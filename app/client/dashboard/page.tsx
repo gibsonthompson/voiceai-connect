@@ -23,7 +23,11 @@ async function getClientData(clientId: string) {
     .eq('id', clientId)
     .single();
 
-  if (!client) return { client: null, recentCalls: [], stats: null };
+  if (!client) return { 
+    client: null, 
+    recentCalls: [], 
+    stats: { callsThisMonth: 0, highUrgency: 0, callLimit: 50, trialDaysLeft: null } 
+  };
 
   // Get recent calls
   const { data: recentCalls } = await supabase
