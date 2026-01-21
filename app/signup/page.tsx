@@ -107,7 +107,7 @@ export default function AgencySignupPage() {
             <div className="text-center mb-8">
               <h1 className="text-2xl font-medium tracking-tight">Create Your Agency</h1>
               <p className="mt-2 text-[#f5f5f0]/50">
-                Start your 14-day free trial. No credit card required.
+                Start your 14-day free trial today.
               </p>
             </div>
 
@@ -160,7 +160,7 @@ export default function AgencySignupPage() {
               
               <div>
                 <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Phone Number <span className="text-[#f5f5f0]/30">(optional)</span>
+                  Phone Number
                 </label>
                 <input
                   name="phone"
@@ -168,6 +168,7 @@ export default function AgencySignupPage() {
                   placeholder="(555) 123-4567"
                   value={formData.phone}
                   onChange={handleChange}
+                  required
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
                 />
               </div>
@@ -217,7 +218,7 @@ export default function AgencySignupPage() {
                 'Full platform access for 14 days',
                 'White-label branding',
                 'Up to 5 test clients',
-                'No credit card required',
+                'Cancel anytime',
               ].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-sm text-[#f5f5f0]/70">
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/10">
