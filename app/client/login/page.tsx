@@ -1,19 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight } from 'lucide-react';
+
+interface Agency {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  support_email: string | null;
+}
 
 export default function ClientLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const agencySlug = searchParams.get('agency');
+  
   const [loading, setLoading] = useState(false);
+  const [agencyLoading, setAgencyLoading] = useState(true);
   const [error, setError] = useState('');
+  const [agency, setAgency] = useState<Agency | null>(null);
   
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  // Fetch agency info
+  useEffect(() => {
+    const fetchAgency = async () => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        let url = '';
+        
+        if (agencySlug) {
+          url = `${backendUrl}/api/agency/by-host?host=${agencySlug}.voiceaiconnect.com`;
+        } else {
+          const host = window.location.host;
+          // Only fetch if we're on a subdomain or custom domain
+          if (!host.includes('localhost') && host !== 'voiceaiconnect.com') {
+            url = `${backendUrl}/api/agency/by-host?host=${host}`;
+          }
+        }
+        
+        if (url) {
+          const response = await fetch(url);
+          if (response.ok) {
+            const data = await response.json();
+            setAgency(data.agency);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch agency:', err);
+      } finally {
+        setAgencyLoading(false);
+      }
+    };
+
+    fetchAgency();
+  }, [agencySlug]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,7 +79,10 @@ export default function ClientLoginPage() {
       const response = await fetch('/api/auth/client-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          agency_id: agency?.id,
+        }),
       });
 
       const data = await response.json();
@@ -46,6 +99,26 @@ export default function ClientLoginPage() {
     }
   };
 
+  // Helper functions
+  const isLightColor = (hex: string): boolean => {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+  };
+
+  const primaryColor = agency?.primary_color || '#f5f5f0';
+  const primaryLight = isLightColor(primaryColor);
+
+  if (agencyLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
       {/* Subtle grain overlay */}
@@ -56,19 +129,33 @@ export default function ClientLoginPage() {
         }}
       />
 
-      {/* Header - This would show agency branding in production */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-center">
+          <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#f5f5f0] blur-lg opacity-20" />
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-[#f5f5f0]">
-                  <Phone className="h-4 w-4 text-[#0a0a0a]" />
+              {agency?.logo_url ? (
+                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 rounded-lg object-contain" />
+              ) : (
+                <div 
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: agency ? primaryColor : '#f5f5f0' }}
+                >
+                  <Phone className="h-4 w-4" style={{ color: agency && !primaryLight ? '#f5f5f0' : '#0a0a0a' }} />
                 </div>
-              </div>
-              <span className="text-lg font-medium tracking-tight">Client Portal</span>
+              )}
+              <span className="text-lg font-medium tracking-tight">
+                {agency?.name || 'Client Portal'}
+              </span>
             </div>
+            {agency && (
+              <Link 
+                href={`/client/signup${agencySlug ? `?agency=${agencySlug}` : ''}`}
+                className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
+              >
+                Need an account? Sign up
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -77,7 +164,10 @@ export default function ClientLoginPage() {
       <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
         {/* Background gradient */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-blue-500/[0.05] to-transparent rounded-full blur-3xl" />
+          <div 
+            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.05]"
+            style={{ backgroundColor: agency?.primary_color || '#3b82f6' }}
+          />
         </div>
 
         <div className="relative w-full max-w-md">
@@ -102,7 +192,7 @@ export default function ClientLoginPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-blue-400/50 focus:outline-none focus:ring-1 focus:ring-blue-400/50 transition-colors"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-white/20 focus:outline-none transition-colors"
                 />
               </div>
               
@@ -117,7 +207,7 @@ export default function ClientLoginPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-blue-400/50 focus:outline-none focus:ring-1 focus:ring-blue-400/50 transition-colors"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-white/20 focus:outline-none transition-colors"
                 />
               </div>
 
@@ -125,7 +215,7 @@ export default function ClientLoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
-                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-blue-400 focus:ring-blue-400/50 focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-white/20 bg-white/5"
                   />
                   <span className="text-sm text-[#f5f5f0]/60">Remember me</span>
                 </label>
@@ -146,7 +236,11 @@ export default function ClientLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#f5f5f0] px-6 py-3.5 text-base font-medium text-[#0a0a0a] transition-all hover:bg-white hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{ 
+                  backgroundColor: agency ? primaryColor : '#f5f5f0',
+                  color: agency && !primaryLight ? '#f5f5f0' : '#0a0a0a',
+                }}
               >
                 {loading ? (
                   <>
@@ -166,7 +260,10 @@ export default function ClientLoginPage() {
           {/* Help text */}
           <p className="mt-8 text-center text-sm text-[#f5f5f0]/40">
             Need help accessing your account?{' '}
-            <a href="mailto:support@example.com" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">
+            <a 
+              href={`mailto:${agency?.support_email || 'support@voiceaiconnect.com'}`} 
+              className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
+            >
               Contact support
             </a>
           </p>
