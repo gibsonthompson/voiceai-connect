@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Phone, Loader2, ArrowRight } from 'lucide-react';
 
-export default function AgencyLoginPage() {
+export default function ClientLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +26,7 @@ export default function AgencyLoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/agency-login', {
+      const response = await fetch('/api/auth/client-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -38,7 +38,7 @@ export default function AgencyLoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
-      router.push('/agency/dashboard');
+      router.push('/client/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -56,25 +56,19 @@ export default function AgencyLoginPage() {
         }}
       />
 
-      {/* Header */}
+      {/* Header - This would show agency branding in production */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+          <div className="flex h-16 items-center justify-center">
+            <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-[#f5f5f0] blur-lg opacity-20" />
                 <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-[#f5f5f0]">
                   <Phone className="h-4 w-4 text-[#0a0a0a]" />
                 </div>
               </div>
-              <span className="text-lg font-medium tracking-tight">VoiceAI Connect</span>
-            </Link>
-            <Link 
-              href="/signup" 
-              className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
-            >
-              Don&apos;t have an account? Sign up
-            </Link>
+              <span className="text-lg font-medium tracking-tight">Client Portal</span>
+            </div>
           </div>
         </div>
       </header>
@@ -83,7 +77,7 @@ export default function AgencyLoginPage() {
       <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
         {/* Background gradient */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-[#f5f5f0]/[0.03] to-transparent rounded-full blur-3xl" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-blue-500/[0.05] to-transparent rounded-full blur-3xl" />
         </div>
 
         <div className="relative w-full max-w-md">
@@ -92,7 +86,7 @@ export default function AgencyLoginPage() {
             <div className="text-center mb-8">
               <h1 className="text-2xl font-medium tracking-tight">Welcome Back</h1>
               <p className="mt-2 text-[#f5f5f0]/50">
-                Sign in to your agency dashboard
+                Sign in to view your AI receptionist dashboard
               </p>
             </div>
 
@@ -104,11 +98,11 @@ export default function AgencyLoginPage() {
                 <input
                   name="email"
                   type="email"
-                  placeholder="you@company.com"
+                  placeholder="you@business.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-blue-400/50 focus:outline-none focus:ring-1 focus:ring-blue-400/50 transition-colors"
                 />
               </div>
               
@@ -123,7 +117,7 @@ export default function AgencyLoginPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-blue-400/50 focus:outline-none focus:ring-1 focus:ring-blue-400/50 transition-colors"
                 />
               </div>
 
@@ -131,12 +125,12 @@ export default function AgencyLoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
-                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-400 focus:ring-emerald-400/50 focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-blue-400 focus:ring-blue-400/50 focus:ring-offset-0"
                   />
                   <span className="text-sm text-[#f5f5f0]/60">Remember me</span>
                 </label>
                 <Link 
-                  href="/forgot-password" 
+                  href="/client/forgot-password" 
                   className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
                 >
                   Forgot password?
@@ -167,24 +161,15 @@ export default function AgencyLoginPage() {
                 )}
               </button>
             </form>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-[#111] px-4 text-[#f5f5f0]/40">New to VoiceAI Connect?</span>
-              </div>
-            </div>
-
-            <Link
-              href="/signup"
-              className="block w-full text-center rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-base font-medium text-[#f5f5f0] transition-all hover:bg-white/10"
-            >
-              Create an Agency Account
-            </Link>
           </div>
+
+          {/* Help text */}
+          <p className="mt-8 text-center text-sm text-[#f5f5f0]/40">
+            Need help accessing your account?{' '}
+            <a href="mailto:support@example.com" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">
+              Contact support
+            </a>
+          </p>
         </div>
       </main>
     </div>
