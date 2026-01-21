@@ -73,9 +73,9 @@ export function SettingsPageClient({
   const [priceStarter, setPriceStarter] = useState(((agency.price_starter || 4900) / 100).toString());
   const [pricePro, setPricePro] = useState(((agency.price_pro || 9900) / 100).toString());
   const [priceGrowth, setPriceGrowth] = useState(((agency.price_growth || 14900) / 100).toString());
-  const [callsStarter, setCallsStarter] = useState((agency.calls_starter || 50).toString());
-  const [callsPro, setCallsPro] = useState((agency.calls_pro || 150).toString());
-  const [callsGrowth, setCallsGrowth] = useState((agency.calls_growth || 500).toString());
+  const [limitStarter, setLimitStarter] = useState((agency.limit_starter || 50).toString());
+  const [limitPro, setLimitPro] = useState((agency.limit_pro || 150).toString());
+  const [limitGrowth, setLimitGrowth] = useState((agency.limit_growth || 500).toString());
   
   const [customDomain, setCustomDomain] = useState(agency.marketing_domain || '');
 
@@ -159,9 +159,9 @@ export function SettingsPageClient({
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
         payload.price_growth = Math.round(parseFloat(priceGrowth) * 100);
-        payload.calls_starter = parseInt(callsStarter);
-        payload.calls_pro = parseInt(callsPro);
-        payload.calls_growth = parseInt(callsGrowth);
+        payload.limit_starter = parseInt(limitStarter);
+        payload.limit_pro = parseInt(limitPro);
+        payload.limit_growth = parseInt(limitGrowth);
       } else if (activeTab === 'domain') {
         payload.marketing_domain = customDomain;
       }
@@ -531,8 +531,8 @@ export function SettingsPageClient({
                             <label className="block text-sm mb-1" style={{ color: theme.textMuted }}>Call Limit</label>
                             <input
                               type="number"
-                              value={callsStarter}
-                              onChange={(e) => setCallsStarter(e.target.value)}
+                              value={limitStarter}
+                              onChange={(e) => setLimitStarter(e.target.value)}
                               className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none"
                               style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                             />
@@ -561,8 +561,8 @@ export function SettingsPageClient({
                             <label className="block text-sm mb-1" style={{ color: theme.textMuted }}>Call Limit</label>
                             <input
                               type="number"
-                              value={callsPro}
-                              onChange={(e) => setCallsPro(e.target.value)}
+                              value={limitPro}
+                              onChange={(e) => setLimitPro(e.target.value)}
                               className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none"
                               style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                             />
@@ -591,8 +591,8 @@ export function SettingsPageClient({
                             <label className="block text-sm mb-1" style={{ color: theme.textMuted }}>Call Limit</label>
                             <input
                               type="number"
-                              value={callsGrowth}
-                              onChange={(e) => setCallsGrowth(e.target.value)}
+                              value={limitGrowth}
+                              onChange={(e) => setLimitGrowth(e.target.value)}
                               className="w-full rounded-lg border px-4 py-2 text-sm focus:outline-none"
                               style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                             />
@@ -628,14 +628,14 @@ export function SettingsPageClient({
                           <div>
                             <p className="font-medium">Stripe Connect</p>
                             <p className="text-sm" style={{ color: theme.textMuted }}>
-                              {agency.stripe_connect_id 
+                              {agency.stripe_account_id 
                                 ? 'Connected - Receiving payments' 
                                 : 'Not connected - Set up to receive payments'}
                             </p>
                           </div>
                         </div>
                         
-                        {agency.stripe_connect_id ? (
+                        {agency.stripe_account_id ? (
                           <div className="flex items-center gap-2 text-emerald-400">
                             <Check className="h-5 w-5" />
                             <span className="text-sm font-medium">Connected</span>
@@ -653,10 +653,10 @@ export function SettingsPageClient({
                       </div>
                     </div>
 
-                    {agency.stripe_connect_id && (
+                    {agency.stripe_account_id && (
                       <div>
                         <p className="text-sm" style={{ color: theme.textMuted }}>
-                          Stripe Account ID: <span className="font-mono">{agency.stripe_connect_id}</span>
+                          Stripe Account ID: <span className="font-mono">{agency.stripe_account_id}</span>
                         </p>
                         <a 
                           href="https://dashboard.stripe.com"
