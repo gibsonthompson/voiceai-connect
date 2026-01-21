@@ -4,6 +4,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { formatCurrency } from '@/lib/utils';
 import { DashboardClient } from './dashboard-client';
 
+// Prevent caching to ensure fresh auth check on each request
+export const dynamic = 'force-dynamic';
+
 async function getAgencyData(agencyId: string) {
   const supabase = await createServerSupabaseClient();
   
