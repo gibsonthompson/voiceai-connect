@@ -161,15 +161,15 @@ export function DashboardClient({
 
       {/* Sidebar with brand colors */}
       <aside 
-        className="fixed inset-y-0 left-0 z-40 w-64 border-r"
+        className="fixed inset-y-0 left-0 z-40 w-64 border-r transition-colors duration-200"
         style={{ 
-          backgroundColor: sidebarBg,
-          borderColor: hexToRgba(branding.primaryColor, 0.2),
+          backgroundColor: darkMode ? sidebarBg : lightenColor(branding.primaryColor, 45),
+          borderColor: darkMode ? hexToRgba(branding.primaryColor, 0.2) : hexToRgba(branding.primaryColor, 0.15),
         }}
       >
         <div 
           className="flex h-16 items-center gap-3 border-b px-6"
-          style={{ borderColor: hexToRgba(branding.primaryColor, 0.2) }}
+          style={{ borderColor: darkMode ? hexToRgba(branding.primaryColor, 0.2) : hexToRgba(branding.primaryColor, 0.15) }}
         >
           {branding.logoUrl ? (
             <img src={branding.logoUrl} alt={branding.name} className="h-8 w-8 rounded-lg object-contain" />
@@ -181,7 +181,12 @@ export function DashboardClient({
               <Phone className="h-4 w-4" style={{ color: primaryLight ? '#0a0a0a' : '#f5f5f0' }} />
             </div>
           )}
-          <span className="font-medium text-[#f5f5f0] truncate">{branding.name}</span>
+          <span 
+            className="font-medium truncate"
+            style={{ color: darkMode ? '#f5f5f0' : '#1a1a1a' }}
+          >
+            {branding.name}
+          </span>
         </div>
 
         <nav className="p-4 space-y-1">
@@ -191,8 +196,14 @@ export function DashboardClient({
               href={item.href}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
               style={{
-                backgroundColor: item.active ? hexToRgba(branding.primaryColor, 0.3) : 'transparent',
-                color: item.active ? '#f5f5f0' : 'rgba(245, 245, 240, 0.6)',
+                backgroundColor: item.active 
+                  ? darkMode 
+                    ? hexToRgba(branding.primaryColor, 0.3) 
+                    : hexToRgba(branding.primaryColor, 0.2)
+                  : 'transparent',
+                color: item.active 
+                  ? darkMode ? '#f5f5f0' : '#1a1a1a'
+                  : darkMode ? 'rgba(245, 245, 240, 0.6)' : 'rgba(26, 26, 26, 0.6)',
               }}
             >
               <item.icon className="h-5 w-5" />
@@ -203,12 +214,12 @@ export function DashboardClient({
 
         <div 
           className="absolute bottom-0 left-0 right-0 border-t p-4"
-          style={{ borderColor: hexToRgba(branding.primaryColor, 0.2) }}
+          style={{ borderColor: darkMode ? hexToRgba(branding.primaryColor, 0.2) : hexToRgba(branding.primaryColor, 0.15) }}
         >
           <Link
             href="/api/auth/logout"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-            style={{ color: 'rgba(245, 245, 240, 0.6)' }}
+            style={{ color: darkMode ? 'rgba(245, 245, 240, 0.6)' : 'rgba(26, 26, 26, 0.6)' }}
           >
             <LogOut className="h-5 w-5" />
             Sign Out
