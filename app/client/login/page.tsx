@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight } from 'lucide-react';
@@ -16,7 +16,7 @@ interface Agency {
   support_email: string | null;
 }
 
-export default function ClientLoginPage() {
+function ClientLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const agencySlug = searchParams.get('agency');
@@ -270,5 +270,17 @@ export default function ClientLoginPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ClientLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    }>
+      <ClientLoginContent />
+    </Suspense>
   );
 }
