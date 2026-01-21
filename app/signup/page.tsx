@@ -11,6 +11,8 @@ export default function AgencySignupPage() {
   const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     agencyName: '',
     email: '',
     password: '',
@@ -112,6 +114,37 @@ export default function AgencySignupPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                    First Name
+                  </label>
+                  <input
+                    name="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                    Last Name
+                  </label>
+                  <input
+                    name="lastName"
+                    type="text"
+                    placeholder="Smith"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
                   Agency Name

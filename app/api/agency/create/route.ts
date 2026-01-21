@@ -24,6 +24,8 @@ export async function POST(request: Request) {
         email: body.email,
         password: body.password,
         phone: body.phone,
+        firstName: body.firstName,
+        lastName: body.lastName,
       }),
     });
 
