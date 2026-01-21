@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           plan_type: planType,
         },
       },
-      success_url: `${baseUrl}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/signup/plan?agency=${agencyId}`,
       metadata: {
         agency_id: agencyId,
