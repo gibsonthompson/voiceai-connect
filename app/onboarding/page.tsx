@@ -14,8 +14,119 @@ import {
   ArrowRight, 
   ArrowLeft,
   Image as ImageIcon,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
+
+// Color extraction utilities
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function getColorLuminance(r: number, g: number, b: number): number {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function adjustColorBrightness(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return rgbToHex(R, G, B);
+}
+
+async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve({ primary: '#2563eb', secondary: '#1e40af', accent: '#3b82f6' });
+        return;
+      }
+
+      // Scale down for performance
+      const maxSize = 100;
+      const scale = Math.min(maxSize / img.width, maxSize / img.height);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+
+      // Collect colors (skip transparent and near-white/black)
+      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> = new Map();
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const a = pixels[i + 3];
+
+        // Skip transparent pixels
+        if (a < 128) continue;
+
+        // Skip near-white and near-black
+        const luminance = getColorLuminance(r, g, b);
+        if (luminance > 0.9 || luminance < 0.1) continue;
+
+        // Quantize colors to reduce variations (group similar colors)
+        const qr = Math.round(r / 32) * 32;
+        const qg = Math.round(g / 32) * 32;
+        const qb = Math.round(b / 32) * 32;
+        const key = `${qr},${qg},${qb}`;
+
+        const existing = colorCounts.get(key);
+        if (existing) {
+          existing.count++;
+        } else {
+          colorCounts.set(key, { count: 1, r: qr, g: qg, b: qb });
+        }
+      }
+
+      // Sort by frequency
+      const sortedColors = Array.from(colorCounts.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      if (sortedColors.length === 0) {
+        resolve({ primary: '#2563eb', secondary: '#1e40af', accent: '#3b82f6' });
+        return;
+      }
+
+      // Pick primary (most frequent), then find contrasting secondary and accent
+      const primary = sortedColors[0];
+      const primaryHex = rgbToHex(primary.r, primary.g, primary.b);
+
+      // Secondary: darker version of primary
+      const secondaryHex = adjustColorBrightness(primaryHex, -20);
+
+      // Accent: find a different color or lighter version
+      let accentHex = adjustColorBrightness(primaryHex, 20);
+      if (sortedColors.length > 1) {
+        const accent = sortedColors[1];
+        accentHex = rgbToHex(accent.r, accent.g, accent.b);
+      }
+
+      resolve({
+        primary: primaryHex,
+        secondary: secondaryHex,
+        accent: accentHex,
+      });
+    };
+
+    img.onerror = () => {
+      resolve({ primary: '#2563eb', secondary: '#1e40af', accent: '#3b82f6' });
+    };
+
+    img.src = imageUrl;
+  });
+}
 
 // Step definitions
 const steps = [
@@ -124,13 +235,27 @@ function OnboardingContent() {
     }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [extractingColors, setExtractingColors] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setLogoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        setLogoPreview(dataUrl);
+        
+        // Auto-extract colors from logo
+        setExtractingColors(true);
+        try {
+          const extractedColors = await extractColorsFromImage(dataUrl);
+          setColors(extractedColors);
+        } catch (err) {
+          console.error('Color extraction failed:', err);
+        } finally {
+          setExtractingColors(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -292,6 +417,40 @@ function OnboardingContent() {
               <p className="text-sm text-[#f5f5f0]/40">
                 PNG, JPG or SVG. Recommended size: 400x400px
               </p>
+
+              {/* Color extraction feedback */}
+              {extractingColors && (
+                <div className="flex items-center gap-2 text-sm text-emerald-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Extracting brand colors...
+                </div>
+              )}
+              
+              {(logoPreview || logoUrl) && !extractingColors && (
+                <div className="p-4 rounded-xl border border-emerald-400/20 bg-emerald-400/5">
+                  <div className="flex items-center gap-2 text-sm text-emerald-400 mb-3">
+                    <Sparkles className="w-4 h-4" />
+                    Brand colors extracted from your logo
+                  </div>
+                  <div className="flex gap-2">
+                    <div 
+                      className="w-10 h-10 rounded-lg border border-white/10" 
+                      style={{ backgroundColor: colors.primary }}
+                      title="Primary"
+                    />
+                    <div 
+                      className="w-10 h-10 rounded-lg border border-white/10" 
+                      style={{ backgroundColor: colors.secondary }}
+                      title="Secondary"
+                    />
+                    <div 
+                      className="w-10 h-10 rounded-lg border border-white/10" 
+                      style={{ backgroundColor: colors.accent }}
+                      title="Accent"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -305,6 +464,34 @@ function OnboardingContent() {
                 Customize your client portal appearance
               </p>
             </div>
+
+            {/* Re-extract from logo button */}
+            {(logoPreview || logoUrl) && (
+              <div className="flex justify-center">
+                <button
+                  onClick={async () => {
+                    setExtractingColors(true);
+                    try {
+                      const extractedColors = await extractColorsFromImage(logoPreview || logoUrl);
+                      setColors(extractedColors);
+                    } catch (err) {
+                      console.error('Color extraction failed:', err);
+                    } finally {
+                      setExtractingColors(false);
+                    }
+                  }}
+                  disabled={extractingColors}
+                  className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50"
+                >
+                  {extractingColors ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  Re-extract colors from logo
+                </button>
+              </div>
+            )}
 
             <div className="grid gap-6 max-w-md mx-auto">
               {[
