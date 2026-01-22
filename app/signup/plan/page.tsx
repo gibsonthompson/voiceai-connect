@@ -67,20 +67,32 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
+      // Map frontend field names to backend expected names
+      const nameParts = signupData.ownerName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       const response = await fetch(`${backendUrl}/api/client/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...signupData,
-          plan_type: planType,
-          agency_id: agency.id,
+          firstName: firstName,
+          lastName: lastName,
+          email: signupData.email,
+          phone: signupData.phone,
+          businessName: signupData.businessName,
+          businessCity: signupData.city,
+          businessState: signupData.state,
+          industry: signupData.industry,
+          agencyId: agency.id,
+          planType: planType,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create account');
+        throw new Error(data.error || data.errors?.join(', ') || 'Failed to create account');
       }
 
       sessionStorage.removeItem('client_signup_data');
@@ -88,7 +100,12 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else if (data.client) {
-        router.push('/signup/success');
+        // Redirect to success with phone number
+        const params = new URLSearchParams({
+          phone: data.client.phone_number || '',
+          business: data.client.business_name || '',
+        });
+        router.push(`/signup/success?${params.toString()}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
