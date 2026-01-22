@@ -9,6 +9,7 @@ function SetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const returnTo = searchParams.get('returnTo');
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -69,9 +70,11 @@ function SetPasswordContent() {
 
       setSuccess(true);
 
-      // Redirect based on user role
+      // Redirect based on returnTo param or user role
       setTimeout(() => {
-        if (data.user?.role === 'client') {
+        if (returnTo) {
+          router.push(returnTo);
+        } else if (data.user?.role === 'client') {
           router.push('/client/dashboard');
         } else if (data.user?.role === 'agency_owner' || data.user?.role === 'agency_staff') {
           router.push('/agency/dashboard');
@@ -96,7 +99,7 @@ function SetPasswordContent() {
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
             <h1 className="text-2xl font-medium tracking-tight mb-2">Password Set!</h1>
-            <p className="text-[#f5f5f0]/50">Redirecting you to your dashboard...</p>
+            <p className="text-[#f5f5f0]/50">Redirecting you...</p>
             <Loader2 className="h-6 w-6 animate-spin mx-auto mt-4 text-emerald-400" />
           </div>
         </div>
@@ -218,7 +221,7 @@ function SetPasswordContent() {
 
           <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
             Already have a password?{' '}
-            <Link href="/client/login" className="text-emerald-400 hover:text-emerald-300">
+            <Link href="/agency/login" className="text-emerald-400 hover:text-emerald-300">
               Sign in
             </Link>
           </p>

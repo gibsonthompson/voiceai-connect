@@ -38,6 +38,11 @@ export default function AgencyLoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
+      // Set auth cookie (server components read from cookies, not localStorage)
+      if (data.token) {
+        document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+      }
+
       router.push('/agency/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

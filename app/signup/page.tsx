@@ -335,7 +335,6 @@ function AgencySignupForm() {
     lastName: '',
     agencyName: '',
     email: '',
-    password: '',
     phone: '',
   });
 
@@ -360,7 +359,6 @@ function AgencySignupForm() {
           phone: formData.phone,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          password: formData.password,
         }),
       });
 
@@ -370,7 +368,9 @@ function AgencySignupForm() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      router.push(`/signup/plan?agency=${data.agencyId}`);
+      // Redirect to set-password with return URL to plan selection
+      const returnTo = encodeURIComponent(`/signup/plan?agency=${data.agencyId}`);
+      router.push(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -481,20 +481,6 @@ function AgencySignupForm() {
                   required
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Password</label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-                <p className="mt-1.5 text-xs text-[#f5f5f0]/40">At least 8 characters</p>
               </div>
               
               <div>
