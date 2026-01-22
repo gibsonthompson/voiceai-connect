@@ -27,7 +27,6 @@ interface SignupData {
   ownerName: string;
   email: string;
   phone: string;
-  password: string;
   city: string;
   state: string;
   industry: string;
@@ -102,32 +101,42 @@ function ClientPlanSelectionContent() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      // Create client and initiate checkout
+      // Map frontend field names to backend expected names
+      const payload = {
+        firstName: signupData.ownerName.split(' ')[0],
+        lastName: signupData.ownerName.split(' ').slice(1).join(' ') || '',
+        email: signupData.email,
+        phone: signupData.phone,
+        businessName: signupData.businessName,
+        businessCity: signupData.city,
+        businessState: signupData.state,
+        industry: signupData.industry,
+        agencyId: signupData.agency_id,
+        plan_type: selectedPlan,
+      };
+      
+      // Create client
       const response = await fetch(`${backendUrl}/api/client/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...signupData,
-          plan_type: selectedPlan,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || data.message || 'Something went wrong');
       }
 
-      // If agency has Stripe Connect, redirect to checkout
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
+      // Clear signup data from session
+      sessionStorage.removeItem('client_signup_data');
+
+      // Redirect to set-password page with token
+      if (data.token) {
+        router.push(`/auth/set-password?token=${data.token}`);
       } else {
-        // No Stripe, just create client with trial
-        // Store auth token if returned
-        if (data.token) {
-          document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
-        }
-        router.push('/client/dashboard');
+        // Fallback: show success message and redirect to login
+        router.push(`/client/login?signup=success`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -373,11 +382,11 @@ function ClientPlanSelectionContent() {
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Processing...
+                  Creating your account...
                 </>
               ) : (
                 <>
-                  Continue to Payment
+                  Start Free Trial
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
@@ -386,7 +395,7 @@ function ClientPlanSelectionContent() {
 
           {/* Trial note */}
           <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
-            Start with a 7-day free trial. Cancel anytime.
+            7-day free trial. No credit card required. Cancel anytime.
           </p>
         </div>
       </main>

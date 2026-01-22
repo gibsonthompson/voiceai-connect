@@ -53,9 +53,18 @@ function SetPasswordContent() {
         throw new Error(data.error || 'Failed to set password');
       }
 
-      // Store the auth token
+      // Set the auth token as a cookie (critical for server-side auth)
       if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+        // Set cookie with proper attributes
+        document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+        
+        // Also store user info in localStorage for client-side access
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+        if (data.client) {
+          localStorage.setItem('client', JSON.stringify(data.client));
+        }
       }
 
       setSuccess(true);
@@ -69,7 +78,7 @@ function SetPasswordContent() {
         } else {
           router.push('/');
         }
-      }, 2000);
+      }, 1500);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

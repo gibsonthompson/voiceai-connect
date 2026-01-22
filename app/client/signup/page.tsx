@@ -36,7 +36,6 @@ function ClientSignupContent() {
     ownerName: '',
     email: '',
     phone: '',
-    password: '',
     city: '',
     state: '',
     industry: 'general',
@@ -280,24 +279,6 @@ function ClientSignupContent() {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Password
-                </label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                />
-                <p className="mt-1.5 text-xs text-[#f5f5f0]/40">At least 6 characters</p>
               </div>
 
               {/* Location Row */}

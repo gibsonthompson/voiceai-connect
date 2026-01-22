@@ -2,8 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -34,6 +34,9 @@ const isLightColor = (hex: string): boolean => {
 // ============================================================================
 function ClientLoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const signupSuccess = searchParams.get('signup') === 'success';
+  
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
@@ -99,9 +102,11 @@ function ClientLoginContent() {
         throw new Error(data.error || data.message || 'Invalid credentials');
       }
 
-      // Store the auth token
+      // Set the auth token as a cookie (critical for server-side auth)
       if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+        document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+        
+        // Also store user info in localStorage for client-side access
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.client) {
           localStorage.setItem('client', JSON.stringify(data.client));
@@ -155,7 +160,7 @@ function ClientLoginContent() {
               <span className="text-lg font-medium tracking-tight">{agency?.name || 'Client Portal'}</span>
             </Link>
             <Link 
-              href="/signup" 
+              href="/client/signup" 
               className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
             >
               Don&apos;t have an account? Sign up
@@ -173,6 +178,16 @@ function ClientLoginContent() {
         </div>
 
         <div className="relative w-full max-w-md">
+          {/* Signup success message */}
+          {signupSuccess && (
+            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+              <p className="text-sm text-emerald-300">
+                Account created! Check your email or SMS for password setup instructions.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-medium tracking-tight">Welcome back</h1>
