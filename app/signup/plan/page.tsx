@@ -80,6 +80,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
           lastName: lastName,
           email: signupData.email,
           phone: signupData.phone,
+          password: signupData.password,
           businessName: signupData.businessName,
           businessCity: signupData.city,
           businessState: signupData.state,
