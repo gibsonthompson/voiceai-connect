@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 // Platform domain configuration
-const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'voiceaiconnect.com';
+const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 const PLATFORM_DOMAINS = [
   PLATFORM_DOMAIN,
   `www.${PLATFORM_DOMAIN}`,
@@ -56,12 +56,12 @@ export async function middleware(request: NextRequest) {
 
   // 1. Check if this is the main platform domain
   if (PLATFORM_DOMAINS.includes(hostname)) {
-    // Serve platform landing pages
-    // Routes: /, /pricing, /features, /signup, /login
+    // Platform domain - serve platform pages directly
+    // No rewrites needed, no agency cookie
     return response;
   }
 
-  // 2. Check for agency subdomain (xxx.voiceaiconnect.com)
+  // 2. Check for agency subdomain (xxx.myvoiceaiconnect.com)
   const subdomainMatch = hostname.match(new RegExp(`^([^.]+)\\.${PLATFORM_DOMAIN.replace('.', '\\.')}$`));
   if (subdomainMatch) {
     const slug = subdomainMatch[1];
@@ -86,27 +86,6 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set('x-agency-name', agency.name);
       requestHeaders.set('x-agency-slug', agency.slug || '');
       
-      // Rewrite to agency-site routes
-      const url = request.nextUrl.clone();
-      
-      // Map routes to agency-site folder
-      if (pathname === '/') {
-        url.pathname = '/(agency-site)';
-      } else if (pathname.startsWith('/signup')) {
-        url.pathname = `/(agency-site)${pathname}`;
-      } else if (pathname.startsWith('/agency') || pathname.startsWith('/client')) {
-        // Protected dashboard routes - pass through
-        url.pathname = pathname;
-      } else {
-        url.pathname = `/(agency-site)${pathname}`;
-      }
-      
-      response = NextResponse.rewrite(url, {
-        request: {
-          headers: requestHeaders,
-        },
-      });
-      
       // Set agency ID cookie for client-side access
       response.cookies.set('agency_id', agency.id, {
         httpOnly: false,
@@ -115,7 +94,27 @@ export async function middleware(request: NextRequest) {
         path: '/',
       });
       
-      return response;
+      // Only rewrite routes that exist in (agency-site) folder
+      // /signup pages are unified and detect context client-side
+      if (pathname === '/' || pathname.startsWith('/get-started')) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/(agency-site)${pathname}`;
+        
+        return NextResponse.rewrite(url, {
+          request: {
+            headers: requestHeaders,
+          },
+        });
+      }
+      
+      // For all other routes (/signup, /agency, /client, /login, etc.)
+      // Just pass through with the agency cookie set - pages handle context detection
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+        headers: response.headers,
+      });
     }
   }
 
@@ -129,44 +128,42 @@ export async function middleware(request: NextRequest) {
     .single();
 
   if (customDomainAgency) {
-    // Set agency context
+    // Set agency context in headers
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-agency-id', customDomainAgency.id);
     requestHeaders.set('x-agency-name', customDomainAgency.name);
     requestHeaders.set('x-agency-slug', customDomainAgency.slug || '');
     
-    const url = request.nextUrl.clone();
+    // Set agency ID cookie for client-side access
+    response.cookies.set('agency_id', customDomainAgency.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+    });
     
-    // Map routes to agency-site folder
-    if (pathname === '/') {
-      url.pathname = '/(agency-site)';
-    } else if (pathname.startsWith('/signup')) {
+    // Only rewrite routes that exist in (agency-site) folder
+    if (pathname === '/' || pathname.startsWith('/get-started')) {
+      const url = request.nextUrl.clone();
       url.pathname = `/(agency-site)${pathname}`;
-    } else if (pathname.startsWith('/agency') || pathname.startsWith('/client')) {
-      // Protected dashboard routes
-      url.pathname = pathname;
-    } else {
-      url.pathname = `/(agency-site)${pathname}`;
+      
+      return NextResponse.rewrite(url, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
     
-    response = NextResponse.rewrite(url, {
+    // For all other routes, pass through with agency cookie
+    return NextResponse.next({
       request: {
         headers: requestHeaders,
       },
+      headers: response.headers,
     });
-    
-    response.cookies.set('agency_id', customDomainAgency.id, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
-    
-    return response;
   }
 
   // 4. Unknown domain - could be local dev or misconfigured
-  // Allow through but log for debugging
   console.log(`[Middleware] Unknown hostname: ${hostname}, pathname: ${pathname}`);
   
   return response;
