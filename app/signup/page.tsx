@@ -48,7 +48,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     ownerName: '',
     email: '',
     phone: '',
-    password: '',
     city: '',
     state: '',
     industry: 'general',
@@ -107,7 +106,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               <span className="text-lg font-medium tracking-tight">{agency.name}</span>
             </Link>
             <Link 
-              href="/login"
+              href="/client/login"
               className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
             >
               Already have an account? Sign in
@@ -208,21 +207,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                     />
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Password</label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                />
-                <p className="mt-1.5 text-xs text-[#f5f5f0]/40">At least 6 characters</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -366,10 +350,18 @@ function AgencySignupForm() {
     setError('');
 
     try {
-      const response = await fetch('/api/agency/create', {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.agencyName,
+          email: formData.email,
+          phone: formData.phone,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          password: formData.password,
+        }),
       });
 
       const data = await response.json();
