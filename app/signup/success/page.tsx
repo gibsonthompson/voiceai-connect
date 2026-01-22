@@ -109,7 +109,7 @@ function ClientSuccessPage({ agency }: { agency: Agency | null }) {
             <div className="text-left mb-8">
               <h3 className="font-medium mb-4">Next Steps:</h3>
               <ul className="space-y-3">
-                {['Check your email for login instructions', 'Forward your business calls to your AI number', 'Log into your dashboard to view calls'].map((step, i) => (
+                {['Check your phone for a text with login instructions', 'Forward your business calls to your AI number', 'Log into your dashboard to view calls'].map((step, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm text-[#f5f5f0]/70">
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium" style={{ backgroundColor: `${accentColor}1A`, color: accentColor }}>
                       {i + 1}
@@ -121,7 +121,7 @@ function ClientSuccessPage({ agency }: { agency: Agency | null }) {
             </div>
 
             <Link
-              href="/login"
+              href="/client/login"
               className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{ backgroundColor: primaryColor, color: primaryLight ? '#0a0a0a' : '#f5f5f0' }}
             >
