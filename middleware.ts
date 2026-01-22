@@ -71,12 +71,12 @@ export async function middleware(request: NextRequest) {
       return response;
     }
     
-    // Look up agency by slug
+    // Look up agency by slug (allow active or trial status)
     const { data: agency } = await supabase
       .from('agencies')
       .select('id, name, status, slug')
       .eq('slug', slug)
-      .eq('status', 'active')
+      .in('status', ['active', 'trial'])
       .single();
     
     if (agency) {
@@ -124,7 +124,7 @@ export async function middleware(request: NextRequest) {
     .select('id, name, status, slug, marketing_domain')
     .eq('marketing_domain', hostname.replace('www.', ''))
     .eq('domain_verified', true)
-    .eq('status', 'active')
+    .in('status', ['active', 'trial'])
     .single();
 
   if (customDomainAgency) {
