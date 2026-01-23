@@ -445,7 +445,7 @@ export default function BlogPage() {
             </div>
 
             <p className="text-sm text-[#fafaf9]/30">
-              © 2025 VoiceAI Connect. All rights reserved.
+              © 2026 VoiceAI Connect. All rights reserved.
             </p>
           </div>
         </div>
