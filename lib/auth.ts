@@ -61,15 +61,39 @@ export function verifyToken(token: string): JWTPayload | null {
 // SESSION MANAGEMENT
 // ============================================================================
 
+export async function setAuthCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  
+  cookieStore.set('auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+  
+  // Also set backup cookie
+  cookieStore.set('auth_token_backup', token, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7,
+  });
+}
+
 export async function getAuthCookie(): Promise<string | undefined> {
   try {
     const cookieStore = await cookies();
-    // Try primary cookie first, then backup
+    // Try all cookie names
     const primary = cookieStore.get('auth_token')?.value;
     if (primary) return primary;
     
     const backup = cookieStore.get('auth_token_backup')?.value;
-    return backup;
+    if (backup) return backup;
+    
+    const client = cookieStore.get('auth_token_client')?.value;
+    return client;
   } catch (error) {
     console.error('Error reading auth cookie:', error);
     return undefined;
@@ -80,6 +104,7 @@ export async function clearAuthCookie(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete('auth_token');
   cookieStore.delete('auth_token_backup');
+  cookieStore.delete('auth_token_client');
 }
 
 // ============================================================================
