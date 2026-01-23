@@ -26,10 +26,11 @@ const isLightColor = (hex: string): boolean => {
 function ClientLoginContent() {
   const searchParams = useSearchParams();
   const signupSuccess = searchParams.get('signup') === 'success';
+  const authError = searchParams.get('error');
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(authError === 'no_token' ? 'Authentication failed. Please try again.' : '');
   const [showPassword, setShowPassword] = useState(false);
   const [agency, setAgency] = useState<Agency | null>(null);
   
@@ -93,24 +94,7 @@ function ClientLoginContent() {
         throw new Error('No token received from server');
       }
 
-      console.log('Token received, setting session...');
-      
-      // Set the auth token via API route
-      const sessionResponse = await fetch('/api/auth/set-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ token: data.token }),
-      });
-      
-      const sessionData = await sessionResponse.json();
-      
-      if (!sessionResponse.ok) {
-        console.error('Failed to set session cookie:', sessionData);
-        throw new Error('Failed to create session');
-      }
-      
-      console.log('Session API responded successfully');
+      console.log('Token received, redirecting through auth callback...');
       
       // Store in localStorage as backup
       localStorage.setItem('auth_token', data.token);
@@ -118,14 +102,9 @@ function ClientLoginContent() {
       if (data.client) {
         localStorage.setItem('client', JSON.stringify(data.client));
       }
-      
-      // Also set client-side cookie as fallback
-      document.cookie = `auth_token_client=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax${window.location.protocol === 'https:' ? '; secure' : ''}`;
-      
-      console.log('All storage set, redirecting...');
-      
-      // Hard navigation to ensure fresh server render with cookie
-      window.location.href = '/client/dashboard';
+
+      // Redirect through server-side callback to set cookie properly
+      window.location.href = `/auth/callback?token=${encodeURIComponent(data.token)}&redirect=/client/dashboard`;
       
     } catch (err) {
       console.error('Login error:', err);
