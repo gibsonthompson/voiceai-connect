@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, PhoneCall, Settings, LogOut, 
@@ -41,8 +41,11 @@ interface Branding {
   agencyName: string;
 }
 
-export default function CallDetailPage({ params }: { params: { id: string } }) {
+export default function CallDetailPage() {
   const router = useRouter();
+  const params = useParams();
+  const callId = params.id as string;
+  
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<Client | null>(null);
   const [call, setCall] = useState<Call | null>(null);
@@ -52,6 +55,11 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const loadCallDetail = async () => {
+      if (!callId) {
+        router.push('/client/calls');
+        return;
+      }
+
       const token = localStorage.getItem('auth_token');
       const clientStr = localStorage.getItem('client');
 
@@ -87,7 +95,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
         });
 
         // Fetch call detail
-        const callResponse = await fetch(`${backendUrl}/api/client/${clientData.id}/calls/${params.id}`, {
+        const callResponse = await fetch(`${backendUrl}/api/client/${clientData.id}/calls/${callId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
@@ -108,7 +116,7 @@ export default function CallDetailPage({ params }: { params: { id: string } }) {
     };
 
     loadCallDetail();
-  }, [router, params.id]);
+  }, [router, callId]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
