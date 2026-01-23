@@ -5,7 +5,6 @@ import type { JWTPayload, AuthUser, UserRole } from '@/types/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '7d';
-const COOKIE_NAME = 'auth_token';
 
 // ============================================================================
 // PASSWORD UTILITIES
@@ -62,26 +61,25 @@ export function verifyToken(token: string): JWTPayload | null {
 // SESSION MANAGEMENT
 // ============================================================================
 
-export async function setAuthCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
-}
-
 export async function getAuthCookie(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get(COOKIE_NAME)?.value;
+  try {
+    const cookieStore = await cookies();
+    // Try primary cookie first, then backup
+    const primary = cookieStore.get('auth_token')?.value;
+    if (primary) return primary;
+    
+    const backup = cookieStore.get('auth_token_backup')?.value;
+    return backup;
+  } catch (error) {
+    console.error('Error reading auth cookie:', error);
+    return undefined;
+  }
 }
 
 export async function clearAuthCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete('auth_token');
+  cookieStore.delete('auth_token_backup');
 }
 
 // ============================================================================
@@ -98,32 +96,39 @@ interface BackendJWTPayload {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const token = await getAuthCookie();
-  
-  if (!token) {
+  try {
+    const token = await getAuthCookie();
+    
+    console.log('getCurrentUser - token exists:', !!token);
+    
+    if (!token) {
+      return null;
+    }
+    
+    const payload = verifyToken(token);
+    
+    console.log('getCurrentUser - payload valid:', !!payload);
+    
+    if (!payload) {
+      return null;
+    }
+    
+    // Handle both backend naming (camelCase) and frontend naming (snake_case)
+    const backendPayload = payload as unknown as BackendJWTPayload;
+    
+    return {
+      id: backendPayload.userId || payload.sub,
+      email: payload.email,
+      role: payload.role,
+      agency_id: backendPayload.agencyId || payload.agency_id,
+      client_id: backendPayload.clientId || payload.client_id,
+      first_name: '',
+      last_name: undefined,
+    };
+  } catch (error) {
+    console.error('getCurrentUser error:', error);
     return null;
   }
-  
-  const payload = verifyToken(token);
-  
-  if (!payload) {
-    return null;
-  }
-  
-  // Handle both backend naming (camelCase) and frontend naming (snake_case)
-  // Backend sends: userId, agencyId, clientId
-  // Frontend expects: sub, agency_id, client_id
-  const backendPayload = payload as unknown as BackendJWTPayload;
-  
-  return {
-    id: backendPayload.userId || payload.sub,
-    email: payload.email,
-    role: payload.role,
-    agency_id: backendPayload.agencyId || payload.agency_id,
-    client_id: backendPayload.clientId || payload.client_id,
-    first_name: '',
-    last_name: undefined,
-  };
 }
 
 // ============================================================================

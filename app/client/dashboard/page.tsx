@@ -1,15 +1,51 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { ClientDashboardClient } from './dashboard-client';
 
-// Prevent caching to ensure fresh auth check
 export const dynamic = 'force-dynamic';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+async function getAuthUser() {
+  const cookieStore = await cookies();
+  
+  // Try all possible cookie names
+  const token = 
+    cookieStore.get('auth_token')?.value ||
+    cookieStore.get('auth_token_backup')?.value ||
+    cookieStore.get('auth_token_client')?.value;
+  
+  console.log('Dashboard auth check - cookies found:', {
+    auth_token: !!cookieStore.get('auth_token')?.value,
+    auth_token_backup: !!cookieStore.get('auth_token_backup')?.value,
+    auth_token_client: !!cookieStore.get('auth_token_client')?.value,
+  });
+  
+  if (!token) {
+    console.log('No auth token found in any cookie');
+    return null;
+  }
+  
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    return {
+      id: payload.userId || payload.sub,
+      email: payload.email,
+      role: payload.role,
+      agency_id: payload.agencyId || payload.agency_id,
+      client_id: payload.clientId || payload.client_id,
+    };
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return null;
+  }
+}
 
 async function getClientData(clientId: string) {
   const supabase = await createServerSupabaseClient();
   
-  // Get client with agency details
   const { data: client } = await supabase
     .from('clients')
     .select(`
@@ -29,7 +65,6 @@ async function getClientData(clientId: string) {
     stats: { callsThisMonth: 0, highUrgency: 0, callLimit: 50, trialDaysLeft: null } 
   };
 
-  // Get recent calls
   const { data: recentCalls } = await supabase
     .from('calls')
     .select('*')
@@ -37,7 +72,6 @@ async function getClientData(clientId: string) {
     .order('created_at', { ascending: false })
     .limit(5);
 
-  // Get call stats for this month
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
@@ -55,7 +89,6 @@ async function getClientData(clientId: string) {
     .eq('urgency_level', 'high')
     .gte('created_at', startOfMonth.toISOString());
 
-  // Calculate trial days left
   let trialDaysLeft = null;
   if (client.trial_ends_at) {
     trialDaysLeft = Math.max(0, Math.ceil(
@@ -76,9 +109,10 @@ async function getClientData(clientId: string) {
 }
 
 export default async function ClientDashboardPage() {
-  const user = await getCurrentUser();
+  const user = await getAuthUser();
   
   if (!user || !user.client_id) {
+    console.log('No user or client_id, redirecting to login');
     redirect('/client/login');
   }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
 interface Agency {
@@ -24,7 +24,6 @@ const isLightColor = (hex: string): boolean => {
 };
 
 function ClientLoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const signupSuccess = searchParams.get('signup') === 'success';
   
@@ -90,40 +89,47 @@ function ClientLoginContent() {
         throw new Error(data.error || data.message || 'Invalid credentials');
       }
 
-      // Set the auth token via API route (proper server-side cookie)
-      if (data.token) {
-        console.log('Token received, setting session...');
-        
-        const sessionResponse = await fetch('/api/auth/set-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ token: data.token }),
-        });
-        
-        if (!sessionResponse.ok) {
-          const sessionError = await sessionResponse.json();
-          console.error('Failed to set session cookie:', sessionError);
-          throw new Error('Failed to create session');
-        }
-        
-        console.log('Session cookie set successfully');
-        
-        // Also store user info in localStorage for client-side access
-        localStorage.setItem('user', JSON.stringify(data.user));
-        if (data.client) {
-          localStorage.setItem('client', JSON.stringify(data.client));
-        }
-      } else {
+      if (!data.token) {
         throw new Error('No token received from server');
       }
 
-      // Redirect to client dashboard
+      console.log('Token received, setting session...');
+      
+      // Set the auth token via API route
+      const sessionResponse = await fetch('/api/auth/set-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token: data.token }),
+      });
+      
+      const sessionData = await sessionResponse.json();
+      
+      if (!sessionResponse.ok) {
+        console.error('Failed to set session cookie:', sessionData);
+        throw new Error('Failed to create session');
+      }
+      
+      console.log('Session API responded successfully');
+      
+      // Store in localStorage as backup
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.client) {
+        localStorage.setItem('client', JSON.stringify(data.client));
+      }
+      
+      // Also set client-side cookie as fallback
+      document.cookie = `auth_token_client=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax${window.location.protocol === 'https:' ? '; secure' : ''}`;
+      
+      console.log('All storage set, redirecting...');
+      
+      // Hard navigation to ensure fresh server render with cookie
       window.location.href = '/client/dashboard';
+      
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
       setLoading(false);
     }
   };
@@ -216,9 +222,6 @@ function ClientLoginContent() {
                     onChange={handleChange}
                     required
                     className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    style={{ 
-                      '--tw-ring-color': `${accentColor}50`,
-                    } as React.CSSProperties}
                   />
                 </div>
               </div>
