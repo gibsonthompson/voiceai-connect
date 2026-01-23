@@ -1,69 +1,161 @@
-import { redirect, notFound } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, PhoneCall, Settings, LogOut, 
-  TrendingUp, ArrowLeft, Play, Clock,
-  User, MapPin, AlertCircle, MessageSquare
+  TrendingUp, ArrowLeft, Play, Pause, Clock,
+  User, MapPin, AlertCircle, MessageSquare, Loader2, Bot
 } from 'lucide-react';
-import { getCurrentUser } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-async function getCallData(clientId: string, callId: string) {
-  const supabase = await createServerSupabaseClient();
-  
-  const { data: client } = await supabase
-    .from('clients')
-    .select(`
-      *,
-      agency:agencies(name, logo_url, primary_color, support_email)
-    `)
-    .eq('id', clientId)
-    .single();
-
-  const { data: call } = await supabase
-    .from('calls')
-    .select('*')
-    .eq('id', callId)
-    .eq('client_id', clientId)
-    .single();
-
-  return { client, call };
+interface Call {
+  id: string;
+  created_at: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  caller_phone: string | null;
+  customer_email: string | null;
+  customer_address: string | null;
+  service_requested: string | null;
+  urgency_level: string | null;
+  ai_summary: string | null;
+  transcript: string | null;
+  recording_url: string | null;
+  duration_seconds: number | null;
+  call_status: string | null;
 }
 
-export default async function CallDetailPage({ 
-  params 
-}: { 
-  params: { id: string } 
-}) {
-  const user = await getCurrentUser();
-  
-  if (!user || !user.client_id) {
-    redirect('/client/login');
-  }
+interface Client {
+  id: string;
+  business_name: string;
+  vapi_phone_number: string | null;
+  agency_id: string | null;
+}
 
-  const { client, call } = await getCallData(user.client_id, params.id);
+interface Branding {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  logoUrl: string | null;
+  agencyName: string;
+}
 
-  if (!client) {
-    redirect('/client/login');
-  }
+export default function CallDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState<Client | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
+  const [branding, setBranding] = useState<Branding | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
-  if (!call) {
-    notFound();
-  }
+  useEffect(() => {
+    const loadCallDetail = async () => {
+      const token = localStorage.getItem('auth_token');
+      const clientStr = localStorage.getItem('client');
 
-  const agency = client.agency;
+      if (!token || !clientStr) {
+        router.push('/client/login');
+        return;
+      }
 
-  const navItems = [
-    { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, active: false },
-    { href: '/client/calls', label: 'Calls', icon: PhoneCall, active: true },
-    { href: '/client/settings', label: 'Settings', icon: Settings, active: false },
-  ];
+      try {
+        const clientData = JSON.parse(clientStr);
+        setClient(clientData);
+
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
+
+        // Fetch client with agency data for branding
+        const clientResponse = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!clientResponse.ok) {
+          throw new Error('Failed to fetch client');
+        }
+
+        const fullClientData = await clientResponse.json();
+        const agency = fullClientData.client?.agencies || fullClientData.agency;
+
+        setBranding({
+          primaryColor: agency?.primary_color || '#3b82f6',
+          secondaryColor: agency?.secondary_color || '#1e40af',
+          accentColor: agency?.accent_color || '#60a5fa',
+          logoUrl: agency?.logo_url || null,
+          agencyName: agency?.name || 'VoiceAI',
+        });
+
+        // Fetch call detail
+        const callResponse = await fetch(`${backendUrl}/api/client/${clientData.id}/calls/${params.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!callResponse.ok) {
+          // Call not found, redirect to calls list
+          router.push('/client/calls');
+          return;
+        }
+
+        const callData = await callResponse.json();
+        setCall(callData.call);
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading call detail:', error);
+        router.push('/client/login');
+      }
+    };
+
+    loadCallDetail();
+  }, [router, params.id]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
   };
+
+  const handlePlayPause = () => {
+    if (!call?.recording_url) return;
+
+    if (!audioElement) {
+      const audio = new Audio(call.recording_url);
+      audio.onended = () => setIsPlaying(false);
+      setAudioElement(audio);
+      audio.play();
+      setIsPlaying(true);
+    } else {
+      if (isPlaying) {
+        audioElement.pause();
+        setIsPlaying(false);
+      } else {
+        audioElement.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('client');
+    router.push('/client/login');
+  };
+
+  const navItems = [
+    { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, active: false },
+    { href: '/client/calls', label: 'Calls', icon: PhoneCall, active: true },
+    { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, active: false },
+    { href: '/client/settings', label: 'Settings', icon: Settings, active: false },
+  ];
+
+  if (loading || !client || !branding || !call) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
@@ -78,11 +170,14 @@ export default async function CallDetailPage({
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 w-64 border-r border-white/5 bg-[#0a0a0a]">
         <div className="flex h-16 items-center gap-3 border-b border-white/5 px-6">
-          {agency?.logo_url ? (
-            <img src={agency.logo_url} alt={agency.name} className="h-8 w-8 rounded-lg object-contain" />
+          {branding.logoUrl ? (
+            <img src={branding.logoUrl} alt={branding.agencyName} className="h-8 w-8 rounded-lg object-contain" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f5f0]">
-              <Phone className="h-4 w-4 text-[#0a0a0a]" />
+            <div 
+              className="flex h-8 w-8 items-center justify-center rounded-lg"
+              style={{ backgroundColor: branding.primaryColor }}
+            >
+              <Phone className="h-4 w-4 text-white" />
             </div>
           )}
           <span className="font-medium text-[#f5f5f0] truncate">{client.business_name}</span>
@@ -106,19 +201,17 @@ export default async function CallDetailPage({
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4">
-          {agency && (
-            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
-              <p className="text-xs text-[#f5f5f0]/40">Powered by</p>
-              <p className="text-sm font-medium text-[#f5f5f0]/70">{agency.name}</p>
-            </div>
-          )}
-          <Link
-            href="/api/auth/logout"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:bg-white/5 hover:text-[#f5f5f0] transition-colors border-t border-white/5 pt-4"
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+            <p className="text-xs text-[#f5f5f0]/40">Powered by</p>
+            <p className="text-sm font-medium text-[#f5f5f0]/70">{branding.agencyName}</p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:bg-white/5 hover:text-[#f5f5f0] transition-colors border-t border-white/5 pt-4 w-full"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -162,7 +255,7 @@ export default async function CallDetailPage({
                   : 'bg-white/10 text-[#f5f5f0]/60 border border-white/10'
               }`}
             >
-              {call.urgency_level || 'Normal'} Priority
+              {call.urgency_level ? `${call.urgency_level.charAt(0).toUpperCase()}${call.urgency_level.slice(1)}` : 'Normal'} Priority
             </span>
           </div>
 
@@ -189,8 +282,15 @@ export default async function CallDetailPage({
                 <div className="rounded-xl border border-white/10 bg-[#111] p-6">
                   <h2 className="font-medium mb-4">Recording</h2>
                   <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                    <button className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f5f0] text-[#0a0a0a] hover:bg-white transition-colors">
-                      <Play className="h-5 w-5 ml-0.5" />
+                    <button 
+                      onClick={handlePlayPause}
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f5f0] text-[#0a0a0a] hover:bg-white transition-colors"
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-5 w-5" />
+                      ) : (
+                        <Play className="h-5 w-5 ml-0.5" />
+                      )}
                     </button>
                     <div className="flex-1">
                       <div className="h-2 rounded-full bg-white/10">
@@ -244,6 +344,18 @@ export default async function CallDetailPage({
                       <div>
                         <p className="text-xs text-[#f5f5f0]/40">Phone</p>
                         <p className="text-sm">{call.customer_phone || call.caller_phone}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {call.customer_email && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
+                        <MessageSquare className="h-4 w-4 text-[#f5f5f0]/50" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#f5f5f0]/40">Email</p>
+                        <p className="text-sm">{call.customer_email}</p>
                       </div>
                     </div>
                   )}
