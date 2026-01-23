@@ -5,9 +5,10 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, PhoneCall, Settings, LogOut, 
-  TrendingUp, ArrowLeft, Play, Pause, Clock,
+  TrendingUp, ArrowLeft, Clock,
   User, MapPin, AlertCircle, MessageSquare, Loader2, Bot
 } from 'lucide-react';
+import CallPlayback from '@/components/client/CallPlayback';
 
 interface Call {
   id: string;
@@ -50,8 +51,6 @@ export default function CallDetailPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [call, setCall] = useState<Call | null>(null);
   const [branding, setBranding] = useState<Branding | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const loadCallDetail = async () => {
@@ -122,26 +121,6 @@ export default function CallDetailPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
-  };
-
-  const handlePlayPause = () => {
-    if (!call?.recording_url) return;
-
-    if (!audioElement) {
-      const audio = new Audio(call.recording_url);
-      audio.onended = () => setIsPlaying(false);
-      setAudioElement(audio);
-      audio.play();
-      setIsPlaying(true);
-    } else {
-      if (isPlaying) {
-        audioElement.pause();
-        setIsPlaying(false);
-      } else {
-        audioElement.play();
-        setIsPlaying(true);
-      }
-    }
   };
 
   const handleSignOut = () => {
@@ -285,31 +264,14 @@ export default function CallDetailPage() {
                 </div>
               )}
 
-              {/* Recording */}
+              {/* Recording - Using CallPlayback Component */}
               {call.recording_url && (
                 <div className="rounded-xl border border-white/10 bg-[#111] p-6">
                   <h2 className="font-medium mb-4">Recording</h2>
-                  <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                    <button 
-                      onClick={handlePlayPause}
-                      className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f5f0] text-[#0a0a0a] hover:bg-white transition-colors"
-                    >
-                      {isPlaying ? (
-                        <Pause className="h-5 w-5" />
-                      ) : (
-                        <Play className="h-5 w-5 ml-0.5" />
-                      )}
-                    </button>
-                    <div className="flex-1">
-                      <div className="h-2 rounded-full bg-white/10">
-                        <div className="h-full w-0 rounded-full bg-emerald-400" />
-                      </div>
-                      <div className="flex justify-between mt-2 text-xs text-[#f5f5f0]/40">
-                        <span>0:00</span>
-                        <span>{call.duration_seconds ? formatDuration(call.duration_seconds) : '—'}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <CallPlayback 
+                    recordingUrl={call.recording_url}
+                    callDuration={call.duration_seconds || undefined}
+                  />
                 </div>
               )}
 
@@ -351,7 +313,12 @@ export default function CallDetailPage() {
                       </div>
                       <div>
                         <p className="text-xs text-[#f5f5f0]/40">Phone</p>
-                        <p className="text-sm">{call.customer_phone || call.caller_phone}</p>
+                        <a 
+                          href={`tel:${call.customer_phone || call.caller_phone}`}
+                          className="text-sm hover:text-emerald-400 transition-colors"
+                        >
+                          {call.customer_phone || call.caller_phone}
+                        </a>
                       </div>
                     </div>
                   )}
@@ -363,7 +330,12 @@ export default function CallDetailPage() {
                       </div>
                       <div>
                         <p className="text-xs text-[#f5f5f0]/40">Email</p>
-                        <p className="text-sm">{call.customer_email}</p>
+                        <a 
+                          href={`mailto:${call.customer_email}`}
+                          className="text-sm hover:text-emerald-400 transition-colors"
+                        >
+                          {call.customer_email}
+                        </a>
                       </div>
                     </div>
                   )}
@@ -426,13 +398,15 @@ export default function CallDetailPage() {
 
               {/* Actions */}
               <div className="space-y-3">
-                <a 
-                  href={`tel:${call.customer_phone || call.caller_phone}`}
-                  className="flex items-center justify-center gap-2 w-full rounded-full bg-[#f5f5f0] px-4 py-3 text-sm font-medium text-[#0a0a0a] hover:bg-white transition-colors"
-                >
-                  <Phone className="h-4 w-4" />
-                  Call Back
-                </a>
+                {(call.customer_phone || call.caller_phone) && (
+                  <a 
+                    href={`tel:${call.customer_phone || call.caller_phone}`}
+                    className="flex items-center justify-center gap-2 w-full rounded-full bg-[#f5f5f0] px-4 py-3 text-sm font-medium text-[#0a0a0a] hover:bg-white transition-colors"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call Back
+                  </a>
+                )}
                 <button className="flex items-center justify-center gap-2 w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[#f5f5f0]/70 hover:bg-white/10 hover:text-[#f5f5f0] transition-colors">
                   Mark as Resolved
                 </button>
