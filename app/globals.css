@@ -1,25 +1,30 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   VOICEAI CONNECT - GLOBAL STYLES
-   Premium dark theme with cream accents
+   VOICEAI CONNECT - PREMIUM GLOBAL STYLES
+   Dark luxury aesthetic with emerald accents
    ============================================================================ */
 
+/* Import premium fonts */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 @theme {
-  /* Primary brand colors */
-  --color-primary: #f5f5f0;
-  --color-primary-dark: #e5e5e0;
-  --color-accent: #10b981;
+  /* Brand colors */
+  --color-brand-dark: #050505;
+  --color-brand-light: #fafaf9;
+  --color-brand-accent: #10b981;
+  --color-brand-accent-light: #34d399;
   
-  /* Dark theme palette */
-  --color-bg: #0a0a0a;
-  --color-bg-elevated: #111111;
-  --color-bg-hover: #1a1a1a;
+  /* Semantic colors */
+  --color-surface-0: #050505;
+  --color-surface-1: #0a0a0a;
+  --color-surface-2: #111111;
+  --color-surface-3: #1a1a1a;
   
-  /* Text colors */
-  --color-text: #f5f5f0;
-  --color-text-muted: rgba(245, 245, 240, 0.6);
-  --color-text-subtle: rgba(245, 245, 240, 0.4);
+  /* Border colors */
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
 }
 
 @layer base {
@@ -29,42 +34,129 @@
   
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body {
-    @apply bg-[#0a0a0a] text-[#f5f5f0] antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-[#050505] text-[#fafaf9] antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   }
   
-  /* Custom selection color */
+  /* Premium selection */
   ::selection {
-    background-color: rgba(16, 185, 129, 0.3);
-    color: #f5f5f0;
+    background-color: rgba(16, 185, 129, 0.25);
+    color: #fafaf9;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #050505;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-[#050505];
+  }
+}
+
+@layer components {
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.06] rounded-2xl;
+  }
+
+  /* Premium button base */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-[#050505] transition-all;
+    @apply hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10 hover:scale-[1.02];
+    @apply active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-6 py-3 text-sm font-medium text-[#fafaf9] transition-all;
+    @apply hover:bg-white/[0.06] hover:border-white/20;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent;
+  }
+
+  /* Glow effects */
+  .glow-emerald {
+    box-shadow: 0 0 60px rgba(16, 185, 129, 0.15);
+  }
+
+  .glow-subtle {
+    box-shadow: 0 0 80px rgba(255, 255, 255, 0.03);
   }
 }
 
 @layer utilities {
-  /* Gradient text */
-  .text-gradient {
-    @apply bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent;
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
   }
-  
-  /* Glass effect */
-  .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
   }
-  
-  /* Subtle glow */
-  .glow {
-    box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+
+  .animate-slide-down {
+    animation: slideDown 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.5s ease-out forwards;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  /* Stagger delays */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
 /* ============================================================================
-   ANIMATION UTILITIES
+   KEYFRAME ANIMATIONS
    ============================================================================ */
 
-@keyframes fade-in {
+@keyframes fadeIn {
   from {
     opacity: 0;
   }
@@ -73,7 +165,7 @@
   }
 }
 
-@keyframes slide-up {
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -81,6 +173,28 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -93,21 +207,91 @@
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out;
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.6s ease-out;
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY SCALE
+   ============================================================================ */
+
+.text-display {
+  @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1];
 }
 
-/* Staggered animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
+.text-headline {
+  @apply text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight;
+}
+
+.text-title {
+  @apply text-xl sm:text-2xl font-semibold;
+}
+
+.text-body {
+  @apply text-base sm:text-lg text-[#fafaf9]/60 leading-relaxed;
+}
+
+.text-caption {
+  @apply text-sm text-[#fafaf9]/50;
+}
+
+/* ============================================================================
+   DETAILS/ACCORDION STYLES
+   ============================================================================ */
+
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] summary {
+  @apply border-b border-white/[0.06];
+}
+
+/* ============================================================================
+   MOBILE-SPECIFIC OPTIMIZATIONS
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  /* Reduce motion on mobile for performance */
+  .animate-float {
+    animation: none;
+  }
+  
+  /* Optimize touch targets */
+  button, a {
+    min-height: 44px;
+  }
+  
+  /* Prevent horizontal overflow */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  nav, footer, .no-print {
+    display: none !important;
+  }
+}
