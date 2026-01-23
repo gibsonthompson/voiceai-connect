@@ -29,7 +29,6 @@ interface SignupData {
   ownerName: string;
   email: string;
   phone: string;
-  password: string;
   city: string;
   state: string;
   industry: string;
@@ -95,17 +94,19 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
         throw new Error(data.error || data.errors?.join(', ') || 'Failed to create account');
       }
 
+      // Clear signup data from session
       sessionStorage.removeItem('client_signup_data');
 
-      if (data.checkoutUrl) {
+      // Redirect to set-password with token, then to client dashboard
+      if (data.token) {
+        const returnTo = encodeURIComponent('/client/dashboard');
+        router.push(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
+      } else if (data.checkoutUrl) {
+        // If Stripe checkout is required (paid plan without trial)
         window.location.href = data.checkoutUrl;
-      } else if (data.client) {
-        // Redirect to success with phone number
-        const params = new URLSearchParams({
-          phone: data.client.phone_number || '',
-          business: data.client.business_name || '',
-        });
-        router.push(`/signup/success?${params.toString()}`);
+      } else {
+        // Fallback - shouldn't happen but handle gracefully
+        router.push('/client/login');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

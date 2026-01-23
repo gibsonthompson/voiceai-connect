@@ -99,7 +99,7 @@ function SetPasswordContent() {
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
             <h1 className="text-2xl font-medium tracking-tight mb-2">Password Set!</h1>
-            <p className="text-[#f5f5f0]/50">Redirecting you...</p>
+            <p className="text-[#f5f5f0]/50">Redirecting you to your dashboard...</p>
             <Loader2 className="h-6 w-6 animate-spin mx-auto mt-4 text-emerald-400" />
           </div>
         </div>

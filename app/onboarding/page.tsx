@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 
 // Color extraction utilities
@@ -128,13 +129,14 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
   });
 }
 
-// Step definitions
+// Step definitions - now includes Set Password as step 5
 const steps = [
   { id: 1, name: 'Logo', icon: ImageIcon },
   { id: 2, name: 'Colors', icon: Palette },
   { id: 3, name: 'Pricing', icon: DollarSign },
   { id: 4, name: 'Payments', icon: CreditCard },
-  { id: 5, name: 'Complete', icon: CheckCircle2 },
+  { id: 5, name: 'Password', icon: Lock },
+  { id: 6, name: 'Complete', icon: CheckCircle2 },
 ];
 
 function OnboardingContent() {
@@ -326,7 +328,7 @@ function OnboardingContent() {
     const result = await saveStep(currentStep, stepData);
     
     if (result?.success) {
-      if (currentStep < 5) {
+      if (currentStep < 6) {
         setCurrentStep(currentStep + 1);
       }
     }
@@ -370,8 +372,29 @@ function OnboardingContent() {
     setCurrentStep(5);
   };
 
+  const handleSetPassword = () => {
+    // Get the password token from localStorage (stored during signup)
+    const token = localStorage.getItem('agency_password_token');
+    
+    if (token) {
+      // Clear onboarding data
+      localStorage.removeItem('onboarding_agency_id');
+      localStorage.removeItem('agency_password_token');
+      
+      // Redirect to set-password with return to dashboard
+      const returnTo = encodeURIComponent('/agency/dashboard');
+      router.push(`/auth/set-password?token=${token}&returnTo=${returnTo}`);
+    } else {
+      // No token found - user may have already set password or there's an issue
+      // Just go to dashboard and let them login if needed
+      localStorage.removeItem('onboarding_agency_id');
+      router.push('/agency/dashboard');
+    }
+  };
+
   const handleComplete = () => {
     localStorage.removeItem('onboarding_agency_id');
+    localStorage.removeItem('agency_password_token');
     router.push('/agency/dashboard');
   };
 
@@ -655,6 +678,37 @@ function OnboardingContent() {
 
       case 5:
         return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-400/10 flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-medium">Secure Your Account</h2>
+              <p className="mt-2 text-[#f5f5f0]/50">
+                Create a password to access your dashboard
+              </p>
+            </div>
+
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="p-6 rounded-xl border border-white/10 bg-white/[0.02]">
+                <p className="text-sm text-[#f5f5f0]/70">
+                  You're almost done! Click below to set your password and start managing your agency.
+                </p>
+              </div>
+
+              <button
+                onClick={handleSetPassword}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#f5f5f0] px-6 py-3.5 text-sm font-medium text-[#0a0a0a] hover:bg-white transition-colors"
+              >
+                Set Password & Continue
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
           <div className="space-y-6 text-center">
             <div className="w-20 h-20 rounded-full bg-emerald-400/10 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-emerald-400" />
@@ -721,7 +775,7 @@ function OnboardingContent() {
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`w-12 h-0.5 mx-1 transition-colors ${
+                  className={`w-8 h-0.5 mx-1 transition-colors ${
                     step.id < currentStep ? 'bg-emerald-400' : 'bg-white/10'
                   }`}
                 />

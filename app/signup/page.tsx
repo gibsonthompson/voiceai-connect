@@ -368,9 +368,13 @@ function AgencySignupForm() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      // Redirect to set-password with return URL to plan selection
-      const returnTo = encodeURIComponent(`/signup/plan?agency=${data.agencyId}`);
-      router.push(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
+      // Store the password token for use after onboarding
+      if (data.token) {
+        localStorage.setItem('agency_password_token', data.token);
+      }
+
+      // Go directly to plan selection - password will be set after onboarding
+      router.push(`/signup/plan?agency=${data.agencyId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
