@@ -90,7 +90,7 @@ function ClientLoginContent() {
     try {
       // Call the BACKEND API, not a frontend API route
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/auth/client-login`, {
+      const response = await fetch(`${backendUrl}/api/auth/client/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
