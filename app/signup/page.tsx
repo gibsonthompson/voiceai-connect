@@ -3,7 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Phone, ArrowRight, Loader2, Check, Building, Mail, User, MapPin } from 'lucide-react';
+import { 
+  Phone, ArrowRight, Loader2, Check, Building, Mail, User, MapPin,
+  ArrowLeft, Sparkles, Shield, Clock, Zap
+} from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -34,6 +37,104 @@ const isLightColor = (hex: string): boolean => {
   const b = parseInt(c.substring(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
+
+// Waveform icon component matching the logo
+function WaveformIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
+      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
+      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
+      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
+      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
+      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
+      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
+    </svg>
+  );
+}
+
+// ============================================================================
+// SHARED COMPONENTS
+// ============================================================================
+function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }: { 
+  currentStep: number; 
+  totalSteps?: number;
+  accentColor?: string;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+        <div key={step} className="flex items-center gap-2">
+          <div
+            className={`h-2 rounded-full transition-all duration-300 ${
+              step === currentStep ? 'w-8' : 'w-2'
+            }`}
+            style={{ 
+              backgroundColor: step <= currentStep ? accentColor : 'rgba(255,255,255,0.1)' 
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FormInput({
+  label,
+  name,
+  type = 'text',
+  placeholder,
+  value,
+  onChange,
+  required = false,
+  icon: Icon,
+  maxLength,
+  className = '',
+  accentColor = '#10b981',
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
+  maxLength?: number;
+  className?: string;
+  accentColor?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+        {label}
+      </label>
+      <div className="relative">
+        {Icon && (
+          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#fafaf9]/30" />
+        )}
+        <input
+          name={name}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required={required}
+          maxLength={maxLength}
+          className={`w-full rounded-xl border border-white/[0.08] bg-white/[0.03] ${
+            Icon ? 'pl-11' : 'pl-4'
+          } pr-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 
+          focus:outline-none focus:border-white/20 focus:bg-white/[0.05] focus:ring-1 focus:ring-white/10
+          transition-all duration-200`}
+          style={{
+            // @ts-ignore
+            '--tw-ring-color': `${accentColor}40`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 // ============================================================================
 // CLIENT SIGNUP FORM (for agency subdomains)
@@ -76,157 +177,149 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     }
   };
 
-  const primaryColor = agency.primary_color || '#2563eb';
-  const accentColor = agency.accent_color || '#3b82f6';
+  const primaryColor = agency.primary_color || '#10b981';
+  const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
+      {/* Premium grain overlay */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
+        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+      {/* Ambient glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.07]"
+          style={{ backgroundColor: primaryColor }}
+        />
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 sm:h-20 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 rounded-lg object-contain" />
+                <img 
+                  src={agency.logo_url} 
+                  alt={agency.name} 
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain border border-white/10" 
+                />
               ) : (
                 <div 
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-white/10"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  <Phone className="h-4 w-4" style={{ color: primaryLight ? '#0a0a0a' : '#f5f5f0' }} />
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
                 </div>
               )}
-              <span className="text-lg font-medium tracking-tight">{agency.name}</span>
+              <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
             </Link>
             <Link 
               href="/client/login"
-              className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
+              className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
             >
-              Already have an account? Sign in
+              <span className="hidden sm:inline">Already have an account? </span>Sign in
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="relative pt-32 pb-16 px-6">
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.07]"
-            style={{ backgroundColor: primaryColor }}
-          />
-        </div>
-
+      {/* Main Content */}
+      <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-lg">
-          <div className="mb-8 flex items-center justify-center gap-3">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div
-                  className="h-2 w-12 rounded-full transition-colors"
-                  style={{ backgroundColor: s === 1 ? primaryColor : 'rgba(255,255,255,0.1)' }}
-                />
-              </div>
-            ))}
+          {/* Progress */}
+          <div className="mb-8">
+            <ProgressSteps currentStep={1} accentColor={primaryColor} />
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
+          {/* Form Card */}
+          <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-medium tracking-tight">Get Your AI Receptionist</h1>
-              <p className="mt-2 text-[#f5f5f0]/50">
+              <div 
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm mb-4"
+                style={{ 
+                  backgroundColor: `${primaryColor}15`,
+                  border: `1px solid ${primaryColor}30`,
+                }}
+              >
+                <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
+                <span style={{ color: primaryColor }}>7-day free trial</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                Get Your AI Receptionist
+              </h1>
+              <p className="mt-2 text-[#fafaf9]/50">
                 Start your free trial with {agency.name}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Business Name</label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                  <input
-                    name="businessName"
-                    type="text"
-                    placeholder="Acme Plumbing Services"
-                    value={formData.businessName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                  />
-                </div>
-              </div>
+              <FormInput
+                label="Business Name"
+                name="businessName"
+                placeholder="Acme Plumbing Services"
+                value={formData.businessName}
+                onChange={handleChange}
+                required
+                icon={Building}
+                accentColor={primaryColor}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Your Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                  <input
-                    name="ownerName"
-                    type="text"
-                    placeholder="John Smith"
-                    value={formData.ownerName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                  />
-                </div>
-              </div>
+              <FormInput
+                label="Your Name"
+                name="ownerName"
+                placeholder="John Smith"
+                value={formData.ownerName}
+                onChange={handleChange}
+                required
+                icon={User}
+                accentColor={primaryColor}
+              />
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="you@business.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Phone</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput
+                  label="Email"
+                  name="email"
+                  type="email"
+                  placeholder="you@business.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  icon={Mail}
+                  accentColor={primaryColor}
+                />
+                <FormInput
+                  label="Phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  icon={Phone}
+                  accentColor={primaryColor}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="City"
+                  name="city"
+                  placeholder="Atlanta"
+                  value={formData.city}
+                  onChange={handleChange}
+                  required
+                  icon={MapPin}
+                  accentColor={primaryColor}
+                />
                 <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">City</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="city"
-                      type="text"
-                      placeholder="Atlanta"
-                      value={formData.city}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">State</label>
+                  <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">State</label>
                   <input
                     name="state"
                     type="text"
@@ -235,18 +328,24 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                     onChange={handleChange}
                     required
                     maxLength={2}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors uppercase"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all uppercase text-center font-medium tracking-wider"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Industry</label>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Industry</label>
                 <select
                   name="industry"
                   value={formData.industry}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] focus:outline-none focus:border-white/20 transition-colors"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.25rem',
+                  }}
                 >
                   <option value="general">General Business</option>
                   <option value="home_services">Home Services (Plumbing, HVAC, etc.)</option>
@@ -264,7 +363,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               </div>
 
               {error && (
-                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
                   {error}
                 </div>
               )}
@@ -272,49 +371,62 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style={{ 
                   backgroundColor: primaryColor,
-                  color: primaryLight ? '#0a0a0a' : '#f5f5f0',
+                  color: primaryLight ? '#050505' : '#fafaf9',
+                  boxShadow: `0 0 40px ${primaryColor}30`,
                 }}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     Please wait...
                   </>
                 ) : (
                   <>
                     Continue to Plans
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
+            <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">Terms</Link>
+              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Terms</Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">Privacy Policy</Link>
+              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Privacy Policy</Link>
             </p>
           </div>
 
+          {/* Benefits Card */}
           <div 
-            className="mt-8 rounded-2xl border p-6"
-            style={{ borderColor: `${accentColor}33`, backgroundColor: `${accentColor}0D` }}
+            className="mt-6 rounded-2xl border p-5 sm:p-6"
+            style={{ 
+              borderColor: `${accentColor}25`,
+              backgroundColor: `${accentColor}08`,
+            }}
           >
-            <h3 className="font-medium text-[#f5f5f0]">What you&apos;ll get:</h3>
-            <ul className="mt-4 space-y-3">
-              {['AI receptionist that answers 24/7', 'Professional call handling', 'Instant SMS notifications', 'Detailed call summaries'].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-[#f5f5f0]/70">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: `${accentColor}1A` }}>
-                    <Check className="h-3 w-3" style={{ color: accentColor }} />
+            <h3 className="font-medium text-[#fafaf9] mb-4">What you&apos;ll get:</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { icon: Phone, text: 'AI receptionist 24/7' },
+                { icon: Zap, text: 'Instant SMS notifications' },
+                { icon: Shield, text: 'Professional call handling' },
+                { icon: Clock, text: 'Detailed call summaries' },
+              ].map((item) => (
+                <div key={item.text} className="flex items-center gap-3 text-sm text-[#fafaf9]/70">
+                  <div 
+                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: `${accentColor}15` }}
+                  >
+                    <item.icon className="h-4 w-4" style={{ color: accentColor }} />
                   </div>
-                  {item}
-                </li>
+                  {item.text}
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       </main>
@@ -368,12 +480,10 @@ function AgencySignupForm() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      // Store the password token for use after onboarding
       if (data.token) {
         localStorage.setItem('agency_password_token', data.token);
       }
 
-      // Go directly to plan selection - password will be set after onboarding
       router.push(`/signup/plan?agency=${data.agencyId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -383,125 +493,130 @@ function AgencySignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
+      {/* Premium grain overlay */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
+        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+      {/* Ambient glow effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-amber-500/[0.03] rounded-full blur-[128px]" />
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 sm:h-20 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
-                <div className="absolute inset-0 bg-[#f5f5f0] blur-lg opacity-20" />
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-[#f5f5f0]">
-                  <Phone className="h-4 w-4 text-[#0a0a0a]" />
+                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                  <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
                 </div>
               </div>
-              <span className="text-lg font-medium tracking-tight">VoiceAI Connect</span>
+              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
-            <Link 
-              href="/agency/login" 
-              className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
-            >
-              Already have an account? Sign in
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/"
+                className="hidden sm:flex items-center gap-1.5 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Link>
+              <Link 
+                href="/agency/login" 
+                className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
+              >
+                <span className="hidden sm:inline">Already have an account? </span>Sign in
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="relative pt-32 pb-16 px-6">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-emerald-500/[0.07] to-transparent rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-md">
-          <div className="mb-8 flex items-center justify-center gap-3">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div className={`h-2 w-12 rounded-full transition-colors ${s === 1 ? 'bg-emerald-400' : 'bg-white/10'}`} />
-              </div>
-            ))}
+      {/* Main Content */}
+      <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
+        <div className="relative mx-auto max-w-lg">
+          {/* Progress */}
+          <div className="mb-8">
+            <ProgressSteps currentStep={1} accentColor="#10b981" />
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
+          {/* Form Card */}
+          <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-medium tracking-tight">Create Your Agency</h1>
-              <p className="mt-2 text-[#f5f5f0]/50">Start your 14-day free trial today.</p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
+                <Sparkles className="h-4 w-4 text-emerald-400" />
+                <span className="text-emerald-300/90">14-day free trial</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                Create Your Agency
+              </h1>
+              <p className="mt-2 text-[#fafaf9]/50">
+                Launch your AI voice business in minutes
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">First Name</label>
-                  <input
-                    name="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Last Name</label>
-                  <input
-                    name="lastName"
-                    type="text"
-                    placeholder="Smith"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                  />
-                </div>
+                <FormInput
+                  label="First Name"
+                  name="firstName"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  required
+                />
+                <FormInput
+                  label="Last Name"
+                  name="lastName"
+                  placeholder="Smith"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Agency Name</label>
-                <input
-                  name="agencyName"
-                  type="text"
-                  placeholder="SmartCall Solutions"
-                  value={formData.agencyName}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+              <FormInput
+                label="Agency Name"
+                name="agencyName"
+                placeholder="SmartCall Solutions"
+                value={formData.agencyName}
+                onChange={handleChange}
+                required
+                icon={Building}
+              />
               
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Email Address</label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+              <FormInput
+                label="Email Address"
+                name="email"
+                type="email"
+                placeholder="you@company.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                icon={Mail}
+              />
               
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">Phone Number</label>
-                <input
-                  name="phone"
-                  type="tel"
-                  placeholder="(555) 123-4567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:border-emerald-400/50 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 transition-colors"
-                />
-              </div>
+              <FormInput
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                icon={Phone}
+              />
 
               {error && (
-                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
                   {error}
                 </div>
               )}
@@ -509,42 +624,55 @@ function AgencySignupForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#f5f5f0] px-6 py-3.5 text-base font-medium text-[#0a0a0a] transition-all hover:bg-white hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                     Creating account...
                   </>
                 ) : (
                   <>
                     Continue
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
+            <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">Terms</Link>
+              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Terms</Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">Privacy Policy</Link>
+              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Privacy Policy</Link>
             </p>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-6">
-            <h3 className="font-medium text-[#f5f5f0]">What you get with your free trial:</h3>
-            <ul className="mt-4 space-y-3">
-              {['Full platform access for 14 days', 'White-label branding', 'Up to 5 test clients', 'Cancel anytime'].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-[#f5f5f0]/70">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/10">
-                    <Check className="h-3 w-3 text-emerald-400" />
+          {/* Benefits Card */}
+          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-5 sm:p-6">
+            <h3 className="font-medium text-[#fafaf9] mb-4">What you get with your free trial:</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { icon: Zap, text: 'Full platform access' },
+                { icon: Shield, text: 'White-label branding' },
+                { icon: Clock, text: 'Up to 5 test clients' },
+                { icon: Check, text: 'Cancel anytime' },
+              ].map((item) => (
+                <div key={item.text} className="flex items-center gap-3 text-sm text-[#fafaf9]/70">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <item.icon className="h-4 w-4 text-emerald-400" />
                   </div>
-                  {item}
-                </li>
+                  {item.text}
+                </div>
               ))}
-            </ul>
+            </div>
+          </div>
+
+          {/* Social proof */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-[#fafaf9]/40">
+              Join <span className="text-[#fafaf9]/60 font-medium">847 agencies</span> already using VoiceAI Connect
+            </p>
           </div>
         </div>
       </main>
@@ -566,7 +694,6 @@ function SignupContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         
-        // Check if we're on the main platform domain
         const platformDomains = [
           platformDomain,
           `www.${platformDomain}`,
@@ -575,13 +702,11 @@ function SignupContent() {
         ];
         
         if (platformDomains.includes(host)) {
-          // Main platform - show agency signup
           setIsAgencySubdomain(false);
           setLoading(false);
           return;
         }
         
-        // Try to fetch agency info for this host
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
@@ -590,7 +715,6 @@ function SignupContent() {
           setAgency(data.agency);
           setIsAgencySubdomain(true);
         } else {
-          // No agency found, show agency signup
           setIsAgencySubdomain(false);
         }
       } catch (err) {
@@ -606,26 +730,30 @@ function SignupContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" />
+          <p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  // If we detected an agency subdomain and found the agency, show client signup
   if (isAgencySubdomain && agency) {
     return <ClientSignupForm agency={agency} />;
   }
 
-  // Otherwise show agency signup (platform signup)
   return <AgencySignupForm />;
 }
 
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" />
+          <p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p>
+        </div>
       </div>
     }>
       <SignupContent />
