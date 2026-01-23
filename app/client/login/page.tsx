@@ -26,11 +26,10 @@ const isLightColor = (hex: string): boolean => {
 function ClientLoginContent() {
   const searchParams = useSearchParams();
   const signupSuccess = searchParams.get('signup') === 'success';
-  const authError = searchParams.get('error');
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [error, setError] = useState(authError === 'no_token' ? 'Authentication failed. Please try again.' : '');
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agency, setAgency] = useState<Agency | null>(null);
   
@@ -40,11 +39,18 @@ function ClientLoginContent() {
   });
 
   useEffect(() => {
+    // Check if already logged in
+    const token = localStorage.getItem('auth_token');
+    const client = localStorage.getItem('client');
+    if (token && client) {
+      window.location.href = '/client/dashboard';
+      return;
+    }
+
     const detectContext = async () => {
       try {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-        
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         
         if (!platformDomains.includes(host)) {
@@ -94,17 +100,17 @@ function ClientLoginContent() {
         throw new Error('No token received from server');
       }
 
-      console.log('Token received, redirecting through auth callback...');
-      
-      // Store in localStorage as backup
+      // Store everything in localStorage
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.client) {
         localStorage.setItem('client', JSON.stringify(data.client));
       }
 
-      // Redirect through server-side callback to set cookie properly
-      window.location.href = `/auth/callback?token=${encodeURIComponent(data.token)}&redirect=/client/dashboard`;
+      console.log('Login successful, redirecting...');
+      
+      // Simple redirect
+      window.location.href = '/client/dashboard';
       
     } catch (err) {
       console.error('Login error:', err);

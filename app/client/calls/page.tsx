@@ -1,47 +1,78 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, PhoneCall, Settings, LogOut, 
-  TrendingUp, Search, Filter, ChevronRight
+  TrendingUp, Search, Filter, ChevronRight, Loader2
 } from 'lucide-react';
-import { getCurrentUser } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-async function getClientCalls(clientId: string) {
-  const supabase = await createServerSupabaseClient();
-  
-  const { data: client } = await supabase
-    .from('clients')
-    .select(`
-      *,
-      agency:agencies(name, logo_url, primary_color, support_email)
-    `)
-    .eq('id', clientId)
-    .single();
+export default function ClientCallsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState<any>(null);
+  const [calls, setCalls] = useState<any[]>([]);
 
-  const { data: calls } = await supabase
-    .from('calls')
-    .select('*')
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false });
+  useEffect(() => {
+    const loadCalls = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const storedClient = localStorage.getItem('client');
+        
+        if (!token || !storedClient) {
+          router.push('/client/login');
+          return;
+        }
 
-  return {
-    client,
-    calls: calls || [],
-  };
-}
+        const clientData = JSON.parse(storedClient);
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-export default async function ClientCallsPage() {
-  const user = await getCurrentUser();
-  
-  if (!user || !user.client_id) {
-    redirect('/client/login');
-  }
+        // Fetch client
+        const clientResponse = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-  const { client, calls } = await getClientCalls(user.client_id);
+        if (!clientResponse.ok) {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('client');
+          localStorage.removeItem('user');
+          router.push('/client/login');
+          return;
+        }
 
-  if (!client) {
-    redirect('/client/login');
+        const clientResult = await clientResponse.json();
+        setClient(clientResult.client);
+
+        // Fetch calls
+        try {
+          const callsResponse = await fetch(`${backendUrl}/api/client/${clientData.id}/calls`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (callsResponse.ok) {
+            const callsData = await callsResponse.json();
+            setCalls(callsData.calls || []);
+          }
+        } catch (e) {
+          console.log('Failed to fetch calls');
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Calls load error:', error);
+        router.push('/client/login');
+      }
+    };
+
+    loadCalls();
+  }, [router]);
+
+  if (loading || !client) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    );
   }
 
   const agency = client.agency;
@@ -52,9 +83,15 @@ export default async function ClientCallsPage() {
     { href: '/client/settings', label: 'Settings', icon: Settings, active: false },
   ];
 
+  const handleSignOut = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('client');
+    localStorage.removeItem('user');
+    router.push('/client/login');
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
-      {/* Subtle grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
         style={{
@@ -62,7 +99,6 @@ export default async function ClientCallsPage() {
         }}
       />
 
-      {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 w-64 border-r border-white/5 bg-[#0a0a0a]">
         <div className="flex h-16 items-center gap-3 border-b border-white/5 px-6">
           {agency?.logo_url ? (
@@ -99,20 +135,18 @@ export default async function ClientCallsPage() {
               <p className="text-sm font-medium text-[#f5f5f0]/70">{agency.name}</p>
             </div>
           )}
-          <Link
-            href="/api/auth/logout"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:bg-white/5 hover:text-[#f5f5f0] transition-colors border-t border-white/5 pt-4"
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:bg-white/5 hover:text-[#f5f5f0] transition-colors border-t border-white/5 pt-4 w-full"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
-          </Link>
+          </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="pl-64">
         <div className="p-8">
-          {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-medium tracking-tight">Call History</h1>
@@ -120,7 +154,6 @@ export default async function ClientCallsPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#f5f5f0]/40" />
                 <input
@@ -130,7 +163,6 @@ export default async function ClientCallsPage() {
                 />
               </div>
               
-              {/* Filter */}
               <button className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[#f5f5f0]/70 hover:bg-white/10 hover:text-[#f5f5f0] transition-colors">
                 <Filter className="h-4 w-4" />
                 Filter
@@ -138,7 +170,6 @@ export default async function ClientCallsPage() {
             </div>
           </div>
 
-          {/* Calls List */}
           <div className="rounded-xl border border-white/10 bg-[#111]">
             {calls.length === 0 ? (
               <div className="py-20 text-center">
