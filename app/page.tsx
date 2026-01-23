@@ -928,20 +928,13 @@ export default function LandingPage() {
                 Join 847 agencies already building recurring revenue with VoiceAI Connect.
               </p>
               
-              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="mt-8 sm:mt-10">
                 <Link 
                   href="/signup" 
-                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
                 >
                   Start Your Free Trial
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link 
-                  href="/demo" 
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium text-[#fafaf9]/70 hover:text-[#fafaf9] transition-colors"
-                >
-                  <Phone className="h-5 w-5" />
-                  Call Our Demo Line
                 </Link>
               </div>
               
