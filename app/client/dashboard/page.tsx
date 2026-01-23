@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useClient } from '../context';
-import { ClientDashboardContent } from './dashboard-content';
+import { ClientDashboardClient } from './dashboard-content';
 
 export default function ClientDashboardPage() {
   const { client, branding, loading } = useClient();
@@ -61,7 +61,7 @@ export default function ClientDashboardPage() {
   }
 
   return (
-    <ClientDashboardContent
+    <ClientDashboardClient
       client={client}
       branding={branding}
       recentCalls={recentCalls}
