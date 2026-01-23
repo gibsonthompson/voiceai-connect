@@ -21,7 +21,7 @@ export const metadata = {
 };
 
 const tableOfContents = [
-  { id: 'optimal-price', title: 'What's the Optimal Price?', level: 2 },
+  { id: 'optimal-price', title: "What's the Optimal Price?", level: 2 },
   { id: 'pricing-psychology', title: 'The Psychology of AI Receptionist Pricing', level: 2 },
   { id: 'value-based-pricing', title: 'How to Calculate Value-Based Pricing', level: 2 },
   { id: 'recommended-tiers', title: 'Recommended Pricing Tiers', level: 2 },
