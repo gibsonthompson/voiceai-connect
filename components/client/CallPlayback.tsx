@@ -6,9 +6,10 @@ import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 interface CallPlaybackProps {
   recordingUrl: string;
   callDuration?: number; // Duration in seconds from database
+  brandColor?: string; // Agency primary color for theming
 }
 
-export default function CallPlayback({ recordingUrl, callDuration }: CallPlaybackProps) {
+export default function CallPlayback({ recordingUrl, callDuration, brandColor = '#10b981' }: CallPlaybackProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(callDuration || 0);
@@ -174,7 +175,10 @@ export default function CallPlayback({ recordingUrl, callDuration }: CallPlaybac
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+          <div 
+            className="animate-spin rounded-full h-8 w-8 border-b-2"
+            style={{ borderColor: brandColor }}
+          />
           <p className="text-[#f5f5f0]/50 text-sm ml-3">Loading recording...</p>
         </div>
       )}
@@ -190,8 +194,11 @@ export default function CallPlayback({ recordingUrl, callDuration }: CallPlaybac
             >
               {/* Progress fill */}
               <div 
-                className="h-full rounded-full bg-emerald-400 transition-all duration-100"
-                style={{ width: `${progressPercent}%` }}
+                className="h-full rounded-full transition-all duration-100"
+                style={{ 
+                  width: `${progressPercent}%`,
+                  backgroundColor: brandColor 
+                }}
               />
               {/* Hover indicator */}
               <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -248,9 +255,10 @@ export default function CallPlayback({ recordingUrl, callDuration }: CallPlaybac
                   onClick={() => changePlaybackRate(rate)}
                   className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                     playbackRate === rate
-                      ? 'bg-emerald-400 text-[#0a0a0a]'
+                      ? 'text-white'
                       : 'bg-white/10 text-[#f5f5f0]/70 hover:bg-white/20'
                   }`}
+                  style={playbackRate === rate ? { backgroundColor: brandColor } : undefined}
                 >
                   {rate}x
                 </button>

@@ -83,7 +83,8 @@ export default function CallDetailPage() {
         }
 
         const fullClientData = await clientResponse.json();
-        const agency = fullClientData.client?.agencies || fullClientData.agency;
+        // Note: API returns 'agency' (singular), not 'agencies'
+        const agency = fullClientData.client?.agency || fullClientData.client?.agencies || fullClientData.agency;
 
         setBranding({
           primaryColor: agency?.primary_color || '#3b82f6',
@@ -253,8 +254,11 @@ export default function CallDetailPage() {
               {call.ai_summary && (
                 <div className="rounded-xl border border-white/10 bg-[#111] p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-400/10">
-                      <MessageSquare className="h-5 w-5 text-emerald-400" />
+                    <div 
+                      className="flex h-10 w-10 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: `${branding.primaryColor}20` }}
+                    >
+                      <MessageSquare className="h-5 w-5" style={{ color: branding.primaryColor }} />
                     </div>
                     <h2 className="font-medium">AI Summary</h2>
                   </div>
@@ -271,6 +275,7 @@ export default function CallDetailPage() {
                   <CallPlayback 
                     recordingUrl={call.recording_url}
                     callDuration={call.duration_seconds || undefined}
+                    brandColor={branding.primaryColor}
                   />
                 </div>
               )}
@@ -315,7 +320,8 @@ export default function CallDetailPage() {
                         <p className="text-xs text-[#f5f5f0]/40">Phone</p>
                         <a 
                           href={`tel:${call.customer_phone || call.caller_phone}`}
-                          className="text-sm hover:text-emerald-400 transition-colors"
+                          className="text-sm transition-colors hover:underline"
+                          style={{ color: branding.primaryColor }}
                         >
                           {call.customer_phone || call.caller_phone}
                         </a>
@@ -332,7 +338,8 @@ export default function CallDetailPage() {
                         <p className="text-xs text-[#f5f5f0]/40">Email</p>
                         <a 
                           href={`mailto:${call.customer_email}`}
-                          className="text-sm hover:text-emerald-400 transition-colors"
+                          className="text-sm transition-colors hover:underline"
+                          style={{ color: branding.primaryColor }}
                         >
                           {call.customer_email}
                         </a>
