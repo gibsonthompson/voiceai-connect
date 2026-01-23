@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { 
   Phone, PhoneCall, Settings, LogOut, Clock, Copy, TrendingUp,
   ChevronRight, Calendar, AlertCircle, Sun, Moon, CheckCircle,
-  XCircle, Loader2, PhoneOff, Zap
+  XCircle, Loader2, PhoneOff, Zap, Bot
 } from 'lucide-react';
 
 interface Branding {
@@ -87,6 +87,13 @@ export function ClientDashboardClient({
     }
   };
 
+  const handleSignOut = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('client');
+    localStorage.removeItem('user');
+    window.location.href = '/client/login';
+  };
+
   // Theme colors
   const theme = {
     bg: darkMode ? '#0a0a0a' : '#f8f8f6',
@@ -104,6 +111,7 @@ export function ClientDashboardClient({
   const navItems = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, active: true },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, active: false },
+    { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, active: false },
     { href: '/client/settings', label: 'Settings', icon: Settings, active: false },
   ];
 
@@ -182,13 +190,13 @@ export function ClientDashboardClient({
             <p className="text-xs text-[#f5f5f0]/40">Powered by</p>
             <p className="text-sm font-medium text-[#f5f5f0]/70">{branding.agencyName}</p>
           </div>
-          <Link
-            href="/api/auth/logout"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
-          </Link>
+          </button>
         </div>
       </aside>
 

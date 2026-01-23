@@ -1,49 +1,77 @@
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { ClientSettingsClient } from './settings-client';
 
-export const dynamic = 'force-dynamic';
+export default function ClientSettingsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState<any>(null);
+  const [branding, setBranding] = useState<any>(null);
 
-export default async function ClientSettingsPage() {
-  const user = await getCurrentUser();
-  
-  if (!user || !user.client_id) {
-    redirect('/client/login');
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const storedClient = localStorage.getItem('client');
+        
+        if (!token || !storedClient) {
+          router.push('/client/login');
+          return;
+        }
+
+        const clientData = JSON.parse(storedClient);
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        const response = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('client');
+          localStorage.removeItem('user');
+          router.push('/client/login');
+          return;
+        }
+
+        const data = await response.json();
+        const fetchedClient = data.client;
+
+        if (!fetchedClient) {
+          router.push('/client/login');
+          return;
+        }
+
+        setClient(fetchedClient);
+        setBranding({
+          primaryColor: fetchedClient.agency?.primary_color || '#3b82f6',
+          accentColor: fetchedClient.agency?.accent_color || '#60a5fa',
+          agencyName: fetchedClient.agency?.name || 'VoiceAI',
+          logoUrl: fetchedClient.agency?.logo_url || null,
+          supportEmail: fetchedClient.agency?.support_email || null,
+          supportPhone: fetchedClient.agency?.support_phone || null,
+        });
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Settings load error:', error);
+        router.push('/client/login');
+      }
+    };
+
+    loadSettings();
+  }, [router]);
+
+  if (loading || !client || !branding) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      </div>
+    );
   }
 
-  const supabase = await createServerSupabaseClient();
-  
-  const { data: client } = await supabase
-    .from('clients')
-    .select(`
-      *,
-      agency:agencies(
-        id, name, slug, logo_url,
-        primary_color, secondary_color, accent_color,
-        support_email, support_phone
-      )
-    `)
-    .eq('id', user.client_id)
-    .single();
-
-  if (!client) {
-    redirect('/client/login');
-  }
-
-  const branding = {
-    primaryColor: client.agency?.primary_color || '#3b82f6',
-    accentColor: client.agency?.accent_color || '#60a5fa',
-    agencyName: client.agency?.name || 'VoiceAI',
-    logoUrl: client.agency?.logo_url || null,
-    supportEmail: client.agency?.support_email || null,
-    supportPhone: client.agency?.support_phone || null,
-  };
-
-  return (
-    <ClientSettingsClient
-      client={client}
-      branding={branding}
-    />
-  );
+  return <ClientSettingsClient client={client} branding={branding} />;
 }

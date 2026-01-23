@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, Loader2, Bot, Mic, MessageSquare, Clock, BookOpen, 
@@ -62,6 +63,7 @@ const TIME_OPTIONS = [
 // MAIN COMPONENT
 // ============================================================================
 export default function ClientAIAgentPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<any>(null);
   const [message, setMessage] = useState('');
@@ -122,44 +124,58 @@ export default function ClientAIAgentPage() {
     };
   }, []);
 
+  const getAuthToken = () => {
+    return localStorage.getItem('auth_token');
+  };
+
   const fetchClientData = async () => {
     try {
+      const token = getAuthToken();
       const storedClient = localStorage.getItem('client');
-      if (storedClient) {
-        const clientData = JSON.parse(storedClient);
-        
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
-        
-        const response = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setClient(data.client);
-          
-          if (data.client.agency) {
-            setBranding({
-              primaryColor: data.client.agency.primary_color || '#3b82f6',
-              accentColor: data.client.agency.accent_color || '#60a5fa',
-              agencyName: data.client.agency.name || 'VoiceAI',
-              logoUrl: data.client.agency.logo_url,
-            });
-          }
-          
-          // Fetch voice, greeting, and other settings
-          await Promise.all([
-            fetchCurrentVoice(data.client.id, token),
-            fetchGreeting(data.client.id, token),
-            fetchKnowledgeBase(data.client.id, token),
-          ]);
-        }
+      
+      if (!token || !storedClient) {
+        router.push('/client/login');
+        return;
       }
+
+      const clientData = JSON.parse(storedClient);
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (!response.ok) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('client');
+        localStorage.removeItem('user');
+        router.push('/client/login');
+        return;
+      }
+
+      const data = await response.json();
+      setClient(data.client);
+      
+      if (data.client.agency) {
+        setBranding({
+          primaryColor: data.client.agency.primary_color || '#3b82f6',
+          accentColor: data.client.agency.accent_color || '#60a5fa',
+          agencyName: data.client.agency.name || 'VoiceAI',
+          logoUrl: data.client.agency.logo_url,
+        });
+      }
+      
+      // Fetch voice, greeting, and other settings
+      await Promise.all([
+        fetchCurrentVoice(data.client.id, token),
+        fetchGreeting(data.client.id, token),
+        fetchKnowledgeBase(data.client.id, token),
+      ]);
+
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching client data:', error);
-    } finally {
-      setLoading(false);
+      router.push('/client/login');
     }
   };
 
@@ -188,7 +204,7 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchCurrentVoice = async (clientId: string, token: string | undefined) => {
+  const fetchCurrentVoice = async (clientId: string, token: string | null) => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/client/${clientId}/voice`, {
@@ -207,7 +223,7 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchGreeting = async (clientId: string, token: string | undefined) => {
+  const fetchGreeting = async (clientId: string, token: string | null) => {
     setGreetingLoading(true);
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -229,7 +245,7 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchKnowledgeBase = async (clientId: string, token: string | undefined) => {
+  const fetchKnowledgeBase = async (clientId: string, token: string | null) => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/client/${clientId}/knowledge-base`, {
@@ -279,7 +295,7 @@ export default function ClientAIAgentPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
+      const token = getAuthToken();
       
       const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
         method: 'PUT',
@@ -314,7 +330,7 @@ export default function ClientAIAgentPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
+      const token = getAuthToken();
       
       const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
         method: 'PUT',
@@ -353,7 +369,7 @@ export default function ClientAIAgentPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
+      const token = getAuthToken();
       
       const hoursText = formatBusinessHoursForSave();
       
@@ -387,7 +403,7 @@ export default function ClientAIAgentPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
+      const token = getAuthToken();
       
       const response = await fetch(`${backendUrl}/api/client/${client.id}/knowledge-base`, {
         method: 'PUT',
