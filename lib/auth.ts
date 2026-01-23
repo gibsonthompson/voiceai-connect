@@ -84,6 +84,19 @@ export async function clearAuthCookie(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
+// ============================================================================
+// Backend JWT payload type (camelCase from backend)
+// ============================================================================
+interface BackendJWTPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+  agencyId?: string;
+  clientId?: string;
+  iat?: number;
+  exp?: number;
+}
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = await getAuthCookie();
   
@@ -97,13 +110,18 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
   
+  // Handle both backend naming (camelCase) and frontend naming (snake_case)
+  // Backend sends: userId, agencyId, clientId
+  // Frontend expects: sub, agency_id, client_id
+  const backendPayload = payload as unknown as BackendJWTPayload;
+  
   return {
-    id: payload.sub,
+    id: backendPayload.userId || payload.sub,
     email: payload.email,
     role: payload.role,
-    agency_id: payload.agency_id,
-    client_id: payload.client_id,
-    first_name: '', // These would be fetched from DB if needed
+    agency_id: backendPayload.agencyId || payload.agency_id,
+    client_id: backendPayload.clientId || payload.client_id,
+    first_name: '',
     last_name: undefined,
   };
 }
