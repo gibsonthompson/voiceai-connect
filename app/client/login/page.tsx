@@ -119,7 +119,7 @@ function ClientLoginContent() {
       }
 
       // Redirect to client dashboard
-      router.push('/client/dashboard');
+      window.location.href = '/client/dashboard';
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
