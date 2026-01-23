@@ -38,9 +38,13 @@ export default function AgencyLoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
-      // Set auth cookie (server components read from cookies, not localStorage)
+      // Set auth cookie via API route (proper server-side cookie)
       if (data.token) {
-        document.cookie = `auth_token=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+        await fetch('/api/auth/set-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: data.token }),
+        });
       }
 
       router.push('/agency/dashboard');
