@@ -27,6 +27,8 @@ export const metadata: Metadata = {
     "business automation",
     "reseller platform",
     "AI agency",
+    "AI voice agency",
+    "start AI business",
   ],
   authors: [{ name: "VoiceAI Connect" }],
   creator: "VoiceAI Connect",
@@ -50,31 +52,15 @@ export const metadata: Metadata = {
     title: "VoiceAI Connect - Launch Your AI Voice Agency",
     description:
       "The complete white-label platform to resell AI receptionists under your brand. Keep 100% of what you charge.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "VoiceAI Connect - White-Label AI Voice Platform",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "VoiceAI Connect - Launch Your AI Voice Agency",
     description:
       "The complete white-label platform to resell AI receptionists under your brand.",
-    images: ["/og-image.png"],
     creator: "@voiceaiconnect",
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png" }],
-  },
-  manifest: "/site.webmanifest",
+  metadataBase: new URL("https://voiceaiconnect.com"),
 };
 
 export const viewport: Viewport = {
