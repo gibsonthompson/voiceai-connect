@@ -8,7 +8,6 @@ import { ClientDashboardClient } from './dashboard-content';
 export default function ClientDashboardPage() {
   const { client, branding, loading } = useClient();
   const [recentCalls, setRecentCalls] = useState<any[]>([]);
-  const [callsLoading, setCallsLoading] = useState(true);
   const [stats, setStats] = useState({
     callsThisMonth: 0,
     highUrgency: 0,
@@ -47,8 +46,6 @@ export default function ClientDashboardPage() {
       }
     } catch (e) {
       console.error('Failed to fetch calls:', e);
-    } finally {
-      setCallsLoading(false);
     }
   };
 
@@ -66,7 +63,6 @@ export default function ClientDashboardPage() {
       branding={branding}
       recentCalls={recentCalls}
       stats={stats}
-      callsLoading={callsLoading}
     />
   );
 }
