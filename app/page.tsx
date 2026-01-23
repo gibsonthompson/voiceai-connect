@@ -838,11 +838,11 @@ export default function LandingPage() {
           <blockquote className="text-xl sm:text-2xl lg:text-3xl font-medium leading-relaxed">
             &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
             VoiceAI Connect let me launch CallBird in a weekend. Signed my first paying client 
-            within 11 days—that one client covered my entire monthly cost. Now I focus on 
-            growing the business instead of debugging code.&rdquo;
+            within 11 days—that one client covered my entire monthly cost. Saved so much time 
+            tech headaches.&rdquo;
           </blockquote>
           <div className="mt-6 sm:mt-8">
-            <p className="font-semibold text-lg">Jake Morrison</p>
+            <p className="font-semibold text-lg">Jonathan Rowe</p>
             <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, CallBird AI</p>
             <p className="text-sm text-emerald-400 mt-1">First client in 11 days • Profitable from month 1</p>
           </div>
