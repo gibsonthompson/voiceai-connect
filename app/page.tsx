@@ -836,13 +836,15 @@ export default function LandingPage() {
             ))}
           </div>
           <blockquote className="text-xl sm:text-2xl lg:text-3xl font-medium leading-relaxed">
-            &ldquo;I started with zero technical skills. Now I have 23 clients paying me $149/month each. 
-            VoiceAI Connect handles everything—I just focus on sales and customer relationships.&rdquo;
+            &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
+            VoiceAI Connect let me launch CallBird in a weekend. Signed my first paying client 
+            within 11 days—that one client covered my entire monthly cost. Now I focus on 
+            growing the business instead of debugging code.&rdquo;
           </blockquote>
           <div className="mt-6 sm:mt-8">
-            <p className="font-semibold text-lg">Marcus Chen</p>
-            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, LocalAI Solutions</p>
-            <p className="text-sm text-emerald-400 mt-1">$3,400/mo profit after 4 months</p>
+            <p className="font-semibold text-lg">Jake Morrison</p>
+            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, CallBird AI</p>
+            <p className="text-sm text-emerald-400 mt-1">First client in 11 days • Profitable from month 1</p>
           </div>
         </div>
       </section>
