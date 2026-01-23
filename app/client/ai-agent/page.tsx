@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   Phone, Loader2, Bot, Mic, MessageSquare, Clock, BookOpen, 
   Play, Pause, Check, ChevronDown, RotateCcw, Sparkles, AlertCircle
 } from 'lucide-react';
+import { useClient } from '../context';
 
 // ============================================================================
 // TYPES
@@ -30,13 +29,6 @@ interface BusinessHours {
   friday: { open: string; close: string; closed: boolean };
   saturday: { open: string; close: string; closed: boolean };
   sunday: { open: string; close: string; closed: boolean };
-}
-
-interface Branding {
-  primaryColor: string;
-  accentColor: string;
-  agencyName: string;
-  logoUrl: string | null;
 }
 
 // ============================================================================
@@ -63,16 +55,8 @@ const TIME_OPTIONS = [
 // MAIN COMPONENT
 // ============================================================================
 export default function ClientAIAgentPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [client, setClient] = useState<any>(null);
+  const { client, branding, loading } = useClient();
   const [message, setMessage] = useState('');
-  const [branding, setBranding] = useState<Branding>({
-    primaryColor: '#3b82f6',
-    accentColor: '#60a5fa',
-    agencyName: 'VoiceAI',
-    logoUrl: null,
-  });
   
   // Voice state
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
@@ -111,9 +95,13 @@ export default function ClientAIAgentPage() {
   const [kbExpanded, setKbExpanded] = useState(false);
 
   useEffect(() => {
-    fetchClientData();
-    fetchVoices();
-  }, []);
+    if (client) {
+      fetchVoices();
+      fetchCurrentVoice();
+      fetchGreeting();
+      fetchKnowledgeBase();
+    }
+  }, [client]);
 
   useEffect(() => {
     return () => {
@@ -124,60 +112,7 @@ export default function ClientAIAgentPage() {
     };
   }, []);
 
-  const getAuthToken = () => {
-    return localStorage.getItem('auth_token');
-  };
-
-  const fetchClientData = async () => {
-    try {
-      const token = getAuthToken();
-      const storedClient = localStorage.getItem('client');
-      
-      if (!token || !storedClient) {
-        router.push('/client/login');
-        return;
-      }
-
-      const clientData = JSON.parse(storedClient);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      
-      const response = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      
-      if (!response.ok) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('client');
-        localStorage.removeItem('user');
-        router.push('/client/login');
-        return;
-      }
-
-      const data = await response.json();
-      setClient(data.client);
-      
-      if (data.client.agency) {
-        setBranding({
-          primaryColor: data.client.agency.primary_color || '#3b82f6',
-          accentColor: data.client.agency.accent_color || '#60a5fa',
-          agencyName: data.client.agency.name || 'VoiceAI',
-          logoUrl: data.client.agency.logo_url,
-        });
-      }
-      
-      // Fetch voice, greeting, and other settings
-      await Promise.all([
-        fetchCurrentVoice(data.client.id, token),
-        fetchGreeting(data.client.id, token),
-        fetchKnowledgeBase(data.client.id, token),
-      ]);
-
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching client data:', error);
-      router.push('/client/login');
-    }
-  };
+  const getAuthToken = () => localStorage.getItem('auth_token');
 
   const fetchVoices = async () => {
     setVoicesLoading(true);
@@ -204,10 +139,12 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchCurrentVoice = async (clientId: string, token: string | null) => {
+  const fetchCurrentVoice = async () => {
+    if (!client) return;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/client/${clientId}/voice`, {
+      const token = getAuthToken();
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -223,11 +160,13 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchGreeting = async (clientId: string, token: string | null) => {
+  const fetchGreeting = async () => {
+    if (!client) return;
     setGreetingLoading(true);
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/client/${clientId}/greeting`, {
+      const token = getAuthToken();
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -245,10 +184,12 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const fetchKnowledgeBase = async (clientId: string, token: string | null) => {
+  const fetchKnowledgeBase = async () => {
+    if (!client) return;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/client/${clientId}/knowledge-base`, {
+      const token = getAuthToken();
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/knowledge-base`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -494,82 +435,45 @@ export default function ClientAIAgentPage() {
   const hasKBChanges = knowledgeBase !== originalKnowledgeBase;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
 
-  if (loading) {
+  if (loading || !client) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-white/50" />
       </div>
     );
   }
 
-  if (!client) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-white text-xl font-semibold mb-2">Error loading settings</h2>
-          <p className="text-white/50">Please try again or contact support</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0] pb-24">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.agencyName} className="h-9 w-9 rounded-lg object-contain" />
-              ) : (
-                <div 
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Bot className="h-4 w-4" style={{ color: primaryLight ? '#0a0a0a' : '#f5f5f0' }} />
-                </div>
-              )}
-              <span className="text-lg font-medium">AI Agent</span>
-            </div>
-            <Link 
-              href="/client/dashboard"
-              className="text-sm text-white/60 hover:text-white transition-colors"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
+    <div className="p-8 pb-24">
+      {/* Status Message */}
+      {message && (
+        <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
+          message.includes('✅')
+            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+        }`}>
+          {message}
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-6">
-        {/* Status Message */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm ${
-            message.includes('✅')
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-              : 'bg-red-500/10 text-red-400 border border-red-500/20'
-          }`}>
-            {message}
-          </div>
-        )}
-
-        {/* Hero */}
-        <div className="mb-6 text-center">
-          <div 
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-            style={{ backgroundColor: `${primaryColor}20` }}
-          >
-            <Bot className="w-7 h-7" style={{ color: primaryColor }} />
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-            Your AI Receptionist
-          </h2>
-          <p className="text-white/50 text-sm">
-            Customize how your AI answers calls
-          </p>
+      {/* Hero */}
+      <div className="mb-6 text-center">
+        <div 
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+          style={{ backgroundColor: `${primaryColor}20` }}
+        >
+          <Bot className="w-7 h-7" style={{ color: primaryColor }} />
         </div>
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+          Your AI Receptionist
+        </h2>
+        <p className="text-white/50 text-sm">
+          Customize how your AI answers calls
+        </p>
+      </div>
 
+      {/* Content Container */}
+      <div className="max-w-3xl mx-auto">
         {/* Test Your AI Button */}
         <section className="mb-6">
           <button
@@ -976,7 +880,7 @@ Policies:
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
