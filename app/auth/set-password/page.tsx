@@ -29,6 +29,20 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
+// ============================================================================
+// LOADING SCREEN COMPONENT
+// ============================================================================
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+        <p className="text-white/30 text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 function SetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,6 +59,7 @@ function SetPasswordContent() {
   // Agency context for branding
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
+  const [contextLoading, setContextLoading] = useState(true); // Start with loading
 
   // Detect agency context on mount
   useEffect(() => {
@@ -63,6 +78,7 @@ function SetPasswordContent() {
         if (platformDomains.includes(host)) {
           // Main platform domain - no agency branding
           setIsAgencySubdomain(false);
+          setContextLoading(false);
           return;
         }
         
@@ -77,6 +93,8 @@ function SetPasswordContent() {
         }
       } catch (err) {
         console.error('Failed to detect agency context:', err);
+      } finally {
+        setContextLoading(false);
       }
     };
 
@@ -152,6 +170,11 @@ function SetPasswordContent() {
       setLoading(false);
     }
   };
+
+  // Show loading screen while detecting context
+  if (contextLoading) {
+    return <LoadingScreen />;
+  }
 
   // Dynamic colors based on agency or platform
   const primaryColor = agency?.primary_color || '#10b981'; // emerald for platform
@@ -345,11 +368,7 @@ function SetPasswordContent() {
 
 export default function SetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen />}>
       <SetPasswordContent />
     </Suspense>
   );
