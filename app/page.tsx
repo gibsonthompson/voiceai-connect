@@ -150,7 +150,7 @@ export default function LandingPage() {
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
               <span className="block">Launch Your Own</span>
-              <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 via-amber-400 to-emerald-400 bg-clip-text text-transparent">
+              <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
                 AI Voice Agency
               </span>
             </h1>
@@ -918,7 +918,7 @@ export default function LandingPage() {
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
                 Ready to launch your
-                <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent">
+                <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
                   AI voice agency?
                 </span>
               </h2>
