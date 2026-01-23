@@ -8,6 +8,9 @@
 
 import Link from 'next/link';
 
+// Main marketing site URL - used for logo/home links
+const MARKETING_URL = 'https://voiceaiconnect.com';
+
 function WaveformIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -42,15 +45,15 @@ export default function PrivacyPolicy() {
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <a href={MARKETING_URL} className="flex items-center gap-2.5 group">
               <div className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center">
                 <WaveformIcon className="w-5 h-5 text-[#fafaf9]" />
               </div>
               <span className="text-base font-semibold">VoiceAI Connect</span>
-            </Link>
-            <Link href="/" className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
+            </a>
+            <a href={MARKETING_URL} className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
               ← Back to Home
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -389,7 +392,7 @@ export default function PrivacyPolicy() {
             <ul>
               <li><strong>Email:</strong> privacy@voiceaiconnect.com</li>
               <li><strong>Data Protection Officer:</strong> dpo@voiceaiconnect.com</li>
-              <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Privacy Team, [2855 Broome Rd. Gainesville GA]</li>
+              <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Privacy Team, 2855 Broome Rd. Gainesville GA</li>
             </ul>
 
             <p>
@@ -404,12 +407,12 @@ export default function PrivacyPolicy() {
       <footer className="relative border-t border-white/[0.06] py-12 px-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
+            <a href={MARKETING_URL} className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
                 <WaveformIcon className="w-4 h-4 text-[#fafaf9]" />
               </div>
               <span className="text-sm font-medium">VoiceAI Connect</span>
-            </div>
+            </a>
             <div className="flex items-center gap-6 text-sm text-[#fafaf9]/40">
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms of Service</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy Policy</Link>
