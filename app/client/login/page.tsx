@@ -5,9 +5,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
-// ============================================================================
-// TYPES
-// ============================================================================
 interface Agency {
   id: string;
   name: string;
@@ -18,9 +15,6 @@ interface Agency {
   accent_color: string;
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 const isLightColor = (hex: string): boolean => {
   const c = hex.replace('#', '');
   const r = parseInt(c.substring(0, 2), 16);
@@ -29,9 +23,6 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
-// ============================================================================
-// CLIENT LOGIN FORM
-// ============================================================================
 function ClientLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +39,6 @@ function ClientLoginContent() {
     password: '',
   });
 
-  // Detect agency context
   useEffect(() => {
     const detectContext = async () => {
       try {
@@ -58,7 +48,6 @@ function ClientLoginContent() {
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         
         if (!platformDomains.includes(host)) {
-          // Try to fetch agency info
           const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
           const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
           
@@ -88,7 +77,6 @@ function ClientLoginContent() {
     setError('');
 
     try {
-      // Call the BACKEND API, not a frontend API route
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/auth/client/login`, {
         method: 'POST',
@@ -104,22 +92,36 @@ function ClientLoginContent() {
 
       // Set the auth token via API route (proper server-side cookie)
       if (data.token) {
-        await fetch('/api/auth/set-session', {
+        console.log('Token received, setting session...');
+        
+        const sessionResponse = await fetch('/api/auth/set-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ token: data.token }),
         });
+        
+        if (!sessionResponse.ok) {
+          const sessionError = await sessionResponse.json();
+          console.error('Failed to set session cookie:', sessionError);
+          throw new Error('Failed to create session');
+        }
+        
+        console.log('Session cookie set successfully');
         
         // Also store user info in localStorage for client-side access
         localStorage.setItem('user', JSON.stringify(data.user));
         if (data.client) {
           localStorage.setItem('client', JSON.stringify(data.client));
         }
+      } else {
+        throw new Error('No token received from server');
       }
 
       // Redirect to client dashboard
       router.push('/client/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
@@ -182,7 +184,6 @@ function ClientLoginContent() {
         </div>
 
         <div className="relative w-full max-w-md">
-          {/* Signup success message */}
           {signupSuccess && (
             <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
