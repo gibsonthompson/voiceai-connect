@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
-  Phone, Loader2, User, CreditCard, Link2, HelpCircle, LogOut, 
+  Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
   Check, Copy, Mail, Building2
 } from 'lucide-react';
 
@@ -39,6 +38,7 @@ interface Client {
 
 interface Branding {
   primaryColor: string;
+  secondaryColor: string;
   accentColor: string;
   agencyName: string;
   logoUrl: string | null;
@@ -78,7 +78,7 @@ const formatDate = (dateString: string | null): string => {
   });
 };
 
-export function ClientSettingsClient({ client: initialClient, branding }: Props) {
+export function ClientSettingsContent({ client: initialClient, branding }: Props) {
   const router = useRouter();
   const [client, setClient] = useState(initialClient);
   const [email, setEmail] = useState(client.email || '');
@@ -94,11 +94,14 @@ export function ClientSettingsClient({ client: initialClient, branding }: Props)
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
       
       const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ email, owner_phone: ownerPhone }),
       });
 
@@ -155,11 +158,6 @@ export function ClientSettingsClient({ client: initialClient, branding }: Props)
     }
   };
 
-  const handleSignOut = async () => {
-    document.cookie = 'auth_token=; path=/; max-age=0';
-    router.push('/client/login');
-  };
-
   const getDaysRemaining = (): number | null => {
     if (!client.trial_ends_at) return null;
     const diffTime = new Date(client.trial_ends_at).getTime() - Date.now();
@@ -173,46 +171,25 @@ export function ClientSettingsClient({ client: initialClient, branding }: Props)
   const daysRemaining = getDaysRemaining();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0] pb-24">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.agencyName} className="h-9 w-9 rounded-lg object-contain" />
-              ) : (
-                <div 
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Phone className="h-4 w-4" style={{ color: primaryLight ? '#0a0a0a' : '#f5f5f0' }} />
-                </div>
-              )}
-              <span className="text-lg font-medium">Settings</span>
-            </div>
-            <Link 
-              href="/client/dashboard"
-              className="text-sm text-white/60 hover:text-white transition-colors"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
+    <div className="p-8 pb-24">
+      {/* Status Message */}
+      {message && (
+        <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
+          message.includes('success') || message.includes('Success')
+            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+        }`}>
+          {message}
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-6">
-        {/* Status Message */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm ${
-            message.includes('success') || message.includes('Success')
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-              : 'bg-red-500/10 text-red-400 border border-red-500/20'
-          }`}>
-            {message}
-          </div>
-        )}
+      {/* Page Title */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
+        <p className="text-[#f5f5f0]/50 mt-1">Manage your account and preferences</p>
+      </div>
 
+      <div className="max-w-3xl">
         {/* Business Overview */}
         <section className="mb-6">
           <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
@@ -456,18 +433,7 @@ export function ClientSettingsClient({ client: initialClient, branding }: Props)
             </div>
           </div>
         </section>
-
-        {/* Sign Out */}
-        <div className="text-center">
-          <button 
-            onClick={handleSignOut}
-            className="inline-flex items-center gap-2 text-white/40 text-sm font-medium hover:text-red-400 transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
