@@ -9,7 +9,7 @@
 import Link from 'next/link';
 
 // Main marketing site URL - used for logo/home links
-const MARKETING_URL = 'https://voiceaiconnect.com';
+const MARKETING_URL = 'https://myvoiceaiconnect.com';
 
 function WaveformIcon({ className }: { className?: string }) {
   return (
@@ -182,7 +182,7 @@ export default function PrivacyPolicy() {
               We may use aggregated and de-identified call data to improve our AI models and Service quality. 
               This data is stripped of personally identifiable information and cannot be used to identify individual 
               callers or businesses. Agency Users can opt out of having their data used for AI improvement by 
-              contacting us at privacy@voiceaiconnect.com.
+              contacting us at privacy@myvoiceaiconnect.com.
             </p>
 
             <h2>4. Legal Basis for Processing (GDPR)</h2>
@@ -280,7 +280,7 @@ export default function PrivacyPolicy() {
               <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights.</li>
             </ul>
             <p>
-              To exercise these rights, contact us at privacy@voiceaiconnect.com or use the &ldquo;Privacy Requests&rdquo; section in your account settings. 
+              To exercise these rights, contact us at privacy@myvoiceaiconnect.com or use the &ldquo;Privacy Requests&rdquo; section in your account settings. 
               We will respond to verified requests within 45 days.
             </p>
 
@@ -297,7 +297,7 @@ export default function PrivacyPolicy() {
               <li><strong>Right to Lodge a Complaint:</strong> Lodge a complaint with a supervisory authority.</li>
             </ul>
             <p>
-              Contact our Data Protection Officer at dpo@voiceaiconnect.com. For international data transfers from 
+              Contact our Data Protection Officer at dpo@myvoiceaiconnect.com. For international data transfers from 
               the EEA/UK, we use Standard Contractual Clauses approved by the European Commission.
             </p>
 
@@ -343,7 +343,7 @@ export default function PrivacyPolicy() {
               Our Service is not directed to individuals under 18 years of age. We do not knowingly collect personal 
               information from children. If we learn we have collected personal information from a child under 18, 
               we will delete that information promptly. If you believe we have information from a child, please 
-              contact us at privacy@voiceaiconnect.com.
+              contact us at privacy@myvoiceaiconnect.com.
             </p>
 
             <h2>11. Third-Party Links</h2>
@@ -390,8 +390,8 @@ export default function PrivacyPolicy() {
             <p>If you have questions about this Privacy Policy or our privacy practices, please contact us:</p>
             
             <ul>
-              <li><strong>Email:</strong> privacy@voiceaiconnect.com</li>
-              <li><strong>Data Protection Officer:</strong> dpo@voiceaiconnect.com</li>
+              <li><strong>Email:</strong> privacy@myvoiceaiconnect.com</li>
+              <li><strong>Data Protection Officer:</strong> dpo@myvoiceaiconnect.com</li>
               <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Privacy Team, 2855 Broome Rd. Gainesville GA</li>
             </ul>
 

@@ -9,7 +9,7 @@
 import Link from 'next/link';
 
 // Main marketing site URL - used for logo/home links
-const MARKETING_URL = 'https://voiceaiconnect.com';
+const MARKETING_URL = 'https://myvoiceaiconnect.com';
 
 function WaveformIcon({ className }: { className?: string }) {
   return (
