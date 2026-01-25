@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Phone, Loader2, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Loader2, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
 // ============================================================================
 // TYPES
@@ -29,15 +29,30 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
+// Waveform icon component matching the logo
+function WaveformIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
+      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
+      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
+      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
+      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
+      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
+      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
+    </svg>
+  );
+}
+
 // ============================================================================
 // LOADING SCREEN COMPONENT
 // ============================================================================
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-        <p className="text-white/30 text-sm">Loading...</p>
+        <p className="text-[#fafaf9]/30 text-sm">Loading...</p>
       </div>
     </div>
   );
@@ -59,7 +74,7 @@ function SetPasswordContent() {
   // Agency context for branding
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
-  const [contextLoading, setContextLoading] = useState(true); // Start with loading
+  const [contextLoading, setContextLoading] = useState(true);
 
   // Detect agency context on mount
   useEffect(() => {
@@ -76,13 +91,11 @@ function SetPasswordContent() {
         ];
         
         if (platformDomains.includes(host)) {
-          // Main platform domain - no agency branding
           setIsAgencySubdomain(false);
           setContextLoading(false);
           return;
         }
         
-        // Try to fetch agency info for this host
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
@@ -137,7 +150,6 @@ function SetPasswordContent() {
         throw new Error(data.error || 'Failed to set password');
       }
 
-      // Set the auth token via API route (proper server-side cookie)
       if (data.token) {
         await fetch('/api/auth/set-session', {
           method: 'POST',
@@ -155,7 +167,6 @@ function SetPasswordContent() {
 
       setSuccess(true);
 
-      // Redirect based on returnTo param or user role
       setTimeout(() => {
         if (returnTo) {
           router.push(returnTo);
@@ -175,30 +186,37 @@ function SetPasswordContent() {
     }
   };
 
-  // Show loading screen while detecting context
   if (contextLoading) {
     return <LoadingScreen />;
   }
 
   // Dynamic colors based on agency or platform
-  const primaryColor = agency?.primary_color || '#10b981'; // emerald for platform
+  const primaryColor = agency?.primary_color || '#10b981';
   const primaryLight = isLightColor(primaryColor);
   const brandName = agency?.name || 'VoiceAI Connect';
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#050505] text-[#fafaf9] flex items-center justify-center px-4 sm:px-6">
+        {/* Grain overlay */}
+        <div 
+          className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+        
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8 text-center">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl p-8 text-center">
             <div 
               className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6"
               style={{ backgroundColor: `${primaryColor}1A` }}
             >
               <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
             </div>
-            <h1 className="text-2xl font-medium tracking-tight mb-2">Password Set!</h1>
-            <p className="text-[#f5f5f0]/50">Redirecting you to your dashboard...</p>
+            <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Set!</h1>
+            <p className="text-[#fafaf9]/50">Redirecting you to your dashboard...</p>
             <Loader2 className="h-6 w-6 animate-spin mx-auto mt-4" style={{ color: primaryColor }} />
           </div>
         </div>
@@ -207,68 +225,74 @@ function SetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
+      {/* Premium grain overlay */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
+        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+      {/* Ambient glow effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.07]"
+          style={{ backgroundColor: primaryColor }}
+        />
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/90 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 sm:h-20 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {agency?.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 rounded-lg object-contain" />
+                <img src={agency.logo_url} alt={agency.name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-contain" />
               ) : (
                 <div className="relative">
-                  {!isAgencySubdomain && <div className="absolute inset-0 bg-[#f5f5f0] blur-lg opacity-20" />}
-                  <div 
-                    className="relative flex h-9 w-9 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: isAgencySubdomain ? primaryColor : '#f5f5f0' }}
-                  >
-                    <Phone className="h-4 w-4" style={{ color: isAgencySubdomain ? (primaryLight ? '#0a0a0a' : '#f5f5f0') : '#0a0a0a' }} />
+                  <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
+                    <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                      <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
                   </div>
                 </div>
               )}
-              <span className="text-lg font-medium tracking-tight">{brandName}</span>
+              <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.07]"
-            style={{ backgroundColor: primaryColor }}
-          />
-        </div>
-
+      {/* Main Content */}
+      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32">
         <div className="relative w-full max-w-md">
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
+          {/* Card */}
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl p-6 sm:p-8">
+            {/* Header */}
             <div className="text-center mb-8">
               <div 
-                className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-4"
-                style={{ backgroundColor: `${primaryColor}1A` }}
+                className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+                style={{ backgroundColor: `${primaryColor}15` }}
               >
                 <Lock className="h-6 w-6" style={{ color: primaryColor }} />
               </div>
-              <h1 className="text-2xl font-medium tracking-tight">Set Your Password</h1>
-              <p className="mt-2 text-[#f5f5f0]/50">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h1>
+              <p className="mt-3 text-[#fafaf9]/50">
                 Create a secure password to access your dashboard
               </p>
             </div>
 
             {!token ? (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400 text-center">
+              <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400 text-center">
                 {error}
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* New Password */}
                 <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                  <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
                     New Password
                   </label>
                   <div className="relative">
@@ -279,32 +303,22 @@ function SetPasswordContent() {
                       placeholder="••••••••"
                       required
                       minLength={8}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 pr-12 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none transition-colors"
-                      style={{ 
-                        borderColor: 'rgba(255,255,255,0.1)',
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = `${primaryColor}80`;
-                        e.target.style.boxShadow = `0 0 0 1px ${primaryColor}80`;
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = 'rgba(255,255,255,0.1)';
-                        e.target.style.boxShadow = 'none';
-                      }}
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 pr-12 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#f5f5f0]/40 hover:text-[#f5f5f0]/70"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  <p className="mt-1.5 text-xs text-[#f5f5f0]/40">At least 8 characters</p>
+                  <p className="mt-2 text-xs text-[#fafaf9]/40">At least 8 characters</p>
                 </div>
 
+                {/* Confirm Password */}
                 <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                  <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
                     Confirm Password
                   </label>
                   <input
@@ -314,31 +328,25 @@ function SetPasswordContent() {
                     placeholder="••••••••"
                     required
                     minLength={8}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none transition-colors"
-                    onFocus={(e) => {
-                      e.target.style.borderColor = `${primaryColor}80`;
-                      e.target.style.boxShadow = `0 0 0 1px ${primaryColor}80`;
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255,255,255,0.1)';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
                   />
                 </div>
 
+                {/* Error Message */}
                 {error && (
-                  <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
                     {error}
                   </div>
                 )}
 
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{ 
                     backgroundColor: primaryColor,
-                    color: primaryLight ? '#0a0a0a' : '#f5f5f0',
+                    color: primaryLight ? '#050505' : '#fafaf9',
                   }}
                 >
                   {loading ? (
@@ -354,11 +362,12 @@ function SetPasswordContent() {
             )}
           </div>
 
-          <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
+          {/* Footer Link */}
+          <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
             Already have a password?{' '}
             <Link 
               href={loginUrl} 
-              className="transition-colors hover:opacity-80"
+              className="font-medium transition-colors hover:opacity-80"
               style={{ color: primaryColor }}
             >
               Sign in

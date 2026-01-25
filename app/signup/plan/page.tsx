@@ -386,7 +386,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                     </>
                   ) : (
                     <>
-                      Start Free Trial
+                      Get Started
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </>
                   )}
@@ -395,7 +395,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
             ))}
           </div>
 
-          {/* Trust badges */}
+          {/* Trust badges - REMOVED "No credit card required" */}
           <div className="mt-10 sm:mt-12 text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/40">
               <span className="flex items-center gap-1.5">
@@ -404,11 +404,11 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
               </span>
               <span className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-400" />
-                No credit card required
+                Cancel anytime
               </span>
               <span className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-400" />
-                Cancel anytime
+                Setup in minutes
               </span>
             </div>
           </div>
@@ -695,10 +695,10 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
             </div>
           </div>
 
-          {/* Comparison note */}
+          {/* Comparison link - UPDATED to /features */}
           <div className="mt-8 text-center">
             <p className="text-sm text-[#fafaf9]/30">
-              Not sure which plan? <Link href="/#pricing" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Compare all features</Link>
+              Not sure which plan? <Link href="/features" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Compare all features</Link>
             </p>
           </div>
         </div>
