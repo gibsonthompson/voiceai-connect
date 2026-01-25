@@ -839,7 +839,7 @@ export default function LandingPage() {
             &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
             VoiceAI Connect let me launch CallBird in a weekend. Signed my first paying client 
             within 11 days—that one client covered my entire monthly cost. Saved so much time 
-            tech headaches.&rdquo;
+            and tech headaches.&rdquo;
           </blockquote>
           <div className="mt-6 sm:mt-8">
             <p className="font-semibold text-lg">Jonathan Rowe</p>
@@ -925,7 +925,7 @@ export default function LandingPage() {
                 </span>
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Join 847 agencies already building recurring revenue with VoiceAI Connect.
+                Join 800+ agencies already building recurring revenue with VoiceAI Connect.
               </p>
               
               <div className="mt-8 sm:mt-10">
