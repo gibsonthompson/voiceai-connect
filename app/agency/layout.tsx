@@ -1,8 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3
 } from 'lucide-react';
@@ -23,7 +23,7 @@ function WaveformIcon({ className }: { className?: string }) {
   );
 }
 
-function AgencyLayoutInner({ children }: { children: ReactNode }) {
+function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading } = useAgency();
 
@@ -88,7 +88,7 @@ function AgencyLayoutInner({ children }: { children: ReactNode }) {
             </div>
           )}
           <span className="font-semibold text-[#fafaf9] truncate">
-            {agency?.name || 'Loading...'}
+            {agency?.name || 'Agency'}
           </span>
         </div>
 
@@ -155,9 +155,17 @@ function AgencyLayoutInner({ children }: { children: ReactNode }) {
 }
 
 export default function AgencyLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  
+  // Don't wrap login page with provider - it handles its own auth
+  if (pathname === '/agency/login') {
+    return <>{children}</>;
+  }
+
+  // All other agency pages get the provider and dashboard layout
   return (
     <AgencyProvider>
-      <AgencyLayoutInner>{children}</AgencyLayoutInner>
+      <AgencyDashboardLayout>{children}</AgencyDashboardLayout>
     </AgencyProvider>
   );
 }
