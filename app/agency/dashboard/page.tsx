@@ -1,131 +1,336 @@
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { formatCurrency } from '@/lib/utils';
-import { DashboardClient } from './dashboard-client';
+'use client';
 
-// Prevent caching to ensure fresh auth check on each request
-export const dynamic = 'force-dynamic';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { 
+  Users, DollarSign, PhoneCall, Clock, Copy, Check,
+  ChevronRight, ArrowUpRight, Loader2, Plus
+} from 'lucide-react';
+import { useAgency } from './context';
 
-async function getAgencyData(agencyId: string) {
-  const supabase = await createServerSupabaseClient();
-  
-  const { data: agency } = await supabase
-    .from('agencies')
-    .select('*')
-    .eq('id', agencyId)
-    .single();
-
-  const { count: clientCount } = await supabase
-    .from('clients')
-    .select('*', { count: 'exact', head: true })
-    .eq('agency_id', agencyId)
-    .neq('status', 'cancelled');
-
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('id, calls_this_month')
-    .eq('agency_id', agencyId);
-
-  const totalCalls = clients?.reduce((sum, c) => sum + (c.calls_this_month || 0), 0) || 0;
-
-  const { data: activeClients } = await supabase
-    .from('clients')
-    .select('plan_type')
-    .eq('agency_id', agencyId)
-    .eq('subscription_status', 'active');
-
-  let mrr = 0;
-  if (activeClients && agency) {
-    activeClients.forEach((client) => {
-      switch (client.plan_type) {
-        case 'starter':
-          mrr += agency.price_starter || 4900;
-          break;
-        case 'pro':
-          mrr += agency.price_pro || 9900;
-          break;
-        case 'growth':
-          mrr += agency.price_growth || 14900;
-          break;
-      }
-    });
-  }
-
-  const { data: recentClients } = await supabase
-    .from('clients')
-    .select('id, business_name, status, created_at, plan_type, subscription_status')
-    .eq('agency_id', agencyId)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  return {
-    agency,
-    clientCount: clientCount || 0,
-    totalCalls,
-    mrr,
-    recentClients: recentClients || [],
-  };
+interface RecentClient {
+  id: string;
+  business_name: string;
+  status: string;
+  created_at: string;
+  plan_type: string;
+  subscription_status: string;
 }
 
-export default async function AgencyDashboardPage() {
-  const user = await getCurrentUser();
-  
-  if (!user || !user.agency_id) {
-    redirect('/agency/login');
-  }
+interface DashboardStats {
+  clientCount: number;
+  mrr: number;
+  totalCalls: number;
+  recentClients: RecentClient[];
+}
 
-  const { agency, clientCount, totalCalls, mrr, recentClients } = await getAgencyData(user.agency_id);
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
 
-  if (!agency) {
-    redirect('/agency/login');
-  }
+export default function AgencyDashboardPage() {
+  const { agency, user, branding, loading: contextLoading } = useAgency();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
-  // Extract brand colors with fallbacks
-  const branding = {
-    primaryColor: agency.primary_color || '#2563eb',
-    secondaryColor: agency.secondary_color || '#1e40af',
-    accentColor: agency.accent_color || '#3b82f6',
-    logoUrl: agency.logo_url,
-    name: agency.name,
+  useEffect(() => {
+    if (agency) {
+      fetchDashboardData();
+    }
+  }, [agency]);
+
+  const fetchDashboardData = async () => {
+    if (!agency) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/dashboard`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          clientCount: data.clientCount || 0,
+          mrr: data.mrr || 0,
+          totalCalls: data.totalCalls || 0,
+          recentClients: data.recentClients || [],
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'voiceaiconnect.com';
-  const signupLink = agency.marketing_domain && agency.domain_verified
+  const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+  const signupLink = agency?.marketing_domain && agency?.domain_verified
     ? `https://${agency.marketing_domain}/signup`
-    : `https://${agency.slug}.${platformDomain}/signup`;
+    : `https://${agency?.slug}.${platformDomain}/signup`;
 
-  const trialDaysLeft = agency.trial_ends_at
+  const copySignupLink = () => {
+    navigator.clipboard.writeText(signupLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const trialDaysLeft = agency?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const stats = [
+  if (contextLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+      </div>
+    );
+  }
+
+  const statCards = [
     {
       label: 'Total Clients',
-      value: clientCount.toString(),
-      icon: 'users',
+      value: stats?.clientCount || 0,
+      icon: Users,
+      color: '#10b981',
     },
     {
       label: 'Monthly Revenue',
-      value: formatCurrency(mrr),
-      icon: 'dollar',
+      value: formatCurrency(stats?.mrr || 0),
+      icon: DollarSign,
+      color: '#f59e0b',
     },
     {
       label: 'Calls This Month',
-      value: totalCalls.toString(),
-      icon: 'phone',
+      value: stats?.totalCalls || 0,
+      icon: PhoneCall,
+      color: '#3b82f6',
     },
   ];
 
   return (
-    <DashboardClient
-      branding={branding}
-      user={user}
-      agency={agency}
-      stats={stats}
-      recentClients={recentClients}
-      signupLink={signupLink}
-      trialDaysLeft={trialDaysLeft}
-    />
+    <div className="p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Welcome back{user?.first_name ? `, ${user.first_name}` : ''}! 👋
+        </h1>
+        <p className="mt-1 text-[#fafaf9]/50">
+          Here&apos;s how your agency is performing.
+        </p>
+      </div>
+
+      {/* Trial Banner */}
+      {agency?.subscription_status === 'trial' && trialDaysLeft !== null && (
+        <div className="mb-8 rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20">
+              <Clock className="h-5 w-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="font-medium text-amber-200">
+                {trialDaysLeft > 0 ? `${trialDaysLeft} days left in your trial` : 'Your trial has ended'}
+              </p>
+              <p className="text-sm text-amber-300/60">
+                Upgrade to keep your agency active and access all features.
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/agency/settings/billing"
+            className="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-amber-400 transition-colors"
+          >
+            Upgrade Now
+          </Link>
+        </div>
+      )}
+
+      {/* Signup Link Card */}
+      <div className="mb-8 rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.08] to-transparent p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-[#fafaf9]/50 mb-1">Your Client Signup Link</p>
+            <p className="text-lg font-medium text-emerald-300 truncate max-w-md">
+              {signupLink}
+            </p>
+          </div>
+          <button
+            onClick={copySignupLink}
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copy Link
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        {statCards.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[#fafaf9]/50">{stat.label}</p>
+                <p className="mt-1 text-3xl font-semibold">{stat.value}</p>
+              </div>
+              <div 
+                className="flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${stat.color}15` }}
+              >
+                <stat.icon className="h-6 w-6" style={{ color: stat.color }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Clients */}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-between border-b border-white/[0.06] p-5">
+          <h2 className="font-medium">Recent Clients</h2>
+          <Link 
+            href="/agency/clients" 
+            className="flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            View all
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+        
+        <div className="p-5">
+          {!stats?.recentClients || stats.recentClients.length === 0 ? (
+            <div className="py-12 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+                <Users className="h-8 w-8 text-[#fafaf9]/30" />
+              </div>
+              <p className="mt-4 font-medium text-[#fafaf9]/60">No clients yet</p>
+              <p className="text-sm text-[#fafaf9]/40 mb-4">
+                Share your signup link to start acquiring clients.
+              </p>
+              <button
+                onClick={copySignupLink}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+              >
+                <Copy className="h-4 w-4" />
+                Copy Signup Link
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {stats.recentClients.map((client) => (
+                <Link
+                  key={client.id}
+                  href={`/agency/clients/${client.id}`}
+                  className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
+                      <span className="text-sm font-medium text-emerald-400">
+                        {client.business_name?.charAt(0) || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{client.business_name}</p>
+                      <p className="text-sm text-[#fafaf9]/50 capitalize">
+                        {client.plan_type || 'starter'} plan
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        client.subscription_status === 'active'
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : client.subscription_status === 'trial'
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-white/[0.06] text-[#fafaf9]/50'
+                      }`}
+                    >
+                      {client.subscription_status || 'pending'}
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 text-[#fafaf9]/30" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href="/agency/clients/new"
+          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+            <Plus className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div>
+            <p className="font-medium">Add Client</p>
+            <p className="text-xs text-[#fafaf9]/40">Manually add a client</p>
+          </div>
+        </Link>
+        
+        <Link
+          href="/agency/settings/branding"
+          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+            <span className="text-blue-400 text-lg">🎨</span>
+          </div>
+          <div>
+            <p className="font-medium">Customize Brand</p>
+            <p className="text-xs text-[#fafaf9]/40">Logo, colors & more</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/agency/settings/pricing"
+          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+            <span className="text-amber-400 text-lg">💰</span>
+          </div>
+          <div>
+            <p className="font-medium">Set Pricing</p>
+            <p className="text-xs text-[#fafaf9]/40">Client plan prices</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/agency/settings/domain"
+          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+            <span className="text-purple-400 text-lg">🌐</span>
+          </div>
+          <div>
+            <p className="font-medium">Custom Domain</p>
+            <p className="text-xs text-[#fafaf9]/40">Use your own domain</p>
+          </div>
+        </Link>
+      </div>
+    </div>
   );
 }

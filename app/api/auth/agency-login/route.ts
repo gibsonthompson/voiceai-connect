@@ -27,13 +27,7 @@ export async function POST(request: NextRequest) {
         first_name,
         last_name,
         role,
-        agency_id,
-        agencies:agency_id (
-          id,
-          name,
-          status,
-          slug
-        )
+        agency_id
       `)
       .eq('email', email.toLowerCase())
       .in('role', ['agency_owner', 'agency_staff', 'super_admin'])
@@ -62,13 +56,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check agency status
-    const agency = user.agencies as { id: string; name: string; status: string; slug: string } | null;
-    if (agency && agency.status === 'suspended') {
-      return NextResponse.json(
-        { error: 'Your account has been suspended. Please contact support.' },
-        { status: 403 }
-      );
+    // Fetch full agency data if user has agency_id
+    let agency = null;
+    if (user.agency_id) {
+      const { data: agencyData } = await supabase
+        .from('agencies')
+        .select('*')
+        .eq('id', user.agency_id)
+        .single();
+      
+      agency = agencyData;
+
+      // Check agency status
+      if (agency && agency.status === 'suspended') {
+        return NextResponse.json(
+          { error: 'Your account has been suspended. Please contact support.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Generate JWT token
@@ -95,21 +100,19 @@ export async function POST(request: NextRequest) {
         .eq('id', user.agency_id);
     }
 
+    // Return token, user, and agency (all required for localStorage auth)
     return NextResponse.json({
       success: true,
+      token, // CRITICAL: Include token for localStorage
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         role: user.role,
-        agencyId: user.agency_id,
-        agency: agency ? {
-          id: agency.id,
-          name: agency.name,
-          slug: agency.slug,
-        } : null,
+        agency_id: user.agency_id,
       },
+      agency, // CRITICAL: Include full agency object at top level
     });
   } catch (error) {
     console.error('Login error:', error);

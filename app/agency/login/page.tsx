@@ -53,6 +53,18 @@ export default function AgencyLoginPage() {
         throw new Error(data.error || 'Invalid credentials');
       }
 
+      // Store auth in localStorage (CRITICAL for dashboard auth)
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      if (data.agency) {
+        localStorage.setItem('agency', JSON.stringify(data.agency));
+      }
+
+      // Also set cookie as backup
       if (data.token) {
         await fetch('/api/auth/set-session', {
           method: 'POST',
