@@ -6,7 +6,7 @@ import {
   Users, DollarSign, PhoneCall, Clock, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2, Plus
 } from 'lucide-react';
-import { useAgency } from './context';
+import { useAgency } from '../context';
 
 interface RecentClient {
   id: string;
