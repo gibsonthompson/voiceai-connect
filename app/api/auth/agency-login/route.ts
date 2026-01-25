@@ -7,6 +7,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
+    console.log('LOGIN: Starting login for', email);
+
     // Validation
     if (!email || !password) {
       return NextResponse.json(
@@ -33,6 +35,12 @@ export async function POST(request: NextRequest) {
       .in('role', ['agency_owner', 'agency_staff', 'super_admin'])
       .single();
 
+    console.log('LOGIN: User query result', { 
+      hasUser: !!user, 
+      userError: userError?.message,
+      userAgencyId: user?.agency_id 
+    });
+
     if (userError || !user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -56,15 +64,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('LOGIN: Password verified');
+
     // Fetch full agency data if user has agency_id
     let agency = null;
     if (user.agency_id) {
-      const { data: agencyData } = await supabase
+      const { data: agencyData, error: agencyError } = await supabase
         .from('agencies')
         .select('*')
         .eq('id', user.agency_id)
         .single();
       
+      console.log('LOGIN: Agency query result', { 
+        hasAgency: !!agencyData, 
+        agencyError: agencyError?.message,
+        agencyId: agencyData?.id 
+      });
+
       agency = agencyData;
 
       // Check agency status
@@ -74,6 +90,8 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
+    } else {
+      console.log('LOGIN: No agency_id on user');
     }
 
     // Generate JWT token
@@ -83,6 +101,8 @@ export async function POST(request: NextRequest) {
       role: user.role,
       agency_id: user.agency_id || undefined,
     });
+
+    console.log('LOGIN: Token generated', { hasToken: !!token, tokenLength: token?.length });
 
     // Set auth cookie
     await setAuthCookie(token);
@@ -100,10 +120,9 @@ export async function POST(request: NextRequest) {
         .eq('id', user.agency_id);
     }
 
-    // Return token, user, and agency (all required for localStorage auth)
-    return NextResponse.json({
+    const responseData = {
       success: true,
-      token, // CRITICAL: Include token for localStorage
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -112,8 +131,18 @@ export async function POST(request: NextRequest) {
         role: user.role,
         agency_id: user.agency_id,
       },
-      agency, // CRITICAL: Include full agency object at top level
+      agency,
+    };
+
+    console.log('LOGIN: Sending response', {
+      hasToken: !!responseData.token,
+      hasUser: !!responseData.user,
+      hasAgency: !!responseData.agency,
+      userAgencyId: responseData.user.agency_id,
     });
+
+    // Return token, user, and agency (all required for localStorage auth)
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
