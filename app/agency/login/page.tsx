@@ -41,7 +41,9 @@ export default function AgencyLoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/agency-login', {
+      // Call backend directly (not Next.js API route)
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/auth/agency/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
