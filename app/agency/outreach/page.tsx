@@ -1,538 +1,462 @@
-// ============================================================================
-// OUTREACH ROUTES
-// VoiceAI Connect - Templates, Composer, and Outreach History
-// ============================================================================
-const express = require('express');
-const router = express.Router();
-const { supabase } = require('../lib/supabase');
-const { logActivity, ACTION_TYPES } = require('./activity');
+'use client';
 
-// ============================================================================
-// TEMPLATE VARIABLES
-// ============================================================================
-const TEMPLATE_VARIABLES = {
-  lead: [
-    { key: '{lead_business_name}', label: 'Business Name', description: 'Lead company name' },
-    { key: '{lead_contact_name}', label: 'Contact Full Name', description: 'Full name of contact' },
-    { key: '{lead_contact_first_name}', label: 'Contact First Name', description: 'First name only' },
-    { key: '{lead_industry}', label: 'Industry', description: 'Business industry' },
-    { key: '{lead_email}', label: 'Email', description: 'Contact email address' },
-    { key: '{lead_phone}', label: 'Phone', description: 'Contact phone number' },
-    { key: '{lead_website}', label: 'Website', description: 'Business website' },
-    { key: '{lead_source}', label: 'Source', description: 'How you found them' },
-  ],
-  agency: [
-    { key: '{agency_name}', label: 'Agency Name', description: 'Your agency name' },
-    { key: '{agency_owner_name}', label: 'Your Name', description: 'Agency owner name' },
-    { key: '{agency_email}', label: 'Agency Email', description: 'Your email address' },
-    { key: '{agency_phone}', label: 'Agency Phone', description: 'Your phone number' },
-    { key: '{agency_website}', label: 'Agency Website', description: 'Your website' },
-    { key: '{signup_link}', label: 'Signup Link', description: 'Client signup URL' },
-  ],
-  dynamic: [
-    { key: '{today_date}', label: 'Today\'s Date', description: 'Current date' },
-    { key: '{personalized_line}', label: 'AI Personalized Line', description: 'AI-generated opener based on their website' },
-  ]
-};
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { 
+  FileText, Mail, MessageSquare, Plus, Search, Loader2,
+  MoreVertical, Copy, Trash2, Edit, ChevronRight, Sparkles
+} from 'lucide-react';
+import { useAgency } from '../context';
 
-// ============================================================================
-// GET /api/agency/:agencyId/templates
-// List all templates for an agency
-// ============================================================================
-router.get('/:agencyId/templates', async (req, res) => {
-  try {
-    const { agencyId } = req.params;
-    const { type, sequenceName } = req.query;
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  type: 'email' | 'sms';
+  subject: string;
+  body: string;
+  is_default: boolean;
+  is_follow_up: boolean;
+  sequence_name: string | null;
+  sequence_order: number | null;
+  use_count: number;
+  created_at: string;
+}
 
-    let query = supabase
-      .from('outreach_templates')
-      .select('*')
-      .or(`agency_id.eq.${agencyId},is_default.eq.true`)
-      .order('sequence_order', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false });
+export default function OutreachPage() {
+  const { agency, loading: contextLoading } = useAgency();
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
-    if (type) {
-      query = query.eq('type', type);
+  useEffect(() => {
+    if (agency) {
+      fetchTemplates();
     }
-    if (sequenceName) {
-      query = query.eq('sequence_name', sequenceName);
-    }
+  }, [agency]);
 
-    const { data: templates, error } = await query;
+  const fetchTemplates = async () => {
+    if (!agency) return;
 
-    if (error) {
-      console.error('Error fetching templates:', error);
-      return res.status(400).json({ error: error.message });
-    }
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-    // Get unique sequence names
-    const sequences = [...new Set(
-      (templates || [])
-        .filter(t => t.sequence_name)
-        .map(t => t.sequence_name)
-    )];
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/templates`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
 
-    res.json({ 
-      templates: templates || [], 
-      sequences,
-      variables: TEMPLATE_VARIABLES 
-    });
-  } catch (error) {
-    console.error('Error fetching templates:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// POST /api/agency/:agencyId/templates
-// Create a new template
-// ============================================================================
-router.post('/:agencyId/templates', async (req, res) => {
-  try {
-    const { agencyId } = req.params;
-    const {
-      name,
-      description,
-      type = 'email',
-      subject,
-      body,
-      is_follow_up,
-      sequence_name,
-      sequence_order,
-      delay_days
-    } = req.body;
-
-    if (!name || !body) {
-      return res.status(400).json({ error: 'Name and body are required' });
-    }
-
-    if (type === 'email' && !subject) {
-      return res.status(400).json({ error: 'Subject is required for email templates' });
-    }
-
-    const { data: template, error } = await supabase
-      .from('outreach_templates')
-      .insert({
-        agency_id: agencyId,
-        name,
-        description,
-        type,
-        subject,
-        body,
-        is_follow_up: is_follow_up || false,
-        sequence_name: sequence_name || null,
-        sequence_order: sequence_order || null,
-        delay_days: delay_days || null,
-        is_default: false
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating template:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    console.log(`✅ Template created: ${name}`);
-    res.status(201).json({ success: true, template });
-  } catch (error) {
-    console.error('Error creating template:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// GET /api/agency/:agencyId/templates/:templateId
-// Get a single template
-// ============================================================================
-router.get('/:agencyId/templates/:templateId', async (req, res) => {
-  try {
-    const { agencyId, templateId } = req.params;
-
-    const { data: template, error } = await supabase
-      .from('outreach_templates')
-      .select('*')
-      .eq('id', templateId)
-      .or(`agency_id.eq.${agencyId},is_default.eq.true`)
-      .single();
-
-    if (error || !template) {
-      return res.status(404).json({ error: 'Template not found' });
-    }
-
-    res.json({ template, variables: TEMPLATE_VARIABLES });
-  } catch (error) {
-    console.error('Error fetching template:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// PUT /api/agency/:agencyId/templates/:templateId
-// Update a template
-// ============================================================================
-router.put('/:agencyId/templates/:templateId', async (req, res) => {
-  try {
-    const { agencyId, templateId } = req.params;
-    const updates = req.body;
-
-    // Can't edit default templates
-    const { data: existing } = await supabase
-      .from('outreach_templates')
-      .select('is_default')
-      .eq('id', templateId)
-      .single();
-
-    if (existing?.is_default) {
-      return res.status(403).json({ error: 'Cannot edit default templates. Duplicate it first.' });
-    }
-
-    // Remove fields that shouldn't be updated
-    delete updates.id;
-    delete updates.agency_id;
-    delete updates.is_default;
-    delete updates.created_at;
-
-    const { data: template, error } = await supabase
-      .from('outreach_templates')
-      .update(updates)
-      .eq('id', templateId)
-      .eq('agency_id', agencyId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating template:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ success: true, template });
-  } catch (error) {
-    console.error('Error updating template:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// DELETE /api/agency/:agencyId/templates/:templateId
-// Delete a template
-// ============================================================================
-router.delete('/:agencyId/templates/:templateId', async (req, res) => {
-  try {
-    const { agencyId, templateId } = req.params;
-
-    // Can't delete default templates
-    const { data: existing } = await supabase
-      .from('outreach_templates')
-      .select('is_default')
-      .eq('id', templateId)
-      .single();
-
-    if (existing?.is_default) {
-      return res.status(403).json({ error: 'Cannot delete default templates' });
-    }
-
-    const { error } = await supabase
-      .from('outreach_templates')
-      .delete()
-      .eq('id', templateId)
-      .eq('agency_id', agencyId);
-
-    if (error) {
-      console.error('Error deleting template:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting template:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// POST /api/agency/:agencyId/templates/:templateId/duplicate
-// Duplicate a template (including defaults)
-// ============================================================================
-router.post('/:agencyId/templates/:templateId/duplicate', async (req, res) => {
-  try {
-    const { agencyId, templateId } = req.params;
-    const { name } = req.body;
-
-    // Get original template
-    const { data: original, error: fetchError } = await supabase
-      .from('outreach_templates')
-      .select('*')
-      .eq('id', templateId)
-      .single();
-
-    if (fetchError || !original) {
-      return res.status(404).json({ error: 'Template not found' });
-    }
-
-    // Create duplicate
-    const { data: template, error } = await supabase
-      .from('outreach_templates')
-      .insert({
-        agency_id: agencyId,
-        name: name || `${original.name} (Copy)`,
-        description: original.description,
-        type: original.type,
-        subject: original.subject,
-        body: original.body,
-        is_follow_up: original.is_follow_up,
-        sequence_name: null,  // Don't copy sequence info
-        sequence_order: null,
-        delay_days: original.delay_days,
-        is_default: false
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error duplicating template:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.status(201).json({ success: true, template });
-  } catch (error) {
-    console.error('Error duplicating template:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// POST /api/agency/:agencyId/outreach/compose
-// Compose a message from a template (variable substitution)
-// ============================================================================
-router.post('/:agencyId/outreach/compose', async (req, res) => {
-  try {
-    const { agencyId } = req.params;
-    const { templateId, leadId, customSubject, customBody } = req.body;
-
-    // Get agency data
-    const { data: agency } = await supabase
-      .from('agencies')
-      .select('*')
-      .eq('id', agencyId)
-      .single();
-
-    // Get agency owner
-    const { data: owner } = await supabase
-      .from('users')
-      .select('first_name, last_name, email')
-      .eq('agency_id', agencyId)
-      .eq('role', 'agency_owner')
-      .single();
-
-    // Get lead data if provided
-    let lead = null;
-    if (leadId) {
-      const { data } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', leadId)
-        .eq('agency_id', agencyId)
-        .single();
-      lead = data;
-    }
-
-    // Get template if provided
-    let subject = customSubject || '';
-    let body = customBody || '';
-
-    if (templateId) {
-      const { data: template } = await supabase
-        .from('outreach_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
-
-      if (template) {
-        subject = customSubject || template.subject || '';
-        body = customBody || template.body || '';
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data.templates || []);
       }
+    } catch (error) {
+      console.error('Failed to fetch templates:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Build replacement map
-    const platformDomain = process.env.PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-    const signupLink = agency?.marketing_domain && agency?.domain_verified
-      ? `https://${agency.marketing_domain}/signup`
-      : `https://${agency?.slug}.${platformDomain}/signup`;
+  const handleDuplicate = async (template: Template) => {
+    if (!agency) return;
+    setActiveDropdown(null);
 
-    const replacements = {
-      // Lead variables
-      '{lead_business_name}': lead?.business_name || '[Business Name]',
-      '{lead_contact_name}': lead?.contact_name || '[Contact Name]',
-      '{lead_contact_first_name}': lead?.contact_name?.split(' ')[0] || '[First Name]',
-      '{lead_industry}': lead?.industry || '[Industry]',
-      '{lead_email}': lead?.email || '[Email]',
-      '{lead_phone}': lead?.phone || '[Phone]',
-      '{lead_website}': lead?.website || '[Website]',
-      '{lead_source}': lead?.source || '[Source]',
-      
-      // Agency variables
-      '{agency_name}': agency?.name || '[Agency Name]',
-      '{agency_owner_name}': owner ? `${owner.first_name} ${owner.last_name}`.trim() : '[Your Name]',
-      '{agency_email}': agency?.email || owner?.email || '[Email]',
-      '{agency_phone}': agency?.phone || '[Phone]',
-      '{agency_website}': agency?.marketing_domain || `${agency?.slug}.${platformDomain}`,
-      '{signup_link}': signupLink,
-      
-      // Dynamic variables
-      '{today_date}': new Date().toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      '{personalized_line}': '[Personalized line - generate with AI]',
-    };
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-    // Perform replacements
-    let composedSubject = subject;
-    let composedBody = body;
-
-    for (const [variable, value] of Object.entries(replacements)) {
-      composedSubject = composedSubject.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
-      composedBody = composedBody.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
-    }
-
-    res.json({
-      subject: composedSubject,
-      body: composedBody,
-      toAddress: lead?.email || '',
-      toPhone: lead?.phone || '',
-      variables: replacements
-    });
-  } catch (error) {
-    console.error('Error composing message:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// POST /api/agency/:agencyId/outreach/log
-// Log that an outreach was sent (copy-to-clipboard flow)
-// ============================================================================
-router.post('/:agencyId/outreach/log', async (req, res) => {
-  try {
-    const { agencyId } = req.params;
-    const { leadId, templateId, type, toAddress, subject, body, userId } = req.body;
-
-    if (!type || !toAddress || !body) {
-      return res.status(400).json({ error: 'type, toAddress, and body are required' });
-    }
-
-    // Log to outreach_emails
-    const { data: outreach, error } = await supabase
-      .from('outreach_emails')
-      .insert({
-        agency_id: agencyId,
-        lead_id: leadId || null,
-        template_id: templateId || null,
-        type,
-        to_address: toAddress,
-        subject: subject || null,
-        body,
-        status: 'sent'
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error logging outreach:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    // Log activity
-    if (leadId) {
-      await logActivity(
-        agencyId,
-        'lead',
-        leadId,
-        type === 'email' ? ACTION_TYPES.EMAIL_SENT : ACTION_TYPES.SMS_SENT,
-        { 
-          subject, 
-          to_address: toAddress,
-          outreach_id: outreach.id 
-        },
-        userId
+      const response = await fetch(
+        `${backendUrl}/api/agency/${agency.id}/templates/${template.id}/duplicate`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: `${template.name} (Copy)` }),
+        }
       );
-    }
 
-    // Update template use count
-    if (templateId) {
-      const { data: template } = await supabase
-        .from('outreach_templates')
-        .select('use_count')
-        .eq('id', templateId)
-        .single();
-      
-      if (template) {
-        await supabase
-          .from('outreach_templates')
-          .update({ use_count: (template.use_count || 0) + 1 })
-          .eq('id', templateId);
+      if (response.ok) {
+        fetchTemplates();
       }
+    } catch (error) {
+      console.error('Failed to duplicate template:', error);
     }
+  };
 
-    res.status(201).json({ success: true, outreach });
-  } catch (error) {
-    console.error('Error logging outreach:', error);
-    res.status(500).json({ error: 'Server error' });
+  const handleDelete = async (templateId: string) => {
+    if (!agency) return;
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    setActiveDropdown(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(
+        `${backendUrl}/api/agency/${agency.id}/templates/${templateId}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        fetchTemplates();
+      }
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+    }
+  };
+
+  // Filter templates
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = !searchQuery || 
+      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = !typeFilter || template.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  // Group by type
+  const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
+  const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
+
+  if (contextLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+      </div>
+    );
   }
-});
 
-// ============================================================================
-// GET /api/agency/:agencyId/outreach/history
-// Get outreach history
-// ============================================================================
-router.get('/:agencyId/outreach/history', async (req, res) => {
-  try {
-    const { agencyId } = req.params;
-    const { leadId, type, limit = 50, offset = 0 } = req.query;
+  return (
+    <div className="p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Outreach</h1>
+          <p className="mt-1 text-[#fafaf9]/50">
+            Manage email and SMS templates for lead outreach
+          </p>
+        </div>
+        
+        <Link
+          href="/agency/outreach/templates/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          New Template
+        </Link>
+      </div>
 
-    let query = supabase
-      .from('outreach_emails')
-      .select(`
-        *,
-        lead:leads (id, business_name, contact_name),
-        template:outreach_templates (id, name)
-      `, { count: 'exact' })
-      .eq('agency_id', agencyId)
-      .order('sent_at', { ascending: false });
+      {/* Quick Links */}
+      <div className="grid gap-4 sm:grid-cols-3 mb-8">
+        <Link
+          href="/agency/outreach/history"
+          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+              <FileText className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="font-medium">Outreach History</p>
+              <p className="text-sm text-[#fafaf9]/50">View all sent messages</p>
+            </div>
+          </div>
+        </Link>
+        
+        <Link
+          href="/agency/outreach/templates/new?type=email"
+          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+              <Mail className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="font-medium">Email Template</p>
+              <p className="text-sm text-[#fafaf9]/50">Create new email template</p>
+            </div>
+          </div>
+        </Link>
+        
+        <Link
+          href="/agency/outreach/templates/new?type=sms"
+          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10">
+              <MessageSquare className="h-5 w-5 text-cyan-400" />
+            </div>
+            <div>
+              <p className="font-medium">SMS Template</p>
+              <p className="text-sm text-[#fafaf9]/50">Create new SMS template</p>
+            </div>
+          </div>
+        </Link>
+      </div>
 
-    if (leadId) {
-      query = query.eq('lead_id', leadId);
-    }
-    if (type) {
-      query = query.eq('type', type);
-    }
+      {/* Search & Filters */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+          <input
+            type="text"
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none transition-colors"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTypeFilter(null)}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              !typeFilter 
+                ? 'bg-emerald-500/10 text-emerald-400' 
+                : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setTypeFilter('email')}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              typeFilter === 'email' 
+                ? 'bg-emerald-500/10 text-emerald-400' 
+                : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
+            }`}
+          >
+            Email
+          </button>
+          <button
+            onClick={() => setTypeFilter('sms')}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              typeFilter === 'sms' 
+                ? 'bg-emerald-500/10 text-emerald-400' 
+                : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
+            }`}
+          >
+            SMS
+          </button>
+        </div>
+      </div>
 
-    query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      {/* Templates List */}
+      {filteredTemplates.length === 0 ? (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] py-20 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <FileText className="h-8 w-8 text-emerald-400/50" />
+          </div>
+          <p className="mt-4 font-medium text-[#fafaf9]/70">
+            {searchQuery || typeFilter ? 'No templates match your search' : 'No templates yet'}
+          </p>
+          <p className="text-sm text-[#fafaf9]/40 mt-1 mb-4">
+            Create your first outreach template to get started
+          </p>
+          <Link
+            href="/agency/outreach/templates/new"
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Create Template
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Email Templates */}
+          {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Mail className="h-4 w-4 text-[#fafaf9]/50" />
+                <h3 className="text-sm font-medium text-[#fafaf9]/70">Email Templates</h3>
+                <span className="text-xs text-[#fafaf9]/40">({emailTemplates.length})</span>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden divide-y divide-white/[0.04]">
+                {emailTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <Link
+                      href={`/agency/outreach/templates/${template.id}`}
+                      className="flex-1 min-w-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 shrink-0">
+                          <Mail className="h-5 w-5 text-purple-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{template.name}</p>
+                            {template.is_default && (
+                              <span className="flex items-center gap-1 text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                                <Sparkles className="h-3 w-3" />
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#fafaf9]/40 truncate">
+                            {template.subject || template.description || 'No subject'}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                    
+                    <div className="flex items-center gap-2 ml-4">
+                      <span className="text-xs text-[#fafaf9]/30">
+                        Used {template.use_count || 0}x
+                      </span>
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveDropdown(activeDropdown === template.id ? null : template.id)}
+                          className="rounded-lg p-2 text-[#fafaf9]/50 hover:bg-white/[0.06] hover:text-[#fafaf9] transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        
+                        {activeDropdown === template.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActiveDropdown(null)}
+                            />
+                            <div className="absolute right-0 mt-1 w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
+                              <Link
+                                href={`/agency/outreach/templates/${template.id}`}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors"
+                                onClick={() => setActiveDropdown(null)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                Edit
+                              </Link>
+                              <button
+                                onClick={() => handleDuplicate(template)}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors w-full text-left"
+                              >
+                                <Copy className="h-4 w-4" />
+                                Duplicate
+                              </button>
+                              {!template.is_default && (
+                                <button
+                                  onClick={() => handleDelete(template.id)}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-    const { data: history, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching outreach history:', error);
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({ history: history || [], total: count });
-  } catch (error) {
-    console.error('Error fetching outreach history:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ============================================================================
-// GET /api/agency/:agencyId/outreach/variables
-// Get available template variables
-// ============================================================================
-router.get('/:agencyId/outreach/variables', async (req, res) => {
-  res.json({ variables: TEMPLATE_VARIABLES });
-});
-
-module.exports = router;
-module.exports.TEMPLATE_VARIABLES = TEMPLATE_VARIABLES;
+          {/* SMS Templates */}
+          {smsTemplates.length > 0 && (!typeFilter || typeFilter === 'sms') && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="h-4 w-4 text-[#fafaf9]/50" />
+                <h3 className="text-sm font-medium text-[#fafaf9]/70">SMS Templates</h3>
+                <span className="text-xs text-[#fafaf9]/40">({smsTemplates.length})</span>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden divide-y divide-white/[0.04]">
+                {smsTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <Link
+                      href={`/agency/outreach/templates/${template.id}`}
+                      className="flex-1 min-w-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
+                          <MessageSquare className="h-5 w-5 text-cyan-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{template.name}</p>
+                            {template.is_default && (
+                              <span className="flex items-center gap-1 text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                                <Sparkles className="h-3 w-3" />
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#fafaf9]/40 truncate">
+                            {template.body?.substring(0, 60) || 'No content'}...
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                    
+                    <div className="flex items-center gap-2 ml-4">
+                      <span className="text-xs text-[#fafaf9]/30">
+                        Used {template.use_count || 0}x
+                      </span>
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveDropdown(activeDropdown === template.id ? null : template.id)}
+                          className="rounded-lg p-2 text-[#fafaf9]/50 hover:bg-white/[0.06] hover:text-[#fafaf9] transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        
+                        {activeDropdown === template.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActiveDropdown(null)}
+                            />
+                            <div className="absolute right-0 mt-1 w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
+                              <Link
+                                href={`/agency/outreach/templates/${template.id}`}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors"
+                                onClick={() => setActiveDropdown(null)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                Edit
+                              </Link>
+                              <button
+                                onClick={() => handleDuplicate(template)}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors w-full text-left"
+                              >
+                                <Copy className="h-4 w-4" />
+                                Duplicate
+                              </button>
+                              {!template.is_default && (
+                                <button
+                                  onClick={() => handleDelete(template.id)}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full text-left"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
