@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface Agency {
   id: string;
@@ -79,7 +78,6 @@ export function useAgency() {
 }
 
 export function AgencyProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [agency, setAgency] = useState<Agency | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [branding, setBranding] = useState<Branding>(defaultBranding);
@@ -87,76 +85,50 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
 
   const fetchAgencyData = async () => {
     try {
-      // Check localStorage for auth
+      // Check localStorage for auth (matching client pattern exactly)
       const token = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('user');
       const storedAgency = localStorage.getItem('agency');
 
-      console.log('AgencyProvider - checking auth:', { 
-        hasToken: !!token, 
-        hasUser: !!storedUser,
-        hasAgency: !!storedAgency 
-      });
-
-      if (!token) {
-        console.log('AgencyProvider - no token, redirecting to login');
-        router.push('/agency/login');
+      // If either is missing, redirect to login
+      if (!token || !storedAgency) {
+        window.location.href = '/agency/login';
         return;
       }
 
-      // Parse stored user to get agency_id
-      let agencyId: string | null = null;
-      let userData: User | null = null;
-
-      if (storedUser) {
-        userData = JSON.parse(storedUser);
-        agencyId = userData?.agency_id || null;
-        setUser(userData);
-      }
-
-      if (storedAgency) {
-        const agencyData = JSON.parse(storedAgency);
-        agencyId = agencyId || agencyData?.id;
-      }
-
-      if (!agencyId) {
-        console.log('AgencyProvider - no agency_id found, redirecting to login');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('agency');
-        router.push('/agency/login');
-        return;
-      }
+      // Parse stored agency to get ID
+      const agencyData = JSON.parse(storedAgency);
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
       // Fetch fresh agency data from backend
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/agency/${agencyId}`, {
+      const response = await fetch(`${backendUrl}/api/agency/${agencyData.id}/settings`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
-        console.log('AgencyProvider - fetch failed, clearing auth');
+        // Clear auth and redirect
         localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
         localStorage.removeItem('agency');
-        router.push('/agency/login');
+        localStorage.removeItem('user');
+        window.location.href = '/agency/login';
         return;
       }
 
       const data = await response.json();
-      const fetchedAgency = data.agency;
+      const fetchedAgency = data.agency || agencyData; // Fallback to stored data
 
       if (!fetchedAgency) {
-        console.log('AgencyProvider - no agency in response');
-        router.push('/agency/login');
+        window.location.href = '/agency/login';
         return;
       }
 
-      // Update state
+      // Set state
       setAgency(fetchedAgency);
       
-      // Update localStorage with fresh data
-      localStorage.setItem('agency', JSON.stringify(fetchedAgency));
+      // Get user from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
 
       // Set branding
       setBranding({
@@ -169,8 +141,8 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
     } catch (error) {
-      console.error('AgencyProvider - error fetching agency data:', error);
-      router.push('/agency/login');
+      console.error('Error fetching agency data:', error);
+      window.location.href = '/agency/login';
     }
   };
 

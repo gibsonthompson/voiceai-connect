@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 // Waveform Icon to match branding
 function WaveformIcon({ className }: { className?: string }) {
@@ -21,14 +20,26 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 export default function AgencyLoginPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  useEffect(() => {
+    // Check if already logged in
+    const token = localStorage.getItem('auth_token');
+    const agency = localStorage.getItem('agency');
+    if (token && agency) {
+      window.location.href = '/agency/dashboard';
+      return;
+    }
+    setPageLoading(false);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,7 +52,6 @@ export default function AgencyLoginPage() {
     setError('');
 
     try {
-      // Call backend directly (not Next.js API route)
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/auth/agency/login`, {
         method: 'POST',
@@ -50,40 +60,41 @@ export default function AgencyLoginPage() {
       });
 
       const data = await response.json();
-      
-      console.log('FULL API RESPONSE:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Invalid credentials');
+        throw new Error(data.error || data.message || 'Invalid credentials');
       }
 
-      // Store auth in localStorage (CRITICAL for dashboard auth)
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+      if (!data.token) {
+        throw new Error('No token received from server');
       }
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
+
+      // Store everything in localStorage
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       if (data.agency) {
         localStorage.setItem('agency', JSON.stringify(data.agency));
       }
 
-      // Also set cookie as backup
-      if (data.token) {
-        await fetch('/api/auth/set-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: data.token }),
-        });
-      }
-
-      router.push('/agency/dashboard');
+      console.log('Login successful, redirecting...');
+      
+      // Use window.location.href for FULL page reload (matches client login)
+      window.location.href = '/agency/dashboard';
+      
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
       setLoading(false);
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
@@ -137,30 +148,43 @@ export default function AgencyLoginPage() {
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
                   Email Address
                 </label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-11 pr-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                  />
+                </div>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
                   Password
                 </label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
-                />
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <input
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-11 pr-12 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 hover:text-[#fafaf9]/70"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -173,7 +197,7 @@ export default function AgencyLoginPage() {
                 </label>
                 <Link 
                   href="/forgot-password" 
-                  className="text-sm text-[#fafaf9]/50 hover:text-emerald-400 transition-colors"
+                  className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
