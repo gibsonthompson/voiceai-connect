@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, DollarSign, PhoneCall, Clock, Copy, Check,
-  ChevronRight, ArrowUpRight, Loader2, Plus
+  ChevronRight, ArrowUpRight, Loader2
 } from 'lucide-react';
 import { useAgency } from '../context';
 
@@ -275,61 +275,6 @@ export default function AgencyDashboardPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Link
-          href="/agency/clients/new"
-          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-            <Plus className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div>
-            <p className="font-medium">Add Client</p>
-            <p className="text-xs text-[#fafaf9]/40">Manually add a client</p>
-          </div>
-        </Link>
-        
-        <Link
-          href="/agency/settings/branding"
-          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-            <span className="text-blue-400 text-lg">🎨</span>
-          </div>
-          <div>
-            <p className="font-medium">Customize Brand</p>
-            <p className="text-xs text-[#fafaf9]/40">Logo, colors & more</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/agency/settings/pricing"
-          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-            <span className="text-amber-400 text-lg">💰</span>
-          </div>
-          <div>
-            <p className="font-medium">Set Pricing</p>
-            <p className="text-xs text-[#fafaf9]/40">Client plan prices</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/agency/settings/domain"
-          className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-            <span className="text-purple-400 text-lg">🌐</span>
-          </div>
-          <div>
-            <p className="font-medium">Custom Domain</p>
-            <p className="text-xs text-[#fafaf9]/40">Use your own domain</p>
-          </div>
-        </Link>
       </div>
     </div>
   );
