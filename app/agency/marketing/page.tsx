@@ -113,7 +113,6 @@ export default function MarketingWebsitePage() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
@@ -151,7 +150,6 @@ export default function MarketingWebsitePage() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
@@ -186,11 +184,16 @@ export default function MarketingWebsitePage() {
     if (!customDomain.trim() || !agency) return;
     
     setSavingDomain(true);
+    console.log('🌐 Saving domain:', customDomain.trim());
+    console.log('🔗 Backend URL:', backendUrl);
+    console.log('🏢 Agency ID:', agency.id);
+    
     try {
       const token = localStorage.getItem('auth_token');
+      const apiUrl = `${backendUrl}/api/agency/${agency.id}/domain`;
+      console.log('📡 API URL:', apiUrl);
       
-      // Use the new automated domain endpoint (adds to Vercel automatically)
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -199,7 +202,10 @@ export default function MarketingWebsitePage() {
         body: JSON.stringify({ domain: customDomain.trim() }),
       });
       
+      console.log('📥 Response status:', response.status);
+      
       const data = await response.json();
+      console.log('📦 Response data:', data);
       
       if (response.ok && data.success) {
         setDomainStatus('pending');
@@ -212,11 +218,12 @@ export default function MarketingWebsitePage() {
         }
         await refreshAgency();
       } else {
-        console.error('Failed to save domain:', data.error);
+        console.error('❌ Failed to save domain:', data.error);
         alert(data.error || 'Failed to save domain');
       }
     } catch (error) {
-      console.error('Failed to save domain:', error);
+      console.error('❌ Failed to save domain:', error);
+      alert('Failed to connect to server. Check console for details.');
     } finally {
       setSavingDomain(false);
     }
@@ -926,12 +933,9 @@ export default function MarketingWebsitePage() {
                     type="text"
                     value={customDomain}
                     onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="www.yourdomain.com"
+                    placeholder="yourdomain.com"
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
                   />
-                  <p className="mt-1.5 text-xs text-[#fafaf9]/40">
-                    Enter your domain without https://
-                  </p>
                 </div>
                 <button
                   onClick={handleSaveCustomDomain}
