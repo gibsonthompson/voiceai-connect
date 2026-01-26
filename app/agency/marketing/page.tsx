@@ -17,6 +17,7 @@ import {
   Save,
   Sun,
   Moon,
+  Wand2,
 } from 'lucide-react';
 import { useAgency } from '../context';
 
@@ -230,6 +231,113 @@ export default function MarketingWebsitePage() {
       console.error('Failed to remove domain:', error);
     } finally {
       setSavingDomain(false);
+    }
+  };
+
+  const [extractingColors, setExtractingColors] = useState(false);
+
+  // Extract colors from logo
+  const extractColorsFromLogo = async () => {
+    if (!branding.logoUrl) return;
+    
+    setExtractingColors(true);
+    
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load logo'));
+        img.src = branding.logoUrl!;
+      });
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      // Sample at reasonable size
+      const size = Math.min(img.width, img.height, 100);
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      const imageData = ctx.getImageData(0, 0, size, size);
+      const pixels = imageData.data;
+      
+      // Collect colors (skip transparent and near-white/black)
+      const colors: { r: number; g: number; b: number; count: number }[] = [];
+      
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const a = pixels[i + 3];
+        
+        // Skip transparent pixels
+        if (a < 128) continue;
+        
+        // Skip near-white and near-black
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+        if (luminance > 240 || luminance < 15) continue;
+        
+        // Quantize to reduce similar colors
+        const qr = Math.round(r / 32) * 32;
+        const qg = Math.round(g / 32) * 32;
+        const qb = Math.round(b / 32) * 32;
+        
+        const existing = colors.find(c => c.r === qr && c.g === qg && c.b === qb);
+        if (existing) {
+          existing.count++;
+        } else {
+          colors.push({ r: qr, g: qg, b: qb, count: 1 });
+        }
+      }
+      
+      // Sort by frequency
+      colors.sort((a, b) => b.count - a.count);
+      
+      if (colors.length === 0) {
+        console.log('No suitable colors found in logo');
+        return;
+      }
+      
+      // Convert to hex
+      const toHex = (c: { r: number; g: number; b: number }) => 
+        '#' + [c.r, c.g, c.b].map(x => Math.min(255, x).toString(16).padStart(2, '0')).join('');
+      
+      // Darken a color
+      const darken = (c: { r: number; g: number; b: number }, amount: number) => ({
+        r: Math.max(0, c.r - amount),
+        g: Math.max(0, c.g - amount),
+        b: Math.max(0, c.b - amount),
+      });
+      
+      // Lighten a color
+      const lighten = (c: { r: number; g: number; b: number }, amount: number) => ({
+        r: Math.min(255, c.r + amount),
+        g: Math.min(255, c.g + amount),
+        b: Math.min(255, c.b + amount),
+      });
+      
+      // Use top color as primary
+      const primary = colors[0];
+      setPrimaryColor(toHex(primary));
+      
+      // Secondary is darker version of primary
+      setSecondaryColor(toHex(darken(primary, 40)));
+      
+      // Accent is second most common or lighter version of primary
+      if (colors.length > 1) {
+        setAccentColor(toHex(colors[1]));
+      } else {
+        setAccentColor(toHex(lighten(primary, 60)));
+      }
+      
+    } catch (error) {
+      console.error('Failed to extract colors:', error);
+    } finally {
+      setExtractingColors(false);
     }
   };
 
@@ -554,12 +662,37 @@ export default function MarketingWebsitePage() {
 
           {/* Color Presets */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
-            <h3 className="font-medium text-[#fafaf9] mb-2">Color Presets</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-[#fafaf9]">Color Presets</h3>
+              {branding.logoUrl && (
+                <button
+                  onClick={extractColorsFromLogo}
+                  disabled={extractingColors}
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 transition-all"
+                >
+                  {extractingColors ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-3 w-3" />
+                  )}
+                  Extract from Logo
+                </button>
+              )}
+            </div>
             <p className="text-sm text-[#fafaf9]/50 mb-4">
-              Choose a preset or customize individual colors below
+              {branding.logoUrl 
+                ? 'Extract colors from your logo or choose a preset below'
+                : 'Choose a preset or customize individual colors below'}
             </p>
 
             <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {!branding.logoUrl && (
+                <div className="col-span-4 md:col-span-8 mb-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-xs text-amber-400">
+                    💡 Upload a logo in Settings → Branding to enable automatic color extraction
+                  </p>
+                </div>
+              )}
               {colorPresets.map((preset) => (
                 <button
                   key={preset.name}
