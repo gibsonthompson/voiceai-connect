@@ -62,7 +62,7 @@ export default function MarketingWebsitePage() {
       try {
         // Pass domain parameter to get project-specific values (not generic 76.76.21.21)
         const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
-        const response = await fetch(`${backendUrl}/api/domain/dns-config${domainParam}`);
+        const response = await fetch(`/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
           setDnsConfig({
@@ -81,7 +81,7 @@ export default function MarketingWebsitePage() {
       }
     };
     fetchDnsConfig();
-  }, [backendUrl, agency?.marketing_domain]);
+  }, [agency?.marketing_domain]);
 
   useEffect(() => {
     if (agency) {
@@ -188,19 +188,16 @@ export default function MarketingWebsitePage() {
     
     setSavingDomain(true);
     console.log('🌐 Saving domain:', customDomain.trim());
-    console.log('🔗 Backend URL:', backendUrl);
     console.log('🏢 Agency ID:', agency.id);
     
     try {
-      const token = localStorage.getItem('auth_token');
-      const apiUrl = `${backendUrl}/api/agency/${agency.id}/domain`;
+      const apiUrl = `/api/agency/${agency.id}/domain`;
       console.log('📡 API URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ domain: customDomain.trim() }),
       });
@@ -213,11 +210,16 @@ export default function MarketingWebsitePage() {
       if (response.ok && data.success) {
         setDomainStatus('pending');
         // Update DNS config if returned
-        if (data.dns_instructions?.primary) {
-          const primary = data.dns_instructions.primary;
-          if (primary.type === 'A') {
-            setDnsConfig(prev => prev ? { ...prev, aRecord: primary.value } : { aRecord: primary.value, cname: 'cname.vercel-dns.com' });
-          }
+        if (data.dns_config) {
+          setDnsConfig({
+            aRecord: data.dns_config.a_record,
+            cname: data.dns_config.cname_record
+          });
+        } else if (data.dns_records) {
+          setDnsConfig({
+            aRecord: data.dns_records[0]?.value || '76.76.21.21',
+            cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
+          });
         }
         await refreshAgency();
       } else {
@@ -237,18 +239,22 @@ export default function MarketingWebsitePage() {
     
     setVerifyingDomain(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain/verify`, {
+      const response = await fetch(`/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
       });
       
       const data = await response.json();
       setDomainStatus(data.verified ? 'verified' : 'pending');
       
       if (!data.verified) {
-        // Show helpful message
+        // Update DNS records if returned
+        if (data.dns_records) {
+          setDnsConfig({
+            aRecord: data.dns_records[0]?.value || '76.76.21.21',
+            cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
+          });
+        }
         alert(data.message || 'DNS records not found. Please check your configuration.');
       }
       
@@ -272,19 +278,13 @@ export default function MarketingWebsitePage() {
     }
     
     console.log('🗑️ Removing domain...');
-    console.log('📡 API URL:', `${backendUrl}/api/agency/${agency.id}/domain`);
+    console.log('📡 API URL:', `/api/agency/${agency.id}/domain`);
     
     setSavingDomain(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      console.log('🔑 Token exists:', !!token);
-      
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+      const response = await fetch(`/api/agency/${agency.id}/domain`, {
         method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       
       console.log('📥 Response status:', response.status);

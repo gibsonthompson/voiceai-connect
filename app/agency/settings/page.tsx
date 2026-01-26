@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { 
   Upload, Check, AlertCircle, ExternalLink,
-  Palette, CreditCard, Globe, Building, Loader2, DollarSign,
-  Copy, RefreshCw, Trash2
+  Palette, CreditCard, Building, Loader2, DollarSign,
+  Copy
 } from 'lucide-react';
 import { useAgency } from '../context';
 
-type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'domain';
+type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -43,43 +43,12 @@ export default function AgencySettingsPage() {
   const [limitPro, setLimitPro] = useState('150');
   const [limitGrowth, setLimitGrowth] = useState('500');
   
-  // Domain state
-  const [customDomain, setCustomDomain] = useState('');
-  const [domainSaving, setDomainSaving] = useState(false);
-  const [domainVerifying, setDomainVerifying] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-
-  // Fetch DNS config when domain changes
-  useEffect(() => {
-    const fetchDnsConfig = async () => {
-      try {
-        // Use Next.js API route (same-origin, no CORS issues)
-        const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
-        const response = await fetch(`/api/domain/dns-config${domainParam}`);
-        if (response.ok) {
-          const data = await response.json();
-          setDnsConfig({
-            aRecord: data.a_record || '76.76.21.21',
-            cname: data.cname_record || 'cname.vercel-dns.com'
-          });
-          console.log('📋 DNS Config loaded:', data.source, data.a_record);
-        }
-      } catch (error) {
-        console.error('Failed to fetch DNS config:', error);
-        setDnsConfig({
-          aRecord: '76.76.21.21',
-          cname: 'cname.vercel-dns.com'
-        });
-      }
-    };
-    fetchDnsConfig();
-  }, [agency?.marketing_domain]);
 
   // Initialize form values when agency loads
   useEffect(() => {
@@ -96,7 +65,6 @@ export default function AgencySettingsPage() {
       setLimitStarter((agency.limit_starter || 50).toString());
       setLimitPro((agency.limit_pro || 150).toString());
       setLimitGrowth((agency.limit_growth || 500).toString());
-      setCustomDomain(agency.marketing_domain || '');
     }
   }, [agency]);
 
@@ -105,7 +73,6 @@ export default function AgencySettingsPage() {
     { id: 'branding' as SettingsTab, label: 'Branding', icon: Palette },
     { id: 'pricing' as SettingsTab, label: 'Client Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
-    { id: 'domain' as SettingsTab, label: 'Custom Domain', icon: Globe },
   ];
 
   const copyToClipboard = (text: string, key: string) => {
@@ -180,141 +147,6 @@ export default function AgencySettingsPage() {
     }
   };
 
-  // Domain Management Functions
-  const handleAddDomain = async () => {
-    if (!agency || !customDomain.trim()) return;
-    
-    setDomainSaving(true);
-    setError(null);
-
-    try {
-      console.log('🌐 Adding domain:', customDomain.trim());
-      console.log('📡 API URL:', `/api/agency/${agency.id}/domain`);
-      
-      // Use Next.js API route (same-origin, no CORS issues)
-      const response = await fetch(`/api/agency/${agency.id}/domain`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ domain: customDomain.trim() }),
-      });
-
-      console.log('📥 Response status:', response.status);
-      const data = await response.json();
-      console.log('📦 Response data:', data);
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to add domain');
-      }
-
-      // Update DNS config with project-specific values from the response
-      if (data.dns_config) {
-        setDnsConfig({
-          aRecord: data.dns_config.a_record,
-          cname: data.dns_config.cname_record
-        });
-        console.log('📋 Updated DNS config:', data.dns_config.a_record);
-      } else if (data.dns_records) {
-        setDnsConfig({
-          aRecord: data.dns_records[0]?.value || '76.76.21.21',
-          cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
-        });
-      }
-
-      await refreshAgency();
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      console.error('❌ Add domain error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add domain');
-    } finally {
-      setDomainSaving(false);
-    }
-  };
-
-  const handleVerifyDomain = async () => {
-    if (!agency) return;
-    
-    setDomainVerifying(true);
-    setError(null);
-
-    try {
-      // Use Next.js API route (same-origin, no CORS issues)
-      const response = await fetch(`/api/agency/${agency.id}/domain/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await response.json();
-      
-      if (data.verified) {
-        await refreshAgency();
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      } else if (data.dnsConfigured) {
-        setError('DNS configured! SSL certificate is being issued. Try again in 1-2 minutes.');
-      } else {
-        // Update DNS records if returned
-        if (data.dns_records) {
-          setDnsConfig({
-            aRecord: data.dns_records[0]?.value || '76.76.21.21',
-            cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
-          });
-        }
-        setError(data.message || 'DNS records not found. Please check your configuration.');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
-    } finally {
-      setDomainVerifying(false);
-    }
-  };
-
-  const handleRemoveDomain = async () => {
-    if (!agency) {
-      console.log('❌ No agency');
-      return;
-    }
-    
-    if (!confirm('Are you sure you want to remove this custom domain?')) {
-      console.log('❌ User cancelled');
-      return;
-    }
-    
-    console.log('🗑️ Removing domain...');
-    console.log('📡 API URL:', `/api/agency/${agency.id}/domain`);
-    
-    setDomainSaving(true);
-    setError(null);
-
-    try {
-      // Use Next.js API route (same-origin, no CORS issues)
-      const response = await fetch(`/api/agency/${agency.id}/domain`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      console.log('📥 Response status:', response.status);
-      const data = await response.json();
-      console.log('📦 Response data:', data);
-
-      if (response.ok && data.success) {
-        setCustomDomain('');
-        await refreshAgency();
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      } else {
-        throw new Error(data.error || 'Failed to remove domain');
-      }
-    } catch (err) {
-      console.error('❌ Remove domain error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to remove domain');
-    } finally {
-      setDomainSaving(false);
-    }
-  };
-
   const handleStripeConnect = async () => {
     if (!agency) return;
     
@@ -348,9 +180,6 @@ export default function AgencySettingsPage() {
       </div>
     );
   }
-
-  const hasDomain = !!agency?.marketing_domain;
-  const domainVerified = agency?.domain_verified;
 
   return (
     <div className="p-6 lg:p-8">
@@ -707,186 +536,8 @@ export default function AgencySettingsPage() {
               </div>
             )}
 
-            {/* Domain Tab */}
-            {activeTab === 'domain' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-1">Custom Domain</h3>
-                  <p className="text-sm text-[#fafaf9]/50">
-                    Use your own domain for your marketing website and client signup pages.
-                  </p>
-                </div>
-
-                {!hasDomain ? (
-                  // No domain configured - show input
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Domain Name</label>
-                      <input
-                        type="text"
-                        value={customDomain}
-                        onChange={(e) => setCustomDomain(e.target.value)}
-                        placeholder="yourdomain.com"
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <button
-                      onClick={handleAddDomain}
-                      disabled={!customDomain.trim() || domainSaving}
-                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {domainSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Globe className="h-4 w-4" />
-                      )}
-                      Add Custom Domain
-                    </button>
-                  </div>
-                ) : (
-                  // Domain configured - show status and DNS instructions
-                  <div className="space-y-4">
-                    {/* Domain Status Card */}
-                    <div className={`rounded-xl border p-4 ${
-                      domainVerified 
-                        ? 'border-emerald-500/30 bg-emerald-500/10' 
-                        : 'border-amber-500/30 bg-amber-500/10'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {domainVerified ? (
-                            <Check className="h-5 w-5 text-emerald-400" />
-                          ) : (
-                            <AlertCircle className="h-5 w-5 text-amber-400" />
-                          )}
-                          <div>
-                            <p className={`font-medium ${domainVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
-                              {domainVerified ? 'Domain Connected' : 'Pending Verification'}
-                            </p>
-                            <p className="text-sm text-[#fafaf9]/70 font-mono">{agency.marketing_domain}</p>
-                          </div>
-                        </div>
-                        {domainVerified && (
-                          <a
-                            href={`https://${agency.marketing_domain}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* DNS Instructions (show when pending) */}
-                    {!domainVerified && (
-                      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                        <h4 className="font-medium mb-3">DNS Configuration</h4>
-                        <p className="text-sm text-[#fafaf9]/50 mb-4">
-                          Add the following DNS records with your domain registrar:
-                        </p>
-                        
-                        <div className="space-y-3">
-                          {/* A Record */}
-                          <div className="grid grid-cols-3 gap-4 text-sm p-3 rounded-lg bg-white/[0.02]">
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
-                              <p className="text-[#fafaf9] font-mono font-medium">A</p>
-                            </div>
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
-                              <p className="text-[#fafaf9] font-mono">@</p>
-                            </div>
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-[#fafaf9] font-mono text-xs">{dnsConfig?.aRecord || '76.76.21.21'}</p>
-                                <button
-                                  onClick={() => copyToClipboard(dnsConfig?.aRecord || '76.76.21.21', 'arecord')}
-                                  className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
-                                >
-                                  {copied === 'arecord' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* CNAME Record */}
-                          <p className="text-xs text-[#fafaf9]/40">Optional: Add www redirect</p>
-                          <div className="grid grid-cols-3 gap-4 text-sm p-3 rounded-lg bg-white/[0.02]">
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
-                              <p className="text-[#fafaf9] font-mono font-medium">CNAME</p>
-                            </div>
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
-                              <p className="text-[#fafaf9] font-mono">www</p>
-                            </div>
-                            <div>
-                              <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-[#fafaf9] font-mono text-xs">{dnsConfig?.cname || 'cname.vercel-dns.com'}</p>
-                                <button
-                                  onClick={() => copyToClipboard(dnsConfig?.cname || 'cname.vercel-dns.com', 'cname')}
-                                  className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
-                                >
-                                  {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-[#fafaf9]/40 mt-4">
-                          DNS changes can take up to 48 hours to propagate worldwide.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3">
-                      {!domainVerified && (
-                        <button
-                          onClick={handleVerifyDomain}
-                          disabled={domainVerifying}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50"
-                        >
-                          {domainVerifying ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
-                          Verify Domain
-                        </button>
-                      )}
-                      <button
-                        onClick={handleRemoveDomain}
-                        disabled={domainSaving}
-                        className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove Domain
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Current URL Info */}
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                  <p className="text-sm text-[#fafaf9]/50 mb-2">Your current marketing URL:</p>
-                  <p className="font-mono text-sm">
-                    {hasDomain && domainVerified 
-                      ? `https://${agency.marketing_domain}`
-                      : `https://${agency?.slug}.${platformDomain}`
-                    }
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Save Button - Not shown for domain or payments tabs */}
-            {activeTab !== 'payments' && activeTab !== 'domain' && (
+            {/* Save Button - Not shown for payments tab */}
+            {activeTab !== 'payments' && (
               <div className="mt-8 pt-6 border-t border-white/[0.06] flex justify-end">
                 <button
                   onClick={handleSave}
