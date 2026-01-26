@@ -297,9 +297,11 @@ export default function AgencyLeadsPage() {
           </div>
           <div className="grid gap-3 p-5 sm:grid-cols-3">
             {LEAD_TIPS.map((tip, index) => (
-              <Link
+              <a
                 key={index}
                 href={tip.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -310,7 +312,7 @@ export default function AgencyLeadsPage() {
                 </div>
                 <h4 className="font-medium text-sm mb-1 line-clamp-2">{tip.title}</h4>
                 <p className="text-xs text-[#fafaf9]/40 line-clamp-2">{tip.description}</p>
-              </Link>
+              </a>
             ))}
           </div>
         </div>
