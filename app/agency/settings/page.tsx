@@ -55,17 +55,22 @@ export default function AgencySettingsPage() {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
-  // Fetch DNS config on mount
+  // Fetch DNS config when domain changes
   useEffect(() => {
     const fetchDnsConfig = async () => {
+      if (!backendUrl) return;
+      
       try {
-        const response = await fetch(`${backendUrl}/api/domain/dns-config`);
+        // Pass domain parameter to get project-specific values (not generic 76.76.21.21)
+        const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
+        const response = await fetch(`${backendUrl}/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
           setDnsConfig({
             aRecord: data.a_record || '76.76.21.21',
             cname: data.cname_record || 'cname.vercel-dns.com'
           });
+          console.log('📋 DNS Config loaded:', data.source, data.a_record);
         }
       } catch (error) {
         console.error('Failed to fetch DNS config:', error);
@@ -75,8 +80,8 @@ export default function AgencySettingsPage() {
         });
       }
     };
-    if (backendUrl) fetchDnsConfig();
-  }, [backendUrl]);
+    fetchDnsConfig();
+  }, [backendUrl, agency?.marketing_domain]);
 
   // Initialize form values when agency loads
   useEffect(() => {
@@ -205,6 +210,15 @@ export default function AgencySettingsPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to add domain');
+      }
+
+      // Update DNS config with project-specific values from the response
+      if (data.dns_config) {
+        setDnsConfig({
+          aRecord: data.dns_config.a_record,
+          cname: data.dns_config.cname_record
+        });
+        console.log('📋 Updated DNS config:', data.dns_config.source, data.dns_config.a_record);
       }
 
       await refreshAgency();

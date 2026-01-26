@@ -56,17 +56,20 @@ export default function MarketingWebsitePage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
 
-  // Fetch DNS config on mount
+  // Fetch DNS config when domain changes
   useEffect(() => {
     const fetchDnsConfig = async () => {
       try {
-        const response = await fetch(`${backendUrl}/api/domain/dns-config`);
+        // Pass domain parameter to get project-specific values (not generic 76.76.21.21)
+        const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
+        const response = await fetch(`${backendUrl}/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
           setDnsConfig({
             aRecord: data.a_record || '76.76.21.21',
             cname: data.cname_record || 'cname.vercel-dns.com'
           });
+          console.log('📋 DNS Config loaded:', data.source, data.a_record);
         }
       } catch (error) {
         console.error('Failed to fetch DNS config:', error);
@@ -78,7 +81,7 @@ export default function MarketingWebsitePage() {
       }
     };
     fetchDnsConfig();
-  }, [backendUrl]);
+  }, [backendUrl, agency?.marketing_domain]);
 
   useEffect(() => {
     if (agency) {
