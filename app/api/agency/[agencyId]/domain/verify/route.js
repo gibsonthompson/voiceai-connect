@@ -20,7 +20,9 @@ const VERCEL_IPS = [
 
 export async function POST(request, { params }) {
   try {
-    const { agencyId } = params
+    const { agencyId } = await params
+
+    console.log(`✅ Verify domain request for agency ${agencyId}`)
 
     // Get agency's domain
     const { data: agency, error } = await supabase
@@ -37,7 +39,7 @@ export async function POST(request, { params }) {
     }
 
     const domain = agency.marketing_domain
-    console.log(`✅ Verifying domain "${domain}" for agency ${agencyId}`)
+    console.log(`✅ Verifying domain "${domain}"`)
 
     // Check Vercel domain status
     const vercelStatus = await checkVercelDomainStatus(domain)

@@ -12,7 +12,7 @@ const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
 export async function POST(request, { params }) {
   try {
-    const { agencyId } = params
+    const { agencyId } = await params
     const { domain } = await request.json()
 
     if (!domain) {
@@ -116,14 +116,21 @@ export async function POST(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { agencyId } = params
+    const { agencyId } = await params
+
+    console.log(`🗑️ DELETE request for agency ${agencyId}`)
 
     // Get current domain
-    const { data: agency } = await supabase
+    const { data: agency, error: fetchError } = await supabase
       .from('agencies')
       .select('marketing_domain')
       .eq('id', agencyId)
       .single()
+
+    if (fetchError) {
+      console.error('Fetch error:', fetchError)
+      return NextResponse.json({ error: 'Agency not found' }, { status: 404 })
+    }
 
     if (!agency?.marketing_domain) {
       return NextResponse.json({ error: 'No domain to remove' }, { status: 404 })
@@ -160,9 +167,11 @@ export async function DELETE(request, { params }) {
       .eq('id', agencyId)
 
     if (dbError) {
+      console.error('Database error:', dbError)
       return NextResponse.json({ error: 'Failed to remove domain' }, { status: 500 })
     }
 
+    console.log(`✅ Domain removed: ${domain}`)
     return NextResponse.json({ success: true, removed_domain: domain })
 
   } catch (error) {
