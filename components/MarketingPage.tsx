@@ -228,7 +228,7 @@ function Navigation({ config }: NavProps) {
           
           <div className="nav-actions">
             <a href={`tel:${config.footer.phone}`} className="btn-ghost">Call Us</a>
-            <Link href="/client/signup" className="btn-primary">Start Free Trial</Link>
+            <Link href="/signup" className="btn-primary">Start Free Trial</Link>
           </div>
           
           <button className="mobile-menu-toggle" aria-label="Toggle menu">
@@ -296,7 +296,7 @@ function HeroSection({ config }: { config: MarketingConfig }) {
 
           {/* CTAs */}
           <div className="hero-ctas">
-            <Link href="/client/signup" className="btn-large btn-primary">Start Free Trial - 7 Days</Link>
+            <Link href="/signup" className="btn-large btn-primary">Start Free Trial - 7 Days</Link>
             <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>
           </div>
         </div>
@@ -416,7 +416,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
         </div>
 
         <div className="cta-box">
-          <Link href="/client/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
+          <Link href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
           <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -782,7 +782,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <Link href="/client/signup" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>
+              <Link href="/signup" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>
                 Start 7-Day Free Trial
               </Link>
               {tier.isPopular && (
@@ -878,7 +878,7 @@ function FinalCTASection({ config }: { config: MarketingConfig }) {
             )}
 
             <div className="cta-box-secondary">
-              <Link href="/client/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
+              <Link href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
               <div className="cta-benefits">
                 <span>✓ Setup in 10 minutes</span>
                 <span>✓ No credit card required</span>
@@ -993,7 +993,7 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
     <div className={`sticky-cta ${visible ? 'visible' : ''}`}>
       <span className="sticky-cta-text">Ready to try {branding.name}?</span>
       <div className="sticky-cta-actions">
-        <Link href="/client/signup" className="btn-primary btn-small">Start Free Trial</Link>
+        <Link href="/signup" className="btn-primary btn-small">Start Free Trial</Link>
         {hero.demoPhone && (
           <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
             <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>
