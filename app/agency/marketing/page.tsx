@@ -49,8 +49,36 @@ export default function MarketingWebsitePage() {
   const [savingColors, setSavingColors] = useState(false);
   const [colorsSaved, setColorsSaved] = useState(false);
 
+  // DNS config (fetched from backend)
+  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
+
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
+
+  // Fetch DNS config on mount
+  useEffect(() => {
+    const fetchDnsConfig = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/api/domain/dns-config`);
+        if (response.ok) {
+          const data = await response.json();
+          setDnsConfig({
+            aRecord: data.a_record || '76.76.21.21',
+            cname: data.cname_record || 'cname.vercel-dns.com'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch DNS config:', error);
+        // Use defaults
+        setDnsConfig({
+          aRecord: '76.76.21.21',
+          cname: 'cname.vercel-dns.com'
+        });
+      }
+    };
+    fetchDnsConfig();
+  }, [backendUrl]);
 
   useEffect(() => {
     if (agency) {
@@ -160,20 +188,32 @@ export default function MarketingWebsitePage() {
     setSavingDomain(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
+      // Use the new automated domain endpoint (adds to Vercel automatically)
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ marketing_domain: customDomain.trim().toLowerCase() }),
+        body: JSON.stringify({ domain: customDomain.trim() }),
       });
       
-      if (response.ok) {
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
         setDomainStatus('pending');
+        // Update DNS config if returned
+        if (data.dns_instructions?.primary) {
+          const primary = data.dns_instructions.primary;
+          if (primary.type === 'A') {
+            setDnsConfig(prev => prev ? { ...prev, aRecord: primary.value } : { aRecord: primary.value, cname: 'cname.vercel-dns.com' });
+          }
+        }
         await refreshAgency();
+      } else {
+        console.error('Failed to save domain:', data.error);
+        alert(data.error || 'Failed to save domain');
       }
     } catch (error) {
       console.error('Failed to save domain:', error);
@@ -188,7 +228,6 @@ export default function MarketingWebsitePage() {
     setVerifyingDomain(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
@@ -197,6 +236,12 @@ export default function MarketingWebsitePage() {
       
       const data = await response.json();
       setDomainStatus(data.verified ? 'verified' : 'pending');
+      
+      if (!data.verified) {
+        // Show helpful message
+        alert(data.message || 'DNS records not found. Please check your configuration.');
+      }
+      
       await refreshAgency();
     } catch (error) {
       console.error('Failed to verify domain:', error);
@@ -208,18 +253,18 @@ export default function MarketingWebsitePage() {
   const handleRemoveDomain = async () => {
     if (!agency) return;
     
+    if (!confirm('Are you sure you want to remove this custom domain?')) {
+      return;
+    }
+    
     setSavingDomain(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ marketing_domain: null, domain_verified: false }),
+      // Use the new automated domain endpoint (removes from Vercel automatically)
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       
       if (response.ok) {
@@ -937,36 +982,94 @@ export default function MarketingWebsitePage() {
                   <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
                     <h4 className="font-medium text-[#fafaf9] mb-3">DNS Configuration</h4>
                     <p className="text-sm text-[#fafaf9]/50 mb-4">
-                      Add the following CNAME record to your domain&apos;s DNS settings:
+                      Add the following DNS records with your domain registrar:
                     </p>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
-                          <p className="text-[#fafaf9] font-mono">CNAME</p>
-                        </div>
-                        <div>
-                          <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
-                          <p className="text-[#fafaf9] font-mono">
-                            {customDomain.startsWith('www.') ? 'www' : '@'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-[#fafaf9] font-mono text-xs truncate">
-                              cname.{platformDomain}
-                            </p>
-                            <button
-                              onClick={() => copyToClipboard(`cname.${platformDomain}`, 'cname')}
-                              className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
-                            >
-                              {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                            </button>
+                    
+                    {/* Show different instructions based on domain type */}
+                    {customDomain.startsWith('www.') ? (
+                      // WWW subdomain - just CNAME
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-4 text-sm p-3 rounded-lg bg-white/[0.02]">
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
+                            <p className="text-[#fafaf9] font-mono font-medium">CNAME</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
+                            <p className="text-[#fafaf9] font-mono">www</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[#fafaf9] font-mono text-xs">{dnsConfig?.cname || 'cname.vercel-dns.com'}</p>
+                              <button
+                                onClick={() => copyToClipboard(dnsConfig?.cname || 'cname.vercel-dns.com', 'cname')}
+                                className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
+                              >
+                                {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      // Apex domain - needs A record
+                      <div className="space-y-3">
+                        {/* A Record for apex */}
+                        <div className="grid grid-cols-3 gap-4 text-sm p-3 rounded-lg bg-white/[0.02]">
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
+                            <p className="text-[#fafaf9] font-mono font-medium">A</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
+                            <p className="text-[#fafaf9] font-mono">@</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[#fafaf9] font-mono text-xs">{dnsConfig?.aRecord || '76.76.21.21'}</p>
+                              <button
+                                onClick={() => copyToClipboard(dnsConfig?.aRecord || '76.76.21.21', 'arecord')}
+                                className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
+                              >
+                                {copied === 'arecord' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Optional CNAME for www redirect */}
+                        <p className="text-xs text-[#fafaf9]/40 mt-2">Optional: Add www redirect</p>
+                        <div className="grid grid-cols-3 gap-4 text-sm p-3 rounded-lg bg-white/[0.02]">
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Type</p>
+                            <p className="text-[#fafaf9] font-mono font-medium">CNAME</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Name</p>
+                            <p className="text-[#fafaf9] font-mono">www</p>
+                          </div>
+                          <div>
+                            <p className="text-[#fafaf9]/50 text-xs uppercase mb-1">Value</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[#fafaf9] font-mono text-xs">{dnsConfig?.cname || 'cname.vercel-dns.com'}</p>
+                              <button
+                                onClick={() => copyToClipboard(dnsConfig?.cname || 'cname.vercel-dns.com', 'cname')}
+                                className="text-[#fafaf9]/50 hover:text-[#fafaf9]"
+                              >
+                                {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-[#fafaf9]/40 mt-4">
+                      DNS changes can take up to 48 hours to propagate worldwide.
+                    </p>
+                    
                     <div className="mt-4 flex gap-3">
                       <button
                         onClick={handleVerifyDomain}
