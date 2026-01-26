@@ -15,16 +15,20 @@ import {
   Palette,
   Type,
   DollarSign,
-  Phone,
-  FileText,
-  Settings2
+  Settings2,
+  Save,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 import { useAgency } from '../context';
 
+type ActiveTab = 'overview' | 'content' | 'theme' | 'domain';
+
 export default function MarketingWebsitePage() {
-  const { agency, branding } = useAgency();
+  const { agency, branding, refreshAgency } = useAgency();
   const [copied, setCopied] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'domain' | 'content'>('overview');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   
   // Domain state
   const [customDomain, setCustomDomain] = useState('');
@@ -32,14 +36,34 @@ export default function MarketingWebsitePage() {
   const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<'none' | 'pending' | 'verified'>('none');
 
+  // Content state
+  const [tagline, setTagline] = useState('');
+  const [headline, setHeadline] = useState('');
+  const [subheadline, setSubheadline] = useState('');
+  const [savingContent, setSavingContent] = useState(false);
+  const [contentSaved, setContentSaved] = useState(false);
+
+  // Theme state
+  const [websiteTheme, setWebsiteTheme] = useState<'auto' | 'light' | 'dark'>('auto');
+  const [savingTheme, setSavingTheme] = useState(false);
+  const [themeSaved, setThemeSaved] = useState(false);
+
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
 
   useEffect(() => {
-    // Load existing custom domain if set
-    if (agency?.marketing_domain) {
-      setCustomDomain(agency.marketing_domain);
-      setDomainStatus(agency.domain_verified ? 'verified' : 'pending');
+    if (agency) {
+      // Load domain
+      if (agency.marketing_domain) {
+        setCustomDomain(agency.marketing_domain);
+        setDomainStatus(agency.domain_verified ? 'verified' : 'pending');
+      }
+      // Load content
+      setTagline(agency.company_tagline || '');
+      setHeadline(agency.website_headline || '');
+      setSubheadline(agency.website_subheadline || '');
+      // Load theme
+      setWebsiteTheme(agency.website_theme || 'auto');
     }
   }, [agency]);
 
@@ -49,22 +73,94 @@ export default function MarketingWebsitePage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleSaveContent = async () => {
+    if (!agency) return;
+    
+    setSavingContent(true);
+    setContentSaved(false);
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          company_tagline: tagline,
+          website_headline: headline,
+          website_subheadline: subheadline,
+        }),
+      });
+      
+      if (response.ok) {
+        await refreshAgency();
+        setContentSaved(true);
+        setTimeout(() => setContentSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save content:', error);
+    } finally {
+      setSavingContent(false);
+    }
+  };
+
+  const handleSaveTheme = async () => {
+    if (!agency) return;
+    
+    setSavingTheme(true);
+    setThemeSaved(false);
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          website_theme: websiteTheme,
+        }),
+      });
+      
+      if (response.ok) {
+        await refreshAgency();
+        setThemeSaved(true);
+        setTimeout(() => setThemeSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save theme:', error);
+    } finally {
+      setSavingTheme(false);
+    }
+  };
+
   const handleSaveCustomDomain = async () => {
-    if (!customDomain.trim()) return;
+    if (!customDomain.trim() || !agency) return;
     
     setSavingDomain(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agency/${agency?.id}/domain`, {
-        method: 'POST',
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ marketing_domain: customDomain.trim().toLowerCase() }),
       });
       
       if (response.ok) {
         setDomainStatus('pending');
+        await refreshAgency();
       }
     } catch (error) {
       console.error('Failed to save domain:', error);
@@ -74,17 +170,23 @@ export default function MarketingWebsitePage() {
   };
 
   const handleVerifyDomain = async () => {
+    if (!agency) return;
+    
     setVerifyingDomain(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agency/${agency?.id}/domain/verify`, {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
         headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
       
       const data = await response.json();
       setDomainStatus(data.verified ? 'verified' : 'pending');
+      await refreshAgency();
     } catch (error) {
       console.error('Failed to verify domain:', error);
     } finally {
@@ -93,18 +195,26 @@ export default function MarketingWebsitePage() {
   };
 
   const handleRemoveDomain = async () => {
+    if (!agency) return;
+    
     setSavingDomain(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/agency/${agency?.id}/domain`, {
-        method: 'DELETE',
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
         headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
+        body: JSON.stringify({ marketing_domain: null, domain_verified: false }),
       });
       
       if (response.ok) {
         setCustomDomain('');
         setDomainStatus('none');
+        await refreshAgency();
       }
     } catch (error) {
       console.error('Failed to remove domain:', error);
@@ -167,11 +277,11 @@ export default function MarketingWebsitePage() {
           <h3 className="font-medium text-[#fafaf9] mb-1">Branding</h3>
           <p className="text-sm text-[#fafaf9]/50 mb-4">Logo, colors, and company name</p>
           <a
-            href="/agency/settings/branding"
+            href="/agency/settings"
             className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
           >
             <Settings2 className="h-4 w-4" />
-            Edit Branding
+            Edit in Settings
           </a>
         </div>
 
@@ -185,11 +295,11 @@ export default function MarketingWebsitePage() {
           <h3 className="font-medium text-[#fafaf9] mb-1">Pricing</h3>
           <p className="text-sm text-[#fafaf9]/50 mb-4">Set your plan prices and limits</p>
           <a
-            href="/agency/settings/pricing"
+            href="/agency/settings"
             className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
           >
             <Settings2 className="h-4 w-4" />
-            Edit Pricing
+            Edit in Settings
           </a>
         </div>
       </div>
@@ -198,19 +308,17 @@ export default function MarketingWebsitePage() {
       <div className="border-b border-white/10 mb-6">
         <nav className="flex gap-6">
           {[
-            { id: 'overview', label: 'Overview', icon: Globe },
-            { id: 'domain', label: 'Custom Domain', icon: LinkIcon },
-            { id: 'content', label: 'Content (Coming Soon)', icon: FileText },
+            { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
+            { id: 'content' as ActiveTab, label: 'Website Content', icon: Type },
+            { id: 'theme' as ActiveTab, label: 'Theme', icon: Palette },
+            { id: 'domain' as ActiveTab, label: 'Custom Domain', icon: LinkIcon },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              disabled={tab.id === 'content'}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-emerald-500 text-emerald-400'
-                  : tab.id === 'content'
-                  ? 'border-transparent text-[#fafaf9]/30 cursor-not-allowed'
                   : 'border-transparent text-[#fafaf9]/50 hover:text-[#fafaf9]/70'
               }`}
             >
@@ -252,7 +360,7 @@ export default function MarketingWebsitePage() {
           {/* Current Settings Preview */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
             <h3 className="font-medium text-[#fafaf9] mb-4">Current Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Brand Name</p>
                 <p className="text-[#fafaf9]">{agency?.name || 'Not set'}</p>
@@ -268,12 +376,219 @@ export default function MarketingWebsitePage() {
                 </div>
               </div>
               <div>
+                <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Theme</p>
+                <p className="text-[#fafaf9] capitalize">{agency?.website_theme || 'Auto'}</p>
+              </div>
+              <div>
                 <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Logo</p>
                 {branding.logoUrl ? (
                   <img src={branding.logoUrl} alt="Logo" className="h-8 w-8 rounded object-contain bg-white/10" />
                 ) : (
                   <span className="text-[#fafaf9]/50">Not uploaded</span>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'content' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+            <h3 className="font-medium text-[#fafaf9] mb-2">Website Content</h3>
+            <p className="text-sm text-[#fafaf9]/50 mb-6">
+              Customize the text that appears on your marketing website
+            </p>
+
+            <div className="space-y-5">
+              {/* Tagline / Badge */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Tagline / Badge
+                </label>
+                <input
+                  type="text"
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  placeholder="AI-Powered Phone Answering"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                />
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  Appears as a badge above your main headline
+                </p>
+              </div>
+
+              {/* Headline */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Main Headline
+                </label>
+                <input
+                  type="text"
+                  value={headline}
+                  onChange={(e) => setHeadline(e.target.value)}
+                  placeholder="Never Miss Another Call"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                />
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  The main headline in your hero section
+                </p>
+              </div>
+
+              {/* Subheadline */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Subheadline
+                </label>
+                <input
+                  type="text"
+                  value={subheadline}
+                  onChange={(e) => setSubheadline(e.target.value)}
+                  placeholder="AI Receptionist Starting at $49/month"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                />
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  Appears below the headline with pricing info
+                </p>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+              {contentSaved && (
+                <span className="flex items-center gap-2 text-sm text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  Content saved
+                </span>
+              )}
+              <button
+                onClick={handleSaveContent}
+                disabled={savingContent}
+                className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+              >
+                {savingContent ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Content
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'theme' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+            <h3 className="font-medium text-[#fafaf9] mb-2">Website Theme</h3>
+            <p className="text-sm text-[#fafaf9]/50 mb-6">
+              Choose how your marketing website looks
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Auto */}
+              <button
+                onClick={() => setWebsiteTheme('auto')}
+                className={`relative rounded-xl border p-5 text-left transition-all ${
+                  websiteTheme === 'auto'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                }`}
+              >
+                {websiteTheme === 'auto' && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="h-5 w-5 text-emerald-400" />
+                  </div>
+                )}
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 mb-3">
+                  <Monitor className="h-5 w-5 text-[#fafaf9]/70" />
+                </div>
+                <h4 className="font-medium text-[#fafaf9] mb-1">Auto</h4>
+                <p className="text-xs text-[#fafaf9]/50">
+                  Automatically detect theme based on your logo background
+                </p>
+              </button>
+
+              {/* Light */}
+              <button
+                onClick={() => setWebsiteTheme('light')}
+                className={`relative rounded-xl border p-5 text-left transition-all ${
+                  websiteTheme === 'light'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                }`}
+              >
+                {websiteTheme === 'light' && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="h-5 w-5 text-emerald-400" />
+                  </div>
+                )}
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white mb-3">
+                  <Sun className="h-5 w-5 text-amber-500" />
+                </div>
+                <h4 className="font-medium text-[#fafaf9] mb-1">Light</h4>
+                <p className="text-xs text-[#fafaf9]/50">
+                  Clean, professional look with light backgrounds
+                </p>
+              </button>
+
+              {/* Dark */}
+              <button
+                onClick={() => setWebsiteTheme('dark')}
+                className={`relative rounded-xl border p-5 text-left transition-all ${
+                  websiteTheme === 'dark'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                }`}
+              >
+                {websiteTheme === 'dark' && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="h-5 w-5 text-emerald-400" />
+                  </div>
+                )}
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900 mb-3">
+                  <Moon className="h-5 w-5 text-blue-400" />
+                </div>
+                <h4 className="font-medium text-[#fafaf9] mb-1">Dark</h4>
+                <p className="text-xs text-[#fafaf9]/50">
+                  Modern, premium look with dark backgrounds
+                </p>
+              </button>
+            </div>
+
+            {/* Save Button */}
+            <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+              {themeSaved && (
+                <span className="flex items-center gap-2 text-sm text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  Theme saved
+                </span>
+              )}
+              <button
+                onClick={handleSaveTheme}
+                disabled={savingTheme}
+                className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+              >
+                {savingTheme ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Theme
+              </button>
+            </div>
+          </div>
+
+          {/* Theme Note */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-400 text-sm">About Auto Theme</p>
+                <p className="text-sm text-[#fafaf9]/50 mt-1">
+                  Auto mode detects your logo's background color. If your logo has a dark background, your website will use dark mode. If your logo has a light or transparent background, your website will use light mode.
+                </p>
               </div>
             </div>
           </div>
@@ -440,18 +755,6 @@ export default function MarketingWebsitePage() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {activeTab === 'content' && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 mx-auto mb-4">
-            <FileText className="h-6 w-6 text-[#fafaf9]/50" />
-          </div>
-          <h3 className="font-medium text-[#fafaf9] mb-2">Content Editor Coming Soon</h3>
-          <p className="text-sm text-[#fafaf9]/50 max-w-md mx-auto">
-            You'll be able to customize headlines, descriptions, testimonials, FAQs, and more directly from this dashboard.
-          </p>
         </div>
       )}
     </div>

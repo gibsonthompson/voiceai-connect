@@ -196,6 +196,7 @@ interface NavProps {
 
 function Navigation({ config }: NavProps) {
   const { branding } = config;
+  const isDark = config.theme === 'dark';
   
   return (
     <nav className="navbar">
@@ -203,7 +204,16 @@ function Navigation({ config }: NavProps) {
         <div className="nav-content">
           <Link href="/" className="logo">
             {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt={branding.name} className="logo-image" />
+              <div 
+                className="logo-wrapper"
+                style={{ 
+                  backgroundColor: branding.logoBackgroundColor || 'transparent',
+                  padding: branding.logoBackgroundColor ? '8px 12px' : '0',
+                  borderRadius: '8px',
+                }}
+              >
+                <img src={branding.logoUrl} alt={branding.name} className="logo-image" />
+              </div>
             ) : (
               <span className="logo-text">{branding.name}</span>
             )}
@@ -218,7 +228,7 @@ function Navigation({ config }: NavProps) {
           
           <div className="nav-actions">
             <a href={`tel:${config.footer.phone}`} className="btn-ghost">Call Us</a>
-            <a href="/start" className="btn-primary">Start Free Trial</a>
+            <Link href="/client/signup" className="btn-primary">Start Free Trial</Link>
           </div>
           
           <button className="mobile-menu-toggle" aria-label="Toggle menu">
@@ -257,23 +267,25 @@ function HeroSection({ config }: { config: MarketingConfig }) {
           <p className="hero-subtitle">{hero.description}</p>
 
           {/* Demo CTA */}
-          <div className="demo-cta">
-            <div className="demo-box">
-              <div className="demo-icon" style={{ color: 'white' }}>
-                {Icons.headphones}
-              </div>
-              <div className="demo-content">
-                <h3>EXPERIENCE IT LIVE:</h3>
-                <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="demo-phone">
-                  <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>
-                    {Icons.phone}
-                  </span>
-                  Call: {hero.demoPhone}
-                </a>
-                <p className="demo-instructions">{hero.demoInstructions}</p>
+          {hero.demoPhone && (
+            <div className="demo-cta">
+              <div className="demo-box">
+                <div className="demo-icon" style={{ color: 'white' }}>
+                  {Icons.headphones}
+                </div>
+                <div className="demo-content">
+                  <h3>EXPERIENCE IT LIVE:</h3>
+                  <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="demo-phone">
+                    <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>
+                      {Icons.phone}
+                    </span>
+                    Call: {hero.demoPhone}
+                  </a>
+                  <p className="demo-instructions">{hero.demoInstructions}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Trust Bar */}
           <div className="trust-bar">
@@ -284,7 +296,7 @@ function HeroSection({ config }: { config: MarketingConfig }) {
 
           {/* CTAs */}
           <div className="hero-ctas">
-            <a href="/start" className="btn-large btn-primary">Start Free Trial - 7 Days</a>
+            <Link href="/client/signup" className="btn-large btn-primary">Start Free Trial - 7 Days</Link>
             <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>
           </div>
         </div>
@@ -404,7 +416,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
         </div>
 
         <div className="cta-box">
-          <a href="/start" className="btn-large btn-primary">Start Your 7-Day Free Trial</a>
+          <Link href="/client/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
           <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -770,9 +782,9 @@ function PricingSection({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <a href="/start" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>
+              <Link href="/client/signup" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>
                 Start 7-Day Free Trial
-              </a>
+              </Link>
               {tier.isPopular && (
                 <p className="pricing-recommendation">Most businesses choose {tier.name}</p>
               )}
@@ -847,22 +859,26 @@ function FinalCTASection({ config }: { config: MarketingConfig }) {
           </p>
 
           <div className="final-cta-boxes">
-            <div className="cta-box-primary">
-              <h3>
-                <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.headphones}</span>
-                Try {branding.name} Right Now (30 Seconds)
-              </h3>
-              <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="cta-phone-large">
-                <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.phone}</span>
-                Call: {hero.demoPhone}
-              </a>
-              <p>"Hear it work before you sign up"</p>
-            </div>
+            {hero.demoPhone && (
+              <>
+                <div className="cta-box-primary">
+                  <h3>
+                    <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.headphones}</span>
+                    Try {branding.name} Right Now (30 Seconds)
+                  </h3>
+                  <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="cta-phone-large">
+                    <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.phone}</span>
+                    Call: {hero.demoPhone}
+                  </a>
+                  <p>"Hear it work before you sign up"</p>
+                </div>
 
-            <div className="cta-box-divider">or</div>
+                <div className="cta-box-divider">or</div>
+              </>
+            )}
 
             <div className="cta-box-secondary">
-              <a href="/start" className="btn-large btn-primary">Start Your 7-Day Free Trial</a>
+              <Link href="/client/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
               <div className="cta-benefits">
                 <span>✓ Setup in 10 minutes</span>
                 <span>✓ No credit card required</span>
@@ -898,16 +914,26 @@ function Footer({ config }: { config: MarketingConfig }) {
           <div className="footer-col">
             <div className="footer-logo">
               {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px' }} />
+                <div 
+                  className="logo-wrapper"
+                  style={{ 
+                    backgroundColor: branding.logoBackgroundColor || 'transparent',
+                    padding: branding.logoBackgroundColor ? '8px 12px' : '0',
+                    borderRadius: '8px',
+                    display: 'inline-block',
+                  }}
+                >
+                  <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px' }} />
+                </div>
               ) : (
                 <span>{branding.name}</span>
               )}
             </div>
             <p className="footer-tagline">AI receptionist that never sleeps</p>
             <div className="footer-contact">
-              <p>{footer.address}</p>
-              <p><a href={`tel:${footer.phone}`}>{footer.phone}</a></p>
-              <p><a href={`mailto:${footer.email}`}>{footer.email}</a></p>
+              {footer.address && <p>{footer.address}</p>}
+              {footer.phone && <p><a href={`tel:${footer.phone}`}>{footer.phone}</a></p>}
+              {footer.email && <p><a href={`mailto:${footer.email}`}>{footer.email}</a></p>}
             </div>
           </div>
 
@@ -965,17 +991,15 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
   
   return (
     <div className={`sticky-cta ${visible ? 'visible' : ''}`}>
-      <div className="container">
-        <div className="sticky-cta-content">
-          <span>Ready to try {branding.name}?</span>
-          <div className="sticky-cta-actions">
-            <a href="/start" className="btn-primary btn-small">Start Free Trial</a>
-            <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
-              <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>
-              Call Demo
-            </a>
-          </div>
-        </div>
+      <span className="sticky-cta-text">Ready to try {branding.name}?</span>
+      <div className="sticky-cta-actions">
+        <Link href="/client/signup" className="btn-primary btn-small">Start Free Trial</Link>
+        {hero.demoPhone && (
+          <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
+            <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>
+            Call Demo
+          </a>
+        )}
       </div>
     </div>
   );
@@ -1000,6 +1024,9 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     footer: { ...defaultMarketingConfig.footer, ...partialConfig?.footer },
   };
   
+  // Determine theme
+  const theme = config.theme || 'light';
+  
   // Apply theme colors via CSS variables
   const themeStyle = {
     '--primary-color': config.branding.primaryColor,
@@ -1008,7 +1035,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
   } as React.CSSProperties;
   
   return (
-    <div className="marketing-page" style={themeStyle}>
+    <div className={`marketing-page theme-${theme}`} style={themeStyle}>
       <Navigation config={config} />
       <HeroSection config={config} />
       <StatsSection config={config} />

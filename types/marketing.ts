@@ -1,25 +1,32 @@
 // types/marketing.ts
-// Configuration types for white-label marketing websites
 
-export interface AgencyBranding {
+export interface MarketingBranding {
   name: string;
   logoUrl: string;
-  primaryColor: string;      // e.g., '#122092'
-  primaryHoverColor: string; // e.g., '#0d1666'
-  accentColor: string;       // e.g., '#f6b828'
+  logoBackgroundColor?: string; // Detected from logo or set manually
+  primaryColor: string;
+  primaryHoverColor: string;
+  accentColor: string;
 }
 
 export interface HeroConfig {
-  badge: string;             // e.g., 'Trusted by 200+ businesses'
-  headline: string[];        // Array of lines, e.g., ['Run Your Business.', 'We\'ll Answer Your Calls.']
-  subtitle: string;          // e.g., 'AI Receptionist • $49/Month'
+  badge: string;
+  headline: string[];
+  subtitle: string;
   description: string;
-  demoPhone: string;         // e.g., '770-809-2820'
+  demoPhone: string;
   demoInstructions: string;
-  trustItems: string[];      // e.g., ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering']
+  trustItems: string[];
 }
 
-export interface ProblemCard {
+export interface StatsConfig {
+  setupTime: string;
+  responseTime: string;
+  businessesServed: string;
+  satisfaction: string;
+}
+
+export interface ProblemItem {
   title: string;
   description: string;
 }
@@ -30,7 +37,7 @@ export interface SolutionConfig {
   highlight: string;
 }
 
-export interface StepCard {
+export interface StepItem {
   title: string;
   description: string;
   time: string;
@@ -42,26 +49,25 @@ export interface BenefitItem {
   description: string;
 }
 
-export interface FeatureCard {
+export interface FeatureItem {
   icon: string;
   title: string;
   description: string;
-  highlight?: string;
   integrations?: string[];
+  highlight?: string;
   example?: string;
   stat?: string;
 }
 
-export interface IndustryCard {
+export interface IndustryItem {
   icon: string;
   title: string;
   subtitle: string;
   description: string;
   result: string;
-  link?: string;
 }
 
-export interface TestimonialCard {
+export interface TestimonialItem {
   rating: number;
   headline: string;
   quote: string;
@@ -74,238 +80,256 @@ export interface PricingTier {
   name: string;
   price: number;
   subtitle: string;
-  features: string[];
   isPopular?: boolean;
+  features: string[];
   note?: string;
 }
 
 export interface FAQItem {
   question: string;
-  answer: string;  // Can contain HTML
+  answer: string;
+}
+
+export interface FooterLink {
+  label: string;
+  href: string;
 }
 
 export interface FooterConfig {
   address: string;
   phone: string;
   email: string;
-  productLinks: { label: string; href: string }[];
-  industryLinks: { label: string; href: string }[];
-  companyLinks: { label: string; href: string }[];
-}
-
-export interface StatsConfig {
-  setupTime: string;
-  responseTime: string;
-  businessesServed: string;
-  satisfaction: string;
+  productLinks: FooterLink[];
+  industryLinks: FooterLink[];
+  companyLinks: FooterLink[];
 }
 
 export interface MarketingConfig {
-  branding: AgencyBranding;
+  // Theme: 'auto' detects from logo, 'light' or 'dark' forces theme
+  theme?: 'auto' | 'light' | 'dark';
+  branding: MarketingBranding;
   hero: HeroConfig;
   stats: StatsConfig;
-  problems: ProblemCard[];
+  problems: ProblemItem[];
   solution: SolutionConfig;
-  steps: StepCard[];
+  steps: StepItem[];
   benefits: BenefitItem[];
-  features: FeatureCard[];
-  industries: IndustryCard[];
-  testimonials: TestimonialCard[];
+  features: FeatureItem[];
+  industries: IndustryItem[];
+  testimonials: TestimonialItem[];
   pricing: PricingTier[];
   faqs: FAQItem[];
   footer: FooterConfig;
-  // Feature toggles
-  showIndustries: boolean;
-  showTestimonials: boolean;
-  showComparison: boolean;
+  showIndustries?: boolean;
+  showComparison?: boolean;
+  showTestimonials?: boolean;
 }
 
-// Default configuration (based on CallBird)
+// ============================================================================
+// DEFAULT CONFIG
+// ============================================================================
 export const defaultMarketingConfig: MarketingConfig = {
+  theme: 'light',
   branding: {
     name: 'VoiceAI',
     logoUrl: '',
-    primaryColor: '#122092',
-    primaryHoverColor: '#0d1666',
-    accentColor: '#f6b828',
+    logoBackgroundColor: '',
+    primaryColor: '#10b981',
+    primaryHoverColor: '#059669',
+    accentColor: '#34d399',
   },
   hero: {
-    badge: 'Trusted by 200+ businesses',
-    headline: ['Run Your Business.', "We'll Answer Your Calls."],
-    subtitle: 'AI Receptionist • $49/Month',
-    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup in 10 minutes.',
-    demoPhone: '770-809-2820',
-    demoInstructions: "Tell our AI your business, and it'll answer your test call like it's been your receptionist for years. Try it in 30 seconds.",
+    badge: 'AI-Powered Phone Answering',
+    headline: ['Never Miss', 'Another Call'],
+    subtitle: 'AI Receptionist Starting at $49/month',
+    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.',
+    demoPhone: '',
+    demoInstructions: 'Call now to hear our AI in action.',
     trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
   },
   stats: {
     setupTime: '10 min',
-    responseTime: '1.2 sec',
+    responseTime: '< 1 sec',
     businessesServed: '200+',
     satisfaction: '96%',
   },
   problems: [
     {
-      title: '62% of Business Calls Go Unanswered',
-      description: "You're on a job, with a customer, or driving. The call goes to voicemail.",
+      title: 'Missed Calls = Lost Revenue',
+      description: "I was on another call when a $5,000 job went to voicemail. They called my competitor instead.",
     },
     {
-      title: 'Hiring a Receptionist Costs $3,000+/Month',
-      description: "You can't afford full-time staff, but you need someone to answer professionally.",
+      title: "Can't Answer While Working",
+      description: "I'm elbow-deep in a project when the phone rings. Answer and lose focus, or ignore and lose business?",
     },
     {
-      title: 'Traditional Answering Services Cost $300-500/Mo',
-      description: "They're scripted, robotic, and can't book appointments or access your calendar.",
+      title: 'After-Hours Opportunities Gone',
+      description: "Someone called at 8pm ready to book. By morning, they'd already hired someone else.",
     },
   ],
   solution: {
-    headline: 'Your $49/Month AI Receptionist That Never Sleeps',
+    headline: 'Your 24/7 AI Receptionist',
     paragraphs: [
-      'No more missed opportunities. No more paying thousands for staff. No more generic answering services.',
-      'Our AI answers every call with a human-sounding voice trained specifically on your business. It books appointments, answers questions, and handles emergencies—24/7, 365 days a year.',
+      "Imagine having a professional receptionist who never sleeps, never takes breaks, and answers every call exactly the way you would.",
+      "That's what you get. An AI assistant trained specifically on your business that handles calls while you focus on what matters.",
     ],
-    highlight: "And here's the best part: Every conversation shows up in your app with a full transcript. Plus, you get an instant text summary the moment each call ends.",
+    highlight: "You get a text summary of every call within seconds, plus an app where you can see transcripts, listen to recordings, and manage everything.",
   },
   steps: [
     {
       title: 'Tell Us About Your Business',
-      description: "2-minute signup form. Just your business name, industry, and phone number. That's it.",
+      description: 'Answer a few questions so our AI knows how to represent you perfectly.',
       time: '2 minutes',
     },
     {
-      title: 'We Build Your AI Receptionist',
-      description: 'Our system reads your website, learns your services, and creates your custom AI voice. You can customize the greeting, tone, and what it says.',
+      title: 'We Train Your AI',
+      description: 'Our system creates a custom AI receptionist that sounds natural and knows your business.',
       time: '5 minutes',
     },
     {
-      title: 'Forward Your Calls',
-      description: 'We give you a dedicated number, or forward your existing business line to us. Works with any phone system.',
-      time: '30 seconds',
+      title: 'Get Your Phone Number',
+      description: 'Forward your calls to your new AI number, or use it as a dedicated line.',
+      time: '1 minute',
     },
     {
-      title: 'Download the App',
-      description: 'Available on iOS and Android. See every conversation, listen to call recordings, read transcripts, and manage appointments—all in one place.',
-      time: '2 minutes',
+      title: 'Start Taking Calls',
+      description: 'Your AI handles calls 24/7. You get text summaries and full access via our app.',
+      time: 'Instant',
     },
   ],
   benefits: [
-    { icon: 'smartphone', title: 'Mobile App', description: 'iOS & Android. Access anywhere, anytime. Manage calls on the go.' },
-    { icon: 'phone', title: 'Call Recordings', description: 'Listen to any call anytime. Review quality, train staff, or settle disputes.' },
-    { icon: 'chart', title: 'Analytics Dashboard', description: 'Track call volume, peak times, conversion rates, and customer satisfaction.' },
-    { icon: 'bell', title: 'Instant Alerts', description: 'Get text notifications for every call with customer details and actions taken.' },
+    {
+      icon: 'smartphone',
+      title: 'Mobile App',
+      description: 'See all calls, transcripts, and manage everything from your phone.',
+    },
+    {
+      icon: 'phone',
+      title: 'Instant SMS Summaries',
+      description: 'Get a text within seconds of each call with all the important details.',
+    },
+    {
+      icon: 'chart',
+      title: 'Analytics Dashboard',
+      description: 'Track call volume, peak hours, and customer trends.',
+    },
+    {
+      icon: 'bell',
+      title: 'Smart Notifications',
+      description: 'Get alerted about urgent calls and important opportunities.',
+    },
   ],
   features: [
     {
       icon: 'calendar',
-      title: 'Smart Appointment Booking',
-      description: 'Your AI accesses your Google Calendar, Outlook, or our built-in scheduler in real-time. Customers book appointments during the call. You get a calendar invite. They get a confirmation text.',
-      integrations: ['Google Calendar', 'Outlook', 'Apple Calendar'],
+      title: 'Appointment Booking',
+      description: 'AI checks your real availability and books appointments directly to your calendar.',
+      integrations: ['Google Calendar', 'Outlook', 'Calendly'],
     },
     {
       icon: 'message',
       title: 'Instant Text Summaries',
-      description: 'The second a call ends, you get a text with customer name and contact info, what they wanted, what action was taken, and a link to full transcript.',
-      highlight: 'No more digging through voicemails or missed call lists.',
+      description: 'Within seconds of each call ending, you get a text with all the important details.',
+      highlight: 'Never wait for voicemails or return calls to find out what someone wanted.',
     },
     {
       icon: 'transfer',
-      title: 'Emergency Call Transfer',
-      description: "Our AI knows when to loop you in. Urgent calls, complex questions, or VIP customers get transferred immediately to your cell phone—with full context so you know what the call is about.",
-      example: 'Example: "Transfer all calls with \'emergency\' in them"',
+      title: 'Smart Call Transfer',
+      description: 'Set rules for when calls should be transferred to you immediately.',
+      example: '"If someone says it\'s an emergency or mentions [keyword], transfer to my cell."',
     },
     {
       icon: 'training',
-      title: 'Industry-Specific Training',
-      description: "We don't give you a generic AI. Your receptionist is trained on your website content, service list and pricing, FAQ answers, and booking policies.",
-      highlight: 'It answers questions accurately because it knows YOUR business.',
+      title: 'Trained on YOUR Business',
+      description: "This isn't a generic answering service. Your AI knows your services, hours, service area, and how you like to handle different situations.",
     },
     {
       icon: 'moon',
-      title: 'After-Hours Coverage',
-      description: 'Most new customers call outside 9-5. Our AI answers at 11pm on Saturday just as professionally as 2pm on Tuesday.',
-      stat: 'Real stat: 34% of booked appointments happen after 6pm or on weekends',
+      title: '24/7 Coverage',
+      description: '3am on a Sunday? Holiday weekend? Your AI never sleeps, never takes vacation.',
+      stat: 'Real stat: 34% of our calls come outside business hours.',
     },
     {
       icon: 'mic',
-      title: 'Call Recording & Transcripts',
-      description: 'Every single call is recorded (downloadable MP3), transcribed word-for-word, searchable in your app, and stored securely for 90 days.',
+      title: 'Natural Conversations',
+      description: 'Our AI sounds human, not robotic. Callers often don\'t realize they\'re talking to an AI.',
     },
   ],
   industries: [
     {
       icon: 'wrench',
       title: 'Home Services',
-      subtitle: 'Plumbers • Electricians • HVAC • Contractors',
-      description: "Books service calls, handles emergency requests, and collects job details while you're on site.",
-      result: 'Average result: 23 more appointments/month',
+      subtitle: 'Plumbers, HVAC, Electricians, Roofers',
+      description: "I was losing 3-4 calls a day while on jobs. Now I get a text summary after each call and can call back qualified leads on my lunch break.",
+      result: "→ Captured 47 new leads in first month",
     },
     {
       icon: 'medical',
       title: 'Medical & Dental',
-      subtitle: 'Dentists • Doctors • Chiropractors • Therapists',
-      description: 'HIPAA-compliant appointment booking. Patients get confirmed without tying up your front desk.',
-      result: 'Average result: 40% fewer no-shows',
+      subtitle: 'Clinics, Dentists, Therapists',
+      description: "Patients can book appointments 24/7 now. Our no-show rate dropped because people book when they're thinking about it, not when we're open.",
+      result: "→ 23% increase in appointments booked",
     },
     {
       icon: 'restaurant',
-      title: 'Restaurants & Food',
-      subtitle: 'Restaurants • Cafes • Catering • Food Trucks',
-      description: 'Answer questions about hours, menu items, dietary options, and take-out availability 24/7.',
-      result: 'Average result: 15% increase in orders',
+      title: 'Restaurants',
+      subtitle: 'Restaurants, Catering, Food Services',
+      description: "During the dinner rush, we'd miss 10+ calls. Now every reservation request is captured, and catering inquiries get handled professionally.",
+      result: "→ $8,400 in catering orders from after-hours calls",
     },
     {
       icon: 'briefcase',
       title: 'Professional Services',
-      subtitle: 'Lawyers • Accountants • Consultants • Coaches',
-      description: 'Qualify leads, book consultations, and screen calls so you only talk to serious prospects.',
-      result: 'Average result: 3x more consultations',
+      subtitle: 'Lawyers, Accountants, Consultants',
+      description: "First impressions matter in my business. Having a professional AI answer instead of voicemail has elevated how clients perceive my firm.",
+      result: "→ Client satisfaction up 31%",
     },
     {
       icon: 'store',
-      title: 'Retail & E-Commerce',
-      subtitle: 'Local shops • Boutiques • Service businesses',
-      description: 'Answer product questions, store hours, and availability while you help in-store customers.',
-      result: 'Average result: 28% less abandonment',
+      title: 'Retail & Local Business',
+      subtitle: 'Shops, Salons, Gyms, Studios',
+      description: "People call about hours, availability, pricing—all day long. AI handles the routine stuff so my staff can focus on customers in the store.",
+      result: "→ Staff now focused 100% on in-person customers",
     },
     {
       icon: 'pet',
-      title: 'Veterinary Clinics',
-      subtitle: 'Vets • Animal Hospitals • Grooming',
-      description: 'Book appointments, triage emergency cases, and refill prescription requests automatically.',
-      result: 'Average result: 50+ hours saved/month',
+      title: 'Pet Services',
+      subtitle: 'Vets, Groomers, Pet Sitters',
+      description: "Pet owners call at all hours—emergencies don't wait. Our AI triages calls and knows when to wake me up vs. book a morning appointment.",
+      result: "→ Emergency response time down 65%",
     },
   ],
   testimonials: [
     {
       rating: 5,
-      headline: 'We were missing 30% of our calls before',
-      quote: "Now every patient gets through, our appointment book stays full, and I'm not chained to the front desk. The text summaries are game-changing—I know exactly who called and what they need before I even call back.",
-      authorName: 'Dr. Sarah Chen',
-      authorTitle: 'Riverside Dental Practice',
-      stats: 'Using for 4 months • 487 calls handled',
+      headline: 'Paid for itself in the first week',
+      quote: "First call my AI handled was a $3,200 HVAC replacement. Customer said he almost hung up when it went to voicemail, but the AI caught him. That one call paid for a year of service.",
+      authorName: 'Mike R.',
+      authorTitle: 'HVAC Contractor, Phoenix AZ',
+      stats: 'Using since March 2024 • 847 calls handled',
     },
     {
       rating: 5,
-      headline: 'Setup literally took 8 minutes',
-      quote: "I signed up, forwarded my phone, and calls were being answered before I finished lunch. The first call was a $3,200 kitchen remodel job. Paid for itself in an hour.",
-      authorName: 'Carlos Martinez',
-      authorTitle: 'Elite Home Renovations',
-      stats: 'Using for 2 months • 156 calls • 23 appointments booked',
+      headline: 'Finally have work-life balance',
+      quote: "I used to answer my phone during dinner, on weekends, even on vacation. Now I actually disconnect knowing every call is handled professionally. The text summaries mean I never miss anything important.",
+      authorName: 'Jennifer L.',
+      authorTitle: 'Family Law Attorney, Denver CO',
+      stats: 'Using since January 2024 • 1,200+ calls handled',
     },
     {
       rating: 5,
-      headline: 'Emergency calls get through, routine stuff is handled',
-      quote: "As a vet, I need to know when there's a real emergency. The AI transfers those immediately, but handles appointment bookings and prescription refills automatically. My staff loves it because their phone isn't ringing off the hook.",
-      authorName: 'Dr. James Park',
-      authorTitle: 'Oakwood Animal Hospital',
-      stats: 'Using for 6 months • 892 calls • 4.9/5 rating',
+      headline: 'Better than my old receptionist',
+      quote: "I hate to say it, but my AI handles calls better than the part-time receptionist I had before. Never sick, never distracted, and costs a fraction of the price.",
+      authorName: 'David K.',
+      authorTitle: 'Dental Practice Owner, Austin TX',
+      stats: 'Using since February 2024 • 2,100+ calls handled',
     },
   ],
   pricing: [
     {
       name: 'Starter',
       price: 49,
-      subtitle: 'Perfect for solo operators and small teams',
+      subtitle: 'Perfect for solo operators',
       features: [
         '1 AI phone number',
         'Up to 50 calls per month',
@@ -321,11 +345,11 @@ export const defaultMarketingConfig: MarketingConfig = {
     {
       name: 'Professional',
       price: 99,
-      subtitle: 'For growing businesses with higher call volume',
+      subtitle: 'For growing businesses',
       isPopular: true,
       features: [
         'Everything in Starter, plus:',
-        'Up to 300 calls per month',
+        'Up to 150 calls per month',
         'Advanced appointment booking',
         'Multiple calendar integration',
         'Custom business hours',
@@ -336,54 +360,61 @@ export const defaultMarketingConfig: MarketingConfig = {
       ],
     },
     {
-      name: 'Enterprise',
-      price: 197,
-      subtitle: 'For high-volume and multi-location operations',
+      name: 'Growth',
+      price: 149,
+      subtitle: 'For high-volume operations',
       features: [
         'Everything in Professional, plus:',
-        'Unlimited calls per month',
-        'Up to 5 AI phone numbers',
+        'Up to 500 calls per month',
+        'Up to 3 AI phone numbers',
         'Advanced CRM integration',
         'Custom AI training',
         'Multi-language support',
         'Dedicated account manager',
         'Custom reporting',
-        'Priority 24/7 phone support',
-        'API access',
+        'Priority phone support',
       ],
       note: 'Best value for high call volume',
     },
   ],
   faqs: [
     {
-      question: 'How quickly can I get my AI phone number?',
-      answer: `<p>Your number is ready within <strong>10 minutes</strong> of completing signup. That's not a typo—10 minutes from signup to answering your first call.</p>`,
+      question: 'Do callers know they\'re talking to an AI?',
+      answer: '<p>Most don\'t. Our AI uses natural conversation patterns and voice that sounds human. We\'ve had business owners tell us customers complimented their "new receptionist." That said, if someone directly asks, the AI will be honest—we believe in transparency.</p>',
     },
     {
-      question: 'Does it integrate with my existing calendar?',
-      answer: `<p>Yes! Works with Google Calendar, Microsoft Outlook, Apple Calendar, and our built-in calendar.</p>`,
+      question: 'What if I want the AI to transfer certain calls to me?',
+      answer: '<p>You set the rules. Common ones we see:</p><ul><li>"Transfer if they say it\'s urgent or an emergency"</li><li>"Transfer if they mention they\'re a current customer with a problem"</li><li>"Transfer if the job sounds over $X"</li></ul><p>The AI follows your rules and gets smarter over time.</p>',
     },
     {
-      question: 'What happens if the AI gets a call it can\'t handle?',
-      answer: `<p>Three safety nets: <strong>Instant Transfer</strong> for emergencies, <strong>Take a Message</strong> if you're unavailable, and <strong>Smart Escalation</strong> rules you define.</p>`,
+      question: 'How does appointment booking work?',
+      answer: '<p>The AI connects to your Google Calendar, Outlook, or Calendly. When someone wants to book, it checks your real availability and offers times. No double-booking, no back-and-forth. The appointment appears on your calendar automatically.</p>',
     },
     {
-      question: 'How does the AI know about my business?',
-      answer: `<p>During setup, it reads your website, asks key questions, learns your booking rules, and stores your FAQs. The more you use it, the smarter it gets.</p>`,
+      question: 'What happens if the AI can\'t answer something?',
+      answer: '<p>It handles it gracefully: "I don\'t have that specific information, but I\'d be happy to have [your name] call you back with the details. Can I get your number?" Then you get a text summary so you know exactly what to address.</p>',
     },
     {
-      question: 'Can I customize how calls are answered?',
-      answer: `<p>Absolutely. You control the greeting, voice, responses, and business rules. Changes take effect in under 60 seconds.</p>`,
+      question: 'Can I try it before signing up?',
+      answer: '<p>Absolutely. Call our demo line to experience exactly how it works. Then start your 7-day free trial—no credit card required. If it\'s not for you, just don\'t continue. No commitments, no hassle.</p>',
     },
     {
-      question: 'Do I need to change my phone number?',
-      answer: `<p>No. You can use our dedicated number, forward your existing number, or use a hybrid approach—toggle forwarding on/off from the app.</p>`,
+      question: 'How is this different from a regular answering service?',
+      answer: '<p><strong>Traditional answering services:</strong> Generic scripts, operators handling dozens of businesses, limited hours, no calendar access, $300-600/month.</p><p><strong>Us:</strong> AI trained on YOUR specific business, available 24/7, books directly to your calendar, instant text summaries, full call recordings, and a mobile app—starting at $49/month.</p>',
+    },
+    {
+      question: 'What if I go over my call limit?',
+      answer: '<p>We\'ll let you know when you\'re approaching your limit. You can upgrade mid-cycle, or we\'ll charge a small per-call fee (typically $1-2 per call) for overages. No surprise bills—you\'ll always know before it happens.</p>',
+    },
+    {
+      question: 'Is my data secure?',
+      answer: '<p>Yes. All calls are encrypted. Recordings and transcripts are stored securely. We\'re SOC 2 compliant and follow healthcare-grade privacy practices. We never sell or share your call data.</p>',
     },
   ],
   footer: {
-    address: 'Atlanta, GA',
-    phone: '(678) 316-1454',
-    email: 'hello@example.com',
+    address: '',
+    phone: '',
+    email: '',
     productLinks: [
       { label: 'Features', href: '#features' },
       { label: 'How It Works', href: '#how-it-works' },
@@ -398,11 +429,11 @@ export const defaultMarketingConfig: MarketingConfig = {
     ],
     companyLinks: [
       { label: 'Contact', href: '#' },
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms & Conditions', href: '#' },
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms & Conditions', href: '/terms' },
     ],
   },
   showIndustries: true,
-  showTestimonials: true,
   showComparison: true,
+  showTestimonials: true,
 };
