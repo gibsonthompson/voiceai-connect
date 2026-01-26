@@ -452,138 +452,136 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 {/* Phone Frame */}
                 <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
                 
-                {/* Screen */}
-                <rect x="18" y="18" width="284" height="604" rx="32" fill="#ffffff"/>
-                
-                {/* Status Bar - Colored for PWA feel */}
-                <rect x="18" y="18" width="284" height="36" rx="32" fill="var(--primary-color, #10b981)"/>
-                <text x="160" y="42" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="white">9:41</text>
+                {/* Screen base - fill with primary color to avoid white corners */}
+                <rect x="18" y="18" width="284" height="604" rx="32" fill="var(--primary-color, #10b981)"/>
                 
                 {/* Notch/Dynamic Island */}
-                <rect x="115" y="22" width="90" height="24" rx="12" fill="#1a1a1a"/>
+                <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
                 
-                {/* App Header - Full width PWA style */}
-                <rect x="18" y="54" width="284" height="52" fill="var(--primary-color, #10b981)"/>
+                {/* Status Bar Text */}
+                <text x="160" y="44" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="white">9:41</text>
+                
+                {/* App Header */}
+                <rect x="18" y="56" width="284" height="52" fill="var(--primary-color, #10b981)"/>
                 
                 {/* Back Arrow */}
-                <path d="M38 80 L48 70 L48 72 L40 80 L48 88 L48 90 Z" fill="white"/>
+                <path d="M38 82 L48 72 L48 74 L40 82 L48 90 L48 92 Z" fill="white"/>
                 
                 {/* Header Title */}
-                <text x="160" y="86" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="17" fontWeight="600" fill="white">Call Details</text>
+                <text x="160" y="88" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="17" fontWeight="600" fill="white">Call Details</text>
                 
                 {/* AI Sparkle Icon */}
-                <circle cx="272" cy="80" r="14" fill="rgba(255,255,255,0.2)"/>
-                <text x="272" y="85" textAnchor="middle" fontSize="14">✨</text>
+                <circle cx="272" cy="82" r="14" fill="rgba(255,255,255,0.2)"/>
+                <text x="272" y="87" textAnchor="middle" fontSize="14">✨</text>
                 
-                {/* Content Area */}
-                <rect x="18" y="106" width="284" height="516" fill="#f8fafc"/>
+                {/* Content Area - white background for content */}
+                <rect x="18" y="108" width="284" height="482" fill="#f8fafc"/>
+                
+                {/* Bottom safe area with rounded corners */}
+                <path d="M18 590 L18 598 Q18 622 42 622 L278 622 Q302 622 302 598 L302 590 Z" fill="white"/>
                 
                 {/* Caller Card */}
-                <rect x="30" y="118" width="260" height="88" rx="12" fill="white"/>
+                <rect x="30" y="120" width="260" height="88" rx="12" fill="white"/>
                 
                 {/* Avatar */}
-                <circle cx="66" cy="162" r="24" fill="var(--primary-color, #10b981)"/>
-                <text x="66" y="169" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="18" fontWeight="700" fill="white">JD</text>
+                <circle cx="66" cy="164" r="24" fill="var(--primary-color, #10b981)"/>
+                <text x="66" y="171" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="18" fontWeight="700" fill="white">JD</text>
                 
                 {/* Caller Info */}
-                <text x="102" y="150" fontFamily="system-ui, -apple-system, sans-serif" fontSize="16" fontWeight="600" fill="#1f2937">John Davidson</text>
-                <rect x="212" y="138" width="52" height="18" rx="9" fill="#dcfce7"/>
-                <text x="238" y="150" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#16a34a">Normal</text>
-                <text x="102" y="168" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#6b7280">Today, 2:34 PM</text>
-                <text x="102" y="184" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#6b7280">Duration: 3:42</text>
+                <text x="102" y="152" fontFamily="system-ui, -apple-system, sans-serif" fontSize="16" fontWeight="600" fill="#1f2937">John Davidson</text>
+                <rect x="212" y="140" width="52" height="18" rx="9" fill="#dcfce7"/>
+                <text x="238" y="152" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#16a34a">Normal</text>
+                <text x="102" y="170" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#6b7280">Today, 2:34 PM</text>
+                <text x="102" y="186" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#6b7280">Duration: 3:42</text>
                 
                 {/* Phone Number Card */}
-                <rect x="30" y="218" width="260" height="50" rx="12" fill="white"/>
-                <circle cx="56" cy="243" r="14" fill="#ecfdf5"/>
-                <text x="56" y="248" textAnchor="middle" fontSize="12">📞</text>
-                <text x="80" y="237" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fill="#6b7280">Phone</text>
-                <text x="80" y="253" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="var(--primary-color, #10b981)">(555) 123-4567</text>
+                <rect x="30" y="220" width="260" height="50" rx="12" fill="white"/>
+                <circle cx="56" cy="245" r="14" fill="#ecfdf5"/>
+                <text x="56" y="250" textAnchor="middle" fontSize="12">📞</text>
+                <text x="80" y="239" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fill="#6b7280">Phone</text>
+                <text x="80" y="255" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="var(--primary-color, #10b981)">(555) 123-4567</text>
                 
                 {/* AI Summary Card */}
-                <rect x="30" y="280" width="260" height="158" rx="12" fill="white"/>
+                <rect x="30" y="282" width="260" height="148" rx="12" fill="white"/>
                 
                 {/* AI Summary Header */}
-                <circle cx="50" cy="302" r="10" fill="#f0fdf4"/>
-                <text x="50" y="306" textAnchor="middle" fontSize="9">🤖</text>
-                <text x="68" y="306" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="var(--primary-color, #10b981)">AI Summary</text>
+                <circle cx="50" cy="304" r="10" fill="#f0fdf4"/>
+                <text x="50" y="308" textAnchor="middle" fontSize="9">🤖</text>
+                <text x="68" y="308" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="var(--primary-color, #10b981)">AI Summary</text>
                 
                 {/* Summary Text */}
                 <text fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#374151">
-                  <tspan x="42" y="328">John called to inquire about your</tspan>
+                  <tspan x="42" y="330">John called to inquire about your</tspan>
                   <tspan x="42" dy="16">services. He&apos;s interested in getting</tspan>
                   <tspan x="42" dy="16">a quote for a project starting next</tspan>
-                  <tspan x="42" dy="16">month. Requested a callback on</tspan>
-                  <tspan x="42" dy="16">Tuesday afternoon.</tspan>
+                  <tspan x="42" dy="16">month. Requested a callback.</tspan>
                 </text>
                 
                 {/* Tags */}
-                <rect x="42" y="410" width="68" height="22" rx="11" fill="#dbeafe"/>
-                <text x="76" y="424" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#2563eb">New Lead</text>
+                <rect x="42" y="398" width="68" height="22" rx="11" fill="#dbeafe"/>
+                <text x="76" y="412" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#2563eb">New Lead</text>
                 
-                <rect x="116" y="410" width="72" height="22" rx="11" fill="#fef3c7"/>
-                <text x="152" y="424" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#d97706">Callback</text>
+                <rect x="116" y="398" width="72" height="22" rx="11" fill="#fef3c7"/>
+                <text x="152" y="412" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fontWeight="600" fill="#d97706">Callback</text>
                 
                 {/* Call Recording Card */}
-                <rect x="30" y="450" width="260" height="90" rx="12" fill="white"/>
+                <rect x="30" y="442" width="260" height="86" rx="12" fill="white"/>
                 
                 {/* Recording Header */}
-                <circle cx="50" cy="472" r="10" fill="#fef3c7"/>
-                <text x="50" y="476" textAnchor="middle" fontSize="9">🎙️</text>
-                <text x="68" y="476" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="#1f2937">Call Recording</text>
+                <circle cx="50" cy="464" r="10" fill="#fef3c7"/>
+                <text x="50" y="468" textAnchor="middle" fontSize="9">🎙️</text>
+                <text x="68" y="468" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="#1f2937">Call Recording</text>
                 
                 {/* Waveform */}
-                <rect x="42" y="490" width="236" height="20" rx="4" fill="#f3f4f6"/>
+                <rect x="42" y="482" width="236" height="18" rx="4" fill="#f3f4f6"/>
                 
                 {/* Waveform bars - played */}
                 <g fill="var(--primary-color, #10b981)">
-                  <rect x="48" y="494" width="2" height="12" rx="1"/><rect x="53" y="496" width="2" height="8" rx="1"/>
-                  <rect x="58" y="492" width="2" height="16" rx="1"/><rect x="63" y="495" width="2" height="10" rx="1"/>
-                  <rect x="68" y="493" width="2" height="14" rx="1"/><rect x="73" y="497" width="2" height="6" rx="1"/>
-                  <rect x="78" y="494" width="2" height="12" rx="1"/><rect x="83" y="496" width="2" height="8" rx="1"/>
-                  <rect x="88" y="492" width="2" height="16" rx="1"/><rect x="93" y="498" width="2" height="4" rx="1"/>
-                  <rect x="98" y="495" width="2" height="10" rx="1"/><rect x="103" y="493" width="2" height="14" rx="1"/>
-                  <rect x="108" y="497" width="2" height="6" rx="1"/><rect x="113" y="494" width="2" height="12" rx="1"/>
+                  <rect x="48" y="486" width="2" height="10" rx="1"/><rect x="53" y="488" width="2" height="6" rx="1"/>
+                  <rect x="58" y="484" width="2" height="14" rx="1"/><rect x="63" y="487" width="2" height="8" rx="1"/>
+                  <rect x="68" y="485" width="2" height="12" rx="1"/><rect x="73" y="489" width="2" height="4" rx="1"/>
+                  <rect x="78" y="486" width="2" height="10" rx="1"/><rect x="83" y="488" width="2" height="6" rx="1"/>
+                  <rect x="88" y="484" width="2" height="14" rx="1"/><rect x="93" y="489" width="2" height="4" rx="1"/>
+                  <rect x="98" y="487" width="2" height="8" rx="1"/><rect x="103" y="485" width="2" height="12" rx="1"/>
                 </g>
                 {/* Waveform bars - unplayed */}
                 <g fill="#d1d5db">
-                  <rect x="118" y="496" width="2" height="8" rx="1"/><rect x="123" y="494" width="2" height="12" rx="1"/>
-                  <rect x="128" y="492" width="2" height="16" rx="1"/><rect x="133" y="497" width="2" height="6" rx="1"/>
-                  <rect x="138" y="495" width="2" height="10" rx="1"/><rect x="143" y="493" width="2" height="14" rx="1"/>
-                  <rect x="148" y="497" width="2" height="6" rx="1"/><rect x="153" y="494" width="2" height="12" rx="1"/>
-                  <rect x="158" y="496" width="2" height="8" rx="1"/><rect x="163" y="492" width="2" height="16" rx="1"/>
-                  <rect x="168" y="498" width="2" height="4" rx="1"/><rect x="173" y="495" width="2" height="10" rx="1"/>
-                  <rect x="178" y="493" width="2" height="14" rx="1"/><rect x="183" y="497" width="2" height="6" rx="1"/>
-                  <rect x="188" y="494" width="2" height="12" rx="1"/><rect x="193" y="496" width="2" height="8" rx="1"/>
-                  <rect x="198" y="492" width="2" height="16" rx="1"/><rect x="203" y="498" width="2" height="4" rx="1"/>
-                  <rect x="208" y="494" width="2" height="12" rx="1"/><rect x="213" y="495" width="2" height="10" rx="1"/>
-                  <rect x="218" y="493" width="2" height="14" rx="1"/><rect x="223" y="497" width="2" height="6" rx="1"/>
-                  <rect x="228" y="494" width="2" height="12" rx="1"/><rect x="233" y="496" width="2" height="8" rx="1"/>
-                  <rect x="238" y="492" width="2" height="16" rx="1"/><rect x="243" y="498" width="2" height="4" rx="1"/>
-                  <rect x="248" y="495" width="2" height="10" rx="1"/><rect x="253" y="493" width="2" height="14" rx="1"/>
-                  <rect x="258" y="497" width="2" height="6" rx="1"/><rect x="263" y="494" width="2" height="12" rx="1"/>
-                  <rect x="268" y="496" width="2" height="8" rx="1"/><rect x="273" y="492" width="2" height="16" rx="1"/>
+                  <rect x="108" y="488" width="2" height="6" rx="1"/><rect x="113" y="486" width="2" height="10" rx="1"/>
+                  <rect x="118" y="484" width="2" height="14" rx="1"/><rect x="123" y="489" width="2" height="4" rx="1"/>
+                  <rect x="128" y="487" width="2" height="8" rx="1"/><rect x="133" y="485" width="2" height="12" rx="1"/>
+                  <rect x="138" y="489" width="2" height="4" rx="1"/><rect x="143" y="486" width="2" height="10" rx="1"/>
+                  <rect x="148" y="488" width="2" height="6" rx="1"/><rect x="153" y="484" width="2" height="14" rx="1"/>
+                  <rect x="158" y="489" width="2" height="4" rx="1"/><rect x="163" y="487" width="2" height="8" rx="1"/>
+                  <rect x="168" y="485" width="2" height="12" rx="1"/><rect x="173" y="489" width="2" height="4" rx="1"/>
+                  <rect x="178" y="486" width="2" height="10" rx="1"/><rect x="183" y="488" width="2" height="6" rx="1"/>
+                  <rect x="188" y="484" width="2" height="14" rx="1"/><rect x="193" y="489" width="2" height="4" rx="1"/>
+                  <rect x="198" y="486" width="2" height="10" rx="1"/><rect x="203" y="487" width="2" height="8" rx="1"/>
+                  <rect x="208" y="485" width="2" height="12" rx="1"/><rect x="213" y="489" width="2" height="4" rx="1"/>
+                  <rect x="218" y="486" width="2" height="10" rx="1"/><rect x="223" y="488" width="2" height="6" rx="1"/>
+                  <rect x="228" y="484" width="2" height="14" rx="1"/><rect x="233" y="489" width="2" height="4" rx="1"/>
+                  <rect x="238" y="487" width="2" height="8" rx="1"/><rect x="243" y="485" width="2" height="12" rx="1"/>
+                  <rect x="248" y="489" width="2" height="4" rx="1"/><rect x="253" y="486" width="2" height="10" rx="1"/>
+                  <rect x="258" y="488" width="2" height="6" rx="1"/><rect x="263" y="484" width="2" height="14" rx="1"/>
+                  <rect x="268" y="489" width="2" height="4" rx="1"/><rect x="273" y="486" width="2" height="10" rx="1"/>
                 </g>
                 
                 {/* Time labels */}
-                <text x="42" y="526" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fill="#6b7280">1:24</text>
-                <text x="272" y="526" textAnchor="end" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fill="#6b7280">3:42</text>
+                <text x="42" y="514" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fill="#6b7280">1:24</text>
+                <text x="272" y="514" textAnchor="end" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fill="#6b7280">3:42</text>
                 
                 {/* Play Button */}
-                <circle cx="160" cy="520" r="14" fill="var(--primary-color, #10b981)"/>
-                <path d="M156 513 L168 520 L156 527 Z" fill="white"/>
+                <circle cx="160" cy="508" r="12" fill="var(--primary-color, #10b981)"/>
+                <path d="M157 502 L166 508 L157 514 Z" fill="white"/>
                 
                 {/* Action Buttons */}
-                <rect x="30" y="552" width="125" height="40" rx="20" fill="var(--primary-color, #10b981)"/>
-                <text x="92" y="577" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="white">📞 Call Back</text>
+                <rect x="30" y="540" width="125" height="38" rx="19" fill="var(--primary-color, #10b981)"/>
+                <text x="92" y="564" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fontWeight="600" fill="white">📞 Call Back</text>
                 
-                <rect x="165" y="552" width="125" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="227" y="577" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="#374151">💬 SMS</text>
-                
-                {/* Bottom safe area */}
-                <rect x="18" y="598" width="284" height="24" fill="white"/>
+                <rect x="165" y="540" width="125" height="38" rx="19" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="227" y="564" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fontWeight="600" fill="#374151">💬 SMS</text>
                 
                 {/* Home indicator */}
-                <rect x="120" y="608" width="80" height="4" rx="2" fill="#1a1a1a"/>
+                <rect x="120" y="606" width="80" height="4" rx="2" fill="#1a1a1a"/>
               </svg>
             </div>
           </div>
