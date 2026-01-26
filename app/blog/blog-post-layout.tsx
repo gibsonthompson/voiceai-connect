@@ -277,22 +277,96 @@ export default function BlogPostLayout({
           <div className="grid lg:grid-cols-[1fr_280px] gap-10 max-w-6xl mx-auto">
             {/* Main Content */}
             <div className="max-w-3xl">
-              {/* Prose */}
-              <div className="prose prose-invert prose-lg max-w-none
-                prose-headings:font-semibold prose-headings:tracking-tight
-                prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:scroll-mt-24
-                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:scroll-mt-24
-                prose-p:text-[#fafaf9]/70 prose-p:leading-relaxed
-                prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-[#fafaf9] prose-strong:font-semibold
-                prose-ul:text-[#fafaf9]/70 prose-ol:text-[#fafaf9]/70
+              {/* Prose - WITH PROPER SPACING */}
+              <div className="
+                prose prose-invert prose-lg max-w-none
+                
+                /* Headings */
+                prose-headings:font-semibold 
+                prose-headings:tracking-tight
+                prose-headings:text-[#fafaf9]
+                
+                prose-h2:text-2xl 
+                prose-h2:mt-14 
+                prose-h2:mb-6 
+                prose-h2:pt-6
+                prose-h2:border-t
+                prose-h2:border-white/[0.06]
+                prose-h2:scroll-mt-24
+                
+                prose-h3:text-xl 
+                prose-h3:mt-10 
+                prose-h3:mb-4 
+                prose-h3:scroll-mt-24
+                
+                /* Paragraphs - KEY SPACING FIX */
+                prose-p:text-[#fafaf9]/70 
+                prose-p:leading-relaxed
+                prose-p:mb-6
+                
+                /* Lead paragraph */
+                [&>.lead]:text-xl
+                [&>.lead]:text-[#fafaf9]/80
+                [&>.lead]:leading-relaxed
+                [&>.lead]:mb-8
+                
+                /* Links */
+                prose-a:text-emerald-400 
+                prose-a:no-underline 
+                hover:prose-a:underline
+                
+                /* Bold/Strong */
+                prose-strong:text-[#fafaf9] 
+                prose-strong:font-semibold
+                
+                /* Lists - KEY SPACING FIX */
+                prose-ul:my-6
+                prose-ul:text-[#fafaf9]/70 
+                prose-ol:my-6
+                prose-ol:text-[#fafaf9]/70
+                prose-li:mb-3
+                prose-li:leading-relaxed
                 prose-li:marker:text-emerald-500
-                prose-blockquote:border-l-emerald-500 prose-blockquote:bg-white/[0.02] prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-                prose-code:text-emerald-400 prose-code:bg-white/[0.05] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-[#0a0a0a] prose-pre:border prose-pre:border-white/[0.08]
+                
+                /* Blockquotes */
+                prose-blockquote:border-l-emerald-500 
+                prose-blockquote:bg-white/[0.02] 
+                prose-blockquote:py-1 
+                prose-blockquote:px-4 
+                prose-blockquote:rounded-r-lg
+                prose-blockquote:my-8
+                
+                /* Code */
+                prose-code:text-emerald-400 
+                prose-code:bg-white/[0.05] 
+                prose-code:px-1.5 
+                prose-code:py-0.5 
+                prose-code:rounded 
+                prose-code:before:content-none 
+                prose-code:after:content-none
+                
+                /* Code blocks */
+                prose-pre:bg-[#0a0a0a] 
+                prose-pre:border 
+                prose-pre:border-white/[0.08]
+                prose-pre:my-8
+                
+                /* Tables */
                 prose-table:border-collapse
-                prose-th:border prose-th:border-white/[0.1] prose-th:bg-white/[0.03] prose-th:px-4 prose-th:py-2
-                prose-td:border prose-td:border-white/[0.08] prose-td:px-4 prose-td:py-2
+                prose-table:my-8
+                prose-th:border 
+                prose-th:border-white/[0.1] 
+                prose-th:bg-white/[0.03] 
+                prose-th:px-4 
+                prose-th:py-2
+                prose-td:border 
+                prose-td:border-white/[0.08] 
+                prose-td:px-4 
+                prose-td:py-2
+                
+                /* HR */
+                prose-hr:border-white/[0.08]
+                prose-hr:my-12
               ">
                 {children}
               </div>
@@ -385,11 +459,11 @@ export function Callout({
   };
 
   return (
-    <div className={`my-6 p-5 rounded-xl border ${styles[type]}`}>
+    <div className={`my-8 p-5 rounded-xl border ${styles[type]}`}>
       {title && (
         <p className={`font-semibold mb-2 ${iconColors[type]}`}>{title}</p>
       )}
-      <div className="text-[#fafaf9]/70 text-sm [&>p]:m-0">{children}</div>
+      <div className="text-[#fafaf9]/70 text-sm leading-relaxed [&>p]:m-0">{children}</div>
     </div>
   );
 }
@@ -402,12 +476,12 @@ export function ComparisonTable({
   rows: (string | React.ReactNode)[][] 
 }) {
   return (
-    <div className="my-8 overflow-x-auto">
+    <div className="my-8 overflow-x-auto rounded-xl border border-white/[0.08]">
       <table className="w-full text-sm">
         <thead>
           <tr>
             {headers.map((header, i) => (
-              <th key={i} className="text-left font-semibold px-4 py-3 bg-white/[0.03] border border-white/[0.08]">
+              <th key={i} className="text-left font-semibold px-4 py-3 bg-white/[0.03] border-b border-white/[0.08]">
                 {header}
               </th>
             ))}
@@ -415,9 +489,9 @@ export function ComparisonTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i}>
+            <tr key={i} className="border-b border-white/[0.04] last:border-0">
               {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 border border-white/[0.06] text-[#fafaf9]/70">
+                <td key={j} className="px-4 py-3 text-[#fafaf9]/70">
                   {cell}
                 </td>
               ))}
@@ -443,7 +517,7 @@ export function StepList({
           </div>
           <div>
             <p className="font-semibold text-[#fafaf9]">{step.title}</p>
-            <p className="mt-1 text-sm text-[#fafaf9]/60">{step.description}</p>
+            <p className="mt-1 text-sm text-[#fafaf9]/60 leading-relaxed">{step.description}</p>
           </div>
         </div>
       ))}
