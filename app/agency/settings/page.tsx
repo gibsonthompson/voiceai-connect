@@ -58,12 +58,10 @@ export default function AgencySettingsPage() {
   // Fetch DNS config when domain changes
   useEffect(() => {
     const fetchDnsConfig = async () => {
-      if (!backendUrl) return;
-      
       try {
-        // Pass domain parameter to get project-specific values (not generic 76.76.21.21)
+        // Use Next.js API route (same-origin, no CORS issues)
         const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
-        const response = await fetch(`${backendUrl}/api/domain/dns-config${domainParam}`);
+        const response = await fetch(`/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
           setDnsConfig({
@@ -81,7 +79,7 @@ export default function AgencySettingsPage() {
       }
     };
     fetchDnsConfig();
-  }, [backendUrl, agency?.marketing_domain]);
+  }, [agency?.marketing_domain]);
 
   // Initialize form values when agency loads
   useEffect(() => {
@@ -190,16 +188,14 @@ export default function AgencySettingsPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      
       console.log('🌐 Adding domain:', customDomain.trim());
-      console.log('📡 API URL:', `${backendUrl}/api/agency/${agency.id}/domain`);
+      console.log('📡 API URL:', `/api/agency/${agency.id}/domain`);
       
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+      // Use Next.js API route (same-origin, no CORS issues)
+      const response = await fetch(`/api/agency/${agency.id}/domain`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ domain: customDomain.trim() }),
       });
@@ -218,7 +214,12 @@ export default function AgencySettingsPage() {
           aRecord: data.dns_config.a_record,
           cname: data.dns_config.cname_record
         });
-        console.log('📋 Updated DNS config:', data.dns_config.source, data.dns_config.a_record);
+        console.log('📋 Updated DNS config:', data.dns_config.a_record);
+      } else if (data.dns_records) {
+        setDnsConfig({
+          aRecord: data.dns_records[0]?.value || '76.76.21.21',
+          cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
+        });
       }
 
       await refreshAgency();
@@ -239,11 +240,10 @@ export default function AgencySettingsPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain/verify`, {
+      // Use Next.js API route (same-origin, no CORS issues)
+      const response = await fetch(`/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();
@@ -252,7 +252,16 @@ export default function AgencySettingsPage() {
         await refreshAgency();
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+      } else if (data.dnsConfigured) {
+        setError('DNS configured! SSL certificate is being issued. Try again in 1-2 minutes.');
       } else {
+        // Update DNS records if returned
+        if (data.dns_records) {
+          setDnsConfig({
+            aRecord: data.dns_records[0]?.value || '76.76.21.21',
+            cname: data.dns_records[1]?.value || 'cname.vercel-dns.com'
+          });
+        }
         setError(data.message || 'DNS records not found. Please check your configuration.');
       }
     } catch (err) {
@@ -274,21 +283,16 @@ export default function AgencySettingsPage() {
     }
     
     console.log('🗑️ Removing domain...');
-    console.log('📡 API URL:', `${backendUrl}/api/agency/${agency.id}/domain`);
+    console.log('📡 API URL:', `/api/agency/${agency.id}/domain`);
     
     setDomainSaving(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      console.log('🔑 Token exists:', !!token);
-      
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
+      // Use Next.js API route (same-origin, no CORS issues)
+      const response = await fetch(`/api/agency/${agency.id}/domain`, {
         method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       console.log('📥 Response status:', response.status);
