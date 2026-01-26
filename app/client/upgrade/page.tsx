@@ -279,13 +279,13 @@ export default function UpgradeRequiredPage() {
                     isSelected
                       ? 'ring-4 shadow-xl scale-[1.02]'
                       : 'border-2 border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                  } ${plan.popular ? 'md:-mt-4' : ''}`}
+                  } ${'popular' in plan && plan.popular ? 'md:-mt-4' : ''}`}
                   style={{
                     borderColor: isSelected ? primaryColor : undefined,
                     ringColor: isSelected ? primaryColor : undefined,
                   }}
                 >
-                  {plan.popular && (
+                  {'popular' in plan && plan.popular && (
                     <div 
                       className="absolute -top-3 left-1/2 -translate-x-1/2 text-white px-4 py-1 rounded-full text-xs font-bold"
                       style={{ backgroundColor: primaryColor }}
