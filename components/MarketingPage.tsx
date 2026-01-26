@@ -1,7 +1,7 @@
 // components/MarketingPage.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -417,7 +417,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function AppShowcaseSection({ config }: { config: MarketingConfig }) {
   const { benefits, branding } = config;
-  const benefitIcons: Record<string, JSX.Element> = {
+  const benefitIcons: Record<string, React.ReactElement> = {
     smartphone: Icons.smartphone,
     phone: Icons.phone,
     chart: Icons.chart,
@@ -485,7 +485,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function FeaturesSection({ config }: { config: MarketingConfig }) {
   const { features } = config;
-  const featureIcons: Record<string, JSX.Element> = {
+  const featureIcons: Record<string, React.ReactElement> = {
     calendar: Icons.calendar,
     message: Icons.message,
     transfer: Icons.transfer,
@@ -544,7 +544,7 @@ function FeaturesSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function IndustriesSection({ config }: { config: MarketingConfig }) {
   const { industries } = config;
-  const industryIcons: Record<string, JSX.Element> = {
+  const industryIcons: Record<string, React.ReactElement> = {
     wrench: Icons.wrench,
     medical: Icons.medical,
     restaurant: Icons.restaurant,
