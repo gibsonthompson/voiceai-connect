@@ -830,19 +830,23 @@
 
 .marketing-page .dashboard-mockup {
   background: var(--bg-white);
-  border-radius: 1rem;
-  padding: 0.5rem;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
   box-shadow: var(--shadow-xl);
-  max-width: 600px;
+  max-width: 400px;
   margin: 0 auto;
   border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .marketing-page .dashboard-image {
   width: 100%;
+  max-width: 320px;
   height: auto;
-  border-radius: 0.75rem;
   display: block;
+}
 }
 
 .marketing-page .app-benefits {
