@@ -10,6 +10,7 @@ interface Agency {
   name: string;
   slug: string;
   logo_url: string | null;
+  favicon_url: string | null;
   logo_background_color: string | null;
   primary_color: string;
   secondary_color: string;
@@ -31,6 +32,31 @@ interface Agency {
   support_phone: string | null;
   // Advanced config (JSONB)
   marketing_config?: Partial<MarketingConfig>;
+}
+
+// Set dynamic favicon
+function setFavicon(url: string) {
+  // Remove existing favicons
+  const existingLinks = document.querySelectorAll("link[rel*='icon']");
+  existingLinks.forEach(link => link.remove());
+  
+  // Add new favicon
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  link.href = url;
+  document.head.appendChild(link);
+  
+  // Also add apple-touch-icon
+  const appleLink = document.createElement('link');
+  appleLink.rel = 'apple-touch-icon';
+  appleLink.href = url;
+  document.head.appendChild(appleLink);
+}
+
+// Set dynamic page title
+function setPageTitle(title: string) {
+  document.title = title;
 }
 
 // Detect if a color is dark
@@ -149,6 +175,15 @@ export default function AgencySiteHomePage() {
         
         const data = await response.json();
         setAgency(data.agency);
+        
+        // Set page title
+        setPageTitle(`${data.agency.name} - AI Receptionist`);
+        
+        // Set favicon - prefer favicon_url, fall back to logo_url
+        const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
+        if (faviconUrl) {
+          setFavicon(faviconUrl);
+        }
         
         // Detect logo background color if we have a logo
         if (data.agency.logo_url) {
