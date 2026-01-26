@@ -26,6 +26,14 @@ interface Agency {
   limit_pro: number;
   limit_growth: number;
   created_at: string;
+  // Marketing website content
+  company_tagline: string | null;
+  website_headline: string | null;
+  website_subheadline: string | null;
+  marketing_config: Record<string, unknown> | null;
+  // Theme settings
+  website_theme: 'auto' | 'light' | 'dark' | null;
+  logo_background_color: string | null;
 }
 
 interface User {
