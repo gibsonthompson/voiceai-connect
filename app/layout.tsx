@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://voiceaiconnect.com",
+    url: "https://myvoiceaiconnect.com",
     siteName: "VoiceAI Connect",
     title: "VoiceAI Connect - Launch Your AI Voice Agency",
     description:
@@ -73,9 +73,9 @@ export const metadata: Metadata = {
     title: "VoiceAI Connect - Launch Your AI Voice Agency",
     description:
       "The complete white-label platform to resell AI receptionists under your brand.",
-    creator: "@voiceaiconnect",
+    creator: "@myvoiceaiconnect",
   },
-  metadataBase: new URL("https://voiceaiconnect.com"),
+  metadataBase: new URL("https://myvoiceaiconnect.com"),
 };
 
 export const viewport: Viewport = {

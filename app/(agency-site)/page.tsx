@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Phone, ArrowRight, Loader2, Check, Building, Mail, User, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import MarketingPage from '@/components/MarketingPage';
+import { MarketingConfig } from '@/types/marketing';
 
 interface Agency {
   id: string;
@@ -13,42 +13,33 @@ interface Agency {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  // Marketing config (stored in agency or separate table)
+  marketing_config?: Partial<MarketingConfig>;
+  // Pricing
   price_starter: number;
   price_pro: number;
   price_growth: number;
   limit_starter: number;
   limit_pro: number;
   limit_growth: number;
+  // Contact
+  support_email?: string;
+  support_phone?: string;
+  city?: string;
+  state?: string;
 }
 
-function ClientSignupContent() {
-  const router = useRouter();
-  
-  const [loading, setLoading] = useState(false);
-  const [agencyLoading, setAgencyLoading] = useState(true);
-  const [error, setError] = useState('');
+export default function AgencySiteHomePage() {
   const [agency, setAgency] = useState<Agency | null>(null);
-  
-  const [formData, setFormData] = useState({
-    businessName: '',
-    ownerName: '',
-    email: '',
-    phone: '',
-    password: '',
-    city: '',
-    state: '',
-    industry: 'general',
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Fetch agency info based on current hostname
   useEffect(() => {
     const fetchAgency = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const host = window.location.host;
-        const url = `${backendUrl}/api/agency/by-host?host=${host}`;
-        
-        const response = await fetch(url);
+        const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
         if (!response.ok) {
           throw new Error('Agency not found');
@@ -58,383 +49,146 @@ function ClientSignupContent() {
         setAgency(data.agency);
       } catch (err) {
         console.error('Failed to fetch agency:', err);
-        setError('Unable to load agency information. Please check the URL.');
+        setError('Unable to load. Please check the URL.');
       } finally {
-        setAgencyLoading(false);
+        setLoading(false);
       }
     };
 
     fetchAgency();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agency) return;
-    
-    setLoading(true);
-    setError('');
-
-    try {
-      // Store form data in sessionStorage for the plan selection page
-      sessionStorage.setItem('client_signup_data', JSON.stringify({
-        ...formData,
-        agency_id: agency.id,
-        agency_slug: agency.slug,
-      }));
-
-      router.push('/signup/plan');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-      setLoading(false);
-    }
-  };
-
-  // Helper functions for colors
-  const isLightColor = (hex: string): boolean => {
-    const c = hex.replace('#', '');
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-  };
-
-  const primaryColor = agency?.primary_color || '#2563eb';
-  const accentColor = agency?.accent_color || '#3b82f6';
-  const primaryLight = isLightColor(primaryColor);
-
-  if (agencyLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
-  if (!agency) {
+  if (error || !agency) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-medium mb-2">Agency Not Found</h1>
-          <p className="text-white/50">Please check the URL and try again.</p>
+          <h1 className="text-2xl font-medium text-gray-900 mb-2">Site Not Found</h1>
+          <p className="text-gray-500">Please check the URL and try again.</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
-      {/* Subtle grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+  // Build marketing config from agency data
+  const marketingConfig: Partial<MarketingConfig> = {
+    branding: {
+      name: agency.name,
+      logoUrl: agency.logo_url || '',
+      primaryColor: agency.primary_color || '#122092',
+      primaryHoverColor: adjustColor(agency.primary_color || '#122092', -20),
+      accentColor: agency.accent_color || '#f6b828',
+    },
+    hero: {
+      badge: agency.marketing_config?.hero?.badge || 'Trusted by local businesses',
+      headline: agency.marketing_config?.hero?.headline || ['Run Your Business.', "We'll Answer Your Calls."],
+      subtitle: agency.marketing_config?.hero?.subtitle || `AI Receptionist • Starting at $${agency.price_starter}/Month`,
+      description: agency.marketing_config?.hero?.description || 
+        'Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup in 10 minutes.',
+      demoPhone: agency.marketing_config?.hero?.demoPhone || agency.support_phone || '770-809-2820',
+      demoInstructions: agency.marketing_config?.hero?.demoInstructions ||
+        "Tell our AI your business, and it'll answer your test call like it's been your receptionist for years. Try it in 30 seconds.",
+      trustItems: agency.marketing_config?.hero?.trustItems || ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
+    },
+    pricing: [
+      {
+        name: 'Starter',
+        price: agency.price_starter,
+        subtitle: 'Perfect for solo operators',
+        features: [
+          '1 AI phone number',
+          `Up to ${agency.limit_starter} calls per month`,
+          'Basic appointment booking',
+          'Google Calendar integration',
+          'Emergency call transfer',
+          'Text summaries after each call',
+          'Mobile app access',
+          'Call recordings & transcripts',
+          'Email support',
+        ],
+      },
+      {
+        name: 'Professional',
+        price: agency.price_pro,
+        subtitle: 'For growing businesses',
+        isPopular: true,
+        features: [
+          'Everything in Starter, plus:',
+          `Up to ${agency.limit_pro} calls per month`,
+          'Advanced appointment booking',
+          'Multiple calendar integration',
+          'Custom business hours',
+          'Lead qualification questions',
+          'Priority call transfer rules',
+          'Analytics dashboard',
+          'Priority email support',
+        ],
+      },
+      {
+        name: 'Growth',
+        price: agency.price_growth,
+        subtitle: 'For high-volume operations',
+        features: [
+          'Everything in Professional, plus:',
+          `Up to ${agency.limit_growth} calls per month`,
+          'Up to 3 AI phone numbers',
+          'Advanced CRM integration',
+          'Custom AI training',
+          'Multi-language support',
+          'Dedicated account manager',
+          'Custom reporting',
+          'Priority phone support',
+        ],
+        note: 'Best value for high call volume',
+      },
+    ],
+    footer: {
+      address: agency.city && agency.state ? `${agency.city}, ${agency.state}` : '',
+      phone: agency.support_phone || '',
+      email: agency.support_email || '',
+      productLinks: [
+        { label: 'Features', href: '#features' },
+        { label: 'How It Works', href: '#how-it-works' },
+        { label: 'Pricing', href: '#pricing' },
+        { label: 'FAQ', href: '#faq' },
+      ],
+      industryLinks: [
+        { label: 'Home Services', href: '#' },
+        { label: 'Medical & Dental', href: '#' },
+        { label: 'Restaurants', href: '#' },
+        { label: 'Professional Services', href: '#' },
+      ],
+      companyLinks: [
+        { label: 'Contact', href: `mailto:${agency.support_email || ''}` },
+        { label: 'Privacy Policy', href: '/privacy' },
+        { label: 'Terms & Conditions', href: '/terms' },
+      ],
+    },
+    // Merge any custom config the agency has set
+    ...agency.marketing_config,
+  };
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 rounded-lg object-contain" />
-              ) : (
-                <div 
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Phone className="h-4 w-4" style={{ color: primaryLight ? '#0a0a0a' : '#f5f5f0' }} />
-                </div>
-              )}
-              <span className="text-lg font-medium tracking-tight">{agency.name}</span>
-            </Link>
-            <Link 
-              href="/login"
-              className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
-            >
-              Already have an account? Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="relative pt-32 pb-16 px-6">
-        {/* Background gradient */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.07]"
-            style={{ backgroundColor: primaryColor }}
-          />
-        </div>
-
-        <div className="relative mx-auto max-w-lg">
-          {/* Progress Indicator */}
-          <div className="mb-8 flex items-center justify-center gap-3">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div
-                  className="h-2 w-12 rounded-full transition-colors"
-                  style={{ backgroundColor: s === 1 ? primaryColor : 'rgba(255,255,255,0.1)' }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Card */}
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-medium tracking-tight">Get Your AI Receptionist</h1>
-              <p className="mt-2 text-[#f5f5f0]/50">
-                Start your free trial with {agency.name}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Business Name */}
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Business Name
-                </label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                  <input
-                    name="businessName"
-                    type="text"
-                    placeholder="Acme Plumbing Services"
-                    value={formData.businessName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Owner Name */}
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Your Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                  <input
-                    name="ownerName"
-                    type="text"
-                    placeholder="John Smith"
-                    value={formData.ownerName}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                  />
-                </div>
-              </div>
-              
-              {/* Email & Phone Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="you@business.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                    Phone
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="phone"
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Password
-                </label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                />
-                <p className="mt-1.5 text-xs text-[#f5f5f0]/40">At least 6 characters</p>
-              </div>
-
-              {/* Location Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                    City
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
-                    <input
-                      name="city"
-                      type="text"
-                      placeholder="Atlanta"
-                      value={formData.city}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                    State
-                  </label>
-                  <input
-                    name="state"
-                    type="text"
-                    placeholder="GA"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                    maxLength={2}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors uppercase"
-                  />
-                </div>
-              </div>
-
-              {/* Industry */}
-              <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
-                  Industry
-                </label>
-                <select
-                  name="industry"
-                  value={formData.industry}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-[#f5f5f0] focus:outline-none focus:border-white/20 transition-colors"
-                >
-                  <option value="general">General Business</option>
-                  <option value="home_services">Home Services (Plumbing, HVAC, etc.)</option>
-                  <option value="medical">Medical/Dental</option>
-                  <option value="legal">Legal Services</option>
-                  <option value="real_estate">Real Estate</option>
-                  <option value="restaurant">Restaurant</option>
-                  <option value="salon_spa">Salon/Spa</option>
-                  <option value="automotive">Automotive</option>
-                  <option value="fitness">Fitness</option>
-                  <option value="retail">Retail</option>
-                  <option value="professional_services">Professional Services</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              {error && (
-                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                style={{ 
-                  backgroundColor: primaryColor,
-                  color: primaryLight ? '#0a0a0a' : '#f5f5f0',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Please wait...
-                  </>
-                ) : (
-                  <>
-                    Continue to Plans
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
-              By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors">
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
-
-          {/* Benefits */}
-          <div 
-            className="mt-8 rounded-2xl border p-6"
-            style={{ 
-              borderColor: `${accentColor}33`,
-              backgroundColor: `${accentColor}0D`,
-            }}
-          >
-            <h3 className="font-medium text-[#f5f5f0]">What you&apos;ll get:</h3>
-            <ul className="mt-4 space-y-3">
-              {[
-                'AI receptionist that answers 24/7',
-                'Professional call handling',
-                'Instant SMS notifications',
-                'Detailed call summaries',
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-[#f5f5f0]/70">
-                  <div 
-                    className="flex h-5 w-5 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${accentColor}1A` }}
-                  >
-                    <Check className="h-3 w-3" style={{ color: accentColor }} />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  return <MarketingPage config={marketingConfig} />;
 }
 
-export default function AgencySiteSignupPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
-      </div>
-    }>
-      <ClientSignupContent />
-    </Suspense>
-  );
+// Helper to darken/lighten a hex color
+function adjustColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  return '#' + (
+    0x1000000 +
+    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+    (B < 255 ? (B < 1 ? 0 : B) : 255)
+  ).toString(16).slice(1);
 }
