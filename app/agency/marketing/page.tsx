@@ -14,16 +14,13 @@ import {
   RefreshCw,
   Palette,
   Type,
-  DollarSign,
-  Settings2,
   Save,
   Sun,
   Moon,
-  Monitor
 } from 'lucide-react';
 import { useAgency } from '../context';
 
-type ActiveTab = 'overview' | 'content' | 'theme' | 'domain';
+type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
 export default function MarketingWebsitePage() {
   const { agency, branding, refreshAgency } = useAgency();
@@ -43,10 +40,13 @@ export default function MarketingWebsitePage() {
   const [savingContent, setSavingContent] = useState(false);
   const [contentSaved, setContentSaved] = useState(false);
 
-  // Theme state
-  const [websiteTheme, setWebsiteTheme] = useState<'auto' | 'light' | 'dark'>('auto');
-  const [savingTheme, setSavingTheme] = useState(false);
-  const [themeSaved, setThemeSaved] = useState(false);
+  // Colors state
+  const [primaryColor, setPrimaryColor] = useState('#10b981');
+  const [secondaryColor, setSecondaryColor] = useState('#059669');
+  const [accentColor, setAccentColor] = useState('#34d399');
+  const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>('light');
+  const [savingColors, setSavingColors] = useState(false);
+  const [colorsSaved, setColorsSaved] = useState(false);
 
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
@@ -62,8 +62,11 @@ export default function MarketingWebsitePage() {
       setTagline(agency.company_tagline || '');
       setHeadline(agency.website_headline || '');
       setSubheadline(agency.website_subheadline || '');
-      // Load theme
-      setWebsiteTheme(agency.website_theme || 'auto');
+      // Load colors
+      setPrimaryColor(agency.primary_color || '#10b981');
+      setSecondaryColor(agency.secondary_color || '#059669');
+      setAccentColor(agency.accent_color || '#34d399');
+      setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light');
     }
   }, [agency]);
 
@@ -90,9 +93,9 @@ export default function MarketingWebsitePage() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          company_tagline: tagline,
-          website_headline: headline,
-          website_subheadline: subheadline,
+          company_tagline: tagline || null,
+          website_headline: headline || null,
+          website_subheadline: subheadline || null,
         }),
       });
       
@@ -100,6 +103,9 @@ export default function MarketingWebsitePage() {
         await refreshAgency();
         setContentSaved(true);
         setTimeout(() => setContentSaved(false), 3000);
+      } else {
+        const data = await response.json();
+        console.error('Failed to save content:', data);
       }
     } catch (error) {
       console.error('Failed to save content:', error);
@@ -108,11 +114,11 @@ export default function MarketingWebsitePage() {
     }
   };
 
-  const handleSaveTheme = async () => {
+  const handleSaveColors = async () => {
     if (!agency) return;
     
-    setSavingTheme(true);
-    setThemeSaved(false);
+    setSavingColors(true);
+    setColorsSaved(false);
     
     try {
       const token = localStorage.getItem('auth_token');
@@ -125,19 +131,25 @@ export default function MarketingWebsitePage() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
+          primary_color: primaryColor,
+          secondary_color: secondaryColor,
+          accent_color: accentColor,
           website_theme: websiteTheme,
         }),
       });
       
       if (response.ok) {
         await refreshAgency();
-        setThemeSaved(true);
-        setTimeout(() => setThemeSaved(false), 3000);
+        setColorsSaved(true);
+        setTimeout(() => setColorsSaved(false), 3000);
+      } else {
+        const data = await response.json();
+        console.error('Failed to save colors:', data);
       }
     } catch (error) {
-      console.error('Failed to save theme:', error);
+      console.error('Failed to save colors:', error);
     } finally {
-      setSavingTheme(false);
+      setSavingColors(false);
     }
   };
 
@@ -179,9 +191,7 @@ export default function MarketingWebsitePage() {
       
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       
       const data = await response.json();
@@ -223,6 +233,24 @@ export default function MarketingWebsitePage() {
     }
   };
 
+  // Color presets
+  const colorPresets = [
+    { name: 'Emerald', primary: '#10b981', secondary: '#059669', accent: '#34d399' },
+    { name: 'Blue', primary: '#3b82f6', secondary: '#2563eb', accent: '#60a5fa' },
+    { name: 'Purple', primary: '#8b5cf6', secondary: '#7c3aed', accent: '#a78bfa' },
+    { name: 'Red', primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' },
+    { name: 'Orange', primary: '#f97316', secondary: '#ea580c', accent: '#fb923c' },
+    { name: 'Teal', primary: '#14b8a6', secondary: '#0d9488', accent: '#2dd4bf' },
+    { name: 'Navy', primary: '#122092', secondary: '#0d1666', accent: '#f6b828' },
+    { name: 'Rose', primary: '#f43f5e', secondary: '#e11d48', accent: '#fb7185' },
+  ];
+
+  const applyPreset = (preset: typeof colorPresets[0]) => {
+    setPrimaryColor(preset.primary);
+    setSecondaryColor(preset.secondary);
+    setAccentColor(preset.accent);
+  };
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -234,7 +262,7 @@ export default function MarketingWebsitePage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* Live Site Card */}
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
           <div className="flex items-start justify-between mb-3">
@@ -267,40 +295,32 @@ export default function MarketingWebsitePage() {
           </div>
         </div>
 
-        {/* Branding Card */}
+        {/* Theme Preview Card */}
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
           <div className="flex items-start justify-between mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-              <Palette className="h-5 w-5 text-purple-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20` }}>
+              <Palette className="h-5 w-5" style={{ color: primaryColor }} />
             </div>
           </div>
-          <h3 className="font-medium text-[#fafaf9] mb-1">Branding</h3>
-          <p className="text-sm text-[#fafaf9]/50 mb-4">Logo, colors, and company name</p>
-          <a
-            href="/agency/settings"
-            className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
-          >
-            <Settings2 className="h-4 w-4" />
-            Edit in Settings
-          </a>
-        </div>
-
-        {/* Pricing Card */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-              <DollarSign className="h-5 w-5 text-amber-400" />
+          <h3 className="font-medium text-[#fafaf9] mb-1">Current Theme</h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex gap-1">
+              <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: primaryColor }} title="Primary" />
+              <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: secondaryColor }} title="Secondary" />
+              <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: accentColor }} title="Accent" />
             </div>
+            <span className="text-sm text-[#fafaf9]/50 capitalize flex items-center gap-1">
+              {websiteTheme === 'dark' ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+              {websiteTheme} mode
+            </span>
           </div>
-          <h3 className="font-medium text-[#fafaf9] mb-1">Pricing</h3>
-          <p className="text-sm text-[#fafaf9]/50 mb-4">Set your plan prices and limits</p>
-          <a
-            href="/agency/settings"
-            className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
+          <button
+            onClick={() => setActiveTab('colors')}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
           >
-            <Settings2 className="h-4 w-4" />
-            Edit in Settings
-          </a>
+            <Palette className="h-4 w-4" />
+            Customize Colors
+          </button>
         </div>
       </div>
 
@@ -309,8 +329,8 @@ export default function MarketingWebsitePage() {
         <nav className="flex gap-6">
           {[
             { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
-            { id: 'content' as ActiveTab, label: 'Website Content', icon: Type },
-            { id: 'theme' as ActiveTab, label: 'Theme', icon: Palette },
+            { id: 'content' as ActiveTab, label: 'Content', icon: Type },
+            { id: 'colors' as ActiveTab, label: 'Colors & Theme', icon: Palette },
             { id: 'domain' as ActiveTab, label: 'Custom Domain', icon: LinkIcon },
           ].map((tab) => (
             <button
@@ -337,7 +357,7 @@ export default function MarketingWebsitePage() {
             <h3 className="font-medium text-[#fafaf9] mb-4">Your marketing website includes:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { title: 'Hero Section', desc: 'Eye-catching headline with live demo call button' },
+                { title: 'Hero Section', desc: 'Eye-catching headline with call-to-action buttons' },
                 { title: 'Features Overview', desc: 'Showcase all AI receptionist capabilities' },
                 { title: 'How It Works', desc: '4-step process to get started' },
                 { title: 'Pricing Plans', desc: 'Your Starter, Pro, and Growth tiers' },
@@ -360,31 +380,25 @@ export default function MarketingWebsitePage() {
           {/* Current Settings Preview */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
             <h3 className="font-medium text-[#fafaf9] mb-4">Current Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
-                <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Brand Name</p>
-                <p className="text-[#fafaf9]">{agency?.name || 'Not set'}</p>
+                <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Tagline</p>
+                <p className="text-[#fafaf9] text-sm">{agency?.company_tagline || 'AI-Powered Phone Answering'}</p>
               </div>
               <div>
-                <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Primary Color</p>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="h-6 w-6 rounded border border-white/20"
-                    style={{ backgroundColor: branding.primaryColor || '#10b981' }}
-                  />
-                  <span className="text-[#fafaf9]">{branding.primaryColor || '#10b981'}</span>
-                </div>
+                <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Headline</p>
+                <p className="text-[#fafaf9] text-sm">{agency?.website_headline || 'Never Miss Another Call'}</p>
               </div>
               <div>
                 <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Theme</p>
-                <p className="text-[#fafaf9] capitalize">{agency?.website_theme || 'Auto'}</p>
+                <p className="text-[#fafaf9] text-sm capitalize">{agency?.website_theme === 'dark' ? 'Dark' : 'Light'}</p>
               </div>
               <div>
                 <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-2">Logo</p>
                 {branding.logoUrl ? (
-                  <img src={branding.logoUrl} alt="Logo" className="h-8 w-8 rounded object-contain bg-white/10" />
+                  <img src={branding.logoUrl} alt="Logo" className="h-8 w-auto rounded object-contain bg-white/10 p-1" />
                 ) : (
-                  <span className="text-[#fafaf9]/50">Not uploaded</span>
+                  <span className="text-[#fafaf9]/50 text-sm">Not uploaded</span>
                 )}
               </div>
             </div>
@@ -397,7 +411,7 @@ export default function MarketingWebsitePage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
             <h3 className="font-medium text-[#fafaf9] mb-2">Website Content</h3>
             <p className="text-sm text-[#fafaf9]/50 mb-6">
-              Customize the text that appears on your marketing website
+              Customize the text that appears on your marketing website. Leave blank to use defaults.
             </p>
 
             <div className="space-y-5">
@@ -455,16 +469,18 @@ export default function MarketingWebsitePage() {
 
             {/* Save Button */}
             <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-              {contentSaved && (
-                <span className="flex items-center gap-2 text-sm text-emerald-400">
-                  <Check className="h-4 w-4" />
-                  Content saved
-                </span>
-              )}
+              <div>
+                {contentSaved && (
+                  <span className="flex items-center gap-2 text-sm text-emerald-400">
+                    <Check className="h-4 w-4" />
+                    Content saved successfully
+                  </span>
+                )}
+              </div>
               <button
                 onClick={handleSaveContent}
                 disabled={savingContent}
-                className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
               >
                 {savingContent ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -478,38 +494,16 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {activeTab === 'theme' && (
+      {activeTab === 'colors' && (
         <div className="space-y-6">
+          {/* Theme Selection */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
             <h3 className="font-medium text-[#fafaf9] mb-2">Website Theme</h3>
-            <p className="text-sm text-[#fafaf9]/50 mb-6">
-              Choose how your marketing website looks
+            <p className="text-sm text-[#fafaf9]/50 mb-4">
+              Choose light or dark mode for your marketing website
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Auto */}
-              <button
-                onClick={() => setWebsiteTheme('auto')}
-                className={`relative rounded-xl border p-5 text-left transition-all ${
-                  websiteTheme === 'auto'
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                }`}
-              >
-                {websiteTheme === 'auto' && (
-                  <div className="absolute top-3 right-3">
-                    <Check className="h-5 w-5 text-emerald-400" />
-                  </div>
-                )}
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 mb-3">
-                  <Monitor className="h-5 w-5 text-[#fafaf9]/70" />
-                </div>
-                <h4 className="font-medium text-[#fafaf9] mb-1">Auto</h4>
-                <p className="text-xs text-[#fafaf9]/50">
-                  Automatically detect theme based on your logo background
-                </p>
-              </button>
-
+            <div className="grid grid-cols-2 gap-4">
               {/* Light */}
               <button
                 onClick={() => setWebsiteTheme('light')}
@@ -524,12 +518,12 @@ export default function MarketingWebsitePage() {
                     <Check className="h-5 w-5 text-emerald-400" />
                   </div>
                 )}
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-gray-200 mb-3">
                   <Sun className="h-5 w-5 text-amber-500" />
                 </div>
-                <h4 className="font-medium text-[#fafaf9] mb-1">Light</h4>
+                <h4 className="font-medium text-[#fafaf9] mb-1">Light Mode</h4>
                 <p className="text-xs text-[#fafaf9]/50">
-                  Clean, professional look with light backgrounds
+                  Clean, professional look with white backgrounds
                 </p>
               </button>
 
@@ -550,46 +544,168 @@ export default function MarketingWebsitePage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900 mb-3">
                   <Moon className="h-5 w-5 text-blue-400" />
                 </div>
-                <h4 className="font-medium text-[#fafaf9] mb-1">Dark</h4>
+                <h4 className="font-medium text-[#fafaf9] mb-1">Dark Mode</h4>
                 <p className="text-xs text-[#fafaf9]/50">
                   Modern, premium look with dark backgrounds
                 </p>
               </button>
             </div>
+          </div>
+
+          {/* Color Presets */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+            <h3 className="font-medium text-[#fafaf9] mb-2">Color Presets</h3>
+            <p className="text-sm text-[#fafaf9]/50 mb-4">
+              Choose a preset or customize individual colors below
+            </p>
+
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              {colorPresets.map((preset) => (
+                <button
+                  key={preset.name}
+                  onClick={() => applyPreset(preset)}
+                  className={`p-3 rounded-lg border transition-all hover:scale-105 ${
+                    primaryColor === preset.primary
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex gap-0.5 mb-2 justify-center">
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: preset.primary }} />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: preset.accent }} />
+                  </div>
+                  <p className="text-[10px] text-[#fafaf9]/70 text-center truncate">{preset.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Colors */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+            <h3 className="font-medium text-[#fafaf9] mb-4">Custom Colors</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Primary Color */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Primary Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-white/10 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[#fafaf9] font-mono focus:outline-none focus:border-emerald-500/50"
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  Buttons, links, accents
+                </p>
+              </div>
+
+              {/* Secondary Color */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Secondary Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-white/10 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[#fafaf9] font-mono focus:outline-none focus:border-emerald-500/50"
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  Hover states, gradients
+                </p>
+              </div>
+
+              {/* Accent Color */}
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Accent Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-white/10 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[#fafaf9] font-mono focus:outline-none focus:border-emerald-500/50"
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-[#fafaf9]/40">
+                  Highlights, badges
+                </p>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="mt-6 p-4 rounded-lg border border-white/10 bg-white/[0.02]">
+              <p className="text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-3">Preview</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="px-4 py-2 rounded-full text-sm font-medium text-white"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Primary Button
+                </button>
+                <button
+                  className="px-4 py-2 rounded-full text-sm font-medium text-white"
+                  style={{ backgroundColor: secondaryColor }}
+                >
+                  Secondary Button
+                </button>
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-medium"
+                  style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
+                >
+                  Accent Badge
+                </span>
+              </div>
+            </div>
 
             {/* Save Button */}
             <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
-              {themeSaved && (
-                <span className="flex items-center gap-2 text-sm text-emerald-400">
-                  <Check className="h-4 w-4" />
-                  Theme saved
-                </span>
-              )}
+              <div>
+                {colorsSaved && (
+                  <span className="flex items-center gap-2 text-sm text-emerald-400">
+                    <Check className="h-4 w-4" />
+                    Colors saved successfully
+                  </span>
+                )}
+              </div>
               <button
-                onClick={handleSaveTheme}
-                disabled={savingTheme}
-                className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                onClick={handleSaveColors}
+                disabled={savingColors}
+                className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
               >
-                {savingTheme ? (
+                {savingColors ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                Save Theme
+                Save Colors & Theme
               </button>
-            </div>
-          </div>
-
-          {/* Theme Note */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-400 text-sm">About Auto Theme</p>
-                <p className="text-sm text-[#fafaf9]/50 mt-1">
-                  Auto mode detects your logo's background color. If your logo has a dark background, your website will use dark mode. If your logo has a light or transparent background, your website will use light mode.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -688,7 +804,7 @@ export default function MarketingWebsitePage() {
                   <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
                     <h4 className="font-medium text-[#fafaf9] mb-3">DNS Configuration</h4>
                     <p className="text-sm text-[#fafaf9]/50 mb-4">
-                      Add the following CNAME record to your domain's DNS settings:
+                      Add the following CNAME record to your domain&apos;s DNS settings:
                     </p>
                     <div className="space-y-3">
                       <div className="grid grid-cols-3 gap-4 text-sm">

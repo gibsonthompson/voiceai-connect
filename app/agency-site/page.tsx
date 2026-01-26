@@ -155,10 +155,8 @@ export default function AgencySiteHomePage() {
           const bgColor = await detectLogoBackgroundColor(data.agency.logo_url);
           setDetectedLogoBackground(bgColor);
           
-          // Auto-detect theme based on logo background
-          if (bgColor && isDarkColor(bgColor)) {
-            setDetectedTheme('dark');
-          }
+          // Only set dark theme if explicitly configured (not auto-detect)
+          // Auto now defaults to light for better readability
         }
       } catch (err) {
         console.error('Failed to fetch agency:', err);
@@ -195,15 +193,12 @@ export default function AgencySiteHomePage() {
   const proPrice = (agency.price_pro || 9900) / 100;
   const growthPrice = (agency.price_growth || 14900) / 100;
 
-  // Determine final theme
+  // Determine final theme - default to light unless explicitly set to dark
   let theme: 'light' | 'dark' = 'light';
   if (agency.website_theme === 'dark') {
     theme = 'dark';
-  } else if (agency.website_theme === 'light') {
-    theme = 'light';
-  } else if (agency.website_theme === 'auto' || !agency.website_theme) {
-    theme = detectedTheme;
   }
+  // 'auto' and 'light' both result in light theme for better default experience
 
   // Use stored or detected logo background color
   const logoBackgroundColor = agency.logo_background_color || detectedLogoBackground;
