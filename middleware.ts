@@ -98,7 +98,7 @@ export async function middleware(request: NextRequest) {
       // /signup pages are unified and detect context client-side
       if (pathname === '/' || pathname.startsWith('/get-started')) {
         const url = request.nextUrl.clone();
-        url.pathname = `/(agency-site)${pathname}`;
+        url.pathname = `/agency-site${pathname}`;
         
         return NextResponse.rewrite(url, {
           request: {
@@ -145,7 +145,7 @@ export async function middleware(request: NextRequest) {
     // Only rewrite routes that exist in (agency-site) folder
     if (pathname === '/' || pathname.startsWith('/get-started')) {
       const url = request.nextUrl.clone();
-      url.pathname = `/(agency-site)${pathname}`;
+      url.pathname = `/agency-site${pathname}`;
       
       return NextResponse.rewrite(url, {
         request: {
