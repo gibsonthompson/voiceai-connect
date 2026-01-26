@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, Tag, Share2, Twitter, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
+import { Calendar, Clock, Tag, Twitter, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
 import { useState } from 'react';
+import './article.css';
 
 // ============================================================================
 // WAVEFORM ICON
@@ -277,97 +278,8 @@ export default function BlogPostLayout({
           <div className="grid lg:grid-cols-[1fr_280px] gap-10 max-w-6xl mx-auto">
             {/* Main Content */}
             <div className="max-w-3xl">
-              {/* Prose - WITH PROPER SPACING */}
-              <div className="
-                prose prose-invert prose-lg max-w-none
-                
-                /* Headings */
-                prose-headings:font-semibold 
-                prose-headings:tracking-tight
-                prose-headings:text-[#fafaf9]
-                
-                prose-h2:text-2xl 
-                prose-h2:mt-14 
-                prose-h2:mb-6 
-                prose-h2:pt-6
-                prose-h2:border-t
-                prose-h2:border-white/[0.06]
-                prose-h2:scroll-mt-24
-                
-                prose-h3:text-xl 
-                prose-h3:mt-10 
-                prose-h3:mb-4 
-                prose-h3:scroll-mt-24
-                
-                /* Paragraphs - KEY SPACING FIX */
-                prose-p:text-[#fafaf9]/70 
-                prose-p:leading-relaxed
-                prose-p:mb-6
-                
-                /* Lead paragraph */
-                [&>.lead]:text-xl
-                [&>.lead]:text-[#fafaf9]/80
-                [&>.lead]:leading-relaxed
-                [&>.lead]:mb-8
-                
-                /* Links */
-                prose-a:text-emerald-400 
-                prose-a:no-underline 
-                hover:prose-a:underline
-                
-                /* Bold/Strong */
-                prose-strong:text-[#fafaf9] 
-                prose-strong:font-semibold
-                
-                /* Lists - KEY SPACING FIX */
-                prose-ul:my-6
-                prose-ul:text-[#fafaf9]/70 
-                prose-ol:my-6
-                prose-ol:text-[#fafaf9]/70
-                prose-li:mb-3
-                prose-li:leading-relaxed
-                prose-li:marker:text-emerald-500
-                
-                /* Blockquotes */
-                prose-blockquote:border-l-emerald-500 
-                prose-blockquote:bg-white/[0.02] 
-                prose-blockquote:py-1 
-                prose-blockquote:px-4 
-                prose-blockquote:rounded-r-lg
-                prose-blockquote:my-8
-                
-                /* Code */
-                prose-code:text-emerald-400 
-                prose-code:bg-white/[0.05] 
-                prose-code:px-1.5 
-                prose-code:py-0.5 
-                prose-code:rounded 
-                prose-code:before:content-none 
-                prose-code:after:content-none
-                
-                /* Code blocks */
-                prose-pre:bg-[#0a0a0a] 
-                prose-pre:border 
-                prose-pre:border-white/[0.08]
-                prose-pre:my-8
-                
-                /* Tables */
-                prose-table:border-collapse
-                prose-table:my-8
-                prose-th:border 
-                prose-th:border-white/[0.1] 
-                prose-th:bg-white/[0.03] 
-                prose-th:px-4 
-                prose-th:py-2
-                prose-td:border 
-                prose-td:border-white/[0.08] 
-                prose-td:px-4 
-                prose-td:py-2
-                
-                /* HR */
-                prose-hr:border-white/[0.08]
-                prose-hr:my-12
-              ">
+              {/* Article Content - styled via article.css */}
+              <div className="article-content">
                 {children}
               </div>
 
@@ -447,9 +359,9 @@ export function Callout({
   children: React.ReactNode 
 }) {
   const styles = {
-    info: 'border-blue-500/20 bg-blue-500/[0.05]',
-    tip: 'border-emerald-500/20 bg-emerald-500/[0.05]',
-    warning: 'border-amber-500/20 bg-amber-500/[0.05]',
+    info: 'border-blue-500/30 bg-blue-500/[0.08]',
+    tip: 'border-emerald-500/30 bg-emerald-500/[0.08]',
+    warning: 'border-amber-500/30 bg-amber-500/[0.08]',
   };
 
   const iconColors = {
@@ -459,11 +371,11 @@ export function Callout({
   };
 
   return (
-    <div className={`my-8 p-5 rounded-xl border ${styles[type]}`}>
+    <div className={`my-8 p-6 rounded-xl border ${styles[type]}`}>
       {title && (
-        <p className={`font-semibold mb-2 ${iconColors[type]}`}>{title}</p>
+        <p className={`font-semibold text-lg mb-3 ${iconColors[type]}`}>{title}</p>
       )}
-      <div className="text-[#fafaf9]/70 text-sm leading-relaxed [&>p]:m-0">{children}</div>
+      <div className="text-[#fafaf9]/70 text-base leading-relaxed [&>p]:m-0">{children}</div>
     </div>
   );
 }
@@ -477,11 +389,11 @@ export function ComparisonTable({
 }) {
   return (
     <div className="my-8 overflow-x-auto rounded-xl border border-white/[0.08]">
-      <table className="w-full text-sm">
+      <table className="w-full text-base">
         <thead>
           <tr>
             {headers.map((header, i) => (
-              <th key={i} className="text-left font-semibold px-4 py-3 bg-white/[0.03] border-b border-white/[0.08]">
+              <th key={i} className="text-left font-semibold px-5 py-4 bg-white/[0.04] border-b border-white/[0.08] text-[#fafaf9]">
                 {header}
               </th>
             ))}
@@ -491,7 +403,7 @@ export function ComparisonTable({
           {rows.map((row, i) => (
             <tr key={i} className="border-b border-white/[0.04] last:border-0">
               {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 text-[#fafaf9]/70">
+                <td key={j} className="px-5 py-4 text-[#fafaf9]/70">
                   {cell}
                 </td>
               ))}
@@ -511,13 +423,13 @@ export function StepList({
   return (
     <div className="my-8 space-y-4">
       {steps.map((step, i) => (
-        <div key={i} className="flex gap-4 p-4 rounded-xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-semibold text-sm">
+        <div key={i} className="flex gap-4 p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-lg">
             {i + 1}
           </div>
           <div>
-            <p className="font-semibold text-[#fafaf9]">{step.title}</p>
-            <p className="mt-1 text-sm text-[#fafaf9]/60 leading-relaxed">{step.description}</p>
+            <p className="font-semibold text-lg text-[#fafaf9]">{step.title}</p>
+            <p className="mt-2 text-base text-[#fafaf9]/60 leading-relaxed">{step.description}</p>
           </div>
         </div>
       ))}

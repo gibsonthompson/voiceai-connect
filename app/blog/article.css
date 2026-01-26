@@ -1,0 +1,170 @@
+/* app/blog/article.css */
+/* Blog Article Content Styling */
+
+/* Lead paragraph */
+.article-content > p.lead,
+.article-content > .lead {
+  font-size: 1.25rem;
+  line-height: 1.75;
+  color: rgba(250, 250, 249, 0.8);
+  margin-bottom: 2rem;
+}
+
+/* Regular paragraphs */
+.article-content > p {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: rgba(250, 250, 249, 0.7);
+  margin-bottom: 1.5rem;
+}
+
+/* H2 - Major sections */
+.article-content > h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #fafaf9;
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  scroll-margin-top: 6rem;
+}
+
+.article-content > h2:first-of-type {
+  margin-top: 2rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* H3 - Sub sections */
+.article-content > h3 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #fafaf9;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  scroll-margin-top: 6rem;
+}
+
+/* Unordered lists */
+.article-content > ul {
+  margin: 1.5rem 0 2rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.article-content > ul > li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: rgba(250, 250, 249, 0.7);
+}
+
+.article-content > ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+}
+
+/* Ordered lists */
+.article-content > ol {
+  margin: 1.5rem 0 2rem 0;
+  padding-left: 0;
+  list-style: none;
+  counter-reset: list-counter;
+}
+
+.article-content > ol > li {
+  position: relative;
+  padding-left: 2.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: rgba(250, 250, 249, 0.7);
+  counter-increment: list-counter;
+}
+
+.article-content > ol > li::before {
+  content: counter(list-counter) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* Strong/Bold text */
+.article-content strong {
+  font-weight: 600;
+  color: #fafaf9;
+}
+
+/* Links */
+.article-content a {
+  color: #10b981;
+  text-decoration: none;
+}
+
+.article-content a:hover {
+  text-decoration: underline;
+}
+
+/* Blockquotes */
+.article-content > blockquote {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 4px solid #10b981;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.article-content > blockquote p {
+  margin: 0;
+  font-style: italic;
+  color: rgba(250, 250, 249, 0.8);
+}
+
+/* Code inline */
+.article-content code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.25rem;
+  color: #10b981;
+}
+
+/* Code blocks */
+.article-content > pre {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.article-content > pre code {
+  padding: 0;
+  background: none;
+}
+
+/* Horizontal rule */
+.article-content > hr {
+  margin: 3rem 0;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Quote box styling */
+.article-content > div.quote-box,
+.article-content > .p-5.rounded-xl {
+  margin: 2rem 0;
+}
