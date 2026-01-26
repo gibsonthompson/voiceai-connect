@@ -261,29 +261,47 @@ export default function MarketingWebsitePage() {
   };
 
   const handleRemoveDomain = async () => {
-    if (!agency) return;
-    
-    if (!confirm('Are you sure you want to remove this custom domain?')) {
+    if (!agency) {
+      console.log('❌ No agency');
       return;
     }
+    
+    if (!confirm('Are you sure you want to remove this custom domain?')) {
+      console.log('❌ User cancelled');
+      return;
+    }
+    
+    console.log('🗑️ Removing domain...');
+    console.log('📡 API URL:', `${backendUrl}/api/agency/${agency.id}/domain`);
     
     setSavingDomain(true);
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token exists:', !!token);
       
-      // Use the new automated domain endpoint (removes from Vercel automatically)
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
       });
       
-      if (response.ok) {
+      console.log('📥 Response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+      
+      if (response.ok && data.success) {
         setCustomDomain('');
         setDomainStatus('none');
         await refreshAgency();
+      } else {
+        console.error('❌ Failed to remove domain:', data.error);
+        alert(data.error || 'Failed to remove domain');
       }
     } catch (error) {
-      console.error('Failed to remove domain:', error);
+      console.error('❌ Failed to remove domain:', error);
+      alert('Failed to remove domain. Check console for details.');
     } finally {
       setSavingDomain(false);
     }

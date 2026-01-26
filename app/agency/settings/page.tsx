@@ -52,7 +52,7 @@ export default function AgencySettingsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
   // Fetch DNS config when domain changes
@@ -263,29 +263,48 @@ export default function AgencySettingsPage() {
   };
 
   const handleRemoveDomain = async () => {
-    if (!agency || !confirm('Are you sure you want to remove this custom domain?')) return;
+    if (!agency) {
+      console.log('❌ No agency');
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to remove this custom domain?')) {
+      console.log('❌ User cancelled');
+      return;
+    }
+    
+    console.log('🗑️ Removing domain...');
+    console.log('📡 API URL:', `${backendUrl}/api/agency/${agency.id}/domain`);
     
     setDomainSaving(true);
     setError(null);
 
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token exists:', !!token);
       
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/domain`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
       });
 
-      if (response.ok) {
+      console.log('📥 Response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+
+      if (response.ok && data.success) {
         setCustomDomain('');
         await refreshAgency();
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } else {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to remove domain');
       }
     } catch (err) {
+      console.error('❌ Remove domain error:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove domain');
     } finally {
       setDomainSaving(false);
