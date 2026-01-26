@@ -447,11 +447,150 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
         <div className="app-features">
           <div className="app-screenshot">
             <div className="dashboard-mockup">
-              <img 
-                src="https://i.imgur.com/Y3X06He.png" 
-                alt="Dashboard - Call Management Interface" 
-                className="dashboard-image"
-              />
+              {/* Inline Phone Mockup SVG */}
+              <svg viewBox="0 0 380 760" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '380px', height: 'auto' }}>
+                {/* Phone Frame */}
+                <rect x="10" y="10" width="360" height="740" rx="50" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
+                
+                {/* Screen */}
+                <rect x="22" y="22" width="336" height="716" rx="42" fill="#ffffff"/>
+                
+                {/* Status Bar */}
+                <rect x="22" y="22" width="336" height="44" rx="42" fill="#f8fafc"/>
+                <text x="190" y="48" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="#1f2937">9:41</text>
+                
+                {/* Notch */}
+                <rect x="130" y="22" width="120" height="28" rx="14" fill="#1a1a1a"/>
+                
+                {/* App Header - Uses brand primary color */}
+                <rect x="22" y="66" width="336" height="56" fill="var(--primary-color, #10b981)"/>
+                <text x="190" y="100" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="17" fontWeight="600" fill="white">Call Details</text>
+                
+                {/* Back Arrow */}
+                <path d="M45 94 L55 84 L55 86 L47 94 L55 102 L55 104 Z" fill="white"/>
+                
+                {/* AI Icon */}
+                <circle cx="320" cy="94" r="12" fill="rgba(255,255,255,0.2)"/>
+                <text x="320" y="98" textAnchor="middle" fontSize="12">✨</text>
+                
+                {/* Content Area */}
+                <rect x="22" y="122" width="336" height="616" fill="#f8fafc"/>
+                
+                {/* Caller Card */}
+                <rect x="38" y="138" width="304" height="100" rx="12" fill="white"/>
+                
+                {/* Avatar */}
+                <circle cx="78" cy="188" r="28" fill="var(--primary-color, #10b981)"/>
+                <text x="78" y="195" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="20" fontWeight="600" fill="white">JD</text>
+                
+                {/* Caller Info */}
+                <text x="120" y="172" fontFamily="system-ui, -apple-system, sans-serif" fontSize="17" fontWeight="600" fill="#1f2937">John Davidson</text>
+                <rect x="232" y="158" width="52" height="20" rx="10" fill="#dcfce7"/>
+                <text x="258" y="172" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fontWeight="500" fill="#16a34a">Normal</text>
+                <text x="120" y="192" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fill="#6b7280">Today, 2:34 PM</text>
+                <text x="120" y="210" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fill="#6b7280">Duration: 3:42</text>
+                
+                {/* Phone Number Row */}
+                <rect x="38" y="254" width="304" height="56" rx="12" fill="white"/>
+                <circle cx="66" cy="282" r="16" fill="#ecfdf5"/>
+                <text x="66" y="287" textAnchor="middle" fontSize="14">📞</text>
+                <text x="94" y="278" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#6b7280">Phone</text>
+                <text x="94" y="294" fontFamily="system-ui, -apple-system, sans-serif" fontSize="15" fontWeight="500" fill="var(--primary-color, #10b981)">(555) 123-4567</text>
+                
+                {/* AI Summary Section */}
+                <rect x="38" y="326" width="304" height="180" rx="12" fill="white"/>
+                
+                {/* AI Summary Header */}
+                <circle cx="58" cy="350" r="12" fill="#f0fdf4"/>
+                <text x="58" y="354" textAnchor="middle" fontSize="10">🤖</text>
+                <text x="78" y="354" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="var(--primary-color, #10b981)">AI Summary</text>
+                
+                {/* Summary Text */}
+                <text x="54" y="382" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fill="#374151">
+                  <tspan x="54" dy="0">John called to inquire about your</tspan>
+                  <tspan x="54" dy="18">services. He&apos;s interested in getting a</tspan>
+                  <tspan x="54" dy="18">quote for a project starting next</tspan>
+                  <tspan x="54" dy="18">month. Requested a callback on</tspan>
+                  <tspan x="54" dy="18">Tuesday afternoon.</tspan>
+                </text>
+                
+                {/* Tags */}
+                <rect x="54" y="472" width="80" height="24" rx="12" fill="#dbeafe"/>
+                <text x="94" y="488" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fontWeight="500" fill="#2563eb">New Lead</text>
+                
+                <rect x="142" y="472" width="90" height="24" rx="12" fill="#fef3c7"/>
+                <text x="187" y="488" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fontWeight="500" fill="#d97706">Callback</text>
+                
+                {/* Call Recording Section */}
+                <rect x="38" y="522" width="304" height="100" rx="12" fill="white"/>
+                
+                {/* Recording Header */}
+                <circle cx="58" cy="546" r="12" fill="#fef3c7"/>
+                <text x="58" y="550" textAnchor="middle" fontSize="10">🎙️</text>
+                <text x="78" y="550" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="#1f2937">Call Recording</text>
+                
+                {/* Waveform Background */}
+                <rect x="54" y="566" width="272" height="24" rx="4" fill="#f3f4f6"/>
+                <rect x="54" y="570" width="100" height="16" rx="2" fill="var(--primary-color, #10b981)" opacity="0.3"/>
+                
+                {/* Waveform bars - played */}
+                <g fill="var(--primary-color, #10b981)">
+                  <rect x="60" y="570" width="3" height="16" rx="1"/><rect x="66" y="572" width="3" height="12" rx="1"/>
+                  <rect x="72" y="568" width="3" height="20" rx="1"/><rect x="78" y="571" width="3" height="14" rx="1"/>
+                  <rect x="84" y="569" width="3" height="18" rx="1"/><rect x="90" y="573" width="3" height="10" rx="1"/>
+                  <rect x="96" y="570" width="3" height="16" rx="1"/><rect x="102" y="572" width="3" height="12" rx="1"/>
+                  <rect x="108" y="568" width="3" height="20" rx="1"/><rect x="114" y="574" width="3" height="8" rx="1"/>
+                  <rect x="120" y="571" width="3" height="14" rx="1"/><rect x="126" y="569" width="3" height="18" rx="1"/>
+                  <rect x="132" y="573" width="3" height="10" rx="1"/><rect x="138" y="570" width="3" height="16" rx="1"/>
+                  <rect x="144" y="572" width="3" height="12" rx="1"/>
+                </g>
+                {/* Waveform bars - unplayed */}
+                <g fill="#d1d5db">
+                  <rect x="150" y="573" width="3" height="10" rx="1"/><rect x="156" y="570" width="3" height="16" rx="1"/>
+                  <rect x="162" y="572" width="3" height="12" rx="1"/><rect x="168" y="569" width="3" height="18" rx="1"/>
+                  <rect x="174" y="574" width="3" height="8" rx="1"/><rect x="180" y="571" width="3" height="14" rx="1"/>
+                  <rect x="186" y="568" width="3" height="20" rx="1"/><rect x="192" y="573" width="3" height="10" rx="1"/>
+                  <rect x="198" y="570" width="3" height="16" rx="1"/><rect x="204" y="572" width="3" height="12" rx="1"/>
+                  <rect x="210" y="569" width="3" height="18" rx="1"/><rect x="216" y="574" width="3" height="8" rx="1"/>
+                  <rect x="222" y="570" width="3" height="16" rx="1"/><rect x="228" y="571" width="3" height="14" rx="1"/>
+                  <rect x="234" y="568" width="3" height="20" rx="1"/><rect x="240" y="573" width="3" height="10" rx="1"/>
+                  <rect x="246" y="570" width="3" height="16" rx="1"/><rect x="252" y="572" width="3" height="12" rx="1"/>
+                  <rect x="258" y="569" width="3" height="18" rx="1"/><rect x="264" y="574" width="3" height="8" rx="1"/>
+                  <rect x="270" y="570" width="3" height="16" rx="1"/><rect x="276" y="572" width="3" height="12" rx="1"/>
+                  <rect x="282" y="568" width="3" height="20" rx="1"/><rect x="288" y="573" width="3" height="10" rx="1"/>
+                  <rect x="294" y="571" width="3" height="14" rx="1"/><rect x="300" y="569" width="3" height="18" rx="1"/>
+                  <rect x="306" y="574" width="3" height="8" rx="1"/><rect x="312" y="570" width="3" height="16" rx="1"/>
+                  <rect x="318" y="572" width="3" height="12" rx="1"/>
+                </g>
+                
+                {/* Time */}
+                <text x="54" y="606" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fill="#6b7280">1:24</text>
+                <text x="318" y="606" textAnchor="end" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fill="#6b7280">3:42</text>
+                
+                {/* Play Button */}
+                <circle cx="190" cy="598" r="18" fill="var(--primary-color, #10b981)"/>
+                <path d="M185 590 L200 598 L185 606 Z" fill="white"/>
+                
+                {/* Action Buttons */}
+                <rect x="38" y="638" width="148" height="44" rx="22" fill="var(--primary-color, #10b981)"/>
+                <text x="112" y="665" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="white">📞 Call Back</text>
+                
+                <rect x="194" y="638" width="148" height="44" rx="22" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="268" y="665" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="#374151">💬 Send SMS</text>
+                
+                {/* Bottom Nav */}
+                <rect x="22" y="694" width="336" height="44" fill="white"/>
+                <line x1="22" y1="694" x2="358" y2="694" stroke="#e5e7eb" strokeWidth="1"/>
+                
+                {/* Nav Icons */}
+                <text x="70" y="722" textAnchor="middle" fontSize="20">🏠</text>
+                <text x="142" y="722" textAnchor="middle" fontSize="20">📞</text>
+                <text x="214" y="722" textAnchor="middle" fontSize="20">📊</text>
+                <text x="286" y="722" textAnchor="middle" fontSize="20">⚙️</text>
+                
+                {/* Home indicator */}
+                <rect x="150" y="726" width="80" height="5" rx="2.5" fill="#1a1a1a"/>
+              </svg>
             </div>
           </div>
 
