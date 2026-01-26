@@ -4,11 +4,20 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
-  Copy
+  AlertTriangle, RefreshCw, Trash2
 } from 'lucide-react';
 import { useAgency } from '../context';
 
 type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments';
+
+interface StripeStatus {
+  connected: boolean;
+  account_id?: string;
+  onboarding_complete: boolean;
+  charges_enabled: boolean;
+  payouts_enabled: boolean;
+  details_submitted?: boolean;
+}
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -27,7 +36,13 @@ export default function AgencySettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form states - initialize with empty, update when agency loads
+  // Stripe Connect status
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
+  const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+
+  // Form states
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -42,12 +57,10 @@ export default function AgencySettingsPage() {
   const [limitStarter, setLimitStarter] = useState('50');
   const [limitPro, setLimitPro] = useState('150');
   const [limitGrowth, setLimitGrowth] = useState('500');
-  
-  const [copied, setCopied] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
   // Initialize form values when agency loads
@@ -68,18 +81,41 @@ export default function AgencySettingsPage() {
     }
   }, [agency]);
 
+  // Fetch Stripe Connect status when on payments tab
+  useEffect(() => {
+    if (activeTab === 'payments' && agency?.id) {
+      fetchStripeStatus();
+    }
+  }, [activeTab, agency?.id]);
+
+  const fetchStripeStatus = async () => {
+    if (!agency) return;
+    
+    setLoadingStripeStatus(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      // Note: Backend route is /api/agency/connect/status/:agencyId
+      const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setStripeStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch Stripe status:', err);
+    } finally {
+      setLoadingStripeStatus(false);
+    }
+  };
+
   const settingsTabs = [
     { id: 'profile' as SettingsTab, label: 'Agency Profile', icon: Building },
     { id: 'branding' as SettingsTab, label: 'Branding', icon: Palette },
     { id: 'pricing' as SettingsTab, label: 'Client Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
   ];
-
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -150,6 +186,9 @@ export default function AgencySettingsPage() {
   const handleStripeConnect = async () => {
     if (!agency) return;
     
+    setConnectingStripe(true);
+    setError(null);
+    
     try {
       const token = localStorage.getItem('auth_token');
       
@@ -163,13 +202,51 @@ export default function AgencySettingsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start Stripe Connect onboarding');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to start Stripe Connect onboarding');
       }
 
       const data = await response.json();
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect Stripe');
+      setConnectingStripe(false);
+    }
+  };
+
+  const handleStripeDisconnect = async () => {
+    if (!agency) return;
+    
+    if (!confirm('Are you sure you want to disconnect your Stripe account? You will not be able to receive payments from clients until you reconnect.')) {
+      return;
+    }
+    
+    setDisconnectingStripe(true);
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // Note: Backend route is /api/agency/:agencyId/connect/disconnect
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to disconnect Stripe');
+      }
+
+      await refreshAgency();
+      setStripeStatus(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe');
+    } finally {
+      setDisconnectingStripe(false);
     }
   };
 
@@ -180,6 +257,25 @@ export default function AgencySettingsPage() {
       </div>
     );
   }
+
+  // Determine Stripe status display
+  const getStripeStatusDisplay = () => {
+    if (!stripeStatus?.connected && !agency?.stripe_account_id) {
+      return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
+    }
+    
+    if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) {
+      return { status: 'active', label: 'Active - Receiving Payments', color: 'text-emerald-400' };
+    }
+    
+    if (stripeStatus?.connected || agency?.stripe_account_id) {
+      return { status: 'restricted', label: 'Restricted - Setup Incomplete', color: 'text-amber-400' };
+    }
+    
+    return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
+  };
+
+  const stripeDisplay = getStripeStatusDisplay();
 
   return (
     <div className="p-6 lg:p-8">
@@ -486,51 +582,163 @@ export default function AgencySettingsPage() {
                   </p>
                 </div>
 
+                {/* Stripe Connect Card */}
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-[#635BFF]">
                         <CreditCard className="h-6 w-6 text-white" />
                       </div>
                       <div>
                         <p className="font-medium">Stripe Connect</p>
-                        <p className="text-sm text-[#fafaf9]/50">
-                          {agency?.stripe_account_id 
-                            ? 'Connected - Receiving payments' 
-                            : 'Not connected - Set up to receive payments'}
+                        <p className={`text-sm ${stripeDisplay.color}`}>
+                          {loadingStripeStatus ? 'Loading...' : stripeDisplay.label}
                         </p>
                       </div>
                     </div>
                     
-                    {agency?.stripe_account_id ? (
+                    {/* Status Icon */}
+                    {stripeDisplay.status === 'active' && (
                       <div className="flex items-center gap-2 text-emerald-400">
                         <Check className="h-5 w-5" />
-                        <span className="text-sm font-medium">Connected</span>
                       </div>
-                    ) : (
-                      <button
-                        onClick={handleStripeConnect}
-                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6]"
-                      >
-                        Connect Stripe
-                        <ExternalLink className="h-4 w-4" />
-                      </button>
+                    )}
+                    {stripeDisplay.status === 'restricted' && (
+                      <div className="flex items-center gap-2 text-amber-400">
+                        <AlertTriangle className="h-5 w-5" />
+                      </div>
                     )}
                   </div>
+
+                  {/* Status Details */}
+                  {(stripeStatus?.connected || agency?.stripe_account_id) && (
+                    <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-3">
+                      {/* Status Grid */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                          <span className="text-[#fafaf9]/50">Charges</span>
+                          {stripeStatus?.charges_enabled ? (
+                            <span className="flex items-center gap-1 text-emerald-400">
+                              <Check className="h-3.5 w-3.5" /> Enabled
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-amber-400">
+                              <AlertTriangle className="h-3.5 w-3.5" /> Disabled
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                          <span className="text-[#fafaf9]/50">Payouts</span>
+                          {stripeStatus?.payouts_enabled ? (
+                            <span className="flex items-center gap-1 text-emerald-400">
+                              <Check className="h-3.5 w-3.5" /> Enabled
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-amber-400">
+                              <AlertTriangle className="h-3.5 w-3.5" /> Disabled
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Account ID */}
+                      <p className="text-xs text-[#fafaf9]/40">
+                        Account ID: <span className="font-mono">{agency?.stripe_account_id}</span>
+                      </p>
+
+                      {/* Warning if restricted */}
+                      {stripeDisplay.status === 'restricted' && (
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+                          <p className="text-sm text-amber-400">
+                            Your Stripe account setup is incomplete. Complete the onboarding process to start receiving payments.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-3 pt-2">
+                        {stripeDisplay.status === 'restricted' && (
+                          <button
+                            onClick={handleStripeConnect}
+                            disabled={connectingStripe}
+                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
+                          >
+                            {connectingStripe ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ExternalLink className="h-4 w-4" />
+                            )}
+                            Complete Setup
+                          </button>
+                        )}
+                        
+                        <a 
+                          href="https://dashboard.stripe.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Stripe Dashboard
+                        </a>
+
+                        <button
+                          onClick={fetchStripeStatus}
+                          disabled={loadingStripeStatus}
+                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-[#fafaf9]/50 hover:bg-white/[0.06] transition-colors"
+                          title="Refresh status"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Connect Button (when not connected) */}
+                  {stripeDisplay.status === 'not_connected' && (
+                    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                      <button
+                        onClick={handleStripeConnect}
+                        disabled={connectingStripe}
+                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
+                      >
+                        {connectingStripe ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                        Connect Stripe Account
+                      </button>
+                      <p className="mt-2 text-xs text-[#fafaf9]/40">
+                        You'll be redirected to Stripe to complete the setup process.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {agency?.stripe_account_id && (
-                  <div className="text-sm text-[#fafaf9]/50">
-                    <p>Stripe Account ID: <span className="font-mono">{agency.stripe_account_id}</span></p>
-                    <a 
-                      href="https://dashboard.stripe.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 mt-2 text-emerald-400 hover:text-emerald-300 transition-colors"
-                    >
-                      Open Stripe Dashboard
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                {/* Disconnect Option */}
+                {(stripeStatus?.connected || agency?.stripe_account_id) && (
+                  <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-red-400">Disconnect Stripe</p>
+                        <p className="text-sm text-[#fafaf9]/50 mt-1">
+                          Remove this Stripe account from your agency. You will not be able to receive client payments until you reconnect.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleStripeDisconnect}
+                        disabled={disconnectingStripe}
+                        className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                      >
+                        {disconnectingStripe ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        Disconnect
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
