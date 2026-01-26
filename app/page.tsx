@@ -565,7 +565,7 @@ export default function LandingPage() {
                     </div>
                     <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
                       <span className="text-[#fafaf9]/60">Your platform cost</span>
-                      <span className="text-2xl font-semibold text-[#fafaf9]/40">−$299</span>
+                      <span className="text-2xl font-semibold text-[#fafaf9]/40">−$199</span>
                     </div>
                     <div className="flex justify-between items-baseline pt-2">
                       <span className="text-[#fafaf9]/80 font-medium">Monthly profit</span>
@@ -730,7 +730,7 @@ export default function LandingPage() {
                 },
                 {
                   name: 'Professional',
-                  price: 299,
+                  price: 199,
                   description: 'Most popular for serious agencies',
                   features: [
                     'Up to 100 clients',
