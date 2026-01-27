@@ -9,8 +9,8 @@ export default function ClientSettingsPage() {
 
   if (loading || !client) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: '#f9fafb' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }

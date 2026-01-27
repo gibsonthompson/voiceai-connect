@@ -59,6 +59,13 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const formatPhoneNumber = (phone: string): string => {
   if (!phone) return 'Not set';
   const cleaned = phone.replace(/\D/g, '');
@@ -87,13 +94,24 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [message, setMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
+  // Light mode theme
+  const theme = {
+    bg: '#f9fafb',
+    text: '#111827',
+    textMuted: '#6b7280',
+    textMuted4: '#9ca3af',
+    border: '#e5e7eb',
+    cardBg: '#ffffff',
+  };
 
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('auth_token');
       
       const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
@@ -158,6 +176,35 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     }
   };
 
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const response = await fetch('/api/client/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({
+          clientId: client.id,
+          planTier: client.plan_type || 'pro',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setMessage('Failed to create checkout');
+        setUpgrading(false);
+      }
+    } catch (error) {
+      setMessage('Error creating checkout');
+      setUpgrading(false);
+    }
+  };
+
   const getDaysRemaining = (): number | null => {
     if (!client.trial_ends_at) return null;
     const diffTime = new Date(client.trial_ends_at).getTime() - Date.now();
@@ -171,13 +218,13 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const daysRemaining = getDaysRemaining();
 
   return (
-    <div className="p-8 pb-24">
+    <div className="p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Status Message */}
       {message && (
         <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
           message.includes('success') || message.includes('Success')
-            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {message}
         </div>
@@ -185,38 +232,41 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
       {/* Page Title */}
       <div className="mb-8">
-        <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
-        <p className="text-[#f5f5f0]/50 mt-1">Manage your account and preferences</p>
+        <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
+        <p className="mt-1" style={{ color: theme.textMuted }}>Manage your account and preferences</p>
       </div>
 
       <div className="max-w-3xl">
         {/* Business Overview */}
         <section className="mb-6">
-          <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Building2 className="w-4 h-4" style={{ color: primaryColor }} />
             Business Details
           </h2>
-          <div className="bg-[#111] rounded-xl border border-white/10 p-4">
+          <div 
+            className="rounded-xl border p-4 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-white/40 text-xs block mb-1">Business Name</label>
-                <div className="text-white font-medium text-sm">{client.business_name}</div>
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
+                <div className="font-medium text-sm" style={{ color: theme.text }}>{client.business_name}</div>
               </div>
               <div>
-                <label className="text-white/40 text-xs block mb-1">Industry</label>
-                <div className="text-white font-medium text-sm">{client.industry || 'Not set'}</div>
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Industry</label>
+                <div className="font-medium text-sm" style={{ color: theme.text }}>{client.industry || 'Not set'}</div>
               </div>
               <div>
-                <label className="text-white/40 text-xs block mb-1">Location</label>
-                <div className="text-white font-medium text-sm">
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Location</label>
+                <div className="font-medium text-sm" style={{ color: theme.text }}>
                   {client.business_city && client.business_state 
                     ? `${client.business_city}, ${client.business_state}` 
                     : 'Not set'}
                 </div>
               </div>
               <div>
-                <label className="text-white/40 text-xs block mb-1">Member Since</label>
-                <div className="text-white font-medium text-sm">{formatDate(client.created_at)}</div>
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Member Since</label>
+                <div className="font-medium text-sm" style={{ color: theme.text }}>{formatDate(client.created_at)}</div>
               </div>
             </div>
           </div>
@@ -224,14 +274,17 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* AI Phone Number */}
         <section className="mb-6">
-          <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Phone className="w-4 h-4" style={{ color: primaryColor }} />
             AI Phone Number
           </h2>
-          <div className="bg-[#111] rounded-xl border border-white/10 p-4">
+          <div 
+            className="rounded-xl border p-4 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <label className="text-white/40 text-xs block mb-1">Your AI Receptionist</label>
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label>
                 <div className="text-xl font-bold" style={{ color: primaryColor }}>
                   {client.vapi_phone_number ? formatPhoneNumber(client.vapi_phone_number) : 'Setting up...'}
                 </div>
@@ -239,9 +292,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button
                 onClick={handleCopyNumber}
                 disabled={!client.vapi_phone_number}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 transition disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-100 disabled:opacity-50"
+                style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
-                {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 {isCopied ? 'Copied!' : 'Copy'}
               </button>
             </div>
@@ -250,29 +304,34 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Contact Information */}
         <section className="mb-6">
-          <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <User className="w-4 h-4" style={{ color: primaryColor }} />
             Contact Information
           </h2>
-          <div className="bg-[#111] rounded-xl border border-white/10 p-4 space-y-4">
+          <div 
+            className="rounded-xl border p-4 space-y-4 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
             <div>
-              <label className="block text-white/70 text-sm font-medium mb-2">Owner Phone *</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label>
               <input 
                 type="tel" 
                 value={ownerPhone} 
                 onChange={(e) => setOwnerPhone(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none transition text-sm"
+                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
+                style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                 placeholder="+1 (555) 123-4567" 
               />
-              <p className="text-white/40 text-xs mt-1.5">📱 SMS notifications sent here</p>
+              <p className="text-xs mt-1.5" style={{ color: theme.textMuted4 }}>📱 SMS notifications sent here</p>
             </div>
             <div>
-              <label className="block text-white/70 text-sm font-medium mb-2">Email *</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Email *</label>
               <input 
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:outline-none transition text-sm"
+                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
+                style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                 placeholder="your@email.com" 
               />
             </div>
@@ -281,8 +340,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               disabled={saving || !hasChanges}
               className="w-full py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
-                backgroundColor: hasChanges ? primaryColor : 'rgba(255,255,255,0.1)',
-                color: hasChanges ? (primaryLight ? '#0a0a0a' : '#f5f5f0') : 'rgba(255,255,255,0.5)',
+                backgroundColor: hasChanges ? primaryColor : theme.bg,
+                color: hasChanges ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted4,
+                border: hasChanges ? 'none' : `1px solid ${theme.border}`,
               }}
             >
               {saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}
@@ -292,21 +352,24 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Subscription & Billing */}
         <section className="mb-6">
-          <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <CreditCard className="w-4 h-4" style={{ color: primaryColor }} />
             Subscription
           </h2>
-          <div className="bg-[#111] rounded-xl border border-white/10 p-4 space-y-4">
+          <div 
+            className="rounded-xl border p-4 space-y-4 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-white/40 text-xs block mb-1">Current Plan</label>
+                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label>
                 <div className="text-xl font-bold capitalize" style={{ color: primaryColor }}>
                   {client.plan_type || 'Trial'}
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                client.subscription_status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 
-                client.subscription_status === 'trial' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'
+                client.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
+                client.subscription_status === 'trial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
               }`}>
                 {client.subscription_status === 'active' ? 'Active' : 
                  client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}
@@ -314,40 +377,52 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
             
             {client.subscription_status === 'trial' && daysRemaining !== null && (
-              <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg">
-                <div className="text-amber-400 font-semibold text-sm">
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                <div className="text-amber-700 font-semibold text-sm">
                   {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial
                 </div>
-                <div className="text-amber-400/70 text-xs mt-0.5">Ends {formatDate(client.trial_ends_at)}</div>
+                <div className="text-amber-600 text-xs mt-0.5">Ends {formatDate(client.trial_ends_at)}</div>
               </div>
             )}
             
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white/5 p-3 rounded-lg text-center">
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
                 <div className="text-lg font-bold" style={{ color: primaryColor }}>{client.monthly_call_limit || '∞'}</div>
-                <div className="text-white/40 text-xs">Limit</div>
+                <div className="text-xs" style={{ color: theme.textMuted4 }}>Limit</div>
               </div>
-              <div className="bg-white/5 p-3 rounded-lg text-center">
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
                 <div className="text-lg font-bold" style={{ color: primaryColor }}>{client.calls_this_month || 0}</div>
-                <div className="text-white/40 text-xs">Used</div>
+                <div className="text-xs" style={{ color: theme.textMuted4 }}>Used</div>
               </div>
-              <div className="bg-white/5 p-3 rounded-lg text-center">
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
                 <div className="text-lg font-bold" style={{ color: primaryColor }}>
                   {client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}
                 </div>
-                <div className="text-white/40 text-xs">Left</div>
+                <div className="text-xs" style={{ color: theme.textMuted4 }}>Left</div>
               </div>
             </div>
             
             {client.subscription_status === 'trial' ? (
               <button 
-                className="w-full py-3 rounded-xl font-semibold text-sm transition hover:opacity-90"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#0a0a0a' : '#f5f5f0' }}
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
               >
-                Upgrade Now
+                {upgrading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  'Upgrade Now'
+                )}
               </button>
             ) : (
-              <button className="w-full py-3 bg-white/5 text-white/70 rounded-xl font-semibold text-sm hover:bg-white/10 transition">
+              <button 
+                className="w-full py-3 rounded-xl font-semibold text-sm hover:bg-gray-100 transition"
+                style={{ backgroundColor: theme.bg, color: theme.textMuted }}
+              >
                 Manage Subscription
               </button>
             )}
@@ -356,14 +431,17 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Integrations */}
         <section className="mb-6">
-          <h2 className="text-white text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Link2 className="w-4 h-4" style={{ color: primaryColor }} />
             Integrations
           </h2>
           
-          <div className="bg-[#111] rounded-xl border border-white/10 p-4 mb-3">
+          <div 
+            className="rounded-xl border p-4 mb-3 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-white border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border }}>
                 <svg viewBox="0 0 24 24" className="w-6 h-6">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -372,11 +450,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-sm">Google Calendar</h3>
-                <p className="text-white/40 text-xs">AI books appointments directly to your calendar</p>
+                <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Google Calendar</h3>
+                <p className="text-xs" style={{ color: theme.textMuted4 }}>AI books appointments directly to your calendar</p>
               </div>
               {client.google_calendar_connected && (
-                <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-full">
+                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                   Connected
                 </span>
               )}
@@ -385,7 +463,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button 
                 onClick={handleDisconnectCalendar} 
                 disabled={disconnectingCalendar}
-                className="w-full py-2.5 border border-red-500/30 text-red-400 rounded-lg text-sm font-medium hover:bg-red-500/10 transition disabled:opacity-50"
+                className="w-full py-2.5 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
               >
                 {disconnectingCalendar ? 'Disconnecting...' : 'Disconnect'}
               </button>
@@ -393,7 +471,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button 
                 onClick={handleConnectCalendar} 
                 className="w-full py-2.5 rounded-lg text-sm font-semibold transition"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#0a0a0a' : '#f5f5f0' }}
+                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
               >
                 Connect Calendar
               </button>
@@ -403,12 +481,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Support */}
         <section className="mb-6">
-          <div className="bg-white/5 rounded-xl p-4">
+          <div 
+            className="rounded-xl p-4"
+            style={{ backgroundColor: hexToRgba(primaryColor, 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
+          >
             <div className="flex items-start gap-3">
               <HelpCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
               <div>
-                <h4 className="text-white font-semibold text-sm mb-1">Need Help?</h4>
-                <p className="text-white/50 text-sm mb-2">Contact {branding.agencyName} for support:</p>
+                <h4 className="font-semibold text-sm mb-1" style={{ color: theme.text }}>Need Help?</h4>
+                <p className="text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} for support:</p>
                 {branding.supportPhone && (
                   <a 
                     href={`tel:${branding.supportPhone}`}
