@@ -727,23 +727,51 @@ export default function FeaturesPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
-            {[
-              'VAPI',
-              'ElevenLabs',
-              'OpenAI',
-              'Stripe',
-              'Twilio',
-              'Google Calendar',
-              'SendGrid',
-            ].map((partner) => (
-              <div 
-                key={partner} 
-                className="px-6 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] text-[#fafaf9]/40 text-sm font-medium"
-              >
-                {partner}
-              </div>
-            ))}
+          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 lg:gap-16">
+            {/* ElevenLabs */}
+            <div className="group relative h-8 sm:h-10 w-auto opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <img 
+                src="/logos/elevenlabs.svg" 
+                alt="ElevenLabs" 
+                className="h-full w-auto object-contain brightness-0 invert"
+              />
+            </div>
+            
+            {/* OpenAI */}
+            <div className="group relative h-8 sm:h-10 w-auto opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <img 
+                src="/logos/openai.webp" 
+                alt="OpenAI" 
+                className="h-full w-auto object-contain brightness-0 invert"
+              />
+            </div>
+            
+            {/* Stripe */}
+            <div className="group relative h-8 sm:h-10 w-auto opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <img 
+                src="/logos/stripe.png" 
+                alt="Stripe" 
+                className="h-full w-auto object-contain brightness-0 invert"
+              />
+            </div>
+            
+            {/* Twilio */}
+            <div className="group relative h-8 sm:h-10 w-auto opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <img 
+                src="/logos/twilio.png" 
+                alt="Twilio" 
+                className="h-full w-auto object-contain brightness-0 invert"
+              />
+            </div>
+            
+            {/* Google */}
+            <div className="group relative h-8 sm:h-10 w-auto opacity-50 hover:opacity-100 transition-opacity duration-300">
+              <img 
+                src="/logos/google.svg" 
+                alt="Google" 
+                className="h-full w-auto object-contain"
+              />
+            </div>
           </div>
         </div>
       </section>
