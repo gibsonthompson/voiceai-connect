@@ -76,13 +76,27 @@ export const metadata: Metadata = {
     creator: "@myvoiceaiconnect",
   },
   metadataBase: new URL("https://myvoiceaiconnect.com"),
+  // Apple PWA settings
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "VoiceAI",
+  },
+  // App manifest
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050505",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#050505" },
+    { media: "(prefers-color-scheme: light)", color: "#050505" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  userScalable: true,
+  // Enable safe-area-inset CSS env variables
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -100,6 +114,10 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Apple PWA icons */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Prevent phone number detection on iOS */}
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>

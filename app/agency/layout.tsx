@@ -1,10 +1,11 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe
+  LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
+  Menu, X, ChevronRight
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 
@@ -26,6 +27,31 @@ function WaveformIcon({ className }: { className?: string }) {
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading } = useAgency();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when sidebar open on mobile
+  useEffect(() => {
+    if (sidebarOpen && isMobile) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen, isMobile]);
 
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
@@ -54,6 +80,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return pathname?.startsWith(href);
   };
 
+  const currentPage = navItems.find(item => isActive(item.href));
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -75,10 +103,89 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         }}
       />
 
+      {/* Mobile Header - Fixed, edge-to-edge */}
+      <header 
+        className="fixed top-0 left-0 right-0 z-30 md:hidden bg-[#050505] border-b border-white/[0.06]"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="flex items-center justify-between h-14 px-4">
+          {/* Hamburger */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center justify-center w-10 h-10 -ml-2 rounded-lg hover:bg-white/[0.06] transition-colors"
+          >
+            <Menu className="h-5 w-5 text-[#fafaf9]" />
+          </button>
+
+          {/* Center - Logo & Name */}
+          <div className="flex items-center gap-2">
+            {branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt={branding.name} 
+                className="h-7 w-7 rounded-lg object-contain" 
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                <WaveformIcon className="h-4 w-4 text-[#fafaf9]" />
+              </div>
+            )}
+            <span className="font-semibold text-sm text-[#fafaf9]">
+              {agency?.name || 'Agency'}
+            </span>
+          </div>
+
+          {/* Right - Page indicator or placeholder */}
+          <div className="w-10 h-10" />
+        </div>
+      </header>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && isMobile && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 w-64 border-r border-white/[0.06] bg-[#050505]">
-        {/* Logo & Agency Name */}
-        <div className="flex h-16 items-center gap-3 border-b border-white/[0.06] px-6">
+      <aside 
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64 border-r border-white/[0.06] bg-[#050505]
+          transform transition-transform duration-300 ease-out
+          md:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
+      >
+        {/* Mobile Close Button */}
+        <div className="flex md:hidden items-center justify-between h-14 px-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2">
+            {branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt={branding.name} 
+                className="h-7 w-7 rounded-lg object-contain" 
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                <WaveformIcon className="h-4 w-4 text-[#fafaf9]" />
+              </div>
+            )}
+            <span className="font-semibold text-sm text-[#fafaf9]">
+              {agency?.name || 'Agency'}
+            </span>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-lg hover:bg-white/[0.06] transition-colors"
+          >
+            <X className="h-5 w-5 text-[#fafaf9]" />
+          </button>
+        </div>
+
+        {/* Desktop Logo & Agency Name */}
+        <div className="hidden md:flex h-16 items-center gap-3 border-b border-white/[0.06] px-6">
           {branding.logoUrl ? (
             <img 
               src={branding.logoUrl} 
@@ -103,21 +210,28 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
                   active
                     ? 'bg-emerald-500/10 text-emerald-400'
                     : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'
                 }`}
               >
-                <item.icon className="h-5 w-5" />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </div>
+                {active && <ChevronRight className="h-4 w-4 md:hidden" />}
               </Link>
             );
           })}
         </nav>
 
         {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-4 space-y-3"
+          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}
+        >
           {/* Trial/Plan Badge */}
           {agency?.subscription_status === 'trial' && agency.trial_ends_at && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-3">
@@ -141,7 +255,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#fafaf9]/50 hover:bg-white/[0.04] hover:text-[#fafaf9] transition-all border-t border-white/[0.06] pt-4"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium text-[#fafaf9]/50 hover:bg-white/[0.04] hover:text-[#fafaf9] transition-all border-t border-white/[0.06] pt-4"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
@@ -150,7 +264,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="pl-64 min-h-screen">
+      <main 
+        className="md:pl-64 min-h-screen"
+        style={{ 
+          paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 3.5rem)' : 0,
+          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0,
+        }}
+      >
         {children}
       </main>
     </div>

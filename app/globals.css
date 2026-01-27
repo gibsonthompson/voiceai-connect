@@ -25,6 +25,12 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-default: rgba(255, 255, 255, 0.1);
   --color-border-strong: rgba(255, 255, 255, 0.2);
+
+  /* Safe Area Insets for native app feel */
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
 }
 
 @layer base {
@@ -36,12 +42,19 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Full viewport height fix for mobile browsers */
+    height: -webkit-fill-available;
   }
   
   body {
     @apply bg-[#050505] text-[#fafaf9] antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    /* Full viewport height fix for mobile browsers */
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
   }
   
   /* Premium selection */
@@ -149,6 +162,27 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* No text selection (for nav elements) */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Safe area padding utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -279,6 +313,24 @@ details[open] summary {
   /* Prevent horizontal overflow */
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Smooth scrolling - respect user preferences */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
