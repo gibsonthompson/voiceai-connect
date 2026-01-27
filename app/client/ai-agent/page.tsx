@@ -502,6 +502,8 @@ export default function ClientAIAgentPage() {
 
       if (data.success) {
         showMessage('Business hours updated!');
+        // Re-fetch to keep form in sync
+        await fetchKnowledgeBase();
       } else {
         showMessage(data.error || 'Failed to update hours', true);
       }
@@ -542,6 +544,8 @@ export default function ClientAIAgentPage() {
       if (data.success) {
         setKbLastUpdated(new Date().toISOString());
         showMessage('Knowledge base updated!');
+        // Re-fetch to keep form in sync with saved data
+        await fetchKnowledgeBase();
       } else {
         showMessage(data.error || 'Failed to update knowledge base', true);
       }
