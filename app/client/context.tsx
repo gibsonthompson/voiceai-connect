@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 interface Client {
   id: string;
@@ -91,7 +92,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       }
 
       const clientData = JSON.parse(storedClient);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
       const response = await fetch(`${backendUrl}/api/client/${clientData.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
@@ -139,6 +140,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
   return (
     <ClientContext.Provider value={{ client, branding, loading, refreshClient: fetchClientData }}>
+      <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />
       {children}
     </ClientContext.Provider>
   );

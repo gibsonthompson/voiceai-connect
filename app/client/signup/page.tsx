@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Phone, ArrowRight, Loader2, Check, Building, Mail, User, MapPin } from 'lucide-react';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 interface Agency {
   id: string;
@@ -20,6 +21,13 @@ interface Agency {
   limit_pro: number;
   limit_growth: number;
 }
+
+// Get backend URL - check multiple env vars for compatibility
+const getBackendUrl = () => {
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 
+         process.env.NEXT_PUBLIC_API_URL || 
+         'https://urchin-app-bqb4i.ondigitalocean.app';
+};
 
 function ClientSignupContent() {
   const router = useRouter();
@@ -45,7 +53,7 @@ function ClientSignupContent() {
   useEffect(() => {
     const fetchAgency = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const backendUrl = getBackendUrl();
         let url = '';
         
         // Check if we have an agency slug in the URL params
@@ -137,6 +145,8 @@ function ClientSignupContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
+      
       {/* Subtle grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"

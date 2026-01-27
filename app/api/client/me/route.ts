@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
         agency: clientData.agencies ? {
           id: clientData.agencies.id,
           name: clientData.agencies.name,
+          logo_url: clientData.agencies.logo_url,
           primary_color: clientData.agencies.primary_color,
           support_email: clientData.agencies.support_email,
           price_starter: clientData.agencies.price_starter,

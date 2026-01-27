@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 interface Agency {
   id: string;
@@ -21,6 +22,13 @@ const isLightColor = (hex: string): boolean => {
   const g = parseInt(c.substring(2, 4), 16);
   const b = parseInt(c.substring(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+};
+
+// Get backend URL - check multiple env vars for compatibility
+const getBackendUrl = () => {
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 
+         process.env.NEXT_PUBLIC_API_URL || 
+         'https://urchin-app-bqb4i.ondigitalocean.app';
 };
 
 function ClientLoginContent() {
@@ -54,12 +62,17 @@ function ClientLoginContent() {
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         
         if (!platformDomains.includes(host)) {
-          const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const backendUrl = getBackendUrl();
+          
+          console.log('Fetching agency for host:', host, 'from:', backendUrl);
+          
           const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
           
           if (response.ok) {
             const data = await response.json();
             setAgency(data.agency);
+          } else {
+            console.error('Failed to fetch agency:', response.status, await response.text());
           }
         }
       } catch (err) {
@@ -83,7 +96,7 @@ function ClientLoginContent() {
     setError('');
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/auth/client/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,6 +146,7 @@ function ClientLoginContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
         style={{

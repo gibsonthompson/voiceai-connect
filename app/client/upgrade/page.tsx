@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Phone, Check, Loader2 } from 'lucide-react';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 type PlanTier = 'starter' | 'pro' | 'growth';
 
@@ -16,6 +17,7 @@ interface AgencyPricing {
   name: string;
   primary_color: string;
   support_email: string;
+  logo_url: string | null;
 }
 
 const DEFAULT_PLANS = {
@@ -104,6 +106,7 @@ export default function UpgradeRequiredPage() {
             name: data.client.agency.name,
             primary_color: data.client.agency.primary_color || '#2563eb',
             support_email: data.client.agency.support_email || 'support@example.com',
+            logo_url: data.client.agency.logo_url || null,
           });
         }
       } catch (err) {
@@ -196,6 +199,7 @@ export default function UpgradeRequiredPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
       {/* Hero Section */}
       <div 
         className="text-white py-12 md:py-20 px-4"

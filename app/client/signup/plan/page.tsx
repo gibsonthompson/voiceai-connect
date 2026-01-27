@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Phone, ArrowRight, ArrowLeft, Loader2, Check, PhoneCall, Zap, Rocket } from 'lucide-react';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 interface Agency {
   id: string;
@@ -36,6 +37,13 @@ interface SignupData {
 
 type PlanType = 'starter' | 'pro' | 'growth';
 
+// Get backend URL - check multiple env vars for compatibility
+const getBackendUrl = () => {
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 
+         process.env.NEXT_PUBLIC_API_URL || 
+         'https://urchin-app-bqb4i.ondigitalocean.app';
+};
+
 function ClientPlanSelectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,7 +71,7 @@ function ClientPlanSelectionContent() {
   useEffect(() => {
     const fetchAgency = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const backendUrl = getBackendUrl();
         let url = '';
         
         if (agencySlug) {
@@ -99,7 +107,7 @@ function ClientPlanSelectionContent() {
     setError('');
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const backendUrl = getBackendUrl();
       
       // Map frontend field names to backend expected names
       const payload = {
@@ -234,6 +242,8 @@ function ClientPlanSelectionContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
+      
       {/* Subtle grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
@@ -317,7 +327,7 @@ function ClientPlanSelectionContent() {
                   backgroundColor: selectedPlan === plan.id ? `${primaryColor}0D` : '#111',
                 }}
               >
-                {plan.popular && (
+                {'popular' in plan && plan.popular && (
                   <div 
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-medium"
                     style={{ backgroundColor: accentColor, color: isLightColor(accentColor) ? '#0a0a0a' : '#f5f5f0' }}
