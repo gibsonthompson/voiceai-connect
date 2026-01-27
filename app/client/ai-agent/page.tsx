@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Phone, Loader2, Bot, Mic, MessageSquare, Clock, BookOpen, 
-  Play, Pause, Check, ChevronDown, RotateCcw, Sparkles, AlertCircle
+  Play, Pause, Check, ChevronDown, RotateCcw, Sparkles, AlertCircle,
+  Plus, Trash2, Globe, Briefcase, HelpCircle, FileText
 } from 'lucide-react';
 import { useClient } from '../context';
 
@@ -29,6 +30,19 @@ interface BusinessHours {
   friday: { open: string; close: string; closed: boolean };
   saturday: { open: string; close: string; closed: boolean };
   sunday: { open: string; close: string; closed: boolean };
+}
+
+interface Service {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
 }
 
 // ============================================================================
@@ -57,6 +71,17 @@ const TIME_OPTIONS = [
   '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
   '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM'
 ];
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return 'Never';
+  return new Date(dateString).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -106,10 +131,14 @@ export default function ClientAIAgentPage() {
   });
 
   // Knowledge Base state
-  const [knowledgeBase, setKnowledgeBase] = useState('');
-  const [originalKnowledgeBase, setOriginalKnowledgeBase] = useState('');
-  const [savingKB, setSavingKB] = useState(false);
   const [kbExpanded, setKbExpanded] = useState(false);
+  const [kbLoading, setKbLoading] = useState(false);
+  const [savingKB, setSavingKB] = useState(false);
+  const [kbLastUpdated, setKbLastUpdated] = useState<string | null>(null);
+  const [website, setWebsite] = useState('');
+  const [services, setServices] = useState<Service[]>([{ id: '1', name: '', price: '', description: '' }]);
+  const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
   useEffect(() => {
     if (client) {
@@ -131,6 +160,10 @@ export default function ClientAIAgentPage() {
 
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+
+  // ============================================================================
+  // FETCH FUNCTIONS
+  // ============================================================================
 
   const fetchVoices = async () => {
     setVoicesLoading(true);
@@ -204,6 +237,7 @@ export default function ClientAIAgentPage() {
 
   const fetchKnowledgeBase = async () => {
     if (!client) return;
+    setKbLoading(true);
     try {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
@@ -213,15 +247,136 @@ export default function ClientAIAgentPage() {
       
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          setKnowledgeBase(data.content || '');
-          setOriginalKnowledgeBase(data.content || '');
+        if (data.success && data.data) {
+          setWebsite(data.websiteUrl || '');
+          if (data.data.services) parseServices(data.data.services);
+          if (data.data.faqs) parseFAQs(data.data.faqs);
+          if (data.data.businessHours) parseBusinessHours(data.data.businessHours);
+          setAdditionalInfo(data.data.additionalInfo || '');
+          setKbLastUpdated(data.updated_at || null);
         }
       }
     } catch (error) {
       console.error('Error fetching knowledge base:', error);
+    } finally {
+      setKbLoading(false);
     }
   };
+
+  // ============================================================================
+  // PARSE FUNCTIONS
+  // ============================================================================
+
+  const parseServices = (servicesText: string) => {
+    const lines = servicesText.split('\n').filter(l => l.trim());
+    const parsed: Service[] = [];
+    
+    lines.forEach((line, index) => {
+      const priceMatch = line.match(/\$[\d,]+/);
+      const price = priceMatch ? priceMatch[0] : '';
+      const name = line.split('-')[0].trim().replace(/^-\s*/, '');
+      const description = line.split('-').slice(1).join('-').trim() || '';
+      
+      if (name) {
+        parsed.push({
+          id: `${index + 1}`,
+          name,
+          price,
+          description: description.replace(/\$[\d,]+/, '').trim()
+        });
+      }
+    });
+    
+    setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
+  };
+
+  const parseFAQs = (faqsText: string) => {
+    const parsed: FAQ[] = [];
+    const lines = faqsText.split('\n');
+    let currentQ = '';
+    let currentA = '';
+    
+    lines.forEach(line => {
+      if (line.trim().startsWith('Q:')) {
+        if (currentQ && currentA) {
+          parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
+        }
+        currentQ = line.replace(/^Q:\s*/i, '').trim();
+        currentA = '';
+      } else if (line.trim().startsWith('A:')) {
+        currentA = line.replace(/^A:\s*/i, '').trim();
+      }
+    });
+    
+    if (currentQ && currentA) {
+      parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
+    }
+    
+    setFaqs(parsed.length > 0 ? parsed : [{ id: '1', question: '', answer: '' }]);
+  };
+
+  const parseBusinessHours = (hoursText: string) => {
+    const lines = hoursText.split('\n');
+    const newHours = { ...businessHours };
+    
+    lines.forEach(line => {
+      const lower = line.toLowerCase();
+      Object.keys(newHours).forEach(day => {
+        if (lower.includes(day)) {
+          if (lower.includes('closed')) {
+            newHours[day as keyof BusinessHours].closed = true;
+          } else {
+            const timeMatch = line.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
+            if (timeMatch) {
+              newHours[day as keyof BusinessHours].open = timeMatch[1];
+              newHours[day as keyof BusinessHours].close = timeMatch[2];
+              newHours[day as keyof BusinessHours].closed = false;
+            }
+          }
+        }
+      });
+    });
+    
+    setBusinessHours(newHours);
+  };
+
+  // ============================================================================
+  // FORMAT FUNCTIONS
+  // ============================================================================
+
+  const formatServices = (): string => {
+    return services
+      .filter(s => s.name.trim())
+      .map(s => {
+        const parts = [`- ${s.name}`];
+        if (s.price) parts.push(s.price);
+        if (s.description) parts.push(s.description);
+        return parts.join(' - ');
+      })
+      .join('\n');
+  };
+
+  const formatFAQs = (): string => {
+    return faqs
+      .filter(f => f.question.trim() && f.answer.trim())
+      .map(f => `Q: ${f.question}\nA: ${f.answer}`)
+      .join('\n\n');
+  };
+
+  const formatBusinessHoursForSave = (): string => {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    return days.map(day => {
+      const dayData = businessHours[day as keyof BusinessHours];
+      const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+      return dayData.closed 
+        ? `${dayName}: Closed`
+        : `${dayName}: ${dayData.open} - ${dayData.close}`;
+    }).join('\n');
+  };
+
+  // ============================================================================
+  // HANDLER FUNCTIONS
+  // ============================================================================
 
   const handlePlayPreview = (voice: VoiceOption) => {
     if (playingVoiceId === voice.id && audioRef.current) {
@@ -330,15 +485,17 @@ export default function ClientAIAgentPage() {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
       
-      const hoursText = formatBusinessHoursForSave();
-      
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/business-hours`, {
-        method: 'PUT',
+      // Save business hours as part of knowledge base
+      const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ business_hours: hoursText }),
+        body: JSON.stringify({
+          clientId: client.id,
+          businessHours: formatBusinessHoursForSave(),
+        }),
       });
 
       const data = await response.json();
@@ -356,7 +513,7 @@ export default function ClientAIAgentPage() {
   };
 
   const handleSaveKnowledgeBase = async () => {
-    if (knowledgeBase === originalKnowledgeBase || !client) return;
+    if (!client) return;
     
     setSavingKB(true);
 
@@ -364,19 +521,26 @@ export default function ClientAIAgentPage() {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
       
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/knowledge-base`, {
-        method: 'PUT',
+      const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: knowledgeBase }),
+        body: JSON.stringify({
+          clientId: client.id,
+          websiteUrl: website,
+          businessHours: formatBusinessHoursForSave(),
+          services: formatServices(),
+          faqs: formatFAQs(),
+          additionalInfo,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setOriginalKnowledgeBase(knowledgeBase);
+        setKbLastUpdated(new Date().toISOString());
         showMessage('Knowledge base updated!');
       } else {
         showMessage(data.error || 'Failed to update knowledge base', true);
@@ -399,23 +563,48 @@ export default function ClientAIAgentPage() {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const formatBusinessHoursForSave = (): string => {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    return days.map(day => {
-      const dayData = businessHours[day as keyof BusinessHours];
-      const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-      return dayData.closed 
-        ? `${dayName}: Closed`
-        : `${dayName}: ${dayData.open} - ${dayData.close}`;
-    }).join('\n');
+  // ============================================================================
+  // SERVICE & FAQ MANAGEMENT
+  // ============================================================================
+
+  const addService = () => {
+    setServices(prev => [...prev, { id: Date.now().toString(), name: '', price: '', description: '' }]);
   };
 
-  const updateBusinessHours = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => {
+  const removeService = (id: string) => {
+    if (services.length > 1) {
+      setServices(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const updateService = (id: string, field: keyof Service, value: string) => {
+    setServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  };
+
+  const addFAQ = () => {
+    setFaqs(prev => [...prev, { id: Date.now().toString(), question: '', answer: '' }]);
+  };
+
+  const removeFAQ = (id: string) => {
+    if (faqs.length > 1) {
+      setFaqs(prev => prev.filter(f => f.id !== id));
+    }
+  };
+
+  const updateFAQ = (id: string, field: keyof FAQ, value: string) => {
+    setFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
+  };
+
+  const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => {
     setBusinessHours(prev => ({
       ...prev,
       [day]: { ...prev[day], [field]: value }
     }));
   };
+
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
 
   const getFilteredVoices = () => {
     if (voiceFilter === 'female') return voices.female || [];
@@ -450,8 +639,11 @@ export default function ClientAIAgentPage() {
   const primaryLight = isLightColor(primaryColor);
   const hasVoiceChanges = selectedVoiceId !== currentVoiceId;
   const hasGreetingChanges = greetingMessage !== originalGreeting;
-  const hasKBChanges = knowledgeBase !== originalKnowledgeBase;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
+
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
 
   if (loading || !client) {
     return (
@@ -460,6 +652,10 @@ export default function ClientAIAgentPage() {
       </div>
     );
   }
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
     <div className="p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
@@ -562,7 +758,7 @@ export default function ClientAIAgentPage() {
                       <button
                         key={filter}
                         onClick={() => setVoiceFilter(filter)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition`}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition"
                         style={{
                           backgroundColor: voiceFilter === filter ? primaryColor : theme.bg,
                           color: voiceFilter === filter ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted,
@@ -792,7 +988,7 @@ export default function ClientAIAgentPage() {
                         <input
                           type="checkbox"
                           checked={businessHours[day].closed}
-                          onChange={(e) => updateBusinessHours(day, 'closed', e.target.checked)}
+                          onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)}
                           className="w-3.5 h-3.5 rounded"
                         />
                         <span className="text-xs" style={{ color: theme.textMuted }}>Closed</span>
@@ -802,7 +998,7 @@ export default function ClientAIAgentPage() {
                         <div className="flex items-center gap-1.5 ml-auto">
                           <select
                             value={businessHours[day].open}
-                            onChange={(e) => updateBusinessHours(day, 'open', e.target.value)}
+                            onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)}
                             className="px-2 py-1 text-xs border rounded focus:outline-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           >
@@ -811,7 +1007,7 @@ export default function ClientAIAgentPage() {
                           <span className="text-xs" style={{ color: theme.textMuted4 }}>-</span>
                           <select
                             value={businessHours[day].close}
-                            onChange={(e) => updateBusinessHours(day, 'close', e.target.value)}
+                            onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)}
                             className="px-2 py-1 text-xs border rounded focus:outline-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           >
@@ -862,57 +1058,188 @@ export default function ClientAIAgentPage() {
                   </div>
                   <p className="text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
                 </div>
-                <button
-                  onClick={() => setKbExpanded(!kbExpanded)}
-                  className="flex items-center gap-1 text-sm font-medium" 
-                  style={{ color: primaryColor }}
-                >
-                  {kbExpanded ? 'Collapse' : 'Expand'}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
-                </button>
               </div>
             </div>
             
-            {kbExpanded && (
-              <div className="p-4">
-                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
-                  Add information about your services, pricing, FAQs, and policies. Your AI will use this to answer customer questions.
-                </p>
-                <textarea
-                  value={knowledgeBase}
-                  onChange={(e) => setKnowledgeBase(e.target.value)}
-                  rows={10}
-                  className="w-full px-4 py-3 rounded-lg border text-sm resize-none font-mono focus:outline-none focus:ring-2 transition"
-                  style={{ 
-                    borderColor: theme.border, 
-                    backgroundColor: theme.bg,
-                    color: theme.text,
-                  }}
-                  placeholder="Services:
-- Plumbing repair: $75-150/hour
-- Emergency service available 24/7
+            <div className="p-4">
+              {/* Collapsed View */}
+              <div 
+                onClick={() => setKbExpanded(!kbExpanded)}
+                className="flex items-center justify-between cursor-pointer group"
+              >
+                <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
+                  <span>Last updated: {formatDate(kbLastUpdated)}</span>
+                </div>
+                <button 
+                  className="flex items-center gap-1 text-sm font-medium group-hover:opacity-80 transition"
+                  style={{ color: primaryColor }}
+                >
+                  {kbExpanded ? 'Collapse' : 'Edit Knowledge'}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
 
-FAQs:
-Q: Do you offer free estimates?
-A: Yes, we provide free estimates for all jobs.
+              {/* Expanded Form */}
+              {kbExpanded && (
+                <div className="mt-4 space-y-5">
+                  {/* Website URL */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
+                      <Globe className="w-4 h-4" style={{ color: primaryColor }} />
+                      Website URL
+                    </label>
+                    <input
+                      type="url"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      placeholder="https://yourbusiness.com"
+                      className="w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none transition"
+                      style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
+                    />
+                    <p className="text-xs mt-1.5" style={{ color: theme.textMuted4 }}>We'll extract info from your website automatically</p>
+                  </div>
 
-Policies:
-- 24 hour cancellation policy
-- Payment due upon completion"
-                />
-                
-                {hasKBChanges && (
+                  {/* Services */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
+                      <Briefcase className="w-4 h-4" style={{ color: primaryColor }} />
+                      Services & Pricing
+                    </label>
+                    <div className="space-y-2">
+                      {services.map((service) => (
+                        <div key={service.id} className="p-3 rounded-lg space-y-2" style={{ backgroundColor: theme.bg }}>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={service.name}
+                              onChange={(e) => updateService(service.id, 'name', e.target.value)}
+                              placeholder="Service name"
+                              className="flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                            />
+                            <input
+                              type="text"
+                              value={service.price}
+                              onChange={(e) => updateService(service.id, 'price', e.target.value)}
+                              placeholder="$100"
+                              className="w-20 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                            />
+                            <button
+                              onClick={() => removeService(service.id)}
+                              disabled={services.length === 1}
+                              className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <textarea
+                            value={service.description}
+                            onChange={(e) => updateService(service.id, 'description', e.target.value)}
+                            placeholder="Brief description..."
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none resize-none"
+                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={addService}
+                      className="mt-2 flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition hover:opacity-80"
+                      style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Service
+                    </button>
+                  </div>
+
+                  {/* FAQs */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
+                      <HelpCircle className="w-4 h-4" style={{ color: primaryColor }} />
+                      FAQs
+                    </label>
+                    <div className="space-y-2">
+                      {faqs.map((faq) => (
+                        <div key={faq.id} className="p-3 rounded-lg space-y-2" style={{ backgroundColor: theme.bg }}>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={faq.question}
+                              onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)}
+                              placeholder="Question..."
+                              className="flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                            />
+                            <button
+                              onClick={() => removeFAQ(faq.id)}
+                              disabled={faqs.length === 1}
+                              className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <textarea
+                            value={faq.answer}
+                            onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)}
+                            placeholder="Answer..."
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none resize-none"
+                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={addFAQ}
+                      className="mt-2 flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition hover:opacity-80"
+                      style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add FAQ
+                    </button>
+                  </div>
+
+                  {/* Additional Info */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
+                      <FileText className="w-4 h-4" style={{ color: primaryColor }} />
+                      Additional Info
+                    </label>
+                    <textarea
+                      value={additionalInfo}
+                      onChange={(e) => setAdditionalInfo(e.target.value)}
+                      placeholder="Policies, service areas, payment methods, team info, etc."
+                      rows={3}
+                      className="w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition"
+                      style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
+                    />
+                  </div>
+
+                  {/* Update Button */}
                   <button
                     onClick={handleSaveKnowledgeBase}
                     disabled={savingKB}
-                    className="w-full mt-3 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
                   >
-                    {savingKB ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Knowledge Base'}
+                    {savingKB ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Update AI Knowledge
+                      </>
+                    )}
                   </button>
-                )}
-              </div>
-            )}
+                  <p className="text-center text-xs" style={{ color: theme.textMuted4 }}>Changes apply to all incoming calls</p>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
