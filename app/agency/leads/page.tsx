@@ -37,23 +37,22 @@ interface LeadStats {
   overdueFollowUps: number;
 }
 
-// Tips & Resources - Blog posts for lead generation (correct URLs)
 const LEAD_TIPS = [
   {
-    title: 'How to Pitch AI Receptionists to Home Service Businesses',
-    description: 'The pain points that matter, the ROI arguments that close deals, and objection handling.',
+    title: 'How to Pitch AI Receptionists',
+    description: 'Pain points, ROI arguments, and objection handling.',
     url: '/blog/pitch-ai-receptionists-home-services',
     category: 'Sales',
   },
   {
-    title: '5 Cold Outreach Templates That Actually Work',
-    description: 'Data-backed email templates with 10-15% reply rates. Includes follow-up sequences.',
+    title: '5 Cold Outreach Templates',
+    description: 'Email templates with 10-15% reply rates.',
     url: '/blog/cold-outreach-templates-that-work',
     category: 'Outreach',
   },
   {
-    title: 'Building a Referral Program for Your Agency',
-    description: 'Systematic approach to getting client referrals with incentive structures and templates.',
+    title: 'Building a Referral Program',
+    description: 'Get client referrals with incentive structures.',
     url: '/blog/building-referral-program-agency',
     category: 'Growth',
   },
@@ -98,14 +97,12 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
-// Check if a date is today
 function isToday(dateStr: string): boolean {
   const date = new Date(dateStr);
   const today = new Date();
   return date.toDateString() === today.toDateString();
 }
 
-// Check if a date is overdue (before today)
 function isOverdue(dateStr: string): boolean {
   const date = new Date(dateStr);
   date.setHours(0, 0, 0, 0);
@@ -114,7 +111,6 @@ function isOverdue(dateStr: string): boolean {
   return date < today;
 }
 
-// Filter types for special views
 type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active';
 
 export default function AgencyLeadsPage() {
@@ -148,10 +144,7 @@ export default function AgencyLeadsPage() {
         const data = await response.json();
         setLeads(data.leads || []);
         
-        // Calculate stats including overdue
         const allLeads = data.leads || [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         
         const calculatedStats: LeadStats = {
           total: allLeads.length,
@@ -184,18 +177,14 @@ export default function AgencyLeadsPage() {
     }
   };
 
-  // Filter leads based on all criteria
   const filteredLeads = leads.filter(lead => {
-    // Search filter
     const matchesSearch = !searchQuery || 
       lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Status filter
     const matchesStatus = !statusFilter || lead.status === statusFilter;
     
-    // Special filter modes
     let matchesFilterMode = true;
     if (filterMode === 'follow-up-today') {
       matchesFilterMode = lead.next_follow_up ? isToday(lead.next_follow_up) : false;
@@ -208,17 +197,15 @@ export default function AgencyLeadsPage() {
     return matchesSearch && matchesStatus && matchesFilterMode;
   });
 
-  // Clear all filters
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter(null);
     setFilterMode('all');
   };
 
-  // Handle stat card clicks
   const handleStatClick = (mode: FilterMode) => {
     setFilterMode(mode);
-    setStatusFilter(null); // Clear status filter when using special modes
+    setStatusFilter(null);
   };
 
   if (contextLoading || loading) {
@@ -232,111 +219,113 @@ export default function AgencyLeadsPage() {
   const hasActiveFilters = searchQuery || statusFilter || filterMode !== 'all';
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="mt-1 text-[#fafaf9]/50">
-            {stats?.total || 0} total leads
-            {stats && stats.overdueFollowUps > 0 && (
-              <span className="text-amber-400 ml-2">
-                {stats.overdueFollowUps} overdue
-              </span>
-            )}
-          </p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Leads</h1>
+            <p className="mt-1 text-sm text-[#fafaf9]/50">
+              {stats?.total || 0} total leads
+              {stats && stats.overdueFollowUps > 0 && (
+                <span className="text-amber-400 ml-2">
+                  {stats.overdueFollowUps} overdue
+                </span>
+              )}
+            </p>
+          </div>
+          
+          <Link
+            href="/agency/leads/new"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Add Lead
+          </Link>
         </div>
-        
-        <Link
-          href="/agency/leads/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Add Lead
-        </Link>
       </div>
 
       {/* Overdue Alert Banner */}
       {stats && stats.overdueFollowUps > 0 && filterMode !== 'overdue' && (
         <button
           onClick={() => handleStatClick('overdue')}
-          className="w-full mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-center justify-between hover:bg-amber-500/15 transition-colors text-left"
+          className="w-full mb-4 sm:mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 sm:p-4 flex items-center justify-between hover:bg-amber-500/15 transition-colors text-left"
         >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
             <div>
-              <p className="font-medium text-amber-400">
+              <p className="font-medium text-sm text-amber-400">
                 {stats.overdueFollowUps} overdue follow-up{stats.overdueFollowUps > 1 ? 's' : ''}
               </p>
-              <p className="text-sm text-[#fafaf9]/50">Click to view leads that need attention</p>
+              <p className="text-xs text-[#fafaf9]/50 hidden sm:block">Click to view leads that need attention</p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-amber-400" />
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
         </button>
       )}
 
-      {/* Tips Section */}
+      {/* Tips Section - Collapsible on mobile */}
       {showTips && !hasActiveFilters && (
-        <div className="mb-8 rounded-xl border border-white/[0.06] bg-gradient-to-r from-purple-500/[0.08] to-transparent overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/20">
-                <Lightbulb className="h-5 w-5 text-purple-400" />
+        <div className="mb-6 sm:mb-8 rounded-xl border border-white/[0.06] bg-gradient-to-r from-purple-500/[0.08] to-transparent overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 sm:px-5 py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-purple-500/20 flex-shrink-0">
+                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
               </div>
               <div>
-                <h3 className="font-medium">Lead Generation Resources</h3>
-                <p className="text-sm text-[#fafaf9]/50">Guides to help you grow your pipeline</p>
+                <h3 className="font-medium text-sm">Lead Generation Tips</h3>
+                <p className="text-xs text-[#fafaf9]/50 hidden sm:block">Guides to grow your pipeline</p>
               </div>
             </div>
             <button
               onClick={() => setShowTips(false)}
-              className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/60 transition-colors"
+              className="text-xs text-[#fafaf9]/40 hover:text-[#fafaf9]/60 transition-colors"
             >
               Hide
             </button>
           </div>
-          <div className="grid gap-3 p-5 sm:grid-cols-3">
+          <div className="grid gap-2 sm:gap-3 p-3 sm:p-5 sm:grid-cols-3">
             {LEAD_TIPS.map((tip, index) => (
               <a
                 key={index}
                 href={tip.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+                className="group rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 sm:p-4 hover:bg-white/[0.04] transition-colors"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
+                  <span className="text-[10px] sm:text-xs font-medium text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
                     {tip.category}
                   </span>
-                  <ExternalLink className="h-3.5 w-3.5 text-[#fafaf9]/30 group-hover:text-[#fafaf9]/50 transition-colors" />
+                  <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-[#fafaf9]/30 group-hover:text-[#fafaf9]/50 transition-colors flex-shrink-0" />
                 </div>
-                <h4 className="font-medium text-sm mb-1 line-clamp-2">{tip.title}</h4>
-                <p className="text-xs text-[#fafaf9]/40 line-clamp-2">{tip.description}</p>
+                <h4 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1 line-clamp-2">{tip.title}</h4>
+                <p className="text-[10px] sm:text-xs text-[#fafaf9]/40 line-clamp-2 hidden sm:block">{tip.description}</p>
               </a>
             ))}
           </div>
         </div>
       )}
 
-      {/* Stats Grid - All clickable */}
+      {/* Stats Grid */}
       {stats && stats.total > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-8">
           {/* Active Leads */}
           <button
             onClick={() => handleStatClick('active')}
-            className={`rounded-xl border p-5 text-left transition-all ${
+            className={`rounded-xl border p-3 sm:p-5 text-left transition-all ${
               filterMode === 'active'
                 ? 'border-blue-500/50 bg-blue-500/10'
                 : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <Target className="h-5 w-5 text-blue-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-blue-500/10 flex-shrink-0">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-[#fafaf9]/50">Active Leads</p>
-                <p className="text-xl font-semibold">
+                <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Active</p>
+                <p className="text-lg sm:text-xl font-semibold">
                   {stats.total - stats.won - stats.lost}
                 </p>
               </div>
@@ -349,59 +338,54 @@ export default function AgencyLeadsPage() {
               setFilterMode('all');
               setStatusFilter(statusFilter === 'qualified' ? null : 'qualified');
             }}
-            className={`rounded-xl border p-5 text-left transition-all ${
+            className={`rounded-xl border p-3 sm:p-5 text-left transition-all ${
               statusFilter === 'qualified'
                 ? 'border-purple-500/50 bg-purple-500/10'
                 : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/10 flex-shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-[#fafaf9]/50">Qualified</p>
-                <p className="text-xl font-semibold">{stats.qualified + stats.proposal}</p>
+                <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Qualified</p>
+                <p className="text-lg sm:text-xl font-semibold">{stats.qualified + stats.proposal}</p>
               </div>
             </div>
           </button>
           
-          {/* Pipeline Value - Not clickable, just display */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                <DollarSign className="h-5 w-5 text-emerald-400" />
+          {/* Pipeline Value */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-emerald-500/10 flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
               </div>
-              <div>
-                <p className="text-sm text-[#fafaf9]/50">Pipeline Value</p>
-                <p className="text-xl font-semibold">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Pipeline</p>
+                <p className="text-lg sm:text-xl font-semibold truncate">
                   {formatCurrency(stats.totalEstimatedValue)}
                 </p>
               </div>
             </div>
           </div>
           
-          {/* Follow-ups Today - Clickable */}
+          {/* Follow-ups Today */}
           <button
             onClick={() => handleStatClick('follow-up-today')}
-            className={`rounded-xl border p-5 text-left transition-all ${
+            className={`rounded-xl border p-3 sm:p-5 text-left transition-all ${
               filterMode === 'follow-up-today'
                 ? 'border-amber-500/50 bg-amber-500/10'
                 : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-                <Calendar className="h-5 w-5 text-amber-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-amber-500/10 flex-shrink-0">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm text-[#fafaf9]/50">Follow-ups Today</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-xl font-semibold">{stats.followUpsToday}</p>
-                  {stats.followUpsToday > 0 && filterMode !== 'follow-up-today' && (
-                    <span className="text-xs text-amber-400">Click to view</span>
-                  )}
-                </div>
+                <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Today</p>
+                <p className="text-lg sm:text-xl font-semibold">{stats.followUpsToday}</p>
               </div>
             </div>
           </button>
@@ -410,56 +394,49 @@ export default function AgencyLeadsPage() {
 
       {/* Active Filter Indicator */}
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          <span className="text-sm text-[#fafaf9]/50">Filtering by:</span>
+        <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
+          <span className="text-xs sm:text-sm text-[#fafaf9]/50">Filtering:</span>
           
           {filterMode === 'follow-up-today' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-medium text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-amber-400">
               <Calendar className="h-3 w-3" />
-              Follow-ups Today
+              Today
             </span>
           )}
           
           {filterMode === 'overdue' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-3 py-1 text-xs font-medium text-red-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/20 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-red-400">
               <AlertCircle className="h-3 w-3" />
               Overdue
             </span>
           )}
           
           {filterMode === 'active' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 text-xs font-medium text-blue-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-blue-400">
               <Target className="h-3 w-3" />
-              Active Only
+              Active
             </span>
           )}
           
           {statusFilter && (
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${getStatusStyle(statusFilter)}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium ${getStatusStyle(statusFilter)}`}>
               {getStatusLabel(statusFilter)}
-            </span>
-          )}
-          
-          {searchQuery && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] px-3 py-1 text-xs font-medium text-[#fafaf9]/70">
-              <Search className="h-3 w-3" />
-              "{searchQuery}"
             </span>
           )}
           
           <button
             onClick={clearFilters}
-            className="inline-flex items-center gap-1 text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors ml-2"
+            className="inline-flex items-center gap-1 text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors ml-1"
           >
             <X className="h-3 w-3" />
-            Clear all
+            Clear
           </button>
         </div>
       )}
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
           <input
             type="text"
@@ -470,54 +447,53 @@ export default function AgencyLeadsPage() {
           />
         </div>
         
-        <select
-          value={statusFilter || ''}
-          onChange={(e) => {
-            setStatusFilter(e.target.value || null);
-            if (e.target.value) {
-              setFilterMode('all'); // Clear special mode when selecting status
-            }
-          }}
-          className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-[#fafaf9]/70 focus:outline-none focus:border-emerald-500/50 transition-colors"
-        >
-          <option value="">All Status</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="qualified">Qualified</option>
-          <option value="proposal">Proposal</option>
-          <option value="won">Won</option>
-          <option value="lost">Lost</option>
-        </select>
-
-        {!showTips && (
-          <button
-            onClick={() => setShowTips(true)}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
+        <div className="flex gap-2">
+          <select
+            value={statusFilter || ''}
+            onChange={(e) => {
+              setStatusFilter(e.target.value || null);
+              if (e.target.value) setFilterMode('all');
+            }}
+            className="flex-1 sm:flex-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2.5 text-sm text-[#fafaf9]/70 focus:outline-none focus:border-emerald-500/50 transition-colors"
           >
-            <BookOpen className="h-4 w-4" />
-            Show Tips
-          </button>
-        )}
+            <option value="">All Status</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option>
+            <option value="proposal">Proposal</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
+
+          {!showTips && (
+            <button
+              onClick={() => setShowTips(true)}
+              className="flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
+            >
+              <BookOpen className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Leads List */}
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         {filteredLeads.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+          <div className="py-12 sm:py-20 text-center px-4">
+            <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-500/10">
               {hasActiveFilters ? (
-                <Filter className="h-8 w-8 text-emerald-400/50" />
+                <Filter className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400/50" />
               ) : (
-                <Target className="h-8 w-8 text-emerald-400/50" />
+                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400/50" />
               )}
             </div>
-            <p className="mt-4 font-medium text-[#fafaf9]/70">
+            <p className="mt-4 font-medium text-sm sm:text-base text-[#fafaf9]/70">
               {hasActiveFilters ? 'No leads match your filters' : 'No leads yet'}
             </p>
-            <p className="text-sm text-[#fafaf9]/40 mt-1 mb-4">
+            <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1 mb-4">
               {hasActiveFilters 
-                ? 'Try adjusting your filters or search query' 
-                : 'Start building your pipeline by adding your first lead'}
+                ? 'Try adjusting your filters' 
+                : 'Start building your pipeline'}
             </p>
             {hasActiveFilters ? (
               <button
@@ -533,7 +509,7 @@ export default function AgencyLeadsPage() {
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                Add Your First Lead
+                Add First Lead
               </Link>
             )}
           </div>
@@ -559,36 +535,38 @@ export default function AgencyLeadsPage() {
                   <Link
                     key={lead.id}
                     href={`/agency/leads/${lead.id}`}
-                    className={`block lg:grid lg:grid-cols-12 gap-4 items-center px-6 py-4 hover:bg-white/[0.02] transition-colors ${
+                    className={`block px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.02] transition-colors ${
                       followUpOverdue ? 'bg-red-500/[0.03]' : ''
                     }`}
                   >
                     {/* Mobile Layout */}
-                    <div className="lg:hidden flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                          <span className="text-sm font-medium text-blue-400">
-                            {lead.business_name?.charAt(0) || '?'}
-                          </span>
+                    <div className="lg:hidden">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-blue-500/10 flex-shrink-0">
+                            <span className="text-xs sm:text-sm font-medium text-blue-400">
+                              {lead.business_name?.charAt(0) || '?'}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{lead.business_name}</p>
+                            <p className="text-xs text-[#fafaf9]/50 truncate">{lead.contact_name || 'No contact'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{lead.business_name}</p>
-                          <p className="text-sm text-[#fafaf9]/50">{lead.contact_name || 'No contact'}</p>
-                        </div>
+                        <ArrowUpRight className="h-4 w-4 text-[#fafaf9]/30 flex-shrink-0" />
                       </div>
-                      <ArrowUpRight className="h-4 w-4 text-[#fafaf9]/30" />
-                    </div>
-                    <div className="lg:hidden flex items-center justify-between text-sm">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusStyle(lead.status)}`}>
-                        {getStatusLabel(lead.status)}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {followUpOverdue && (
-                          <AlertCircle className="h-4 w-4 text-red-400" />
-                        )}
-                        {followUpToday && (
-                          <Calendar className="h-4 w-4 text-amber-400" />
-                        )}
+                      <div className="flex items-center justify-between text-xs sm:text-sm pl-11 sm:pl-[52px]">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getStatusStyle(lead.status)}`}>
+                            {getStatusLabel(lead.status)}
+                          </span>
+                          {followUpOverdue && (
+                            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-400" />
+                          )}
+                          {followUpToday && !followUpOverdue && (
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-amber-400" />
+                          )}
+                        </div>
                         <span className="text-[#fafaf9]/40">
                           {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
                         </span>
@@ -596,66 +574,68 @@ export default function AgencyLeadsPage() {
                     </div>
 
                     {/* Desktop Layout */}
-                    <div className="hidden lg:flex col-span-3 items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                        <span className="text-sm font-medium text-blue-400">
-                          {lead.business_name?.charAt(0) || '?'}
+                    <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
+                      <div className="col-span-3 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                          <span className="text-sm font-medium text-blue-400">
+                            {lead.business_name?.charAt(0) || '?'}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{lead.business_name}</p>
+                          <p className="text-sm text-[#fafaf9]/40 capitalize truncate">{lead.industry || 'No industry'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="col-span-2 min-w-0">
+                        <p className="text-sm truncate">{lead.contact_name || '—'}</p>
+                        <p className="text-xs text-[#fafaf9]/40 truncate">{lead.email || '—'}</p>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusStyle(lead.status)}`}>
+                          {getStatusLabel(lead.status)}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium">{lead.business_name}</p>
-                        <p className="text-sm text-[#fafaf9]/40 capitalize">{lead.industry || 'No industry'}</p>
+                      
+                      <div className="col-span-2">
+                        <p className="text-sm">
+                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
+                        </p>
+                        {lead.estimated_value && (
+                          <p className="text-xs text-[#fafaf9]/40">/month</p>
+                        )}
                       </div>
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2">
-                      <p className="text-sm">{lead.contact_name || '—'}</p>
-                      <p className="text-xs text-[#fafaf9]/40 truncate">{lead.email || '—'}</p>
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2">
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusStyle(lead.status)}`}>
-                        {getStatusLabel(lead.status)}
-                      </span>
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2">
-                      <p className="text-sm">
-                        {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
-                      </p>
-                      {lead.estimated_value && (
-                        <p className="text-xs text-[#fafaf9]/40">/month</p>
-                      )}
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2">
-                      {lead.next_follow_up ? (
-                        <div className="flex items-center gap-2">
-                          {followUpOverdue && (
-                            <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
-                          )}
-                          {followUpToday && !followUpOverdue && (
-                            <Calendar className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                          )}
-                          <div>
-                            <p className={`text-sm ${followUpOverdue ? 'text-red-400' : followUpToday ? 'text-amber-400' : ''}`}>
-                              {new Date(lead.next_follow_up).toLocaleDateString()}
-                            </p>
+                      
+                      <div className="col-span-2">
+                        {lead.next_follow_up ? (
+                          <div className="flex items-center gap-2">
                             {followUpOverdue && (
-                              <p className="text-xs text-red-400">Overdue</p>
+                              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
                             )}
                             {followUpToday && !followUpOverdue && (
-                              <p className="text-xs text-amber-400">Today</p>
+                              <Calendar className="h-4 w-4 text-amber-400 flex-shrink-0" />
                             )}
+                            <div>
+                              <p className={`text-sm ${followUpOverdue ? 'text-red-400' : followUpToday ? 'text-amber-400' : ''}`}>
+                                {new Date(lead.next_follow_up).toLocaleDateString()}
+                              </p>
+                              {followUpOverdue && (
+                                <p className="text-xs text-red-400">Overdue</p>
+                              )}
+                              {followUpToday && !followUpOverdue && (
+                                <p className="text-xs text-amber-400">Today</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-[#fafaf9]/30">Not set</p>
-                      )}
-                    </div>
-                    
-                    <div className="hidden lg:flex col-span-1 justify-end">
-                      <ChevronRight className="h-4 w-4 text-[#fafaf9]/20" />
+                        ) : (
+                          <p className="text-sm text-[#fafaf9]/30">Not set</p>
+                        )}
+                      </div>
+                      
+                      <div className="col-span-1 flex justify-end">
+                        <ChevronRight className="h-4 w-4 text-[#fafaf9]/20" />
+                      </div>
                     </div>
                   </Link>
                 );

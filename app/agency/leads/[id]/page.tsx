@@ -86,13 +86,11 @@ export default function LeadDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [activityKey, setActivityKey] = useState(0);  // For refreshing activity log
+  const [activityKey, setActivityKey] = useState(0);
   
-  // Composer modal state
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
   
-  // Form state
   const [formData, setFormData] = useState({
     business_name: '',
     contact_name: '',
@@ -137,7 +135,6 @@ export default function LeadDetailPage() {
       const data = await response.json();
       setLead(data.lead);
       
-      // Populate form
       setFormData({
         business_name: data.lead.business_name || '',
         contact_name: data.lead.contact_name || '',
@@ -197,7 +194,7 @@ export default function LeadDetailPage() {
       const data = await response.json();
       setLead(data.lead);
       setSuccessMessage('Lead updated successfully');
-      setActivityKey(prev => prev + 1);  // Refresh activity log
+      setActivityKey(prev => prev + 1);
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to save lead');
@@ -258,7 +255,7 @@ export default function LeadDetailPage() {
         setLead(data.lead);
         setFormData(prev => ({ ...prev, status: newStatus }));
         setSuccessMessage('Status updated');
-        setActivityKey(prev => prev + 1);  // Refresh activity log
+        setActivityKey(prev => prev + 1);
         setTimeout(() => setSuccessMessage(''), 2000);
       }
     } catch (err) {
@@ -272,7 +269,7 @@ export default function LeadDetailPage() {
   };
 
   const handleOutreachSent = () => {
-    setActivityKey(prev => prev + 1);  // Refresh activity log
+    setActivityKey(prev => prev + 1);
   };
 
   if (contextLoading || loading) {
@@ -285,7 +282,7 @@ export default function LeadDetailPage() {
 
   if (error && !lead) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors mb-8"
@@ -293,9 +290,9 @@ export default function LeadDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
         </Link>
-        <div className="text-center py-20">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
-            <XCircle className="h-8 w-8 text-red-400/50" />
+        <div className="text-center py-16 sm:py-20">
+          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-red-500/10">
+            <XCircle className="h-7 w-7 sm:h-8 sm:w-8 text-red-400/50" />
           </div>
           <p className="mt-4 font-medium text-[#fafaf9]/70">{error}</p>
           <Link 
@@ -311,9 +308,9 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Back Button & Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors mb-4"
@@ -322,38 +319,38 @@ export default function LeadDetailPage() {
           Back to Leads
         </Link>
         
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-blue-500/10">
-              <span className="text-2xl font-medium text-blue-400">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-blue-500/10 flex-shrink-0">
+              <span className="text-lg sm:text-2xl font-medium text-blue-400">
                 {lead?.business_name?.charAt(0) || '?'}
               </span>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">{lead?.business_name}</h1>
-              <p className="mt-1 text-[#fafaf9]/50">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate">{lead?.business_name}</h1>
+              <p className="text-sm text-[#fafaf9]/50">
                 Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '—'}
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 sm:px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
             >
               {deleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
-              Delete
+              <span className="hidden sm:inline">Delete</span>
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-3 sm:px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -368,56 +365,58 @@ export default function LeadDetailPage() {
 
       {/* Status Messages */}
       {error && (
-        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400">
+        <div className="mb-4 sm:mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-3 sm:p-4 text-sm text-red-400">
           {error}
         </div>
       )}
       {successMessage && (
-        <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-400 flex items-center gap-2">
-          <CheckCircle className="h-4 w-4" />
+        <div className="mb-4 sm:mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:p-4 text-sm text-emerald-400 flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 flex-shrink-0" />
           {successMessage}
         </div>
       )}
 
       {/* Quick Actions Bar */}
-      <div className="mb-8 flex flex-wrap items-center gap-3">
-        <span className="text-sm text-[#fafaf9]/50">Quick Actions:</span>
-        <button
-          onClick={() => openComposer('email')}
-          disabled={!lead?.email}
-          className="inline-flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-sm font-medium text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Mail className="h-4 w-4" />
-          Send Email
-        </button>
-        <button
-          onClick={() => openComposer('sms')}
-          disabled={!lead?.phone}
-          className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <MessageSquare className="h-4 w-4" />
-          Send SMS
-        </button>
-        {lead?.phone && (
-          <a
-            href={`tel:${lead.phone}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-400 hover:bg-green-500/20 transition-colors"
+      <div className="mb-6 sm:mb-8">
+        <span className="text-xs sm:text-sm text-[#fafaf9]/50 block mb-2 sm:mb-3">Quick Actions:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => openComposer('email')}
+            disabled={!lead?.email}
+            className="inline-flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <PhoneCall className="h-4 w-4" />
-            Call
-          </a>
-        )}
+            <Mail className="h-4 w-4" />
+            Email
+          </button>
+          <button
+            onClick={() => openComposer('sms')}
+            disabled={!lead?.phone}
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <MessageSquare className="h-4 w-4" />
+            SMS
+          </button>
+          {lead?.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              className="inline-flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-green-400 hover:bg-green-500/20 transition-colors"
+            >
+              <PhoneCall className="h-4 w-4" />
+              Call
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Quick Status Buttons */}
-      <div className="mb-8">
-        <p className="text-sm text-[#fafaf9]/50 mb-3">Pipeline Stage</p>
+      <div className="mb-6 sm:mb-8">
+        <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-2 sm:mb-3">Pipeline Stage</p>
         <div className="flex flex-wrap gap-2">
           {STATUS_OPTIONS.map((status) => (
             <button
               key={status.value}
               onClick={() => handleQuickStatusChange(status.value)}
-              className={`rounded-full px-4 py-2 text-sm font-medium border transition-all ${
+              className={`rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border transition-all ${
                 formData.status === status.value
                   ? getStatusStyle(status.value) + ' border-current'
                   : 'border-white/[0.08] bg-white/[0.02] text-[#fafaf9]/60 hover:bg-white/[0.04]'
@@ -429,37 +428,37 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left Column - Contact & Business Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Business Information */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-5 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
               <Building2 className="h-4 w-4 text-[#fafaf9]/50" />
               Business Information
             </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Business Name *</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Business Name *</label>
                 <input
                   type="text"
                   value={formData.business_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Industry</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Industry</label>
                 <input
                   type="text"
                   value={formData.industry}
                   onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
-                  placeholder="e.g., Plumbing, HVAC, Dental"
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                  placeholder="e.g., Plumbing, HVAC"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Website</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Website</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
@@ -467,7 +466,7 @@ export default function LeadDetailPage() {
                     value={formData.website}
                     onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
                     placeholder="https://example.com"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -475,42 +474,42 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Contact Information */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-5 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
               <User className="h-4 w-4 text-[#fafaf9]/50" />
               Contact Information
             </h3>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Contact Name</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Contact Name</label>
                 <input
                   type="text"
                   value={formData.contact_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Phone</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Phone</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Email</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -518,17 +517,17 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Notes Section */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-5 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
               <FileText className="h-4 w-4 text-[#fafaf9]/50" />
               Internal Notes
             </h3>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Add notes about this lead... meetings, conversations, next steps, etc."
-              rows={6}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none resize-none"
+              placeholder="Add notes about this lead..."
+              rows={4}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none resize-none"
             />
           </div>
 
@@ -544,20 +543,20 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right Column - Lead Details */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Lead Status & Source */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-5 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
               <Tag className="h-4 w-4 text-[#fafaf9]/50" />
               Lead Details
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Status</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -565,11 +564,11 @@ export default function LeadDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Source</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Source</label>
                 <select
                   value={formData.source}
                   onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                 >
                   <option value="">Select source</option>
                   {SOURCE_OPTIONS.map((opt) => (
@@ -581,14 +580,14 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Deal Value & Follow-up */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-5 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
               <DollarSign className="h-4 w-4 text-[#fafaf9]/50" />
               Deal Info
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Estimated Value ($/mo)</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Estimated Value ($/mo)</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
@@ -596,19 +595,19 @@ export default function LeadDetailPage() {
                     value={formData.estimated_value}
                     onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
                     placeholder="99"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-[#fafaf9]/50 mb-1.5">Next Follow-up</label>
+                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Next Follow-up</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
                     type="date"
                     value={formData.next_follow_up}
                     onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2.5 text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -616,12 +615,12 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Timestamps */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-            <h3 className="font-medium mb-4 flex items-center gap-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+            <h3 className="font-medium mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <Clock className="h-4 w-4 text-[#fafaf9]/50" />
               Timestamps
             </h3>
-            <div className="space-y-3 text-sm">
+            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-[#fafaf9]/50">Created</span>
                 <span>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '—'}</span>

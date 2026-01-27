@@ -76,7 +76,6 @@ export default function AgencyAnalyticsPage() {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-      // Fetch analytics/revenue data
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/analytics`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -116,90 +115,90 @@ export default function AgencyAnalyticsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics & Revenue</h1>
-        <p className="mt-1 text-[#fafaf9]/50">Track your earnings and client metrics.</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Analytics & Revenue</h1>
+        <p className="mt-1 text-sm text-[#fafaf9]/50">Track your earnings and client metrics.</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
         {/* MRR */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
-              <TrendingUp className="h-6 w-6 text-emerald-400" />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-emerald-500/10 flex-shrink-0">
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
             </div>
-            <div>
-              <p className="text-sm text-[#fafaf9]/50">Monthly Recurring</p>
-              <p className="text-2xl font-semibold">{formatCurrency(stats.mrr)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Monthly Recurring</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate">{formatCurrency(stats.mrr)}</p>
             </div>
           </div>
         </div>
 
         {/* Total Earned */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-              <DollarSign className="h-6 w-6 text-blue-400" />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-blue-500/10 flex-shrink-0">
+              <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm text-[#fafaf9]/50">Total Earned</p>
-              <p className="text-2xl font-semibold">{formatCurrency(stats.totalEarned)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Total Earned</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate">{formatCurrency(stats.totalEarned)}</p>
             </div>
           </div>
         </div>
 
         {/* Pending Payout */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
-              <Wallet className="h-6 w-6 text-amber-400" />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-amber-500/10 flex-shrink-0">
+              <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400" />
             </div>
-            <div>
-              <p className="text-sm text-[#fafaf9]/50">Pending Payout</p>
-              <p className="text-2xl font-semibold">{formatCurrency(stats.pendingPayout)}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Pending Payout</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate">{formatCurrency(stats.pendingPayout)}</p>
             </div>
           </div>
         </div>
 
         {/* Active Clients */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
-              <Users className="h-6 w-6 text-purple-400" />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-purple-500/10 flex-shrink-0">
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
             </div>
-            <div>
-              <p className="text-sm text-[#fafaf9]/50">Paying Clients</p>
-              <p className="text-2xl font-semibold">{stats.activeClients}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-sm text-[#fafaf9]/50">Paying Clients</p>
+              <p className="text-lg sm:text-2xl font-semibold">{stats.activeClients}</p>
               {stats.trialClients > 0 && (
-                <p className="text-xs text-[#fafaf9]/40">+{stats.trialClients} in trial</p>
+                <p className="text-[10px] sm:text-xs text-[#fafaf9]/40">+{stats.trialClients} in trial</p>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-          <h3 className="font-medium mb-6">Revenue Over Time</h3>
+        <div className="lg:col-span-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="font-medium mb-4 sm:mb-6 text-sm sm:text-base">Revenue Over Time</h3>
           
           {revenueByMonth.length === 0 ? (
-            <div className="h-48 flex items-center justify-center">
-              <p className="text-[#fafaf9]/40">No revenue data yet</p>
+            <div className="h-32 sm:h-48 flex items-center justify-center">
+              <p className="text-sm text-[#fafaf9]/40">No revenue data yet</p>
             </div>
           ) : (
-            <div className="h-48">
-              <div className="flex items-end justify-between h-full gap-2">
+            <div className="h-32 sm:h-48">
+              <div className="flex items-end justify-between h-full gap-1 sm:gap-2">
                 {revenueByMonth.map((item, index) => {
                   const height = maxRevenue > 0 ? (item.amount / maxRevenue) * 100 : 0;
                   return (
-                    <div key={item.month} className="flex-1 flex flex-col items-center gap-2">
-                      <div className="w-full flex flex-col items-center justify-end h-36">
+                    <div key={item.month} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
+                      <div className="w-full flex flex-col items-center justify-end h-24 sm:h-36">
                         <div 
-                          className="w-full max-w-[40px] rounded-t-lg transition-all duration-300 bg-emerald-500"
+                          className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg transition-all duration-300 bg-emerald-500"
                           style={{ 
                             height: `${Math.max(height, 2)}%`,
                             opacity: 0.6 + (index / revenueByMonth.length) * 0.4,
@@ -207,7 +206,7 @@ export default function AgencyAnalyticsPage() {
                           title={formatCurrency(item.amount)}
                         />
                       </div>
-                      <span className="text-xs text-[#fafaf9]/40">
+                      <span className="text-[8px] sm:text-xs text-[#fafaf9]/40">
                         {formatMonth(item.month)}
                       </span>
                     </div>
@@ -219,10 +218,10 @@ export default function AgencyAnalyticsPage() {
         </div>
 
         {/* Revenue by Plan */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-          <h3 className="font-medium mb-4">Revenue by Plan</h3>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Revenue by Plan</h3>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {['starter', 'pro', 'growth'].map((plan) => {
               const planClients = clients.filter(
                 c => c.plan_type === plan && c.subscription_status === 'active'
@@ -233,10 +232,10 @@ export default function AgencyAnalyticsPage() {
               return (
                 <div key={plan}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm capitalize">{plan}</span>
-                    <span className="text-sm font-medium">{formatCurrency(planRevenue)}</span>
+                    <span className="text-xs sm:text-sm capitalize">{plan}</span>
+                    <span className="text-xs sm:text-sm font-medium">{formatCurrency(planRevenue)}</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden bg-white/[0.06]">
+                  <div className="h-1.5 sm:h-2 rounded-full overflow-hidden bg-white/[0.06]">
                     <div 
                       className="h-full rounded-full transition-all duration-500"
                       style={{ 
@@ -249,7 +248,7 @@ export default function AgencyAnalyticsPage() {
                       }}
                     />
                   </div>
-                  <p className="text-xs mt-1 text-[#fafaf9]/40">
+                  <p className="text-[10px] sm:text-xs mt-1 text-[#fafaf9]/40">
                     {planClients.length} client{planClients.length !== 1 ? 's' : ''}
                   </p>
                 </div>
@@ -260,18 +259,18 @@ export default function AgencyAnalyticsPage() {
       </div>
 
       {/* Recent Transactions */}
-      <div className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
-          <h3 className="font-medium">Recent Transactions</h3>
+      <div className="mt-4 sm:mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 sm:px-6 py-3 sm:py-4">
+          <h3 className="font-medium text-sm sm:text-base">Recent Transactions</h3>
         </div>
 
         {payments.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-emerald-500/10">
-              <CreditCard className="h-6 w-6 text-emerald-400/50" />
+          <div className="p-8 sm:p-12 text-center">
+            <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-4 bg-emerald-500/10">
+              <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400/50" />
             </div>
-            <p className="text-[#fafaf9]/60">No transactions yet</p>
-            <p className="text-sm mt-1 text-[#fafaf9]/40">
+            <p className="text-sm text-[#fafaf9]/60">No transactions yet</p>
+            <p className="text-xs sm:text-sm mt-1 text-[#fafaf9]/40">
               Transactions will appear here when clients pay
             </p>
           </div>
@@ -293,63 +292,67 @@ export default function AgencyAnalyticsPage() {
                 return (
                   <div
                     key={payment.id}
-                    className="px-6 py-4 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center"
+                    className="px-4 sm:px-6 py-3 sm:py-4"
                   >
                     {/* Mobile layout */}
-                    <div className="lg:hidden flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                    <div className="lg:hidden">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-medium bg-emerald-500/10 text-emerald-400 flex-shrink-0">
+                            {client?.business_name?.charAt(0) || '?'}
+                          </div>
+                          <span className="truncate text-sm">{client?.business_name || 'Unknown'}</span>
+                        </div>
+                        <span className="font-medium text-sm">{formatCurrency(payment.amount)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs sm:text-sm pl-10 sm:pl-11">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium capitalize ${
+                          payment.status === 'succeeded'
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : payment.status === 'pending'
+                            ? 'bg-amber-500/10 text-amber-400'
+                            : 'bg-red-500/10 text-red-400'
+                        }`}>
+                          {payment.status}
+                        </span>
+                        <span className="text-[#fafaf9]/40">
+                          {new Date(payment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Desktop layout */}
+                    <div className="hidden lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center">
+                      <div className="col-span-4 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium bg-emerald-500/10 text-emerald-400">
                           {client?.business_name?.charAt(0) || '?'}
                         </div>
                         <span className="truncate">{client?.business_name || 'Unknown'}</span>
                       </div>
-                      <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                    </div>
-                    <div className="lg:hidden flex items-center justify-between text-sm">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                        payment.status === 'succeeded'
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : payment.status === 'pending'
-                          ? 'bg-amber-500/10 text-amber-400'
-                          : 'bg-red-500/10 text-red-400'
-                      }`}>
-                        {payment.status}
-                      </span>
-                      <span className="text-[#fafaf9]/40">
-                        {new Date(payment.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    {/* Desktop layout */}
-                    <div className="hidden lg:flex col-span-4 items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium bg-emerald-500/10 text-emerald-400">
-                        {client?.business_name?.charAt(0) || '?'}
+                      
+                      <div className="col-span-2 font-medium">
+                        {formatCurrency(payment.amount)}
                       </div>
-                      <span className="truncate">{client?.business_name || 'Unknown'}</span>
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2 font-medium">
-                      {formatCurrency(payment.amount)}
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                        payment.status === 'succeeded'
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : payment.status === 'pending'
-                          ? 'bg-amber-500/10 text-amber-400'
-                          : 'bg-red-500/10 text-red-400'
-                      }`}>
-                        {payment.status}
-                      </span>
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2 capitalize text-[#fafaf9]/50">
-                      {payment.type || 'subscription'}
-                    </div>
-                    
-                    <div className="hidden lg:block col-span-2 text-right text-[#fafaf9]/50">
-                      {new Date(payment.created_at).toLocaleDateString()}
+                      
+                      <div className="col-span-2">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+                          payment.status === 'succeeded'
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : payment.status === 'pending'
+                            ? 'bg-amber-500/10 text-amber-400'
+                            : 'bg-red-500/10 text-red-400'
+                        }`}>
+                          {payment.status}
+                        </span>
+                      </div>
+                      
+                      <div className="col-span-2 capitalize text-[#fafaf9]/50">
+                        {payment.type || 'subscription'}
+                      </div>
+                      
+                      <div className="col-span-2 text-right text-[#fafaf9]/50">
+                        {new Date(payment.created_at).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
                 );
@@ -361,22 +364,22 @@ export default function AgencyAnalyticsPage() {
 
       {/* Stripe Connect Status */}
       {agency && !agency.stripe_account_id && (
-        <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-6">
+        <div className="mt-4 sm:mt-6 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-amber-500/10">
-                <CreditCard className="h-6 w-6 text-amber-400" />
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-amber-500/10 flex-shrink-0">
+                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400" />
               </div>
               <div>
-                <p className="font-medium text-amber-200">Connect Stripe to receive payouts</p>
-                <p className="text-sm text-amber-300/60">
+                <p className="font-medium text-sm sm:text-base text-amber-200">Connect Stripe to receive payouts</p>
+                <p className="text-xs sm:text-sm text-amber-300/60">
                   Set up Stripe Connect to receive payments from your clients
                 </p>
               </div>
             </div>
             <Link
               href="/agency/settings"
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-amber-400 transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-amber-400 transition-colors w-full sm:w-auto"
             >
               Set Up Payments
               <ChevronRight className="h-4 w-4" />
