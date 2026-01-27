@@ -152,18 +152,29 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
   // Calculate progress percentage
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // Helper to check if brand color is light
+  const isLightColor = (hex: string): boolean => {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+  };
+
+  const brandIsLight = isLightColor(brandColor);
+
   if (!recordingUrl) {
     return (
-      <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-center">
-        <p className="text-[#f5f5f0]/50">No recording available for this call</p>
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+        <p className="text-gray-500">No recording available for this call</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-6 text-center">
-        <p className="text-red-400">{error}</p>
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }
@@ -179,7 +190,7 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
             className="animate-spin rounded-full h-8 w-8 border-b-2"
             style={{ borderColor: brandColor }}
           />
-          <p className="text-[#f5f5f0]/50 text-sm ml-3">Loading recording...</p>
+          <p className="text-gray-500 text-sm ml-3">Loading recording...</p>
         </div>
       )}
 
@@ -190,7 +201,7 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
           <div className="space-y-2">
             <div 
               onClick={handleTimelineClick}
-              className="h-2 rounded-full bg-white/10 cursor-pointer relative overflow-hidden group"
+              className="h-2 rounded-full bg-gray-200 cursor-pointer relative overflow-hidden group"
             >
               {/* Progress fill */}
               <div 
@@ -201,11 +212,11 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
                 }}
               />
               {/* Hover indicator */}
-              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             
             {/* Time Display */}
-            <div className="flex items-center justify-between text-xs text-[#f5f5f0]/40">
+            <div className="flex items-center justify-between text-xs text-gray-500">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -216,16 +227,20 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
             {/* Skip Backward */}
             <button
               onClick={() => skip(-5)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="Skip backward 5 seconds (←)"
             >
-              <SkipBack className="w-5 h-5 text-[#f5f5f0]/70" />
+              <SkipBack className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Play/Pause */}
             <button
               onClick={togglePlayPause}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f5f0] text-[#0a0a0a] hover:bg-white transition-colors"
+              className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:opacity-90"
+              style={{ 
+                backgroundColor: brandColor, 
+                color: brandIsLight ? '#111827' : '#ffffff' 
+              }}
               title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
             >
               {isPlaying ? (
@@ -238,16 +253,16 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
             {/* Skip Forward */}
             <button
               onClick={() => skip(5)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="Skip forward 5 seconds (→)"
             >
-              <SkipForward className="w-5 h-5 text-[#f5f5f0]/70" />
+              <SkipForward className="w-5 h-5 text-gray-600" />
             </button>
           </div>
 
           {/* Playback Speed */}
           <div className="flex items-center justify-center gap-2">
-            <span className="text-xs text-[#f5f5f0]/40">Speed:</span>
+            <span className="text-xs text-gray-500">Speed:</span>
             <div className="flex gap-1">
               {[0.5, 1, 1.5, 2].map((rate) => (
                 <button
@@ -255,10 +270,13 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
                   onClick={() => changePlaybackRate(rate)}
                   className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                     playbackRate === rate
-                      ? 'text-white'
-                      : 'bg-white/10 text-[#f5f5f0]/70 hover:bg-white/20'
+                      ? ''
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
-                  style={playbackRate === rate ? { backgroundColor: brandColor } : undefined}
+                  style={playbackRate === rate ? { 
+                    backgroundColor: brandColor, 
+                    color: brandIsLight ? '#111827' : '#ffffff' 
+                  } : undefined}
                 >
                   {rate}x
                 </button>
@@ -267,7 +285,7 @@ export default function CallPlayback({ recordingUrl, callDuration, brandColor = 
           </div>
 
           {/* Keyboard Shortcuts Info */}
-          <p className="text-xs text-[#f5f5f0]/30 text-center pt-2">
+          <p className="text-xs text-gray-400 text-center pt-2">
             <span className="font-medium">Space</span> play/pause · 
             <span className="font-medium"> ←</span> back 5s · 
             <span className="font-medium"> →</span> forward 5s
