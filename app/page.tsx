@@ -56,15 +56,20 @@ export default function LandingPage() {
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
 
-            {/* Desktop Nav */}
+            {/* Desktop Nav - UPDATED */}
             <div className="hidden lg:flex items-center gap-1">
-              {['Features', 'How It Works', 'Pricing', 'FAQ'].map((item) => (
+              {[
+                { name: 'Platform', href: '/platform' },
+                { name: 'How It Works', href: '#how-it-works' },
+                { name: 'Pricing', href: '#pricing' },
+                { name: 'FAQ', href: '#faq' },
+              ].map((item) => (
                 <Link 
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, '-')}`} 
+                  key={item.name}
+                  href={item.href} 
                   className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors rounded-lg hover:bg-white/[0.03]"
                 >
-                  {item}
+                  {item.name}
                 </Link>
               ))}
             </div>
@@ -96,19 +101,24 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu - UPDATED */}
         <div className={`lg:hidden transition-all duration-300 ${
           mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
           <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
-            {['Features', 'How It Works', 'Pricing', 'FAQ'].map((item) => (
+            {[
+              { name: 'Platform', href: '/platform' },
+              { name: 'How It Works', href: '#how-it-works' },
+              { name: 'Pricing', href: '#pricing' },
+              { name: 'FAQ', href: '#faq' },
+            ].map((item) => (
               <Link 
-                key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
+                key={item.name}
+                href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-3 text-[#fafaf9]/70 hover:text-[#fafaf9] hover:bg-white/[0.03] rounded-lg transition-colors"
               >
-                {item}
+                {item.name}
               </Link>
             ))}
             <div className="pt-4 flex flex-col gap-3">
@@ -946,7 +956,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer - UPDATED */}
       <footer className="border-t border-white/[0.06] py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
@@ -960,6 +970,7 @@ export default function LandingPage() {
             
             {/* Links */}
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
+              <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
