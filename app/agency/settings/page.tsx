@@ -36,13 +36,11 @@ export default function AgencySettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Stripe Connect status
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
 
-  // Form states
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -63,7 +61,6 @@ export default function AgencySettingsPage() {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
-  // Initialize form values when agency loads
   useEffect(() => {
     if (agency) {
       setAgencyName(agency.name || '');
@@ -81,7 +78,6 @@ export default function AgencySettingsPage() {
     }
   }, [agency]);
 
-  // Fetch Stripe Connect status when on payments tab
   useEffect(() => {
     if (activeTab === 'payments' && agency?.id) {
       fetchStripeStatus();
@@ -90,15 +86,12 @@ export default function AgencySettingsPage() {
 
   const fetchStripeStatus = async () => {
     if (!agency) return;
-    
     setLoadingStripeStatus(true);
     try {
       const token = localStorage.getItem('auth_token');
-      // Note: Backend route is /api/agency/connect/status/:agencyId
       const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      
       if (response.ok) {
         const data = await response.json();
         setStripeStatus(data);
@@ -111,9 +104,9 @@ export default function AgencySettingsPage() {
   };
 
   const settingsTabs = [
-    { id: 'profile' as SettingsTab, label: 'Agency Profile', icon: Building },
+    { id: 'profile' as SettingsTab, label: 'Profile', icon: Building },
     { id: 'branding' as SettingsTab, label: 'Branding', icon: Palette },
-    { id: 'pricing' as SettingsTab, label: 'Client Pricing', icon: DollarSign },
+    { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
   ];
 
@@ -132,14 +125,12 @@ export default function AgencySettingsPage() {
 
   const handleSave = async () => {
     if (!agency) return;
-    
     setSaving(true);
     setError(null);
     setSaved(false);
 
     try {
       const token = localStorage.getItem('auth_token');
-      
       const payload: any = {};
       
       if (activeTab === 'profile') {
@@ -160,10 +151,7 @@ export default function AgencySettingsPage() {
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
 
@@ -173,7 +161,6 @@ export default function AgencySettingsPage() {
       }
 
       await refreshAgency();
-      
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -185,25 +172,20 @@ export default function AgencySettingsPage() {
 
   const handleStripeConnect = async () => {
     if (!agency) return;
-    
     setConnectingStripe(true);
     setError(null);
     
     try {
       const token = localStorage.getItem('auth_token');
-      
       const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to start Stripe Connect onboarding');
+        throw new Error(data.error || 'Failed to start Stripe onboarding');
       }
 
       const data = await response.json();
@@ -216,24 +198,16 @@ export default function AgencySettingsPage() {
 
   const handleStripeDisconnect = async () => {
     if (!agency) return;
-    
-    if (!confirm('Are you sure you want to disconnect your Stripe account? You will not be able to receive payments from clients until you reconnect.')) {
-      return;
-    }
+    if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return;
     
     setDisconnectingStripe(true);
     setError(null);
     
     try {
       const token = localStorage.getItem('auth_token');
-      
-      // Note: Backend route is /api/agency/:agencyId/connect/disconnect
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -258,42 +232,38 @@ export default function AgencySettingsPage() {
     );
   }
 
-  // Determine Stripe status display
   const getStripeStatusDisplay = () => {
     if (!stripeStatus?.connected && !agency?.stripe_account_id) {
       return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
     }
-    
     if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) {
-      return { status: 'active', label: 'Active - Receiving Payments', color: 'text-emerald-400' };
+      return { status: 'active', label: 'Active', color: 'text-emerald-400' };
     }
-    
     if (stripeStatus?.connected || agency?.stripe_account_id) {
-      return { status: 'restricted', label: 'Restricted - Setup Incomplete', color: 'text-amber-400' };
+      return { status: 'restricted', label: 'Setup Incomplete', color: 'text-amber-400' };
     }
-    
     return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
   };
 
   const stripeDisplay = getStripeStatusDisplay();
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-[#fafaf9]/50">Manage your agency settings and preferences.</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="mt-1 text-sm text-[#fafaf9]/50">Manage your agency settings</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
         {/* Settings Tabs */}
-        <div className="lg:w-56 flex-shrink-0">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+        <div className="lg:w-48 flex-shrink-0">
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
             {settingsTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-emerald-500/10 text-emerald-400'
                     : 'text-[#fafaf9]/50 hover:bg-white/[0.04] hover:text-[#fafaf9]'
@@ -310,51 +280,49 @@ export default function AgencySettingsPage() {
         <div className="flex-1 max-w-2xl">
           {/* Error/Success Messages */}
           {error && (
-            <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
-              <p className="text-red-400">{error}</p>
+            <div className="mb-4 sm:mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0" />
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
           
           {saved && (
-            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-center gap-3">
-              <Check className="h-5 w-5 text-emerald-400" />
-              <p className="text-emerald-400">Settings saved successfully!</p>
+            <div className="mb-4 sm:mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+              <p className="text-sm text-emerald-400">Settings saved!</p>
             </div>
           )}
 
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
             {/* Profile Tab */}
             {activeTab === 'profile' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-1">Agency Profile</h3>
-                  <p className="text-sm text-[#fafaf9]/50">
-                    Basic information about your agency.
-                  </p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3>
+                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Basic information about your agency.</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Agency Name</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label>
                   <input
                     type="text"
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Logo</label>
-                  <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center overflow-hidden">
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center overflow-hidden flex-shrink-0">
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />
                       ) : (
-                        <Building className="h-8 w-8 text-[#fafaf9]/30" />
+                        <Building className="h-6 w-6 sm:h-8 sm:w-8 text-[#fafaf9]/30" />
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -364,25 +332,23 @@ export default function AgencySettingsPage() {
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium hover:bg-white/[0.06] transition-colors"
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:bg-white/[0.06] transition-colors"
                       >
                         <Upload className="h-4 w-4" />
-                        Upload Logo
+                        Upload
                       </button>
-                      <p className="mt-2 text-xs text-[#fafaf9]/40">
-                        PNG, JPG up to 2MB
-                      </p>
+                      <p className="mt-1.5 text-[10px] sm:text-xs text-[#fafaf9]/40">PNG, JPG up to 2MB</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Agency Slug</label>
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-[#fafaf9]/50">
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9]/50">
                     {agency?.slug}
                   </div>
-                  <p className="mt-2 text-xs text-[#fafaf9]/40">
-                    Your client signup URL: https://{agency?.slug}.{platformDomain}/signup
+                  <p className="mt-1.5 text-[10px] sm:text-xs text-[#fafaf9]/40 break-all">
+                    URL: https://{agency?.slug}.{platformDomain}/signup
                   </p>
                 </div>
               </div>
@@ -390,90 +356,58 @@ export default function AgencySettingsPage() {
 
             {/* Branding Tab */}
             {activeTab === 'branding' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-1">Brand Colors</h3>
-                  <p className="text-sm text-[#fafaf9]/50">
-                    Customize the colors used throughout your client portal.
-                  </p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Brand Colors</h3>
+                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Customize your client portal colors.</p>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Primary Color</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="h-10 w-14 rounded cursor-pointer border-0 bg-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-mono text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
-                      />
+                <div className="space-y-3 sm:space-y-4">
+                  {[
+                    { label: 'Primary', value: primaryColor, setter: setPrimaryColor },
+                    { label: 'Secondary', value: secondaryColor, setter: setSecondaryColor },
+                    { label: 'Accent', value: accentColor, setter: setAccentColor },
+                  ].map((color) => (
+                    <div key={color.label}>
+                      <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">{color.label} Color</label>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <input
+                          type="color"
+                          value={color.value}
+                          onChange={(e) => color.setter(e.target.value)}
+                          className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={color.value}
+                          onChange={(e) => color.setter(e.target.value)}
+                          className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
+                        />
+                      </div>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Secondary Color</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="h-10 w-14 rounded cursor-pointer border-0 bg-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-mono text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Accent Color</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="h-10 w-14 rounded cursor-pointer border-0 bg-transparent"
-                      />
-                      <input
-                        type="text"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-mono text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Preview */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Preview</label>
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 space-y-3">
-                    <div className="flex gap-2">
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Preview</label>
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4 space-y-2 sm:space-y-3">
+                    <div className="flex flex-wrap gap-2">
                       <button 
-                        className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors"
                         style={{ backgroundColor: primaryColor, color: isLightColor(primaryColor) ? '#0a0a0a' : '#fff' }}
                       >
-                        Primary Button
+                        Primary
                       </button>
                       <button 
-                        className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors"
                         style={{ backgroundColor: secondaryColor, color: isLightColor(secondaryColor) ? '#0a0a0a' : '#fff' }}
                       >
                         Secondary
                       </button>
                     </div>
-                    <p className="text-sm">
-                      This is an <span style={{ color: accentColor }} className="font-medium">accent link</span> in your brand color.
+                    <p className="text-xs sm:text-sm">
+                      An <span style={{ color: accentColor }} className="font-medium">accent link</span> example
                     </p>
                   </div>
                 </div>
@@ -482,88 +416,86 @@ export default function AgencySettingsPage() {
 
             {/* Pricing Tab */}
             {activeTab === 'pricing' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-1">Client Pricing</h3>
-                  <p className="text-sm text-[#fafaf9]/50">
-                    Set the prices and call limits for your client plans.
-                  </p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Client Pricing</h3>
+                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Set prices and limits for your plans.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Starter Plan */}
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                    <h4 className="font-medium mb-3">Starter Plan</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
+                    <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Starter Plan</h4>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Monthly Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
                         <input
                           type="number"
                           value={priceStarter}
                           onChange={(e) => setPriceStarter(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Call Limit</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
                         <input
                           type="number"
                           value={limitStarter}
                           onChange={(e) => setLimitStarter(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Pro Plan */}
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <h4 className="font-medium">Pro Plan</h4>
-                      <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Popular</span>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                      <h4 className="font-medium text-sm sm:text-base">Pro Plan</h4>
+                      <span className="text-[10px] sm:text-xs bg-emerald-500/20 text-emerald-400 px-1.5 sm:px-2 py-0.5 rounded-full">Popular</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Monthly Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
                         <input
                           type="number"
                           value={pricePro}
                           onChange={(e) => setPricePro(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Call Limit</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
                         <input
                           type="number"
                           value={limitPro}
                           onChange={(e) => setLimitPro(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Growth Plan */}
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                    <h4 className="font-medium mb-3">Growth Plan</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
+                    <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Growth Plan</h4>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Monthly Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
                         <input
                           type="number"
                           value={priceGrowth}
                           onChange={(e) => setPriceGrowth(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm mb-1 text-[#fafaf9]/50">Call Limit</label>
+                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
                         <input
                           type="number"
                           value={limitGrowth}
                           onChange={(e) => setLimitGrowth(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -574,101 +506,89 @@ export default function AgencySettingsPage() {
 
             {/* Payments Tab */}
             {activeTab === 'payments' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-1">Payment Settings</h3>
-                  <p className="text-sm text-[#fafaf9]/50">
-                    Connect your Stripe account to receive payments from clients.
-                  </p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3>
+                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Connect Stripe to receive payments.</p>
                 </div>
 
                 {/* Stripe Connect Card */}
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-[#635BFF]">
-                        <CreditCard className="h-6 w-6 text-white" />
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0">
+                        <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <div>
-                        <p className="font-medium">Stripe Connect</p>
-                        <p className={`text-sm ${stripeDisplay.color}`}>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
+                        <p className={`text-xs sm:text-sm ${stripeDisplay.color}`}>
                           {loadingStripeStatus ? 'Loading...' : stripeDisplay.label}
                         </p>
                       </div>
                     </div>
                     
-                    {/* Status Icon */}
                     {stripeDisplay.status === 'active' && (
-                      <div className="flex items-center gap-2 text-emerald-400">
-                        <Check className="h-5 w-5" />
-                      </div>
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 flex-shrink-0" />
                     )}
                     {stripeDisplay.status === 'restricted' && (
-                      <div className="flex items-center gap-2 text-amber-400">
-                        <AlertTriangle className="h-5 w-5" />
-                      </div>
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
                     )}
                   </div>
 
-                  {/* Status Details */}
                   {(stripeStatus?.connected || agency?.stripe_account_id) && (
                     <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-3">
-                      {/* Status Grid */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-2 sm:px-3 py-1.5 sm:py-2">
                           <span className="text-[#fafaf9]/50">Charges</span>
                           {stripeStatus?.charges_enabled ? (
                             <span className="flex items-center gap-1 text-emerald-400">
-                              <Check className="h-3.5 w-3.5" /> Enabled
+                              <Check className="h-3 w-3" /> OK
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-amber-400">
-                              <AlertTriangle className="h-3.5 w-3.5" /> Disabled
+                              <AlertTriangle className="h-3 w-3" /> No
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-2 sm:px-3 py-1.5 sm:py-2">
                           <span className="text-[#fafaf9]/50">Payouts</span>
                           {stripeStatus?.payouts_enabled ? (
                             <span className="flex items-center gap-1 text-emerald-400">
-                              <Check className="h-3.5 w-3.5" /> Enabled
+                              <Check className="h-3 w-3" /> OK
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-amber-400">
-                              <AlertTriangle className="h-3.5 w-3.5" /> Disabled
+                              <AlertTriangle className="h-3 w-3" /> No
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Account ID */}
-                      <p className="text-xs text-[#fafaf9]/40">
-                        Account ID: <span className="font-mono">{agency?.stripe_account_id}</span>
+                      <p className="text-[10px] sm:text-xs text-[#fafaf9]/40 break-all">
+                        ID: {agency?.stripe_account_id}
                       </p>
 
-                      {/* Warning if restricted */}
                       {stripeDisplay.status === 'restricted' && (
-                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
-                          <p className="text-sm text-amber-400">
-                            Your Stripe account setup is incomplete. Complete the onboarding process to start receiving payments.
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 sm:p-3">
+                          <p className="text-xs sm:text-sm text-amber-400">
+                            Complete setup to receive payments.
                           </p>
                         </div>
                       )}
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-3 pt-2">
+                      <div className="flex flex-wrap items-center gap-2 pt-2">
                         {stripeDisplay.status === 'restricted' && (
                           <button
                             onClick={handleStripeConnect}
                             disabled={connectingStripe}
-                            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
                           >
                             {connectingStripe ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <ExternalLink className="h-4 w-4" />
                             )}
-                            Complete Setup
+                            Complete
                           </button>
                         )}
                         
@@ -676,17 +596,17 @@ export default function AgencySettingsPage() {
                           href="https://dashboard.stripe.com"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
+                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
                         >
                           <ExternalLink className="h-4 w-4" />
-                          Stripe Dashboard
+                          Dashboard
                         </a>
 
                         <button
                           onClick={fetchStripeStatus}
                           disabled={loadingStripeStatus}
-                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-[#fafaf9]/50 hover:bg-white/[0.06] transition-colors"
-                          title="Refresh status"
+                          className="inline-flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-2 text-[#fafaf9]/50 hover:bg-white/[0.06] transition-colors"
+                          title="Refresh"
                         >
                           <RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} />
                         </button>
@@ -694,23 +614,22 @@ export default function AgencySettingsPage() {
                     </div>
                   )}
 
-                  {/* Connect Button (when not connected) */}
                   {stripeDisplay.status === 'not_connected' && (
                     <div className="mt-4 pt-4 border-t border-white/[0.06]">
                       <button
                         onClick={handleStripeConnect}
                         disabled={connectingStripe}
-                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50"
                       >
                         {connectingStripe ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <ExternalLink className="h-4 w-4" />
                         )}
-                        Connect Stripe Account
+                        Connect Stripe
                       </button>
-                      <p className="mt-2 text-xs text-[#fafaf9]/40">
-                        You'll be redirected to Stripe to complete the setup process.
+                      <p className="mt-2 text-[10px] sm:text-xs text-[#fafaf9]/40">
+                        You'll be redirected to Stripe.
                       </p>
                     </div>
                   )}
@@ -718,18 +637,18 @@ export default function AgencySettingsPage() {
 
                 {/* Disconnect Option */}
                 {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                  <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] p-4">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
-                        <p className="font-medium text-red-400">Disconnect Stripe</p>
-                        <p className="text-sm text-[#fafaf9]/50 mt-1">
-                          Remove this Stripe account from your agency. You will not be able to receive client payments until you reconnect.
+                        <p className="font-medium text-sm text-red-400">Disconnect Stripe</p>
+                        <p className="text-xs text-[#fafaf9]/50 mt-0.5">
+                          You won't receive payments until reconnected.
                         </p>
                       </div>
                       <button
                         onClick={handleStripeDisconnect}
                         disabled={disconnectingStripe}
-                        className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex-shrink-0"
                       >
                         {disconnectingStripe ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -744,13 +663,13 @@ export default function AgencySettingsPage() {
               </div>
             )}
 
-            {/* Save Button - Not shown for payments tab */}
+            {/* Save Button */}
             {activeTab !== 'payments' && (
-              <div className="mt-8 pt-6 border-t border-white/[0.06] flex justify-end">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/[0.06] flex justify-end">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
                 >
                   {saving ? (
                     <>

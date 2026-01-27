@@ -112,7 +112,6 @@ export default function OutreachPage() {
     }
   };
 
-  // Filter templates
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = !searchQuery || 
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,7 +120,6 @@ export default function OutreachPage() {
     return matchesSearch && matchesType;
   });
 
-  // Group by type
   const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
   const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
 
@@ -136,58 +134,60 @@ export default function OutreachPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Outreach</h1>
-          <p className="mt-1 text-sm text-[#fafaf9]/50">
-            Manage email and SMS templates for lead outreach
-          </p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Outreach</h1>
+            <p className="mt-1 text-sm text-[#fafaf9]/50">
+              Manage email and SMS templates
+            </p>
+          </div>
+          
+          <Link
+            href="/agency/outreach/templates/new"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            New Template
+          </Link>
         </div>
-        
-        <Link
-          href="/agency/outreach/templates/new"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          New Template
-        </Link>
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mb-6 sm:mb-8">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 mb-6 sm:mb-8">
         <Link
           href="/agency/outreach/templates/new?type=email"
-          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] transition-colors"
+          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
-              <Mail className="h-5 w-5 text-blue-400" />
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
+              <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
             </div>
             <div className="min-w-0">
-              <p className="font-medium">Email Template</p>
-              <p className="text-sm text-[#fafaf9]/50 truncate">Create new email template</p>
+              <p className="font-medium text-sm sm:text-base">Email Template</p>
+              <p className="text-xs sm:text-sm text-[#fafaf9]/50 truncate">Create new email</p>
             </div>
           </div>
         </Link>
         
         <Link
           href="/agency/outreach/templates/new?type=sms"
-          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 hover:bg-white/[0.04] transition-colors"
+          className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
-              <MessageSquare className="h-5 w-5 text-cyan-400" />
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
+              <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />
             </div>
             <div className="min-w-0">
-              <p className="font-medium">SMS Template</p>
-              <p className="text-sm text-[#fafaf9]/50 truncate">Create new SMS template</p>
+              <p className="font-medium text-sm sm:text-base">SMS Template</p>
+              <p className="text-xs sm:text-sm text-[#fafaf9]/50 truncate">Create new SMS</p>
             </div>
           </div>
         </Link>
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
           <input
@@ -199,10 +199,10 @@ export default function OutreachPage() {
           />
         </div>
         
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setTypeFilter(null)}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               !typeFilter 
                 ? 'bg-emerald-500/10 text-emerald-400' 
                 : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
@@ -212,7 +212,7 @@ export default function OutreachPage() {
           </button>
           <button
             onClick={() => setTypeFilter('email')}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               typeFilter === 'email' 
                 ? 'bg-emerald-500/10 text-emerald-400' 
                 : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
@@ -222,7 +222,7 @@ export default function OutreachPage() {
           </button>
           <button
             onClick={() => setTypeFilter('sms')}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               typeFilter === 'sms' 
                 ? 'bg-emerald-500/10 text-emerald-400' 
                 : 'text-[#fafaf9]/50 hover:text-[#fafaf9]'
@@ -235,15 +235,15 @@ export default function OutreachPage() {
 
       {/* Templates List */}
       {filteredTemplates.length === 0 ? (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] py-16 sm:py-20 text-center px-4">
-          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-500/10">
-            <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-emerald-400/50" />
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] py-12 sm:py-20 text-center px-4">
+          <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400/50" />
           </div>
-          <p className="mt-4 font-medium text-[#fafaf9]/70">
+          <p className="mt-4 font-medium text-sm sm:text-base text-[#fafaf9]/70">
             {searchQuery || typeFilter ? 'No templates match your search' : 'No templates yet'}
           </p>
-          <p className="text-sm text-[#fafaf9]/40 mt-1 mb-4">
-            Create your first outreach template to get started
+          <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1 mb-4">
+            Create your first outreach template
           </p>
           <Link
             href="/agency/outreach/templates/new"
@@ -254,14 +254,14 @@ export default function OutreachPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Email Templates */}
           {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <Mail className="h-4 w-4 text-[#fafaf9]/50" />
-                <h3 className="text-sm font-medium text-[#fafaf9]/70">Email Templates</h3>
-                <span className="text-xs text-[#fafaf9]/40">({emailTemplates.length})</span>
+                <h3 className="text-xs sm:text-sm font-medium text-[#fafaf9]/70">Email Templates</h3>
+                <span className="text-[10px] sm:text-xs text-[#fafaf9]/40">({emailTemplates.length})</span>
               </div>
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden divide-y divide-white/[0.04]">
                 {emailTemplates.map((template) => (
@@ -273,30 +273,30 @@ export default function OutreachPage() {
                       href={`/agency/outreach/templates/${template.id}`}
                       className="flex-1 min-w-0"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/10 shrink-0">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/10 shrink-0">
                           <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm sm:text-base truncate">{template.name}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <p className="font-medium text-sm truncate">{template.name}</p>
                             {template.is_default && (
-                              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-amber-400 bg-amber-500/10 px-1.5 sm:px-2 py-0.5 rounded">
-                                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              <span className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                <Sparkles className="h-2.5 w-2.5" />
                                 Default
                               </span>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm text-[#fafaf9]/40 truncate">
+                          <p className="text-[11px] sm:text-sm text-[#fafaf9]/40 truncate">
                             {template.subject || template.description || 'No subject'}
                           </p>
                         </div>
                       </div>
                     </Link>
                     
-                    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4">
-                      <span className="text-[10px] sm:text-xs text-[#fafaf9]/30 hidden sm:inline">
-                        Used {template.use_count || 0}x
+                    <div className="flex items-center gap-1 ml-2">
+                      <span className="text-[10px] text-[#fafaf9]/30 hidden sm:inline mr-1">
+                        {template.use_count || 0}x
                       </span>
                       <div className="relative">
                         <button
@@ -308,11 +308,8 @@ export default function OutreachPage() {
                         
                         {activeDropdown === template.id && (
                           <>
-                            <div 
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActiveDropdown(null)}
-                            />
-                            <div className="absolute right-0 mt-1 w-36 sm:w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
+                            <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                            <div className="absolute right-0 mt-1 w-32 sm:w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
                               <Link
                                 href={`/agency/outreach/templates/${template.id}`}
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors"
@@ -351,10 +348,10 @@ export default function OutreachPage() {
           {/* SMS Templates */}
           {smsTemplates.length > 0 && (!typeFilter || typeFilter === 'sms') && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <MessageSquare className="h-4 w-4 text-[#fafaf9]/50" />
-                <h3 className="text-sm font-medium text-[#fafaf9]/70">SMS Templates</h3>
-                <span className="text-xs text-[#fafaf9]/40">({smsTemplates.length})</span>
+                <h3 className="text-xs sm:text-sm font-medium text-[#fafaf9]/70">SMS Templates</h3>
+                <span className="text-[10px] sm:text-xs text-[#fafaf9]/40">({smsTemplates.length})</span>
               </div>
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden divide-y divide-white/[0.04]">
                 {smsTemplates.map((template) => (
@@ -366,30 +363,30 @@ export default function OutreachPage() {
                       href={`/agency/outreach/templates/${template.id}`}
                       className="flex-1 min-w-0"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
                           <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm sm:text-base truncate">{template.name}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <p className="font-medium text-sm truncate">{template.name}</p>
                             {template.is_default && (
-                              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-amber-400 bg-amber-500/10 px-1.5 sm:px-2 py-0.5 rounded">
-                                <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              <span className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                <Sparkles className="h-2.5 w-2.5" />
                                 Default
                               </span>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm text-[#fafaf9]/40 truncate">
-                            {template.body?.substring(0, 60) || 'No content'}...
+                          <p className="text-[11px] sm:text-sm text-[#fafaf9]/40 truncate">
+                            {template.body?.substring(0, 50) || 'No content'}...
                           </p>
                         </div>
                       </div>
                     </Link>
                     
-                    <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4">
-                      <span className="text-[10px] sm:text-xs text-[#fafaf9]/30 hidden sm:inline">
-                        Used {template.use_count || 0}x
+                    <div className="flex items-center gap-1 ml-2">
+                      <span className="text-[10px] text-[#fafaf9]/30 hidden sm:inline mr-1">
+                        {template.use_count || 0}x
                       </span>
                       <div className="relative">
                         <button
@@ -401,11 +398,8 @@ export default function OutreachPage() {
                         
                         {activeDropdown === template.id && (
                           <>
-                            <div 
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActiveDropdown(null)}
-                            />
-                            <div className="absolute right-0 mt-1 w-36 sm:w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
+                            <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                            <div className="absolute right-0 mt-1 w-32 sm:w-40 rounded-xl border border-white/[0.08] bg-[#0f0f0f] shadow-xl z-20">
                               <Link
                                 href={`/agency/outreach/templates/${template.id}`}
                                 className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-white/[0.04] transition-colors"
