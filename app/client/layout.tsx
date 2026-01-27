@@ -9,15 +9,6 @@ import {
 } from 'lucide-react';
 import { ClientProvider, useClient } from './context';
 
-// Helper to check if color is light
-const isLightColor = (hex: string): boolean => {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-};
-
 // Darken a hex color
 const darkenColor = (hex: string, percent: number): string => {
   const c = hex.replace('#', '');
@@ -25,6 +16,16 @@ const darkenColor = (hex: string, percent: number): string => {
   const g = Math.max(0, parseInt(c.substring(2, 4), 16) - (255 * percent / 100));
   const b = Math.max(0, parseInt(c.substring(4, 6), 16) - (255 * percent / 100));
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+};
+
+// Convert rgb to hex for meta tag
+const rgbToHex = (rgb: string): string => {
+  const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!match) return '#050505';
+  const r = parseInt(match[1]).toString(16).padStart(2, '0');
+  const g = parseInt(match[2]).toString(16).padStart(2, '0');
+  const b = parseInt(match[3]).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`;
 };
 
 // Auth pages that should NOT use the dashboard layout
@@ -35,6 +36,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const { client, branding, loading } = useClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Nav colors based on agency primary color
+  const navBg = darkenColor(branding.primaryColor, 40);
+  const navTextColor = '#ffffff';
+  const navTextMuted = 'rgba(255, 255, 255, 0.7)';
+  const navBorder = 'rgba(255, 255, 255, 0.1)';
 
   // Detect mobile
   useEffect(() => {
@@ -59,22 +66,27 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
 
-  // Update theme-color meta tag dynamically for client dashboard
+  // CRITICAL: Set html background color for status bar on iOS
   useEffect(() => {
-    if (isMobile && branding.primaryColor) {
-      const navBg = darkenColor(branding.primaryColor, 40);
+    if (branding.primaryColor) {
+      const bgColor = darkenColor(branding.primaryColor, 40);
+      document.documentElement.style.background = bgColor;
+      
+      // Also update theme-color meta tag
+      const hexColor = rgbToHex(bgColor);
       let metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', navBg);
+        metaThemeColor.setAttribute('content', hexColor);
       }
+      
       return () => {
-        // Reset to default on unmount
+        document.documentElement.style.background = '#050505';
         if (metaThemeColor) {
           metaThemeColor.setAttribute('content', '#050505');
         }
       };
     }
-  }, [isMobile, branding.primaryColor]);
+  }, [branding.primaryColor]);
 
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
@@ -97,15 +109,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return pathname?.startsWith(href);
   };
 
-  // Nav colors based on agency primary color
-  const navBg = darkenColor(branding.primaryColor, 40);
-  const navTextColor = '#ffffff';
-  const navTextMuted = 'rgba(255, 255, 255, 0.7)';
-  const navBorder = 'rgba(255, 255, 255, 0.1)';
-
-  // Header uses the same dark branded color
-  const headerBg = navBg;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -116,32 +119,33 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header - Fixed, edge-to-edge, BRANDED, BIGGER */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-30 md:hidden"
+      {/* Mobile Header - STICKY (not fixed), extends into safe area */}
+      <div 
+        className="sticky top-0 z-30 md:hidden"
         style={{ 
-          backgroundColor: headerBg,
+          backgroundColor: navBg,
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="flex items-center justify-between h-16 px-4">
+        <header className="flex items-center justify-between h-14 px-4 shadow-lg">
           {/* Left - Logo & Business Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
                 src={branding.logoUrl} 
-                alt={branding.agencyName} 
-                className="h-9 w-9 rounded-xl object-contain bg-white/10 p-0.5" 
+                alt={branding.agencyName}
+                style={{ height: '36px', width: 'auto' }}
+                className="object-contain flex-shrink-0"
               />
             ) : (
               <div 
-                className="flex h-9 w-9 items-center justify-center rounded-xl"
-                style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                className="flex items-center justify-center rounded-xl"
+                style={{ height: '36px', width: '36px', backgroundColor: 'rgba(255,255,255,0.2)' }}
               >
                 <Phone className="h-5 w-5 text-white" />
               </div>
             )}
-            <span className="font-semibold text-base" style={{ color: navTextColor }}>
+            <span className="font-semibold text-white truncate max-w-[150px]">
               {client?.business_name || 'Loading...'}
             </span>
           </div>
@@ -149,15 +153,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {/* Right - Hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl transition-colors"
             style={{ color: navTextColor }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <Menu className="h-6 w-6" />
           </button>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && isMobile && (
@@ -167,7 +169,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Slides from RIGHT on mobile, LEFT on desktop, Agency branded */}
+      {/* Sidebar - Slides from RIGHT on mobile, LEFT on desktop */}
       <aside 
         className={`
           fixed inset-y-0 z-50 w-72 md:w-64
@@ -184,18 +186,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       >
         {/* Mobile Header in Sidebar */}
         <div 
-          className="flex md:hidden items-center justify-between h-16 px-4 border-b"
+          className="flex md:hidden items-center justify-between h-14 px-4 border-b"
           style={{ borderColor: navBorder }}
         >
-          <span className="font-semibold text-base" style={{ color: navTextColor }}>
-            Menu
-          </span>
+          <span className="font-semibold" style={{ color: navTextColor }}>Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl transition-colors"
             style={{ color: navTextColor }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <X className="h-6 w-6" />
           </button>
@@ -209,13 +207,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {branding.logoUrl ? (
             <img 
               src={branding.logoUrl} 
-              alt={branding.agencyName} 
-              className="h-8 w-8 rounded-lg object-contain bg-white/10 p-0.5" 
+              alt={branding.agencyName}
+              style={{ height: '32px', width: 'auto' }}
+              className="object-contain flex-shrink-0"
             />
           ) : (
             <div 
-              className="flex h-8 w-8 items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+              className="flex items-center justify-center rounded-lg"
+              style={{ height: '32px', width: '32px', backgroundColor: 'rgba(255,255,255,0.2)' }}
             >
               <Phone className="h-4 w-4 text-white" />
             </div>
@@ -239,12 +238,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                   backgroundColor: active ? 'rgba(255,255,255,0.15)' : 'transparent',
                   color: active ? navTextColor : navTextMuted,
                 }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.backgroundColor = active ? 'rgba(255,255,255,0.15)' : 'transparent';
-                }}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="h-5 w-5" />
@@ -264,10 +257,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {/* Powered By */}
           <div 
             className="rounded-xl border p-3"
-            style={{ 
-              borderColor: navBorder, 
-              backgroundColor: 'rgba(255,255,255,0.05)',
-            }}
+            style={{ borderColor: navBorder, backgroundColor: 'rgba(255,255,255,0.05)' }}
           >
             <p className="text-xs" style={{ color: navTextMuted }}>Powered by</p>
             <p className="text-sm font-medium" style={{ color: navTextColor }}>{branding.agencyName}</p>
@@ -278,14 +268,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             onClick={handleSignOut}
             className="flex items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors w-full"
             style={{ color: navTextMuted }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-              e.currentTarget.style.color = navTextColor;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = navTextMuted;
-            }}
           >
             <LogOut className="h-5 w-5" />
             Sign Out
@@ -294,14 +276,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content - Light mode */}
-      <main 
-        className="md:pl-64"
-        style={{ 
-          paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 4rem)' : 0,
-          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0,
-          minHeight: '100vh',
-        }}
-      >
+      <main className="md:pl-64 min-h-screen">
         {children}
       </main>
     </div>
@@ -318,7 +293,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  // Dashboard pages get the full layout with provider
   return (
     <ClientProvider>
       <ClientDashboardLayout>{children}</ClientDashboardLayout>

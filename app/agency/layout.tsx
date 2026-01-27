@@ -101,26 +101,27 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         }}
       />
 
-      {/* Mobile Header - Fixed, edge-to-edge, BIGGER */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-30 md:hidden bg-[#050505] border-b border-white/[0.06]"
+      {/* Mobile Header - STICKY (not fixed), extends into safe area */}
+      <div 
+        className="sticky top-0 z-30 md:hidden bg-[#050505]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center justify-between h-16 px-4">
+        <header className="flex items-center justify-between h-14 px-4 border-b border-white/[0.06]">
           {/* Left - Logo & Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
                 src={branding.logoUrl} 
-                alt={branding.name} 
-                className="h-9 w-9 rounded-xl object-contain" 
+                alt={branding.name}
+                style={{ height: '36px', width: 'auto' }}
+                className="object-contain flex-shrink-0"
               />
             ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+              <div className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5" style={{ height: '36px', width: '36px' }}>
                 <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
               </div>
             )}
-            <span className="font-semibold text-base text-[#fafaf9]">
+            <span className="font-semibold text-[#fafaf9] truncate max-w-[150px]">
               {agency?.name || 'Agency'}
             </span>
           </div>
@@ -128,12 +129,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Right - Hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
           >
             <Menu className="h-6 w-6 text-[#fafaf9]" />
           </button>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && isMobile && (
@@ -155,13 +156,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
       >
         {/* Mobile Header in Sidebar */}
-        <div className="flex md:hidden items-center justify-between h-16 px-4 border-b border-white/[0.06]">
-          <span className="font-semibold text-base text-[#fafaf9]">
-            Menu
-          </span>
+        <div className="flex md:hidden items-center justify-between h-14 px-4 border-b border-white/[0.06]">
+          <span className="font-semibold text-[#fafaf9]">Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
           >
             <X className="h-6 w-6 text-[#fafaf9]" />
           </button>
@@ -172,11 +171,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {branding.logoUrl ? (
             <img 
               src={branding.logoUrl} 
-              alt={branding.name} 
-              className="h-8 w-8 rounded-lg object-contain" 
+              alt={branding.name}
+              style={{ height: '32px', width: 'auto' }}
+              className="object-contain flex-shrink-0"
             />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+            <div className="flex items-center justify-center rounded-lg border border-white/10 bg-white/5" style={{ height: '32px', width: '32px' }}>
               <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
             </div>
           )}
@@ -247,13 +247,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main 
-        className="md:pl-64 min-h-screen"
-        style={{ 
-          paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 4rem)' : 0,
-          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0,
-        }}
-      >
+      <main className="md:pl-64 min-h-screen">
         {children}
       </main>
     </div>
@@ -263,12 +257,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 export default function AgencyLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
-  // Don't wrap login page with provider - it handles its own auth
+  // Don't wrap login page with provider
   if (pathname === '/agency/login') {
     return <>{children}</>;
   }
 
-  // All other agency pages get the provider and dashboard layout
   return (
     <AgencyProvider>
       <AgencyDashboardLayout>{children}</AgencyDashboardLayout>
