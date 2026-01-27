@@ -144,14 +144,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Desktop: LEFT, Mobile: slides from RIGHT */}
+      {/* Sidebar - Desktop: LEFT, Mobile: slides from LEFT */}
       <aside 
         className={`
-          fixed inset-y-0 z-50 w-72 md:w-64 bg-[#050505]
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#050505] border-r border-white/[0.06]
           transform transition-transform duration-300 ease-out
           ${isMobile 
-            ? `right-0 border-l border-white/[0.06] ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
-            : 'left-0 border-r border-white/[0.06] translate-x-0'
+            ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : 'translate-x-0'
           }
         `}
         style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}

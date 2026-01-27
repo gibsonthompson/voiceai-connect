@@ -169,14 +169,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Desktop: LEFT, Mobile: slides from RIGHT */}
+      {/* Sidebar - Desktop: LEFT, Mobile: slides from LEFT */}
       <aside 
         className={`
-          fixed inset-y-0 z-50 w-72 md:w-64
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64 border-r
           transform transition-transform duration-300 ease-out
           ${isMobile 
-            ? `right-0 border-l ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
-            : 'left-0 border-r translate-x-0'
+            ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : 'translate-x-0'
           }
         `}
         style={{ 
