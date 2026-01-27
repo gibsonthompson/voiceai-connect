@@ -17,7 +17,10 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
-function ClientLayoutInner({ children }: { children: ReactNode }) {
+// Auth pages that should NOT use the dashboard layout
+const AUTH_PAGES = ['/client/login', '/client/signup', '/client/set-password', '/client/upgrade'];
+
+function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { client, branding, loading } = useClient();
 
@@ -137,9 +140,19 @@ function ClientLayoutInner({ children }: { children: ReactNode }) {
 }
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  
+  // Auth pages render without the dashboard layout/provider
+  const isAuthPage = AUTH_PAGES.some(page => pathname?.startsWith(page));
+  
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  // Dashboard pages get the full layout with provider
   return (
     <ClientProvider>
-      <ClientLayoutInner>{children}</ClientLayoutInner>
+      <ClientDashboardLayout>{children}</ClientDashboardLayout>
     </ClientProvider>
   );
 }
