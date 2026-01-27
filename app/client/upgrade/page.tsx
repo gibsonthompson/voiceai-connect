@@ -186,10 +186,10 @@ export default function UpgradeRequiredPage() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 text-sm sm:text-base">Loading...</p>
         </div>
       </div>
     );
@@ -200,48 +200,49 @@ export default function UpgradeRequiredPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
+      
       {/* Hero Section */}
       <div 
-        className="text-white py-12 md:py-20 px-4"
+        className="text-white py-8 sm:py-12 md:py-20 px-4"
         style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)` }}
       >
         <div className="max-w-4xl mx-auto text-center">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
-              <Phone className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white/20">
+              <Phone className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
             </div>
-            <span className="text-xl font-bold">{agency?.name || 'AI Receptionist'}</span>
+            <span className="text-lg sm:text-xl font-bold">{agency?.name || 'AI Receptionist'}</span>
           </div>
 
           {/* Warning Badge */}
-          <div className="inline-flex items-center bg-amber-500/20 backdrop-blur-sm border border-amber-300/30 rounded-full px-5 py-2 mb-5">
-            <svg className="w-4 h-4 mr-2 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+          <div className="inline-flex items-center bg-amber-500/20 backdrop-blur-sm border border-amber-300/30 rounded-full px-3 sm:px-5 py-1.5 sm:py-2 mb-4 sm:mb-5">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            <span className="font-semibold text-sm md:text-base text-amber-300">Trial Ended</span>
+            <span className="font-semibold text-xs sm:text-sm md:text-base text-amber-300">Trial Ended</span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 md:mb-6 px-4">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 md:mb-6 px-2 sm:px-4">
             Your AI Receptionist is Paused
           </h1>
           
-          <p className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 px-4">
+          <p className="text-base sm:text-lg md:text-xl text-white/90 mb-5 sm:mb-6 md:mb-8 px-2 sm:px-4">
             Reactivate now to continue answering calls 24/7
           </p>
 
           {/* Impact Stats */}
-          <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-3 md:gap-6 text-base px-4">
+          <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:flex-wrap md:justify-center md:gap-6 text-sm sm:text-base px-2 sm:px-4">
             <div className="flex items-center justify-center text-white/90">
-              <Check className="w-5 h-5 mr-2 flex-shrink-0 text-green-400" />
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0 text-green-400" />
               <span>Stop losing leads to voicemail</span>
             </div>
             <div className="flex items-center justify-center text-white/90">
-              <Check className="w-5 h-5 mr-2 flex-shrink-0 text-green-400" />
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0 text-green-400" />
               <span>Resume 24/7 call answering</span>
             </div>
             <div className="flex items-center justify-center text-white/90">
-              <Check className="w-5 h-5 mr-2 flex-shrink-0 text-green-400" />
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0 text-green-400" />
               <span>Keep your business phone number</span>
             </div>
           </div>
@@ -250,9 +251,9 @@ export default function UpgradeRequiredPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-center text-red-700">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2.5 sm:py-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-center text-red-700 text-sm sm:text-base">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
             <span className="font-medium">{error}</span>
@@ -261,62 +262,64 @@ export default function UpgradeRequiredPage() {
       )}
 
       {/* Pricing Section */}
-      <div className="py-12 md:py-16 px-4">
+      <div className="py-8 sm:py-12 md:py-16 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          <div className="text-center mb-6 sm:mb-10">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
               Choose Your Plan
             </h2>
-            <p className="text-gray-600">Select a plan to reactivate your AI receptionist</p>
+            <p className="text-gray-600 text-sm sm:text-base">Select a plan to reactivate your AI receptionist</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8 mb-8">
+          {/* Pricing Cards */}
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-3 md:gap-8 mb-6 sm:mb-8">
             {(Object.keys(plans) as PlanTier[]).map((tier) => {
               const plan = plans[tier];
               const isSelected = selectedPlan === tier;
+              const isPopular = 'popular' in plan && plan.popular;
 
               return (
                 <div
                   key={tier}
                   onClick={() => setSelectedPlan(tier)}
-                  className={`relative bg-white rounded-2xl p-6 cursor-pointer transition-all ${
+                  className={`relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 cursor-pointer transition-all ${
                     isSelected
-                      ? 'ring-4 shadow-xl scale-[1.02]'
+                      ? 'ring-2 sm:ring-4 shadow-lg sm:shadow-xl scale-[1.01] sm:scale-[1.02]'
                       : 'border-2 border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                  } ${'popular' in plan && plan.popular ? 'md:-mt-4' : ''}`}
+                  } ${isPopular ? 'md:-mt-4 order-first md:order-none' : ''}`}
                   style={{
                     borderColor: isSelected ? primaryColor : undefined,
                     boxShadow: isSelected ? `0 0 0 4px ${primaryColor}40` : undefined,
                   }}
                 >
-                  {'popular' in plan && plan.popular && (
+                  {isPopular && (
                     <div 
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 text-white px-4 py-1 rounded-full text-xs font-bold"
+                      className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 text-white px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap"
                       style={{ backgroundColor: primaryColor }}
                     >
                       ⭐ Most Popular
                     </div>
                   )}
 
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                    <p className="text-gray-500 text-sm mb-4">Up to {plan.calls} calls/month</p>
+                  <div className="text-center mb-4 sm:mb-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5 sm:mb-1">{plan.name}</h3>
+                    <p className="text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">Up to {plan.calls} calls/month</p>
                     
                     <div className="flex items-baseline justify-center">
-                      <span className="text-gray-400 text-xl mr-1">$</span>
-                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                      <span className="text-gray-400 text-lg ml-1">/mo</span>
+                      <span className="text-gray-400 text-lg sm:text-xl mr-0.5 sm:mr-1">$</span>
+                      <span className="text-3xl sm:text-4xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-400 text-base sm:text-lg ml-0.5 sm:ml-1">/mo</span>
                     </div>
                   </div>
 
-                  <ul className="space-y-2.5 mb-6">
+                  <ul className="space-y-2 sm:space-y-2.5 mb-4 sm:mb-6">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start text-sm">
+                      <li key={i} className="flex items-start text-xs sm:text-sm">
                         {feature.includes('Everything') ? (
                           <span className="font-semibold text-gray-700">{feature}</span>
                         ) : (
                           <>
-                            <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mr-1.5 sm:mr-2 flex-shrink-0 mt-0.5" />
                             <span className="text-gray-600">{feature}</span>
                           </>
                         )}
@@ -326,10 +329,10 @@ export default function UpgradeRequiredPage() {
 
                   {isSelected && (
                     <div 
-                      className="flex items-center justify-center font-bold mb-2 text-sm"
+                      className="flex items-center justify-center font-bold mb-1 sm:mb-2 text-xs sm:text-sm"
                       style={{ color: primaryColor }}
                     >
-                      <Check className="w-4 h-4 mr-1" />
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                       Selected
                     </div>
                   )}
@@ -343,12 +346,12 @@ export default function UpgradeRequiredPage() {
             <button
               onClick={handleUpgrade}
               disabled={loading}
-              className="w-full text-white font-bold py-4 px-8 rounded-xl text-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: primaryColor }}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
-                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                  <Loader2 className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
                   Processing...
                 </span>
               ) : (
@@ -356,7 +359,7 @@ export default function UpgradeRequiredPage() {
               )}
             </button>
 
-            <p className="text-center text-gray-500 text-sm mt-4">
+            <p className="text-center text-gray-500 text-xs sm:text-sm mt-3 sm:mt-4">
               Questions?{' '}
               <a 
                 href={`mailto:${agency?.support_email || 'support@example.com'}`} 
@@ -367,7 +370,7 @@ export default function UpgradeRequiredPage() {
               </a>
             </p>
 
-            <p className="text-center text-gray-400 text-xs mt-4 space-x-2">
+            <p className="text-center text-gray-400 text-[10px] sm:text-xs mt-3 sm:mt-4 space-x-1 sm:space-x-2">
               <span>✓ Secure payment via Stripe</span>
               <span>•</span>
               <span>✓ Cancel anytime</span>

@@ -96,7 +96,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
-  // Light mode theme
   const theme = {
     bg: '#f9fafb',
     text: '#111827',
@@ -218,10 +217,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const daysRemaining = getDaysRemaining();
 
   return (
-    <div className="p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Status Message */}
       {message && (
-        <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
+        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
           message.includes('success') || message.includes('Success')
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
             : 'bg-red-50 text-red-700 border border-red-200'
@@ -231,68 +230,68 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       )}
 
       {/* Page Title */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
-        <p className="mt-1" style={{ color: theme.textMuted }}>Manage your account and preferences</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
+        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your account and preferences</p>
       </div>
 
       <div className="max-w-3xl">
         {/* Business Overview */}
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Building2 className="w-4 h-4" style={{ color: primaryColor }} />
             Business Details
           </h2>
           <div 
-            className="rounded-xl border p-4 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 shadow-sm"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
-                <div className="font-medium text-sm" style={{ color: theme.text }}>{client.business_name}</div>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
+                <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.business_name}</div>
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Industry</label>
-                <div className="font-medium text-sm" style={{ color: theme.text }}>{client.industry || 'Not set'}</div>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Industry</label>
+                <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.industry || 'Not set'}</div>
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Location</label>
-                <div className="font-medium text-sm" style={{ color: theme.text }}>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Location</label>
+                <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>
                   {client.business_city && client.business_state 
                     ? `${client.business_city}, ${client.business_state}` 
                     : 'Not set'}
                 </div>
               </div>
               <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Member Since</label>
-                <div className="font-medium text-sm" style={{ color: theme.text }}>{formatDate(client.created_at)}</div>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Member Since</label>
+                <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{formatDate(client.created_at)}</div>
               </div>
             </div>
           </div>
         </section>
 
         {/* AI Phone Number */}
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Phone className="w-4 h-4" style={{ color: primaryColor }} />
             AI Phone Number
           </h2>
           <div 
-            className="rounded-xl border p-4 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 shadow-sm"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label>
-                <div className="text-xl font-bold" style={{ color: primaryColor }}>
+            <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <div className="min-w-0">
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label>
+                <div className="text-base sm:text-xl font-bold truncate" style={{ color: primaryColor }}>
                   {client.vapi_phone_number ? formatPhoneNumber(client.vapi_phone_number) : 'Setting up...'}
                 </div>
               </div>
               <button
                 onClick={handleCopyNumber}
                 disabled={!client.vapi_phone_number}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-100 disabled:opacity-50"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-gray-100 disabled:opacity-50 flex-shrink-0"
                 style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
                 {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
@@ -303,34 +302,34 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {/* Contact Information */}
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <User className="w-4 h-4" style={{ color: primaryColor }} />
             Contact Information
           </h2>
           <div 
-            className="rounded-xl border p-4 space-y-4 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label>
               <input 
                 type="tel" 
                 value={ownerPhone} 
                 onChange={(e) => setOwnerPhone(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
                 style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                 placeholder="+1 (555) 123-4567" 
               />
-              <p className="text-xs mt-1.5" style={{ color: theme.textMuted4 }}>📱 SMS notifications sent here</p>
+              <p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>📱 SMS notifications sent here</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Email *</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label>
               <input 
                 type="email" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
                 style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                 placeholder="your@email.com" 
               />
@@ -338,7 +337,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <button 
               onClick={handleSave} 
               disabled={saving || !hasChanges}
-              className="w-full py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 backgroundColor: hasChanges ? primaryColor : theme.bg,
                 color: hasChanges ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted4,
@@ -351,23 +350,23 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {/* Subscription & Billing */}
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <CreditCard className="w-4 h-4" style={{ color: primaryColor }} />
             Subscription
           </h2>
           <div 
-            className="rounded-xl border p-4 space-y-4 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-xs block mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label>
-                <div className="text-xl font-bold capitalize" style={{ color: primaryColor }}>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label>
+                <div className="text-base sm:text-xl font-bold capitalize" style={{ color: primaryColor }}>
                   {client.plan_type || 'Trial'}
                 </div>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
                 client.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
                 client.subscription_status === 'trial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
               }`}>
@@ -377,28 +376,28 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
             
             {client.subscription_status === 'trial' && daysRemaining !== null && (
-              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                <div className="text-amber-700 font-semibold text-sm">
+              <div className="bg-amber-50 border border-amber-200 p-2 sm:p-3 rounded-lg">
+                <div className="text-amber-700 font-semibold text-xs sm:text-sm">
                   {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial
                 </div>
-                <div className="text-amber-600 text-xs mt-0.5">Ends {formatDate(client.trial_ends_at)}</div>
+                <div className="text-amber-600 text-[10px] sm:text-xs mt-0.5">Ends {formatDate(client.trial_ends_at)}</div>
               </div>
             )}
             
-            <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-lg font-bold" style={{ color: primaryColor }}>{client.monthly_call_limit || '∞'}</div>
-                <div className="text-xs" style={{ color: theme.textMuted4 }}>Limit</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>{client.monthly_call_limit || '∞'}</div>
+                <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div>
               </div>
-              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-lg font-bold" style={{ color: primaryColor }}>{client.calls_this_month || 0}</div>
-                <div className="text-xs" style={{ color: theme.textMuted4 }}>Used</div>
+              <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>{client.calls_this_month || 0}</div>
+                <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div>
               </div>
-              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-lg font-bold" style={{ color: primaryColor }}>
+              <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>
                   {client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}
                 </div>
-                <div className="text-xs" style={{ color: theme.textMuted4 }}>Left</div>
+                <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div>
               </div>
             </div>
             
@@ -406,7 +405,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button 
                 onClick={handleUpgrade}
                 disabled={upgrading}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
+                className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
               >
                 {upgrading ? (
@@ -420,7 +419,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               </button>
             ) : (
               <button 
-                className="w-full py-3 rounded-xl font-semibold text-sm hover:bg-gray-100 transition"
+                className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm hover:bg-gray-100 transition"
                 style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
                 Manage Subscription
@@ -430,19 +429,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {/* Integrations */}
-        <section className="mb-6">
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
             <Link2 className="w-4 h-4" style={{ color: primaryColor }} />
             Integrations
           </h2>
           
           <div 
-            className="rounded-xl border p-4 mb-3 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 mb-3 shadow-sm"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-white border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border }}>
-                <svg viewBox="0 0 24 24" className="w-6 h-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border }}>
+                <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -450,11 +449,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Google Calendar</h3>
-                <p className="text-xs" style={{ color: theme.textMuted4 }}>AI books appointments directly to your calendar</p>
+                <h3 className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>Google Calendar</h3>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>AI books appointments directly to your calendar</p>
               </div>
               {client.google_calendar_connected && (
-                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
                   Connected
                 </span>
               )}
@@ -463,14 +462,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button 
                 onClick={handleDisconnectCalendar} 
                 disabled={disconnectingCalendar}
-                className="w-full py-2.5 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
+                className="w-full py-2 sm:py-2.5 border border-red-300 text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
               >
                 {disconnectingCalendar ? 'Disconnecting...' : 'Disconnect'}
               </button>
             ) : (
               <button 
                 onClick={handleConnectCalendar} 
-                className="w-full py-2.5 rounded-lg text-sm font-semibold transition"
+                className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition"
                 style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
               >
                 Connect Calendar
@@ -480,34 +479,34 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {/* Support */}
-        <section className="mb-6">
+        <section className="mb-4 sm:mb-6">
           <div 
-            className="rounded-xl p-4"
+            className="rounded-xl p-3 sm:p-4"
             style={{ backgroundColor: hexToRgba(primaryColor, 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
           >
-            <div className="flex items-start gap-3">
-              <HelpCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
-              <div>
-                <h4 className="font-semibold text-sm mb-1" style={{ color: theme.text }}>Need Help?</h4>
-                <p className="text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} for support:</p>
+            <div className="flex items-start gap-2 sm:gap-3">
+              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+              <div className="min-w-0">
+                <h4 className="font-semibold text-xs sm:text-sm mb-1" style={{ color: theme.text }}>Need Help?</h4>
+                <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} for support:</p>
                 {branding.supportPhone && (
                   <a 
                     href={`tel:${branding.supportPhone}`}
-                    className="flex items-center gap-2 font-semibold text-lg hover:opacity-80 transition"
+                    className="flex items-center gap-1.5 sm:gap-2 font-semibold text-sm sm:text-lg hover:opacity-80 transition"
                     style={{ color: primaryColor }}
                   >
-                    <Phone className="w-4 h-4" />
+                    <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     {formatPhoneNumber(branding.supportPhone)}
                   </a>
                 )}
                 {branding.supportEmail && (
                   <a 
                     href={`mailto:${branding.supportEmail}`}
-                    className="flex items-center gap-2 text-sm hover:opacity-80 transition mt-1"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm hover:opacity-80 transition mt-1 truncate"
                     style={{ color: primaryColor }}
                   >
-                    <Mail className="w-4 h-4" />
-                    {branding.supportEmail}
+                    <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate">{branding.supportEmail}</span>
                   </a>
                 )}
               </div>

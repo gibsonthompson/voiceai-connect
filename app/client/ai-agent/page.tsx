@@ -90,7 +90,6 @@ export default function ClientAIAgentPage() {
   const { client, branding, loading } = useClient();
   const [message, setMessage] = useState('');
   
-  // Light mode theme
   const theme = {
     bg: '#f9fafb',
     text: '#111827',
@@ -100,7 +99,6 @@ export default function ClientAIAgentPage() {
     cardBg: '#ffffff',
   };
   
-  // Voice state
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [voicesError, setVoicesError] = useState<string | null>(null);
@@ -111,13 +109,11 @@ export default function ClientAIAgentPage() {
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Greeting state
   const [greetingMessage, setGreetingMessage] = useState('');
   const [originalGreeting, setOriginalGreeting] = useState('');
   const [greetingLoading, setGreetingLoading] = useState(true);
   const [savingGreeting, setSavingGreeting] = useState(false);
 
-  // Business Hours state
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
   const [businessHours, setBusinessHours] = useState<BusinessHours>({
@@ -130,7 +126,6 @@ export default function ClientAIAgentPage() {
     sunday: { open: '9:00 AM', close: '5:00 PM', closed: true },
   });
 
-  // Knowledge Base state
   const [kbExpanded, setKbExpanded] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
   const [savingKB, setSavingKB] = useState(false);
@@ -161,29 +156,20 @@ export default function ClientAIAgentPage() {
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
-  // ============================================================================
-  // FETCH FUNCTIONS
-  // ============================================================================
-
   const fetchVoices = async () => {
     setVoicesLoading(true);
     setVoicesError(null);
-    
     try {
       const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/voices`);
-      
       if (!response.ok) throw new Error('Failed to load voices');
-      
       const data = await response.json();
-      
       if (data.success && data.grouped) {
         setVoices(data.grouped);
       } else {
         throw new Error('Invalid voices response');
       }
     } catch (error) {
-      console.error('Error fetching voices:', error);
       setVoicesError(error instanceof Error ? error.message : 'Failed to load voices');
     } finally {
       setVoicesLoading(false);
@@ -198,7 +184,6 @@ export default function ClientAIAgentPage() {
       const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -220,7 +205,6 @@ export default function ClientAIAgentPage() {
       const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -244,7 +228,6 @@ export default function ClientAIAgentPage() {
       const response = await fetch(`${backendUrl}/api/client/${client.id}/knowledge-base`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -263,30 +246,18 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  // ============================================================================
-  // PARSE FUNCTIONS
-  // ============================================================================
-
   const parseServices = (servicesText: string) => {
     const lines = servicesText.split('\n').filter(l => l.trim());
     const parsed: Service[] = [];
-    
     lines.forEach((line, index) => {
       const priceMatch = line.match(/\$[\d,]+/);
       const price = priceMatch ? priceMatch[0] : '';
       const name = line.split('-')[0].trim().replace(/^-\s*/, '');
       const description = line.split('-').slice(1).join('-').trim() || '';
-      
       if (name) {
-        parsed.push({
-          id: `${index + 1}`,
-          name,
-          price,
-          description: description.replace(/\$[\d,]+/, '').trim()
-        });
+        parsed.push({ id: `${index + 1}`, name, price, description: description.replace(/\$[\d,]+/, '').trim() });
       }
     });
-    
     setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
   };
 
@@ -295,30 +266,22 @@ export default function ClientAIAgentPage() {
     const lines = faqsText.split('\n');
     let currentQ = '';
     let currentA = '';
-    
     lines.forEach(line => {
       if (line.trim().startsWith('Q:')) {
-        if (currentQ && currentA) {
-          parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
-        }
+        if (currentQ && currentA) parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
         currentQ = line.replace(/^Q:\s*/i, '').trim();
         currentA = '';
       } else if (line.trim().startsWith('A:')) {
         currentA = line.replace(/^A:\s*/i, '').trim();
       }
     });
-    
-    if (currentQ && currentA) {
-      parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
-    }
-    
+    if (currentQ && currentA) parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
     setFaqs(parsed.length > 0 ? parsed : [{ id: '1', question: '', answer: '' }]);
   };
 
   const parseBusinessHours = (hoursText: string) => {
     const lines = hoursText.split('\n');
     const newHours = { ...businessHours };
-    
     lines.forEach(line => {
       const lower = line.toLowerCase();
       Object.keys(newHours).forEach(day => {
@@ -336,13 +299,8 @@ export default function ClientAIAgentPage() {
         }
       });
     });
-    
     setBusinessHours(newHours);
   };
-
-  // ============================================================================
-  // FORMAT FUNCTIONS
-  // ============================================================================
 
   const formatServices = (): string => {
     return services
@@ -357,10 +315,7 @@ export default function ClientAIAgentPage() {
   };
 
   const formatFAQs = (): string => {
-    return faqs
-      .filter(f => f.question.trim() && f.answer.trim())
-      .map(f => `Q: ${f.question}\nA: ${f.answer}`)
-      .join('\n\n');
+    return faqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
   };
 
   const formatBusinessHoursForSave = (): string => {
@@ -368,15 +323,9 @@ export default function ClientAIAgentPage() {
     return days.map(day => {
       const dayData = businessHours[day as keyof BusinessHours];
       const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-      return dayData.closed 
-        ? `${dayName}: Closed`
-        : `${dayName}: ${dayData.open} - ${dayData.close}`;
+      return dayData.closed ? `${dayName}: Closed` : `${dayName}: ${dayData.open} - ${dayData.close}`;
     }).join('\n');
   };
-
-  // ============================================================================
-  // HANDLER FUNCTIONS
-  // ============================================================================
 
   const handlePlayPreview = (voice: VoiceOption) => {
     if (playingVoiceId === voice.id && audioRef.current) {
@@ -384,47 +333,30 @@ export default function ClientAIAgentPage() {
       setPlayingVoiceId(null);
       return;
     }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
+    if (audioRef.current) audioRef.current.pause();
     const audio = new Audio(voice.previewUrl);
     audioRef.current = audio;
-    
     audio.onended = () => setPlayingVoiceId(null);
-    audio.onerror = () => {
-      setPlayingVoiceId(null);
-      showMessage('Failed to play audio preview', true);
-    };
-    
+    audio.onerror = () => { setPlayingVoiceId(null); showMessage('Failed to play preview', true); };
     audio.play();
     setPlayingVoiceId(voice.id);
   };
 
   const handleSaveVoice = async () => {
     if (selectedVoiceId === currentVoiceId || !client) return;
-    
     setSavingVoice(true);
-
     try {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
-      
       const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ voice_id: selectedVoiceId }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setCurrentVoiceId(selectedVoiceId);
-        showMessage('Voice updated successfully!');
+        showMessage('Voice updated!');
       } else {
         showMessage('Failed to update voice', true);
         setSelectedVoiceId(currentVoiceId);
@@ -439,27 +371,19 @@ export default function ClientAIAgentPage() {
 
   const handleSaveGreeting = async () => {
     if (greetingMessage === originalGreeting || !client) return;
-    
     setSavingGreeting(true);
-
     try {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
-      
       const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ greeting_message: greetingMessage }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setOriginalGreeting(greetingMessage);
-        showMessage('Greeting updated successfully!');
+        showMessage('Greeting updated!');
       } else {
         showMessage(data.error || 'Failed to update greeting', true);
       }
@@ -472,37 +396,23 @@ export default function ClientAIAgentPage() {
 
   const handleResetGreeting = () => {
     if (!client?.business_name) return;
-    const defaultGreeting = `Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`;
-    setGreetingMessage(defaultGreeting);
+    setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`);
   };
 
   const handleSaveBusinessHours = async () => {
     if (!client) return;
-    
     setSavingHours(true);
-
     try {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
-      
-      // Save business hours as part of knowledge base
       const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          clientId: client.id,
-          businessHours: formatBusinessHoursForSave(),
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ clientId: client.id, businessHours: formatBusinessHoursForSave() }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         showMessage('Business hours updated!');
-        // Re-fetch to keep form in sync
         await fetchKnowledgeBase();
       } else {
         showMessage(data.error || 'Failed to update hours', true);
@@ -516,19 +426,13 @@ export default function ClientAIAgentPage() {
 
   const handleSaveKnowledgeBase = async () => {
     if (!client) return;
-    
     setSavingKB(true);
-
     try {
       const backendUrl = getBackendUrl();
       const token = getAuthToken();
-      
       const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           clientId: client.id,
           websiteUrl: website,
@@ -538,16 +442,13 @@ export default function ClientAIAgentPage() {
           additionalInfo,
         }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setKbLastUpdated(new Date().toISOString());
         showMessage('Knowledge base updated!');
-        // Re-fetch to keep form in sync with saved data
         await fetchKnowledgeBase();
       } else {
-        showMessage(data.error || 'Failed to update knowledge base', true);
+        showMessage(data.error || 'Failed to update', true);
       }
     } catch (error) {
       showMessage('Error updating knowledge base', true);
@@ -557,9 +458,7 @@ export default function ClientAIAgentPage() {
   };
 
   const handleTestCall = () => {
-    if (client?.vapi_phone_number) {
-      window.location.href = `tel:${client.vapi_phone_number}`;
-    }
+    if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`;
   };
 
   const showMessage = (text: string, isError = false) => {
@@ -567,48 +466,17 @@ export default function ClientAIAgentPage() {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  // ============================================================================
-  // SERVICE & FAQ MANAGEMENT
-  // ============================================================================
+  const addService = () => setServices(prev => [...prev, { id: Date.now().toString(), name: '', price: '', description: '' }]);
+  const removeService = (id: string) => { if (services.length > 1) setServices(prev => prev.filter(s => s.id !== id)); };
+  const updateService = (id: string, field: keyof Service, value: string) => setServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
 
-  const addService = () => {
-    setServices(prev => [...prev, { id: Date.now().toString(), name: '', price: '', description: '' }]);
-  };
-
-  const removeService = (id: string) => {
-    if (services.length > 1) {
-      setServices(prev => prev.filter(s => s.id !== id));
-    }
-  };
-
-  const updateService = (id: string, field: keyof Service, value: string) => {
-    setServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
-  };
-
-  const addFAQ = () => {
-    setFaqs(prev => [...prev, { id: Date.now().toString(), question: '', answer: '' }]);
-  };
-
-  const removeFAQ = (id: string) => {
-    if (faqs.length > 1) {
-      setFaqs(prev => prev.filter(f => f.id !== id));
-    }
-  };
-
-  const updateFAQ = (id: string, field: keyof FAQ, value: string) => {
-    setFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
-  };
+  const addFAQ = () => setFaqs(prev => [...prev, { id: Date.now().toString(), question: '', answer: '' }]);
+  const removeFAQ = (id: string) => { if (faqs.length > 1) setFaqs(prev => prev.filter(f => f.id !== id)); };
+  const updateFAQ = (id: string, field: keyof FAQ, value: string) => setFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
 
   const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => {
-    setBusinessHours(prev => ({
-      ...prev,
-      [day]: { ...prev[day], [field]: value }
-    }));
+    setBusinessHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   };
-
-  // ============================================================================
-  // COMPUTED VALUES
-  // ============================================================================
 
   const getFilteredVoices = () => {
     if (voiceFilter === 'female') return voices.female || [];
@@ -624,14 +492,13 @@ export default function ClientAIAgentPage() {
       const mon = businessHours.monday;
       return day.closed === mon.closed && day.open === mon.open && day.close === mon.close;
     });
-
     if (allWeekdaysSame && !businessHours.monday.closed) {
-      const parts = [`Mon-Fri: ${businessHours.monday.open.replace(' ', '')}-${businessHours.monday.close.replace(' ', '')}`];
-      parts.push(businessHours.saturday.closed ? 'Sat: Closed' : `Sat: ${businessHours.saturday.open.replace(' ', '')}-${businessHours.saturday.close.replace(' ', '')}`);
-      parts.push(businessHours.sunday.closed ? 'Sun: Closed' : `Sun: ${businessHours.sunday.open.replace(' ', '')}-${businessHours.sunday.close.replace(' ', '')}`);
-      return parts;
+      return [
+        `M-F: ${businessHours.monday.open.replace(' ', '')}-${businessHours.monday.close.replace(' ', '')}`,
+        businessHours.saturday.closed ? 'Sat: Closed' : `Sat: ${businessHours.saturday.open.replace(' ', '')}-${businessHours.saturday.close.replace(' ', '')}`,
+        businessHours.sunday.closed ? 'Sun: Closed' : `Sun: ${businessHours.sunday.open.replace(' ', '')}-${businessHours.sunday.close.replace(' ', '')}`
+      ];
     }
-    
     return days.map(d => {
       const day = businessHours[d as keyof BusinessHours];
       const name = d.charAt(0).toUpperCase() + d.slice(1, 3);
@@ -645,10 +512,6 @@ export default function ClientAIAgentPage() {
   const hasGreetingChanges = greetingMessage !== originalGreeting;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
 
-  // ============================================================================
-  // LOADING STATE
-  // ============================================================================
-
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
@@ -657,35 +520,29 @@ export default function ClientAIAgentPage() {
     );
   }
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
   return (
-    <div className="p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Status Message */}
       {message && (
-        <div className={`mb-6 p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
-          message.includes('✅')
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-            : 'bg-red-50 text-red-700 border border-red-200'
+        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
+          message.includes('✅') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {message}
         </div>
       )}
 
       {/* Hero */}
-      <div className="mb-6 text-center">
+      <div className="mb-4 sm:mb-6 text-center">
         <div 
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3"
           style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
         >
-          <Bot className="w-7 h-7" style={{ color: primaryColor }} />
+          <Bot className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: primaryColor }} />
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: theme.text }}>
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1" style={{ color: theme.text }}>
           Your AI Receptionist
         </h2>
-        <p className="text-sm" style={{ color: theme.textMuted }}>
+        <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
           Customize how your AI answers calls
         </p>
       </div>
@@ -693,76 +550,63 @@ export default function ClientAIAgentPage() {
       {/* Content Container */}
       <div className="max-w-3xl mx-auto">
         {/* Test Your AI Button */}
-        <section className="mb-6">
+        <section className="mb-4 sm:mb-6">
           <button
             onClick={handleTestCall}
             disabled={!client?.vapi_phone_number}
-            className="w-full rounded-xl p-4 flex items-center justify-center gap-3 transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="w-full rounded-xl p-3 sm:p-4 flex items-center justify-center gap-2 sm:gap-3 transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
           >
-            <Phone className="w-5 h-5" />
-            <span className="font-semibold">Test Your AI Receptionist</span>
+            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="font-semibold text-sm sm:text-base">Test Your AI Receptionist</span>
           </button>
-          <p className="text-center text-xs mt-2" style={{ color: theme.textMuted4 }}>
+          <p className="text-center text-[10px] sm:text-xs mt-1.5 sm:mt-2" style={{ color: theme.textMuted4 }}>
             Call your AI number to hear your settings in action
           </p>
         </section>
 
         {/* Voice Selection */}
-        <section className="mb-6">
-          <div 
-            className="rounded-xl border overflow-hidden shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
-            <div className="p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
-                >
-                  <Mic className="w-5 h-5" style={{ color: primaryColor }} />
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
+                  <Mic className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Voice Selection</h3>
-                    <span 
-                      className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase"
-                      style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}
-                    >
-                      Live
-                    </span>
+                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Live</span>
                   </div>
-                  <p className="text-xs" style={{ color: theme.textMuted4 }}>Choose your AI's voice</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Choose your AI's voice</p>
                 </div>
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               {voicesLoading && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: primaryColor }} />
-                  <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading voices...</span>
+                <div className="flex items-center justify-center py-6 sm:py-8">
+                  <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" style={{ color: primaryColor }} />
+                  <span className="ml-2 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Loading voices...</span>
                 </div>
               )}
 
               {voicesError && !voicesLoading && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                  <AlertCircle className="w-6 h-6 text-red-500 mx-auto mb-2" />
-                  <p className="text-red-700 text-sm font-medium mb-2">{voicesError}</p>
-                  <button onClick={fetchVoices} className="text-red-600 text-sm underline hover:no-underline">
-                    Try again
-                  </button>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 text-center">
+                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 mx-auto mb-2" />
+                  <p className="text-red-700 text-xs sm:text-sm font-medium mb-2">{voicesError}</p>
+                  <button onClick={fetchVoices} className="text-red-600 text-xs sm:text-sm underline hover:no-underline">Try again</button>
                 </div>
               )}
 
               {!voicesLoading && !voicesError && totalVoices > 0 && (
                 <>
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                     {(['all', 'female', 'male'] as const).map((filter) => (
                       <button
                         key={filter}
                         onClick={() => setVoiceFilter(filter)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition"
                         style={{
                           backgroundColor: voiceFilter === filter ? primaryColor : theme.bg,
                           color: voiceFilter === filter ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted,
@@ -773,7 +617,7 @@ export default function ClientAIAgentPage() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {getFilteredVoices().map((voice) => {
                       const isSelected = selectedVoiceId === voice.id;
                       const isCurrent = currentVoiceId === voice.id;
@@ -783,48 +627,31 @@ export default function ClientAIAgentPage() {
                         <div
                           key={voice.id}
                           onClick={() => setSelectedVoiceId(voice.id)}
-                          className="relative p-3 rounded-xl border-2 cursor-pointer transition-all"
-                          style={{
-                            borderColor: isSelected ? primaryColor : theme.border,
-                            backgroundColor: isSelected ? hexToRgba(primaryColor, 0.05) : theme.cardBg,
-                          }}
+                          className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer transition-all"
+                          style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, 0.05) : theme.cardBg }}
                         >
                           {isCurrent && (
-                            <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full">
-                              CURRENT
-                            </span>
+                            <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500 text-white text-[8px] sm:text-[9px] font-bold rounded-full">CURRENT</span>
                           )}
-                          
                           {voice.recommended && !isCurrent && (
-                            <span 
-                              className="absolute -top-2 -right-2 px-2 py-0.5 text-[9px] font-bold rounded-full"
-                              style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-                            >
-                              ★
-                            </span>
+                            <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}>★</span>
                           )}
 
-                          <div className="flex items-start gap-2">
+                          <div className="flex items-start gap-1.5 sm:gap-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlayPreview(voice);
-                              }}
-                              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
-                              style={{
-                                backgroundColor: isPlaying ? primaryColor : theme.bg,
-                                color: isPlaying ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted,
-                              }}
+                              onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
+                              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
+                              style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted }}
                             >
-                              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                              {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />}
                             </button>
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="font-semibold text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
-                                {isSelected && <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />}
+                                <span className="font-semibold text-xs sm:text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
+                                {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: primaryColor }} />}
                               </div>
-                              <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.accent} • {voice.style}</p>
+                              <p className="text-[9px] sm:text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.accent}</p>
                             </div>
                           </div>
                         </div>
@@ -836,10 +663,10 @@ export default function ClientAIAgentPage() {
                     <button
                       onClick={handleSaveVoice}
                       disabled={savingVoice}
-                      className="w-full mt-4 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
                       style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
                     >
-                      {savingVoice ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Voice Selection'}
+                      {savingVoice ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Voice'}
                     </button>
                   )}
                 </>
@@ -849,39 +676,28 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Greeting Message */}
-        <section className="mb-6">
-          <div 
-            className="rounded-xl border overflow-hidden shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
-            <div className="p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
-                >
-                  <MessageSquare className="w-5 h-5" style={{ color: primaryColor }} />
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Greeting Message</h3>
-                    <span 
-                      className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase"
-                      style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}
-                    >
-                      Live
-                    </span>
+                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Live</span>
                   </div>
-                  <p className="text-xs" style={{ color: theme.textMuted4 }}>What your AI says when answering calls</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>What your AI says first</p>
                 </div>
               </div>
             </div>
             
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               {greetingLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} />
-                  <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading...</span>
+                <div className="flex items-center justify-center py-4 sm:py-6">
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" style={{ color: primaryColor }} />
+                  <span className="ml-2 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Loading...</span>
                 </div>
               ) : (
                 <>
@@ -890,32 +706,24 @@ export default function ClientAIAgentPage() {
                     onChange={(e) => setGreetingMessage(e.target.value)}
                     rows={3}
                     maxLength={500}
-                    className="w-full px-4 py-3 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 transition"
-                    style={{ 
-                      borderColor: theme.border, 
-                      backgroundColor: theme.bg,
-                      color: theme.text,
-                    }}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 transition"
+                    style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                     placeholder="Hi, you've reached [Business Name]. How can I help you today?"
                   />
                   
-                  <div className="flex items-center justify-between mt-2">
-                    <button
-                      onClick={handleResetGreeting}
-                      className="flex items-center gap-1 text-xs hover:opacity-80 transition"
-                      style={{ color: theme.textMuted4 }}
-                    >
+                  <div className="flex items-center justify-between mt-1.5 sm:mt-2">
+                    <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[10px] sm:text-xs hover:opacity-80 transition" style={{ color: theme.textMuted4 }}>
                       <RotateCcw className="w-3 h-3" />
-                      Reset to default
+                      Reset
                     </button>
-                    <span className="text-xs" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
+                    <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
                   </div>
 
                   {hasGreetingChanges && (
                     <button
                       onClick={handleSaveGreeting}
                       disabled={savingGreeting || greetingMessage.length < 10}
-                      className="w-full mt-3 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full mt-2 sm:mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
                       style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
                     >
                       {savingGreeting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Greeting'}
@@ -928,91 +736,62 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Business Hours */}
-        <section className="mb-6">
-          <div 
-            className="rounded-xl border overflow-hidden shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
-            <div className="p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
-                >
-                  <Clock className="w-5 h-5" style={{ color: primaryColor }} />
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Business Hours</h3>
-                    <span 
-                      className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase"
-                      style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}
-                    >
-                      Live
-                    </span>
+                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Live</span>
                   </div>
-                  <p className="text-xs" style={{ color: theme.textMuted4 }}>Your AI knows when to book vs take messages</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>When you're available</p>
                 </div>
               </div>
             </div>
             
-            <div className="p-4">
-              <div 
-                onClick={() => setHoursExpanded(!hoursExpanded)}
-                className="flex items-center justify-between cursor-pointer group"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {getHoursSummary().slice(0, 4).map((h, i) => (
-                    <span 
-                      key={i} 
-                      className="px-2 py-1 rounded text-xs"
-                      style={{ backgroundColor: theme.bg, color: theme.textMuted }}
-                    >
-                      {h}
-                    </span>
+            <div className="p-3 sm:p-4">
+              <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
+                <div className="flex flex-wrap gap-1 sm:gap-2 flex-1 min-w-0">
+                  {getHoursSummary().slice(0, 3).map((h, i) => (
+                    <span key={i} className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>{h}</span>
                   ))}
                 </div>
-                <button className="flex items-center gap-1 text-sm font-medium group-hover:opacity-80 ml-2" style={{ color: primaryColor }}>
-                  {hoursExpanded ? 'Collapse' : 'Edit'}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${hoursExpanded ? 'rotate-180' : ''}`} />
+                <button className="flex items-center gap-1 text-xs sm:text-sm font-medium group-hover:opacity-80 ml-2 flex-shrink-0" style={{ color: primaryColor }}>
+                  {hoursExpanded ? 'Hide' : 'Edit'}
+                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${hoursExpanded ? 'rotate-180' : ''}`} />
                 </button>
               </div>
 
               {hoursExpanded && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
                   {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => (
-                    <div 
-                      key={day} 
-                      className="flex items-center gap-2 p-2 rounded-lg"
-                      style={{ backgroundColor: theme.bg }}
-                    >
-                      <span className="w-16 text-xs font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0, 3)}</span>
+                    <div key={day} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-lg" style={{ backgroundColor: theme.bg }}>
+                      <span className="w-10 sm:w-16 text-[10px] sm:text-xs font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0, 3)}</span>
                       
-                      <label className="flex items-center gap-1.5">
-                        <input
-                          type="checkbox"
-                          checked={businessHours[day].closed}
-                          onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)}
-                          className="w-3.5 h-3.5 rounded"
-                        />
-                        <span className="text-xs" style={{ color: theme.textMuted }}>Closed</span>
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={businessHours[day].closed} onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded" />
+                        <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Closed</span>
                       </label>
 
                       {!businessHours[day].closed && (
-                        <div className="flex items-center gap-1.5 ml-auto">
+                        <div className="flex items-center gap-1 ml-auto">
                           <select
                             value={businessHours[day].open}
                             onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)}
-                            className="px-2 py-1 text-xs border rounded focus:outline-none"
+                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           >
                             {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
                           </select>
-                          <span className="text-xs" style={{ color: theme.textMuted4 }}>-</span>
+                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>-</span>
                           <select
                             value={businessHours[day].close}
                             onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)}
-                            className="px-2 py-1 text-xs border rounded focus:outline-none"
+                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           >
                             {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
@@ -1025,10 +804,10 @@ export default function ClientAIAgentPage() {
                   <button
                     onClick={handleSaveBusinessHours}
                     disabled={savingHours}
-                    className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-2 sm:mt-3 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50"
                     style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
                   >
-                    {savingHours ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Sparkles className="w-4 h-4" /> Save Business Hours</>}
+                    {savingHours ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Sparkles className="w-4 h-4" /> Save Hours</>}
                   </button>
                 </div>
               )}
@@ -1037,88 +816,68 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Knowledge Base */}
-        <section className="mb-6">
-          <div 
-            className="rounded-xl border overflow-hidden shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
-            <div className="p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
-                >
-                  <BookOpen className="w-5 h-5" style={{ color: primaryColor }} />
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}>
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Knowledge Base</h3>
-                    <span 
-                      className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase"
-                      style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}
-                    >
-                      Live
-                    </span>
+                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Live</span>
                   </div>
-                  <p className="text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
                 </div>
               </div>
             </div>
             
-            <div className="p-4">
-              {/* Collapsed View */}
-              <div 
-                onClick={() => setKbExpanded(!kbExpanded)}
-                className="flex items-center justify-between cursor-pointer group"
-              >
-                <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
-                  <span>Last updated: {formatDate(kbLastUpdated)}</span>
+            <div className="p-3 sm:p-4">
+              <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
+                <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                  Updated: {formatDate(kbLastUpdated)}
                 </div>
-                <button 
-                  className="flex items-center gap-1 text-sm font-medium group-hover:opacity-80 transition"
-                  style={{ color: primaryColor }}
-                >
-                  {kbExpanded ? 'Collapse' : 'Edit Knowledge'}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
+                <button className="flex items-center gap-1 text-xs sm:text-sm font-medium group-hover:opacity-80 transition" style={{ color: primaryColor }}>
+                  {kbExpanded ? 'Hide' : 'Edit'}
+                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
                 </button>
               </div>
 
-              {/* Expanded Form */}
               {kbExpanded && (
-                <div className="mt-4 space-y-5">
+                <div className="mt-3 sm:mt-4 space-y-4 sm:space-y-5">
                   {/* Website URL */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
-                      <Globe className="w-4 h-4" style={{ color: primaryColor }} />
-                      Website URL
+                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
+                      Website
                     </label>
                     <input
                       type="url"
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
                       placeholder="https://yourbusiness.com"
-                      className="w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none transition"
+                      className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none transition"
                       style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                     />
-                    <p className="text-xs mt-1.5" style={{ color: theme.textMuted4 }}>We'll extract info from your website automatically</p>
                   </div>
 
                   {/* Services */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
-                      <Briefcase className="w-4 h-4" style={{ color: primaryColor }} />
+                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
+                      <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
                       Services & Pricing
                     </label>
                     <div className="space-y-2">
                       {services.map((service) => (
-                        <div key={service.id} className="p-3 rounded-lg space-y-2" style={{ backgroundColor: theme.bg }}>
-                          <div className="flex gap-2">
+                        <div key={service.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
+                          <div className="flex gap-1.5 sm:gap-2">
                             <input
                               type="text"
                               value={service.name}
                               onChange={(e) => updateService(service.id, 'name', e.target.value)}
                               placeholder="Service name"
-                              className="flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0"
                               style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                             />
                             <input
@@ -1126,15 +885,11 @@ export default function ClientAIAgentPage() {
                               value={service.price}
                               onChange={(e) => updateService(service.id, 'price', e.target.value)}
                               placeholder="$100"
-                              className="w-20 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none"
                               style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                             />
-                            <button
-                              onClick={() => removeService(service.id)}
-                              disabled={services.length === 1}
-                              className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
+                            <button onClick={() => removeService(service.id)} disabled={services.length === 1} className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition">
+                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </button>
                           </div>
                           <textarea
@@ -1142,46 +897,38 @@ export default function ClientAIAgentPage() {
                             onChange={(e) => updateService(service.id, 'description', e.target.value)}
                             placeholder="Brief description..."
                             rows={2}
-                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none resize-none"
+                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           />
                         </div>
                       ))}
                     </div>
-                    <button
-                      onClick={addService}
-                      className="mt-2 flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition hover:opacity-80"
-                      style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}
-                    >
-                      <Plus className="w-4 h-4" />
+                    <button onClick={addService} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}>
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Add Service
                     </button>
                   </div>
 
                   {/* FAQs */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
-                      <HelpCircle className="w-4 h-4" style={{ color: primaryColor }} />
+                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
+                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
                       FAQs
                     </label>
                     <div className="space-y-2">
                       {faqs.map((faq) => (
-                        <div key={faq.id} className="p-3 rounded-lg space-y-2" style={{ backgroundColor: theme.bg }}>
-                          <div className="flex gap-2">
+                        <div key={faq.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
+                          <div className="flex gap-1.5 sm:gap-2">
                             <input
                               type="text"
                               value={faq.question}
                               onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)}
                               placeholder="Question..."
-                              className="flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none"
+                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0"
                               style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                             />
-                            <button
-                              onClick={() => removeFAQ(faq.id)}
-                              disabled={faqs.length === 1}
-                              className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
+                            <button onClick={() => removeFAQ(faq.id)} disabled={faqs.length === 1} className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 transition">
+                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </button>
                           </div>
                           <textarea
@@ -1189,58 +936,42 @@ export default function ClientAIAgentPage() {
                             onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)}
                             placeholder="Answer..."
                             rows={2}
-                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none resize-none"
+                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none"
                             style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
                           />
                         </div>
                       ))}
                     </div>
-                    <button
-                      onClick={addFAQ}
-                      className="mt-2 flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition hover:opacity-80"
-                      style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}
-                    >
-                      <Plus className="w-4 h-4" />
+                    <button onClick={addFAQ} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, 0.05) }}>
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Add FAQ
                     </button>
                   </div>
 
                   {/* Additional Info */}
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: theme.text }}>
-                      <FileText className="w-4 h-4" style={{ color: primaryColor }} />
+                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
                       Additional Info
                     </label>
                     <textarea
                       value={additionalInfo}
                       onChange={(e) => setAdditionalInfo(e.target.value)}
-                      placeholder="Policies, service areas, payment methods, team info, etc."
+                      placeholder="Policies, service areas, payment methods, etc."
                       rows={3}
-                      className="w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition"
+                      className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition"
                       style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
                     />
                   </div>
 
-                  {/* Update Button */}
                   <button
                     onClick={handleSaveKnowledgeBase}
                     disabled={savingKB}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50"
                     style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
                   >
-                    {savingKB ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Update AI Knowledge
-                      </>
-                    )}
+                    {savingKB ? <><Loader2 className="w-4 h-4 animate-spin" />Updating...</> : <><Sparkles className="w-4 h-4" />Update AI Knowledge</>}
                   </button>
-                  <p className="text-center text-xs" style={{ color: theme.textMuted4 }}>Changes apply to all incoming calls</p>
                 </div>
               )}
             </div>
@@ -1248,18 +979,13 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Pro Tip */}
-        <div 
-          className="rounded-xl p-4"
-          style={{ backgroundColor: hexToRgba(primaryColor, 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
-        >
-          <div className="flex items-start gap-3">
-            <div className="text-xl flex-shrink-0">💡</div>
+        <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(primaryColor, 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}>
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="text-base sm:text-xl flex-shrink-0">💡</div>
             <div>
-              <h4 className="font-semibold text-sm mb-1" style={{ color: primaryColor }}>
-                Pro Tip
-              </h4>
-              <p className="text-sm" style={{ color: theme.textMuted }}>
-                After changing your voice or greeting, tap "Test Your AI Receptionist" to call and hear the changes in action!
+              <h4 className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1" style={{ color: primaryColor }}>Pro Tip</h4>
+              <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                After changes, tap "Test Your AI" to hear them in action!
               </p>
             </div>
           </div>
