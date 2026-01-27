@@ -76,14 +76,14 @@ export const metadata: Metadata = {
     creator: "@myvoiceaiconnect",
   },
   metadataBase: new URL("https://myvoiceaiconnect.com"),
+  // PWA manifest
+  manifest: "/manifest.json",
   // Apple PWA settings
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "VoiceAI",
   },
-  // App manifest
-  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -95,7 +95,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  // Enable safe-area-inset CSS env variables
+  // CRITICAL: This enables safe-area-inset CSS variables AND standalone mode
   viewportFit: "cover",
 };
 
@@ -114,10 +114,36 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-        {/* Apple PWA icons */}
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        {/* Prevent phone number detection on iOS */}
+        
+        {/* PWA / iOS Standalone Mode - These are REQUIRED */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="VoiceAI" />
+        
+        {/* Prevent automatic detection/formatting */}
         <meta name="format-detection" content="telephone=no" />
+        <meta name="format-detection" content="date=no" />
+        <meta name="format-detection" content="address=no" />
+        <meta name="format-detection" content="email=no" />
+        
+        {/* Apple Touch Icons */}
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167.png" />
+        
+        {/* Splash screens for iOS */}
+        <link
+          rel="apple-touch-startup-image"
+          href="/splash/splash-1170x2532.png"
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/splash/splash-1284x2778.png"
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+        />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>

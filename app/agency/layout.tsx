@@ -80,8 +80,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return pathname?.startsWith(href);
   };
 
-  const currentPage = navItems.find(item => isActive(item.href));
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -103,40 +101,37 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         }}
       />
 
-      {/* Mobile Header - Fixed, edge-to-edge */}
+      {/* Mobile Header - Fixed, edge-to-edge, BIGGER */}
       <header 
         className="fixed top-0 left-0 right-0 z-30 md:hidden bg-[#050505] border-b border-white/[0.06]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center justify-between h-14 px-4">
-          {/* Hamburger */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-10 h-10 -ml-2 rounded-lg hover:bg-white/[0.06] transition-colors"
-          >
-            <Menu className="h-5 w-5 text-[#fafaf9]" />
-          </button>
-
-          {/* Center - Logo & Name */}
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between h-16 px-4">
+          {/* Left - Logo & Name */}
+          <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
                 src={branding.logoUrl} 
                 alt={branding.name} 
-                className="h-7 w-7 rounded-lg object-contain" 
+                className="h-9 w-9 rounded-xl object-contain" 
               />
             ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-                <WaveformIcon className="h-4 w-4 text-[#fafaf9]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
               </div>
             )}
-            <span className="font-semibold text-sm text-[#fafaf9]">
+            <span className="font-semibold text-base text-[#fafaf9]">
               {agency?.name || 'Agency'}
             </span>
           </div>
 
-          {/* Right - Page indicator or placeholder */}
-          <div className="w-10 h-10" />
+          {/* Right - Hamburger */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+          >
+            <Menu className="h-6 w-6 text-[#fafaf9]" />
+          </button>
         </div>
       </header>
 
@@ -148,39 +143,27 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Slides from RIGHT on mobile, LEFT on desktop */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 md:w-64 border-r border-white/[0.06] bg-[#050505]
+          fixed inset-y-0 z-50 w-72 md:w-64 border-white/[0.06] bg-[#050505]
           transform transition-transform duration-300 ease-out
-          md:translate-x-0
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:left-0 md:translate-x-0 md:border-r
+          right-0 border-l md:border-l-0
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
         `}
         style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
       >
-        {/* Mobile Close Button */}
-        <div className="flex md:hidden items-center justify-between h-14 px-4 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2">
-            {branding.logoUrl ? (
-              <img 
-                src={branding.logoUrl} 
-                alt={branding.name} 
-                className="h-7 w-7 rounded-lg object-contain" 
-              />
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-                <WaveformIcon className="h-4 w-4 text-[#fafaf9]" />
-              </div>
-            )}
-            <span className="font-semibold text-sm text-[#fafaf9]">
-              {agency?.name || 'Agency'}
-            </span>
-          </div>
+        {/* Mobile Header in Sidebar */}
+        <div className="flex md:hidden items-center justify-between h-16 px-4 border-b border-white/[0.06]">
+          <span className="font-semibold text-base text-[#fafaf9]">
+            Menu
+          </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-lg hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
           >
-            <X className="h-5 w-5 text-[#fafaf9]" />
+            <X className="h-6 w-6 text-[#fafaf9]" />
           </button>
         </div>
 
@@ -267,7 +250,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main 
         className="md:pl-64 min-h-screen"
         style={{ 
-          paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 3.5rem)' : 0,
+          paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 4rem)' : 0,
           paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : 0,
         }}
       >
