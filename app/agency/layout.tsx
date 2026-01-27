@@ -106,22 +106,22 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         className="sticky top-0 z-30 md:hidden bg-[#050505]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <header className="flex items-center justify-between h-14 px-4 border-b border-white/[0.06]">
+        <header className="flex items-center justify-between h-16 px-4 border-b border-white/[0.06]">
           {/* Left - Logo & Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
                 src={branding.logoUrl} 
                 alt={branding.name}
-                style={{ height: '36px', width: 'auto' }}
+                style={{ height: '40px', width: 'auto' }}
                 className="object-contain flex-shrink-0"
               />
             ) : (
-              <div className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5" style={{ height: '36px', width: '36px' }}>
-                <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
+              <div className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5" style={{ height: '40px', width: '40px' }}>
+                <WaveformIcon className="h-6 w-6 text-[#fafaf9]" />
               </div>
             )}
-            <span className="font-semibold text-[#fafaf9] truncate max-w-[150px]">
+            <span className="font-semibold text-lg text-[#fafaf9] truncate max-w-[180px]">
               {agency?.name || 'Agency'}
             </span>
           </div>
@@ -129,9 +129,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Right - Hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
           >
-            <Menu className="h-6 w-6 text-[#fafaf9]" />
+            <Menu className="h-7 w-7 text-[#fafaf9]" />
           </button>
         </header>
       </div>
@@ -144,25 +144,26 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Slides from RIGHT on mobile, LEFT on desktop */}
+      {/* Sidebar - Desktop: LEFT, Mobile: slides from RIGHT */}
       <aside 
         className={`
-          fixed inset-y-0 z-50 w-72 md:w-64 border-white/[0.06] bg-[#050505]
+          fixed inset-y-0 z-50 w-72 md:w-64 bg-[#050505]
           transform transition-transform duration-300 ease-out
-          md:left-0 md:translate-x-0 md:border-r
-          right-0 border-l md:border-l-0
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+          ${isMobile 
+            ? `right-0 border-l border-white/[0.06] ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
+            : 'left-0 border-r border-white/[0.06] translate-x-0'
+          }
         `}
         style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
       >
         {/* Mobile Header in Sidebar */}
-        <div className="flex md:hidden items-center justify-between h-14 px-4 border-b border-white/[0.06]">
-          <span className="font-semibold text-[#fafaf9]">Menu</span>
+        <div className="flex md:hidden items-center justify-between h-16 px-4 border-b border-white/[0.06]">
+          <span className="font-semibold text-lg text-[#fafaf9]">Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
           >
-            <X className="h-6 w-6 text-[#fafaf9]" />
+            <X className="h-7 w-7 text-[#fafaf9]" />
           </button>
         </div>
 

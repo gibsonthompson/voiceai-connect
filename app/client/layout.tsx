@@ -127,25 +127,25 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <header className="flex items-center justify-between h-14 px-4 shadow-lg">
+        <header className="flex items-center justify-between h-16 px-4 shadow-lg">
           {/* Left - Logo & Business Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
                 src={branding.logoUrl} 
                 alt={branding.agencyName}
-                style={{ height: '36px', width: 'auto' }}
+                style={{ height: '40px', width: 'auto' }}
                 className="object-contain flex-shrink-0"
               />
             ) : (
               <div 
                 className="flex items-center justify-center rounded-xl"
-                style={{ height: '36px', width: '36px', backgroundColor: 'rgba(255,255,255,0.2)' }}
+                style={{ height: '40px', width: '40px', backgroundColor: 'rgba(255,255,255,0.2)' }}
               >
-                <Phone className="h-5 w-5 text-white" />
+                <Phone className="h-6 w-6 text-white" />
               </div>
             )}
-            <span className="font-semibold text-white truncate max-w-[150px]">
+            <span className="font-semibold text-lg text-white truncate max-w-[180px]">
               {client?.business_name || 'Loading...'}
             </span>
           </div>
@@ -153,10 +153,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {/* Right - Hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
             style={{ color: navTextColor }}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-7 w-7" />
           </button>
         </header>
       </div>
@@ -169,14 +169,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Slides from RIGHT on mobile, LEFT on desktop */}
+      {/* Sidebar - Desktop: LEFT, Mobile: slides from RIGHT */}
       <aside 
         className={`
           fixed inset-y-0 z-50 w-72 md:w-64
           transform transition-transform duration-300 ease-out
-          md:left-0 md:translate-x-0 md:border-r
-          right-0 border-l md:border-l-0
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+          ${isMobile 
+            ? `right-0 border-l ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
+            : 'left-0 border-r translate-x-0'
+          }
         `}
         style={{ 
           backgroundColor: navBg,
@@ -186,16 +187,16 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       >
         {/* Mobile Header in Sidebar */}
         <div 
-          className="flex md:hidden items-center justify-between h-14 px-4 border-b"
+          className="flex md:hidden items-center justify-between h-16 px-4 border-b"
           style={{ borderColor: navBorder }}
         >
-          <span className="font-semibold" style={{ color: navTextColor }}>Menu</span>
+          <span className="font-semibold text-lg" style={{ color: navTextColor }}>Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-10 h-10 -mr-2 rounded-xl transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
             style={{ color: navTextColor }}
           >
-            <X className="h-6 w-6" />
+            <X className="h-7 w-7" />
           </button>
         </div>
 
