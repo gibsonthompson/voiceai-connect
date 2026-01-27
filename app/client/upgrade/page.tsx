@@ -282,7 +282,7 @@ export default function UpgradeRequiredPage() {
                   } ${'popular' in plan && plan.popular ? 'md:-mt-4' : ''}`}
                   style={{
                     borderColor: isSelected ? primaryColor : undefined,
-                    ringColor: isSelected ? primaryColor : undefined,
+                    boxShadow: isSelected ? `0 0 0 4px ${primaryColor}40` : undefined,
                   }}
                 >
                   {'popular' in plan && plan.popular && (
