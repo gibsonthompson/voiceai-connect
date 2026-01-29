@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight
+  Menu, X, ChevronRight, Gift
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 
@@ -67,6 +67,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/outreach', label: 'Outreach', icon: Send },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/agency/marketing', label: 'Marketing Website', icon: Globe },
+    { href: '/agency/referrals', label: 'Referrals', icon: Gift },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
