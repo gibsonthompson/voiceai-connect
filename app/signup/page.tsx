@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Phone, ArrowRight, Loader2, Check, Building, Mail, User, MapPin,
   ArrowLeft, Sparkles, Shield, Clock, Zap
@@ -51,6 +51,49 @@ function WaveformIcon({ className }: { className?: string }) {
       <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
     </svg>
   );
+}
+
+// ============================================================================
+// REFERRAL TRACKING HELPERS
+// ============================================================================
+const REFERRAL_STORAGE_KEY = 'voiceai_referral_code';
+const REFERRAL_EXPIRY_DAYS = 90;
+
+function captureReferralCode(code: string) {
+  if (typeof window === 'undefined') return;
+  
+  const data = {
+    code: code.toLowerCase().trim(),
+    timestamp: Date.now(),
+  };
+  
+  localStorage.setItem(REFERRAL_STORAGE_KEY, JSON.stringify(data));
+}
+
+function getStoredReferralCode(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const stored = localStorage.getItem(REFERRAL_STORAGE_KEY);
+    if (!stored) return null;
+    
+    const data = JSON.parse(stored);
+    const daysSinceCapture = (Date.now() - data.timestamp) / (1000 * 60 * 60 * 24);
+    
+    if (daysSinceCapture > REFERRAL_EXPIRY_DAYS) {
+      localStorage.removeItem(REFERRAL_STORAGE_KEY);
+      return null;
+    }
+    
+    return data.code;
+  } catch {
+    return null;
+  }
+}
+
+function clearReferralCode() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(REFERRAL_STORAGE_KEY);
 }
 
 // ============================================================================
@@ -439,8 +482,10 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 // ============================================================================
 function AgencySignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -449,6 +494,29 @@ function AgencySignupForm() {
     email: '',
     phone: '',
   });
+
+  // Capture referral code from URL on mount
+  useEffect(() => {
+    const refFromUrl = searchParams.get('ref') || searchParams.get('referral');
+    
+    if (refFromUrl) {
+      // Store it for persistence (90 day window)
+      captureReferralCode(refFromUrl);
+      setReferralCode(refFromUrl.toLowerCase().trim());
+      
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('ref');
+      url.searchParams.delete('referral');
+      window.history.replaceState({}, '', url.toString());
+    } else {
+      // Check for previously stored referral
+      const stored = getStoredReferralCode();
+      if (stored) {
+        setReferralCode(stored);
+      }
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -471,6 +539,7 @@ function AgencySignupForm() {
           phone: formData.phone,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          referralCode: referralCode, // Include referral code
         }),
       });
 
@@ -479,6 +548,9 @@ function AgencySignupForm() {
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong');
       }
+
+      // Clear stored referral code on successful signup
+      clearReferralCode();
 
       if (data.token) {
         localStorage.setItem('agency_password_token', data.token);
@@ -547,6 +619,19 @@ function AgencySignupForm() {
           <div className="mb-8">
             <ProgressSteps currentStep={1} accentColor="#10b981" />
           </div>
+
+          {/* Referral Banner */}
+          {referralCode && (
+            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 flex-shrink-0">
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="font-medium text-emerald-300 text-sm">You were referred!</p>
+                <p className="text-xs text-emerald-300/60">Your referral has been applied</p>
+              </div>
+            </div>
+          )}
 
           {/* Form Card */}
           <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
