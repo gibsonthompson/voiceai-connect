@@ -600,7 +600,7 @@ export default function FeaturesPage() {
                 </div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-[#fafaf9]/60">VoiceAI Connect</span>
-                  <span className="text-xl font-semibold text-emerald-400">$199/mo</span>
+                  <span className="text-xl font-semibold text-emerald-400">From $99/mo</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[#fafaf9]/60">Time to launch</span>

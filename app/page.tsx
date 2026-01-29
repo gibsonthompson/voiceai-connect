@@ -56,7 +56,7 @@ export default function LandingPage() {
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
 
-            {/* Desktop Nav - UPDATED */}
+            {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-1">
               {[
                 { name: 'Platform', href: '/platform' },
@@ -101,7 +101,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile menu - UPDATED */}
+        {/* Mobile menu */}
         <div className={`lg:hidden transition-all duration-300 ${
           mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
@@ -579,14 +579,14 @@ export default function LandingPage() {
                     </div>
                     <div className="flex justify-between items-baseline pt-2">
                       <span className="text-[#fafaf9]/80 font-medium">Monthly profit</span>
-                      <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$1,191</span>
+                      <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$1,291</span>
                     </div>
                   </div>
                   
                   <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
                     <p className="text-sm text-emerald-300/80">
-                      <strong className="text-emerald-300">Scale to 50 clients?</strong> That's $7,251/mo profit. 
-                      Same $299 platform fee. Unlimited upside.
+                      <strong className="text-emerald-300">Scale to 50 clients?</strong> That&apos;s $7,301/mo profit. 
+                      Same $199 platform fee. Unlimited upside.
                     </p>
                   </div>
                 </div>
@@ -721,19 +721,21 @@ export default function LandingPage() {
               {[
                 {
                   name: 'Starter',
-                  price: 199,
+                  price: 99,
                   description: 'For new agencies testing the waters',
                   features: [
-                    'Up to 25 clients',
+                    'Up to 15 clients',
                     'Embeddable signup widget',
                     'White-label client dashboard',
                     'Your branding & colors',
                     'Stripe Connect payments',
+                    'Basic analytics',
                     'Email support',
                   ],
                   limitations: [
                     'No marketing site',
                     'Subdomain only',
+                    'No API access',
                   ],
                   highlighted: false,
                   cta: 'Start Free Trial',
@@ -748,9 +750,9 @@ export default function LandingPage() {
                     'Demo phone number',
                     'Sample call recordings',
                     'Custom domain support',
-                    'Priority support',
                     'Advanced analytics',
-                    'API access',
+                    'API access & webhooks',
+                    'Priority support',
                   ],
                   limitations: [],
                   highlighted: true,
@@ -764,10 +766,10 @@ export default function LandingPage() {
                     'Unlimited clients',
                     'Everything in Professional',
                     'White-label emails',
-                    'Dedicated success manager',
                     'Custom integrations',
-                    'SLA guarantee',
+                    'Dedicated success manager',
                     'Phone support',
+                    'SLA guarantee',
                     'Early feature access',
                   ],
                   limitations: [],
@@ -876,7 +878,7 @@ export default function LandingPage() {
               },
               {
                 q: 'What\'s the difference between Starter and Professional?',
-                a: 'Starter gives you an embeddable widget to add to your existing website. Professional includes a complete marketing website with a demo phone number potential clients can call to experience the AI. Most agencies upgrade to Professional within their trial.',
+                a: 'Starter ($99/mo) gives you up to 15 clients and an embeddable widget. Professional ($199/mo) includes up to 100 clients, a complete marketing website with a demo phone number, custom domain support, API access, and advanced analytics. Most agencies upgrade to Professional within their trial.',
               },
               {
                 q: 'How do I get clients?',
@@ -900,7 +902,7 @@ export default function LandingPage() {
               },
               {
                 q: 'What if I need help?',
-                a: 'Starter includes email support. Professional adds priority support. Scale includes a dedicated success manager and phone support. We\'re invested in your success.',
+                a: 'Starter includes email support. Professional adds priority support with faster response times. Scale includes a dedicated success manager and phone support. We\'re invested in your success.',
               },
             ].map((item, i) => (
               <details 
@@ -956,7 +958,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer - UPDATED */}
+      {/* Footer */}
       <footer className="border-t border-white/[0.06] py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
@@ -971,6 +973,7 @@ export default function LandingPage() {
             {/* Links */}
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
+              <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>

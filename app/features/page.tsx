@@ -21,7 +21,7 @@ function WaveformIcon({ className }: { className?: string }) {
 
 export const metadata = {
   title: 'Features & Pricing Comparison | VoiceAI Connect',
-  description: 'Compare VoiceAI Connect plans and features. Find the perfect white-label AI receptionist platform for your agency. Starter, Professional, and Scale plans with detailed feature breakdown.',
+  description: 'Compare VoiceAI Connect plans and features. Find the perfect white-label AI receptionist platform for your agency. Starter $99, Professional $199, and Scale $499 plans with detailed feature breakdown.',
   keywords: 'AI receptionist, white-label voice AI, agency platform, pricing comparison, features, AI phone answering, voice AI platform',
   openGraph: {
     title: 'Features & Pricing | VoiceAI Connect',
@@ -29,13 +29,13 @@ export const metadata = {
   },
 };
 
-// Feature comparison data
+// Feature comparison data - UPDATED for new pricing tiers
 const featureCategories = [
   {
     name: 'Client Capacity',
     icon: Users,
     features: [
-      { name: 'Maximum clients', starter: '25', professional: '100', scale: 'Unlimited' },
+      { name: 'Maximum clients', starter: '15', professional: '100', scale: 'Unlimited' },
     ],
   },
   {
@@ -126,12 +126,12 @@ const featureCategories = [
   },
 ];
 
-// Plan data
+// Plan data - UPDATED PRICING
 const plans = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 199,
+    price: 99,
     description: 'For new agencies testing the waters',
     icon: Zap,
     cta: 'Start Free Trial',
@@ -140,7 +140,7 @@ const plans = [
   {
     id: 'professional',
     name: 'Professional',
-    price: 299,
+    price: 199,
     description: 'Most popular for serious agencies',
     icon: Shield,
     cta: 'Start Free Trial',
@@ -228,7 +228,7 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* Pricing Cards */}
+      {/* Pricing Cards - UPDATED */}
       <section className="relative pb-16 sm:pb-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
@@ -474,7 +474,7 @@ export default function FeaturesPage() {
               },
               {
                 q: 'What happens if I exceed my client limit?',
-                a: 'We\'ll notify you when you\'re approaching your limit. You can either upgrade to a higher plan or we\'ll work with you to find a solution that fits your needs.',
+                a: 'We\'ll notify you when you\'re approaching your limit. You can either upgrade to a higher plan or we\'ll work with you to find a solution that fits your needs. Starter allows 15 clients, Professional allows 100, and Scale is unlimited.',
               },
               {
                 q: 'Do you offer annual billing discounts?',
@@ -494,7 +494,7 @@ export default function FeaturesPage() {
               },
               {
                 q: 'What kind of support do you offer?',
-                a: 'All plans include email support. Professional plans get priority support with faster response times. Scale plans include dedicated success managers and phone support.',
+                a: 'Starter includes email support. Professional plans get priority support with faster response times. Scale plans include dedicated success managers, phone support, and SLA guarantees.',
               },
               {
                 q: 'How long does it take to set up a client?',
@@ -551,15 +551,15 @@ export default function FeaturesPage() {
             </Link>
             
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
-              <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
-              <Link href="/#pricing" className="hover:text-[#fafaf9] transition-colors">Pricing</Link>
+              <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
+              <Link href="/features" className="text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Features</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <a href="mailto:support@myvoiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
             </div>
             
             <p className="text-sm text-[#fafaf9]/30">
-              © 2025 VoiceAI Connect. All rights reserved.
+              © 2026 VoiceAI Connect. All rights reserved.
             </p>
           </div>
         </div>
