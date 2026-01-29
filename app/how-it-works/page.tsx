@@ -75,7 +75,7 @@ export default function HowItWorksPage() {
                 { name: 'Platform', href: '/platform' },
                 { name: 'How It Works', href: '/how-it-works' },
                 { name: 'Pricing', href: '/#pricing' },
-                { name: 'FAQ', href: '/#faq' },
+                { name: 'FAQ', href: '/faq' },
               ].map((item) => (
                 <Link 
                   key={item.name}
@@ -123,7 +123,7 @@ export default function HowItWorksPage() {
               { name: 'Platform', href: '/platform' },
               { name: 'How It Works', href: '/how-it-works' },
               { name: 'Pricing', href: '/#pricing' },
-              { name: 'FAQ', href: '/#faq' },
+              { name: 'FAQ', href: '/faq' },
             ].map((item) => (
               <Link 
                 key={item.name}
