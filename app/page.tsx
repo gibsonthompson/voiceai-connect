@@ -60,7 +60,7 @@ export default function LandingPage() {
             <div className="hidden lg:flex items-center gap-1">
               {[
                 { name: 'Platform', href: '/platform' },
-                { name: 'How It Works', href: '#how-it-works' },
+                { name: 'How It Works', href: '/how-it-works' },
                 { name: 'Pricing', href: '#pricing' },
                 { name: 'FAQ', href: '#faq' },
               ].map((item) => (
@@ -108,7 +108,7 @@ export default function LandingPage() {
           <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
             {[
               { name: 'Platform', href: '/platform' },
-              { name: 'How It Works', href: '#how-it-works' },
+              { name: 'How It Works', href: '/how-it-works' },
               { name: 'Pricing', href: '#pricing' },
               { name: 'FAQ', href: '#faq' },
             ].map((item) => (
