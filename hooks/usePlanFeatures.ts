@@ -19,9 +19,10 @@ import {
 
 export function usePlanFeatures() {
   const { agency } = useAgency();
-  const plan = (agency?.plan || 'starter') as PlanType;
+  const agencyData = agency as any;
+  const plan = (agencyData?.plan || 'starter') as PlanType;
   const limits = PLAN_LIMITS[plan];
-  const currentClients = agency?.client_count || 0;
+  const currentClients = agencyData?.client_count || 0;
   
   return {
     // Current plan info
