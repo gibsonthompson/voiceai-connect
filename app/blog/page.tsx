@@ -122,7 +122,7 @@ const blogPosts: BlogPost[] = [
     excerpt: 'The pain points that matter, the ROI arguments that close deals, and the objections you\'ll face. Home service businesses miss 27% of calls—here\'s how to sell the solution.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-20',
+    publishedAt: '2026-01-20',
     readTime: '10 min read',
   },
   {
@@ -131,7 +131,7 @@ const blogPosts: BlogPost[] = [
     excerpt: 'Data-backed email templates for reaching home service business owners. Average reply rates dropped to 5%—these templates hit 10-15%. Includes follow-up sequences.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-18',
+    publishedAt: '2026-01-18',
     readTime: '12 min read',
   },
   {
@@ -140,16 +140,16 @@ const blogPosts: BlogPost[] = [
     excerpt: '84% of B2B buyers enter the sales cycle through referrals. Learn how to build a systematic referral program with incentive structures, timing frameworks, and ready-to-use templates.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-16',
+    publishedAt: '2026-01-16',
     readTime: '11 min read',
   },
   {
     slug: 'how-to-start-ai-receptionist-agency',
-    title: 'How to Start an AI Receptionist Agency in 2025',
+    title: 'How to Start an AI Receptionist Agency in 2026',
     excerpt: 'A complete guide to launching your white-label AI voice business, from finding your first clients to scaling to $50k/month.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-15',
+    publishedAt: '2026-01-15',
     readTime: '12 min read',
   },
   {
@@ -158,7 +158,7 @@ const blogPosts: BlogPost[] = [
     excerpt: 'The psychology of pricing, what competitors charge, and how to position your agency for premium clients.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-08',
+    publishedAt: '2026-01-08',
     readTime: '10 min read',
   },
   {
@@ -167,7 +167,7 @@ const blogPosts: BlogPost[] = [
     excerpt: 'Not all businesses need AI receptionists equally. Here are the industries with the highest demand and willingness to pay.',
     category: 'industry',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-05',
+    publishedAt: '2026-01-05',
     readTime: '7 min read',
   },
   {
@@ -176,7 +176,7 @@ const blogPosts: BlogPost[] = [
     excerpt: 'Should you build your own AI receptionist platform or use a white-label solution? A detailed comparison of costs, timelines, and trade-offs.',
     category: 'guides',
     author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-03',
+    publishedAt: '2026-01-03',
     readTime: '12 min read',
   },
 ];
