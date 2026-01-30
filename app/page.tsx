@@ -438,6 +438,14 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
+              
+              <Link 
+                href="/platform"
+                className="inline-flex items-center gap-2 mt-6 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                Explore the full platform
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
             
             {/* Phone mockup */}
@@ -637,6 +645,16 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          
+          <div className="mt-10 text-center">
+            <Link 
+              href="/platform"
+              className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              View all 40+ features
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -692,6 +710,14 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
+              
+              <Link 
+                href="/platform"
+                className="inline-flex items-center gap-2 mt-6 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                Learn more about the marketing site
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
             
             {/* Marketing site mockup */}
