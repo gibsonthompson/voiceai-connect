@@ -7,7 +7,7 @@ import {
   Smartphone, BarChart3, Calendar, Bell, Headphones, Building2, 
   Sparkles, Menu, X, Upload, Palette, CreditCard, Link2, Share2,
   Phone, UserPlus, Settings, CheckCircle2, Rocket, Gift,
-  MousePointer, Eye, PhoneCall, Bot, ArrowDown, Timer
+  MousePointer, Eye, PhoneCall, Bot, ArrowDown, Timer, Coffee, Palmtree
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -75,7 +75,7 @@ export default function HowItWorksPage() {
                 { name: 'Platform', href: '/platform' },
                 { name: 'How It Works', href: '/how-it-works' },
                 { name: 'Pricing', href: '/#pricing' },
-                { name: 'FAQ', href: '/faq' },
+                { name: 'Blog', href: '/blog' },
               ].map((item) => (
                 <Link 
                   key={item.name}
@@ -123,7 +123,7 @@ export default function HowItWorksPage() {
               { name: 'Platform', href: '/platform' },
               { name: 'How It Works', href: '/how-it-works' },
               { name: 'Pricing', href: '/#pricing' },
-              { name: 'FAQ', href: '/faq' },
+              { name: 'Blog', href: '/blog' },
             ].map((item) => (
               <Link 
                 key={item.name}
@@ -162,26 +162,26 @@ export default function HowItWorksPage() {
           <div className="mx-auto max-w-4xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6 sm:mb-8">
               <Zap className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Simple 4-Step Process</span>
+              <span className="text-emerald-300/90">Zero Fulfillment Model</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
-              <span className="block">How VoiceAI Connect</span>
+              <span className="block">You Sell. We Handle</span>
               <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                Actually Works
+                Everything Else.
               </span>
             </h1>
             
             <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-4">
               From signup to your first paying client in under 24 hours. 
-              No coding, no complexity—just a proven system that works.
+              No coding, no fulfillment work—just sales and profit.
             </p>
 
             <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-sm text-[#fafaf9]/50">
               {[
                 'Launch in 24 hours',
-                'Zero technical skills needed', 
-                'Full support included'
+                'Run from your phone', 
+                'Zero tech skills needed'
               ].map((item) => (
                 <span key={item} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400" />
@@ -213,12 +213,12 @@ export default function HowItWorksPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">Your Journey</h3>
-                  <p className="text-sm text-[#fafaf9]/50">Agency setup & management</p>
+                  <p className="text-sm text-[#fafaf9]/50">Setup once, earn forever</p>
                 </div>
               </div>
               <p className="text-[#fafaf9]/60 mb-4">
-                How you set up your white-label agency, customize your branding, 
-                connect payments, and start acquiring clients.
+                How you set up your white-label agency, customize branding, 
+                connect payments, and start finding clients—all from your phone.
               </p>
               <span className="inline-flex items-center gap-2 text-emerald-400 text-sm font-medium group-hover:gap-3 transition-all">
                 See the process <ArrowDown className="h-4 w-4" />
@@ -232,12 +232,12 @@ export default function HowItWorksPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">Your Client&apos;s Journey</h3>
-                  <p className="text-sm text-[#fafaf9]/50">Business owner experience</p>
+                  <p className="text-sm text-[#fafaf9]/50">Fully automated onboarding</p>
                 </div>
               </div>
               <p className="text-[#fafaf9]/60 mb-4">
-                What your clients experience when they sign up, set up their AI receptionist, 
-                and start receiving calls.
+                What your clients experience when they sign up. Spoiler: you do nothing. 
+                The platform handles everything automatically.
               </p>
               <span className="inline-flex items-center gap-2 text-amber-400 text-sm font-medium group-hover:gap-3 transition-all">
                 See the process <ArrowDown className="h-4 w-4" />
@@ -253,14 +253,14 @@ export default function HowItWorksPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
               <Building2 className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Agency Onboarding</span>
+              <span className="text-emerald-300/90">Your Setup (One Time)</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
               Your journey to launch
             </h2>
             <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              From signup to your first client in 4 simple steps. 
-              Most agencies complete setup in under 30 minutes.
+              Setup takes 30 minutes. After that, your only job is finding clients. 
+              The platform handles literally everything else.
             </p>
           </div>
 
@@ -272,12 +272,12 @@ export default function HowItWorksPage() {
                 icon: UserPlus,
                 title: 'Create Your Account',
                 time: '2 minutes',
-                description: 'Sign up with your email. No credit card required for the 14-day trial. Instant access to your agency dashboard.',
+                description: 'Sign up with your email. Instant access to your phone-native agency dashboard.',
                 details: [
                   'Enter your name and email',
                   'Choose your agency name',
                   'Verify your email',
-                  'Access your dashboard immediately',
+                  'Access dashboard on any device',
                 ],
               },
               {
@@ -285,12 +285,12 @@ export default function HowItWorksPage() {
                 icon: Palette,
                 title: 'Customize Your Brand',
                 time: '10 minutes',
-                description: 'Make it yours. Upload your logo, set your colors, and configure how everything looks to your clients.',
+                description: 'Upload your logo, set your colors. Everything your clients see is 100% your brand.',
                 details: [
                   'Upload your logo (PNG or SVG)',
                   'Set primary and accent colors',
-                  'Add your business details',
                   'Preview your branded dashboard',
+                  'Customize from your phone',
                 ],
               },
               {
@@ -298,36 +298,34 @@ export default function HowItWorksPage() {
                 icon: CreditCard,
                 title: 'Connect Payments',
                 time: '5 minutes',
-                description: 'Link your Stripe account to receive payments directly. Set your own pricing for each plan you offer.',
+                description: 'Link your Stripe account. Set your own prices. Keep 100% of what you charge.',
                 details: [
-                  'Connect existing or new Stripe account',
-                  'Set prices for Starter, Pro, Growth tiers',
-                  'Configure your payout schedule',
-                  '100% of client payments go to you',
+                  'Connect Stripe in one click',
+                  'Set prices for each tier',
+                  'No revenue share to us',
+                  'Get paid directly to your bank',
                 ],
               },
               {
                 step: '04',
                 icon: Rocket,
                 title: 'Start Selling',
-                time: 'Ongoing',
-                description: 'Share your unique signup link. When clients subscribe, their AI receptionist is live in 60 seconds.',
+                time: 'Your only job',
+                description: 'Share your signup link. When clients subscribe, everything is automatic. You just collect money.',
                 details: [
-                  'Get your personalized signup URL',
-                  'Share via email, social, or your website',
-                  'Clients self-serve onboarding',
-                  'You earn recurring revenue automatically',
+                  'Get your personalized URL',
+                  'Share via any channel',
+                  'Clients onboard themselves',
+                  'You earn recurring revenue',
                 ],
               },
             ].map((item, i) => (
               <div key={item.step} className="relative">
-                {/* Connector line for desktop */}
                 {i < 3 && (
                   <div className="hidden lg:block absolute top-12 left-[calc(100%+1rem)] w-[calc(100%-2rem)] h-px bg-gradient-to-r from-emerald-500/30 to-transparent" />
                 )}
                 
                 <div className="relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all h-full">
-                  {/* Step number */}
                   <div className="absolute -top-3 -left-3 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-[#050505] text-sm font-bold">
                     {item.step}
                   </div>
@@ -357,31 +355,30 @@ export default function HowItWorksPage() {
             ))}
           </div>
 
-          {/* Agency Tools Highlight */}
+          {/* Phone-First Management */}
           <div className="mt-16 p-6 sm:p-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03]">
             <div className="grid lg:grid-cols-2 gap-8 items-center">
               <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-3 py-1 text-xs mb-4">
+                  <Smartphone className="h-3 w-3 text-amber-400" />
+                  <span className="text-amber-300/90">Phone-Native</span>
+                </div>
                 <h3 className="text-xl sm:text-2xl font-semibold mb-4">
-                  What you get as an agency owner
+                  Manage your entire agency from your phone
                 </h3>
                 <p className="text-[#fafaf9]/60 mb-6">
-                  Your agency dashboard gives you complete control over your business. 
-                  Monitor clients, track revenue, and manage everything from one place.
+                  VoiceAI Connect is built phone-first. Check clients, track revenue, 
+                  and manage everything while you&apos;re out living your life.
                 </p>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
                   {[
-                    { icon: BarChart3, label: 'Revenue analytics' },
-                    { icon: Users, label: 'Client management' },
-                    { icon: Settings, label: 'Branding controls' },
-                    { icon: Bell, label: 'Real-time alerts' },
-                    { icon: Headphones, label: 'Support access' },
-                    { icon: Share2, label: 'Marketing tools' },
+                    { time: 'Morning', icon: Coffee, text: 'Check overnight signups from bed' },
+                    { time: 'Afternoon', icon: Palmtree, text: 'Close a deal while at the pool' },
+                    { time: 'Evening', icon: BarChart3, text: 'Quick revenue check—done for the day' },
                   ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-                        <item.icon className="h-4 w-4 text-emerald-400" />
-                      </div>
-                      <span className="text-sm text-[#fafaf9]/70">{item.label}</span>
+                    <div key={item.time} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                      <item.icon className="h-4 w-4 text-amber-400" />
+                      <span className="text-sm text-[#fafaf9]/70">{item.text}</span>
                     </div>
                   ))}
                 </div>
@@ -406,8 +403,8 @@ export default function HowItWorksPage() {
                       <p className="text-xl font-semibold">1,847</p>
                     </div>
                     <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                      <p className="text-xs text-[#fafaf9]/40 mb-1">Avg. Rating</p>
-                      <p className="text-xl font-semibold">4.9★</p>
+                      <p className="text-xs text-[#fafaf9]/40 mb-1">Work This Week</p>
+                      <p className="text-xl font-semibold text-emerald-400">~12 hrs</p>
                     </div>
                   </div>
                 </div>
@@ -423,14 +420,14 @@ export default function HowItWorksPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
               <Users className="h-4 w-4 text-amber-400" />
-              <span className="text-amber-300/90">Client Onboarding</span>
+              <span className="text-amber-300/90">Zero Fulfillment</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
               Your client&apos;s experience
             </h2>
             <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              When a business signs up through your link, here&apos;s exactly what happens. 
-              Their AI receptionist is live in under 60 seconds.
+              When a business signs up through your link, the platform handles everything. 
+              Their AI receptionist is live in under 60 seconds. You do nothing.
             </p>
           </div>
 
@@ -442,62 +439,64 @@ export default function HowItWorksPage() {
                 icon: MousePointer,
                 title: 'Visit Your Signup Page',
                 time: '30 seconds',
-                description: 'Client clicks your unique link and sees your branded signup page with your logo, colors, and pricing.',
+                description: 'Client clicks your link and sees your branded signup page with your logo and pricing.',
                 details: [
                   'Your branding, not ours',
                   'Clear pricing you set',
                   'Simple signup form',
                   'Secure payment via Stripe',
                 ],
+                youDo: 'Nothing',
               },
               {
                 step: '02',
                 icon: Globe,
                 title: 'Enter Business Details',
                 time: '2 minutes',
-                description: 'They enter their business name, website, and basic info. Our AI automatically learns from their website.',
+                description: 'They enter their business name and website. Our AI automatically learns from their site.',
                 details: [
                   'Business name & industry',
                   'Website URL for AI training',
-                  'Contact information',
-                  'Service area (optional)',
+                  'AI scrapes services/hours/FAQs',
+                  'Zero manual configuration',
                 ],
+                youDo: 'Nothing',
               },
               {
                 step: '03',
                 icon: Phone,
                 title: 'Get Their Phone Number',
                 time: '10 seconds',
-                description: 'A dedicated local or toll-free number is instantly provisioned. They can start forwarding calls immediately.',
+                description: 'A dedicated local or toll-free number is instantly provisioned. Ready for calls immediately.',
                 details: [
                   'Instant number provisioning',
                   'Local or toll-free options',
                   'Easy call forwarding setup',
                   'Number porting available',
                 ],
+                youDo: 'Nothing',
               },
               {
                 step: '04',
                 icon: Bot,
                 title: 'AI Goes Live',
                 time: 'Instant',
-                description: 'Their AI receptionist is immediately active. It answers calls, takes messages, and books appointments 24/7.',
+                description: 'Their AI receptionist is immediately active. Answers calls, takes messages, books appointments 24/7.',
                 details: [
                   'Answers in under 500ms',
                   'Knows their business instantly',
                   'SMS summaries after calls',
                   'Full recordings & transcripts',
                 ],
+                youDo: 'Collect payment',
               },
             ].map((item, i) => (
               <div key={item.step} className="relative">
-                {/* Connector line for desktop */}
                 {i < 3 && (
                   <div className="hidden lg:block absolute top-12 left-[calc(100%+1rem)] w-[calc(100%-2rem)] h-px bg-gradient-to-r from-amber-500/30 to-transparent" />
                 )}
                 
                 <div className="relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all h-full">
-                  {/* Step number */}
                   <div className="absolute -top-3 -left-3 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-[#050505] text-sm font-bold">
                     {item.step}
                   </div>
@@ -514,7 +513,7 @@ export default function HowItWorksPage() {
                   <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                   <p className="text-sm text-[#fafaf9]/50 mb-4">{item.description}</p>
                   
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 mb-4">
                     {item.details.map((detail) => (
                       <li key={detail} className="flex items-start gap-2 text-sm text-[#fafaf9]/60">
                         <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
@@ -522,6 +521,11 @@ export default function HowItWorksPage() {
                       </li>
                     ))}
                   </ul>
+                  
+                  <div className="pt-3 border-t border-white/[0.06]">
+                    <span className="text-xs text-[#fafaf9]/40">What you do: </span>
+                    <span className="text-xs font-medium text-emerald-400">{item.youDo}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -533,62 +537,23 @@ export default function HowItWorksPage() {
               What happens when someone calls your client
             </h3>
             
-            <div className="relative">
-              {/* Timeline line */}
+            <div className="relative max-w-3xl mx-auto">
               <div className="absolute left-4 sm:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-amber-500/50 via-emerald-500/50 to-amber-500/50 sm:-translate-x-px" />
               
               <div className="space-y-8">
                 {[
-                  {
-                    icon: PhoneCall,
-                    title: 'Customer calls',
-                    description: 'Someone dials your client\'s AI number—maybe a homeowner needing plumbing help at 2am.',
-                    time: '0:00',
-                    color: 'amber',
-                  },
-                  {
-                    icon: Zap,
-                    title: 'AI answers instantly',
-                    description: 'Within 500ms, the AI picks up with a warm, professional greeting customized for the business.',
-                    time: '0:01',
-                    color: 'emerald',
-                  },
-                  {
-                    icon: MessageSquare,
-                    title: 'Natural conversation',
-                    description: 'The AI gathers information: name, issue, urgency. It can answer FAQs from the knowledge base.',
-                    time: '0:30',
-                    color: 'emerald',
-                  },
-                  {
-                    icon: Calendar,
-                    title: 'Books appointment (if needed)',
-                    description: 'If enabled, AI checks real-time calendar availability and schedules the appointment.',
-                    time: '1:30',
-                    color: 'emerald',
-                  },
-                  {
-                    icon: Bell,
-                    title: 'Instant notification',
-                    description: 'Your client gets an SMS with caller details, reason, and urgency level—immediately.',
-                    time: '2:00',
-                    color: 'amber',
-                  },
-                  {
-                    icon: FileText,
-                    title: 'Full documentation',
-                    description: 'Recording, transcript, and AI summary appear in the dashboard. Nothing is ever lost.',
-                    time: '2:01',
-                    color: 'amber',
-                  },
+                  { icon: PhoneCall, title: 'Customer calls', description: 'Someone dials your client\'s AI number—maybe a homeowner needing plumbing help at 2am.', time: '0:00', color: 'amber' },
+                  { icon: Zap, title: 'AI answers instantly', description: 'Within 500ms, the AI picks up with a warm, professional greeting customized for the business.', time: '0:01', color: 'emerald' },
+                  { icon: MessageSquare, title: 'Natural conversation', description: 'The AI gathers information: name, issue, urgency. It can answer FAQs from the knowledge base.', time: '0:30', color: 'emerald' },
+                  { icon: Calendar, title: 'Books appointment (if needed)', description: 'If enabled, AI checks real-time calendar availability and schedules the appointment.', time: '1:30', color: 'emerald' },
+                  { icon: Bell, title: 'Instant notification', description: 'Your client gets an SMS with caller details, reason, and urgency level—immediately.', time: '2:00', color: 'amber' },
+                  { icon: FileText, title: 'Full documentation', description: 'Recording, transcript, and AI summary appear in the dashboard. Nothing is ever lost.', time: '2:01', color: 'amber' },
                 ].map((item, i) => (
                   <div key={item.title} className={`relative flex gap-6 sm:gap-8 ${i % 2 === 1 ? 'sm:flex-row-reverse' : ''}`}>
-                    {/* Timeline dot */}
                     <div className={`absolute left-4 sm:left-1/2 w-3 h-3 rounded-full border-2 -translate-x-1/2 ${
                       item.color === 'amber' ? 'bg-amber-500 border-amber-400' : 'bg-emerald-500 border-emerald-400'
                     }`} style={{ top: '1.5rem' }} />
                     
-                    {/* Content */}
                     <div className={`flex-1 ml-10 sm:ml-0 ${i % 2 === 1 ? 'sm:pr-12 sm:text-right' : 'sm:pl-12'}`}>
                       <div className={`inline-flex items-center gap-2 mb-2 ${i % 2 === 1 ? 'sm:flex-row-reverse' : ''}`}>
                         <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
@@ -606,90 +571,9 @@ export default function HowItWorksPage() {
                       <p className="text-sm text-[#fafaf9]/50">{item.description}</p>
                     </div>
                     
-                    {/* Spacer for alternating layout */}
                     <div className="hidden sm:block flex-1" />
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Client Dashboard Preview */}
-          <div className="mt-16 p-6 sm:p-8 rounded-2xl border border-amber-500/20 bg-amber-500/[0.03]">
-            <div className="grid lg:grid-cols-2 gap-8 items-center">
-              <div className="order-2 lg:order-1">
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0a] p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-[#fafaf9]/40">Client Dashboard</span>
-                    <span className="text-xs text-amber-400 bg-amber-400/10 px-2 py-1 rounded-full">Your Brand</span>
-                  </div>
-                  
-                  {/* Call summary example */}
-                  <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.06] mb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium">Sarah Johnson</p>
-                        <p className="text-xs text-[#fafaf9]/40">(555) 123-4567 • 2 min ago</p>
-                      </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-400">Urgent</span>
-                    </div>
-                    <p className="text-sm text-[#fafaf9]/60 mb-3">
-                      &quot;Caller needs emergency plumbing service for a burst pipe in their basement. 
-                      Water is spreading. Requested callback ASAP.&quot;
-                    </p>
-                    <div className="flex gap-2">
-                      <button className="text-xs px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Play Recording
-                      </button>
-                      <button className="text-xs px-3 py-1.5 rounded-full bg-white/[0.05] text-[#fafaf9]/60 border border-white/[0.08]">
-                        View Transcript
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-center">
-                      <p className="text-xs text-[#fafaf9]/40 mb-1">Today</p>
-                      <p className="text-lg font-semibold">12</p>
-                      <p className="text-xs text-[#fafaf9]/40">calls</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-center">
-                      <p className="text-xs text-[#fafaf9]/40 mb-1">Booked</p>
-                      <p className="text-lg font-semibold">4</p>
-                      <p className="text-xs text-[#fafaf9]/40">appts</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-center">
-                      <p className="text-xs text-[#fafaf9]/40 mb-1">Missed</p>
-                      <p className="text-lg font-semibold text-emerald-400">0</p>
-                      <p className="text-xs text-[#fafaf9]/40">calls</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="order-1 lg:order-2">
-                <h3 className="text-xl sm:text-2xl font-semibold mb-4">
-                  What your clients see
-                </h3>
-                <p className="text-[#fafaf9]/60 mb-6">
-                  A beautiful, branded dashboard where they can view all calls, listen to recordings, 
-                  read transcripts, and see AI-generated summaries. All under your brand.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    'Every call recorded and transcribed',
-                    'AI summaries with key details extracted',
-                    'SMS notifications for urgent calls',
-                    'Analytics on call volume and patterns',
-                    'Calendar integration for appointments',
-                    'Mobile-friendly for on-the-go access',
-                  ].map((item) => (
-                    <div key={item} className="flex items-center gap-3">
-                      <Check className="h-4 w-4 text-amber-400 shrink-0" />
-                      <span className="text-sm text-[#fafaf9]/70">{item}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
@@ -702,61 +586,25 @@ export default function HowItWorksPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
               <DollarSign className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Growing Your Business</span>
+              <span className="text-emerald-300/90">Your Only Job</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
               How do I get clients?
             </h2>
             <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              The most common question. Here are the proven strategies our 
-              most successful agencies use.
+              Since the platform handles everything else, you can focus 100% on sales. 
+              Here are the proven strategies our most successful agencies use.
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              {
-                icon: MessageSquare,
-                title: 'Cold Outreach',
-                description: 'Direct email and LinkedIn messages to local business owners. We provide templates that convert.',
-                stat: '40%',
-                statLabel: 'of agencies start here',
-              },
-              {
-                icon: Globe,
-                title: 'Local SEO & Ads',
-                description: 'Target "[industry] answering service" keywords in your area. Low competition, high intent.',
-                stat: '25%',
-                statLabel: 'use paid ads',
-              },
-              {
-                icon: Users,
-                title: 'Referrals',
-                description: 'Happy clients refer other business owners. Offer a discount for referrals to accelerate growth.',
-                stat: '3.2x',
-                statLabel: 'avg. referral rate',
-              },
-              {
-                icon: Share2,
-                title: 'Social Media',
-                description: 'Short videos showing AI in action get massive engagement. TikTok and Instagram Reels work great.',
-                stat: '500K+',
-                statLabel: 'views on top posts',
-              },
-              {
-                icon: Building2,
-                title: 'Industry Events',
-                description: 'Local business meetups, trade shows, and chamber of commerce events are goldmines.',
-                stat: '5-10',
-                statLabel: 'leads per event',
-              },
-              {
-                icon: Gift,
-                title: 'Free Trials',
-                description: 'Let prospects try the AI for a week. Once they see missed calls drop to zero, they convert.',
-                stat: '68%',
-                statLabel: 'trial conversion',
-              },
+              { icon: MessageSquare, title: 'Cold Outreach', description: 'Direct email and LinkedIn messages to local business owners. We provide templates that convert.', stat: '40%', statLabel: 'of agencies start here' },
+              { icon: Globe, title: 'Local SEO & Ads', description: 'Target "[industry] answering service" keywords in your area. Low competition, high intent.', stat: '25%', statLabel: 'use paid ads' },
+              { icon: Users, title: 'Referrals', description: 'Happy clients refer other business owners. Offer a discount for referrals to accelerate growth.', stat: '3.2x', statLabel: 'avg. referral rate' },
+              { icon: Share2, title: 'Social Media', description: 'Short videos showing AI in action get massive engagement. TikTok and Instagram Reels work great.', stat: '500K+', statLabel: 'views on top posts' },
+              { icon: Building2, title: 'Industry Events', description: 'Local business meetups, trade shows, and chamber of commerce events are goldmines.', stat: '5-10', statLabel: 'leads per event' },
+              { icon: Gift, title: 'Free Trials', description: 'Let prospects try the AI for a week. Once they see missed calls drop to zero, they convert.', stat: '68%', statLabel: 'trial conversion' },
             ].map((item) => (
               <div key={item.title} className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all">
                 <div className="flex items-center justify-between mb-4">
@@ -776,7 +624,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Timeline Comparison */}
+      {/* Timeline */}
       <section className="py-20 sm:py-24 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -791,7 +639,7 @@ export default function HowItWorksPage() {
           <div className="max-w-3xl mx-auto">
             <div className="space-y-6">
               {[
-                { day: 'Day 1', title: 'Sign up & setup', description: 'Create account, brand your dashboard, connect Stripe' },
+                { day: 'Day 1', title: 'Sign up & setup', description: 'Create account, brand your dashboard, connect Stripe (30 min total)' },
                 { day: 'Day 2-3', title: 'Learn the platform', description: 'Explore features, test the AI, prepare your pitch' },
                 { day: 'Day 4-7', title: 'Start outreach', description: 'Send 50-100 cold emails to local businesses' },
                 { day: 'Day 8-14', title: 'First demos', description: 'Schedule calls with interested prospects, show them the AI' },
@@ -830,7 +678,7 @@ export default function HowItWorksPage() {
                 Ready to get started?
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Join 800+ agencies already building recurring revenue. 
+                Join 800+ agencies building recurring revenue. 
                 Your first client is closer than you think.
               </p>
               
@@ -852,7 +700,7 @@ export default function HowItWorksPage() {
               </div>
               
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · No credit card required · Cancel anytime
+                14-day free trial · Cancel anytime
               </p>
             </div>
           </div>
@@ -873,7 +721,7 @@ export default function HowItWorksPage() {
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/how-it-works" className="text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">How It Works</Link>
-              <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
+              <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>

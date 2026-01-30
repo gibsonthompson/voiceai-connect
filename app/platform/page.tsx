@@ -76,7 +76,7 @@ export default function PlatformPage() {
             <div className="hidden lg:flex items-center gap-1">
               {[
                 { name: 'Platform', href: '/platform' },
-                { name: 'How It Works', href: '/#how-it-works' },
+                { name: 'How It Works', href: '/how-it-works' },
                 { name: 'Pricing', href: '/#pricing' },
                 { name: 'Blog', href: '/blog' },
               ].map((item) => (
@@ -110,14 +110,19 @@ export default function PlatformPage() {
 
         <div className={`lg:hidden transition-all duration-300 ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
           <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
-            {['Platform', 'How It Works', 'Pricing', 'Blog'].map((item) => (
+            {[
+              { name: 'Platform', href: '/platform' },
+              { name: 'How It Works', href: '/how-it-works' },
+              { name: 'Pricing', href: '/#pricing' },
+              { name: 'Blog', href: '/blog' },
+            ].map((item) => (
               <Link 
-                key={item}
-                href={item === 'Platform' ? '/platform' : item === 'Blog' ? '/blog' : `/#${item.toLowerCase().replace(/\s+/g, '-')}`}
+                key={item.name}
+                href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-3 text-[#fafaf9]/70 hover:text-[#fafaf9] hover:bg-white/[0.03] rounded-lg transition-colors"
               >
-                {item}
+                {item.name}
               </Link>
             ))}
             <div className="pt-4 flex flex-col gap-3">
