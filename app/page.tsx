@@ -6,7 +6,7 @@ import {
   Phone, ArrowRight, Check, Play, Star, Zap, Shield, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Building2, Sparkles, Menu, X, Laptop, Coffee, Palmtree
+  Building2, Sparkles, Menu, X, Coffee, Palmtree
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -153,27 +153,27 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
               </span>
-              <span className="text-emerald-300/90">The only phone-only white-label platform</span>
+              <span className="text-emerald-300/90">Now serving 12,000+ businesses worldwide</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
-              <span className="block">All You Need Is</span>
+              <span className="block">Sell AI Receptionists</span>
               <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                Your Phone
+                To Local Businesses
               </span>
             </h1>
             
             <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-4">
-              Launch your own AI receptionist agency without ever opening a laptop. 
-              We handle the technology AND the fulfillment. You just sell.
+              The white-label platform that lets you start an AI receptionist agency. 
+              We handle the tech and fulfillment. You sell and keep 100% of what you charge.
             </p>
 
             {/* Value props row */}
             <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-sm text-[#fafaf9]/50">
               {[
                 'Run from your phone',
-                'Zero client work', 
+                'Zero fulfillment work', 
                 'Keep 100% revenue'
               ].map((item) => (
                 <span key={item} className="flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function LandingPage() {
             </div>
 
             <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-              No credit card required · Setup in under 5 minutes
+              Setup in under 5 minutes · Cancel anytime
             </p>
           </div>
 
@@ -304,7 +304,7 @@ export default function LandingPage() {
               {[
                 { value: '$2.4M+', label: 'Revenue for partners' },
                 { value: '847', label: 'Active agencies' },
-                { value: '~12 hrs', label: 'Avg. work per week' },
+                { value: '12,400+', label: 'Businesses served' },
               ].map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
                   <p className="text-2xl sm:text-3xl font-semibold tracking-tight">{stat.value}</p>
@@ -322,61 +322,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Zero Fulfillment Section - NEW */}
+      {/* How It Works - Simplified */}
       <section className="py-20 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
               <Zap className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Zero Fulfillment</span>
+              <span className="text-emerald-300/90">How It Works</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              The platform handles everything.
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">You just sell.</span>
+              You sell. We handle everything else.
             </h2>
             <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              Other white-label platforms still make you do the work. 
-              VoiceAI Connect is different—we handle setup, support, and everything in between.
+              When a client signs up, the platform automatically configures their AI, 
+              provisions their phone number, and handles ongoing support. Your only job is finding clients.
             </p>
           </div>
 
-          {/* Three column comparison */}
+          {/* Three column - what happens */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
-                trigger: 'Client signs up',
-                other: 'You manually configure their AI, set up phone number, import data',
-                voiceai: 'Platform auto-configures everything in 60 seconds. You get notified.',
+                step: '01',
+                title: 'Client Signs Up',
+                description: 'They click your link and subscribe. The platform automatically configures their AI receptionist, provisions a phone number, and imports their business info—all in 60 seconds.',
                 icon: Users,
               },
               {
-                trigger: 'Client has an issue',
-                other: 'You troubleshoot, contact support, relay messages back and forth',
-                voiceai: 'Platform handles support directly. You stay informed, not involved.',
-                icon: Headphones,
+                step: '02',
+                title: 'AI Answers Calls',
+                description: 'Their new AI receptionist starts taking calls immediately. It answers questions, books appointments, captures leads, and sends summaries—24/7, no setup needed.',
+                icon: Phone,
               },
               {
-                trigger: 'Client wants changes',
-                other: 'You log in, make edits, test, hope nothing breaks',
-                voiceai: 'Client self-serves in their dashboard. No work for you.',
-                icon: Code,
+                step: '03',
+                title: 'You Get Paid',
+                description: 'Payments go directly to your Stripe. You keep 100% of what you charge. The platform handles client support, so you can focus on growing.',
+                icon: DollarSign,
               },
             ].map((item) => (
-              <div key={item.trigger} className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 overflow-hidden">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 mb-4">
-                  <item.icon className="h-5 w-5 text-emerald-400" />
+              <div key={item.step} className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 overflow-hidden">
+                <div className="text-6xl font-bold text-white/[0.03] absolute -top-2 -left-1 select-none">
+                  {item.step}
                 </div>
-                <h3 className="font-semibold text-lg mb-4">{item.trigger}</h3>
-                
-                <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-red-500/[0.05] border border-red-500/10">
-                    <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Other Platforms</p>
-                    <p className="text-sm text-[#fafaf9]/50">{item.other}</p>
+                <div className="relative">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 mb-4">
+                    <item.icon className="h-6 w-6 text-emerald-400" />
                   </div>
-                  <div className="p-3 rounded-lg bg-emerald-500/[0.05] border border-emerald-500/20">
-                    <p className="text-xs text-emerald-400/70 uppercase tracking-wider mb-1">VoiceAI Connect</p>
-                    <p className="text-sm text-[#fafaf9]/70">{item.voiceai}</p>
-                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -386,33 +380,32 @@ export default function LandingPage() {
           <div className="mt-12 max-w-3xl mx-auto">
             <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
               <p className="text-lg font-medium">
-                <span className="text-emerald-400">Your only job:</span> Find clients and collect payments.
+                <span className="text-emerald-400">Zero fulfillment.</span> No tech work. No client support tickets.
               </p>
               <p className="mt-2 text-[#fafaf9]/50">
-                No technical work. No client support. No ongoing fulfillment.
+                The platform handles setup, maintenance, and support. You focus on sales.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Phone-Only Section - NEW */}
+      {/* Phone-Only Section */}
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
                 <Smartphone className="h-4 w-4 text-amber-400" />
-                <span className="text-amber-300/90">Phone-Only Business</span>
+                <span className="text-amber-300/90">Phone-First Platform</span>
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
-                No laptop required.
-                <span className="block text-[#fafaf9]/40">Seriously.</span>
+                Manage everything
+                <span className="block text-[#fafaf9]/40">from your phone.</span>
               </h2>
               <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                Every competitor says &ldquo;no code.&rdquo; But they still expect you to sit at a computer. 
-                VoiceAI Connect is built phone-first—check clients, track revenue, and manage 
-                your entire agency from anywhere.
+                VoiceAI Connect is built phone-first. Check on clients, track revenue, 
+                and manage your entire agency from anywhere. No laptop required.
               </p>
               
               <div className="mt-8 sm:mt-10 space-y-4">
@@ -426,7 +419,7 @@ export default function LandingPage() {
                   {
                     time: 'Afternoon',
                     icon: Palmtree,
-                    activity: 'Reply to a lead on Instagram while at the beach.',
+                    activity: 'Reply to a lead on Instagram while out. Close the deal.',
                   },
                   {
                     time: 'Evening',
@@ -662,14 +655,14 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
                 Beyond just reselling — get a complete business platform. 
-                Marketing site, client management, payments, and support. All white-labeled and phone-accessible.
+                Marketing site, client management, payments, and support. All white-labeled.
               </p>
               
               <div className="mt-8 sm:mt-10 space-y-4">
                 {[
                   {
                     title: 'Phone-Native Dashboard',
-                    description: 'Not just "mobile responsive" — built from the ground up for phones. Manage everything on the go.',
+                    description: 'Built for phones from the ground up. Manage everything on the go.',
                     badge: null,
                   },
                   {
@@ -812,7 +805,7 @@ export default function LandingPage() {
                 They need 24/7 coverage but can&apos;t afford a receptionist.
               </p>
               <p className="mt-4 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                You sell them the solution from your phone. We power it invisibly. They pay you $99-299/month 
+                You sell them the solution. We power it invisibly. They pay you $99-299/month 
                 and never miss another opportunity.
               </p>
               
@@ -834,19 +827,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* Launch Steps */}
       <section id="how-it-works" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
               <Zap className="h-4 w-4 text-amber-400" />
-              <span className="text-amber-300/90">Simple Process</span>
+              <span className="text-amber-300/90">Get Started</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
               Launch in under 24 hours
             </h2>
             <p className="mt-4 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              Do it all from your phone. If you can use Instagram, you can run an AI agency.
+              From signup to your first client—all from your phone.
             </p>
           </div>
 
@@ -1038,13 +1031,13 @@ export default function LandingPage() {
             </div>
             
             <p className="text-center mt-8 text-sm text-[#fafaf9]/40">
-              All plans include 14-day free trial. No credit card required to start.
+              All plans include 14-day free trial. Cancel anytime.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Testimonial */}
+      {/* Testimonial - Original */}
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center gap-1 mb-6 sm:mb-8">
@@ -1053,20 +1046,103 @@ export default function LandingPage() {
             ))}
           </div>
           <blockquote className="text-xl sm:text-2xl lg:text-3xl font-medium leading-relaxed">
-            &ldquo;I manage my entire agency from my iPhone. Signed 23 clients in 3 months 
-            without ever opening my laptop. VoiceAI Connect handles everything—I just 
-            share my link and collect payments.&rdquo;
+            &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
+            VoiceAI Connect let me launch CallBird in a weekend. Signed my first paying client 
+            within 11 days—that one client covered my entire monthly cost. Saved so much time 
+            and tech headaches.&rdquo;
           </blockquote>
           <div className="mt-6 sm:mt-8">
-            <p className="font-semibold text-lg">Marcus Chen</p>
-            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, RingLeader AI</p>
-            <p className="text-sm text-emerald-400 mt-1">23 clients • 100% phone-managed • $3,200/mo profit</p>
+            <p className="font-semibold text-lg">Jonathan Rowe</p>
+            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, CallBird AI</p>
+            <p className="text-sm text-emerald-400 mt-1">First client in 11 days • Profitable from month 1</p>
+          </div>
+        </div>
+      </section>
+
+      {/* From the Blog - NEW */}
+      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-10 sm:mb-12">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                From the Blog
+              </h2>
+              <p className="mt-2 text-[#fafaf9]/50">
+                Guides and insights for building your AI receptionist agency.
+              </p>
+            </div>
+            <Link 
+              href="/blog" 
+              className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              View all posts
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                slug: 'how-much-do-ai-receptionist-agencies-make',
+                title: 'How Much Do AI Receptionist Agencies Make? Real Numbers',
+                excerpt: 'Realistic income breakdown: $3,000-$15,000/month within 12 months. See month-by-month progression and profit margins.',
+                category: 'Guide',
+                readTime: '12 min',
+              },
+              {
+                slug: 'ai-receptionist-agency-vs-smma',
+                title: 'AI Receptionist Agency vs SMMA: Which Model Wins?',
+                excerpt: '80-96% margins vs 20-40%. Compare time requirements, competition, and which business model suits you.',
+                category: 'Guide',
+                readTime: '14 min',
+              },
+              {
+                slug: 'how-to-start-ai-receptionist-agency',
+                title: 'How to Start an AI Receptionist Agency in 2026',
+                excerpt: 'Complete guide from finding your first clients to scaling to $50k/month recurring revenue.',
+                category: 'Guide',
+                readTime: '12 min',
+              },
+            ].map((post) => (
+              <Link 
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="group relative block rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+                    {post.category}
+                  </span>
+                  <span className="text-xs text-[#fafaf9]/40">{post.readTime}</span>
+                </div>
+                <h3 className="text-lg font-semibold group-hover:text-emerald-400 transition-colors line-clamp-2 mb-2">
+                  {post.title}
+                </h3>
+                <p className="text-sm text-[#fafaf9]/50 line-clamp-2">
+                  {post.excerpt}
+                </p>
+                <div className="mt-4 flex items-center gap-1 text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Read more
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center sm:hidden">
+            <Link 
+              href="/blog" 
+              className="inline-flex items-center gap-2 text-sm text-emerald-400"
+            >
+              View all posts
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section id="faq" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
@@ -1077,8 +1153,8 @@ export default function LandingPage() {
           <div className="space-y-4">
             {[
               {
-                q: 'Can I really run this entirely from my phone?',
-                a: 'Yes, 100%. Our dashboard is built phone-first, not just "mobile responsive." Sign up clients, track revenue, manage settings—all from your phone. Many of our most successful agencies have never opened a laptop to manage their business.',
+                q: 'Can I really run this from my phone?',
+                a: 'Yes. Our dashboard is built phone-first. Sign up clients, track revenue, manage settings—all from your phone. Many of our most successful agencies have never used a laptop to manage their business.',
               },
               {
                 q: 'What do I actually have to do?',
@@ -1135,13 +1211,13 @@ export default function LandingPage() {
             
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-                Ready to launch your
+                Ready to start your
                 <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                  AI voice agency?
+                  AI receptionist agency?
                 </span>
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                All you need is your phone. Start today.
+                Join 800+ agencies already building recurring revenue with VoiceAI Connect.
               </p>
               
               <div className="mt-8 sm:mt-10">
@@ -1155,7 +1231,7 @@ export default function LandingPage() {
               </div>
               
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · No credit card required · Cancel anytime
+                14-day free trial · Cancel anytime
               </p>
             </div>
           </div>
