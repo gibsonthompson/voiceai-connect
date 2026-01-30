@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'The 10 Best Industries for AI Receptionist Services (2025)',
+  title: 'The 10 Best Industries for AI Receptionist Services (2026)',
   description: 'Discover which industries are most profitable for AI receptionist services. Ranked list with revenue potential, pricing, and sales strategies for HVAC, legal, medical, and more.',
   keywords: 'best industries AI receptionist, AI receptionist HVAC, AI answering service medical, AI phone agent law firms, who buys AI receptionists',
   openGraph: {
     title: '10 Best Industries for AI Receptionist Services',
     description: 'Data-backed ranking of the most profitable industries for AI receptionist agencies.',
     type: 'article',
-    publishedTime: '2025-01-05',
+    publishedTime: '2026-01-05',
   },
 };
 
@@ -42,11 +42,11 @@ export default function BestIndustriesAIReceptionist() {
   return (
     <BlogPostLayout
       meta={{
-        title: 'The 10 Best Industries for AI Receptionist Services (2025)',
+        title: 'The 10 Best Industries for AI Receptionist Services (2026)',
         description: 'Ranked list of the most profitable industries for AI receptionist agencies. Includes HVAC, legal, medical, and more with pricing and sales strategies.',
         category: 'industry',
-        publishedAt: '2025-01-05',
-        updatedAt: '2025-01-19',
+        publishedAt: '2026-01-05',
+        updatedAt: '2026-01-19',
         readTime: '13 min read',
         author: {
           name: 'Gibson Thompson',

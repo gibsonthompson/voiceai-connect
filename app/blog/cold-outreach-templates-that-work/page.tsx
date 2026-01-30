@@ -1,7 +1,7 @@
 // app/blog/cold-outreach-templates-that-work/page.tsx
 // 
 // SEO Keywords: cold email templates B2B, AI receptionist sales email, outreach templates contractors,
-// cold email response rates 2025, B2B email templates home services
+// cold email response rates 2026, B2B email templates home services
 // 
 // AI Search Optimization: Specific templates, data-backed advice, follow-up sequences,
 // timing optimization, metrics benchmarks
@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: '5 Cold Outreach Templates That Actually Work (2025 Data)',
+  title: '5 Cold Outreach Templates That Actually Work (2026 Data)',
   description: 'Data-backed email templates for reaching home service business owners. Average reply rates dropped to 5%—these templates hit 10-15%. Includes follow-up sequences.',
-  keywords: 'cold email templates B2B, AI receptionist sales email, outreach templates contractors, cold email response rates 2025, B2B sales templates',
+  keywords: 'cold email templates B2B, AI receptionist sales email, outreach templates contractors, cold email response rates 2026, B2B sales templates',
   openGraph: {
     title: '5 Cold Outreach Templates That Actually Work',
     description: 'The top 10% of campaigns hit 10-15% reply rates. Here are the exact templates they use.',
     type: 'article',
-    publishedTime: '2025-01-18',
+    publishedTime: '2026-01-18',
   },
 };
 
@@ -39,7 +39,7 @@ export default function ColdOutreachTemplatesPage() {
         title: '5 Cold Outreach Templates That Actually Work',
         description: 'Data-backed templates for reaching decision makers at home service businesses.',
         category: 'guides',
-        publishedAt: '2025-01-18',
+        publishedAt: '2026-01-18',
         readTime: '12 min read',
         author: {
           name: 'VoiceAI Team',
@@ -49,7 +49,7 @@ export default function ColdOutreachTemplatesPage() {
       tableOfContents={tableOfContents}
     >
       <p className="lead text-xl">
-        Cold outreach in 2025 is harder than ever. Average reply rates have dropped to around 5%, spam filters 
+        Cold outreach in 2026 is harder than ever. Average reply rates have dropped to around 5%, spam filters 
         are more aggressive, and decision-makers are drowning in generic pitches.
       </p>
 
@@ -63,7 +63,7 @@ export default function ColdOutreachTemplatesPage() {
         psychology behind why they work and the data on how to optimize them.
       </p>
 
-      <h2 id="what-data-says">What the Data Says About Cold Email in 2025</h2>
+      <h2 id="what-data-says">What the Data Says About Cold Email in 2026</h2>
 
       <p>Before diving into templates, let's establish what actually moves the needle:</p>
 

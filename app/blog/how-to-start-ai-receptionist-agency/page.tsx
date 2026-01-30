@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'How to Start an AI Receptionist Agency in 2025 (Complete Guide)',
+  title: 'How to Start an AI Receptionist Agency in 2026 (Complete Guide)',
   description: 'Learn how to start an AI receptionist agency with under $300. Step-by-step guide covering white-label platforms, target markets, pricing, and scaling to $10k/month.',
   keywords: 'AI receptionist agency, start AI voice business, white label AI receptionist, AI answering service business, how to sell AI receptionists',
   openGraph: {
-    title: 'How to Start an AI Receptionist Agency in 2025',
+    title: 'How to Start an AI Receptionist Agency in 2026',
     description: 'Complete guide to launching a profitable AI voice agency. Start with $300, no coding required.',
     type: 'article',
-    publishedTime: '2025-01-15',
+    publishedTime: '2026-01-15',
   },
 };
 
@@ -38,11 +38,11 @@ export default function HowToStartAIReceptionistAgency() {
   return (
     <BlogPostLayout
       meta={{
-        title: 'How to Start an AI Receptionist Agency in 2025 (Complete Guide)',
+        title: 'How to Start an AI Receptionist Agency in 2026 (Complete Guide)',
         description: 'Learn how to start an AI receptionist agency with under $300. Step-by-step guide covering white-label platforms, target markets, pricing, and scaling to $10k/month.',
         category: 'guides',
-        publishedAt: '2025-01-15',
-        updatedAt: '2025-01-20',
+        publishedAt: '2026-01-15',
+        updatedAt: '2026-01-20',
         readTime: '14 min read',
         author: {
           name: 'Gibson Thompson',
@@ -54,7 +54,7 @@ export default function HowToStartAIReceptionistAgency() {
     >
       {/* DIRECT ANSWER - AI engines pull this as featured snippet */}
       <p className="lead text-xl">
-        <strong>To start an AI receptionist agency in 2025, you need three things: a white-label AI platform ($199-$499/month), a target industry (home services is best for beginners), and a simple outreach strategy.</strong> You can launch in under a week with zero technical skills and start generating revenue within 30 days. Total startup cost: under $300.
+        <strong>To start an AI receptionist agency in 2026, you need three things: a white-label AI platform ($199-$499/month), a target industry (home services is best for beginners), and a simple outreach strategy.</strong> You can launch in under a week with zero technical skills and start generating revenue within 30 days. Total startup cost: under $300.
       </p>
 
       <p>
@@ -323,7 +323,7 @@ export default function HowToStartAIReceptionistAgency() {
       <h2>Your Next Steps</h2>
 
       <p>
-        Starting an AI receptionist agency is one of the lowest-risk, highest-margin businesses you can launch in 2025. The technology is proven, the market is hungry, and the barrier to entry is a few hundred dollars.
+        Starting an AI receptionist agency is one of the lowest-risk, highest-margin businesses you can launch in 2026. The technology is proven, the market is hungry, and the barrier to entry is a few hundred dollars.
       </p>
 
       <p>

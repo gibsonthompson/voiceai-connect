@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'Building a Referral Program for Your Agency (Complete 2025 Guide)',
+  title: 'Building a Referral Program for Your Agency (Complete 2026 Guide)',
   description: '84% of B2B buyers enter the sales cycle through referrals. Learn how to build a systematic referral program with incentive structures, timing frameworks, and ready-to-use templates.',
   keywords: 'B2B referral program, agency referral program, client referral incentives, referral marketing B2B, how to get client referrals',
   openGraph: {
     title: 'Building a Referral Program for Your Agency',
     description: '84% of B2B buyers enter through referrals. Here\'s how to turn happy clients into your best sales channel.',
     type: 'article',
-    publishedTime: '2025-01-16',
+    publishedTime: '2026-01-16',
   },
 };
 
@@ -40,7 +40,7 @@ export default function BuildingReferralProgramPage() {
         title: 'Building a Referral Program for Your Agency',
         description: 'How to turn happy clients into your best source of new business.',
         category: 'guides',
-        publishedAt: '2025-01-16',
+        publishedAt: '2026-01-16',
         readTime: '11 min read',
         author: {
           name: 'VoiceAI Team',

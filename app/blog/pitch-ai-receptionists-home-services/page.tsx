@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'How to Pitch AI Receptionists to Home Service Businesses (2025 Guide)',
+  title: 'How to Pitch AI Receptionists to Home Service Businesses (2026 Guide)',
   description: 'The pain points that matter, the ROI arguments that close deals, and how to handle every objection. Data shows home service businesses miss 27% of calls—here\'s how to sell the solution.',
   keywords: 'sell AI receptionist, pitch AI answering service, home service AI sales, HVAC AI receptionist, plumber missed calls, contractor phone answering',
   openGraph: {
     title: 'How to Pitch AI Receptionists to Home Service Businesses',
     description: 'Home service businesses miss 27% of calls and lose $50K+/year. Here\'s exactly how to sell them the solution.',
     type: 'article',
-    publishedTime: '2025-01-20',
+    publishedTime: '2026-01-20',
   },
 };
 
@@ -37,7 +37,7 @@ export default function PitchAIReceptionistsPage() {
         title: 'How to Pitch AI Receptionists to Home Service Businesses',
         description: 'The pain points that matter, the ROI arguments that close deals, and the objections you\'ll face.',
         category: 'guides',
-        publishedAt: '2025-01-20',
+        publishedAt: '2026-01-20',
         readTime: '10 min read',
         author: {
           name: 'VoiceAI Team',

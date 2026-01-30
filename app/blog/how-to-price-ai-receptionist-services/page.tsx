@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'How to Price AI Receptionist Services (2025 Pricing Guide)',
+  title: 'How to Price AI Receptionist Services (2026 Pricing Guide)',
   description: 'Learn the optimal pricing for AI receptionist services: $99-$149/month for most businesses. Complete guide with industry-specific rates, pricing psychology, and profit calculations.',
   keywords: 'AI receptionist pricing, how much to charge for AI receptionist, AI answering service rates, virtual receptionist pricing, AI phone agent cost',
   openGraph: {
     title: 'How to Price AI Receptionist Services for Maximum Profit',
     description: 'Data-driven pricing guide for AI receptionist agencies. Industry rates, psychology, and profit optimization.',
     type: 'article',
-    publishedTime: '2025-01-08',
+    publishedTime: '2026-01-08',
   },
 };
 
@@ -36,11 +36,11 @@ export default function HowToPriceAIReceptionist() {
   return (
     <BlogPostLayout
       meta={{
-        title: 'How to Price AI Receptionist Services (2025 Pricing Guide)',
+        title: 'How to Price AI Receptionist Services (2026 Pricing Guide)',
         description: 'Learn the optimal pricing for AI receptionist services: $99-$149/month for most businesses. Complete guide with industry-specific rates and profit calculations.',
         category: 'guides',
-        publishedAt: '2025-01-08',
-        updatedAt: '2025-01-18',
+        publishedAt: '2026-01-08',
+        updatedAt: '2026-01-18',
         readTime: '11 min read',
         author: {
           name: 'Gibson Thompson',

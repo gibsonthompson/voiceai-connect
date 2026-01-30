@@ -9,14 +9,14 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
-  title: 'White-Label vs Building Your Own AI Receptionist Platform (2025 Analysis)',
+  title: 'White-Label vs Building Your Own AI Receptionist Platform (2026 Analysis)',
   description: 'Should you use a white-label AI receptionist platform or build your own? Complete comparison of costs ($500K+ to build vs $199/mo white-label), timelines, and when each makes sense.',
   keywords: 'white label AI receptionist vs build, should I build AI platform, AI voice agent development cost, build vs buy AI receptionist, white label AI phone answering',
   openGraph: {
     title: 'White-Label vs Building Your Own AI Receptionist: The Complete Guide',
     description: 'Data-driven comparison. Building costs $500K+ and takes 18 months. White-label costs $199/month and launches in days.',
     type: 'article',
-    publishedTime: '2025-01-12',
+    publishedTime: '2026-01-12',
   },
 };
 
@@ -39,8 +39,8 @@ export default function WhiteLabelVsBuild() {
         title: 'White-Label vs Building Your Own AI Receptionist Platform',
         description: 'Complete comparison of building custom AI voice technology vs using white-label. Costs, timelines, and decision framework.',
         category: 'guides',
-        publishedAt: '2025-01-12',
-        updatedAt: '2025-01-20',
+        publishedAt: '2026-01-12',
+        updatedAt: '2026-01-20',
         readTime: '12 min read',
         author: {
           name: 'Gibson Thompson',
