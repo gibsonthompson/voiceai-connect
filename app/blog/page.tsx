@@ -58,7 +58,64 @@ const categories = [
 ];
 
 const blogPosts: BlogPost[] = [
-  // NEW POSTS
+  // NEWEST POSTS (January 30, 2026)
+  {
+    slug: 'best-recurring-revenue-business-ideas-2026',
+    title: 'Best Recurring Revenue Business Ideas in 2026 (Ranked by Profit Margin)',
+    excerpt: 'The 7 best recurring revenue business models for 2026, ranked by profit margin, startup cost, and time to profitability. From AI agencies to SaaS to digital products.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '16 min read',
+    featured: true,
+  },
+  {
+    slug: 'ai-receptionist-agency-vs-smma',
+    title: 'AI Receptionist Agency vs SMMA: Which Business Model in 2026?',
+    excerpt: 'Honest comparison of AI receptionist agencies vs social media marketing agencies. Profit margins, time requirements, competition, and which model suits you better.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '14 min read',
+    featured: true,
+  },
+  {
+    slug: 'how-much-do-ai-receptionist-agencies-make',
+    title: 'How Much Do AI Receptionist Agencies Make? Real Numbers (2026)',
+    excerpt: 'Realistic income breakdown for AI receptionist agencies: $3,000-$15,000/month is achievable within 12 months. See month-by-month progression, profit margins, and what top earners do differently.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '12 min read',
+  },
+  {
+    slug: 'white-label-ai-receptionist-platform',
+    title: 'White Label AI Receptionist Platform: The Complete Guide (2026)',
+    excerpt: 'Everything you need to know about white label AI receptionist platforms. Compare options, understand pricing models, and learn how to launch your own AI receptionist business.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '15 min read',
+  },
+  {
+    slug: 'phone-only-business-ai-agency',
+    title: 'Phone-Only Business: How to Run an AI Agency Entirely From Your Phone',
+    excerpt: 'The rise of phone-only businesses in 2026. Learn how to run a profitable AI receptionist agency without ever opening a laptop—true mobile-first entrepreneurship.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '11 min read',
+  },
+  {
+    slug: 'my-ai-front-desk-alternative',
+    title: 'My AI Front Desk Alternative: Compare White Label Options (2026)',
+    excerpt: 'Looking for a My AI Front Desk alternative? Compare pricing, features, and white-label capabilities of the top AI receptionist platforms for agencies.',
+    category: 'industry',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-01-30',
+    readTime: '10 min read',
+  },
+  // PREVIOUS POSTS
   {
     slug: 'pitch-ai-receptionists-home-services',
     title: 'How to Pitch AI Receptionists to Home Service Businesses',
@@ -67,7 +124,6 @@ const blogPosts: BlogPost[] = [
     author: { name: 'VoiceAI Team' },
     publishedAt: '2025-01-20',
     readTime: '10 min read',
-    featured: true,
   },
   {
     slug: 'cold-outreach-templates-that-work',
@@ -77,7 +133,6 @@ const blogPosts: BlogPost[] = [
     author: { name: 'VoiceAI Team' },
     publishedAt: '2025-01-18',
     readTime: '12 min read',
-    featured: true,
   },
   {
     slug: 'building-referral-program-agency',
@@ -88,7 +143,6 @@ const blogPosts: BlogPost[] = [
     publishedAt: '2025-01-16',
     readTime: '11 min read',
   },
-  // EXISTING POSTS
   {
     slug: 'how-to-start-ai-receptionist-agency',
     title: 'How to Start an AI Receptionist Agency in 2025',
@@ -99,25 +153,7 @@ const blogPosts: BlogPost[] = [
     readTime: '12 min read',
   },
   {
-    slug: 'ai-receptionist-vs-answering-service',
-    title: 'AI Receptionist vs Traditional Answering Services: The Complete Comparison',
-    excerpt: 'Why businesses are switching from $500/month answering services to AI receptionists that cost a fraction of the price.',
-    category: 'industry',
-    author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-12',
-    readTime: '8 min read',
-  },
-  {
-    slug: 'hvac-company-case-study',
-    title: 'How Smith HVAC Captured $47,000 in Missed Calls with AI',
-    excerpt: 'A local HVAC company was missing 40% of after-hours calls. Here\'s how they turned that into revenue.',
-    category: 'case-studies',
-    author: { name: 'VoiceAI Team' },
-    publishedAt: '2025-01-10',
-    readTime: '6 min read',
-  },
-  {
-    slug: 'pricing-ai-receptionist-services',
+    slug: 'how-to-price-ai-receptionist-services',
     title: 'How to Price Your AI Receptionist Services for Maximum Profit',
     excerpt: 'The psychology of pricing, what competitors charge, and how to position your agency for premium clients.',
     category: 'guides',
@@ -135,13 +171,13 @@ const blogPosts: BlogPost[] = [
     readTime: '7 min read',
   },
   {
-    slug: 'custom-domain-setup-guide',
-    title: 'Setting Up Your Custom Domain: A Step-by-Step Guide',
-    excerpt: 'How to configure DNS, SSL certificates, and point your domain to your VoiceAI Connect portal.',
-    category: 'product',
+    slug: 'white-label-vs-build-ai-receptionist',
+    title: 'White Label vs Building Your Own AI Receptionist Platform',
+    excerpt: 'Should you build your own AI receptionist platform or use a white-label solution? A detailed comparison of costs, timelines, and trade-offs.',
+    category: 'guides',
     author: { name: 'VoiceAI Team' },
     publishedAt: '2025-01-03',
-    readTime: '5 min read',
+    readTime: '12 min read',
   },
 ];
 
