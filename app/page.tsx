@@ -667,7 +667,12 @@ export default function LandingPage() {
                   },
                   {
                     title: 'Branded Marketing Site',
-                    description: 'Professional plan includes a complete marketing website with demo phone number and sample calls.',
+                    description: 'Professional plan includes a complete marketing website with your logo, colors, and copy—fully editable from your dashboard.',
+                    badge: 'Pro+',
+                  },
+                  {
+                    title: 'Interactive AI Demo Line',
+                    description: 'Your marketing site includes a demo number. Prospects call, tell the AI about their business, and it transforms into their receptionist on the spot.',
                     badge: 'Pro+',
                   },
                   {
@@ -750,6 +755,133 @@ export default function LandingPage() {
               {/* Badge */}
               <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 px-3 sm:px-4 py-2 rounded-xl bg-emerald-500 text-[#050505] text-xs sm:text-sm font-medium shadow-lg shadow-emerald-500/30">
                 Fully white-labeled ✓
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* White-Label Marketing Site Section - NEW */}
+      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+                <Globe className="h-4 w-4 text-emerald-400" />
+                <span className="text-emerald-300/90">Professional Plan Feature</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
+                Your own marketing site.
+                <span className="block text-[#fafaf9]/40">With an AI demo that sells.</span>
+              </h2>
+              <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
+                Professional and Scale plans include a complete white-label marketing website—your logo, 
+                your colors, your domain. But the real magic? The interactive AI demo line.
+              </p>
+              
+              <div className="mt-8 sm:mt-10 space-y-6">
+                <div className="p-5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+                      <Phone className="h-5 w-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-emerald-300 mb-2">The Role-Playing AI Demo</h4>
+                      <p className="text-sm text-[#fafaf9]/60 leading-relaxed">
+                        When prospects call your demo line, the AI asks about their business—name, hours, 
+                        common questions. Then it <span className="text-[#fafaf9]/80">transforms into their receptionist</span> right 
+                        on the call. They can test it, ask questions, and experience exactly what their 
+                        callers will hear. It sells itself.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {[
+                    { icon: Sparkles, text: 'Your logo & colors everywhere' },
+                    { icon: Globe, text: 'Custom domain (youragency.com)' },
+                    { icon: Phone, text: 'Interactive demo phone number' },
+                    { icon: Mic, text: 'Sample call recordings' },
+                    { icon: Code, text: 'Editable from your dashboard' },
+                    { icon: Smartphone, text: 'Mobile-optimized design' },
+                  ].map((item) => (
+                    <div key={item.text} className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02]">
+                      <item.icon className="h-4 w-4 text-emerald-400 shrink-0" />
+                      <span className="text-sm text-[#fafaf9]/70">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Marketing site mockup */}
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 via-amber-500/5 to-transparent rounded-3xl blur-2xl" />
+              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#080808]">
+                  <div className="flex gap-1.5">
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="px-4 py-1 rounded-lg bg-white/[0.03] text-xs text-[#fafaf9]/40 font-mono">
+                      smartcallsolutions.com
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Site content */}
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-sm font-bold">SC</span>
+                      </div>
+                      <span className="font-semibold">SmartCall Solutions</span>
+                    </div>
+                    <div className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-sm font-medium">
+                      Get Started
+                    </div>
+                  </div>
+                  
+                  {/* Hero */}
+                  <div className="pt-4">
+                    <h3 className="text-xl sm:text-2xl font-semibold mb-2">Never Miss Another Call</h3>
+                    <p className="text-sm text-[#fafaf9]/50">AI-powered receptionist for your business</p>
+                  </div>
+                  
+                  {/* Demo CTA */}
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-blue-500/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20">
+                        <Phone className="h-4 w-4 text-blue-400" />
+                      </div>
+                      <span className="text-sm font-medium text-blue-300">Try Our AI Demo</span>
+                    </div>
+                    <p className="text-lg font-mono font-semibold text-[#fafaf9] mb-2">(555) 123-DEMO</p>
+                    <p className="text-xs text-[#fafaf9]/50">
+                      Call now—tell the AI about your business and watch it become your receptionist
+                    </p>
+                  </div>
+                  
+                  {/* Features preview */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {['24/7 Coverage', 'Call Recording', 'SMS Alerts'].map((feature) => (
+                      <div key={feature} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+                        <span className="text-xs text-[#fafaf9]/60">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Badge */}
+              <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 px-3 sm:px-4 py-2 rounded-xl bg-emerald-500 text-[#050505] text-xs sm:text-sm font-medium shadow-lg shadow-emerald-500/30">
+                100% your brand ✓
               </div>
             </div>
           </div>
@@ -945,7 +1077,7 @@ export default function LandingPage() {
                   features: [
                     'Up to 100 clients',
                     'Full marketing website',
-                    'Demo phone number',
+                    'Interactive AI demo line',
                     'Sample call recordings',
                     'Custom domain support',
                     'Advanced analytics',
@@ -1152,6 +1284,10 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
+              {
+                q: 'What is the interactive AI demo line?',
+                a: 'Professional and Scale plans include a demo phone number on your marketing site. When prospects call, the AI asks about their business—name, type, hours, common questions—then transforms into their receptionist right on the call. They can test it by asking questions and experience exactly what their callers will hear. It\'s incredibly effective at converting prospects into clients.',
+              },
               {
                 q: 'Can I really run this from my phone?',
                 a: 'Yes. Our dashboard is built phone-first. Sign up clients, track revenue, manage settings—all from your phone. Many of our most successful agencies have never used a laptop to manage their business.',
