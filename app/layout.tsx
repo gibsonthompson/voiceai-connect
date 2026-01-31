@@ -44,15 +44,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "VoiceAI",
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -84,15 +75,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="VoiceAI" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        
-        {/* Apple Touch Icons */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-152x152.png" />
-        
-        {/* Manifest */}
-        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
