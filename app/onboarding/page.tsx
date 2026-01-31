@@ -477,7 +477,7 @@ function OnboardingContent() {
       localStorage.removeItem('onboarding_agency_id');
       localStorage.removeItem('agency_password_token');
       
-      const returnTo = encodeURIComponent('/plans');
+      const returnTo = encodeURIComponent('/signup/plan');
       router.push(`/auth/set-password?token=${token}&returnTo=${returnTo}`);
     } else {
       localStorage.removeItem('onboarding_agency_id');
@@ -488,7 +488,7 @@ function OnboardingContent() {
   const handleComplete = () => {
     localStorage.removeItem('onboarding_agency_id');
     localStorage.removeItem('agency_password_token');
-    router.push('/plans');
+    router.push('/signup/plan');
   };
 
   // ============================================================================

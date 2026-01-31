@@ -178,7 +178,7 @@ function SetPasswordContent() {
         } else if (data.user?.role === 'agency_owner' || data.user?.role === 'agency_staff') {
           // Agency owner/staff coming from onboarding - send to plans
           // Plans page will redirect to dashboard if already subscribed
-          router.push('/plans');
+          router.push('/signup/plan');
         } else {
           router.push('/');
         }
