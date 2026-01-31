@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Sparkles,
   Lock,
-  Info
+  Info,
+  Building
 } from 'lucide-react';
 
 // ============================================================================
@@ -121,7 +122,6 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
   });
 }
 
-// Waveform icon component
 function WaveformIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -137,15 +137,16 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS
+// STEP DEFINITIONS - Updated with Agency Details as step 1
 // ============================================================================
 const steps = [
-  { id: 1, name: 'Logo', icon: ImageIcon, description: 'Upload your brand' },
-  { id: 2, name: 'Colors', icon: Palette, description: 'Set your palette' },
-  { id: 3, name: 'Pricing', icon: DollarSign, description: 'Configure plans' },
-  { id: 4, name: 'Payments', icon: CreditCard, description: 'Connect Stripe' },
-  { id: 5, name: 'Password', icon: Lock, description: 'Secure account' },
-  { id: 6, name: 'Complete', icon: CheckCircle2, description: 'All done!' },
+  { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
+  { id: 2, name: 'Logo', icon: ImageIcon, description: 'Upload your brand' },
+  { id: 3, name: 'Colors', icon: Palette, description: 'Set your palette' },
+  { id: 4, name: 'Pricing', icon: DollarSign, description: 'Configure plans' },
+  { id: 5, name: 'Payments', icon: CreditCard, description: 'Connect Stripe' },
+  { id: 6, name: 'Password', icon: Lock, description: 'Secure account' },
+  { id: 7, name: 'Complete', icon: CheckCircle2, description: 'All done!' },
 ];
 
 // ============================================================================
@@ -159,7 +160,7 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center">
             <div
-              className={`relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 ${
+              className={`relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-300 ${
                 step.id < currentStep
                   ? 'bg-emerald-500 text-[#050505]'
                   : step.id === currentStep
@@ -175,7 +176,7 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
             </div>
             {index < steps.length - 1 && (
               <div
-                className={`w-6 sm:w-10 h-0.5 mx-1 transition-colors duration-300 ${
+                className={`w-4 sm:w-6 h-0.5 mx-1 transition-colors duration-300 ${
                   step.id < currentStep ? 'bg-emerald-500' : 'bg-white/[0.06]'
                 }`}
               />
@@ -224,7 +225,12 @@ function OnboardingContent() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyData, setAgencyData] = useState<any>(null);
   
-  // Form state
+  // Form state - NEW: Agency details
+  const [agencyDetails, setAgencyDetails] = useState({
+    name: '',
+    phone: '',
+  });
+  
   const [logoUrl, setLogoUrl] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState('');
@@ -283,8 +289,22 @@ function OnboardingContent() {
       if (response.ok) {
         const data = await response.json();
         setAgencyData(data.agency);
-        setCurrentStep(data.agency.onboarding_step || 1);
         
+        // Determine which step based on what's filled
+        // If name is still temp/empty, start at step 1
+        // Otherwise use saved step
+        if (!data.agency.name || data.agency.name.includes("'s Agency") || data.agency.name === 'My Agency') {
+          setCurrentStep(1);
+        } else {
+          setCurrentStep(data.agency.onboarding_step || 1);
+        }
+        
+        if (data.agency.name && !data.agency.name.includes("'s Agency")) {
+          setAgencyDetails({
+            name: data.agency.name || '',
+            phone: data.agency.phone || '',
+          });
+        }
         if (data.agency.logo_url) setLogoUrl(data.agency.logo_url);
         if (data.agency.primary_color) {
           setColors({
@@ -369,17 +389,27 @@ function OnboardingContent() {
     let stepData = {};
     
     switch (currentStep) {
-      case 1:
+      case 1: // Agency Details (NEW)
+        if (!agencyDetails.name.trim()) {
+          setError('Please enter your agency name');
+          return;
+        }
+        stepData = { 
+          name: agencyDetails.name.trim(),
+          phone: agencyDetails.phone,
+        };
+        break;
+      case 2: // Logo
         stepData = { logo_url: logoPreview || logoUrl };
         break;
-      case 2:
+      case 3: // Colors
         stepData = {
           primary_color: colors.primary,
           secondary_color: colors.secondary,
           accent_color: colors.accent,
         };
         break;
-      case 3:
+      case 4: // Pricing
         stepData = {
           price_starter: pricing.starter * 100,
           price_pro: pricing.pro * 100,
@@ -389,14 +419,14 @@ function OnboardingContent() {
           limit_growth: pricing.limitGrowth,
         };
         break;
-      case 4:
+      case 5: // Stripe
         break;
     }
 
     const result = await saveStep(currentStep, stepData);
     
     if (result?.success) {
-      if (currentStep < 6) {
+      if (currentStep < 7) {
         setCurrentStep(currentStep + 1);
       }
     }
@@ -436,8 +466,8 @@ function OnboardingContent() {
   };
 
   const handleSkipConnect = async () => {
-    await saveStep(4, {});
-    setCurrentStep(5);
+    await saveStep(5, {});
+    setCurrentStep(6);
   };
 
   const handleSetPassword = () => {
@@ -466,7 +496,76 @@ function OnboardingContent() {
   // ============================================================================
   const renderStepContent = () => {
     switch (currentStep) {
+      // NEW STEP 1: Agency Details
       case 1:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Name Your Agency</h2>
+              <p className="mt-2 text-[#fafaf9]/50">
+                This is how clients will see your brand
+              </p>
+            </div>
+
+            <div className="max-w-md mx-auto space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Agency Name
+                </label>
+                <div className="relative">
+                  <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <input
+                    type="text"
+                    value={agencyDetails.name}
+                    onChange={(e) => setAgencyDetails({ ...agencyDetails, name: e.target.value })}
+                    placeholder="SmartCall Solutions"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">
+                  This appears on your signup pages, client dashboard, and emails
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <input
+                    type="tel"
+                    value={agencyDetails.phone}
+                    onChange={(e) => setAgencyDetails({ ...agencyDetails, phone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">
+                  For support and account verification (optional)
+                </p>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Preview</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Building className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-[#fafaf9]">
+                    {agencyDetails.name || 'Your Agency Name'}
+                  </p>
+                  <p className="text-sm text-[#fafaf9]/50">AI Voice Agency</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2: // Logo (was step 1)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -477,7 +576,6 @@ function OnboardingContent() {
             </div>
 
             <div className="flex flex-col items-center gap-6">
-              {/* Logo preview area */}
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-amber-500/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center bg-white/[0.02] overflow-hidden transition-colors group-hover:border-white/30">
@@ -496,7 +594,6 @@ function OnboardingContent() {
                 </div>
               </div>
 
-              {/* Upload button */}
               <label className="cursor-pointer group">
                 <input
                   type="file"
@@ -514,7 +611,6 @@ function OnboardingContent() {
                 PNG, JPG or SVG • Recommended: 400×400px
               </p>
 
-              {/* Color extraction feedback */}
               {extractingColors && (
                 <div className="flex items-center gap-2 text-sm text-emerald-400 animate-pulse">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -544,7 +640,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 2:
+      case 3: // Colors (was step 2)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -554,7 +650,6 @@ function OnboardingContent() {
               </p>
             </div>
 
-            {/* Re-extract button */}
             {(logoPreview || logoUrl) && (
               <div className="flex justify-center">
                 <button
@@ -582,7 +677,6 @@ function OnboardingContent() {
               </div>
             )}
 
-            {/* Color pickers */}
             <div className="space-y-4 max-w-md mx-auto">
               {[
                 { key: 'primary', label: 'Primary Color', desc: 'Buttons & main accents' },
@@ -616,7 +710,6 @@ function OnboardingContent() {
               ))}
             </div>
 
-            {/* Preview */}
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] max-w-md mx-auto">
               <p className="text-xs text-[#fafaf9]/40 mb-4 uppercase tracking-wider">Preview</p>
               <div className="flex flex-wrap gap-3">
@@ -643,7 +736,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 3:
+      case 4: // Pricing (was step 3)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -706,7 +799,6 @@ function OnboardingContent() {
               ))}
             </div>
 
-            {/* Tip */}
             <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] max-w-2xl mx-auto">
               <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-[#fafaf9]/60">
@@ -717,7 +809,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 4:
+      case 5: // Stripe (was step 4)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -771,7 +863,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 5:
+      case 6: // Password (was step 5)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -802,7 +894,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 6:
+      case 7: // Complete (was step 6)
         return (
           <div className="space-y-8 text-center">
             <div className="relative">
@@ -853,23 +945,19 @@ function OnboardingContent() {
 
   return (
     <>
-      {/* Progress */}
       <OnboardingProgress currentStep={currentStep} />
 
-      {/* Error */}
       {error && (
         <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center text-sm text-red-400 max-w-md mx-auto">
           {error}
         </div>
       )}
 
-      {/* Step Content */}
       <div className="max-w-2xl mx-auto">
         {renderStepContent()}
       </div>
 
-      {/* Navigation */}
-      {currentStep < 5 && (
+      {currentStep < 6 && (
         <div className="mt-10 sm:mt-12 flex justify-center gap-4">
           {currentStep > 1 && (
             <button
@@ -882,7 +970,7 @@ function OnboardingContent() {
             </button>
           )}
           
-          {currentStep < 4 && (
+          {currentStep < 5 && (
             <button
               onClick={handleNext}
               disabled={loading}
@@ -913,7 +1001,6 @@ function OnboardingContent() {
 export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
-      {/* Premium grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
@@ -921,22 +1008,16 @@ export default function OnboardingPage() {
         }}
       />
 
-      {/* Ambient glow effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-amber-500/[0.03] rounded-full blur-[128px]" />
       </div>
 
-      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                  <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
-                </div>
+              <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
               </div>
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
@@ -944,13 +1025,11 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-4xl">
           <Suspense fallback={
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-              <p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p>
             </div>
           }>
             <OnboardingContent />

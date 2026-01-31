@@ -53,6 +53,30 @@ function WaveformIcon({ className }: { className?: string }) {
   );
 }
 
+// Google icon
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
 // ============================================================================
 // REFERRAL TRACKING HELPERS
 // ============================================================================
@@ -61,30 +85,21 @@ const REFERRAL_EXPIRY_DAYS = 90;
 
 function captureReferralCode(code: string) {
   if (typeof window === 'undefined') return;
-  
-  const data = {
-    code: code.toLowerCase().trim(),
-    timestamp: Date.now(),
-  };
-  
+  const data = { code: code.toLowerCase().trim(), timestamp: Date.now() };
   localStorage.setItem(REFERRAL_STORAGE_KEY, JSON.stringify(data));
 }
 
 function getStoredReferralCode(): string | null {
   if (typeof window === 'undefined') return null;
-  
   try {
     const stored = localStorage.getItem(REFERRAL_STORAGE_KEY);
     if (!stored) return null;
-    
     const data = JSON.parse(stored);
     const daysSinceCapture = (Date.now() - data.timestamp) / (1000 * 60 * 60 * 24);
-    
     if (daysSinceCapture > REFERRAL_EXPIRY_DAYS) {
       localStorage.removeItem(REFERRAL_STORAGE_KEY);
       return null;
     }
-    
     return data.code;
   } catch {
     return null;
@@ -99,29 +114,6 @@ function clearReferralCode() {
 // ============================================================================
 // SHARED COMPONENTS
 // ============================================================================
-function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }: { 
-  currentStep: number; 
-  totalSteps?: number;
-  accentColor?: string;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-2">
-      {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-        <div key={step} className="flex items-center gap-2">
-          <div
-            className={`h-2 rounded-full transition-all duration-300 ${
-              step === currentStep ? 'w-8' : 'w-2'
-            }`}
-            style={{ 
-              backgroundColor: step <= currentStep ? accentColor : 'rgba(255,255,255,0.1)' 
-            }}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function FormInput({
   label,
   name,
@@ -131,9 +123,7 @@ function FormInput({
   onChange,
   required = false,
   icon: Icon,
-  maxLength,
   className = '',
-  accentColor = '#10b981',
 }: {
   label: string;
   name: string;
@@ -143,9 +133,7 @@ function FormInput({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
-  maxLength?: number;
   className?: string;
-  accentColor?: string;
 }) {
   return (
     <div className={className}>
@@ -163,16 +151,11 @@ function FormInput({
           value={value}
           onChange={onChange}
           required={required}
-          maxLength={maxLength}
           className={`w-full rounded-xl border border-white/[0.08] bg-white/[0.03] ${
             Icon ? 'pl-11' : 'pl-4'
           } pr-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 
           focus:outline-none focus:border-white/20 focus:bg-white/[0.05] focus:ring-1 focus:ring-white/10
           transition-all duration-200`}
-          style={{
-            // @ts-ignore
-            '--tw-ring-color': `${accentColor}40`,
-          }}
         />
       </div>
     </div>
@@ -180,7 +163,7 @@ function FormInput({
 }
 
 // ============================================================================
-// CLIENT SIGNUP FORM (for agency subdomains)
+// CLIENT SIGNUP FORM (for agency subdomains) - UNCHANGED
 // ============================================================================
 function ClientSignupForm({ agency }: { agency: Agency }) {
   const router = useRouter();
@@ -276,11 +259,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
       {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-lg">
-          {/* Progress */}
-          <div className="mb-8">
-            <ProgressSteps currentStep={1} accentColor={primaryColor} />
-          </div>
-
           {/* Form Card */}
           <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
             <div className="text-center mb-8">
@@ -311,7 +289,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 onChange={handleChange}
                 required
                 icon={Building}
-                accentColor={primaryColor}
               />
 
               <FormInput
@@ -322,7 +299,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 onChange={handleChange}
                 required
                 icon={User}
-                accentColor={primaryColor}
               />
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -335,7 +311,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={Mail}
-                  accentColor={primaryColor}
                 />
                 <FormInput
                   label="Phone"
@@ -346,7 +321,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={Phone}
-                  accentColor={primaryColor}
                 />
               </div>
 
@@ -359,7 +333,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={MapPin}
-                  accentColor={primaryColor}
                 />
                 <div>
                   <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">State</label>
@@ -391,16 +364,13 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   }}
                 >
                   <option value="general">General Business</option>
-                  <option value="home_services">Home Services (Plumbing, HVAC, etc.)</option>
+                  <option value="home_services">Home Services</option>
                   <option value="medical">Medical/Dental</option>
                   <option value="legal">Legal Services</option>
                   <option value="real_estate">Real Estate</option>
                   <option value="restaurant">Restaurant</option>
                   <option value="salon_spa">Salon/Spa</option>
                   <option value="automotive">Automotive</option>
-                  <option value="fitness">Fitness</option>
-                  <option value="retail">Retail</option>
-                  <option value="professional_services">Professional Services</option>
                   <option value="other">Other</option>
                 </select>
               </div>
@@ -414,11 +384,10 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
                 style={{ 
                   backgroundColor: primaryColor,
                   color: primaryLight ? '#050505' : '#fafaf9',
-                  boxShadow: `0 0 40px ${primaryColor}30`,
                 }}
               >
                 {loading ? (
@@ -437,19 +406,16 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 
             <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Terms</Link>
+              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Privacy Policy</Link>
+              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</Link>
             </p>
           </div>
 
           {/* Benefits Card */}
           <div 
             className="mt-6 rounded-2xl border p-5 sm:p-6"
-            style={{ 
-              borderColor: `${accentColor}25`,
-              backgroundColor: `${accentColor}08`,
-            }}
+            style={{ borderColor: `${accentColor}25`, backgroundColor: `${accentColor}08` }}
           >
             <h3 className="font-medium text-[#fafaf9] mb-4">What you&apos;ll get:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -478,49 +444,67 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 }
 
 // ============================================================================
-// AGENCY SIGNUP FORM (for platform domain)
+// AGENCY SIGNUP FORM (SIMPLIFIED - just name + email + Google)
 // ============================================================================
 function AgencySignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [referralCode, setReferralCode] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    agencyName: '',
     email: '',
-    phone: '',
   });
 
-  // Capture referral code from URL on mount
+  // Check for errors from Google OAuth
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      const errorMessages: Record<string, string> = {
+        'google_auth_failed': 'Google sign in failed. Please try again.',
+        'no_code': 'Google sign in was cancelled.',
+        'no_email': 'Could not get email from Google.',
+        'account_exists': 'An account with this email already exists. Please sign in.',
+      };
+      setError(errorMessages[errorParam] || 'Something went wrong.');
+      
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
+  // Capture referral code
   useEffect(() => {
     const refFromUrl = searchParams.get('ref') || searchParams.get('referral');
-    
     if (refFromUrl) {
-      // Store it for persistence (90 day window)
       captureReferralCode(refFromUrl);
       setReferralCode(refFromUrl.toLowerCase().trim());
-      
-      // Clean URL without reload
       const url = new URL(window.location.href);
       url.searchParams.delete('ref');
       url.searchParams.delete('referral');
       window.history.replaceState({}, '', url.toString());
     } else {
-      // Check for previously stored referral
       const stored = getStoredReferralCode();
-      if (stored) {
-        setReferralCode(stored);
-      }
+      if (stored) setReferralCode(stored);
     }
   }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const handleGoogleSignup = () => {
+    setGoogleLoading(true);
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    // Include referral code in state
+    const state = referralCode ? `?ref=${referralCode}` : '';
+    window.location.href = `${backendUrl}/api/auth/google${state}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -534,12 +518,11 @@ function AgencySignupForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.agencyName,
           email: formData.email,
-          phone: formData.phone,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          referralCode: referralCode, // Include referral code
+          referralCode: referralCode,
+          // No agency name or phone - collected in onboarding
         }),
       });
 
@@ -549,14 +532,16 @@ function AgencySignupForm() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      // Clear stored referral code on successful signup
       clearReferralCode();
 
       if (data.token) {
         localStorage.setItem('agency_password_token', data.token);
       }
+      if (data.agencyId) {
+        localStorage.setItem('onboarding_agency_id', data.agencyId);
+      }
 
-      router.push(`/signup/plan?agency=${data.agencyId}`);
+      router.push('/onboarding');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -574,10 +559,9 @@ function AgencySignupForm() {
         }}
       />
 
-      {/* Ambient glow effects */}
+      {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-amber-500/[0.03] rounded-full blur-[128px]" />
       </div>
 
       {/* Header */}
@@ -585,11 +569,8 @@ function AgencySignupForm() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                  <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
-                </div>
+              <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
               </div>
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
@@ -605,7 +586,7 @@ function AgencySignupForm() {
                 href="/agency/login" 
                 className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
               >
-                <span className="hidden sm:inline">Already have an account? </span>Sign in
+                Sign in
               </Link>
             </div>
           </div>
@@ -614,12 +595,7 @@ function AgencySignupForm() {
 
       {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
-        <div className="relative mx-auto max-w-lg">
-          {/* Progress */}
-          <div className="mb-8">
-            <ProgressSteps currentStep={1} accentColor="#10b981" />
-          </div>
-
+        <div className="relative mx-auto max-w-md">
           {/* Referral Banner */}
           {referralCode && (
             <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
@@ -641,14 +617,38 @@ function AgencySignupForm() {
                 <span className="text-emerald-300/90">14-day free trial</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                Create Your Agency
+                Get Started Free
               </h1>
               <p className="mt-2 text-[#fafaf9]/50">
-                Launch your AI voice business in minutes
+                Launch your AI voice agency in minutes
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Google Sign Up Button */}
+            <button
+              onClick={handleGoogleSignup}
+              disabled={googleLoading || loading}
+              className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-6 py-3.5 text-base font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-6"
+            >
+              {googleLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <GoogleIcon className="h-5 w-5" />
+              )}
+              Continue with Google
+            </button>
+
+            {/* Divider */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/[0.06]" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[#0a0a0a] px-3 text-[#fafaf9]/40">or</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormInput
                   label="First Name"
@@ -667,16 +667,6 @@ function AgencySignupForm() {
                   required
                 />
               </div>
-
-              <FormInput
-                label="Agency Name"
-                name="agencyName"
-                placeholder="SmartCall Solutions"
-                value={formData.agencyName}
-                onChange={handleChange}
-                required
-                icon={Building}
-              />
               
               <FormInput
                 label="Email Address"
@@ -688,17 +678,6 @@ function AgencySignupForm() {
                 required
                 icon={Mail}
               />
-              
-              <FormInput
-                label="Phone Number"
-                name="phone"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                icon={Phone}
-              />
 
               {error && (
                 <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
@@ -708,8 +687,8 @@ function AgencySignupForm() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                disabled={loading || googleLoading}
+                className="group w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -718,7 +697,7 @@ function AgencySignupForm() {
                   </>
                 ) : (
                   <>
-                    Continue
+                    Continue with Email
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
@@ -727,15 +706,15 @@ function AgencySignupForm() {
 
             <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Terms</Link>
+              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2 transition-colors">Privacy Policy</Link>
+              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</Link>
             </p>
           </div>
 
-          {/* Benefits Card */}
+          {/* Benefits */}
           <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-5 sm:p-6">
-            <h3 className="font-medium text-[#fafaf9] mb-4">What you get with your free trial:</h3>
+            <h3 className="font-medium text-[#fafaf9] mb-4">What you get:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { icon: Zap, text: 'Full platform access' },
@@ -766,7 +745,7 @@ function AgencySignupForm() {
 }
 
 // ============================================================================
-// MAIN COMPONENT - Detects context and renders appropriate form
+// MAIN COMPONENT
 // ============================================================================
 function SignupContent() {
   const [loading, setLoading] = useState(true);
@@ -778,13 +757,7 @@ function SignupContent() {
       try {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-        
-        const platformDomains = [
-          platformDomain,
-          `www.${platformDomain}`,
-          'localhost:3000',
-          'localhost',
-        ];
+        const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         
         if (platformDomains.includes(host)) {
           setIsAgencySubdomain(false);
@@ -816,10 +789,7 @@ function SignupContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" />
-          <p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
       </div>
     );
   }
@@ -835,10 +805,7 @@ export default function SignupPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" />
-          <p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
       </div>
     }>
       <SignupContent />
