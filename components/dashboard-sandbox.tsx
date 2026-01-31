@@ -547,14 +547,6 @@ export default function DashboardSandbox() {
           )}
         </div>
       </div>
-
-      {/* Caption */}
-      <p className="text-center text-sm text-[#fafaf9]/40 mt-4">
-        {view === 'agency' 
-          ? 'Your agency dashboard — manage clients, track leads, monitor revenue'
-          : 'What your clients see — branded to your agency, simple & clean'
-        }
-      </p>
     </div>
   );
 }
