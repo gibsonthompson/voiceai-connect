@@ -9,6 +9,7 @@ import {
   Building2, Sparkles, Menu, X, Coffee, Palmtree
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import DashboardSandbox from '@/components/dashboard-sandbox';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -192,7 +193,10 @@ export default function LandingPage() {
                 <span>Start Your 14-Day Free Trial</span>
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
-              <button className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-6 sm:px-8 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20">
+              <button 
+                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-6 sm:px-8 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
+              >
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
                   <Play className="h-4 w-4 fill-current ml-0.5" />
                 </span>
@@ -205,86 +209,13 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Dashboard Preview */}
-          <div className="mt-16 sm:mt-20 lg:mt-24 relative">
+          {/* Interactive Dashboard Demo */}
+          <div id="demo" className="mt-16 sm:mt-20 lg:mt-24 relative scroll-mt-24">
             {/* Glow behind dashboard */}
             <div className="absolute -inset-x-20 -top-20 h-[400px] bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-transparent blur-2xl pointer-events-none" />
             
             <div className="relative">
-              {/* Browser chrome */}
-              <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl shadow-black/50">
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#0a0a0a]">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-white/10 hover:bg-red-500/50 transition-colors" />
-                    <div className="h-3 w-3 rounded-full bg-white/10 hover:bg-yellow-500/50 transition-colors" />
-                    <div className="h-3 w-3 rounded-full bg-white/10 hover:bg-green-500/50 transition-colors" />
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="px-4 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-[#fafaf9]/40 font-mono">
-                      app.youragency.com
-                    </div>
-                  </div>
-                  <div className="w-[52px]" />
-                </div>
-                
-                {/* Dashboard mockup */}
-                <div className="aspect-[16/9] sm:aspect-[16/8] bg-gradient-to-br from-[#0a0a0a] via-[#0d0d0d] to-[#0a0a0a] p-4 sm:p-8">
-                  <div className="h-full rounded-xl border border-white/[0.06] bg-[#080808] overflow-hidden">
-                    {/* Sidebar */}
-                    <div className="flex h-full">
-                      <div className="hidden sm:block w-48 lg:w-56 border-r border-white/[0.06] bg-[#070707] p-4">
-                        <div className="flex items-center gap-2 mb-8">
-                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-amber-500" />
-                          <span className="text-sm font-medium text-[#fafaf9]/80">Your Agency</span>
-                        </div>
-                        <div className="space-y-1">
-                          {['Dashboard', 'Clients', 'Analytics', 'Settings'].map((item, i) => (
-                            <div key={item} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${i === 0 ? 'bg-white/[0.06] text-[#fafaf9]' : 'text-[#fafaf9]/40'}`}>
-                              <div className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-emerald-400' : 'bg-white/20'}`} />
-                              {item}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Main content */}
-                      <div className="flex-1 p-4 sm:p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <div>
-                            <p className="text-[#fafaf9]/40 text-xs sm:text-sm">Welcome back</p>
-                            <p className="text-lg sm:text-xl font-medium">Agency Dashboard</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="hidden sm:block px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-                              47 Active Clients
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Stats grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                          {[
-                            { label: 'Monthly Revenue', value: '$6,903', change: '+18%' },
-                            { label: 'Total Clients', value: '47', change: '+5' },
-                            { label: 'Calls This Month', value: '3,241', change: '+31%' },
-                            { label: 'Avg. Call Duration', value: '2:12', change: '' },
-                          ].map((stat) => (
-                            <div key={stat.label} className="p-3 sm:p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                              <p className="text-[#fafaf9]/40 text-xs mb-1">{stat.label}</p>
-                              <div className="flex items-end gap-2">
-                                <p className="text-lg sm:text-xl font-semibold">{stat.value}</p>
-                                {stat.change && (
-                                  <span className="text-emerald-400 text-xs mb-0.5">{stat.change}</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <DashboardSandbox />
               
               {/* Floating badge */}
               <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a]/90 backdrop-blur-xl px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm shadow-xl">
