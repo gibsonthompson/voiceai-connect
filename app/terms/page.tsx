@@ -1,7 +1,7 @@
 // app/terms/page.tsx
 // 
 // VoiceAI Connect Terms of Service
-// Last Updated: January 2025
+// Last Updated: January 2026
 // 
 // Covers: White-label platform terms, AI receptionist usage, call recording compliance,
 // TCPA requirements, payment terms, intellectual property, liability limitations
@@ -64,7 +64,7 @@ export default function TermsOfService() {
           <header className="mb-12">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Terms of Service</h1>
             <p className="mt-4 text-[#fafaf9]/60">
-              Last Updated: January 20, 2025
+              Last Updated: January 31, 2026
             </p>
           </header>
 
@@ -139,13 +139,14 @@ export default function TermsOfService() {
             <h3>3.1 Account Creation</h3>
             <p>
               To use the Service, you must create an account by providing accurate, current, and complete information. 
-              You must be at least 18 years old and have the legal capacity to enter into these Terms.
+              You may create an account using your email address or by signing in with a third-party authentication 
+              provider such as Google. You must be at least 18 years old and have the legal capacity to enter into these Terms.
             </p>
 
             <h3>3.2 Account Security</h3>
             <p>
               You are responsible for maintaining the confidentiality of your account credentials and for all activities 
-              that occur under your account. You must immediately notify us at security@voiceaiconnect.com if you suspect 
+              that occur under your account. You must immediately notify us at support@myvoiceaiconnect.com if you suspect 
               unauthorized access to your account.
             </p>
 
@@ -317,7 +318,7 @@ export default function TermsOfService() {
             <h3>8.3 GDPR and Data Protection</h3>
             <p>
               If you process personal data of individuals in the European Economic Area or United Kingdom, a Data 
-              Processing Agreement (DPA) is available upon request at legal@voiceaiconnect.com.
+              Processing Agreement (DPA) is available upon request at support@myvoiceaiconnect.com.
             </p>
 
             <h3>8.4 Your Obligations</h3>
@@ -329,7 +330,15 @@ export default function TermsOfService() {
             <h2>9. Third-Party Services</h2>
 
             <p>
-              The Service integrates with third-party services (e.g., Stripe, Twilio, Google Calendar, CRM systems). 
+              The Service integrates with third-party services including:
+            </p>
+            <ul>
+              <li><strong>Authentication:</strong> Google Sign-In for account creation and login</li>
+              <li><strong>Payments:</strong> Stripe for payment processing and Stripe Connect for agency payouts</li>
+              <li><strong>Telephony:</strong> VAPI and related providers for voice AI services</li>
+              <li><strong>Integrations:</strong> Google Calendar, CRM systems, and other business tools</li>
+            </ul>
+            <p>
               Your use of these integrations is subject to the respective third party&apos;s terms of service. We are not 
               responsible for the availability, accuracy, or functionality of third-party services.
             </p>
@@ -438,7 +447,7 @@ export default function TermsOfService() {
 
             <h3>15.1 Informal Resolution</h3>
             <p>
-              Before initiating any formal dispute proceeding, you agree to first contact us at legal@voiceaiconnect.com 
+              Before initiating any formal dispute proceeding, you agree to first contact us at support@myvoiceaiconnect.com 
               to attempt to resolve the dispute informally. We will attempt to resolve the dispute within 30 days.
             </p>
 
@@ -498,7 +507,7 @@ export default function TermsOfService() {
             <h3>16.6 Notices</h3>
             <p>
               We may provide notices to you via email to the address associated with your account or through the Service. 
-              You may provide notices to us at legal@voiceaiconnect.com.
+              You may provide notices to us at support@myvoiceaiconnect.com.
             </p>
 
             <h3>16.7 Force Majeure</h3>
@@ -512,11 +521,13 @@ export default function TermsOfService() {
 
             <p>If you have questions about these Terms, please contact us:</p>
             
-            <ul>
-              <li><strong>Email:</strong> legal@voiceaiconnect.com</li>
-              <li><strong>Support:</strong> support@voiceaiconnect.com</li>
-              <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Legal Team, 2855 Broome Rd. Gainesville GA</li>
-            </ul>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 my-6">
+              <ul className="space-y-2 mb-0">
+                <li><strong>Email:</strong> <a href="mailto:support@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">support@myvoiceaiconnect.com</a></li>
+                <li><strong>Privacy Inquiries:</strong> <a href="mailto:privacy@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">privacy@myvoiceaiconnect.com</a></li>
+                <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Legal Team, 2855 Broome Rd, Gainesville, GA 30507</li>
+              </ul>
+            </div>
 
             <hr className="my-10 border-white/[0.08]" />
 
@@ -543,7 +554,7 @@ export default function TermsOfService() {
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms of Service</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-sm text-[#fafaf9]/30">© 2025 VoiceAI Connect</p>
+            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect</p>
           </div>
         </div>
       </footer>

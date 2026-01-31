@@ -4,7 +4,7 @@
 // Last Updated: January 2025
 // 
 // Covers: GDPR, CCPA/CPRA, TCPA, call recording consent, voice data, 
-// white-label platform specifics, Stripe payments, data retention
+// white-label platform specifics, Stripe payments, Google OAuth, data retention
 
 import Link from 'next/link';
 
@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
           <header className="mb-12">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Privacy Policy</h1>
             <p className="mt-4 text-[#fafaf9]/60">
-              Last Updated: January 20, 2025
+              Last Updated: January 31, 2025
             </p>
           </header>
 
@@ -114,7 +114,35 @@ export default function PrivacyPolicy() {
               <li><strong>Contact support:</strong> Any information you provide in support requests or communications.</li>
             </ul>
 
-            <h3>2.2 Voice and Call Data</h3>
+            <h3>2.2 Information from Third-Party Authentication Providers</h3>
+
+            <p>
+              We offer the option to create an account or sign in using third-party authentication providers. When you choose to authenticate using these services, we receive certain information from them:
+            </p>
+
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 my-6">
+              <p className="text-blue-300 font-semibold mb-2">Google Sign-In</p>
+              <p className="text-[#fafaf9]/70 text-sm mb-3">
+                When you sign up or log in using Google, we receive the following information from your Google account:
+              </p>
+              <ul className="text-[#fafaf9]/70 text-sm mb-0 space-y-1">
+                <li>• <strong>Email address:</strong> Used as your account identifier and for communications</li>
+                <li>• <strong>Name:</strong> Your first and last name from your Google profile</li>
+                <li>• <strong>Profile picture:</strong> Your Google profile photo (optional, used for account display)</li>
+              </ul>
+              <p className="text-[#fafaf9]/70 text-sm mt-3 mb-0">
+                We only request basic profile information (email and profile scopes). We do not access your Google contacts, 
+                calendar, drive, or any other Google services. You can revoke our access at any time through your 
+                <a href="https://myaccount.google.com/permissions" className="text-blue-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google Account permissions</a>.
+              </p>
+            </div>
+
+            <p>
+              Your use of third-party authentication is also subject to that provider&apos;s privacy policy. We encourage you to review 
+              <a href="https://policies.google.com/privacy" className="text-emerald-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google&apos;s Privacy Policy</a> for information about their data practices.
+            </p>
+
+            <h3>2.3 Voice and Call Data</h3>
             
             <p>
               <strong>Important:</strong> Our Service processes telephone calls using AI technology. When calls are made to 
@@ -138,7 +166,7 @@ export default function PrivacyPolicy() {
               </p>
             </div>
 
-            <h3>2.3 Information Collected Automatically</h3>
+            <h3>2.4 Information Collected Automatically</h3>
             
             <p>When you access our Service, we automatically collect:</p>
             
@@ -148,11 +176,12 @@ export default function PrivacyPolicy() {
               <li><strong>Cookies and similar technologies:</strong> We use cookies, pixels, and similar technologies to enhance your experience and collect analytics data.</li>
             </ul>
 
-            <h3>2.4 Information from Third Parties</h3>
+            <h3>2.5 Information from Third Parties</h3>
             
             <p>We may receive information from:</p>
             
             <ul>
+              <li><strong>Authentication providers:</strong> Google provides basic profile information when you use Google Sign-In (see Section 2.2).</li>
               <li><strong>Payment processors:</strong> Stripe provides us with limited transaction information (we do not store full payment card details).</li>
               <li><strong>Integration partners:</strong> If you connect third-party services (e.g., Google Calendar, CRM systems), we receive data necessary to provide the integration.</li>
               <li><strong>Telephony providers:</strong> Our telephony partners provide call routing and metadata.</li>
@@ -164,8 +193,8 @@ export default function PrivacyPolicy() {
             
             <ul>
               <li>Provide, operate, and maintain our Service</li>
+              <li>Create and authenticate user accounts</li>
               <li>Process transactions and send related information (confirmations, invoices)</li>
-              <li>Create and manage user accounts</li>
               <li>Power AI receptionist conversations and generate call transcripts</li>
               <li>Send notifications about calls, appointments, and service updates</li>
               <li>Respond to customer service requests and support needs</li>
@@ -192,7 +221,7 @@ export default function PrivacyPolicy() {
             <ul>
               <li><strong>Contract performance:</strong> Processing necessary to provide our Service to you.</li>
               <li><strong>Legitimate interests:</strong> Processing for our legitimate business interests, such as improving our Service, preventing fraud, and marketing (where not overridden by your rights).</li>
-              <li><strong>Consent:</strong> Where you have given explicit consent (e.g., for marketing emails).</li>
+              <li><strong>Consent:</strong> Where you have given explicit consent (e.g., for marketing emails or using third-party sign-in).</li>
               <li><strong>Legal obligation:</strong> Processing necessary to comply with applicable laws.</li>
             </ul>
 
@@ -202,8 +231,17 @@ export default function PrivacyPolicy() {
 
             <h3>5.1 Service Providers</h3>
             <p>
-              Third-party vendors who perform services on our behalf, including cloud hosting (Vercel, AWS), 
-              payment processing (Stripe), telephony services (Twilio/VAPI), email delivery, and analytics providers. 
+              Third-party vendors who perform services on our behalf, including:
+            </p>
+            <ul>
+              <li><strong>Cloud hosting:</strong> Vercel, DigitalOcean, AWS</li>
+              <li><strong>Authentication:</strong> Google (for Google Sign-In)</li>
+              <li><strong>Payment processing:</strong> Stripe</li>
+              <li><strong>Telephony services:</strong> VAPI, Twilio</li>
+              <li><strong>Email delivery:</strong> Resend</li>
+              <li><strong>Database:</strong> Supabase</li>
+            </ul>
+            <p>
               These providers are contractually obligated to protect your data and use it only for the services they provide to us.
             </p>
 
@@ -267,6 +305,7 @@ export default function PrivacyPolicy() {
               <li>Delete your account and associated data</li>
               <li>Opt out of marketing communications</li>
               <li>Request a copy of your data in a portable format</li>
+              <li>Disconnect third-party authentication providers (like Google) from your account</li>
             </ul>
 
             <h3>7.2 California Residents (CCPA/CPRA)</h3>
@@ -297,7 +336,7 @@ export default function PrivacyPolicy() {
               <li><strong>Right to Lodge a Complaint:</strong> Lodge a complaint with a supervisory authority.</li>
             </ul>
             <p>
-              Contact our Data Protection Officer at dpo@myvoiceaiconnect.com. For international data transfers from 
+              Contact us at privacy@myvoiceaiconnect.com for data protection inquiries. For international data transfers from 
               the EEA/UK, we use Standard Contractual Clauses approved by the European Commission.
             </p>
 
@@ -317,6 +356,7 @@ export default function PrivacyPolicy() {
             <ul>
               <li>Encryption of data in transit (TLS 1.3) and at rest (AES-256)</li>
               <li>Secure cloud infrastructure with SOC 2 certified providers</li>
+              <li>OAuth 2.0 for secure third-party authentication</li>
               <li>Access controls and authentication requirements</li>
               <li>Regular security assessments and monitoring</li>
               <li>Employee training on data protection</li>
@@ -346,20 +386,25 @@ export default function PrivacyPolicy() {
               contact us at privacy@myvoiceaiconnect.com.
             </p>
 
-            <h2>11. Third-Party Links</h2>
+            <h2>11. Third-Party Links and Services</h2>
             
             <p>
-              Our Service may contain links to third-party websites or services. We are not responsible for the 
-              privacy practices of these third parties. We encourage you to review the privacy policies of any 
-              third-party sites you visit.
+              Our Service may contain links to third-party websites or services, and we integrate with third-party 
+              providers for authentication (Google), payments (Stripe), and other functionality. We are not responsible 
+              for the privacy practices of these third parties. We encourage you to review the privacy policies of any 
+              third-party sites and services you use:
             </p>
+            <ul>
+              <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">Google Privacy Policy</a></li>
+              <li><a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">Stripe Privacy Policy</a></li>
+            </ul>
 
             <h2>12. Cookies and Tracking Technologies</h2>
             
             <p>We use cookies and similar technologies for:</p>
             
             <ul>
-              <li><strong>Essential cookies:</strong> Required for the Service to function (authentication, security).</li>
+              <li><strong>Essential cookies:</strong> Required for the Service to function (authentication, security, session management).</li>
               <li><strong>Analytics cookies:</strong> Help us understand how visitors use our Service.</li>
               <li><strong>Preference cookies:</strong> Remember your settings and preferences.</li>
             </ul>
@@ -389,14 +434,16 @@ export default function PrivacyPolicy() {
             
             <p>If you have questions about this Privacy Policy or our privacy practices, please contact us:</p>
             
-            <ul>
-              <li><strong>Email:</strong> privacy@myvoiceaiconnect.com</li>
-              <li><strong>Data Protection Officer:</strong> dpo@myvoiceaiconnect.com</li>
-              <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Privacy Team, 2855 Broome Rd. Gainesville GA</li>
-            </ul>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 my-6">
+              <ul className="space-y-2 mb-0">
+                <li><strong>Email:</strong> <a href="mailto:privacy@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">privacy@myvoiceaiconnect.com</a></li>
+                <li><strong>General Support:</strong> <a href="mailto:support@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">support@myvoiceaiconnect.com</a></li>
+                <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Privacy Team, 2855 Broome Rd, Gainesville, GA 30507</li>
+              </ul>
+            </div>
 
             <p>
-              For California residents, you may also contact us toll-free at [Phone Number] to exercise your CCPA/CPRA rights.
+              We aim to respond to all privacy inquiries within 30 days.
             </p>
 
           </div>
