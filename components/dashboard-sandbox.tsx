@@ -192,6 +192,88 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
     );
   }
 
+  if (activeTab === 'website') {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-semibold">Marketing Website</h1>
+            <p className="text-sm text-[#fafaf9]/50">Your public site where clients learn about your service</p>
+          </div>
+          <a href="#" className="flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-medium text-[#050505] hover:bg-emerald-400 transition-colors">
+            <Globe className="h-3 w-3" />
+            View Site
+          </a>
+        </div>
+        
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
+                <Globe className="h-4 w-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-[#fafaf9]/50">Live URL</p>
+                <p className="text-sm font-medium text-emerald-300 truncate">aivoice.pro</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live
+            </span>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p className="text-xs text-[#fafaf9]/50 mb-2">Theme Colors</p>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#10b981' }} />
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#059669' }} />
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#34d399' }} />
+              </div>
+              <span className="text-xs text-[#fafaf9]/40">Emerald</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Website Sections */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <h3 className="font-medium text-sm mb-3">Your website includes:</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              'Hero & CTAs',
+              'Features Overview',
+              'Pricing Plans',
+              'How It Works',
+              'Testimonials',
+              'FAQ Section',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-xs text-[#fafaf9]/70">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Preview */}
+        <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <h3 className="font-medium text-sm mb-3">Current Content</h3>
+          <div className="space-y-2">
+            <div>
+              <p className="text-[10px] text-[#fafaf9]/40 uppercase">Headline</p>
+              <p className="text-sm text-[#fafaf9]">Never Miss Another Call</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-[#fafaf9]/40 uppercase">Tagline</p>
+              <p className="text-sm text-[#fafaf9]">AI-Powered Phone Answering</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Default: Dashboard
   return (
     <div className="p-6">
@@ -415,6 +497,7 @@ export default function DashboardSandbox() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'clients', label: 'Clients', icon: Users },
     { id: 'leads', label: 'Leads', icon: Target },
+    { id: 'website', label: 'Website', icon: Globe },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
