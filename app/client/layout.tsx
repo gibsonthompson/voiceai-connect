@@ -88,6 +88,21 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [branding.primaryColor]);
 
+  // Update apple-mobile-web-app-title dynamically
+  useEffect(() => {
+    if (branding.agencyName) {
+      let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (metaTitle) {
+        metaTitle.setAttribute('content', branding.agencyName);
+      } else {
+        metaTitle = document.createElement('meta');
+        metaTitle.setAttribute('name', 'apple-mobile-web-app-title');
+        metaTitle.setAttribute('content', branding.agencyName);
+        document.head.appendChild(metaTitle);
+      }
+    }
+  }, [branding.agencyName]);
+
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('client');
@@ -296,6 +311,12 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <ClientProvider>
+      {/* PWA Manifest and Meta Tags for Client Dashboard */}
+      <head>
+        <link rel="manifest" href="/api/client-manifest" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <ClientDashboardLayout>{children}</ClientDashboardLayout>
     </ClientProvider>
   );
