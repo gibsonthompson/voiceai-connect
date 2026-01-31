@@ -852,38 +852,7 @@ export default function LandingPage() {
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-transparent rounded-3xl blur-2xl" />
-                <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-8">
-                  <p className="text-sm text-[#fafaf9]/40 uppercase tracking-wider mb-6">Revenue Calculator</p>
-                  
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
-                      <span className="text-[#fafaf9]/60">50 clients × $149/mo</span>
-                      <span className="text-2xl font-semibold">$7,450</span>
-                    </div>
-                    <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
-                      <span className="text-[#fafaf9]/60">Your platform cost</span>
-                      <span className="text-2xl font-semibold text-[#fafaf9]/40">−$199</span>
-                    </div>
-                    <div className="flex justify-between items-baseline pt-2">
-                      <span className="text-[#fafaf9]/80 font-medium">Monthly profit</span>
-                      <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$7,251</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
-                    <p className="text-sm text-emerald-300/80">
-                      <strong className="text-emerald-300">That&apos;s 97% profit margin.</strong> Same $199 platform fee 
-                      whether you have 10 clients or 100. Your revenue scales, your costs don&apos;t.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="order-1 lg:order-2">
+            <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
                 <DollarSign className="h-4 w-4 text-emerald-400" />
                 <span className="text-emerald-300/90">The Opportunity</span>
@@ -913,6 +882,37 @@ export default function LandingPage() {
                     <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1">{stat.label}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+            
+            <div>
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-transparent rounded-3xl blur-2xl" />
+                <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-8">
+                  <p className="text-sm text-[#fafaf9]/40 uppercase tracking-wider mb-6">Revenue Calculator</p>
+                  
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
+                      <span className="text-[#fafaf9]/60">50 clients × $149/mo</span>
+                      <span className="text-2xl font-semibold">$7,450</span>
+                    </div>
+                    <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
+                      <span className="text-[#fafaf9]/60">Your platform cost</span>
+                      <span className="text-2xl font-semibold text-[#fafaf9]/40">−$199</span>
+                    </div>
+                    <div className="flex justify-between items-baseline pt-2">
+                      <span className="text-[#fafaf9]/80 font-medium">Monthly profit</span>
+                      <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$7,251</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
+                    <p className="text-sm text-emerald-300/80">
+                      <strong className="text-emerald-300">That&apos;s 97% profit margin.</strong> Same $199 platform fee 
+                      whether you have 10 clients or 100. Your revenue scales, your costs don&apos;t.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
