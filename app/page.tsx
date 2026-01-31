@@ -6,7 +6,7 @@ import {
   Phone, ArrowRight, Check, Play, Star, Zap, Shield, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Building2, Sparkles, Menu, X, Coffee, Palmtree
+  Building2, Sparkles, Menu, X, Coffee, Palmtree, Target
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import DashboardSandbox from '@/components/dashboard-sandbox';
@@ -724,7 +724,131 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ROI Calculator */}
+      {/* Built-in Leads CRM Section */}
+      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* CRM Mockup */}
+            <div className="relative order-2 lg:order-1">
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
+              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#080808]">
+                  <div className="flex gap-1.5">
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="px-4 py-1 rounded-lg bg-white/[0.03] text-xs text-[#fafaf9]/40 font-mono">
+                      app.youragency.com/leads
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Template Preview */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-blue-400" />
+                      <span className="font-medium text-sm">Email Composer</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">Variables auto-fill</span>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <p className="text-[#fafaf9]/40 text-xs mb-1">Subject</p>
+                      <p className="text-[#fafaf9]/80">Quick question about <span className="text-emerald-400 font-mono text-xs bg-emerald-500/10 px-1 rounded">{'{lead_business_name}'}</span></p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <p className="text-[#fafaf9]/40 text-xs mb-2">Body</p>
+                      <p className="text-[#fafaf9]/60 text-xs leading-relaxed">
+                        Hi <span className="text-emerald-400 font-mono bg-emerald-500/10 px-1 rounded">{'{lead_contact_first_name}'}</span>,<br /><br />
+                        I came across <span className="text-emerald-400 font-mono bg-emerald-500/10 px-1 rounded">{'{lead_business_name}'}</span> while researching <span className="text-emerald-400 font-mono bg-emerald-500/10 px-1 rounded">{'{lead_industry}'}</span> businesses...<br /><br />
+                        Best,<br />
+                        <span className="text-emerald-400 font-mono bg-emerald-500/10 px-1 rounded">{'{agency_owner_name}'}</span>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 mt-4">
+                    <button className="flex-1 py-2 rounded-lg bg-emerald-500 text-[#050505] text-xs font-medium">Copy & Log as Sent</button>
+                    <button className="px-4 py-2 rounded-lg border border-white/10 text-xs text-[#fafaf9]/60">Edit</button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Floating badge */}
+              <div className="absolute -bottom-3 -right-3 px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium shadow-lg shadow-blue-500/30">
+                <Target className="h-4 w-4 inline mr-1.5" />
+                Find clients faster
+              </div>
+            </div>
+            
+            <div className="order-1 lg:order-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+                <Target className="h-4 w-4 text-blue-400" />
+                <span className="text-blue-300/90">All Plans</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
+                Built-in leads CRM.
+                <span className="block text-[#fafaf9]/40">Find and close more clients.</span>
+              </h2>
+              <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
+                Track prospects, send personalized outreach with pre-built templates, and follow up until they convert. 
+                Everything you need to grow your agency—included on all plans.
+              </p>
+              
+              <div className="mt-8 space-y-4">
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <FileText className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">13+ Pre-built Templates</h4>
+                      <p className="text-xs text-[#fafaf9]/50">Email sequences, follow-ups, SMS intros—all written and ready to send.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                      <Zap className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Smart Variable System</h4>
+                      <p className="text-xs text-[#fafaf9]/50"><code className="text-emerald-400">{'{lead_business_name}'}</code>, <code className="text-emerald-400">{'{agency_name}'}</code>—auto-fills from your lead data.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                      <Clock className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Activity Timeline</h4>
+                      <p className="text-xs text-[#fafaf9]/50">Every email, note, and status change logged. Never lose context on a lead.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Link 
+                href="/features/leads-crm"
+                className="inline-flex items-center gap-2 mt-6 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Learn more about the leads CRM
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">

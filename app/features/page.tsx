@@ -9,7 +9,7 @@ import {
   FileAudio, Search, AlertTriangle, Voicemail, Timer,
   Palette, CreditCard, UserPlus, Webhook, Database, Lock,
   Cloud, RefreshCw, Gauge, Mail, Settings, Download,
-  Bot, Layers, CircuitBoard, Play
+  Bot, Layers, CircuitBoard, Play, Target
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -98,6 +98,7 @@ export default function FeaturesIndexPage() {
         { icon: Palette, title: 'Complete White-Label', description: 'Your logo, colors, and domain everywhere. We\'re invisible.', href: '/features/white-label', stat: '100% yours' },
         { icon: Globe, title: 'Marketing Website', description: 'Professional landing page with your branding and pricing.', href: '/features/marketing-site', stat: 'Pro+', badge: 'Pro+' },
         { icon: Play, title: 'Interactive AI Demo', description: 'Demo line where prospects experience AI as their receptionist.', href: '/features/ai-demo', stat: '3x conversion', badge: 'Pro+' },
+        { icon: Target, title: 'Leads CRM', description: 'Track prospects, send personalized outreach, follow up until they convert.', href: '/features/leads-crm', stat: '13+ templates' },
         { icon: CreditCard, title: 'Stripe Connect', description: 'Clients pay you directly. Set any price. Keep 100%.', href: '/features/stripe-connect', stat: 'No fees' },
         { icon: Users, title: 'Client CRM', description: 'View all clients, usage, subscriptions, and revenue.', href: '/features/client-crm', stat: 'Included' },
         { icon: UserPlus, title: 'Auto Provisioning', description: 'Clients go live in 60 seconds. Zero manual setup.', href: '/features/auto-provisioning', stat: '60 seconds' },

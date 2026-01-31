@@ -128,6 +128,70 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
     );
   }
 
+  if (activeTab === 'leads') {
+    const leads = [
+      { id: '1', business_name: 'Ace Garage Doors', contact: 'Tom Wilson', status: 'hot', source: 'Cold Email', lastContact: '2 hours ago' },
+      { id: '2', business_name: 'Comfort Air HVAC', contact: 'Maria Santos', status: 'warm', source: 'LinkedIn', lastContact: '1 day ago' },
+      { id: '3', business_name: 'Quick Fix Plumbing', contact: 'James Lee', status: 'hot', source: 'Referral', lastContact: '3 hours ago' },
+      { id: '4', business_name: 'Bright Smile Dental', contact: 'Dr. Patel', status: 'new', source: 'Website', lastContact: 'Just now' },
+      { id: '5', business_name: 'Summit Roofing', contact: 'Mike Brown', status: 'warm', source: 'Cold Email', lastContact: '2 days ago' },
+    ];
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-semibold">Leads</h1>
+            <p className="text-sm text-[#fafaf9]/50">Track and convert prospects into clients</p>
+          </div>
+          <button className="flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-medium text-[#050505] hover:bg-emerald-400 transition-colors">
+            <Target className="h-3 w-3" />
+            Add Lead
+          </button>
+        </div>
+        
+        {/* Lead Stats */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Total Leads', value: '124', color: '#3b82f6' },
+            { label: 'Hot', value: '18', color: '#ef4444' },
+            { label: 'Warm', value: '42', color: '#f59e0b' },
+            { label: 'Converted', value: '47', color: '#10b981' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+              <p className="text-lg font-semibold" style={{ color: stat.color }}>{stat.value}</p>
+              <p className="text-[10px] text-[#fafaf9]/40">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Leads List */}
+        <div className="space-y-2">
+          {leads.map((lead) => (
+            <div key={lead.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 hover:bg-white/[0.04] cursor-pointer transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10">
+                  <span className="text-xs font-medium text-blue-400">{lead.business_name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{lead.business_name}</p>
+                  <p className="text-xs text-[#fafaf9]/40">{lead.contact} • {lead.source}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  lead.status === 'hot' ? 'bg-red-500/10 text-red-400' : 
+                  lead.status === 'warm' ? 'bg-amber-500/10 text-amber-400' : 
+                  'bg-blue-500/10 text-blue-400'
+                }`}>{lead.status}</span>
+                <span className="text-[10px] text-[#fafaf9]/30">{lead.lastContact}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Default: Dashboard
   return (
     <div className="p-6">
@@ -350,6 +414,7 @@ export default function DashboardSandbox() {
   const agencyNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'clients', label: 'Clients', icon: Users },
+    { id: 'leads', label: 'Leads', icon: Target },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -406,14 +471,14 @@ export default function DashboardSandbox() {
           {view === 'agency' ? (
             <>
               {/* Agency Sidebar */}
-              <div className="w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0">
+              <div className="w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 relative flex flex-col">
                 <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5">
                     <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
                   </div>
                   <span className="font-semibold text-sm text-[#fafaf9]">Your Agency</span>
                 </div>
-                <nav className="p-3 space-y-1">
+                <nav className="p-3 space-y-1 flex-1">
                   {agencyNavItems.map((item) => (
                     <button
                       key={item.id}
@@ -429,7 +494,7 @@ export default function DashboardSandbox() {
                     </button>
                   ))}
                 </nav>
-                <div className="absolute bottom-4 left-4 right-4">
+                <div className="p-3 border-t border-white/[0.06]">
                   <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-2">
                     <p className="text-[10px] text-emerald-400/80">Current Plan</p>
                     <p className="text-xs font-medium text-emerald-300">Professional</p>
@@ -444,14 +509,14 @@ export default function DashboardSandbox() {
           ) : (
             <>
               {/* Client Sidebar */}
-              <div className="w-56 border-r flex-shrink-0" style={{ backgroundColor: 'rgb(23, 90, 72)' }}>
+              <div className="w-56 border-r flex-shrink-0 flex flex-col" style={{ backgroundColor: 'rgb(23, 90, 72)' }}>
                 <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
                     <Phone className="h-4 w-4 text-white" />
                   </div>
                   <span className="font-medium text-sm text-white truncate">Smith Plumbing</span>
                 </div>
-                <nav className="p-3 space-y-1">
+                <nav className="p-3 space-y-1 flex-1">
                   {clientNavItems.map((item) => (
                     <button
                       key={item.id}
@@ -467,7 +532,7 @@ export default function DashboardSandbox() {
                     </button>
                   ))}
                 </nav>
-                <div className="absolute bottom-4 left-4 right-4">
+                <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <div className="rounded-lg border p-2" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
                     <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Powered by</p>
                     <p className="text-xs font-medium text-white">AI Voice Pro</p>
@@ -486,7 +551,7 @@ export default function DashboardSandbox() {
       {/* Caption */}
       <p className="text-center text-sm text-[#fafaf9]/40 mt-4">
         {view === 'agency' 
-          ? 'Your agency dashboard — manage clients, track revenue, monitor calls'
+          ? 'Your agency dashboard — manage clients, track leads, monitor revenue'
           : 'What your clients see — branded to your agency, simple & clean'
         }
       </p>

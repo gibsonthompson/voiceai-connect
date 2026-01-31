@@ -26,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
   })
 
-  // Feature Pages (31)
+  // Feature Pages (32)
   const featureSlugs = [
     '24-7-coverage',
     'ai-demo',
@@ -45,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'industries',
     'instant-answer',
     'knowledge-base',
+    'leads-crm',
     'marketing-site',
     'mobile-dashboard',
     'notifications',
