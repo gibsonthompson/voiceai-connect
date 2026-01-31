@@ -167,13 +167,18 @@ function SetPasswordContent() {
 
       setSuccess(true);
 
+      // Determine redirect destination
       setTimeout(() => {
         if (returnTo) {
+          // Explicit return URL takes priority
           router.push(returnTo);
         } else if (data.user?.role === 'client') {
+          // Client goes to client dashboard
           router.push('/client/dashboard');
         } else if (data.user?.role === 'agency_owner' || data.user?.role === 'agency_staff') {
-          router.push('/agency/dashboard');
+          // Agency owner/staff coming from onboarding - send to plans
+          // Plans page will redirect to dashboard if already subscribed
+          router.push('/plans');
         } else {
           router.push('/');
         }
@@ -216,7 +221,7 @@ function SetPasswordContent() {
               <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Set!</h1>
-            <p className="text-[#fafaf9]/50">Redirecting you to your dashboard...</p>
+            <p className="text-[#fafaf9]/50">Redirecting you...</p>
             <Loader2 className="h-6 w-6 animate-spin mx-auto mt-4" style={{ color: primaryColor }} />
           </div>
         </div>

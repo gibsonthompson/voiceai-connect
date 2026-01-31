@@ -15,7 +15,15 @@ function GoogleSuccessContent() {
     const redirect = searchParams.get('redirect') || '/agency/dashboard';
 
     if (token) {
-      // Store auth token
+      // IMPORTANT: Clear ALL old auth/agency data first to prevent wrong agency bug
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('agency_password_token');
+      localStorage.removeItem('onboarding_agency_id');
+      localStorage.removeItem('user');
+      localStorage.removeItem('agency');
+      localStorage.removeItem('client');
+      
+      // Now store fresh data
       localStorage.setItem('auth_token', token);
       
       // Store password token if provided (for optional password setup later)
