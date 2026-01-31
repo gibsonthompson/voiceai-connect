@@ -144,8 +144,25 @@ function ClientLoginContent() {
     );
   }
 
+  // Input styles - neutral focus, no colored borders
+  const inputClassName = "w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/30 focus:bg-white/[0.07] transition-colors";
+  const inputWithButtonClassName = "w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-12 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/30 focus:bg-white/[0.07] transition-colors";
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
+      {/* Override any autofill styling */}
+      <style jsx global>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
+          -webkit-text-fill-color: #f5f5f0 !important;
+          border-color: rgba(255, 255, 255, 0.2) !important;
+          caret-color: #f5f5f0 !important;
+        }
+      `}</style>
+      
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
@@ -220,7 +237,8 @@ function ClientLoginContent() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
+                    autoComplete="email"
+                    className={inputClassName}
                   />
                 </div>
               </div>
@@ -238,7 +256,8 @@ function ClientLoginContent() {
                     value={formData.password}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-12 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/20 transition-colors"
+                    autoComplete="current-password"
+                    className={inputWithButtonClassName}
                   />
                   <button
                     type="button"
@@ -253,8 +272,7 @@ function ClientLoginContent() {
               <div className="flex items-center justify-end">
                 <Link 
                   href="/auth/forgot-password"
-                  className="text-sm hover:underline transition-colors"
-                  style={{ color: accentColor }}
+                  className="text-sm text-[#f5f5f0]/50 hover:text-[#f5f5f0]/70 transition-colors"
                 >
                   Forgot password?
                 </Link>

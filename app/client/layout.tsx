@@ -51,7 +51,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close sidebar on route change
+  // Close sidebar on route change - this handles sidebar closing automatically
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
@@ -240,7 +240,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           </span>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - NO onClick on Links, useEffect handles sidebar close */}
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.href);
@@ -248,7 +248,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setSidebarOpen(false)}
                 className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors"
                 style={{
                   backgroundColor: active ? 'rgba(255,255,255,0.15)' : 'transparent',
