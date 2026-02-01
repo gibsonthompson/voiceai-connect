@@ -137,7 +137,7 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS - Updated with Agency Details as step 1
+// STEP DEFINITIONS
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
@@ -155,7 +155,6 @@ const steps = [
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
     <div className="mb-10 sm:mb-12">
-      {/* Desktop progress */}
       <div className="hidden sm:flex items-center justify-center gap-1">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center">
@@ -185,7 +184,6 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
         ))}
       </div>
 
-      {/* Mobile progress */}
       <div className="sm:hidden">
         <div className="flex items-center justify-center gap-1.5 mb-4">
           {steps.map((step) => (
@@ -199,7 +197,6 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
         </div>
       </div>
 
-      {/* Current step label */}
       <div className="flex justify-center mt-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06]">
           <span className="text-emerald-400 text-sm font-medium">Step {currentStep}</span>
@@ -225,7 +222,6 @@ function OnboardingContent() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyData, setAgencyData] = useState<any>(null);
   
-  // Form state - NEW: Agency details
   const [agencyDetails, setAgencyDetails] = useState({
     name: '',
     phone: '',
@@ -251,7 +247,6 @@ function OnboardingContent() {
     limitGrowth: 500,
   });
 
-  // Fetch agency data on mount
   useEffect(() => {
     const fetchAgency = async () => {
       if (!sessionId) {
@@ -290,9 +285,6 @@ function OnboardingContent() {
         const data = await response.json();
         setAgencyData(data.agency);
         
-        // Determine which step based on what's filled
-        // If name is still temp/empty, start at step 1
-        // Otherwise use saved step
         if (!data.agency.name || data.agency.name.includes("'s Agency") || data.agency.name === 'My Agency') {
           setCurrentStep(1);
         } else {
@@ -389,7 +381,7 @@ function OnboardingContent() {
     let stepData = {};
     
     switch (currentStep) {
-      case 1: // Agency Details (NEW)
+      case 1:
         if (!agencyDetails.name.trim()) {
           setError('Please enter your agency name');
           return;
@@ -399,17 +391,17 @@ function OnboardingContent() {
           phone: agencyDetails.phone,
         };
         break;
-      case 2: // Logo
+      case 2:
         stepData = { logo_url: logoPreview || logoUrl };
         break;
-      case 3: // Colors
+      case 3:
         stepData = {
           primary_color: colors.primary,
           secondary_color: colors.secondary,
           accent_color: colors.accent,
         };
         break;
-      case 4: // Pricing
+      case 4:
         stepData = {
           price_starter: pricing.starter * 100,
           price_pro: pricing.pro * 100,
@@ -419,7 +411,7 @@ function OnboardingContent() {
           limit_growth: pricing.limitGrowth,
         };
         break;
-      case 5: // Stripe
+      case 5:
         break;
     }
 
@@ -470,48 +462,48 @@ function OnboardingContent() {
     setCurrentStep(6);
   };
 
+  // FIXED: Pass agency ID to plan page
   const handleSetPassword = () => {
     const token = localStorage.getItem('agency_password_token');
+    const agencyIdForPlan = agencyId;
     
-    if (token) {
-      localStorage.removeItem('onboarding_agency_id');
+    if (token && agencyIdForPlan) {
       localStorage.removeItem('agency_password_token');
       
-      const returnTo = encodeURIComponent('/signup/plan');
+      const returnTo = encodeURIComponent(`/signup/plan?agency=${agencyIdForPlan}`);
       router.push(`/auth/set-password?token=${token}&returnTo=${returnTo}`);
-    } else {
+    } else if (agencyIdForPlan) {
       localStorage.removeItem('onboarding_agency_id');
-      router.push('/agency/dashboard');
+      router.push(`/signup/plan?agency=${agencyIdForPlan}`);
+    } else {
+      router.push('/signup');
     }
   };
 
+  // FIXED: Go to plan page with agency ID
   const handleComplete = () => {
-    localStorage.removeItem('onboarding_agency_id');
-    localStorage.removeItem('agency_password_token');
-    router.push('/signup/plan');
+    if (agencyId) {
+      localStorage.removeItem('onboarding_agency_id');
+      localStorage.removeItem('agency_password_token');
+      router.push(`/signup/plan?agency=${agencyId}`);
+    } else {
+      router.push('/signup');
+    }
   };
 
-  // ============================================================================
-  // STEP RENDERERS
-  // ============================================================================
   const renderStepContent = () => {
     switch (currentStep) {
-      // NEW STEP 1: Agency Details
       case 1:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Name Your Agency</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                This is how clients will see your brand
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">This is how clients will see your brand</p>
             </div>
 
             <div className="max-w-md mx-auto space-y-5">
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
-                  Agency Name
-                </label>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Agency Name</label>
                 <div className="relative">
                   <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
                   <input
@@ -522,15 +514,11 @@ function OnboardingContent() {
                     className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
                   />
                 </div>
-                <p className="mt-2 text-xs text-[#fafaf9]/40">
-                  This appears on your signup pages, client dashboard, and emails
-                </p>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">This appears on your signup pages, client dashboard, and emails</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
                   <input
@@ -541,13 +529,10 @@ function OnboardingContent() {
                     className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
                   />
                 </div>
-                <p className="mt-2 text-xs text-[#fafaf9]/40">
-                  For support and account verification (optional)
-                </p>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">For support and account verification (optional)</p>
               </div>
             </div>
 
-            {/* Preview */}
             <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Preview</p>
               <div className="flex items-center gap-3">
@@ -555,9 +540,7 @@ function OnboardingContent() {
                   <Building className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#fafaf9]">
-                    {agencyDetails.name || 'Your Agency Name'}
-                  </p>
+                  <p className="font-medium text-[#fafaf9]">{agencyDetails.name || 'Your Agency Name'}</p>
                   <p className="text-sm text-[#fafaf9]/50">AI Voice Agency</p>
                 </div>
               </div>
@@ -565,14 +548,12 @@ function OnboardingContent() {
           </div>
         );
 
-      case 2: // Logo (was step 1)
+      case 2:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Upload Your Logo</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                This appears on your client portal, emails, and marketing site
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">This appears on your client portal, emails, and marketing site</p>
             </div>
 
             <div className="flex flex-col items-center gap-6">
@@ -580,11 +561,7 @@ function OnboardingContent() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-amber-500/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center bg-white/[0.02] overflow-hidden transition-colors group-hover:border-white/30">
                   {logoPreview || logoUrl ? (
-                    <img 
-                      src={logoPreview || logoUrl} 
-                      alt="Logo preview" 
-                      className="w-full h-full object-contain p-4"
-                    />
+                    <img src={logoPreview || logoUrl} alt="Logo preview" className="w-full h-full object-contain p-4" />
                   ) : (
                     <div className="text-center">
                       <Upload className="w-10 h-10 text-[#fafaf9]/20 mx-auto mb-2" />
@@ -595,21 +572,14 @@ function OnboardingContent() {
               </div>
 
               <label className="cursor-pointer group">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
+                <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.08] px-6 py-3 text-sm font-medium hover:bg-white/[0.1] hover:border-white/[0.15] transition-all group-hover:scale-[1.02]">
                   <Upload className="w-4 h-4" />
                   {logoPreview || logoUrl ? 'Change Logo' : 'Upload Logo'}
                 </span>
               </label>
 
-              <p className="text-sm text-[#fafaf9]/30">
-                PNG, JPG or SVG • Recommended: 400×400px
-              </p>
+              <p className="text-sm text-[#fafaf9]/30">PNG, JPG or SVG • Recommended: 400×400px</p>
 
               {extractingColors && (
                 <div className="flex items-center gap-2 text-sm text-emerald-400 animate-pulse">
@@ -626,12 +596,7 @@ function OnboardingContent() {
                   </div>
                   <div className="flex gap-2 justify-center">
                     {[colors.primary, colors.secondary, colors.accent].map((color, i) => (
-                      <div 
-                        key={i}
-                        className="w-10 h-10 rounded-xl border border-white/10 shadow-lg" 
-                        style={{ backgroundColor: color }}
-                        title={['Primary', 'Secondary', 'Accent'][i]}
-                      />
+                      <div key={i} className="w-10 h-10 rounded-xl border border-white/10 shadow-lg" style={{ backgroundColor: color }} title={['Primary', 'Secondary', 'Accent'][i]} />
                     ))}
                   </div>
                 </div>
@@ -640,14 +605,12 @@ function OnboardingContent() {
           </div>
         );
 
-      case 3: // Colors (was step 2)
+      case 3:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Brand Colors</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                Customize how your portal looks to clients
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">Customize how your portal looks to clients</p>
             </div>
 
             {(logoPreview || logoUrl) && (
@@ -667,11 +630,7 @@ function OnboardingContent() {
                   disabled={extractingColors}
                   className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50"
                 >
-                  {extractingColors ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
+                  {extractingColors ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   Re-extract from logo
                 </button>
               </div>
@@ -683,10 +642,7 @@ function OnboardingContent() {
                 { key: 'secondary', label: 'Secondary Color', desc: 'Hover states & backgrounds' },
                 { key: 'accent', label: 'Accent Color', desc: 'Highlights & links' },
               ].map(({ key, label, desc }) => (
-                <div 
-                  key={key} 
-                  className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]"
-                >
+                <div key={key} className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                   <div className="relative">
                     <input
                       type="color"
@@ -713,37 +669,20 @@ function OnboardingContent() {
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] max-w-md mx-auto">
               <p className="text-xs text-[#fafaf9]/40 mb-4 uppercase tracking-wider">Preview</p>
               <div className="flex flex-wrap gap-3">
-                <button 
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-transform hover:scale-105"
-                  style={{ backgroundColor: colors.primary, color: '#fff' }}
-                >
-                  Primary Button
-                </button>
-                <button 
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-transform hover:scale-105"
-                  style={{ backgroundColor: colors.secondary, color: '#fff' }}
-                >
-                  Secondary
-                </button>
-                <span 
-                  className="px-4 py-2 text-sm font-medium underline underline-offset-2"
-                  style={{ color: colors.accent }}
-                >
-                  Accent Link
-                </span>
+                <button className="px-4 py-2 rounded-lg text-sm font-medium transition-transform hover:scale-105" style={{ backgroundColor: colors.primary, color: '#fff' }}>Primary Button</button>
+                <button className="px-4 py-2 rounded-lg text-sm font-medium transition-transform hover:scale-105" style={{ backgroundColor: colors.secondary, color: '#fff' }}>Secondary</button>
+                <span className="px-4 py-2 text-sm font-medium underline underline-offset-2" style={{ color: colors.accent }}>Accent Link</span>
               </div>
             </div>
           </div>
         );
 
-      case 4: // Pricing (was step 3)
+      case 4:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Pricing</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                What you charge clients — you keep 100%
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">What you charge clients — you keep 100%</p>
             </div>
 
             <div className="space-y-4 max-w-2xl mx-auto">
@@ -752,27 +691,14 @@ function OnboardingContent() {
                 { key: 'pro', label: 'Pro Plan', limitKey: 'limitPro', recommended: true },
                 { key: 'growth', label: 'Growth Plan', limitKey: 'limitGrowth', recommended: false },
               ].map(({ key, label, limitKey, recommended }) => (
-                <div 
-                  key={key} 
-                  className={`p-5 rounded-xl border transition-all ${
-                    recommended 
-                      ? 'border-emerald-500/30 bg-emerald-500/[0.03]' 
-                      : 'border-white/[0.06] bg-white/[0.02]'
-                  }`}
-                >
+                <div key={key} className={`p-5 rounded-xl border transition-all ${recommended ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <p className="font-medium">{label}</p>
-                    {recommended && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
-                        Most Popular
-                      </span>
-                    )}
+                    {recommended && <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Most Popular</span>}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-[#fafaf9]/40 mb-2">
-                        Monthly Price
-                      </label>
+                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Monthly Price</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 text-sm">$</span>
                         <input
@@ -784,9 +710,7 @@ function OnboardingContent() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-[#fafaf9]/40 mb-2">
-                        Calls / Month
-                      </label>
+                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Calls / Month</label>
                       <input
                         type="number"
                         value={pricing[limitKey as keyof typeof pricing]}
@@ -802,21 +726,18 @@ function OnboardingContent() {
             <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] max-w-2xl mx-auto">
               <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-[#fafaf9]/60">
-                <span className="text-amber-400 font-medium">Tip:</span> Most agencies charge $99-149 for Pro plans. 
-                A missed call can cost a business $500+, so pricing at $149/mo is a no-brainer for them.
+                <span className="text-amber-400 font-medium">Tip:</span> Most agencies charge $99-149 for Pro plans. A missed call can cost a business $500+, so pricing at $149/mo is a no-brainer for them.
               </p>
             </div>
           </div>
         );
 
-      case 5: // Stripe (was step 4)
+      case 5:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Connect Stripe</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                Receive payments directly from clients
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">Receive payments directly from clients</p>
             </div>
 
             <div className="max-w-md mx-auto space-y-6">
@@ -827,10 +748,7 @@ function OnboardingContent() {
                   </div>
                   <div>
                     <h3 className="font-medium">Stripe Connect</h3>
-                    <p className="mt-1 text-sm text-[#fafaf9]/50">
-                      Client payments go directly to your Stripe account. 
-                      You keep 100% minus standard Stripe fees (2.9% + 30¢).
-                    </p>
+                    <p className="mt-1 text-sm text-[#fafaf9]/50">Client payments go directly to your Stripe account. You keep 100% minus standard Stripe fees (2.9% + 30¢).</p>
                   </div>
                 </div>
               </div>
@@ -853,17 +771,14 @@ function OnboardingContent() {
                 )}
               </button>
 
-              <button
-                onClick={handleSkipConnect}
-                className="w-full text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/60 transition-colors py-2"
-              >
+              <button onClick={handleSkipConnect} className="w-full text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/60 transition-colors py-2">
                 Skip for now — set up later in settings
               </button>
             </div>
           </div>
         );
 
-      case 6: // Password (was step 5)
+      case 6:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -871,16 +786,12 @@ function OnboardingContent() {
                 <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Secure Your Account</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                Create a password to access your dashboard
-              </p>
+              <p className="mt-2 text-[#fafaf9]/50">Create a password to access your dashboard</p>
             </div>
 
             <div className="max-w-md mx-auto space-y-6">
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <p className="text-sm text-[#fafaf9]/60">
-                  You're almost done! Click below to set your password and start managing your AI voice agency.
-                </p>
+                <p className="text-sm text-[#fafaf9]/60">You're almost done! Click below to set your password and select your plan.</p>
               </div>
 
               <button
@@ -894,7 +805,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 7: // Complete (was step 6)
+      case 7:
         return (
           <div className="space-y-8 text-center">
             <div className="relative">
@@ -907,35 +818,15 @@ function OnboardingContent() {
             </div>
 
             <div>
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">You're All Set!</h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                Your agency is ready to start signing up clients
-              </p>
-            </div>
-
-            <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-left">
-              <h3 className="font-medium mb-4">What's Next</h3>
-              <ul className="space-y-3">
-                {[
-                  'Share your signup link with potential clients',
-                  'Customize your portal further in settings',
-                  'Set up a custom domain (Professional plan)',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-[#fafaf9]/70">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0 text-emerald-400 text-xs font-medium">
-                      {i + 1}
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Almost There!</h2>
+              <p className="mt-2 text-[#fafaf9]/50">Select your plan to complete setup</p>
             </div>
 
             <button
               onClick={handleComplete}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
             >
-              Go to Dashboard
+              Choose Your Plan
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
