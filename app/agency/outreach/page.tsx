@@ -23,6 +23,16 @@ interface Template {
   created_at: string;
 }
 
+// Helper to determine text color based on background luminance
+const getContrastColor = (hexColor: string): string => {
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#050505' : '#ffffff';
+};
+
 export default function OutreachPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -34,6 +44,7 @@ export default function OutreachPage() {
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
+  const buttonTextColor = getContrastColor(primaryColor);
 
   // Theme-based colors
   const textColor = isDark ? '#fafaf9' : '#111827';
@@ -159,7 +170,7 @@ export default function OutreachPage() {
           <Link
             href="/agency/outreach/templates/new"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto"
-            style={{ backgroundColor: primaryColor, color: '#050505' }}
+            style={{ backgroundColor: primaryColor, color: buttonTextColor }}
           >
             <Plus className="h-4 w-4" />
             New Template
@@ -270,7 +281,7 @@ export default function OutreachPage() {
           <Link
             href="/agency/outreach/templates/new"
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-            style={{ backgroundColor: primaryColor, color: '#050505' }}
+            style={{ backgroundColor: primaryColor, color: buttonTextColor }}
           >
             <Plus className="h-4 w-4" />
             Create Template

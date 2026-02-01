@@ -47,6 +47,16 @@ const SOURCE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
+// Helper to determine text color based on background luminance
+const getContrastColor = (hexColor: string): string => {
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#050505' : '#ffffff';
+};
+
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -89,6 +99,7 @@ export default function LeadDetailPage() {
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
+  const buttonTextColor = getContrastColor(primaryColor);
 
   // Theme-based colors
   const textColor = isDark ? '#fafaf9' : '#111827';
@@ -377,7 +388,7 @@ export default function LeadDetailPage() {
               onClick={handleSave}
               disabled={saving}
               className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
-              style={{ backgroundColor: primaryColor, color: '#050505' }}
+              style={{ backgroundColor: primaryColor, color: buttonTextColor }}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
