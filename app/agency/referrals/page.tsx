@@ -352,7 +352,7 @@ export default function ReferralsPage() {
           <h1 className="text-2xl font-semibold">Referral Program</h1>
         </div>
         <p style={{ color: mutedTextColor }}>
-          Earn 20% recurring commission for every agency you refer
+          Earn 40% recurring commission for every agency you refer
         </p>
       </div>
 
@@ -710,7 +710,7 @@ export default function ReferralsPage() {
           {[
             { num: '1', title: 'Share Your Link', desc: 'Share your unique referral link with other agency owners' },
             { num: '2', title: 'They Sign Up', desc: "When they create an agency using your link, they're linked to you" },
-            { num: '3', title: 'Earn 20% Forever', desc: 'Earn 20% of their subscription fee every month they stay subscribed' },
+            { num: '3', title: 'Earn 40% Forever', desc: 'Earn 40% of their subscription fee every month they stay subscribed' },
           ].map((step) => (
             <div key={step.num} className="flex gap-4">
               <div 
