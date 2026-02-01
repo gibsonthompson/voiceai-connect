@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
-export async function POST(request: Request, { params }: { params: { agencyId: string } }) {
+export async function POST(request, { params }) {
   try {
     const { agencyId } = await params
     const { domain } = await request.json()
@@ -137,11 +137,11 @@ export async function POST(request: Request, { params }: { params: { agencyId: s
 
   } catch (error) {
     console.error('Add domain error:', error)
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { agencyId: string } }) {
+export async function DELETE(request, { params }) {
   try {
     const { agencyId } = await params
 
@@ -219,7 +219,7 @@ export async function DELETE(request: Request, { params }: { params: { agencyId:
 
   } catch (error) {
     console.error('Remove domain error:', error)
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
@@ -228,7 +228,7 @@ export async function DELETE(request: Request, { params }: { params: { agencyId:
  * CRITICAL: Uses /v6/domains/{domain}/config endpoint
  * This returns recommendedIPv4 and recommendedCNAME with actual values
  */
-async function fetchVercelDnsConfig(domain: string) {
+async function fetchVercelDnsConfig(domain) {
   const DEFAULT_CONFIG = {
     aRecord: '76.76.21.21',
     cnameRecord: 'cname.vercel-dns.com',
@@ -266,7 +266,7 @@ async function fetchVercelDnsConfig(domain: string) {
 
     // Parse recommendedIPv4: [{ rank: 1, value: ["216.198.79.1"] }]
     if (data.recommendedIPv4 && Array.isArray(data.recommendedIPv4)) {
-      const preferred = data.recommendedIPv4.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedIPv4.find(r => r.rank === 1)
       if (preferred?.value?.[0]) {
         aRecord = preferred.value[0]
         console.log(`✅ Found project-specific A record: ${aRecord}`)
@@ -275,7 +275,7 @@ async function fetchVercelDnsConfig(domain: string) {
 
     // Parse recommendedCNAME: [{ rank: 1, value: "xxx.vercel-dns-xxx.com" }]
     if (data.recommendedCNAME && Array.isArray(data.recommendedCNAME)) {
-      const preferred = data.recommendedCNAME.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedCNAME.find(r => r.rank === 1)
       if (preferred?.value) {
         cnameRecord = preferred.value
         console.log(`✅ Found project-specific CNAME: ${cnameRecord}`)

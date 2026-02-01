@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
-export async function GET(request: Request) {
+export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const domain = searchParams.get('domain')
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
     // Parse recommendedIPv4: [{ rank: 1, value: ["216.198.79.1"] }]
     if (data.recommendedIPv4 && Array.isArray(data.recommendedIPv4)) {
-      const preferred = data.recommendedIPv4.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedIPv4.find(r => r.rank === 1)
       if (preferred?.value?.[0]) {
         aRecord = preferred.value[0]
         console.log(`✅ Found A record: ${aRecord}`)
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     // Parse recommendedCNAME: [{ rank: 1, value: "xxx.vercel-dns-xxx.com" }]
     if (data.recommendedCNAME && Array.isArray(data.recommendedCNAME)) {
-      const preferred = data.recommendedCNAME.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedCNAME.find(r => r.rank === 1)
       if (preferred?.value) {
         cnameRecord = preferred.value
         console.log(`✅ Found CNAME: ${cnameRecord}`)

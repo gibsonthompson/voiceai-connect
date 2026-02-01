@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
-export async function POST(request: Request, { params }: { params: { agencyId: string } }) {
+export async function POST(request, { params }) {
   try {
     const { agencyId } = await params
 
@@ -79,12 +79,12 @@ export async function POST(request: Request, { params }: { params: { agencyId: s
     console.error('Verify domain error:', error)
     return NextResponse.json({ 
       verified: false,
-      error: (error as Error).message 
+      error: error.message 
     }, { status: 500 })
   }
 }
 
-async function checkVercelDomainStatus(domain: string) {
+async function checkVercelDomainStatus(domain) {
   if (!VERCEL_API_TOKEN || !VERCEL_PROJECT_ID) {
     return { verified: false, error: 'Vercel not configured' }
   }
@@ -108,11 +108,11 @@ async function checkVercelDomainStatus(domain: string) {
     return { verified: false, details: data.verification }
 
   } catch (error) {
-    return { verified: false, error: (error as Error).message }
+    return { verified: false, error: error.message }
   }
 }
 
-async function checkDnsPropagation(domain: string, expectedARecord: string) {
+async function checkDnsPropagation(domain, expectedARecord) {
   // List of valid Vercel IPs (including project-specific ones)
   const VERCEL_IPS = [
     '76.76.21.21',
@@ -128,7 +128,7 @@ async function checkDnsPropagation(domain: string, expectedARecord: string) {
     const aData = await aResponse.json()
     
     if (aData.Answer) {
-      const aRecord = aData.Answer.find((a: any) => a.type === 1)
+      const aRecord = aData.Answer.find(a => a.type === 1)
       if (aRecord && VERCEL_IPS.includes(aRecord.data)) {
         console.log(`✅ A record found: ${aRecord.data}`)
         return { propagated: true, ip: aRecord.data }
@@ -140,7 +140,7 @@ async function checkDnsPropagation(domain: string, expectedARecord: string) {
     const cnameData = await cnameResponse.json()
     
     if (cnameData.Answer) {
-      const cnameRecord = cnameData.Answer.find((a: any) => a.type === 5)
+      const cnameRecord = cnameData.Answer.find(a => a.type === 5)
       if (cnameRecord && cnameRecord.data.includes('vercel')) {
         console.log(`✅ CNAME found: ${cnameRecord.data}`)
         return { propagated: true, value: cnameRecord.data }
@@ -160,7 +160,7 @@ async function checkDnsPropagation(domain: string, expectedARecord: string) {
  * Fetch project-specific DNS values from Vercel
  * Uses /v6/domains/{domain}/config endpoint
  */
-async function fetchVercelDnsConfig(domain: string) {
+async function fetchVercelDnsConfig(domain) {
   const DEFAULT_CONFIG = {
     aRecord: '76.76.21.21',
     cnameRecord: 'cname.vercel-dns.com',
@@ -191,7 +191,7 @@ async function fetchVercelDnsConfig(domain: string) {
 
     // Parse recommendedIPv4: [{ rank: 1, value: ["216.198.79.1"] }]
     if (data.recommendedIPv4 && Array.isArray(data.recommendedIPv4)) {
-      const preferred = data.recommendedIPv4.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedIPv4.find(r => r.rank === 1)
       if (preferred?.value?.[0]) {
         aRecord = preferred.value[0]
       }
@@ -199,7 +199,7 @@ async function fetchVercelDnsConfig(domain: string) {
 
     // Parse recommendedCNAME: [{ rank: 1, value: "xxx.vercel-dns-xxx.com" }]
     if (data.recommendedCNAME && Array.isArray(data.recommendedCNAME)) {
-      const preferred = data.recommendedCNAME.find((r: any) => r.rank === 1)
+      const preferred = data.recommendedCNAME.find(r => r.rank === 1)
       if (preferred?.value) {
         cnameRecord = preferred.value
       }
