@@ -38,7 +38,6 @@ interface Agency {
 
 // Platform default demo phone number
 const PLATFORM_DEMO_PHONE = '(770) 809-2820';
-const PLATFORM_DEMO_PHONE_RAW = '+17708092820';
 
 // Set dynamic favicon
 function setFavicon(url: string) {
@@ -246,9 +245,6 @@ export default function AgencySiteHomePage() {
 
   // Demo phone: use agency's demo_phone, fallback to support_phone, fallback to platform default
   const demoPhone = agency.demo_phone || PLATFORM_DEMO_PHONE;
-  const demoPhoneRaw = agency.demo_phone 
-    ? agency.demo_phone.replace(/\D/g, '')
-    : PLATFORM_DEMO_PHONE_RAW;
 
   // Build marketing config from agency data
   const marketingConfig: Partial<MarketingConfig> = {
@@ -269,7 +265,6 @@ export default function AgencySiteHomePage() {
       subtitle: agency.website_subheadline || `AI Receptionist Starting at $${starterPrice}/month`,
       description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
       demoPhone: demoPhone,
-      demoPhoneRaw: demoPhoneRaw,
       demoInstructions: "Call now to hear our AI in action. Tell it about your business and see how it handles calls.",
       trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
     },
