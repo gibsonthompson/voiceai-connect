@@ -262,8 +262,33 @@ export default function AgencySettingsPage() {
   const stripeDisplay = getStripeStatusDisplay();
   const primaryColorValue = branding.primaryColor || '#10b981';
 
+  // Dynamic styles for selection and focus - uses agency primary color
+  const dynamicStyles = `
+    .agency-settings ::selection {
+      background-color: ${primaryColorValue}40;
+      color: inherit;
+    }
+    .agency-settings ::-moz-selection {
+      background-color: ${primaryColorValue}40;
+      color: inherit;
+    }
+    .agency-settings input:focus,
+    .agency-settings select:focus,
+    .agency-settings textarea:focus {
+      outline: none;
+      border-color: ${primaryColorValue} !important;
+      box-shadow: 0 0 0 3px ${primaryColorValue}20 !important;
+    }
+    .agency-settings input::selection,
+    .agency-settings textarea::selection {
+      background-color: ${primaryColorValue}40;
+    }
+  `;
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="agency-settings p-4 sm:p-6 lg:p-8">
+      <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
+      
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
@@ -348,7 +373,7 @@ export default function AgencySettingsPage() {
                     type="text"
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none"
+                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
                     style={{ 
                       backgroundColor: inputBg, 
                       border: `1px solid ${inputBorder}`,
@@ -476,7 +501,7 @@ export default function AgencySettingsPage() {
                           type="text"
                           value={color.value}
                           onChange={(e) => color.setter(e.target.value)}
-                          className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors focus:outline-none"
+                          className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
                           style={{ 
                             backgroundColor: inputBg, 
                             border: `1px solid ${inputBorder}`,
@@ -539,7 +564,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={priceStarter}
                           onChange={(e) => setPriceStarter(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#f9fafb', 
                             border: `1px solid ${inputBorder}`,
@@ -553,7 +578,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={limitStarter}
                           onChange={(e) => setLimitStarter(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#f9fafb', 
                             border: `1px solid ${inputBorder}`,
@@ -588,7 +613,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={pricePro}
                           onChange={(e) => setPricePro(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#ffffff', 
                             border: `1px solid ${inputBorder}`,
@@ -602,7 +627,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={limitPro}
                           onChange={(e) => setLimitPro(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#ffffff', 
                             border: `1px solid ${inputBorder}`,
@@ -626,7 +651,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={priceGrowth}
                           onChange={(e) => setPriceGrowth(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#f9fafb', 
                             border: `1px solid ${inputBorder}`,
@@ -640,7 +665,7 @@ export default function AgencySettingsPage() {
                           type="number"
                           value={limitGrowth}
                           onChange={(e) => setLimitGrowth(e.target.value)}
-                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm"
                           style={{ 
                             backgroundColor: isDark ? '#050505' : '#f9fafb', 
                             border: `1px solid ${inputBorder}`,

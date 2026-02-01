@@ -14,6 +14,8 @@ interface Agency {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  website_theme?: 'light' | 'dark' | 'auto' | null;
+  logo_background_color?: string | null;
 }
 
 const isLightColor = (hex: string): boolean => {
@@ -136,47 +138,90 @@ function ClientLoginContent() {
   const accentColor = agency?.accent_color || '#3b82f6';
   const primaryLight = isLightColor(primaryColor);
 
+  // Theme detection - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+
+  // Theme-based colors
+  const bgColor = isDark ? '#0a0a0a' : '#ffffff';
+  const textColor = isDark ? '#f5f5f0' : '#111827';
+  const textMuted = isDark ? 'rgba(245,245,240,0.5)' : '#6b7280';
+  const textSubtle = isDark ? 'rgba(245,245,240,0.3)' : '#9ca3af';
+  const textLink = isDark ? 'rgba(245,245,240,0.6)' : '#6b7280';
+  const textLinkHover = isDark ? '#f5f5f0' : '#111827';
+  const cardBg = isDark ? '#111111' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const headerBg = isDark ? 'rgba(10,10,10,0.8)' : 'rgba(255,255,255,0.8)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
+  const autofillBg = isDark ? '#1a1a1a' : '#f9fafb';
+
   if (pageLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f5f5' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     );
   }
 
-  // Input styles - neutral focus, no colored borders
-  const inputClassName = "w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-4 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/30 focus:bg-white/[0.07] transition-colors";
-  const inputWithButtonClassName = "w-full rounded-lg border border-white/10 bg-white/5 pl-11 pr-12 py-3 text-[#f5f5f0] placeholder:text-[#f5f5f0]/30 focus:outline-none focus:border-white/30 focus:bg-white/[0.07] transition-colors";
+  // Dynamic styles for autofill and focus
+  const dynamicStyles = `
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px ${autofillBg} inset !important;
+      -webkit-text-fill-color: ${textColor} !important;
+      border-color: ${inputBorder} !important;
+      caret-color: ${textColor} !important;
+    }
+    .client-login input:focus {
+      outline: none;
+      border-color: ${primaryColor} !important;
+      box-shadow: 0 0 0 3px ${primaryColor}20 !important;
+    }
+    .client-login ::selection {
+      background-color: ${primaryColor}40;
+      color: inherit;
+    }
+  `;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f0]">
-      {/* Override any autofill styling */}
-      <style jsx global>{`
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
-          -webkit-text-fill-color: #f5f5f0 !important;
-          border-color: rgba(255, 255, 255, 0.2) !important;
-          caret-color: #f5f5f0 !important;
-        }
-      `}</style>
+    <div className="client-login min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
+      <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+      
+      {/* Grain overlay - only show in dark mode */}
+      {isDark && (
+        <div 
+          className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      )}
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+      <header 
+        className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl"
+        style={{ 
+          borderBottom: `1px solid ${headerBorder}`,
+          backgroundColor: headerBg,
+        }}
+      >
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               {agency?.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 rounded-lg object-contain" />
+                <div
+                  className="flex items-center justify-center rounded-lg overflow-hidden"
+                  style={{
+                    backgroundColor: agency.logo_background_color || 'transparent',
+                    padding: agency.logo_background_color ? '6px' : '0',
+                  }}
+                >
+                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 object-contain" />
+                </div>
               ) : (
                 <div 
                   className="flex h-9 w-9 items-center justify-center rounded-lg"
@@ -188,8 +233,11 @@ function ClientLoginContent() {
               <span className="text-lg font-medium tracking-tight">{agency?.name || 'Client Portal'}</span>
             </Link>
             <Link 
-              href="/client/signup" 
-              className="text-sm text-[#f5f5f0]/60 hover:text-[#f5f5f0] transition-colors"
+              href="/get-started" 
+              className="text-sm transition-colors"
+              style={{ color: textLink }}
+              onMouseEnter={(e) => e.currentTarget.style.color = textLinkHover}
+              onMouseLeave={(e) => e.currentTarget.style.color = textLink}
             >
               Don&apos;t have an account? Sign up
             </Link>
@@ -200,36 +248,52 @@ function ClientLoginContent() {
       <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
         <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.07]"
-            style={{ backgroundColor: primaryColor }}
+            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl"
+            style={{ 
+              backgroundColor: primaryColor,
+              opacity: isDark ? 0.07 : 0.1,
+            }}
           />
         </div>
 
         <div className="relative w-full max-w-md">
           {signupSuccess && (
-            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-              <p className="text-sm text-emerald-300">
+            <div 
+              className="mb-6 rounded-xl p-4 flex items-center gap-3"
+              style={{
+                backgroundColor: isDark ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.1)',
+                border: `1px solid ${isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.3)'}`,
+              }}
+            >
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
+              <p className="text-sm" style={{ color: isDark ? '#6ee7b7' : '#059669' }}>
                 Account created! Check your email or SMS for password setup instructions.
               </p>
             </div>
           )}
 
-          <div className="rounded-2xl border border-white/10 bg-[#111] p-8">
+          <div 
+            className="rounded-2xl p-8"
+            style={{ 
+              backgroundColor: cardBg,
+              border: `1px solid ${cardBorder}`,
+              boxShadow: isDark ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+          >
             <div className="text-center mb-8">
               <h1 className="text-2xl font-medium tracking-tight">Welcome back</h1>
-              <p className="mt-2 text-[#f5f5f0]/50">
+              <p className="mt-2" style={{ color: textMuted }}>
                 Sign in to access your dashboard
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}>
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: textSubtle }} />
                   <input
                     name="email"
                     type="email"
@@ -238,17 +302,22 @@ function ClientLoginContent() {
                     onChange={handleChange}
                     required
                     autoComplete="email"
-                    className={inputClassName}
+                    className="w-full rounded-lg pl-11 pr-4 py-3 transition-colors"
+                    style={{
+                      backgroundColor: inputBg,
+                      border: `1px solid ${inputBorder}`,
+                      color: textColor,
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#f5f5f0]/70 mb-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}>
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#f5f5f0]/30" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: textSubtle }} />
                   <input
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -257,12 +326,18 @@ function ClientLoginContent() {
                     onChange={handleChange}
                     required
                     autoComplete="current-password"
-                    className={inputWithButtonClassName}
+                    className="w-full rounded-lg pl-11 pr-12 py-3 transition-colors"
+                    style={{
+                      backgroundColor: inputBg,
+                      border: `1px solid ${inputBorder}`,
+                      color: textColor,
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#f5f5f0]/40 hover:text-[#f5f5f0]/70"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    style={{ color: isDark ? 'rgba(245,245,240,0.4)' : '#9ca3af' }}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -272,14 +347,22 @@ function ClientLoginContent() {
               <div className="flex items-center justify-end">
                 <Link 
                   href="/auth/forgot-password"
-                  className="text-sm text-[#f5f5f0]/50 hover:text-[#f5f5f0]/70 transition-colors"
+                  className="text-sm transition-colors"
+                  style={{ color: textMuted }}
                 >
                   Forgot password?
                 </Link>
               </div>
 
               {error && (
-                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+                <div 
+                  className="rounded-lg p-3 text-sm"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                    border: `1px solid ${isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}`,
+                    color: isDark ? '#f87171' : '#dc2626',
+                  }}
+                >
                   {error}
                 </div>
               )}
@@ -308,7 +391,7 @@ function ClientLoginContent() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-sm text-[#f5f5f0]/40">
+          <p className="mt-6 text-center text-sm" style={{ color: isDark ? 'rgba(245,245,240,0.4)' : '#9ca3af' }}>
             Need help? Contact {agency?.name || 'support'} for assistance.
           </p>
         </div>
@@ -320,8 +403,8 @@ function ClientLoginContent() {
 export default function ClientLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f5f5' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     }>
       <ClientLoginContent />
