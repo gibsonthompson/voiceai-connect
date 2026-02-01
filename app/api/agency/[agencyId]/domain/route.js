@@ -2,15 +2,15 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
-export async function POST(request, { params }) {
+export async function POST(request: Request, { params }: { params: { agencyId: string } }) {
   try {
     const { agencyId } = await params
     const { domain } = await request.json()
@@ -49,9 +49,10 @@ export async function POST(request, { params }) {
       }, { status: 400 })
     }
 
-    // Add domain to Vercel
+    // Add domain to Vercel (both apex and www)
     let vercelAdded = false
     if (VERCEL_API_TOKEN && VERCEL_PROJECT_ID) {
+      // Add apex domain
       try {
         const vercelUrl = VERCEL_TEAM_ID
           ? `https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains?teamId=${VERCEL_TEAM_ID}`
@@ -67,14 +68,40 @@ export async function POST(request, { params }) {
         })
 
         const vercelData = await vercelResponse.json()
-        console.log('Vercel response:', JSON.stringify(vercelData, null, 2))
+        console.log('Vercel apex response:', JSON.stringify(vercelData, null, 2))
 
         if (vercelResponse.ok || vercelData.error?.code === 'domain_already_in_use') {
           vercelAdded = true
         }
       } catch (err) {
-        console.error('Vercel API error:', err)
+        console.error('Vercel API error (apex):', err)
       }
+
+      // Add www subdomain
+      try {
+        const vercelUrl = VERCEL_TEAM_ID
+          ? `https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains?teamId=${VERCEL_TEAM_ID}`
+          : `https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`
+
+        const wwwResponse = await fetch(vercelUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${VERCEL_API_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: `www.${normalizedDomain}` })
+        })
+
+        const wwwData = await wwwResponse.json()
+        console.log('Vercel www response:', JSON.stringify(wwwData, null, 2))
+      } catch (err) {
+        console.error('Vercel API error (www):', err)
+      }
+    } else {
+      console.log('⚠️ Vercel credentials not configured:', {
+        hasToken: !!VERCEL_API_TOKEN,
+        hasProjectId: !!VERCEL_PROJECT_ID
+      })
     }
 
     // Update database
@@ -94,27 +121,27 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Failed to save domain' }, { status: 500 })
     }
 
-    // Fetch DNS records from Vercel
-    const dnsRecords = await getDnsRecords(normalizedDomain)
+    // Fetch project-specific DNS records from Vercel
+    const dnsConfig = await fetchVercelDnsConfig(normalizedDomain)
 
     return NextResponse.json({
       success: true,
       domain: normalizedDomain,
       vercel_added: vercelAdded,
-      dns_records: dnsRecords,
       dns_config: {
-        a_record: dnsRecords[0]?.value || '76.76.21.21',
-        cname_record: dnsRecords[1]?.value || 'cname.vercel-dns.com'
+        a_record: dnsConfig.aRecord,
+        cname_record: dnsConfig.cnameRecord,
+        source: dnsConfig.source
       }
     })
 
   } catch (error) {
     console.error('Add domain error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request: Request, { params }: { params: { agencyId: string } }) {
   try {
     const { agencyId } = await params
 
@@ -139,8 +166,9 @@ export async function DELETE(request, { params }) {
     const domain = agency.marketing_domain
     console.log(`🗑️ Removing domain "${domain}" for agency ${agencyId}`)
 
-    // Remove from Vercel
+    // Remove from Vercel (both apex and www)
     if (VERCEL_API_TOKEN && VERCEL_PROJECT_ID) {
+      // Remove apex
       try {
         const vercelUrl = VERCEL_TEAM_ID
           ? `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}?teamId=${VERCEL_TEAM_ID}`
@@ -150,9 +178,24 @@ export async function DELETE(request, { params }) {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${VERCEL_API_TOKEN}` }
         })
-        console.log('✅ Domain removed from Vercel')
+        console.log('✅ Apex domain removed from Vercel')
       } catch (err) {
-        console.error('Vercel delete error:', err)
+        console.error('Vercel delete error (apex):', err)
+      }
+
+      // Remove www
+      try {
+        const wwwUrl = VERCEL_TEAM_ID
+          ? `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/www.${domain}?teamId=${VERCEL_TEAM_ID}`
+          : `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/www.${domain}`
+
+        await fetch(wwwUrl, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${VERCEL_API_TOKEN}` }
+        })
+        console.log('✅ WWW domain removed from Vercel')
+      } catch (err) {
+        console.error('Vercel delete error (www):', err)
       }
     }
 
@@ -176,43 +219,78 @@ export async function DELETE(request, { params }) {
 
   } catch (error) {
     console.error('Remove domain error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
 }
 
-async function getDnsRecords(domain) {
-  const records = [
-    { type: 'A', name: '@', value: '76.76.21.21' },
-    { type: 'CNAME', name: 'www', value: 'cname.vercel-dns.com' }
-  ]
+/**
+ * Fetch project-specific DNS values from Vercel
+ * CRITICAL: Uses /v6/domains/{domain}/config endpoint
+ * This returns recommendedIPv4 and recommendedCNAME with actual values
+ */
+async function fetchVercelDnsConfig(domain: string) {
+  const DEFAULT_CONFIG = {
+    aRecord: '76.76.21.21',
+    cnameRecord: 'cname.vercel-dns.com',
+    source: 'fallback'
+  }
 
-  if (!VERCEL_API_TOKEN || !VERCEL_PROJECT_ID) {
-    return records
+  if (!VERCEL_API_TOKEN) {
+    console.log('⚠️ No Vercel token, using fallback DNS values')
+    return DEFAULT_CONFIG
   }
 
   try {
-    const url = VERCEL_TEAM_ID
-      ? `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}?teamId=${VERCEL_TEAM_ID}`
-      : `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}`
+    // CORRECT ENDPOINT: /v6/domains/{domain}/config
+    // Returns: recommendedIPv4, recommendedCNAME
+    const configUrl = VERCEL_TEAM_ID
+      ? `https://api.vercel.com/v6/domains/${domain}/config?teamId=${VERCEL_TEAM_ID}`
+      : `https://api.vercel.com/v6/domains/${domain}/config`
 
-    const response = await fetch(url, {
+    console.log(`🔍 Fetching DNS config from: ${configUrl}`)
+
+    const response = await fetch(configUrl, {
       headers: { 'Authorization': `Bearer ${VERCEL_API_TOKEN}` }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      
-      if (data.verification && Array.isArray(data.verification)) {
-        for (const record of data.verification) {
-          if (record.type === 'A' && record.value && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(record.value)) {
-            records[0].value = record.value
-          }
-        }
+    const data = await response.json()
+    console.log('📋 Vercel DNS config response:', JSON.stringify(data, null, 2))
+
+    if (!response.ok) {
+      console.log(`⚠️ Config endpoint returned ${response.status}`)
+      return DEFAULT_CONFIG
+    }
+
+    let aRecord = DEFAULT_CONFIG.aRecord
+    let cnameRecord = DEFAULT_CONFIG.cnameRecord
+
+    // Parse recommendedIPv4: [{ rank: 1, value: ["216.198.79.1"] }]
+    if (data.recommendedIPv4 && Array.isArray(data.recommendedIPv4)) {
+      const preferred = data.recommendedIPv4.find((r: any) => r.rank === 1)
+      if (preferred?.value?.[0]) {
+        aRecord = preferred.value[0]
+        console.log(`✅ Found project-specific A record: ${aRecord}`)
       }
     }
-  } catch (error) {
-    console.error('Error fetching DNS records:', error)
-  }
 
-  return records
+    // Parse recommendedCNAME: [{ rank: 1, value: "xxx.vercel-dns-xxx.com" }]
+    if (data.recommendedCNAME && Array.isArray(data.recommendedCNAME)) {
+      const preferred = data.recommendedCNAME.find((r: any) => r.rank === 1)
+      if (preferred?.value) {
+        cnameRecord = preferred.value
+        console.log(`✅ Found project-specific CNAME: ${cnameRecord}`)
+      }
+    }
+
+    return {
+      aRecord,
+      cnameRecord,
+      source: aRecord !== DEFAULT_CONFIG.aRecord ? 'vercel-api' : 'fallback',
+      misconfigured: data.misconfigured
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to fetch Vercel DNS config:', error)
+    return DEFAULT_CONFIG
+  }
 }

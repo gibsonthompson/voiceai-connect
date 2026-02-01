@@ -1,50 +1,76 @@
 import { NextResponse } from 'next/server'
 
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
 
-export async function GET(request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const domain = searchParams.get('domain')
 
-  const records = [
-    { type: 'A', name: '@', value: '76.76.21.21' },
-    { type: 'CNAME', name: 'www', value: 'cname.vercel-dns.com' }
-  ]
+  console.log(`📋 DNS config requested for domain: ${domain || '(none)'}`)
 
-  // If a domain is provided and we have Vercel credentials, fetch project-specific values
-  if (domain && VERCEL_API_TOKEN && VERCEL_PROJECT_ID) {
-    try {
-      const url = VERCEL_TEAM_ID
-        ? `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}?teamId=${VERCEL_TEAM_ID}`
-        : `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}`
-
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${VERCEL_API_TOKEN}` }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log(`DNS config for ${domain}:`, JSON.stringify(data, null, 2))
-        
-        if (data.verification && Array.isArray(data.verification)) {
-          for (const record of data.verification) {
-            if (record.type === 'A' && record.value && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(record.value)) {
-              records[0].value = record.value
-              console.log(`Found project-specific A record: ${record.value}`)
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching DNS config:', error)
-    }
+  const DEFAULT_CONFIG = {
+    a_record: '76.76.21.21',
+    cname_record: 'cname.vercel-dns.com',
+    source: 'fallback'
   }
 
-  return NextResponse.json({
-    a_record: records[0].value,
-    cname_record: records[1].value,
-    source: records[0].value === '76.76.21.21' ? 'fallback' : 'vercel-api'
-  })
+  // If no domain provided or no Vercel token, return defaults
+  if (!domain || !VERCEL_API_TOKEN) {
+    return NextResponse.json(DEFAULT_CONFIG)
+  }
+
+  try {
+    // Use /v6/domains/{domain}/config endpoint
+    // This returns recommendedIPv4 and recommendedCNAME
+    const configUrl = VERCEL_TEAM_ID
+      ? `https://api.vercel.com/v6/domains/${domain}/config?teamId=${VERCEL_TEAM_ID}`
+      : `https://api.vercel.com/v6/domains/${domain}/config`
+
+    console.log(`🔍 Fetching from: ${configUrl}`)
+
+    const response = await fetch(configUrl, {
+      headers: { 'Authorization': `Bearer ${VERCEL_API_TOKEN}` }
+    })
+
+    if (!response.ok) {
+      console.log(`⚠️ Vercel returned ${response.status}`)
+      return NextResponse.json(DEFAULT_CONFIG)
+    }
+
+    const data = await response.json()
+    console.log('📋 Vercel config response:', JSON.stringify(data, null, 2))
+
+    let aRecord = DEFAULT_CONFIG.a_record
+    let cnameRecord = DEFAULT_CONFIG.cname_record
+
+    // Parse recommendedIPv4: [{ rank: 1, value: ["216.198.79.1"] }]
+    if (data.recommendedIPv4 && Array.isArray(data.recommendedIPv4)) {
+      const preferred = data.recommendedIPv4.find((r: any) => r.rank === 1)
+      if (preferred?.value?.[0]) {
+        aRecord = preferred.value[0]
+        console.log(`✅ Found A record: ${aRecord}`)
+      }
+    }
+
+    // Parse recommendedCNAME: [{ rank: 1, value: "xxx.vercel-dns-xxx.com" }]
+    if (data.recommendedCNAME && Array.isArray(data.recommendedCNAME)) {
+      const preferred = data.recommendedCNAME.find((r: any) => r.rank === 1)
+      if (preferred?.value) {
+        cnameRecord = preferred.value
+        console.log(`✅ Found CNAME: ${cnameRecord}`)
+      }
+    }
+
+    return NextResponse.json({
+      a_record: aRecord,
+      cname_record: cnameRecord,
+      source: aRecord !== DEFAULT_CONFIG.a_record ? 'vercel-api' : 'fallback',
+      misconfigured: data.misconfigured
+    })
+
+  } catch (error) {
+    console.error('❌ DNS config fetch error:', error)
+    return NextResponse.json(DEFAULT_CONFIG)
+  }
 }

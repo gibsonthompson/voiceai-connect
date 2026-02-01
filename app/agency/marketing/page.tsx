@@ -65,8 +65,10 @@ export default function MarketingWebsitePage() {
             aRecord: data.a_record || '76.76.21.21',
             cname: data.cname_record || 'cname.vercel-dns.com'
           });
+          console.log('DNS config loaded:', data);
         }
       } catch (error) {
+        console.error('Failed to fetch DNS config:', error);
         setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' });
       }
     };
@@ -159,24 +161,35 @@ export default function MarketingWebsitePage() {
     setSavingDomain(true);
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/agency/${agency.id}/domain`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ domain: customDomain.trim() }),
       });
       
       const data = await response.json();
+      console.log('Add domain response:', data);
       
       if (response.ok && data.success) {
         setDomainStatus('pending');
+        // Update DNS config with project-specific values from response
         if (data.dns_config) {
-          setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record });
+          setDnsConfig({ 
+            aRecord: data.dns_config.a_record, 
+            cname: data.dns_config.cname_record 
+          });
+          console.log('Updated DNS config from response:', data.dns_config);
         }
         await refreshAgency();
       } else {
         alert(data.error || 'Failed to save domain');
       }
     } catch (error) {
+      console.error('Failed to add domain:', error);
       alert('Failed to connect to server.');
     } finally {
       setSavingDomain(false);
@@ -188,16 +201,21 @@ export default function MarketingWebsitePage() {
     setVerifyingDomain(true);
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/agency/${agency.id}/domain/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
       
       const data = await response.json();
+      console.log('Verify domain response:', data);
       setDomainStatus(data.verified ? 'verified' : 'pending');
       
       if (!data.verified) {
-        alert(data.message || 'DNS records not found.');
+        alert(data.message || 'DNS records not found. Please check your configuration and try again.');
       }
       await refreshAgency();
     } catch (error) {
@@ -208,16 +226,21 @@ export default function MarketingWebsitePage() {
   };
 
   const handleRemoveDomain = async () => {
-    if (!agency || !confirm('Remove this custom domain?')) return;
+    if (!agency || !confirm('Remove this custom domain? Your site will only be accessible via the subdomain.')) return;
     setSavingDomain(true);
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/agency/${agency.id}/domain`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
       
       const data = await response.json();
+      console.log('Remove domain response:', data);
       
       if (response.ok && data.success) {
         setCustomDomain('');
@@ -227,6 +250,7 @@ export default function MarketingWebsitePage() {
         alert(data.error || 'Failed to remove domain');
       }
     } catch (error) {
+      console.error('Failed to remove domain:', error);
       alert('Failed to remove domain.');
     } finally {
       setSavingDomain(false);
@@ -838,6 +862,7 @@ export default function MarketingWebsitePage() {
                     <p className="text-xs mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Add these records with your registrar:</p>
                     
                     <div className="space-y-2 sm:space-y-3">
+                      {/* A Record for apex domain */}
                       <div 
                         className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg"
                         style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
@@ -856,6 +881,30 @@ export default function MarketingWebsitePage() {
                             <p className="font-mono text-[10px] truncate">{dnsConfig?.aRecord}</p>
                             <button onClick={() => copyToClipboard(dnsConfig?.aRecord || '', 'arecord')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
                               {copied === 'arecord' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* CNAME Record for www subdomain */}
+                      <div 
+                        className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg"
+                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                      >
+                        <div>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Type</p>
+                          <p className="font-mono font-medium">CNAME</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Name</p>
+                          <p className="font-mono">www</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Value</p>
+                          <div className="flex items-center gap-1">
+                            <p className="font-mono text-[10px] truncate">{dnsConfig?.cname}</p>
+                            <button onClick={() => copyToClipboard(dnsConfig?.cname || '', 'cname')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
+                              {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                             </button>
                           </div>
                         </div>
