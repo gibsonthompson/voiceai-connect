@@ -289,9 +289,9 @@ export default function ReferralsPage() {
         <div className="flex items-start justify-between mb-3">
           <div 
             className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: highlight ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6') }}
+            style={{ backgroundColor: highlight ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: highlight ? primaryColor : mutedTextColor }}
           >
-            <Icon className="h-5 w-5" style={{ color: highlight ? primaryColor : mutedTextColor }} />
+            <Icon className="h-5 w-5" />
           </div>
           {trend && (
             <span className="flex items-center gap-1 text-xs" style={{ color: primaryColor }}>
@@ -314,8 +314,8 @@ export default function ReferralsPage() {
   if (loading) {
     return (
       <div className="p-6 md:p-8 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: primaryColor }} />
+        <div className="text-center" style={{ color: primaryColor }}>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
           <p className="mt-4 text-sm" style={{ color: mutedTextColor }}>Loading referrals...</p>
         </div>
       </div>
@@ -345,9 +345,9 @@ export default function ReferralsPage() {
         <div className="flex items-center gap-3 mb-2">
           <div 
             className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${primaryColor}20` }}
+            style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
           >
-            <Gift className="h-5 w-5" style={{ color: primaryColor }} />
+            <Gift className="h-5 w-5" />
           </div>
           <h1 className="text-2xl font-semibold">Referral Program</h1>
         </div>
@@ -367,7 +367,7 @@ export default function ReferralsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
+              <span style={{ color: primaryColor }}><Sparkles className="h-4 w-4" /></span>
               Your Referral Link
             </h2>
             <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
@@ -456,7 +456,7 @@ export default function ReferralsPage() {
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4" style={{ color: primaryColor }} />
+                  <span style={{ color: primaryColor }}><Check className="h-4 w-4" /></span>
                   Copied!
                 </>
               ) : (
@@ -549,9 +549,9 @@ export default function ReferralsPage() {
               }}
             >
               {payoutMessage.type === 'success' ? (
-                <Check className="h-5 w-5 flex-shrink-0" style={{ color: primaryColor }} />
+                <span style={{ color: primaryColor }}><Check className="h-5 w-5 flex-shrink-0" /></span>
               ) : (
-                <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
+                <span style={{ color: isDark ? '#f87171' : '#dc2626' }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
               )}
               <p className="text-sm" style={{ 
                 color: payoutMessage.type === 'success' ? primaryColor : (isDark ? '#f87171' : '#dc2626')
@@ -569,7 +569,7 @@ export default function ReferralsPage() {
                 border: '1px solid rgba(245,158,11,0.2)',
               }}
             >
-              <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
+              <span style={{ color: isDark ? '#fbbf24' : '#d97706' }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
               <p className="text-sm" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
                 Set up Stripe Connect in Settings → Billing to receive payouts
               </p>
@@ -626,10 +626,10 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center">
-              <Users className="h-10 w-10 mx-auto mb-3" style={{ color: mutedTextColor }} />
-              <p className="text-sm" style={{ color: mutedTextColor }}>No referrals yet</p>
-              <p className="text-xs mt-1" style={{ color: mutedTextColor }}>Share your link to start earning</p>
+            <div className="p-8 text-center" style={{ color: mutedTextColor }}>
+              <Users className="h-10 w-10 mx-auto mb-3" />
+              <p className="text-sm">No referrals yet</p>
+              <p className="text-xs mt-1">Share your link to start earning</p>
             </div>
           )}
         </div>
@@ -687,10 +687,10 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center">
-              <DollarSign className="h-10 w-10 mx-auto mb-3" style={{ color: mutedTextColor }} />
-              <p className="text-sm" style={{ color: mutedTextColor }}>No commissions yet</p>
-              <p className="text-xs mt-1" style={{ color: mutedTextColor }}>Commissions appear when referrals pay</p>
+            <div className="p-8 text-center" style={{ color: mutedTextColor }}>
+              <DollarSign className="h-10 w-10 mx-auto mb-3" />
+              <p className="text-sm">No commissions yet</p>
+              <p className="text-xs mt-1">Commissions appear when referrals pay</p>
             </div>
           )}
         </div>
