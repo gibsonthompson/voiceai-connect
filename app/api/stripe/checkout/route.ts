@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session with 14-day trial
-    const baseUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://voiceaiconnect.com';
+    const baseUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://myvoiceaiconnect.com';
     
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           plan_type: planType,
         },
       },
-      success_url: `${baseUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/signup/success`,
       cancel_url: `${baseUrl}/signup/plan?agency=${agencyId}`,
       metadata: {
         agency_id: agencyId,
@@ -98,12 +98,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update agency with pending subscription info
+    // Update agency with subscription info
     await supabase
       .from('agencies')
       .update({
         plan_type: planType,
-        subscription_status: 'pending',
+        subscription_status: 'trialing',
+        status: 'active',
       })
       .eq('id', agencyId);
 
