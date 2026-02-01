@@ -68,74 +68,11 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    case 'trial':
-      return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-    case 'pending':
-      return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    case 'transferred':
-      return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    default:
-      return 'text-[#fafaf9]/40 bg-white/5 border-white/10';
-  }
-};
-
-// ============================================================================
-// STAT CARD COMPONENT
-// ============================================================================
-function StatCard({ 
-  label, 
-  value, 
-  subValue,
-  icon: Icon, 
-  trend,
-  highlight = false 
-}: { 
-  label: string; 
-  value: string; 
-  subValue?: string;
-  icon: React.ComponentType<{ className?: string }>; 
-  trend?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className={`rounded-2xl border p-5 transition-all ${
-      highlight 
-        ? 'border-emerald-500/30 bg-emerald-500/[0.08]' 
-        : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
-    }`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-          highlight ? 'bg-emerald-500/20' : 'bg-white/[0.06]'
-        }`}>
-          <Icon className={`h-5 w-5 ${highlight ? 'text-emerald-400' : 'text-[#fafaf9]/60'}`} />
-        </div>
-        {trend && (
-          <span className="flex items-center gap-1 text-xs text-emerald-400">
-            <ArrowUpRight className="h-3 w-3" />
-            {trend}
-          </span>
-        )}
-      </div>
-      <p className="text-sm text-[#fafaf9]/50 mb-1">{label}</p>
-      <p className={`text-2xl font-semibold ${highlight ? 'text-emerald-300' : 'text-[#fafaf9]'}`}>
-        {value}
-      </p>
-      {subValue && (
-        <p className="text-xs text-[#fafaf9]/40 mt-1">{subValue}</p>
-      )}
-    </div>
-  );
-}
-
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 export default function ReferralsPage() {
-  const { agency } = useAgency();
+  const { agency, branding } = useAgency();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -145,6 +82,53 @@ export default function ReferralsPage() {
   const [savingCode, setSavingCode] = useState(false);
   const [requestingPayout, setRequestingPayout] = useState(false);
   const [payoutMessage, setPayoutMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+  const primaryColor = branding.primaryColor || '#10b981';
+
+  // Theme-based colors
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const inputBg = isDark ? '#0a0a0a' : '#ffffff';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return { 
+          text: primaryColor, 
+          bg: `${primaryColor}15`, 
+          border: `${primaryColor}30` 
+        };
+      case 'trial':
+        return { 
+          text: isDark ? '#fbbf24' : '#d97706', 
+          bg: 'rgba(245,158,11,0.1)', 
+          border: 'rgba(245,158,11,0.2)' 
+        };
+      case 'pending':
+        return { 
+          text: isDark ? '#60a5fa' : '#2563eb', 
+          bg: 'rgba(59,130,246,0.1)', 
+          border: 'rgba(59,130,246,0.2)' 
+        };
+      case 'transferred':
+        return { 
+          text: primaryColor, 
+          bg: `${primaryColor}15`, 
+          border: `${primaryColor}30` 
+        };
+      default:
+        return { 
+          text: mutedTextColor, 
+          bg: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', 
+          border: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
+        };
+    }
+  };
 
   // Fetch referral data
   useEffect(() => {
@@ -185,7 +169,6 @@ export default function ReferralsPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const input = document.createElement('input');
       input.value = data.referralLink;
       document.body.appendChild(input);
@@ -261,7 +244,6 @@ export default function ReferralsPage() {
 
       setPayoutMessage({ type: 'success', text: result.message });
       
-      // Refresh data
       setData(prev => prev ? {
         ...prev,
         stats: {
@@ -279,12 +261,62 @@ export default function ReferralsPage() {
     }
   };
 
+  // Stat Card Component
+  function StatCard({ 
+    label, 
+    value, 
+    subValue,
+    icon: Icon, 
+    trend,
+    highlight = false 
+  }: { 
+    label: string; 
+    value: string; 
+    subValue?: string;
+    icon: React.ComponentType<{ className?: string }>; 
+    trend?: string;
+    highlight?: boolean;
+  }) {
+    return (
+      <div 
+        className="rounded-2xl p-5 transition-all"
+        style={{ 
+          backgroundColor: highlight ? `${primaryColor}10` : cardBg,
+          border: highlight ? `1px solid ${primaryColor}30` : `1px solid ${borderColor}`,
+          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div 
+            className="flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: highlight ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6') }}
+          >
+            <Icon className="h-5 w-5" style={{ color: highlight ? primaryColor : mutedTextColor }} />
+          </div>
+          {trend && (
+            <span className="flex items-center gap-1 text-xs" style={{ color: primaryColor }}>
+              <ArrowUpRight className="h-3 w-3" />
+              {trend}
+            </span>
+          )}
+        </div>
+        <p className="text-sm mb-1" style={{ color: mutedTextColor }}>{label}</p>
+        <p className="text-2xl font-semibold" style={{ color: highlight ? primaryColor : textColor }}>
+          {value}
+        </p>
+        {subValue && (
+          <p className="text-xs mt-1" style={{ color: mutedTextColor }}>{subValue}</p>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="p-6 md:p-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" />
-          <p className="mt-4 text-sm text-[#fafaf9]/40">Loading referrals...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: primaryColor }} />
+          <p className="mt-4 text-sm" style={{ color: mutedTextColor }}>Loading referrals...</p>
         </div>
       </div>
     );
@@ -293,8 +325,14 @@ export default function ReferralsPage() {
   if (error) {
     return (
       <div className="p-6 md:p-8">
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-center">
-          <p className="text-red-400">{error}</p>
+        <div 
+          className="rounded-2xl p-6 text-center"
+          style={{
+            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+          }}
+        >
+          <p style={{ color: isDark ? '#f87171' : '#dc2626' }}>{error}</p>
         </div>
       </div>
     );
@@ -305,25 +343,34 @@ export default function ReferralsPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20">
-            <Gift className="h-5 w-5 text-emerald-400" />
+          <div 
+            className="flex h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${primaryColor}20` }}
+          >
+            <Gift className="h-5 w-5" style={{ color: primaryColor }} />
           </div>
-          <h1 className="text-2xl font-semibold text-[#fafaf9]">Referral Program</h1>
+          <h1 className="text-2xl font-semibold">Referral Program</h1>
         </div>
-        <p className="text-[#fafaf9]/50">
+        <p style={{ color: mutedTextColor }}>
           Earn 20% recurring commission for every agency you refer
         </p>
       </div>
 
       {/* Referral Link Card */}
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-6 mb-8">
+      <div 
+        className="rounded-2xl p-6 mb-8"
+        style={{ 
+          backgroundColor: `${primaryColor}08`,
+          border: `1px solid ${primaryColor}30`,
+        }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h2 className="font-medium text-[#fafaf9] flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
+            <h2 className="font-medium flex items-center gap-2">
+              <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
               Your Referral Link
             </h2>
-            <p className="text-sm text-[#fafaf9]/50 mt-1">
+            <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
               Share this link to earn commissions
             </p>
           </div>
@@ -331,7 +378,8 @@ export default function ReferralsPage() {
           {!editingCode ? (
             <button
               onClick={() => setEditingCode(true)}
-              className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: primaryColor }}
             >
               <Edit2 className="h-4 w-4" />
               Customize Code
@@ -342,7 +390,8 @@ export default function ReferralsPage() {
                 setEditingCode(false);
                 setNewCode(data?.referralCode || '');
               }}
-              className="flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: mutedTextColor }}
             >
               <X className="h-4 w-4" />
               Cancel
@@ -352,15 +401,19 @@ export default function ReferralsPage() {
 
         {editingCode ? (
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0a0a0a] px-4 py-3">
-              <span className="text-[#fafaf9]/40 text-sm whitespace-nowrap">
+            <div 
+              className="flex-1 flex items-center gap-2 rounded-xl px-4 py-3"
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+            >
+              <span className="text-sm whitespace-nowrap" style={{ color: mutedTextColor }}>
                 {process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com'}/signup?ref=
               </span>
               <input
                 type="text"
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="flex-1 bg-transparent text-[#fafaf9] outline-none min-w-0"
+                className="flex-1 bg-transparent outline-none min-w-0"
+                style={{ color: textColor }}
                 placeholder="your-code"
                 maxLength={30}
               />
@@ -368,7 +421,8 @@ export default function ReferralsPage() {
             <button
               onClick={handleUpdateCode}
               disabled={savingCode || !newCode.trim()}
-              className="px-6 py-3 rounded-xl bg-emerald-500 text-[#050505] font-medium hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ backgroundColor: primaryColor, color: '#050505' }}
             >
               {savingCode ? (
                 <>
@@ -382,18 +436,27 @@ export default function ReferralsPage() {
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#0a0a0a] px-4 py-3">
-              <span className="text-[#fafaf9] text-sm truncate flex-1">
+            <div 
+              className="flex-1 flex items-center gap-3 rounded-xl px-4 py-3"
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+            >
+              <span className="text-sm truncate flex-1">
                 {data?.referralLink}
               </span>
             </div>
             <button
               onClick={handleCopy}
-              className="px-6 py-3 rounded-xl bg-white/[0.06] text-[#fafaf9] font-medium hover:bg-white/[0.1] transition-colors border border-white/[0.08] flex items-center justify-center gap-2"
+              className={`px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${
+                isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.02]'
+              }`}
+              style={{ 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
+                border: `1px solid ${inputBorder}`,
+              }}
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 text-emerald-400" />
+                  <Check className="h-4 w-4" style={{ color: primaryColor }} />
                   Copied!
                 </>
               ) : (
@@ -435,11 +498,18 @@ export default function ReferralsPage() {
 
       {/* Payout Section */}
       {(data?.stats.availableBalance || 0) > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 mb-8">
+        <div 
+          className="rounded-2xl p-6 mb-8"
+          style={{ 
+            backgroundColor: cardBg, 
+            border: `1px solid ${borderColor}`,
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-medium text-[#fafaf9]">Request Payout</h3>
-              <p className="text-sm text-[#fafaf9]/50 mt-1">
+              <h3 className="font-medium">Request Payout</h3>
+              <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
                 {data?.canReceivePayouts 
                   ? `Minimum payout: $10. Your balance: ${formatCurrency(data?.stats.availableBalance || 0)}`
                   : 'Complete Stripe Connect onboarding to receive payouts'
@@ -453,7 +523,8 @@ export default function ReferralsPage() {
                 !data?.canReceivePayouts || 
                 (data?.stats.availableBalance || 0) < 1000
               }
-              className="px-6 py-3 rounded-xl bg-emerald-500 text-[#050505] font-medium hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+              className="px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+              style={{ backgroundColor: primaryColor, color: '#050505' }}
             >
               {requestingPayout ? (
                 <>
@@ -470,28 +541,36 @@ export default function ReferralsPage() {
           </div>
           
           {payoutMessage && (
-            <div className={`mt-4 rounded-xl p-4 flex items-center gap-3 ${
-              payoutMessage.type === 'success' 
-                ? 'bg-emerald-500/10 border border-emerald-500/20' 
-                : 'bg-red-500/10 border border-red-500/20'
-            }`}>
+            <div 
+              className="mt-4 rounded-xl p-4 flex items-center gap-3"
+              style={{
+                backgroundColor: payoutMessage.type === 'success' ? `${primaryColor}15` : (isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2'),
+                border: payoutMessage.type === 'success' ? `1px solid ${primaryColor}30` : (isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca'),
+              }}
+            >
               {payoutMessage.type === 'success' ? (
-                <Check className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+                <Check className="h-5 w-5 flex-shrink-0" style={{ color: primaryColor }} />
               ) : (
-                <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
               )}
-              <p className={`text-sm ${
-                payoutMessage.type === 'success' ? 'text-emerald-300' : 'text-red-300'
-              }`}>
+              <p className="text-sm" style={{ 
+                color: payoutMessage.type === 'success' ? primaryColor : (isDark ? '#f87171' : '#dc2626')
+              }}>
                 {payoutMessage.text}
               </p>
             </div>
           )}
 
           {!data?.canReceivePayouts && (
-            <div className="mt-4 rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0" />
-              <p className="text-sm text-amber-300">
+            <div 
+              className="mt-4 rounded-xl p-4 flex items-center gap-3"
+              style={{
+                backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.1)',
+                border: '1px solid rgba(245,158,11,0.2)',
+              }}
+            >
+              <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
+              <p className="text-sm" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
                 Set up Stripe Connect in Settings → Billing to receive payouts
               </p>
             </div>
@@ -502,118 +581,152 @@ export default function ReferralsPage() {
       {/* Two Column Layout */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Referrals List */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-          <div className="p-5 border-b border-white/[0.06]">
-            <h3 className="font-medium text-[#fafaf9]">Your Referrals</h3>
+        <div 
+          className="rounded-2xl overflow-hidden"
+          style={{ 
+            backgroundColor: cardBg, 
+            border: `1px solid ${borderColor}`,
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
+          <div className="p-5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+            <h3 className="font-medium">Your Referrals</h3>
           </div>
           
           {data?.referrals && data.referrals.length > 0 ? (
-            <div className="divide-y divide-white/[0.06]">
-              {data.referrals.map((referral) => (
-                <div key={referral.id} className="p-4 hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-[#fafaf9]">{referral.name}</p>
-                      <p className="text-sm text-[#fafaf9]/40">
-                        Joined {formatDate(referral.created_at)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(referral.subscription_status)}`}>
+            <div style={{ borderTop: `1px solid ${borderColor}` }}>
+              {data.referrals.map((referral, idx) => {
+                const statusColors = getStatusColor(referral.subscription_status);
+                return (
+                  <div 
+                    key={referral.id} 
+                    className={`p-4 transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'}`}
+                    style={{ borderBottom: idx < data.referrals.length - 1 ? `1px solid ${borderColor}` : 'none' }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{referral.name}</p>
+                        <p className="text-sm" style={{ color: mutedTextColor }}>
+                          Joined {formatDate(referral.created_at)}
+                        </p>
+                      </div>
+                      <span 
+                        className="px-2.5 py-1 rounded-full text-xs font-medium"
+                        style={{ 
+                          backgroundColor: statusColors.bg,
+                          border: `1px solid ${statusColors.border}`,
+                          color: statusColors.text,
+                        }}
+                      >
                         {referral.subscription_status}
                       </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 text-center">
-              <Users className="h-10 w-10 text-[#fafaf9]/20 mx-auto mb-3" />
-              <p className="text-[#fafaf9]/40 text-sm">No referrals yet</p>
-              <p className="text-[#fafaf9]/30 text-xs mt-1">Share your link to start earning</p>
+              <Users className="h-10 w-10 mx-auto mb-3" style={{ color: mutedTextColor }} />
+              <p className="text-sm" style={{ color: mutedTextColor }}>No referrals yet</p>
+              <p className="text-xs mt-1" style={{ color: mutedTextColor }}>Share your link to start earning</p>
             </div>
           )}
         </div>
 
         {/* Commission History */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-          <div className="p-5 border-b border-white/[0.06]">
-            <h3 className="font-medium text-[#fafaf9]">Commission History</h3>
+        <div 
+          className="rounded-2xl overflow-hidden"
+          style={{ 
+            backgroundColor: cardBg, 
+            border: `1px solid ${borderColor}`,
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
+          <div className="p-5" style={{ borderBottom: `1px solid ${borderColor}` }}>
+            <h3 className="font-medium">Commission History</h3>
           </div>
           
           {data?.commissions && data.commissions.length > 0 ? (
-            <div className="divide-y divide-white/[0.06]">
-              {data.commissions.map((commission) => (
-                <div key={commission.id} className="p-4 hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-emerald-400">
-                        +{formatCurrency(commission.commission_amount_cents)}
-                      </p>
-                      <p className="text-sm text-[#fafaf9]/40">
-                        From {commission.referred?.name || 'Unknown'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(commission.status)}`}>
-                        {commission.status}
-                      </span>
-                      <p className="text-xs text-[#fafaf9]/30 mt-1">
-                        {formatDate(commission.created_at)}
-                      </p>
+            <div style={{ borderTop: `1px solid ${borderColor}` }}>
+              {data.commissions.map((commission, idx) => {
+                const statusColors = getStatusColor(commission.status);
+                return (
+                  <div 
+                    key={commission.id} 
+                    className={`p-4 transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'}`}
+                    style={{ borderBottom: idx < data.commissions.length - 1 ? `1px solid ${borderColor}` : 'none' }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium" style={{ color: primaryColor }}>
+                          +{formatCurrency(commission.commission_amount_cents)}
+                        </p>
+                        <p className="text-sm" style={{ color: mutedTextColor }}>
+                          From {commission.referred?.name || 'Unknown'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span 
+                          className="px-2.5 py-1 rounded-full text-xs font-medium"
+                          style={{ 
+                            backgroundColor: statusColors.bg,
+                            border: `1px solid ${statusColors.border}`,
+                            color: statusColors.text,
+                          }}
+                        >
+                          {commission.status}
+                        </span>
+                        <p className="text-xs mt-1" style={{ color: mutedTextColor }}>
+                          {formatDate(commission.created_at)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 text-center">
-              <DollarSign className="h-10 w-10 text-[#fafaf9]/20 mx-auto mb-3" />
-              <p className="text-[#fafaf9]/40 text-sm">No commissions yet</p>
-              <p className="text-[#fafaf9]/30 text-xs mt-1">Commissions appear when referrals pay</p>
+              <DollarSign className="h-10 w-10 mx-auto mb-3" style={{ color: mutedTextColor }} />
+              <p className="text-sm" style={{ color: mutedTextColor }}>No commissions yet</p>
+              <p className="text-xs mt-1" style={{ color: mutedTextColor }}>Commissions appear when referrals pay</p>
             </div>
           )}
         </div>
       </div>
 
       {/* How It Works */}
-      <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
-        <h3 className="font-medium text-[#fafaf9] mb-4">How It Works</h3>
+      <div 
+        className="mt-8 rounded-2xl p-6"
+        style={{ 
+          backgroundColor: cardBg, 
+          border: `1px solid ${borderColor}`,
+          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <h3 className="font-medium mb-4">How It Works</h3>
         <div className="grid sm:grid-cols-3 gap-6">
-          <div className="flex gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-semibold text-sm flex-shrink-0">
-              1
+          {[
+            { num: '1', title: 'Share Your Link', desc: 'Share your unique referral link with other agency owners' },
+            { num: '2', title: 'They Sign Up', desc: "When they create an agency using your link, they're linked to you" },
+            { num: '3', title: 'Earn 20% Forever', desc: 'Earn 20% of their subscription fee every month they stay subscribed' },
+          ].map((step) => (
+            <div key={step.num} className="flex gap-4">
+              <div 
+                className="flex h-8 w-8 items-center justify-center rounded-lg font-semibold text-sm flex-shrink-0"
+                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+              >
+                {step.num}
+              </div>
+              <div>
+                <p className="font-medium text-sm">{step.title}</p>
+                <p className="text-xs mt-1" style={{ color: mutedTextColor }}>
+                  {step.desc}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-[#fafaf9] text-sm">Share Your Link</p>
-              <p className="text-xs text-[#fafaf9]/50 mt-1">
-                Share your unique referral link with other agency owners
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-semibold text-sm flex-shrink-0">
-              2
-            </div>
-            <div>
-              <p className="font-medium text-[#fafaf9] text-sm">They Sign Up</p>
-              <p className="text-xs text-[#fafaf9]/50 mt-1">
-                When they create an agency using your link, they're linked to you
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-semibold text-sm flex-shrink-0">
-              3
-            </div>
-            <div>
-              <p className="font-medium text-[#fafaf9] text-sm">Earn 20% Forever</p>
-              <p className="text-xs text-[#fafaf9]/50 mt-1">
-                Earn 20% of their subscription fee every month they stay subscribed
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

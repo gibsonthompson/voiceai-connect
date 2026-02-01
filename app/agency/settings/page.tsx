@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
-  AlertTriangle, RefreshCw, Trash2
+  AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor
 } from 'lucide-react';
 import { useAgency } from '../context';
 
@@ -48,6 +48,7 @@ export default function AgencySettingsPage() {
   const [primaryColor, setPrimaryColor] = useState('#10b981');
   const [secondaryColor, setSecondaryColor] = useState('#059669');
   const [accentColor, setAccentColor] = useState('#34d399');
+  const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark' | 'auto'>('dark');
   
   const [priceStarter, setPriceStarter] = useState('49');
   const [pricePro, setPricePro] = useState('99');
@@ -61,6 +62,17 @@ export default function AgencySettingsPage() {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+
+  // Theme-based colors
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+
   useEffect(() => {
     if (agency) {
       setAgencyName(agency.name || '');
@@ -69,6 +81,7 @@ export default function AgencySettingsPage() {
       setPrimaryColor(agency.primary_color || '#10b981');
       setSecondaryColor(agency.secondary_color || '#059669');
       setAccentColor(agency.accent_color || '#34d399');
+      setWebsiteTheme(agency.website_theme || 'dark');
       setPriceStarter(((agency.price_starter || 4900) / 100).toString());
       setPricePro(((agency.price_pro || 9900) / 100).toString());
       setPriceGrowth(((agency.price_growth || 14900) / 100).toString());
@@ -140,6 +153,7 @@ export default function AgencySettingsPage() {
         payload.primary_color = primaryColor;
         payload.secondary_color = secondaryColor;
         payload.accent_color = accentColor;
+        payload.website_theme = websiteTheme;
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
@@ -227,32 +241,33 @@ export default function AgencySettingsPage() {
   if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: branding.primaryColor }} />
       </div>
     );
   }
 
   const getStripeStatusDisplay = () => {
     if (!stripeStatus?.connected && !agency?.stripe_account_id) {
-      return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
+      return { status: 'not_connected', label: 'Not Connected', color: mutedTextColor };
     }
     if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) {
-      return { status: 'active', label: 'Active', color: 'text-emerald-400' };
+      return { status: 'active', label: 'Active', color: '#34d399' };
     }
     if (stripeStatus?.connected || agency?.stripe_account_id) {
-      return { status: 'restricted', label: 'Setup Incomplete', color: 'text-amber-400' };
+      return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' };
     }
-    return { status: 'not_connected', label: 'Not Connected', color: 'text-[#fafaf9]/50' };
+    return { status: 'not_connected', label: 'Not Connected', color: mutedTextColor };
   };
 
   const stripeDisplay = getStripeStatusDisplay();
+  const primaryColorValue = branding.primaryColor || '#10b981';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-[#fafaf9]/50">Manage your agency settings</p>
+        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Manage your agency settings</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
@@ -264,10 +279,16 @@ export default function AgencySettingsPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'text-[#fafaf9]/50 hover:bg-white/[0.04] hover:text-[#fafaf9]'
+                  !activeTab || activeTab !== tab.id
+                    ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]')
+                    : ''
                 }`}
+                style={activeTab === tab.id ? {
+                  backgroundColor: `${primaryColorValue}15`,
+                  color: primaryColorValue,
+                } : {
+                  color: mutedTextColor,
+                }}
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
@@ -280,26 +301,45 @@ export default function AgencySettingsPage() {
         <div className="flex-1 max-w-2xl">
           {/* Error/Success Messages */}
           {error && (
-            <div className="mb-4 sm:mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+            <div 
+              className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+              style={{
+                backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+              }}
+            >
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
+              <p className="text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>{error}</p>
             </div>
           )}
           
           {saved && (
-            <div className="mb-4 sm:mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
-              <p className="text-sm text-emerald-400">Settings saved!</p>
+            <div 
+              className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+              style={{
+                backgroundColor: `${primaryColorValue}15`,
+                border: `1px solid ${primaryColorValue}30`,
+              }}
+            >
+              <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColorValue }} />
+              <p className="text-sm" style={{ color: primaryColorValue }}>Settings saved!</p>
             </div>
           )}
 
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ 
+              backgroundColor: cardBg, 
+              border: `1px solid ${borderColor}`,
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+          >
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3>
-                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Basic information about your agency.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Basic information about your agency.</p>
                 </div>
 
                 <div>
@@ -308,18 +348,26 @@ export default function AgencySettingsPage() {
                     type="text"
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
+                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none"
+                    style={{ 
+                      backgroundColor: inputBg, 
+                      border: `1px solid ${inputBorder}`,
+                      color: textColor,
+                    }}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label>
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div 
+                      className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                    >
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />
                       ) : (
-                        <Building className="h-6 w-6 sm:h-8 sm:w-8 text-[#fafaf9]/30" />
+                        <Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: mutedTextColor }} />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -332,22 +380,28 @@ export default function AgencySettingsPage() {
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:bg-white/[0.06] transition-colors"
+                        className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                          isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
+                        }`}
+                        style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
                       >
                         <Upload className="h-4 w-4" />
                         Upload
                       </button>
-                      <p className="mt-1.5 text-[10px] sm:text-xs text-[#fafaf9]/40">PNG, JPG up to 2MB</p>
+                      <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>PNG, JPG up to 2MB</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9]/50">
+                  <div 
+                    className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}
+                  >
                     {agency?.slug}
                   </div>
-                  <p className="mt-1.5 text-[10px] sm:text-xs text-[#fafaf9]/40 break-all">
+                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: mutedTextColor }}>
                     URL: https://{agency?.slug}.{platformDomain}/signup
                   </p>
                 </div>
@@ -359,7 +413,48 @@ export default function AgencySettingsPage() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Brand Colors</h3>
-                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Customize your client portal colors.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Customize your client portal colors.</p>
+                </div>
+
+                {/* Theme Selector */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Theme Mode</label>
+                  <p className="text-xs mb-3" style={{ color: mutedTextColor }}>
+                    Choose the color scheme for your dashboard and client-facing pages.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {[
+                      { value: 'light', label: 'Light', icon: Sun },
+                      { value: 'dark', label: 'Dark', icon: Moon },
+                      { value: 'auto', label: 'Auto', icon: Monitor },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setWebsiteTheme(option.value as 'light' | 'dark' | 'auto')}
+                        className={`flex flex-col items-center gap-2 rounded-xl p-3 sm:p-4 transition-all ${
+                          websiteTheme === option.value ? '' : (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]')
+                        }`}
+                        style={websiteTheme === option.value ? {
+                          backgroundColor: `${primaryColorValue}15`,
+                          border: `2px solid ${primaryColorValue}`,
+                        } : {
+                          backgroundColor: inputBg,
+                          border: `1px solid ${inputBorder}`,
+                        }}
+                      >
+                        <option.icon 
+                          className="h-5 w-5 sm:h-6 sm:w-6" 
+                          style={{ color: websiteTheme === option.value ? primaryColorValue : mutedTextColor }} 
+                        />
+                        <span 
+                          className="text-xs sm:text-sm font-medium"
+                          style={{ color: websiteTheme === option.value ? primaryColorValue : textColor }}
+                        >
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-3 sm:space-y-4">
@@ -381,7 +476,12 @@ export default function AgencySettingsPage() {
                           type="text"
                           value={color.value}
                           onChange={(e) => color.setter(e.target.value)}
-                          className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none transition-colors"
+                          className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors focus:outline-none"
+                          style={{ 
+                            backgroundColor: inputBg, 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                     </div>
@@ -391,7 +491,10 @@ export default function AgencySettingsPage() {
                 {/* Preview */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Preview</label>
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4 space-y-2 sm:space-y-3">
+                  <div 
+                    className="rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                  >
                     <div className="flex flex-wrap gap-2">
                       <button 
                         className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors"
@@ -419,83 +522,130 @@ export default function AgencySettingsPage() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Pricing</h3>
-                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Set prices and limits for your plans.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Set prices and limits for your plans.</p>
                 </div>
 
                 <div className="space-y-3 sm:space-y-4">
                   {/* Starter Plan */}
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
+                  <div 
+                    className="rounded-xl p-3 sm:p-4"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                  >
                     <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Starter Plan</h4>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
                         <input
                           type="number"
                           value={priceStarter}
                           onChange={(e) => setPriceStarter(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#f9fafb', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
                         <input
                           type="number"
                           value={limitStarter}
                           onChange={(e) => setLimitStarter(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#f9fafb', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Pro Plan */}
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-3 sm:p-4">
+                  <div 
+                    className="rounded-xl p-3 sm:p-4"
+                    style={{ 
+                      backgroundColor: `${primaryColorValue}08`,
+                      border: `1px solid ${primaryColorValue}30`,
+                    }}
+                  >
                     <div className="flex items-center gap-2 mb-2 sm:mb-3">
                       <h4 className="font-medium text-sm sm:text-base">Pro Plan</h4>
-                      <span className="text-[10px] sm:text-xs bg-emerald-500/20 text-emerald-400 px-1.5 sm:px-2 py-0.5 rounded-full">Popular</span>
+                      <span 
+                        className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: `${primaryColorValue}20`, color: primaryColorValue }}
+                      >
+                        Popular
+                      </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
                         <input
                           type="number"
                           value={pricePro}
                           onChange={(e) => setPricePro(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#ffffff', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
                         <input
                           type="number"
                           value={limitPro}
                           onChange={(e) => setLimitPro(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#ffffff', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Growth Plan */}
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 sm:p-4">
+                  <div 
+                    className="rounded-xl p-3 sm:p-4"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                  >
                     <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Growth Plan</h4>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Price ($)</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
                         <input
                           type="number"
                           value={priceGrowth}
                           onChange={(e) => setPriceGrowth(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#f9fafb', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1 text-[#fafaf9]/50">Calls</label>
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
                         <input
                           type="number"
                           value={limitGrowth}
                           onChange={(e) => setLimitGrowth(e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-[#050505] px-3 py-2 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                          className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{ 
+                            backgroundColor: isDark ? '#050505' : '#f9fafb', 
+                            border: `1px solid ${inputBorder}`,
+                            color: textColor,
+                          }}
                         />
                       </div>
                     </div>
@@ -509,11 +659,14 @@ export default function AgencySettingsPage() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3>
-                  <p className="text-xs sm:text-sm text-[#fafaf9]/50">Connect Stripe to receive payments.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Connect Stripe to receive payments.</p>
                 </div>
 
                 {/* Stripe Connect Card */}
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 sm:p-5">
+                <div 
+                  className="rounded-xl p-4 sm:p-5"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                >
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0">
@@ -521,14 +674,14 @@ export default function AgencySettingsPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
-                        <p className={`text-xs sm:text-sm ${stripeDisplay.color}`}>
+                        <p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>
                           {loadingStripeStatus ? 'Loading...' : stripeDisplay.label}
                         </p>
                       </div>
                     </div>
                     
                     {stripeDisplay.status === 'active' && (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 flex-shrink-0" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: primaryColorValue }} />
                     )}
                     {stripeDisplay.status === 'restricted' && (
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
@@ -536,12 +689,15 @@ export default function AgencySettingsPage() {
                   </div>
 
                   {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                    <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-3">
+                    <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${borderColor}` }}>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-2 sm:px-3 py-1.5 sm:py-2">
-                          <span className="text-[#fafaf9]/50">Charges</span>
+                        <div 
+                          className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
+                          style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                        >
+                          <span style={{ color: mutedTextColor }}>Charges</span>
                           {stripeStatus?.charges_enabled ? (
-                            <span className="flex items-center gap-1 text-emerald-400">
+                            <span className="flex items-center gap-1" style={{ color: primaryColorValue }}>
                               <Check className="h-3 w-3" /> OK
                             </span>
                           ) : (
@@ -550,10 +706,13 @@ export default function AgencySettingsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-2 sm:px-3 py-1.5 sm:py-2">
-                          <span className="text-[#fafaf9]/50">Payouts</span>
+                        <div 
+                          className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2"
+                          style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                        >
+                          <span style={{ color: mutedTextColor }}>Payouts</span>
                           {stripeStatus?.payouts_enabled ? (
-                            <span className="flex items-center gap-1 text-emerald-400">
+                            <span className="flex items-center gap-1" style={{ color: primaryColorValue }}>
                               <Check className="h-3 w-3" /> OK
                             </span>
                           ) : (
@@ -564,12 +723,18 @@ export default function AgencySettingsPage() {
                         </div>
                       </div>
 
-                      <p className="text-[10px] sm:text-xs text-[#fafaf9]/40 break-all">
+                      <p className="text-[10px] sm:text-xs break-all" style={{ color: mutedTextColor }}>
                         ID: {agency?.stripe_account_id}
                       </p>
 
                       {stripeDisplay.status === 'restricted' && (
-                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 sm:p-3">
+                        <div 
+                          className="rounded-lg p-2 sm:p-3"
+                          style={{
+                            backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.1)',
+                            border: '1px solid rgba(245,158,11,0.2)',
+                          }}
+                        >
                           <p className="text-xs sm:text-sm text-amber-400">
                             Complete setup to receive payments.
                           </p>
@@ -596,7 +761,14 @@ export default function AgencySettingsPage() {
                           href="https://dashboard.stripe.com"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-[#fafaf9]/70 hover:bg-white/[0.06] transition-colors"
+                          className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                            isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
+                          }`}
+                          style={{ 
+                            backgroundColor: inputBg, 
+                            border: `1px solid ${inputBorder}`,
+                            color: isDark ? 'rgba(250,250,249,0.7)' : '#374151',
+                          }}
                         >
                           <ExternalLink className="h-4 w-4" />
                           Dashboard
@@ -605,7 +777,14 @@ export default function AgencySettingsPage() {
                         <button
                           onClick={fetchStripeStatus}
                           disabled={loadingStripeStatus}
-                          className="inline-flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-2 text-[#fafaf9]/50 hover:bg-white/[0.06] transition-colors"
+                          className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${
+                            isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
+                          }`}
+                          style={{ 
+                            backgroundColor: inputBg, 
+                            border: `1px solid ${inputBorder}`,
+                            color: mutedTextColor,
+                          }}
                           title="Refresh"
                         >
                           <RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} />
@@ -615,7 +794,7 @@ export default function AgencySettingsPage() {
                   )}
 
                   {stripeDisplay.status === 'not_connected' && (
-                    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                    <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
                       <button
                         onClick={handleStripeConnect}
                         disabled={connectingStripe}
@@ -628,7 +807,7 @@ export default function AgencySettingsPage() {
                         )}
                         Connect Stripe
                       </button>
-                      <p className="mt-2 text-[10px] sm:text-xs text-[#fafaf9]/40">
+                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
                         You'll be redirected to Stripe.
                       </p>
                     </div>
@@ -637,18 +816,29 @@ export default function AgencySettingsPage() {
 
                 {/* Disconnect Option */}
                 {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                  <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] p-3 sm:p-4">
+                  <div 
+                    className="rounded-xl p-3 sm:p-4"
+                    style={{
+                      backgroundColor: isDark ? 'rgba(239,68,68,0.02)' : '#fef2f2',
+                      border: isDark ? '1px solid rgba(239,68,68,0.1)' : '1px solid #fecaca',
+                    }}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm text-red-400">Disconnect Stripe</p>
-                        <p className="text-xs text-[#fafaf9]/50 mt-0.5">
+                        <p className="font-medium text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>Disconnect Stripe</p>
+                        <p className="text-xs mt-0.5" style={{ color: mutedTextColor }}>
                           You won't receive payments until reconnected.
                         </p>
                       </div>
                       <button
                         onClick={handleStripeDisconnect}
                         disabled={disconnectingStripe}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0"
+                        style={{
+                          backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)',
+                          border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(239,68,68,0.2)',
+                          color: isDark ? '#f87171' : '#dc2626',
+                        }}
                       >
                         {disconnectingStripe ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -665,11 +855,15 @@ export default function AgencySettingsPage() {
 
             {/* Save Button */}
             {activeTab !== 'payments' && (
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/[0.06] flex justify-end">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${borderColor}` }}>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+                  className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+                  style={{ 
+                    backgroundColor: primaryColorValue, 
+                    color: isLightColor(primaryColorValue) ? '#050505' : '#ffffff',
+                  }}
                 >
                   {saving ? (
                     <>

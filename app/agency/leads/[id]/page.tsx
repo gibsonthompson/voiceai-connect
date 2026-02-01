@@ -55,30 +55,11 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
-const getStatusStyle = (status: string) => {
-  switch (status) {
-    case 'new':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    case 'contacted':
-      return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-    case 'qualified':
-      return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-    case 'proposal':
-      return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-    case 'won':
-      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    case 'lost':
-      return 'bg-red-500/10 text-red-400 border-red-500/20';
-    default:
-      return 'bg-white/[0.06] text-[#fafaf9]/50 border-white/[0.08]';
-  }
-};
-
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
   const leadId = params.id as string;
-  const { agency, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading } = useAgency();
   
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,6 +85,37 @@ export default function LeadDetailPage() {
     estimated_value: '',
     next_follow_up: '',
   });
+
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+  const primaryColor = branding.primaryColor || '#10b981';
+
+  // Theme-based colors
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'new':
+        return { bg: 'rgba(59,130,246,0.1)', text: isDark ? '#60a5fa' : '#2563eb', border: 'rgba(59,130,246,0.2)' };
+      case 'contacted':
+        return { bg: 'rgba(245,158,11,0.1)', text: isDark ? '#fbbf24' : '#d97706', border: 'rgba(245,158,11,0.2)' };
+      case 'qualified':
+        return { bg: 'rgba(168,85,247,0.1)', text: isDark ? '#a78bfa' : '#7c3aed', border: 'rgba(168,85,247,0.2)' };
+      case 'proposal':
+        return { bg: 'rgba(6,182,212,0.1)', text: isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
+      case 'won':
+        return { bg: `${primaryColor}15`, text: primaryColor, border: `${primaryColor}30` };
+      case 'lost':
+        return { bg: 'rgba(239,68,68,0.1)', text: isDark ? '#f87171' : '#dc2626', border: 'rgba(239,68,68,0.2)' };
+      default:
+        return { bg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', text: mutedTextColor, border: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb' };
+    }
+  };
 
   useEffect(() => {
     if (agency && leadId) {
@@ -275,7 +287,7 @@ export default function LeadDetailPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     );
   }
@@ -285,19 +297,24 @@ export default function LeadDetailPage() {
       <div className="p-4 sm:p-6 lg:p-8">
         <Link 
           href="/agency/leads"
-          className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm transition-colors mb-8"
+          style={{ color: mutedTextColor }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
         </Link>
         <div className="text-center py-16 sm:py-20">
-          <div className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-red-500/10">
-            <XCircle className="h-7 w-7 sm:h-8 sm:w-8 text-red-400/50" />
+          <div 
+            className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full"
+            style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+          >
+            <XCircle className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: isDark ? '#f87171' : '#dc2626', opacity: 0.5 }} />
           </div>
-          <p className="mt-4 font-medium text-[#fafaf9]/70">{error}</p>
+          <p className="mt-4 font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{error}</p>
           <Link 
             href="/agency/leads"
-            className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300"
+            className="mt-4 inline-flex items-center gap-2 text-sm transition-colors"
+            style={{ color: primaryColor }}
           >
             <ArrowLeft className="h-4 w-4" />
             Return to leads
@@ -313,7 +330,8 @@ export default function LeadDetailPage() {
       <div className="mb-6 sm:mb-8">
         <Link 
           href="/agency/leads"
-          className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors mb-4"
+          className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
+          style={{ color: mutedTextColor }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -321,14 +339,17 @@ export default function LeadDetailPage() {
         
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-blue-500/10 flex-shrink-0">
-              <span className="text-lg sm:text-2xl font-medium text-blue-400">
+            <div 
+              className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0"
+              style={{ backgroundColor: 'rgba(59,130,246,0.1)' }}
+            >
+              <span className="text-lg sm:text-2xl font-medium" style={{ color: isDark ? '#60a5fa' : '#2563eb' }}>
                 {lead?.business_name?.charAt(0) || '?'}
               </span>
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate">{lead?.business_name}</h1>
-              <p className="text-sm text-[#fafaf9]/50">
+              <p className="text-sm" style={{ color: mutedTextColor }}>
                 Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '—'}
               </p>
             </div>
@@ -338,7 +359,12 @@ export default function LeadDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 sm:px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              style={{
+                backgroundColor: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                color: isDark ? '#f87171' : '#dc2626',
+              }}
             >
               {deleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,7 +376,8 @@ export default function LeadDetailPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-3 sm:px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
+              className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
+              style={{ backgroundColor: primaryColor, color: '#050505' }}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -365,12 +392,26 @@ export default function LeadDetailPage() {
 
       {/* Status Messages */}
       {error && (
-        <div className="mb-4 sm:mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-3 sm:p-4 text-sm text-red-400">
+        <div 
+          className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 text-sm"
+          style={{
+            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+            color: isDark ? '#f87171' : '#dc2626',
+          }}
+        >
           {error}
         </div>
       )}
       {successMessage && (
-        <div className="mb-4 sm:mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:p-4 text-sm text-emerald-400 flex items-center gap-2">
+        <div 
+          className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 text-sm flex items-center gap-2"
+          style={{
+            backgroundColor: `${primaryColor}15`,
+            border: `1px solid ${primaryColor}30`,
+            color: primaryColor,
+          }}
+        >
           <CheckCircle className="h-4 w-4 flex-shrink-0" />
           {successMessage}
         </div>
@@ -378,12 +419,17 @@ export default function LeadDetailPage() {
 
       {/* Quick Actions Bar */}
       <div className="mb-6 sm:mb-8">
-        <span className="text-xs sm:text-sm text-[#fafaf9]/50 block mb-2 sm:mb-3">Quick Actions:</span>
+        <span className="text-xs sm:text-sm block mb-2 sm:mb-3" style={{ color: mutedTextColor }}>Quick Actions:</span>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => openComposer('email')}
             disabled={!lead?.email}
-            className="inline-flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-purple-400 hover:bg-purple-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'rgba(168,85,247,0.1)',
+              border: '1px solid rgba(168,85,247,0.3)',
+              color: isDark ? '#a78bfa' : '#7c3aed',
+            }}
           >
             <Mail className="h-4 w-4" />
             Email
@@ -391,7 +437,12 @@ export default function LeadDetailPage() {
           <button
             onClick={() => openComposer('sms')}
             disabled={!lead?.phone}
-            className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-cyan-400 hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: 'rgba(6,182,212,0.1)',
+              border: '1px solid rgba(6,182,212,0.3)',
+              color: isDark ? '#22d3ee' : '#0891b2',
+            }}
           >
             <MessageSquare className="h-4 w-4" />
             SMS
@@ -399,7 +450,12 @@ export default function LeadDetailPage() {
           {lead?.phone && (
             <a
               href={`tel:${lead.phone}`}
-              className="inline-flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs sm:text-sm font-medium text-green-400 hover:bg-green-500/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                color: isDark ? '#4ade80' : '#16a34a',
+              }}
             >
               <PhoneCall className="h-4 w-4" />
               Call
@@ -410,21 +466,30 @@ export default function LeadDetailPage() {
 
       {/* Quick Status Buttons */}
       <div className="mb-6 sm:mb-8">
-        <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-2 sm:mb-3">Pipeline Stage</p>
+        <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: mutedTextColor }}>Pipeline Stage</p>
         <div className="flex flex-wrap gap-2">
-          {STATUS_OPTIONS.map((status) => (
-            <button
-              key={status.value}
-              onClick={() => handleQuickStatusChange(status.value)}
-              className={`rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border transition-all ${
-                formData.status === status.value
-                  ? getStatusStyle(status.value) + ' border-current'
-                  : 'border-white/[0.08] bg-white/[0.02] text-[#fafaf9]/60 hover:bg-white/[0.04]'
-              }`}
-            >
-              {status.label}
-            </button>
-          ))}
+          {STATUS_OPTIONS.map((status) => {
+            const style = getStatusStyle(status.value);
+            const isActive = formData.status === status.value;
+            return (
+              <button
+                key={status.value}
+                onClick={() => handleQuickStatusChange(status.value)}
+                className="rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all"
+                style={isActive ? {
+                  backgroundColor: style.bg,
+                  border: `1px solid ${style.text}`,
+                  color: style.text,
+                } : {
+                  backgroundColor: cardBg,
+                  border: `1px solid ${inputBorder}`,
+                  color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
+                }}
+              >
+                {status.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -432,41 +497,47 @@ export default function LeadDetailPage() {
         {/* Left Column - Contact & Business Info */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Business Information */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <Building2 className="h-4 w-4 text-[#fafaf9]/50" />
+              <Building2 className="h-4 w-4" style={{ color: mutedTextColor }} />
               Business Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Business Name *</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Business Name *</label>
                 <input
                   type="text"
                   value={formData.business_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Industry</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Industry</label>
                 <input
                   type="text"
                   value={formData.industry}
                   onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
                   placeholder="e.g., Plumbing, HVAC"
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Website</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Website</label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
                     type="url"
                     value={formData.website}
                     onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
                     placeholder="https://example.com"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
               </div>
@@ -474,42 +545,48 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Contact Information */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <User className="h-4 w-4 text-[#fafaf9]/50" />
+              <User className="h-4 w-4" style={{ color: mutedTextColor }} />
               Contact Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Contact Name</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Contact Name</label>
                 <input
                   type="text"
                   value={formData.contact_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Phone</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Email</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
               </div>
@@ -517,9 +594,12 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Notes Section */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <FileText className="h-4 w-4 text-[#fafaf9]/50" />
+              <FileText className="h-4 w-4" style={{ color: mutedTextColor }} />
               Internal Notes
             </h3>
             <textarea
@@ -527,7 +607,8 @@ export default function LeadDetailPage() {
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Add notes about this lead..."
               rows={4}
-              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none resize-none"
+              className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none"
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
             />
           </div>
 
@@ -545,18 +626,22 @@ export default function LeadDetailPage() {
         {/* Right Column - Lead Details */}
         <div className="space-y-4 sm:space-y-6">
           {/* Lead Status & Source */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <Tag className="h-4 w-4 text-[#fafaf9]/50" />
+              <Tag className="h-4 w-4" style={{ color: mutedTextColor }} />
               Lead Details
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Status</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -564,11 +649,12 @@ export default function LeadDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Source</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Source</label>
                 <select
                   value={formData.source}
                   onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 >
                   <option value="">Select source</option>
                   {SOURCE_OPTIONS.map((opt) => (
@@ -580,34 +666,39 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Deal Value & Follow-up */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <DollarSign className="h-4 w-4 text-[#fafaf9]/50" />
+              <DollarSign className="h-4 w-4" style={{ color: mutedTextColor }} />
               Deal Info
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Estimated Value ($/mo)</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Estimated Value ($/mo)</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
                     type="number"
                     value={formData.estimated_value}
                     onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
                     placeholder="99"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm text-[#fafaf9]/50 mb-1.5">Next Follow-up</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Next Follow-up</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
                     type="date"
                     value={formData.next_follow_up}
                     onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-4 py-2 sm:py-2.5 text-sm text-[#fafaf9] focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
               </div>
@@ -615,18 +706,21 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Timestamps */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <h3 className="font-medium mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <Clock className="h-4 w-4 text-[#fafaf9]/50" />
+              <Clock className="h-4 w-4" style={{ color: mutedTextColor }} />
               Timestamps
             </h3>
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between">
-                <span className="text-[#fafaf9]/50">Created</span>
+                <span style={{ color: mutedTextColor }}>Created</span>
                 <span>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#fafaf9]/50">Last Updated</span>
+                <span style={{ color: mutedTextColor }}>Last Updated</span>
                 <span>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '—'}</span>
               </div>
             </div>
