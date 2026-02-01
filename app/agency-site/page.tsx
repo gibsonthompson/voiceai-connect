@@ -30,9 +30,15 @@ interface Agency {
   // Contact
   support_email: string | null;
   support_phone: string | null;
+  // Demo phone (optional - agencies can set their own)
+  demo_phone: string | null;
   // Advanced config (JSONB)
   marketing_config?: Partial<MarketingConfig>;
 }
+
+// Platform default demo phone number
+const PLATFORM_DEMO_PHONE = '(770) 809-2820';
+const PLATFORM_DEMO_PHONE_RAW = '+17708092820';
 
 // Set dynamic favicon
 function setFavicon(url: string) {
@@ -238,6 +244,12 @@ export default function AgencySiteHomePage() {
   // Use stored or detected logo background color
   const logoBackgroundColor = agency.logo_background_color || detectedLogoBackground;
 
+  // Demo phone: use agency's demo_phone, fallback to support_phone, fallback to platform default
+  const demoPhone = agency.demo_phone || PLATFORM_DEMO_PHONE;
+  const demoPhoneRaw = agency.demo_phone 
+    ? agency.demo_phone.replace(/\D/g, '')
+    : PLATFORM_DEMO_PHONE_RAW;
+
   // Build marketing config from agency data
   const marketingConfig: Partial<MarketingConfig> = {
     theme,
@@ -256,10 +268,9 @@ export default function AgencySiteHomePage() {
         : ['Never Miss', 'Another Call'],
       subtitle: agency.website_subheadline || `AI Receptionist Starting at $${starterPrice}/month`,
       description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
-      demoPhone: agency.support_phone || '',
-      demoInstructions: agency.support_phone 
-        ? "Call now to hear our AI in action. Tell it about your business and see how it handles calls."
-        : "",
+      demoPhone: demoPhone,
+      demoPhoneRaw: demoPhoneRaw,
+      demoInstructions: "Call now to hear our AI in action. Tell it about your business and see how it handles calls.",
       trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
     },
     pricing: [
@@ -316,7 +327,7 @@ export default function AgencySiteHomePage() {
     ],
     footer: {
       address: '',
-      phone: agency.support_phone || '',
+      phone: agency.support_phone || demoPhone,
       email: agency.support_email || '',
       productLinks: [
         { label: 'Features', href: '#features' },
@@ -331,7 +342,7 @@ export default function AgencySiteHomePage() {
         { label: 'Professional Services', href: '#' },
       ],
       companyLinks: [
-        { label: 'Get Started', href: '/client/signup' },
+        { label: 'Get Started', href: '/get-started' },
         { label: 'Contact', href: agency.support_email ? `mailto:${agency.support_email}` : '#' },
         { label: 'Privacy Policy', href: '/privacy' },
         { label: 'Terms & Conditions', href: '/terms' },
