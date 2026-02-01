@@ -9,17 +9,17 @@ import {
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 
-// Waveform icon component
-function WaveformIcon({ className }: { className?: string }) {
+// Waveform icon component with color prop
+function WaveformIcon({ className, color }: { className?: string; color?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
+      <rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
+      <rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" />
+      <rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} />
+      <rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} />
+      <rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} />
+      <rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" />
+      <rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
     </svg>
   );
 }
@@ -111,7 +111,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     <div 
       className="min-h-screen bg-[#050505] text-[#fafaf9]"
       style={{
-        // CSS custom properties for agency colors
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
         '--color-accent': accentColor,
@@ -125,13 +124,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         }}
       />
 
-      {/* Mobile Header - STICKY (not fixed), extends into safe area */}
+      {/* Mobile Header */}
       <div 
         className="sticky top-0 z-30 md:hidden bg-[#050505]"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <header className="flex items-center justify-between h-16 px-4 border-b border-white/[0.06]">
-          {/* Left - Logo & Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
@@ -145,7 +143,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 className="flex items-center justify-center rounded-xl border border-white/10" 
                 style={{ height: '40px', width: '40px', backgroundColor: `${primaryColor}15` }}
               >
-                <WaveformIcon className="h-6 w-6" style={{ color: primaryColor }} />
+                <WaveformIcon className="h-6 w-6" color={primaryColor} />
               </div>
             )}
             <span className="font-semibold text-lg text-[#fafaf9] truncate max-w-[180px]">
@@ -153,7 +151,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
 
-          {/* Right - Hamburger */}
           <button
             onClick={() => setSidebarOpen(true)}
             className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
@@ -171,7 +168,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar - Desktop: LEFT, Mobile: slides from LEFT */}
+      {/* Sidebar */}
       <aside 
         className={`
           fixed inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#050505] border-r border-white/[0.06]
@@ -208,7 +205,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               className="flex items-center justify-center rounded-lg border border-white/10" 
               style={{ height: '32px', width: '32px', backgroundColor: `${primaryColor}15` }}
             >
-              <WaveformIcon className="h-5 w-5" style={{ color: primaryColor }} />
+              <WaveformIcon className="h-5 w-5" color={primaryColor} />
             </div>
           )}
           <span className="font-semibold text-[#fafaf9] truncate">
@@ -250,7 +247,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           className="absolute bottom-0 left-0 right-0 p-4 space-y-3"
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}
         >
-          {/* Trial/Plan Badge */}
+          {/* Trial Badge */}
           {agency?.subscription_status === 'trial' && agency.trial_ends_at && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-3">
               <p className="text-xs text-amber-400/80">Trial Period</p>
@@ -260,7 +257,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {/* Plan Badge - Uses agency primary color */}
+          {/* Plan Badge */}
           {(agency?.subscription_status === 'active' || agency?.subscription_status === 'trialing') && (
             <div 
               className="rounded-xl p-3"
@@ -298,7 +295,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 export default function AgencyLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
-  // Don't wrap login page with provider
   if (pathname === '/agency/login') {
     return <>{children}</>;
   }
