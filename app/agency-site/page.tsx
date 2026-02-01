@@ -39,6 +39,30 @@ interface Agency {
 // Platform default demo phone number
 const PLATFORM_DEMO_PHONE = '(770) 809-2820';
 
+// ============================================================================
+// HELPER: Cache theme for subsequent pages
+// ============================================================================
+function setCachedTheme(theme: 'light' | 'dark' | 'auto' | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    const resolved = theme === 'dark' ? 'dark' : 'light';
+    sessionStorage.setItem('agency_theme', resolved);
+  } catch (e) {
+    // sessionStorage not available
+  }
+}
+
+function getCachedTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const cached = sessionStorage.getItem('agency_theme');
+    if (cached === 'dark') return 'dark';
+  } catch (e) {
+    // sessionStorage not available
+  }
+  return 'light';
+}
+
 // Set dynamic favicon
 function setFavicon(url: string) {
   // Remove existing favicons
@@ -160,12 +184,36 @@ function detectLogoBackgroundColor(imageUrl: string): Promise<string | null> {
   });
 }
 
+// ============================================================================
+// THEMED LOADING COMPONENT
+// ============================================================================
+function ThemedLoading({ theme }: { theme: 'light' | 'dark' }) {
+  const isDark = theme === 'dark';
+  return (
+    <div 
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
+    >
+      <Loader2 
+        className="h-8 w-8 animate-spin" 
+        style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+      />
+    </div>
+  );
+}
+
 export default function AgencySiteHomePage() {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [detectedLogoBackground, setDetectedLogoBackground] = useState<string | null>(null);
   const [detectedTheme, setDetectedTheme] = useState<'light' | 'dark'>('light');
+  const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
+
+  // Get cached theme on mount (client-side only)
+  useEffect(() => {
+    setCachedThemeState(getCachedTheme());
+  }, []);
 
   useEffect(() => {
     const fetchAgency = async () => {
@@ -180,6 +228,9 @@ export default function AgencySiteHomePage() {
         
         const data = await response.json();
         setAgency(data.agency);
+        
+        // Cache the theme for subsequent pages (get-started, etc.)
+        setCachedTheme(data.agency.website_theme);
         
         // Set page title
         setPageTitle(`${data.agency.name} - AI Receptionist`);
@@ -210,19 +261,26 @@ export default function AgencySiteHomePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <ThemedLoading theme={cachedTheme} />;
   }
 
   if (error || !agency) {
+    const isDark = cachedTheme === 'dark';
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
+      >
         <div className="text-center">
-          <h1 className="text-2xl font-medium text-gray-900 mb-2">Site Not Found</h1>
-          <p className="text-gray-500">Please check the URL and try again.</p>
+          <h1 
+            className="text-2xl font-medium mb-2"
+            style={{ color: isDark ? '#fafaf9' : '#111827' }}
+          >
+            Site Not Found
+          </h1>
+          <p style={{ color: isDark ? '#6b7280' : '#6b7280' }}>
+            Please check the URL and try again.
+          </p>
         </div>
       </div>
     );

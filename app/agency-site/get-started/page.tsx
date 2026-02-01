@@ -518,12 +518,68 @@ function SignupFormContent({ agency }: { agency: Agency }) {
 }
 
 // ============================================================================
+// HELPER: Get cached theme from sessionStorage
+// ============================================================================
+function getCachedTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const cached = sessionStorage.getItem('agency_theme');
+    if (cached === 'dark') return 'dark';
+  } catch (e) {
+    // sessionStorage not available
+  }
+  return 'light';
+}
+
+function setCachedTheme(theme: 'light' | 'dark' | 'auto' | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    const resolved = theme === 'dark' ? 'dark' : 'light';
+    sessionStorage.setItem('agency_theme', resolved);
+  } catch (e) {
+    // sessionStorage not available
+  }
+}
+
+// ============================================================================
+// THEMED LOADING COMPONENT
+// ============================================================================
+function ThemedLoading({ theme }: { theme: 'light' | 'dark' }) {
+  const isDark = theme === 'dark';
+  return (
+    <div 
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
+    >
+      <div className="text-center">
+        <Loader2 
+          className="h-8 w-8 animate-spin mx-auto" 
+          style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+        />
+        <p 
+          className="mt-4 text-sm"
+          style={{ color: isDark ? '#6b7280' : '#6b7280' }}
+        >
+          Loading...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN COMPONENT - Detects agency and loads appropriate theme
 // ============================================================================
 function SignupContent() {
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [error, setError] = useState('');
+  const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
+
+  // Get cached theme on mount (client-side only)
+  useEffect(() => {
+    setCachedThemeState(getCachedTheme());
+  }, []);
 
   useEffect(() => {
     const fetchAgency = async () => {
@@ -550,6 +606,9 @@ function SignupContent() {
         
         const data = await response.json();
         setAgency(data.agency);
+        
+        // Cache the theme for future page loads
+        setCachedTheme(data.agency.website_theme);
       } catch (err) {
         console.error('Failed to fetch agency:', err);
         setError('Unable to load signup page. Please check the URL.');
@@ -561,23 +620,28 @@ function SignupContent() {
     fetchAgency();
   }, []);
 
+  // Loading state - use cached theme (respects dark mode if previously visited)
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto" />
-          <p className="mt-4 text-sm text-gray-500">Loading...</p>
-        </div>
-      </div>
-    );
+    return <ThemedLoading theme={cachedTheme} />;
   }
 
   if (error || !agency) {
+    const isDark = cachedTheme === 'dark';
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
+      >
         <div className="text-center">
-          <h1 className="text-2xl font-medium text-gray-900 mb-2">Page Not Found</h1>
-          <p className="text-gray-500">{error || 'Please check the URL and try again.'}</p>
+          <h1 
+            className="text-2xl font-medium mb-2"
+            style={{ color: isDark ? '#fafaf9' : '#111827' }}
+          >
+            Page Not Found
+          </h1>
+          <p style={{ color: isDark ? '#6b7280' : '#6b7280' }}>
+            {error || 'Please check the URL and try again.'}
+          </p>
         </div>
       </div>
     );
@@ -587,9 +651,11 @@ function SignupContent() {
 }
 
 export default function ClientSignupPage() {
+  // Note: Suspense fallback can't use hooks, so we default to light theme
+  // The actual loading state in SignupContent will use cached theme
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto" />
           <p className="mt-4 text-sm text-gray-500">Loading...</p>

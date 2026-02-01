@@ -1,5 +1,6 @@
 // app/agency-site/layout.tsx
-// This layout wraps all agency marketing site pages and overrides dark body styles
+// This layout wraps all agency marketing site pages
+// Individual pages handle their own theme - this just provides metadata defaults
 
 import type { Metadata } from 'next';
 
@@ -16,8 +17,9 @@ export default function AgencySiteLayout({
   return (
     <>
       {/* 
-        Override the dark body background from globals.css
-        This style tag is server-rendered so it applies before hydration
+        Override the dark body background from globals.css for agency sites.
+        Default to white - individual pages will set their own background.
+        This prevents the black flash during initial load.
       */}
       <style
         dangerouslySetInnerHTML={{
@@ -26,12 +28,7 @@ export default function AgencySiteLayout({
               background: #ffffff !important;
               background-color: #ffffff !important;
             }
-            /* Re-apply dark bg for dark theme marketing pages */
-            html:has(.marketing-page.theme-dark),
-            html:has(.marketing-page.theme-dark) body {
-              background: #0f0f0f !important;
-              background-color: #0f0f0f !important;
-            }
+            /* Dark theme pages set their own bg via inline styles */
           `,
         }}
       />
