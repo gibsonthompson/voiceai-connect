@@ -1642,11 +1642,12 @@
   font-weight: 600;
 }
 
-/* ==================== FOOTER ==================== */
+/* ==================== FOOTER (Theme-aware) ==================== */
 .marketing-page .footer {
-  background: var(--text-dark);
-  color: white;
+  background: var(--bg-light);
+  color: var(--text-dark);
   padding: 4rem 0 2rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .marketing-page.theme-dark .footer {
@@ -1662,9 +1663,13 @@
 }
 
 .marketing-page .footer-col h4 {
-  color: white;
+  color: var(--text-dark);
   margin-bottom: 1rem;
   font-size: 1rem;
+}
+
+.marketing-page.theme-dark .footer-col h4 {
+  color: white;
 }
 
 .marketing-page .footer-logo {
@@ -1675,24 +1680,45 @@
   font-weight: 800;
   font-size: 1.5rem;
   margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
+.marketing-page.theme-dark .footer-logo {
+  color: white;
 }
 
 .marketing-page .footer-tagline {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-medium);
   margin-bottom: 1.5rem;
+}
+
+.marketing-page.theme-dark .footer-tagline {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .marketing-page .footer-contact p {
   margin-bottom: 0.5rem;
+  color: var(--text-medium);
+}
+
+.marketing-page.theme-dark .footer-contact p {
   color: rgba(255, 255, 255, 0.8);
 }
 
 .marketing-page .footer-contact a {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-medium);
   transition: color var(--transition-base);
 }
 
 .marketing-page .footer-contact a:hover {
+  color: var(--primary-color);
+}
+
+.marketing-page.theme-dark .footer-contact a {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.marketing-page.theme-dark .footer-contact a:hover {
   color: white;
 }
 
@@ -1705,23 +1731,39 @@
 }
 
 .marketing-page .footer-links a {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-medium);
   transition: color var(--transition-base);
 }
 
 .marketing-page .footer-links a:hover {
+  color: var(--primary-color);
+}
+
+.marketing-page.theme-dark .footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.marketing-page.theme-dark .footer-links a:hover {
   color: white;
 }
 
 .marketing-page .footer-bottom {
   text-align: center;
   padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-light);
+}
+
+.marketing-page.theme-dark .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
 }
 
 .marketing-page .footer-bottom p {
   margin-bottom: 0.5rem;
+  color: var(--text-light);
+}
+
+.marketing-page.theme-dark .footer-bottom p {
   color: rgba(255, 255, 255, 0.6);
 }
 
