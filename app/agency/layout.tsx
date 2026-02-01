@@ -39,11 +39,23 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+
   // Agency colors with fallbacks
   const primaryColor = branding.primaryColor || '#10b981';
   const secondaryColor = branding.secondaryColor || '#059669';
   const accentColor = branding.accentColor || '#34d399';
   const primaryLight = isLightColor(primaryColor);
+
+  // Theme-based colors
+  const bgColor = isDark ? '#050505' : '#f9fafb';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const sidebarBg = isDark ? '#050505' : '#ffffff';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const hoverBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)';
 
   // Detect mobile
   useEffect(() => {
@@ -98,10 +110,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
-          <p className="text-[#fafaf9]/40 text-sm">Loading dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+          <p className="text-sm text-neutral-500">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -109,27 +121,34 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div 
-      className="min-h-screen bg-[#050505] text-[#fafaf9]"
+      className="min-h-screen"
       style={{
+        backgroundColor: bgColor,
+        color: textColor,
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
         '--color-accent': accentColor,
       } as React.CSSProperties}
     >
-      {/* Grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+      {/* Grain overlay - dark mode only */}
+      {isDark && (
+        <div 
+          className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      )}
 
       {/* Mobile Header */}
       <div 
-        className="sticky top-0 z-30 md:hidden bg-[#050505]"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        className="sticky top-0 z-30 md:hidden"
+        style={{ backgroundColor: sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <header className="flex items-center justify-between h-16 px-4 border-b border-white/[0.06]">
+        <header 
+          className="flex items-center justify-between h-16 px-4"
+          style={{ borderBottom: `1px solid ${borderColor}` }}
+        >
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
               <img 
@@ -140,22 +159,27 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               />
             ) : (
               <div 
-                className="flex items-center justify-center rounded-xl border border-white/10" 
-                style={{ height: '40px', width: '40px', backgroundColor: `${primaryColor}15` }}
+                className="flex items-center justify-center rounded-xl" 
+                style={{ 
+                  height: '40px', 
+                  width: '40px', 
+                  backgroundColor: `${primaryColor}15`,
+                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${primaryColor}20`,
+                }}
               >
                 <WaveformIcon className="h-6 w-6" color={primaryColor} />
               </div>
             )}
-            <span className="font-semibold text-lg text-[#fafaf9] truncate max-w-[180px]">
+            <span className="font-semibold text-lg truncate max-w-[180px]">
               {agency?.name || 'Agency'}
             </span>
           </div>
 
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
           >
-            <Menu className="h-7 w-7 text-[#fafaf9]" />
+            <Menu className="h-7 w-7" />
           </button>
         </header>
       </div>
@@ -171,28 +195,38 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#050505] border-r border-white/[0.06]
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64
           transform transition-transform duration-300 ease-out
           ${isMobile 
             ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
             : 'translate-x-0'
           }
         `}
-        style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
+        style={{ 
+          backgroundColor: sidebarBg, 
+          borderRight: `1px solid ${borderColor}`,
+          paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
+        }}
       >
         {/* Mobile Header in Sidebar */}
-        <div className="flex md:hidden items-center justify-between h-16 px-4 border-b border-white/[0.06]">
-          <span className="font-semibold text-lg text-[#fafaf9]">Menu</span>
+        <div 
+          className="flex md:hidden items-center justify-between h-16 px-4"
+          style={{ borderBottom: `1px solid ${borderColor}` }}
+        >
+          <span className="font-semibold text-lg">Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
           >
-            <X className="h-7 w-7 text-[#fafaf9]" />
+            <X className="h-7 w-7" />
           </button>
         </div>
 
         {/* Desktop Logo & Agency Name */}
-        <div className="hidden md:flex h-16 items-center gap-3 border-b border-white/[0.06] px-6">
+        <div 
+          className="hidden md:flex h-16 items-center gap-3 px-6"
+          style={{ borderBottom: `1px solid ${borderColor}` }}
+        >
           {branding.logoUrl ? (
             <img 
               src={branding.logoUrl} 
@@ -202,13 +236,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             />
           ) : (
             <div 
-              className="flex items-center justify-center rounded-lg border border-white/10" 
-              style={{ height: '32px', width: '32px', backgroundColor: `${primaryColor}15` }}
+              className="flex items-center justify-center rounded-lg" 
+              style={{ 
+                height: '32px', 
+                width: '32px', 
+                backgroundColor: `${primaryColor}15`,
+                border: isDark ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${primaryColor}20`,
+              }}
             >
               <WaveformIcon className="h-5 w-5" color={primaryColor} />
             </div>
           )}
-          <span className="font-semibold text-[#fafaf9] truncate">
+          <span className="font-semibold truncate">
             {agency?.name || 'Agency'}
           </span>
         </div>
@@ -223,14 +262,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
-                  active
-                    ? ''
-                    : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'
+                  !active ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''
                 }`}
                 style={active ? {
                   backgroundColor: `${primaryColor}15`,
                   color: primaryColor,
-                } : undefined}
+                } : {
+                  color: mutedTextColor,
+                }}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="h-5 w-5" />
@@ -249,9 +288,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         >
           {/* Trial Badge */}
           {agency?.subscription_status === 'trial' && agency.trial_ends_at && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-3">
-              <p className="text-xs text-amber-400/80">Trial Period</p>
-              <p className="text-sm font-medium text-amber-300">
+            <div 
+              className="rounded-xl p-3"
+              style={{
+                backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)',
+                border: '1px solid rgba(245,158,11,0.2)',
+              }}
+            >
+              <p className="text-xs" style={{ color: isDark ? 'rgba(245,158,11,0.8)' : '#b45309' }}>Trial Period</p>
+              <p className="text-sm font-medium" style={{ color: isDark ? '#fcd34d' : '#d97706' }}>
                 {Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days left
               </p>
             </div>
@@ -276,7 +321,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium text-[#fafaf9]/50 hover:bg-white/[0.04] hover:text-[#fafaf9] transition-all border-t border-white/[0.06] pt-4"
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4 ${
+              isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
+            }`}
+            style={{ 
+              color: mutedTextColor,
+              borderTop: `1px solid ${borderColor}`,
+            }}
           >
             <LogOut className="h-5 w-5" />
             Sign Out

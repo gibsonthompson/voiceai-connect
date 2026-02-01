@@ -39,9 +39,18 @@ export default function AgencyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+
   // Agency colors
   const primaryColor = branding.primaryColor || '#10b981';
   const accentColor = branding.accentColor || '#34d399';
+
+  // Theme-based colors
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
 
   useEffect(() => {
     if (agency) {
@@ -127,30 +136,43 @@ export default function AgencyDashboardPage() {
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
           Welcome back{user?.first_name ? `, ${user.first_name}` : ''}! 👋
         </h1>
-        <p className="mt-1 text-sm sm:text-base text-[#fafaf9]/50">
+        <p className="mt-1 text-sm sm:text-base" style={{ color: mutedTextColor }}>
           Here&apos;s how your agency is performing.
         </p>
       </div>
 
       {/* Trial Banner */}
       {agency?.subscription_status === 'trial' && trialDaysLeft !== null && (
-        <div className="mb-6 sm:mb-8 rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div 
+          className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          style={{
+            backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)',
+            border: '1px solid rgba(245,158,11,0.2)',
+          }}
+        >
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-amber-500/20 flex-shrink-0">
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400" />
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
+              style={{ backgroundColor: 'rgba(245,158,11,0.2)' }}
+            >
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
             </div>
             <div>
-              <p className="font-medium text-sm sm:text-base text-amber-200">
+              <p className="font-medium text-sm sm:text-base" style={{ color: isDark ? '#fde68a' : '#92400e' }}>
                 {trialDaysLeft > 0 ? `${trialDaysLeft} days left in your trial` : 'Your trial has ended'}
               </p>
-              <p className="text-xs sm:text-sm text-amber-300/60">
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(253,230,138,0.6)' : '#b45309' }}>
                 Upgrade to keep your agency active and access all features.
               </p>
             </div>
           </div>
           <Link 
             href="/agency/settings/billing"
-            className="rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-amber-400 transition-colors text-center sm:text-left"
+            className="rounded-full px-4 py-2 text-sm font-medium transition-colors text-center sm:text-left"
+            style={{ 
+              backgroundColor: '#f59e0b',
+              color: '#050505',
+            }}
           >
             Upgrade Now
           </Link>
@@ -161,13 +183,15 @@ export default function AgencyDashboardPage() {
       <div 
         className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
         style={{
-          background: `linear-gradient(to right, ${primaryColor}12, transparent)`,
+          background: isDark 
+            ? `linear-gradient(to right, ${primaryColor}12, transparent)` 
+            : `linear-gradient(to right, ${primaryColor}08, transparent)`,
           border: `1px solid ${primaryColor}30`,
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-1">Your Client Signup Link</p>
+            <p className="text-xs sm:text-sm mb-1" style={{ color: mutedTextColor }}>Your Client Signup Link</p>
             <p className="text-sm sm:text-lg font-medium truncate" style={{ color: primaryColor }}>
               {signupLink}
             </p>
@@ -201,11 +225,16 @@ export default function AgencyDashboardPage() {
         {statCards.map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6"
+            className="rounded-xl p-4 sm:p-6"
+            style={{ 
+              backgroundColor: cardBg,
+              border: `1px solid ${borderColor}`,
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            }}
           >
             <div className="flex items-center justify-between sm:justify-start sm:gap-4">
               <div className="order-2 sm:order-1">
-                <p className="text-xs sm:text-sm text-[#fafaf9]/50">{stat.label}</p>
+                <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>{stat.label}</p>
                 <p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold">{stat.value}</p>
               </div>
               <div 
@@ -220,8 +249,18 @@ export default function AgencyDashboardPage() {
       </div>
 
       {/* Recent Clients */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
-        <div className="flex items-center justify-between border-b border-white/[0.06] p-4 sm:p-5">
+      <div 
+        className="rounded-xl"
+        style={{ 
+          backgroundColor: cardBg,
+          border: `1px solid ${borderColor}`,
+          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <div 
+          className="flex items-center justify-between p-4 sm:p-5"
+          style={{ borderBottom: `1px solid ${borderColor}` }}
+        >
           <h2 className="font-medium text-sm sm:text-base">Recent Clients</h2>
           <Link 
             href="/agency/clients" 
@@ -240,10 +279,12 @@ export default function AgencyDashboardPage() {
                 className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
                 style={{ backgroundColor: `${primaryColor}15` }}
               >
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-[#fafaf9]/30" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: mutedTextColor }} />
               </div>
-              <p className="mt-4 font-medium text-sm sm:text-base text-[#fafaf9]/60">No clients yet</p>
-              <p className="text-xs sm:text-sm text-[#fafaf9]/40 mb-4">
+              <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#374151' }}>
+                No clients yet
+              </p>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>
                 Share your signup link to start acquiring clients.
               </p>
               <button
@@ -251,7 +292,7 @@ export default function AgencyDashboardPage() {
                 className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
                 style={{ 
                   backgroundColor: primaryColor, 
-                  color: '#050505',
+                  color: isDark ? '#050505' : '#ffffff',
                 }}
               >
                 <Copy className="h-4 w-4" />
@@ -264,7 +305,13 @@ export default function AgencyDashboardPage() {
                 <Link
                   key={client.id}
                   href={`/agency/clients/${client.id}`}
-                  className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-4 hover:bg-white/[0.04] transition-colors"
+                  className={`flex items-center justify-between rounded-xl p-3 sm:p-4 transition-colors ${
+                    isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
+                  }`}
+                  style={{ 
+                    backgroundColor: cardBg,
+                    border: `1px solid ${borderColor}`,
+                  }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div 
@@ -277,7 +324,7 @@ export default function AgencyDashboardPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-sm sm:text-base truncate">{client.business_name}</p>
-                      <p className="text-xs sm:text-sm text-[#fafaf9]/50 capitalize">
+                      <p className="text-xs sm:text-sm capitalize" style={{ color: mutedTextColor }}>
                         {client.plan_type || 'starter'} plan
                       </p>
                     </div>
@@ -289,13 +336,13 @@ export default function AgencyDashboardPage() {
                         client.subscription_status === 'active'
                           ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
                           : client.subscription_status === 'trial'
-                          ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                          : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(250,250,249,0.5)' }
+                          ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: isDark ? '#fbbf24' : '#d97706' }
+                          : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: mutedTextColor }
                       }
                     >
                       {client.subscription_status || 'pending'}
                     </span>
-                    <ArrowUpRight className="h-4 w-4 text-[#fafaf9]/30 hidden sm:block" />
+                    <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: mutedTextColor }} />
                   </div>
                 </Link>
               ))}
