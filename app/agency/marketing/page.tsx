@@ -38,6 +38,18 @@ export default function MarketingWebsitePage() {
 
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
 
+  // Theme - default to dark unless explicitly light
+  const isDark = agency?.website_theme !== 'light';
+  const agencyPrimaryColor = branding.primaryColor || '#10b981';
+
+  // Theme-based colors
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#ffffff';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
@@ -310,8 +322,8 @@ export default function MarketingWebsitePage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#fafaf9]">Marketing Website</h1>
-        <p className="mt-1 text-sm text-[#fafaf9]/50">
+        <h1 className="text-xl sm:text-2xl font-semibold">Marketing Website</h1>
+        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>
           Your public website where clients learn about your service
         </p>
       </div>
@@ -319,31 +331,47 @@ export default function MarketingWebsitePage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {/* Live Site Card */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <div 
+          className="rounded-xl p-4 sm:p-5"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
           <div className="flex items-start justify-between mb-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}
+            >
+              <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <span className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 sm:py-1 rounded-full">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span 
+              className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full"
+              style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}
+            >
+              <span 
+                className="h-1.5 w-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              />
               Live
             </span>
           </div>
-          <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1">Your Website</h3>
-          <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-3 sm:mb-4 truncate">{subdomainUrl}</p>
+          <h3 className="font-medium text-sm sm:text-base mb-1">Your Website</h3>
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
           <div className="flex gap-2">
             <a
               href={subdomainUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs sm:text-sm font-medium text-white hover:bg-emerald-600 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-white transition-colors"
+              style={{ backgroundColor: agencyPrimaryColor }}
             >
               <Eye className="h-4 w-4" />
               View
             </a>
             <button
               onClick={() => copyToClipboard(subdomainUrl, 'subdomain')}
-              className="flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
+              className={`flex items-center justify-center rounded-lg px-3 py-2 transition-colors ${
+                isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'
+              }`}
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
             >
               {copied === 'subdomain' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
@@ -351,27 +379,36 @@ export default function MarketingWebsitePage() {
         </div>
 
         {/* Theme Preview Card */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <div 
+          className="rounded-xl p-4 sm:p-5"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
           <div className="flex items-start justify-between mb-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20` }}>
-              <Palette className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+            >
+              <Palette className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           </div>
-          <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1">Current Theme</h3>
+          <h3 className="font-medium text-sm sm:text-base mb-1">Current Theme</h3>
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <div className="flex gap-0.5 sm:gap-1">
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded border border-white/20" style={{ backgroundColor: primaryColor }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded border border-white/20" style={{ backgroundColor: secondaryColor }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded border border-white/20" style={{ backgroundColor: accentColor }} />
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: primaryColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: secondaryColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: accentColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
             </div>
-            <span className="text-xs sm:text-sm text-[#fafaf9]/50 capitalize flex items-center gap-1">
+            <span className="text-xs sm:text-sm capitalize flex items-center gap-1" style={{ color: mutedTextColor }}>
               {websiteTheme === 'dark' ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
               {websiteTheme}
             </span>
           </div>
           <button
             onClick={() => setActiveTab('colors')}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
+            className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors ${
+              isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'
+            }`}
+            style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             <Palette className="h-4 w-4" />
             Customize
@@ -380,7 +417,7 @@ export default function MarketingWebsitePage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-white/10 mb-4 sm:mb-6 overflow-x-auto">
+      <div className="mb-4 sm:mb-6 overflow-x-auto" style={{ borderBottom: `1px solid ${borderColor}` }}>
         <nav className="flex gap-4 sm:gap-6 min-w-max">
           {[
             { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
@@ -391,11 +428,14 @@ export default function MarketingWebsitePage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 sm:gap-2 pb-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-emerald-500 text-emerald-400'
-                  : 'border-transparent text-[#fafaf9]/50 hover:text-[#fafaf9]/70'
-              }`}
+              className="flex items-center gap-1.5 sm:gap-2 pb-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+              style={activeTab === tab.id ? {
+                borderColor: agencyPrimaryColor,
+                color: agencyPrimaryColor,
+              } : {
+                borderColor: 'transparent',
+                color: mutedTextColor,
+              }}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
@@ -407,8 +447,11 @@ export default function MarketingWebsitePage() {
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-3 sm:mb-4">Your website includes:</h3>
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Your website includes:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {[
                 { title: 'Hero Section', desc: 'Eye-catching headline with CTAs' },
@@ -421,37 +464,40 @@ export default function MarketingWebsitePage() {
                 { title: 'Comparison Table', desc: 'Compare vs competitors' },
               ].map((item) => (
                 <div key={item.title} className="flex items-start gap-2 sm:gap-3">
-                  <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span>
                   <div>
-                    <p className="font-medium text-xs sm:text-sm text-[#fafaf9]">{item.title}</p>
-                    <p className="text-[10px] sm:text-xs text-[#fafaf9]/50">{item.desc}</p>
+                    <p className="font-medium text-xs sm:text-sm">{item.title}</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-3 sm:mb-4">Current Settings</h3>
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Current Settings</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-1 sm:mb-2">Tagline</p>
-                <p className="text-xs sm:text-sm text-[#fafaf9] truncate">{agency?.company_tagline || 'AI-Powered Phone Answering'}</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Tagline</p>
+                <p className="text-xs sm:text-sm truncate">{agency?.company_tagline || 'AI-Powered Phone Answering'}</p>
               </div>
               <div>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-1 sm:mb-2">Headline</p>
-                <p className="text-xs sm:text-sm text-[#fafaf9] truncate">{agency?.website_headline || 'Never Miss Another Call'}</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Headline</p>
+                <p className="text-xs sm:text-sm truncate">{agency?.website_headline || 'Never Miss Another Call'}</p>
               </div>
               <div>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-1 sm:mb-2">Theme</p>
-                <p className="text-xs sm:text-sm text-[#fafaf9] capitalize">{agency?.website_theme === 'dark' ? 'Dark' : 'Light'}</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Theme</p>
+                <p className="text-xs sm:text-sm capitalize">{agency?.website_theme === 'dark' ? 'Dark' : 'Light'}</p>
               </div>
               <div>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50 uppercase tracking-wide mb-1 sm:mb-2">Logo</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Logo</p>
                 {branding.logoUrl ? (
-                  <img src={branding.logoUrl} alt="Logo" className="h-6 sm:h-8 w-auto rounded object-contain bg-white/10 p-1" />
+                  <img src={branding.logoUrl} alt="Logo" className="h-6 sm:h-8 w-auto rounded object-contain p-1" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6' }} />
                 ) : (
-                  <span className="text-xs sm:text-sm text-[#fafaf9]/50">Not uploaded</span>
+                  <span className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Not uploaded</span>
                 )}
               </div>
             </div>
@@ -461,15 +507,18 @@ export default function MarketingWebsitePage() {
 
       {activeTab === 'content' && (
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1 sm:mb-2">Website Content</h3>
-            <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-4 sm:mb-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Website Content</h3>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>
               Customize the text on your marketing website.
             </p>
 
             <div className="space-y-4 sm:space-y-5">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#fafaf9]/70 mb-1.5 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
                   Tagline / Badge
                 </label>
                 <input
@@ -477,12 +526,13 @@ export default function MarketingWebsitePage() {
                   value={tagline}
                   onChange={(e) => setTagline(e.target.value)}
                   placeholder="AI-Powered Phone Answering"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#fafaf9]/70 mb-1.5 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
                   Main Headline
                 </label>
                 <input
@@ -490,12 +540,13 @@ export default function MarketingWebsitePage() {
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="Never Miss Another Call"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#fafaf9]/70 mb-1.5 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
                   Subheadline
                 </label>
                 <input
@@ -503,14 +554,15 @@ export default function MarketingWebsitePage() {
                   value={subheadline}
                   onChange={(e) => setSubheadline(e.target.value)}
                   placeholder="AI Receptionist Starting at $49/month"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderTop: `1px solid ${borderColor}` }}>
               {contentSaved && (
-                <span className="flex items-center gap-2 text-xs sm:text-sm text-emerald-400">
+                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
                   <Check className="h-4 w-4" />
                   Saved!
                 </span>
@@ -518,7 +570,8 @@ export default function MarketingWebsitePage() {
               <button
                 onClick={handleSaveContent}
                 disabled={savingContent}
-                className="flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 sm:py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto"
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
               >
                 {savingContent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save Content
@@ -531,59 +584,71 @@ export default function MarketingWebsitePage() {
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
           {/* Theme Selection */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1 sm:mb-2">Website Theme</h3>
-            <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-3 sm:mb-4">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Website Theme</h3>
+            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>
               Choose light or dark mode
             </p>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={() => setWebsiteTheme('light')}
-                className={`relative rounded-xl border p-4 sm:p-5 text-left transition-all ${
-                  websiteTheme === 'light'
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                }`}
+                className="relative rounded-xl p-4 sm:p-5 text-left transition-all"
+                style={websiteTheme === 'light' ? {
+                  backgroundColor: `${agencyPrimaryColor}15`,
+                  border: `2px solid ${agencyPrimaryColor}`,
+                } : {
+                  backgroundColor: cardBg,
+                  border: `1px solid ${borderColor}`,
+                }}
               >
                 {websiteTheme === 'light' && (
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
-                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3" style={{ color: agencyPrimaryColor }}>
+                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                 )}
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white border border-gray-200 mb-2 sm:mb-3">
                   <Sun className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
                 </div>
-                <h4 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-0.5 sm:mb-1">Light</h4>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50">Clean, white backgrounds</p>
+                <h4 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Light</h4>
+                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Clean, white backgrounds</p>
               </button>
 
               <button
                 onClick={() => setWebsiteTheme('dark')}
-                className={`relative rounded-xl border p-4 sm:p-5 text-left transition-all ${
-                  websiteTheme === 'dark'
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                }`}
+                className="relative rounded-xl p-4 sm:p-5 text-left transition-all"
+                style={websiteTheme === 'dark' ? {
+                  backgroundColor: `${agencyPrimaryColor}15`,
+                  border: `2px solid ${agencyPrimaryColor}`,
+                } : {
+                  backgroundColor: cardBg,
+                  border: `1px solid ${borderColor}`,
+                }}
               >
                 {websiteTheme === 'dark' && (
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
-                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3" style={{ color: agencyPrimaryColor }}>
+                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                 )}
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-gray-900 mb-2 sm:mb-3">
                   <Moon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                 </div>
-                <h4 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-0.5 sm:mb-1">Dark</h4>
-                <p className="text-[10px] sm:text-xs text-[#fafaf9]/50">Modern, dark backgrounds</p>
+                <h4 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Dark</h4>
+                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Modern, dark backgrounds</p>
               </button>
             </div>
           </div>
 
           {/* Color Presets */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
-              <h3 className="font-medium text-sm sm:text-base text-[#fafaf9]">Color Presets</h3>
+              <h3 className="font-medium text-sm sm:text-base">Color Presets</h3>
               {branding.logoUrl && (
                 <button
                   onClick={extractColorsFromLogo}
@@ -601,26 +666,32 @@ export default function MarketingWebsitePage() {
                 <button
                   key={preset.name}
                   onClick={() => applyPreset(preset)}
-                  className={`p-2 sm:p-3 rounded-lg border transition-all hover:scale-105 ${
-                    primaryColor === preset.primary
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                  }`}
+                  className="p-2 sm:p-3 rounded-lg transition-all hover:scale-105"
+                  style={primaryColor === preset.primary ? {
+                    backgroundColor: `${agencyPrimaryColor}15`,
+                    border: `2px solid ${agencyPrimaryColor}`,
+                  } : {
+                    backgroundColor: cardBg,
+                    border: `1px solid ${borderColor}`,
+                  }}
                 >
                   <div className="flex gap-0.5 mb-1 sm:mb-2 justify-center">
                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.primary }} />
                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.accent }} />
                   </div>
-                  <p className="text-[8px] sm:text-[10px] text-[#fafaf9]/70 text-center truncate">{preset.name}</p>
+                  <p className="text-[8px] sm:text-[10px] text-center truncate" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{preset.name}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Custom Colors */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-3 sm:mb-4">Custom Colors</h3>
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Custom Colors</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               {[
@@ -629,29 +700,31 @@ export default function MarketingWebsitePage() {
                 { label: 'Accent', value: accentColor, setter: setAccentColor, desc: 'Highlights' },
               ].map((color) => (
                 <div key={color.label}>
-                  <label className="block text-xs sm:text-sm font-medium text-[#fafaf9]/70 mb-1.5 sm:mb-2">{color.label}</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{color.label}</label>
                   <div className="flex gap-2">
                     <input
                       type="color"
                       value={color.value}
                       onChange={(e) => color.setter(e.target.value)}
-                      className="h-9 sm:h-10 w-12 sm:w-14 rounded border border-white/10 bg-transparent cursor-pointer"
+                      className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer"
+                      style={{ backgroundColor: 'transparent', border: `1px solid ${inputBorder}` }}
                     />
                     <input
                       type="text"
                       value={color.value}
                       onChange={(e) => color.setter(e.target.value)}
-                      className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 sm:px-3 py-2 text-xs sm:text-sm text-[#fafaf9] font-mono focus:outline-none focus:border-emerald-500/50"
+                      className="flex-1 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-mono focus:outline-none"
+                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                     />
                   </div>
-                  <p className="mt-1 text-[10px] sm:text-xs text-[#fafaf9]/40">{color.desc}</p>
+                  <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{color.desc}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderTop: `1px solid ${borderColor}` }}>
               {colorsSaved && (
-                <span className="flex items-center gap-2 text-xs sm:text-sm text-emerald-400">
+                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
                   <Check className="h-4 w-4" />
                   Colors saved!
                 </span>
@@ -659,7 +732,8 @@ export default function MarketingWebsitePage() {
               <button
                 onClick={handleSaveColors}
                 disabled={savingColors}
-                className="flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 sm:py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto"
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
               >
                 {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save Colors
@@ -672,15 +746,22 @@ export default function MarketingWebsitePage() {
       {activeTab === 'domain' && (
         <div className="space-y-4 sm:space-y-6">
           {/* Subdomain Info */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1 sm:mb-2">Default Subdomain</h3>
-            <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-3 sm:mb-4">Always available at this URL</p>
-            <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-white/5 border border-white/10">
-              <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-[#fafaf9]/50 flex-shrink-0" />
-              <span className="flex-1 text-xs sm:text-sm text-[#fafaf9] font-mono truncate">{subdomainUrl}</span>
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Default Subdomain</h3>
+            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Always available at this URL</p>
+            <div 
+              className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg"
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+            >
+              <span style={{ color: mutedTextColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" /></span>
+              <span className="flex-1 text-xs sm:text-sm font-mono truncate">{subdomainUrl}</span>
               <button
                 onClick={() => copyToClipboard(subdomainUrl, 'subdomain2')}
-                className="text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors flex-shrink-0"
+                className="flex-shrink-0 transition-colors"
+                style={{ color: mutedTextColor }}
               >
                 {copied === 'subdomain2' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
@@ -688,26 +769,31 @@ export default function MarketingWebsitePage() {
           </div>
 
           {/* Custom Domain */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6">
-            <h3 className="font-medium text-sm sm:text-base text-[#fafaf9] mb-1 sm:mb-2">Custom Domain</h3>
-            <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-3 sm:mb-4">Connect your own domain</p>
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Custom Domain</h3>
+            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain</p>
 
             {domainStatus === 'none' ? (
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-[#fafaf9]/70 mb-1.5 sm:mb-2">Domain Name</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label>
                   <input
                     type="text"
                     value={customDomain}
                     onChange={(e) => setCustomDomain(e.target.value)}
                     placeholder="yourdomain.com"
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                    className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
                 <button
                   onClick={handleSaveCustomDomain}
                   disabled={!customDomain.trim() || savingDomain}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 sm:py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                  style={{ backgroundColor: agencyPrimaryColor }}
                 >
                   {savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
                   Add Domain
@@ -715,49 +801,60 @@ export default function MarketingWebsitePage() {
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
-                <div className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border ${
-                  domainStatus === 'verified' 
-                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                    : 'bg-amber-500/10 border-amber-500/30'
-                }`}>
+                <div 
+                  className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg"
+                  style={domainStatus === 'verified' ? {
+                    backgroundColor: `${agencyPrimaryColor}15`,
+                    border: `1px solid ${agencyPrimaryColor}40`,
+                  } : {
+                    backgroundColor: 'rgba(245,158,11,0.1)',
+                    border: '1px solid rgba(245,158,11,0.3)',
+                  }}
+                >
                   {domainStatus === 'verified' ? (
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 flex-shrink-0" />
+                    <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" /></span>
                   ) : (
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm ${domainStatus === 'verified' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    <p className="font-medium text-sm" style={{ color: domainStatus === 'verified' ? agencyPrimaryColor : '#fbbf24' }}>
                       {domainStatus === 'verified' ? 'Connected' : 'Pending'}
                     </p>
-                    <p className="text-xs sm:text-sm text-[#fafaf9]/70 font-mono truncate">{customDomain}</p>
+                    <p className="text-xs sm:text-sm font-mono truncate" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{customDomain}</p>
                   </div>
                   {domainStatus === 'verified' && (
-                    <a href={`https://${customDomain}`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 flex-shrink-0">
+                    <a href={`https://${customDomain}`} target="_blank" rel="noopener noreferrer" className="flex-shrink-0" style={{ color: agencyPrimaryColor }}>
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
                 </div>
 
                 {domainStatus === 'pending' && (
-                  <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 sm:p-4">
-                    <h4 className="font-medium text-sm text-[#fafaf9] mb-2 sm:mb-3">DNS Configuration</h4>
-                    <p className="text-xs text-[#fafaf9]/50 mb-3 sm:mb-4">Add these records with your registrar:</p>
+                  <div 
+                    className="rounded-lg p-3 sm:p-4"
+                    style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+                  >
+                    <h4 className="font-medium text-sm mb-2 sm:mb-3">DNS Configuration</h4>
+                    <p className="text-xs mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Add these records with your registrar:</p>
                     
                     <div className="space-y-2 sm:space-y-3">
-                      <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg bg-white/[0.02]">
+                      <div 
+                        className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg"
+                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                      >
                         <div>
-                          <p className="text-[#fafaf9]/50 text-[10px] uppercase mb-0.5 sm:mb-1">Type</p>
-                          <p className="text-[#fafaf9] font-mono font-medium">A</p>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Type</p>
+                          <p className="font-mono font-medium">A</p>
                         </div>
                         <div>
-                          <p className="text-[#fafaf9]/50 text-[10px] uppercase mb-0.5 sm:mb-1">Name</p>
-                          <p className="text-[#fafaf9] font-mono">@</p>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Name</p>
+                          <p className="font-mono">@</p>
                         </div>
                         <div>
-                          <p className="text-[#fafaf9]/50 text-[10px] uppercase mb-0.5 sm:mb-1">Value</p>
+                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Value</p>
                           <div className="flex items-center gap-1">
-                            <p className="text-[#fafaf9] font-mono text-[10px] truncate">{dnsConfig?.aRecord}</p>
-                            <button onClick={() => copyToClipboard(dnsConfig?.aRecord || '', 'arecord')} className="text-[#fafaf9]/50 hover:text-[#fafaf9] flex-shrink-0">
+                            <p className="font-mono text-[10px] truncate">{dnsConfig?.aRecord}</p>
+                            <button onClick={() => copyToClipboard(dnsConfig?.aRecord || '', 'arecord')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
                               {copied === 'arecord' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                             </button>
                           </div>
@@ -765,13 +862,14 @@ export default function MarketingWebsitePage() {
                       </div>
                     </div>
                     
-                    <p className="text-[10px] text-[#fafaf9]/40 mt-3">DNS changes can take up to 48 hours.</p>
+                    <p className="text-[10px] mt-3" style={{ color: mutedTextColor }}>DNS changes can take up to 48 hours.</p>
                     
                     <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <button
                         onClick={handleVerifyDomain}
                         disabled={verifyingDomain}
-                        className="flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                        className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors"
+                        style={{ backgroundColor: agencyPrimaryColor }}
                       >
                         {verifyingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         Verify
@@ -779,7 +877,10 @@ export default function MarketingWebsitePage() {
                       <button
                         onClick={handleRemoveDomain}
                         disabled={savingDomain}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[#fafaf9]/70 hover:bg-white/10 transition-colors"
+                        className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                          isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'
+                        }`}
+                        style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
                       >
                         Remove
                       </button>
@@ -791,7 +892,8 @@ export default function MarketingWebsitePage() {
                   <button
                     onClick={handleRemoveDomain}
                     disabled={savingDomain}
-                    className="text-sm text-red-400 hover:text-red-300 transition-colors"
+                    className="text-sm transition-colors"
+                    style={{ color: isDark ? '#f87171' : '#dc2626' }}
                   >
                     Remove custom domain
                   </button>
