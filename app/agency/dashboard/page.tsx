@@ -39,6 +39,10 @@ export default function AgencyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Agency colors
+  const primaryColor = branding.primaryColor || '#10b981';
+  const accentColor = branding.accentColor || '#34d399';
+
   useEffect(() => {
     if (agency) {
       fetchDashboardData();
@@ -90,7 +94,7 @@ export default function AgencyDashboardPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     );
   }
@@ -100,19 +104,19 @@ export default function AgencyDashboardPage() {
       label: 'Total Clients',
       value: stats?.clientCount || 0,
       icon: Users,
-      color: '#10b981',
+      color: primaryColor,
     },
     {
       label: 'Monthly Revenue',
       value: formatCurrency(stats?.mrr || 0),
       icon: DollarSign,
-      color: '#f59e0b',
+      color: '#f59e0b', // Keep amber for revenue
     },
     {
       label: 'Calls This Month',
       value: stats?.totalCalls || 0,
       icon: PhoneCall,
-      color: '#3b82f6',
+      color: '#3b82f6', // Keep blue for calls
     },
   ];
 
@@ -153,18 +157,29 @@ export default function AgencyDashboardPage() {
         </div>
       )}
 
-      {/* Signup Link Card */}
-      <div className="mb-6 sm:mb-8 rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.08] to-transparent p-4 sm:p-5">
+      {/* Signup Link Card - Uses agency primary color */}
+      <div 
+        className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
+        style={{
+          background: `linear-gradient(to right, ${primaryColor}12, transparent)`,
+          border: `1px solid ${primaryColor}30`,
+        }}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs sm:text-sm text-[#fafaf9]/50 mb-1">Your Client Signup Link</p>
-            <p className="text-sm sm:text-lg font-medium text-emerald-300 truncate">
+            <p className="text-sm sm:text-lg font-medium truncate" style={{ color: primaryColor }}>
               {signupLink}
             </p>
           </div>
           <button
             onClick={copySignupLink}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 transition-colors flex-shrink-0"
+            className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex-shrink-0"
+            style={{
+              backgroundColor: `${primaryColor}15`,
+              border: `1px solid ${primaryColor}40`,
+              color: primaryColor,
+            }}
           >
             {copied ? (
               <>
@@ -210,7 +225,8 @@ export default function AgencyDashboardPage() {
           <h2 className="font-medium text-sm sm:text-base">Recent Clients</h2>
           <Link 
             href="/agency/clients" 
-            className="flex items-center gap-1 text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+            className="flex items-center gap-1 text-xs sm:text-sm transition-colors"
+            style={{ color: primaryColor }}
           >
             View all
             <ChevronRight className="h-4 w-4" />
@@ -220,7 +236,10 @@ export default function AgencyDashboardPage() {
         <div className="p-4 sm:p-5">
           {!stats?.recentClients || stats.recentClients.length === 0 ? (
             <div className="py-8 sm:py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-500/10">
+              <div 
+                className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
                 <Users className="h-6 w-6 sm:h-8 sm:w-8 text-[#fafaf9]/30" />
               </div>
               <p className="mt-4 font-medium text-sm sm:text-base text-[#fafaf9]/60">No clients yet</p>
@@ -229,7 +248,11 @@ export default function AgencyDashboardPage() {
               </p>
               <button
                 onClick={copySignupLink}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                style={{ 
+                  backgroundColor: primaryColor, 
+                  color: '#050505',
+                }}
               >
                 <Copy className="h-4 w-4" />
                 Copy Signup Link
@@ -244,8 +267,11 @@ export default function AgencyDashboardPage() {
                   className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-4 hover:bg-white/[0.04] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-emerald-500/10 flex-shrink-0">
-                      <span className="text-xs sm:text-sm font-medium text-emerald-400">
+                    <div 
+                      className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full flex-shrink-0"
+                      style={{ backgroundColor: `${primaryColor}15` }}
+                    >
+                      <span className="text-xs sm:text-sm font-medium" style={{ color: primaryColor }}>
                         {client.business_name?.charAt(0) || '?'}
                       </span>
                     </div>
@@ -258,13 +284,14 @@ export default function AgencyDashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     <span
-                      className={`rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium ${
+                      className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium"
+                      style={
                         client.subscription_status === 'active'
-                          ? 'bg-emerald-500/10 text-emerald-400'
+                          ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
                           : client.subscription_status === 'trial'
-                          ? 'bg-amber-500/10 text-amber-400'
-                          : 'bg-white/[0.06] text-[#fafaf9]/50'
-                      }`}
+                          ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                          : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(250,250,249,0.5)' }
+                      }
                     >
                       {client.subscription_status || 'pending'}
                     </span>

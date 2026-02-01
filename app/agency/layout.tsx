@@ -24,11 +24,26 @@ function WaveformIcon({ className }: { className?: string }) {
   );
 }
 
+// Helper to check if color is light
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
+
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading } = useAgency();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Agency colors with fallbacks
+  const primaryColor = branding.primaryColor || '#10b981';
+  const secondaryColor = branding.secondaryColor || '#059669';
+  const accentColor = branding.accentColor || '#34d399';
+  const primaryLight = isLightColor(primaryColor);
 
   // Detect mobile
   useEffect(() => {
@@ -85,7 +100,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
           <p className="text-[#fafaf9]/40 text-sm">Loading dashboard...</p>
         </div>
       </div>
@@ -93,7 +108,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
+    <div 
+      className="min-h-screen bg-[#050505] text-[#fafaf9]"
+      style={{
+        // CSS custom properties for agency colors
+        '--color-primary': primaryColor,
+        '--color-secondary': secondaryColor,
+        '--color-accent': accentColor,
+      } as React.CSSProperties}
+    >
       {/* Grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -118,8 +141,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 className="object-contain flex-shrink-0"
               />
             ) : (
-              <div className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5" style={{ height: '40px', width: '40px' }}>
-                <WaveformIcon className="h-6 w-6 text-[#fafaf9]" />
+              <div 
+                className="flex items-center justify-center rounded-xl border border-white/10" 
+                style={{ height: '40px', width: '40px', backgroundColor: `${primaryColor}15` }}
+              >
+                <WaveformIcon className="h-6 w-6" style={{ color: primaryColor }} />
               </div>
             )}
             <span className="font-semibold text-lg text-[#fafaf9] truncate max-w-[180px]">
@@ -178,8 +204,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               className="object-contain flex-shrink-0"
             />
           ) : (
-            <div className="flex items-center justify-center rounded-lg border border-white/10 bg-white/5" style={{ height: '32px', width: '32px' }}>
-              <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
+            <div 
+              className="flex items-center justify-center rounded-lg border border-white/10" 
+              style={{ height: '32px', width: '32px', backgroundColor: `${primaryColor}15` }}
+            >
+              <WaveformIcon className="h-5 w-5" style={{ color: primaryColor }} />
             </div>
           )}
           <span className="font-semibold text-[#fafaf9] truncate">
@@ -198,9 +227,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
                   active
-                    ? 'bg-emerald-500/10 text-emerald-400'
+                    ? ''
                     : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'
                 }`}
+                style={active ? {
+                  backgroundColor: `${primaryColor}15`,
+                  color: primaryColor,
+                } : undefined}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="h-5 w-5" />
@@ -227,11 +260,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {/* Plan Badge */}
-          {agency?.subscription_status === 'active' && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-3">
-              <p className="text-xs text-emerald-400/80">Current Plan</p>
-              <p className="text-sm font-medium text-emerald-300 capitalize">
+          {/* Plan Badge - Uses agency primary color */}
+          {(agency?.subscription_status === 'active' || agency?.subscription_status === 'trialing') && (
+            <div 
+              className="rounded-xl p-3"
+              style={{
+                backgroundColor: `${primaryColor}10`,
+                border: `1px solid ${primaryColor}30`,
+              }}
+            >
+              <p className="text-xs" style={{ color: `${primaryColor}99` }}>Current Plan</p>
+              <p className="text-sm font-medium capitalize" style={{ color: primaryColor }}>
                 {agency.plan_type || 'Starter'}
               </p>
             </div>
