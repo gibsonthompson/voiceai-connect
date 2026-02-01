@@ -225,11 +225,11 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
 
       if (data.token) {
         const returnTo = encodeURIComponent('/client/dashboard');
-        router.push(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
+        window.location.href = `/auth/set-password?token=${data.token}&returnTo=${returnTo}`;
       } else if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        router.push('/client/login');
+        window.location.href = '/client/login';
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
