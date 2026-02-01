@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import '@/styles/marketing.css';
@@ -202,7 +201,7 @@ function Navigation({ config }: NavProps) {
     <nav className="navbar">
       <div className="container">
         <div className="nav-content">
-          <Link href="/" className="logo">
+          <a href="/" className="logo">
             {branding.logoUrl ? (
               <div 
                 className="logo-wrapper"
@@ -217,7 +216,7 @@ function Navigation({ config }: NavProps) {
             ) : (
               <span className="logo-text">{branding.name}</span>
             )}
-          </Link>
+          </a>
           
           <ul className="nav-links">
             <li><a href="#features">Features</a></li>
@@ -230,9 +229,9 @@ function Navigation({ config }: NavProps) {
             {config.footer.phone && (
               <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>
             )}
-            <Link href="/get-started" className="btn-primary">
+            <a href="/get-started" className="btn-primary">
               Start Free Trial
-            </Link>
+            </a>
           </div>
           
           <button className="mobile-menu-toggle" aria-label="Toggle menu">
@@ -300,9 +299,9 @@ function HeroSection({ config }: { config: MarketingConfig }) {
 
           {/* CTAs */}
           <div className="hero-ctas">
-            <Link href="/get-started" className="btn-large btn-primary">
+            <a href="/get-started" className="btn-large btn-primary">
               Start Free Trial - 7 Days
-            </Link>
+            </a>
             <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>
           </div>
         </div>
@@ -422,9 +421,9 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
         </div>
 
         <div className="cta-box">
-          <Link href="/get-started" className="btn-large btn-primary">
+          <a href="/get-started" className="btn-large btn-primary">
             Start Your 7-Day Free Trial
-          </Link>
+          </a>
           <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -921,12 +920,12 @@ function PricingSection({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <Link 
+              <a 
                 href="/get-started" 
                 className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}
               >
                 Start 7-Day Free Trial
-              </Link>
+              </a>
               {tier.isPopular && (
                 <p className="pricing-recommendation">Most businesses choose {tier.name}</p>
               )}
@@ -1020,9 +1019,9 @@ function FinalCTASection({ config }: { config: MarketingConfig }) {
             )}
 
             <div className="cta-box-secondary">
-              <Link href="/get-started" className="btn-large btn-primary">
+              <a href="/get-started" className="btn-large btn-primary">
                 Start Your 7-Day Free Trial
-              </Link>
+              </a>
               <div className="cta-benefits">
                 <span>✓ Setup in 10 minutes</span>
                 <span>✓ No credit card required</span>
@@ -1137,9 +1136,9 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
     <div className={`sticky-cta ${visible ? 'visible' : ''}`}>
       <span className="sticky-cta-text">Ready to try {branding.name}?</span>
       <div className="sticky-cta-actions">
-        <Link href="/get-started" className="btn-primary btn-small">
+        <a href="/get-started" className="btn-primary btn-small">
           Start Free Trial
-        </Link>
+        </a>
         {hero.demoPhone && (
           <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
             <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>
