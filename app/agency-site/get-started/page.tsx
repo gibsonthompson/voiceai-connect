@@ -15,6 +15,7 @@ interface Agency {
   name: string;
   slug: string;
   logo_url: string | null;
+  favicon_url: string | null;  // Added for favicon support
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -52,6 +53,50 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
       <rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
     </svg>
   );
+}
+
+// ============================================================================
+// HELPER: Get cached theme from sessionStorage
+// ============================================================================
+function getCachedTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const cached = sessionStorage.getItem('agency_theme');
+    if (cached === 'dark') return 'dark';
+  } catch (e) {
+    // sessionStorage not available
+  }
+  return 'light';
+}
+
+function setCachedTheme(theme: 'light' | 'dark' | 'auto' | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    const resolved = theme === 'dark' ? 'dark' : 'light';
+    sessionStorage.setItem('agency_theme', resolved);
+  } catch (e) {
+    // sessionStorage not available
+  }
+}
+
+// Set dynamic favicon
+function setFavicon(url: string) {
+  // Remove existing favicons
+  const existingLinks = document.querySelectorAll("link[rel*='icon']");
+  existingLinks.forEach(link => link.remove());
+  
+  // Add new favicon
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  link.href = url;
+  document.head.appendChild(link);
+  
+  // Also add apple-touch-icon
+  const appleLink = document.createElement('link');
+  appleLink.rel = 'apple-touch-icon';
+  appleLink.href = url;
+  document.head.appendChild(appleLink);
 }
 
 // ============================================================================
@@ -518,30 +563,6 @@ function SignupFormContent({ agency }: { agency: Agency }) {
 }
 
 // ============================================================================
-// HELPER: Get cached theme from sessionStorage
-// ============================================================================
-function getCachedTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-  try {
-    const cached = sessionStorage.getItem('agency_theme');
-    if (cached === 'dark') return 'dark';
-  } catch (e) {
-    // sessionStorage not available
-  }
-  return 'light';
-}
-
-function setCachedTheme(theme: 'light' | 'dark' | 'auto' | null) {
-  if (typeof window === 'undefined') return;
-  try {
-    const resolved = theme === 'dark' ? 'dark' : 'light';
-    sessionStorage.setItem('agency_theme', resolved);
-  } catch (e) {
-    // sessionStorage not available
-  }
-}
-
-// ============================================================================
 // THEMED LOADING COMPONENT
 // ============================================================================
 function ThemedLoading({ theme }: { theme: 'light' | 'dark' }) {
@@ -609,6 +630,12 @@ function SignupContent() {
         
         // Cache the theme for future page loads
         setCachedTheme(data.agency.website_theme);
+        
+        // Set favicon - prefer favicon_url, fall back to logo_url
+        const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
+        if (faviconUrl) {
+          setFavicon(faviconUrl);
+        }
       } catch (err) {
         console.error('Failed to fetch agency:', err);
         setError('Unable to load signup page. Please check the URL.');
