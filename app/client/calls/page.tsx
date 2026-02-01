@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { 
   PhoneCall, Search, Filter, ChevronRight, Loader2
 } from 'lucide-react';
@@ -130,7 +129,7 @@ export default function ClientCallsPage() {
         ) : (
           <div className="divide-y" style={{ borderColor: theme.border }}>
             {filteredCalls.map((call) => (
-              <Link
+              <a
                 key={call.id}
                 href={`/client/calls/${call.id}`}
                 className="block transition-colors hover:bg-gray-50"
@@ -262,7 +261,7 @@ export default function ClientCallsPage() {
                     <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" style={{ color: theme.textMuted4 }} />
                   </div>
                 </div>
-              </Link>
+              </a>
             ))}
           </div>
         )}

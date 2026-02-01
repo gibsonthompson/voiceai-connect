@@ -1,7 +1,6 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Bot, Settings, LogOut, Loader2,
@@ -28,6 +27,23 @@ const rgbToHex = (rgb: string): string => {
   return `#${r}${g}${b}`;
 };
 
+// Set dynamic favicon
+function setFavicon(url: string) {
+  const existingLinks = document.querySelectorAll("link[rel*='icon']");
+  existingLinks.forEach(link => link.remove());
+  
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  link.href = url;
+  document.head.appendChild(link);
+  
+  const appleLink = document.createElement('link');
+  appleLink.rel = 'apple-touch-icon';
+  appleLink.href = url;
+  document.head.appendChild(appleLink);
+}
+
 // Auth pages that should NOT use the dashboard layout
 const AUTH_PAGES = ['/client/login', '/client/signup', '/client/set-password', '/client/upgrade'];
 
@@ -51,7 +67,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close sidebar on route change - this handles sidebar closing automatically
+  // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
@@ -65,6 +81,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     }
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
+
+  // Set favicon from agency branding
+  useEffect(() => {
+    if (branding.faviconUrl || branding.logoUrl) {
+      setFavicon(branding.faviconUrl || branding.logoUrl);
+    }
+  }, [branding.faviconUrl, branding.logoUrl]);
 
   // CRITICAL: Set html background color for status bar on iOS
   useEffect(() => {
@@ -122,6 +145,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       return pathname === '/client/dashboard' || pathname === '/client';
     }
     return pathname?.startsWith(href);
+  };
+
+  // Handle nav click - close sidebar and navigate
+  const handleNavClick = (href: string) => {
+    setSidebarOpen(false);
+    // Use window.location for proper middleware handling
+    window.location.href = href;
   };
 
   if (loading) {
@@ -240,15 +270,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           </span>
         </div>
 
-        {/* Navigation - NO onClick on Links, useEffect handles sidebar close */}
+        {/* Navigation - Use buttons with onClick for proper navigation */}
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
-              <Link
+              <button
                 key={item.href}
-                href={item.href}
-                className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors"
+                onClick={() => handleNavClick(item.href)}
+                className="w-full flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors text-left"
                 style={{
                   backgroundColor: active ? 'rgba(255,255,255,0.15)' : 'transparent',
                   color: active ? navTextColor : navTextMuted,
@@ -259,7 +289,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                   {item.label}
                 </div>
                 {active && <ChevronRight className="h-4 w-4 md:hidden" style={{ color: navTextMuted }} />}
-              </Link>
+              </button>
             );
           })}
         </nav>

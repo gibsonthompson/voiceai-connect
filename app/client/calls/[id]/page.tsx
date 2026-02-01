@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
 import { 
   Phone, Settings, ArrowLeft, Clock,
   User, MapPin, AlertCircle, MessageSquare, Loader2
@@ -65,14 +64,14 @@ export default function CallDetailPage() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) {
-        router.push('/client/calls');
+        window.location.href = '/client/calls';
         return;
       }
       const data = await response.json();
       setCall(data.call);
     } catch (error) {
       console.error('Error loading call detail:', error);
-      router.push('/client/calls');
+      window.location.href = '/client/calls';
     } finally {
       setCallLoading(false);
     }
@@ -105,24 +104,24 @@ export default function CallDetailPage() {
     return (
       <div className="p-4 sm:p-8 text-center" style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
         <p style={{ color: theme.textMuted }}>Call not found</p>
-        <Link href="/client/calls" className="text-sm mt-2 inline-block" style={{ color: branding.primaryColor }}>
+        <a href="/client/calls" className="text-sm mt-2 inline-block" style={{ color: branding.primaryColor }}>
           ← Back to Calls
-        </Link>
+        </a>
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {/* Back button */}
-      <Link 
+      {/* Back button - use <a> tag */}
+      <a 
         href="/client/calls"
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
         style={{ color: theme.textMuted }}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Calls
-      </Link>
+      </a>
 
       {/* Header */}
       <div className="mb-4 sm:mb-6 lg:mb-8">
