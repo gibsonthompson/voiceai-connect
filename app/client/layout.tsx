@@ -53,11 +53,18 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Nav colors based on agency primary color
-  const navBg = darkenColor(branding.primaryColor, 40);
-  const navTextColor = '#ffffff';
-  const navTextMuted = 'rgba(255, 255, 255, 0.7)';
-  const navBorder = 'rgba(255, 255, 255, 0.1)';
+  // Determine if using light or dark theme for nav
+  const isDarkNav = branding.websiteTheme === 'dark';
+
+  // Nav colors based on theme
+  const navBg = isDarkNav 
+    ? darkenColor(branding.primaryColor, 40)
+    : '#ffffff';
+  const navTextColor = isDarkNav ? '#ffffff' : '#111827';
+  const navTextMuted = isDarkNav ? 'rgba(255, 255, 255, 0.7)' : '#6b7280';
+  const navBorder = isDarkNav ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
+  const navActiveItemBg = isDarkNav ? 'rgba(255,255,255,0.15)' : `${branding.primaryColor}15`;
+  const navActiveItemColor = isDarkNav ? '#ffffff' : branding.primaryColor;
 
   // Detect mobile
   useEffect(() => {
@@ -92,11 +99,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   // CRITICAL: Set html background color for status bar on iOS
   useEffect(() => {
     if (branding.primaryColor) {
-      const bgColor = darkenColor(branding.primaryColor, 40);
+      const bgColor = isDarkNav ? darkenColor(branding.primaryColor, 40) : '#ffffff';
       document.documentElement.style.background = bgColor;
       
       // Also update theme-color meta tag
-      const hexColor = rgbToHex(bgColor);
+      const hexColor = isDarkNav ? rgbToHex(bgColor) : '#ffffff';
       let metaThemeColor = document.querySelector('meta[name="theme-color"]');
       if (metaThemeColor) {
         metaThemeColor.setAttribute('content', hexColor);
@@ -109,7 +116,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         }
       };
     }
-  }, [branding.primaryColor]);
+  }, [branding.primaryColor, isDarkNav]);
 
   // Update apple-mobile-web-app-title dynamically
   useEffect(() => {
@@ -172,7 +179,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <header className="flex items-center justify-between h-16 px-4 shadow-lg">
+        <header 
+          className="flex items-center justify-between h-16 px-4"
+          style={{ 
+            boxShadow: isDarkNav ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+            borderBottom: isDarkNav ? 'none' : `1px solid ${navBorder}`,
+          }}
+        >
           {/* Left - Logo & Business Name */}
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
@@ -185,12 +198,19 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             ) : (
               <div 
                 className="flex items-center justify-center rounded-xl"
-                style={{ height: '40px', width: '40px', backgroundColor: 'rgba(255,255,255,0.2)' }}
+                style={{ 
+                  height: '40px', 
+                  width: '40px', 
+                  backgroundColor: isDarkNav ? 'rgba(255,255,255,0.2)' : `${branding.primaryColor}15`,
+                }}
               >
-                <Phone className="h-6 w-6 text-white" />
+                <Phone className="h-6 w-6" style={{ color: isDarkNav ? '#ffffff' : branding.primaryColor }} />
               </div>
             )}
-            <span className="font-semibold text-lg text-white truncate max-w-[180px]">
+            <span 
+              className="font-semibold text-lg truncate max-w-[180px]"
+              style={{ color: navTextColor }}
+            >
               {client?.business_name || 'Loading...'}
             </span>
           </div>
@@ -217,7 +237,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar - Desktop: LEFT, Mobile: slides from LEFT */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 md:w-64 border-r
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64
           transform transition-transform duration-300 ease-out
           ${isMobile 
             ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
@@ -226,7 +246,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         `}
         style={{ 
           backgroundColor: navBg,
-          borderColor: navBorder,
+          borderRight: `1px solid ${navBorder}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
         }}
       >
@@ -260,9 +280,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           ) : (
             <div 
               className="flex items-center justify-center rounded-lg"
-              style={{ height: '32px', width: '32px', backgroundColor: 'rgba(255,255,255,0.2)' }}
+              style={{ 
+                height: '32px', 
+                width: '32px', 
+                backgroundColor: isDarkNav ? 'rgba(255,255,255,0.2)' : `${branding.primaryColor}15`,
+              }}
             >
-              <Phone className="h-4 w-4 text-white" />
+              <Phone className="h-4 w-4" style={{ color: isDarkNav ? '#ffffff' : branding.primaryColor }} />
             </div>
           )}
           <span className="font-medium truncate" style={{ color: navTextColor }}>
@@ -280,8 +304,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                 onClick={() => handleNavClick(item.href)}
                 className="w-full flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors text-left"
                 style={{
-                  backgroundColor: active ? 'rgba(255,255,255,0.15)' : 'transparent',
-                  color: active ? navTextColor : navTextMuted,
+                  backgroundColor: active ? navActiveItemBg : 'transparent',
+                  color: active ? navActiveItemColor : navTextMuted,
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -302,7 +326,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {/* Powered By */}
           <div 
             className="rounded-xl border p-3"
-            style={{ borderColor: navBorder, backgroundColor: 'rgba(255,255,255,0.05)' }}
+            style={{ 
+              borderColor: navBorder, 
+              backgroundColor: isDarkNav ? 'rgba(255,255,255,0.05)' : '#f9fafb',
+            }}
           >
             <p className="text-xs" style={{ color: navTextMuted }}>Powered by</p>
             <p className="text-sm font-medium" style={{ color: navTextColor }}>{branding.agencyName}</p>

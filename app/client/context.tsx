@@ -30,6 +30,7 @@ interface Client {
     accent_color: string;
     support_email: string | null;
     support_phone: string | null;
+    website_theme: 'light' | 'dark' | 'auto' | null;
   } | null;
 }
 
@@ -41,6 +42,7 @@ interface Branding {
   logoUrl: string | null;
   supportEmail: string | null;
   supportPhone: string | null;
+  websiteTheme: 'light' | 'dark' | 'auto';
 }
 
 interface ClientContextType {
@@ -58,6 +60,7 @@ const defaultBranding: Branding = {
   logoUrl: null,
   supportEmail: null,
   supportPhone: null,
+  websiteTheme: 'dark',
 };
 
 const ClientContext = createContext<ClientContextType>({
@@ -125,6 +128,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         logoUrl: agency?.logo_url || null,
         supportEmail: agency?.support_email || null,
         supportPhone: agency?.support_phone || null,
+        websiteTheme: agency?.website_theme || 'dark',
       });
 
       setLoading(false);
