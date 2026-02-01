@@ -82,12 +82,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
 
-  // Set favicon from agency branding
+  // Set favicon from agency branding (uses logo as favicon)
   useEffect(() => {
-    if (branding.faviconUrl || branding.logoUrl) {
-      setFavicon(branding.faviconUrl || branding.logoUrl);
+    if (branding.logoUrl) {
+      setFavicon(branding.logoUrl);
     }
-  }, [branding.faviconUrl, branding.logoUrl]);
+  }, [branding.logoUrl]);
 
   // CRITICAL: Set html background color for status bar on iOS
   useEffect(() => {
