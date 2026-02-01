@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -195,8 +196,13 @@ interface NavProps {
 }
 
 function Navigation({ config }: NavProps) {
+  const router = useRouter();
   const { branding } = config;
   const isDark = config.theme === 'dark';
+  
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
   
   return (
     <nav className="navbar">
@@ -227,8 +233,12 @@ function Navigation({ config }: NavProps) {
           </ul>
           
           <div className="nav-actions">
-            <a href={`tel:${config.footer.phone}`} className="btn-ghost">Call Us</a>
-            <Link href="/signup" className="btn-primary">Start Free Trial</Link>
+            {config.footer.phone && (
+              <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>
+            )}
+            <button onClick={handleSignupClick} className="btn-primary">
+              Start Free Trial
+            </button>
           </div>
           
           <button className="mobile-menu-toggle" aria-label="Toggle menu">
@@ -246,7 +256,12 @@ function Navigation({ config }: NavProps) {
 // HERO SECTION
 // ============================================================================
 function HeroSection({ config }: { config: MarketingConfig }) {
+  const router = useRouter();
   const { hero } = config;
+  
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
   
   return (
     <section className="hero">
@@ -296,7 +311,9 @@ function HeroSection({ config }: { config: MarketingConfig }) {
 
           {/* CTAs */}
           <div className="hero-ctas">
-            <Link href="/signup" className="btn-large btn-primary">Start Free Trial - 7 Days</Link>
+            <button onClick={handleSignupClick} className="btn-large btn-primary">
+              Start Free Trial - 7 Days
+            </button>
             <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>
           </div>
         </div>
@@ -389,8 +406,13 @@ function ProblemSolutionSection({ config }: { config: MarketingConfig }) {
 // HOW IT WORKS SECTION
 // ============================================================================
 function HowItWorksSection({ config }: { config: MarketingConfig }) {
+  const router = useRouter();
   const { steps } = config;
   const stepIcons = [Icons.file, Icons.cpu, Icons.phone, Icons.smartphone];
+  
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
   
   return (
     <section id="how-it-works" className="how-it-works">
@@ -416,7 +438,9 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
         </div>
 
         <div className="cta-box">
-          <Link href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
+          <button onClick={handleSignupClick} className="btn-large btn-primary">
+            Start Your 7-Day Free Trial
+          </button>
           <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -879,7 +903,12 @@ function TestimonialsSection({ config }: { config: MarketingConfig }) {
 // PRICING SECTION
 // ============================================================================
 function PricingSection({ config }: { config: MarketingConfig }) {
+  const router = useRouter();
   const { pricing, branding } = config;
+  
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
   
   return (
     <section id="pricing" className="pricing">
@@ -913,9 +942,12 @@ function PricingSection({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <Link href="/signup" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>
+              <button 
+                onClick={handleSignupClick} 
+                className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}
+              >
                 Start 7-Day Free Trial
-              </Link>
+              </button>
               {tier.isPopular && (
                 <p className="pricing-recommendation">Most businesses choose {tier.name}</p>
               )}
@@ -975,7 +1007,12 @@ function FAQSection({ config }: { config: MarketingConfig }) {
 // FINAL CTA SECTION
 // ============================================================================
 function FinalCTASection({ config }: { config: MarketingConfig }) {
+  const router = useRouter();
   const { hero, branding } = config;
+  
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
   
   return (
     <section className="final-cta">
@@ -1009,7 +1046,9 @@ function FinalCTASection({ config }: { config: MarketingConfig }) {
             )}
 
             <div className="cta-box-secondary">
-              <Link href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</Link>
+              <button onClick={handleSignupClick} className="btn-large btn-primary">
+                Start Your 7-Day Free Trial
+              </button>
               <div className="cta-benefits">
                 <span>✓ Setup in 10 minutes</span>
                 <span>✓ No credit card required</span>
@@ -1063,7 +1102,7 @@ function Footer({ config }: { config: MarketingConfig }) {
             <p className="footer-tagline">AI receptionist that never sleeps</p>
             <div className="footer-contact">
               {footer.address && <p>{footer.address}</p>}
-              {footer.phone && <p><a href={`tel:${footer.phone}`}>{footer.phone}</a></p>}
+              {footer.phone && <p><a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a></p>}
               {footer.email && <p><a href={`mailto:${footer.email}`}>{footer.email}</a></p>}
             </div>
           </div>
@@ -1109,6 +1148,7 @@ function Footer({ config }: { config: MarketingConfig }) {
 // STICKY CTA
 // ============================================================================
 function StickyCTA({ config }: { config: MarketingConfig }) {
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const { hero, branding } = config;
   
@@ -1120,11 +1160,17 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
+  const handleSignupClick = () => {
+    router.push('/get-started');
+  };
+  
   return (
     <div className={`sticky-cta ${visible ? 'visible' : ''}`}>
       <span className="sticky-cta-text">Ready to try {branding.name}?</span>
       <div className="sticky-cta-actions">
-        <Link href="/signup" className="btn-primary btn-small">Start Free Trial</Link>
+        <button onClick={handleSignupClick} className="btn-primary btn-small">
+          Start Free Trial
+        </button>
         {hero.demoPhone && (
           <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
             <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>
@@ -1165,8 +1211,32 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     '--accent-color': config.branding.accentColor,
   } as React.CSSProperties;
   
+  // Dynamic styles for selection and focus - uses agency primary color
+  const dynamicStyles = `
+    .marketing-page ::selection {
+      background-color: ${config.branding.primaryColor}40;
+      color: inherit;
+    }
+    .marketing-page ::-moz-selection {
+      background-color: ${config.branding.primaryColor}40;
+      color: inherit;
+    }
+    .marketing-page input:focus,
+    .marketing-page select:focus,
+    .marketing-page textarea:focus {
+      outline: none;
+      border-color: ${config.branding.primaryColor} !important;
+      box-shadow: 0 0 0 3px ${config.branding.primaryColor}20 !important;
+    }
+    .marketing-page input::selection,
+    .marketing-page textarea::selection {
+      background-color: ${config.branding.primaryColor}40;
+    }
+  `;
+  
   return (
     <div className={`marketing-page theme-${theme}`} style={themeStyle}>
+      <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       <Navigation config={config} />
       <HeroSection config={config} />
       <StatsSection config={config} />
