@@ -19,6 +19,8 @@ interface Agency {
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  website_theme: 'light' | 'dark' | 'auto' | null;
+  logo_background_color: string | null;
   price_starter: number;
   price_pro: number;
   price_growth: number;
@@ -112,9 +114,9 @@ function clearReferralCode() {
 }
 
 // ============================================================================
-// SHARED COMPONENTS
+// THEMED FORM INPUT (supports light/dark)
 // ============================================================================
-function FormInput({
+function ThemedFormInput({
   label,
   name,
   type = 'text',
@@ -124,6 +126,9 @@ function FormInput({
   required = false,
   icon: Icon,
   className = '',
+  isDark = true,
+  primaryColor = '#10b981',
+  maxLength,
 }: {
   label: string;
   name: string;
@@ -134,15 +139,18 @@ function FormInput({
   required?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
   className?: string;
+  isDark?: boolean;
+  primaryColor?: string;
+  maxLength?: number;
 }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+      <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
         {label}
       </label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#fafaf9]/30" />
+          <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`} />
         )}
         <input
           name={name}
@@ -151,11 +159,13 @@ function FormInput({
           value={value}
           onChange={onChange}
           required={required}
-          className={`w-full rounded-xl border border-white/[0.08] bg-white/[0.03] ${
-            Icon ? 'pl-11' : 'pl-4'
-          } pr-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 
-          focus:outline-none focus:border-white/20 focus:bg-white/[0.05] focus:ring-1 focus:ring-white/10
-          transition-all duration-200`}
+          maxLength={maxLength}
+          className={`w-full rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
+            isDark 
+              ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
+              : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300'
+          }`}
+          style={{ '--tw-ring-color': `${primaryColor}30` } as React.CSSProperties}
         />
       </div>
     </div>
@@ -163,7 +173,7 @@ function FormInput({
 }
 
 // ============================================================================
-// CLIENT SIGNUP FORM (for agency subdomains) - UNCHANGED
+// CLIENT SIGNUP FORM (for agency subdomains) - NOW WITH THEME SUPPORT
 // ============================================================================
 function ClientSignupForm({ agency }: { agency: Agency }) {
   const router = useRouter();
@@ -203,30 +213,48 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     }
   };
 
+  // Theme detection - default to light unless explicitly dark
+  const isDark = agency.website_theme === 'dark';
+  
+  // Colors
   const primaryColor = agency.primary_color || '#10b981';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
+  // Theme-based colors
+  const bgColor = isDark ? '#050505' : '#ffffff';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
+
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
-      {/* Premium grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
+      {/* Premium grain overlay - dark only */}
+      {isDark && (
+        <div 
+          className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      )}
 
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.07]"
-          style={{ backgroundColor: primaryColor }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px]"
+          style={{ backgroundColor: primaryColor, opacity: isDark ? 0.07 : 0.1 }}
         />
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+      <header 
+        className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-2xl"
+        style={{ backgroundColor: headerBg, borderColor: headerBorder }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
@@ -234,12 +262,19 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 <img 
                   src={agency.logo_url} 
                   alt={agency.name} 
-                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain border border-white/10" 
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
+                  style={{ 
+                    backgroundColor: agency.logo_background_color || 'transparent',
+                    border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)',
+                  }}
                 />
               ) : (
                 <div 
-                  className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-white/10"
-                  style={{ backgroundColor: primaryColor }}
+                  className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                  style={{ 
+                    backgroundColor: primaryColor,
+                    border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                  }}
                 >
                   <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
                 </div>
@@ -248,7 +283,8 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
             </Link>
             <Link 
               href="/client/login"
-              className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
+              className="text-sm transition-colors"
+              style={{ color: mutedTextColor }}
             >
               <span className="hidden sm:inline">Already have an account? </span>Sign in
             </Link>
@@ -260,7 +296,14 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-lg">
           {/* Form Card */}
-          <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
+          <div 
+            className="rounded-2xl sm:rounded-3xl backdrop-blur-xl p-6 sm:p-8 shadow-2xl"
+            style={{ 
+              backgroundColor: cardBg, 
+              border: `1px solid ${cardBorder}`,
+              boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)',
+            }}
+          >
             <div className="text-center mb-8">
               <div 
                 className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm mb-4"
@@ -275,13 +318,13 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                 Get Your AI Receptionist
               </h1>
-              <p className="mt-2 text-[#fafaf9]/50">
+              <p className="mt-2" style={{ color: mutedTextColor }}>
                 Start your free trial with {agency.name}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <FormInput
+              <ThemedFormInput
                 label="Business Name"
                 name="businessName"
                 placeholder="Acme Plumbing Services"
@@ -289,9 +332,11 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 onChange={handleChange}
                 required
                 icon={Building}
+                isDark={isDark}
+                primaryColor={primaryColor}
               />
 
-              <FormInput
+              <ThemedFormInput
                 label="Your Name"
                 name="ownerName"
                 placeholder="John Smith"
@@ -299,10 +344,12 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 onChange={handleChange}
                 required
                 icon={User}
+                isDark={isDark}
+                primaryColor={primaryColor}
               />
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormInput
+                <ThemedFormInput
                   label="Email"
                   name="email"
                   type="email"
@@ -311,8 +358,10 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={Mail}
+                  isDark={isDark}
+                  primaryColor={primaryColor}
                 />
-                <FormInput
+                <ThemedFormInput
                   label="Phone"
                   name="phone"
                   type="tel"
@@ -321,11 +370,13 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={Phone}
+                  isDark={isDark}
+                  primaryColor={primaryColor}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormInput
+                <ThemedFormInput
                   label="City"
                   name="city"
                   placeholder="Atlanta"
@@ -333,9 +384,13 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   onChange={handleChange}
                   required
                   icon={MapPin}
+                  isDark={isDark}
+                  primaryColor={primaryColor}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">State</label>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
+                    State
+                  </label>
                   <input
                     name="state"
                     type="text"
@@ -344,24 +399,36 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                     onChange={handleChange}
                     required
                     maxLength={2}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all uppercase text-center font-medium tracking-wider"
+                    className={`w-full rounded-xl border px-4 py-3.5 transition-all uppercase text-center font-medium tracking-wider focus:outline-none focus:ring-2 ${
+                      isDark 
+                        ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
+                        : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300'
+                    }`}
+                    style={{ '--tw-ring-color': `${primaryColor}30` } as React.CSSProperties}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Industry</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
+                  Industry
+                </label>
                 <select
                   name="industry"
                   value={formData.industry}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
+                  className={`w-full rounded-xl border px-4 py-3.5 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${
+                    isDark 
+                      ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20 focus:bg-white/[0.05]'
+                      : 'border-gray-200 bg-white text-gray-900 focus:border-gray-300'
+                  }`}
                   style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'right 1rem center',
                     backgroundSize: '1.25rem',
-                  }}
+                    '--tw-ring-color': `${primaryColor}30`,
+                  } as React.CSSProperties}
                 >
                   <option value="general">General Business</option>
                   <option value="home_services">Home Services</option>
@@ -376,7 +443,14 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               </div>
 
               {error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+                <div 
+                  className="rounded-xl p-4 text-sm"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                    border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+                    color: isDark ? '#f87171' : '#dc2626',
+                  }}
+                >
                   {error}
                 </div>
               )}
@@ -388,6 +462,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 style={{ 
                   backgroundColor: primaryColor,
                   color: primaryLight ? '#050505' : '#fafaf9',
+                  boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40`,
                 }}
               >
                 {loading ? (
@@ -404,20 +479,23 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
+            <p className="mt-6 text-center text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</Link>
+              <Link href="/terms" className="underline underline-offset-2" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Terms</Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</Link>
+              <Link href="/privacy" className="underline underline-offset-2" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Privacy Policy</Link>
             </p>
           </div>
 
           {/* Benefits Card */}
           <div 
             className="mt-6 rounded-2xl border p-5 sm:p-6"
-            style={{ borderColor: `${accentColor}25`, backgroundColor: `${accentColor}08` }}
+            style={{ 
+              borderColor: `${accentColor}25`, 
+              backgroundColor: `${accentColor}08`,
+            }}
           >
-            <h3 className="font-medium text-[#fafaf9] mb-4">What you&apos;ll get:</h3>
+            <h3 className="font-medium mb-4" style={{ color: textColor }}>What you&apos;ll get:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { icon: Phone, text: 'AI receptionist 24/7' },
@@ -425,7 +503,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 { icon: Shield, text: 'Professional call handling' },
                 { icon: Clock, text: 'Detailed call summaries' },
               ].map((item) => (
-                <div key={item.text} className="flex items-center gap-3 text-sm text-[#fafaf9]/70">
+                <div key={item.text} className="flex items-center gap-3 text-sm" style={{ color: mutedTextColor }}>
                   <div 
                     className="flex h-8 w-8 items-center justify-center rounded-lg"
                     style={{ backgroundColor: `${accentColor}15` }}
@@ -502,7 +580,6 @@ function AgencySignupForm() {
   const handleGoogleSignup = () => {
     setGoogleLoading(true);
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    // Include referral code in state
     const state = referralCode ? `?ref=${referralCode}` : '';
     window.location.href = `${backendUrl}/api/auth/google${state}`;
   };
@@ -522,7 +599,6 @@ function AgencySignupForm() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           referralCode: referralCode,
-          // No agency name or phone - collected in onboarding
         }),
       });
 
@@ -650,25 +726,27 @@ function AgencySignupForm() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <FormInput
+                <ThemedFormInput
                   label="First Name"
                   name="firstName"
                   placeholder="John"
                   value={formData.firstName}
                   onChange={handleChange}
                   required
+                  isDark={true}
                 />
-                <FormInput
+                <ThemedFormInput
                   label="Last Name"
                   name="lastName"
                   placeholder="Smith"
                   value={formData.lastName}
                   onChange={handleChange}
                   required
+                  isDark={true}
                 />
               </div>
               
-              <FormInput
+              <ThemedFormInput
                 label="Email Address"
                 name="email"
                 type="email"
@@ -677,6 +755,7 @@ function AgencySignupForm() {
                 onChange={handleChange}
                 required
                 icon={Mail}
+                isDark={true}
               />
 
               {error && (
