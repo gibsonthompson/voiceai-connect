@@ -435,11 +435,20 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             Integrations
           </h2>
           
+          {/* Google Calendar - Coming Soon */}
           <div 
-            className="rounded-xl border p-3 sm:p-4 mb-3 shadow-sm"
+            className="rounded-xl border p-3 sm:p-4 mb-3 shadow-sm relative overflow-hidden"
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
-            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+            {/* Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center">
+              <div className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                🚀 Coming Soon
+              </div>
+            </div>
+
+            {/* Original Content (dimmed behind overlay) */}
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 opacity-60">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border }}>
                 <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -452,29 +461,16 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 <h3 className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>Google Calendar</h3>
                 <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>AI books appointments directly to your calendar</p>
               </div>
-              {client.google_calendar_connected && (
-                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
-                  Connected
-                </span>
-              )}
             </div>
-            {client.google_calendar_connected ? (
+            <div className="opacity-60">
               <button 
-                onClick={handleDisconnectCalendar} 
-                disabled={disconnectingCalendar}
-                className="w-full py-2 sm:py-2.5 border border-red-300 text-red-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-50 transition disabled:opacity-50"
-              >
-                {disconnectingCalendar ? 'Disconnecting...' : 'Disconnect'}
-              </button>
-            ) : (
-              <button 
-                onClick={handleConnectCalendar} 
-                className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
+                disabled
+                className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-not-allowed"
+                style={{ backgroundColor: theme.bg, color: theme.textMuted4 }}
               >
                 Connect Calendar
               </button>
-            )}
+            </div>
           </div>
         </section>
 
