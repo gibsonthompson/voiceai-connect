@@ -304,13 +304,11 @@ export default function ClientUpgradePage() {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative rounded-2xl p-6 transition-all ${
-                plan.popular ? 'ring-2' : ''
-              }`}
+              className="relative rounded-2xl p-6 transition-all"
               style={{
                 backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
                 border: `1px solid ${plan.popular ? primaryColor : (isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb')}`,
-                ringColor: primaryColor,
+                boxShadow: plan.popular ? `0 0 0 2px ${primaryColor}` : 'none',
               }}
             >
               {plan.popular && (
