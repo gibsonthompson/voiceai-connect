@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight, Gift, AlertTriangle
+  Menu, X, ChevronRight, Gift, AlertTriangle, CreditCard
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 
@@ -37,9 +37,9 @@ function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
 
-// Helper to check if subscription is expired
-function isExpiredStatus(status: string | null | undefined): boolean {
-  return status === 'expired' || status === 'trial_expired' || status === 'canceled' || status === 'cancelled' || status === 'past_due';
+// Helper to check if payment has failed (these statuses require action)
+function isPaymentFailed(status: string | null | undefined): boolean {
+  return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'cancelled';
 }
 
 // Calculate trial days remaining
@@ -57,7 +57,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const { agency, branding, loading } = useAgency();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isExpiredRedirecting, setIsExpiredRedirecting] = useState(false);
 
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
@@ -77,22 +76,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // Calculate trial status
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
   const isOnTrial = isTrialStatus(agency?.subscription_status);
-  const hasTrialExpired = isOnTrial && trialDaysLeft !== null && trialDaysLeft <= 0;
-  const isExpired = isExpiredStatus(agency?.subscription_status) || hasTrialExpired;
-
-  // Check for expired subscription and redirect (but allow access to billing page)
-  useEffect(() => {
-    if (!loading && agency && isExpired) {
-      // Allow access to settings/billing page so they can upgrade
-      const allowedPaths = ['/agency/settings', '/agency/settings/billing', '/agency/settings/branding'];
-      const isAllowedPath = allowedPaths.some(path => pathname?.startsWith(path));
-      
-      if (!isAllowedPath && !isExpiredRedirecting) {
-        setIsExpiredRedirecting(true);
-        window.location.href = '/agency/settings/billing?expired=true';
-      }
-    }
-  }, [agency, loading, isExpired, pathname, isExpiredRedirecting]);
+  
+  // Only block access if payment has failed (not for trial - Stripe auto-charges)
+  const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
 
   // Detect mobile
   useEffect(() => {
@@ -163,20 +149,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Show redirecting state if expired and navigating away from billing
-  if (isExpiredRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
-        <div className="flex flex-col items-center gap-4 text-center p-6">
-          <AlertTriangle className="h-12 w-12 text-amber-500" />
-          <h2 className="text-xl font-semibold" style={{ color: textColor }}>Trial Expired</h2>
-          <p style={{ color: mutedTextColor }}>Redirecting to billing...</p>
-          <Loader2 className="h-6 w-6 animate-spin" style={{ color: primaryColor }} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div 
       className="min-h-screen"
@@ -198,8 +170,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Expired Banner - Shows on all pages when expired but on allowed path */}
-      {isExpired && (
+      {/* Payment Failed Banner - Only shows if payment failed (not for trial) */}
+      {hasPaymentIssue && (
         <div 
           className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between gap-3"
           style={{
@@ -208,13 +180,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           }}
         >
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+            <CreditCard className="h-5 w-5 text-red-500 flex-shrink-0" />
             <div>
               <p className="font-medium text-sm" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
-                Your trial has ended
+                Payment failed
               </p>
               <p className="text-xs" style={{ color: isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>
-                Upgrade now to continue using your agency dashboard.
+                Please update your payment method to continue using your agency.
               </p>
             </div>
           </div>
@@ -226,7 +198,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               color: '#ffffff',
             }}
           >
-            Upgrade Now
+            Update Payment
           </a>
         </div>
       )}
@@ -237,7 +209,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         style={{ 
           backgroundColor: sidebarBg, 
           paddingTop: 'env(safe-area-inset-top)',
-          top: isExpired ? '60px' : 0,
+          top: hasPaymentIssue ? '60px' : 0,
         }}
       >
         <header 
@@ -301,7 +273,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           backgroundColor: sidebarBg, 
           borderRight: `1px solid ${borderColor}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
-          top: isExpired && !isMobile ? '60px' : 0,
+          top: hasPaymentIssue && !isMobile ? '60px' : 0,
         }}
       >
         {/* Mobile Header in Sidebar */}
@@ -382,39 +354,29 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           className="absolute bottom-0 left-0 right-0 p-4 space-y-3"
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}
         >
-          {/* Trial Badge - Check for both 'trial' AND 'trialing' */}
-          {isOnTrial && !isExpired && trialDaysLeft !== null && (
-            <a
-              href="/agency/settings/billing"
-              className="block rounded-xl p-3 transition-opacity hover:opacity-90"
+          {/* Trial Badge - Informational only (Stripe auto-charges when trial ends) */}
+          {isOnTrial && trialDaysLeft !== null && (
+            <div 
+              className="rounded-xl p-3"
               style={{
-                backgroundColor: trialDaysLeft <= 3 
-                  ? (isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)')
-                  : (isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)'),
-                border: trialDaysLeft <= 3 
-                  ? '1px solid rgba(239,68,68,0.3)'
-                  : '1px solid rgba(245,158,11,0.2)',
+                backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.1)',
+                border: '1px solid rgba(59,130,246,0.2)',
               }}
             >
-              <p className="text-xs" style={{ 
-                color: trialDaysLeft <= 3 
-                  ? (isDark ? 'rgba(252,165,165,0.8)' : '#991b1b')
-                  : (isDark ? 'rgba(245,158,11,0.8)' : '#b45309') 
-              }}>
+              <p className="text-xs" style={{ color: isDark ? 'rgba(147,197,253,0.8)' : '#1e40af' }}>
                 Trial Period
               </p>
-              <p className="text-sm font-medium" style={{ 
-                color: trialDaysLeft <= 3 
-                  ? (isDark ? '#fca5a5' : '#dc2626')
-                  : (isDark ? '#fcd34d' : '#d97706')
-              }}>
-                {trialDaysLeft} days left
+              <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>
+                {trialDaysLeft} days remaining
               </p>
-            </a>
+              <p className="text-xs mt-1" style={{ color: isDark ? 'rgba(147,197,253,0.6)' : '#3b82f6' }}>
+                Your card will be charged automatically
+              </p>
+            </div>
           )}
 
-          {/* Expired Badge */}
-          {isExpired && (
+          {/* Payment Issue Badge */}
+          {hasPaymentIssue && (
             <a
               href="/agency/settings/billing"
               className="block rounded-xl p-3 transition-opacity hover:opacity-90"
@@ -423,14 +385,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 border: '1px solid rgba(239,68,68,0.3)',
               }}
             >
-              <p className="text-xs" style={{ color: isDark ? 'rgba(252,165,165,0.8)' : '#991b1b' }}>Status</p>
+              <p className="text-xs" style={{ color: isDark ? 'rgba(252,165,165,0.8)' : '#991b1b' }}>Payment Issue</p>
               <p className="text-sm font-medium" style={{ color: isDark ? '#fca5a5' : '#dc2626' }}>
-                Trial Expired - Upgrade
+                Update payment method
               </p>
             </a>
           )}
 
-          {/* Plan Badge - Only show if active and not on trial */}
+          {/* Plan Badge - Show for active subscriptions */}
           {agency?.subscription_status === 'active' && (
             <div 
               className="rounded-xl p-3"
@@ -464,10 +426,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main 
-        className="md:pl-64 min-h-screen"
-        style={{ paddingTop: isExpired ? '0' : undefined }}
-      >
+      <main className="md:pl-64 min-h-screen">
         {children}
       </main>
     </div>

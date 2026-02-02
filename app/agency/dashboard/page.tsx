@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { 
   Users, DollarSign, PhoneCall, Clock, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2
@@ -38,11 +37,6 @@ function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
 
-// Helper to check if subscription is expired
-function isExpiredStatus(status: string | null | undefined): boolean {
-  return status === 'expired' || status === 'trial_expired' || status === 'canceled' || status === 'cancelled';
-}
-
 export default function AgencyDashboardPage() {
   const { agency, user, branding, loading: contextLoading } = useAgency();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -59,26 +53,6 @@ export default function AgencyDashboardPage() {
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-
-  // Check for expired trial and redirect
-  useEffect(() => {
-    if (!contextLoading && agency) {
-      // Check if subscription is expired
-      if (isExpiredStatus(agency.subscription_status)) {
-        window.location.href = '/agency/settings/billing?expired=true';
-        return;
-      }
-      
-      // Check if trial has ended (past trial_ends_at date)
-      if (isTrialStatus(agency.subscription_status) && agency.trial_ends_at) {
-        const trialEnd = new Date(agency.trial_ends_at);
-        if (trialEnd < new Date()) {
-          window.location.href = '/agency/settings/billing?expired=true';
-          return;
-        }
-      }
-    }
-  }, [agency, contextLoading]);
 
   useEffect(() => {
     if (agency) {
@@ -169,42 +143,31 @@ export default function AgencyDashboardPage() {
         </p>
       </div>
 
-      {/* Trial Banner - Check for both 'trial' and 'trialing' */}
+      {/* Trial Info Banner - Informational only (Stripe auto-charges) */}
       {isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
         <div 
-          className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3"
           style={{
-            backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)',
-            border: '1px solid rgba(245,158,11,0.2)',
+            backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.1)',
+            border: '1px solid rgba(59,130,246,0.2)',
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <div 
               className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-              style={{ backgroundColor: 'rgba(245,158,11,0.2)' }}
+              style={{ backgroundColor: 'rgba(59,130,246,0.2)' }}
             >
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }} />
             </div>
             <div>
-              <p className="font-medium text-sm sm:text-base" style={{ color: isDark ? '#fde68a' : '#92400e' }}>
-                {trialDaysLeft > 0 ? `${trialDaysLeft} days left in your trial` : 'Your trial has ended'}
+              <p className="font-medium text-sm sm:text-base" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                {trialDaysLeft} days remaining in your trial
               </p>
-              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(253,230,138,0.6)' : '#b45309' }}>
-                Upgrade to keep your agency active and access all features.
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+                Your card will be charged automatically when the trial ends. No action needed.
               </p>
             </div>
           </div>
-          {/* Use <a> tag for proper navigation */}
-          <a 
-            href="/agency/settings/billing"
-            className="rounded-full px-4 py-2 text-sm font-medium transition-colors text-center sm:text-left"
-            style={{ 
-              backgroundColor: '#f59e0b',
-              color: '#050505',
-            }}
-          >
-            Upgrade Now
-          </a>
         </div>
       )}
 
@@ -365,7 +328,7 @@ export default function AgencyDashboardPage() {
                         client.subscription_status === 'active'
                           ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
                           : client.subscription_status === 'trial' || client.subscription_status === 'trialing'
-                          ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: isDark ? '#fbbf24' : '#d97706' }
+                          ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', color: isDark ? '#93c5fd' : '#1d4ed8' }
                           : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: mutedTextColor }
                       }
                     >
