@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
-  AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor
+  AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
+  Receipt, XCircle
 } from 'lucide-react';
 import { useAgency } from '../context';
 
-type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments';
+type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing';
 
 interface StripeStatus {
   connected: boolean;
@@ -28,6 +29,11 @@ function isLightColor(hex: string): boolean {
   return luminance > 0.5;
 }
 
+// Helper to check if subscription is in trial state
+function isTrialStatus(status: string | null | undefined): boolean {
+  return status === 'trial' || status === 'trialing';
+}
+
 export default function AgencySettingsPage() {
   const { agency, user, branding, loading: contextLoading, refreshAgency } = useAgency();
   
@@ -40,6 +46,11 @@ export default function AgencySettingsPage() {
   const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+
+  // Billing state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -72,6 +83,12 @@ export default function AgencySettingsPage() {
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
   const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+
+  // Trial calculations
+  const isOnTrial = isTrialStatus(agency?.subscription_status);
+  const trialDaysLeft = agency?.trial_ends_at
+    ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   useEffect(() => {
     if (agency) {
@@ -121,6 +138,7 @@ export default function AgencySettingsPage() {
     { id: 'branding' as SettingsTab, label: 'Branding', icon: Palette },
     { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
+    { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
   ];
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,6 +256,62 @@ export default function AgencySettingsPage() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    if (!agency) return;
+    setPortalLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/billing/portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ agency_id: agency.id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to open billing portal');
+      }
+
+      const data = await response.json();
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to open billing portal');
+      setPortalLoading(false);
+    }
+  };
+
+  const handleCancelTrial = async () => {
+    if (!agency) return;
+    setCancelLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/billing/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ agency_id: agency.id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel subscription');
+      }
+
+      // Clear auth and redirect
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('agency');
+      localStorage.removeItem('user');
+      window.location.href = '/agency/login?canceled=true';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel');
+      setCancelLoading(false);
+      setShowCancelModal(false);
+    }
+  };
+
   if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -261,6 +335,26 @@ export default function AgencySettingsPage() {
 
   const stripeDisplay = getStripeStatusDisplay();
   const primaryColorValue = branding.primaryColor || '#10b981';
+
+  // Get subscription status display
+  const getSubscriptionDisplay = () => {
+    const status = agency?.subscription_status;
+    if (status === 'active') {
+      return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' };
+    }
+    if (isTrialStatus(status)) {
+      return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' };
+    }
+    if (status === 'past_due') {
+      return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' };
+    }
+    if (status === 'canceled' || status === 'cancelled') {
+      return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' };
+    }
+    return { label: status || 'Unknown', color: mutedTextColor, bgColor: inputBg };
+  };
+
+  const subscriptionDisplay = getSubscriptionDisplay();
 
   // Dynamic styles for selection and focus - uses agency primary color
   const dynamicStyles = `
@@ -289,6 +383,81 @@ export default function AgencySettingsPage() {
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       
+      {/* Cancel Trial Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !cancelLoading && setShowCancelModal(false)}
+          />
+          <div 
+            className="relative w-full max-w-md rounded-2xl p-6"
+            style={{ 
+              backgroundColor: isDark ? '#0a0a0a' : '#ffffff',
+              border: `1px solid ${borderColor}`,
+            }}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div 
+                className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+              >
+                <AlertTriangle className="h-6 w-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold" style={{ color: textColor }}>Cancel Trial?</h3>
+                <p className="text-sm" style={{ color: mutedTextColor }}>This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <div 
+              className="rounded-xl p-4 mb-6"
+              style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.05)' : '#fef2f2' }}
+            >
+              <p className="text-sm" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
+                If you cancel now:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm" style={{ color: isDark ? 'rgba(252,165,165,0.8)' : '#b91c1c' }}>
+                <li>• You'll lose access to your agency dashboard immediately</li>
+                <li>• All client AI receptionists will be disabled</li>
+                <li>• You won't be charged</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                disabled={cancelLoading}
+                className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
+                }`}
+                style={{ 
+                  backgroundColor: inputBg, 
+                  border: `1px solid ${inputBorder}`,
+                  color: textColor,
+                }}
+              >
+                Keep My Trial
+              </button>
+              <button
+                onClick={handleCancelTrial}
+                disabled={cancelLoading}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {cancelLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Canceling...
+                  </>
+                ) : (
+                  'Yes, Cancel Trial'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
@@ -878,8 +1047,140 @@ export default function AgencySettingsPage() {
               </div>
             )}
 
+            {/* Billing Tab */}
+            {activeTab === 'billing' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3>
+                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Manage your VoiceAI Connect subscription.</p>
+                </div>
+
+                {/* Current Plan Card */}
+                <div 
+                  className="rounded-xl p-4 sm:p-5"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                >
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <p className="text-sm" style={{ color: mutedTextColor }}>Current Plan</p>
+                      <p className="text-xl sm:text-2xl font-semibold capitalize mt-1">
+                        {agency?.plan_type || 'Starter'}
+                      </p>
+                    </div>
+                    <span 
+                      className="px-3 py-1 rounded-full text-xs font-medium"
+                      style={{ 
+                        backgroundColor: subscriptionDisplay.bgColor,
+                        color: subscriptionDisplay.color,
+                      }}
+                    >
+                      {subscriptionDisplay.label}
+                    </span>
+                  </div>
+
+                  {/* Trial Info */}
+                  {isOnTrial && trialDaysLeft !== null && (
+                    <div 
+                      className="rounded-lg p-3 mb-4"
+                      style={{
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        border: '1px solid rgba(59,130,246,0.2)',
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4" style={{ color: '#3b82f6' }} />
+                        <p className="text-sm font-medium" style={{ color: '#3b82f6' }}>
+                          {trialDaysLeft} days left in trial
+                        </p>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: 'rgba(59,130,246,0.8)' }}>
+                        Your card will be charged automatically on {agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Plan Details */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div 
+                      className="rounded-lg px-3 py-2"
+                      style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                    >
+                      <p className="text-xs" style={{ color: mutedTextColor }}>Price</p>
+                      <p className="font-medium">
+                        ${agency?.plan_type === 'professional' ? '199' : agency?.plan_type === 'enterprise' ? '299' : '99'}/mo
+                      </p>
+                    </div>
+                    <div 
+                      className="rounded-lg px-3 py-2"
+                      style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
+                    >
+                      <p className="text-xs" style={{ color: mutedTextColor }}>Status</p>
+                      <p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p>
+                    </div>
+                  </div>
+
+                  {/* Manage Subscription Button */}
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                      style={{ 
+                        backgroundColor: primaryColorValue, 
+                        color: isLightColor(primaryColorValue) ? '#050505' : '#ffffff',
+                      }}
+                    >
+                      {portalLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
+                      Manage Subscription
+                    </button>
+                    <p className="mt-2 text-xs" style={{ color: mutedTextColor }}>
+                      Update payment method, view invoices, or change plan.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cancel Trial Option - Only show during trial */}
+                {isOnTrial && (
+                  <div 
+                    className="rounded-xl p-4"
+                    style={{
+                      backgroundColor: isDark ? 'rgba(239,68,68,0.02)' : '#fef2f2',
+                      border: isDark ? '1px solid rgba(239,68,68,0.1)' : '1px solid #fecaca',
+                    }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>
+                          Cancel Trial
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: mutedTextColor }}>
+                          You'll lose access immediately and won't be charged.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
+                        style={{
+                          backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)',
+                          border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(239,68,68,0.2)',
+                          color: isDark ? '#f87171' : '#dc2626',
+                        }}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Cancel Trial
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Save Button */}
-            {activeTab !== 'payments' && (
+            {activeTab !== 'payments' && activeTab !== 'billing' && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${borderColor}` }}>
                 <button
                   onClick={handleSave}
