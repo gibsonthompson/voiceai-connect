@@ -256,6 +256,7 @@ export default function AgencySettingsPage() {
     }
   };
 
+  // FIXED: Changed from /api/agency/billing/portal to /api/agency/portal
   const handleManageSubscription = async () => {
     if (!agency) return;
     setPortalLoading(true);
@@ -263,7 +264,7 @@ export default function AgencySettingsPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/billing/portal`, {
+      const response = await fetch(`${backendUrl}/api/agency/portal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
@@ -282,6 +283,7 @@ export default function AgencySettingsPage() {
     }
   };
 
+  // FIXED: Changed from /api/agency/billing/cancel to /api/agency/cancel
   const handleCancelTrial = async () => {
     if (!agency) return;
     setCancelLoading(true);
@@ -289,7 +291,7 @@ export default function AgencySettingsPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/billing/cancel`, {
+      const response = await fetch(`${backendUrl}/api/agency/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
