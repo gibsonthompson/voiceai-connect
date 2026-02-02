@@ -246,18 +246,41 @@ export default function ClientAIAgentPage() {
     }
   };
 
+  // FIXED: Properly parse services from the saved format "- Name - $Price - Description"
   const parseServices = (servicesText: string) => {
     const lines = servicesText.split('\n').filter(l => l.trim());
     const parsed: Service[] = [];
+    
     lines.forEach((line, index) => {
-      const priceMatch = line.match(/\$[\d,]+/);
-      const price = priceMatch ? priceMatch[0] : '';
-      const name = line.split('-')[0].trim().replace(/^-\s*/, '');
-      const description = line.split('-').slice(1).join('-').trim() || '';
+      // Remove leading "- " if present
+      const cleanLine = line.trim().replace(/^-\s*/, '');
+      if (!cleanLine) return;
+      
+      // Split by " - " separator (with spaces around dash)
+      const parts = cleanLine.split(/\s+-\s+/);
+      
+      let name = '';
+      let price = '';
+      let descParts: string[] = [];
+      
+      parts.forEach((part, i) => {
+        const trimmed = part.trim();
+        if (i === 0) {
+          name = trimmed;
+        } else if (trimmed.startsWith('$')) {
+          price = trimmed;
+        } else if (trimmed) {
+          descParts.push(trimmed);
+        }
+      });
+      
+      const description = descParts.join(' - ');
+      
       if (name) {
-        parsed.push({ id: `${index + 1}`, name, price, description: description.replace(/\$[\d,]+/, '').trim() });
+        parsed.push({ id: `${index + 1}`, name, price, description });
       }
     });
+    
     setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
   };
 
