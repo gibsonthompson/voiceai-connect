@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Loader2, AlertTriangle, Phone, Clock, Zap } from 'lucide-react';
 
@@ -36,7 +36,7 @@ function formatPrice(cents: number): string {
   }).format(cents / 100);
 }
 
-export default function ClientUpgradePage() {
+function ClientUpgradeContent() {
   const searchParams = useSearchParams();
   const expired = searchParams.get('expired') === 'true';
   const canceled = searchParams.get('canceled') === 'true';
@@ -411,5 +411,26 @@ export default function ClientUpgradePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function UpgradePageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Default export with Suspense boundary
+export default function ClientUpgradePage() {
+  return (
+    <Suspense fallback={<UpgradePageLoading />}>
+      <ClientUpgradeContent />
+    </Suspense>
   );
 }
