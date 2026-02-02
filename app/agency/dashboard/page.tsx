@@ -33,6 +33,16 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
+// Helper to check if subscription is in trial state (handles both 'trial' and 'trialing')
+function isTrialStatus(status: string | null | undefined): boolean {
+  return status === 'trial' || status === 'trialing';
+}
+
+// Helper to check if subscription is expired
+function isExpiredStatus(status: string | null | undefined): boolean {
+  return status === 'expired' || status === 'trial_expired' || status === 'canceled' || status === 'cancelled';
+}
+
 export default function AgencyDashboardPage() {
   const { agency, user, branding, loading: contextLoading } = useAgency();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -44,13 +54,31 @@ export default function AgencyDashboardPage() {
 
   // Agency colors
   const primaryColor = branding.primaryColor || '#10b981';
-  const accentColor = branding.accentColor || '#34d399';
 
   // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+
+  // Check for expired trial and redirect
+  useEffect(() => {
+    if (!contextLoading && agency) {
+      // Check if subscription is expired
+      if (isExpiredStatus(agency.subscription_status)) {
+        window.location.href = '/agency/settings/billing?expired=true';
+        return;
+      }
+      
+      // Check if trial has ended (past trial_ends_at date)
+      if (isTrialStatus(agency.subscription_status) && agency.trial_ends_at) {
+        const trialEnd = new Date(agency.trial_ends_at);
+        if (trialEnd < new Date()) {
+          window.location.href = '/agency/settings/billing?expired=true';
+          return;
+        }
+      }
+    }
+  }, [agency, contextLoading]);
 
   useEffect(() => {
     if (agency) {
@@ -119,13 +147,13 @@ export default function AgencyDashboardPage() {
       label: 'Monthly Revenue',
       value: formatCurrency(stats?.mrr || 0),
       icon: DollarSign,
-      color: '#f59e0b', // Keep amber for revenue
+      color: '#f59e0b',
     },
     {
       label: 'Calls This Month',
       value: stats?.totalCalls || 0,
       icon: PhoneCall,
-      color: '#3b82f6', // Keep blue for calls
+      color: '#3b82f6',
     },
   ];
 
@@ -141,8 +169,8 @@ export default function AgencyDashboardPage() {
         </p>
       </div>
 
-      {/* Trial Banner */}
-      {agency?.subscription_status === 'trial' && trialDaysLeft !== null && (
+      {/* Trial Banner - Check for both 'trial' and 'trialing' */}
+      {isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
         <div 
           className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           style={{
@@ -166,7 +194,8 @@ export default function AgencyDashboardPage() {
               </p>
             </div>
           </div>
-          <Link 
+          {/* Use <a> tag for proper navigation */}
+          <a 
             href="/agency/settings/billing"
             className="rounded-full px-4 py-2 text-sm font-medium transition-colors text-center sm:text-left"
             style={{ 
@@ -175,11 +204,11 @@ export default function AgencyDashboardPage() {
             }}
           >
             Upgrade Now
-          </Link>
+          </a>
         </div>
       )}
 
-      {/* Signup Link Card - Uses agency primary color */}
+      {/* Signup Link Card */}
       <div 
         className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
         style={{
@@ -262,14 +291,14 @@ export default function AgencyDashboardPage() {
           style={{ borderBottom: `1px solid ${borderColor}` }}
         >
           <h2 className="font-medium text-sm sm:text-base">Recent Clients</h2>
-          <Link 
+          <a 
             href="/agency/clients" 
             className="flex items-center gap-1 text-xs sm:text-sm transition-colors"
             style={{ color: primaryColor }}
           >
             View all
             <ChevronRight className="h-4 w-4" />
-          </Link>
+          </a>
         </div>
         
         <div className="p-4 sm:p-5">
@@ -302,7 +331,7 @@ export default function AgencyDashboardPage() {
           ) : (
             <div className="space-y-2 sm:space-y-3">
               {stats.recentClients.map((client) => (
-                <Link
+                <a
                   key={client.id}
                   href={`/agency/clients/${client.id}`}
                   className={`flex items-center justify-between rounded-xl p-3 sm:p-4 transition-colors ${
@@ -335,16 +364,16 @@ export default function AgencyDashboardPage() {
                       style={
                         client.subscription_status === 'active'
                           ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
-                          : client.subscription_status === 'trial'
+                          : client.subscription_status === 'trial' || client.subscription_status === 'trialing'
                           ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: isDark ? '#fbbf24' : '#d97706' }
                           : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: mutedTextColor }
                       }
                     >
-                      {client.subscription_status || 'pending'}
+                      {client.subscription_status === 'trialing' ? 'trial' : (client.subscription_status || 'pending')}
                     </span>
                     <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: mutedTextColor }} />
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
           )}

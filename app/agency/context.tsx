@@ -58,6 +58,9 @@ interface AgencyContextType {
   user: User | null;
   branding: Branding;
   loading: boolean;
+  isTrialActive: boolean;
+  isExpired: boolean;
+  trialDaysLeft: number | null;
   refreshAgency: () => Promise<void>;
 }
 
@@ -74,6 +77,9 @@ const AgencyContext = createContext<AgencyContextType>({
   user: null,
   branding: defaultBranding,
   loading: true,
+  isTrialActive: false,
+  isExpired: false,
+  trialDaysLeft: null,
   refreshAgency: async () => {},
 });
 
@@ -83,6 +89,26 @@ export function useAgency() {
     throw new Error('useAgency must be used within an AgencyProvider');
   }
   return context;
+}
+
+// Helper to check if subscription is in trial state (handles both 'trial' and 'trialing')
+function isTrialStatus(status: string | null | undefined): boolean {
+  return status === 'trial' || status === 'trialing';
+}
+
+// Helper to check if subscription is expired
+function isExpiredStatus(status: string | null | undefined): boolean {
+  return status === 'expired' || status === 'trial_expired' || status === 'canceled' || status === 'cancelled';
+}
+
+// Calculate trial days remaining
+function calculateTrialDays(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null;
+  const endDate = new Date(trialEndsAt);
+  const now = new Date();
+  const diffTime = endDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
 }
 
 export function AgencyProvider({ children }: { children: ReactNode }) {
@@ -158,8 +184,25 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     fetchAgencyData();
   }, []);
 
+  // Calculate derived state
+  const trialDaysLeft = calculateTrialDays(agency?.trial_ends_at || null);
+  const isTrialActive = isTrialStatus(agency?.subscription_status) && (trialDaysLeft === null || trialDaysLeft > 0);
+  
+  // Check if expired: either status is expired OR trial has ended
+  const isExpired = isExpiredStatus(agency?.subscription_status) || 
+    (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
+
   return (
-    <AgencyContext.Provider value={{ agency, user, branding, loading, refreshAgency: fetchAgencyData }}>
+    <AgencyContext.Provider value={{ 
+      agency, 
+      user, 
+      branding, 
+      loading, 
+      isTrialActive,
+      isExpired,
+      trialDaysLeft,
+      refreshAgency: fetchAgencyData 
+    }}>
       {children}
     </AgencyContext.Provider>
   );
