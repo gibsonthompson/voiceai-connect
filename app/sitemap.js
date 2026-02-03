@@ -266,6 +266,12 @@ export default function sitemap() {
 
     // Blog Posts
     {
+      url: `${baseUrl}/blog/how-to-find-leads-google-maps`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${baseUrl}/blog/ai-receptionist-agency-vs-smma`,
       lastModified: new Date(),
       changeFrequency: 'monthly',

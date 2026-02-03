@@ -58,7 +58,18 @@ const categories = [
 ];
 
 const blogPosts: BlogPost[] = [
-  // NEWEST POSTS (January 30, 2026)
+  // NEWEST POSTS (February 2026)
+  {
+    slug: 'how-to-find-leads-google-maps',
+    title: 'How to Find Leads on Google Maps (Free Method for AI Agencies)',
+    excerpt: 'Step-by-step guide to finding unlimited local business leads on Google Maps. Free prospecting method for AI receptionist agencies—no tools required. Find 50+ qualified leads per hour.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-03',
+    readTime: '11 min read',
+    featured: true,
+  },
+  // January 30, 2026
   {
     slug: 'best-recurring-revenue-business-ideas-2026',
     title: 'Best Recurring Revenue Business Ideas in 2026 (Ranked by Profit Margin)',
@@ -77,7 +88,6 @@ const blogPosts: BlogPost[] = [
     author: { name: 'Gibson Thompson' },
     publishedAt: '2026-01-30',
     readTime: '14 min read',
-    featured: true,
   },
   {
     slug: 'how-much-do-ai-receptionist-agencies-make',
