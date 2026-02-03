@@ -5,7 +5,7 @@ import {
   X, Loader2, Mail, MessageSquare, Copy, Check, 
   ChevronDown, Info
 } from 'lucide-react';
-import { useAgency } from '../context';
+import { useAgency } from '@/app/agency/context';
 
 interface Lead {
   id: string;
