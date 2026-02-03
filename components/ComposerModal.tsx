@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   X, Loader2, Mail, MessageSquare, Copy, Check, 
-  ChevronDown, Info
+  ChevronDown, Info, Hash
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 
@@ -51,6 +51,16 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function getOutreachLabel(type: 'email' | 'sms', number: number): string {
+  if (number === 1) {
+    return type === 'email' ? 'Initial Email' : 'Initial SMS';
+  } else if (number === 2) {
+    return type === 'email' ? 'Follow-up Email' : 'Follow-up SMS';
+  } else {
+    return type === 'email' ? `Follow-up Email #${number - 1}` : `Follow-up SMS #${number - 1}`;
+  }
+}
+
 export default function ComposerModal({ 
   isOpen, 
   onClose, 
@@ -69,6 +79,9 @@ export default function ComposerModal({
   const [copied, setCopied] = useState(false);
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [loggedSuccess, setLoggedSuccess] = useState(false);
+  
+  // Outreach counts for sequence tracking
+  const [outreachCounts, setOutreachCounts] = useState({ email: 0, sms: 0 });
 
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
@@ -76,8 +89,6 @@ export default function ComposerModal({
   // Agency primary color
   const primaryColor = branding?.primaryColor || '#10b981';
   const primaryLight = isLightColor(primaryColor);
-  const primaryBg = hexToRgba(primaryColor, isDark ? 0.15 : 0.1);
-  const primaryBorder = hexToRgba(primaryColor, 0.3);
 
   // Theme-based colors
   const theme = {
@@ -92,16 +103,43 @@ export default function ComposerModal({
     hoverBg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
   };
 
+  // Current sequence number
+  const currentNumber = type === 'email' ? outreachCounts.email + 1 : outreachCounts.sms + 1;
+  const sequenceLabel = getOutreachLabel(type, currentNumber);
+
   useEffect(() => {
     if (isOpen) {
       fetchTemplates();
+      fetchOutreachCounts();
       setSubject('');
       setBody('');
       setSelectedTemplate('');
       setCopied(false);
       setLoggedSuccess(false);
     }
-  }, [isOpen, agencyId, type]);
+  }, [isOpen, agencyId, type, lead.id]);
+
+  const fetchOutreachCounts = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(
+        `${backendUrl}/api/agency/${agencyId}/leads/${lead.id}/outreach`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setOutreachCounts({
+          email: data.outreach?.email_count || 0,
+          sms: data.outreach?.sms_count || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch outreach counts:', error);
+    }
+  };
 
   const fetchTemplates = async () => {
     setLoading(true);
@@ -188,6 +226,7 @@ export default function ComposerModal({
           templateId: selectedTemplate || null,
           type,
           toAddress: type === 'email' ? lead.email : lead.phone,
+          toPhone: type === 'sms' ? lead.phone : null,
           subject: type === 'email' ? subject : null,
           body,
           userId: user.id,
@@ -253,8 +292,18 @@ export default function ComposerModal({
               </div>
             )}
             <div>
-              <h2 className="font-semibold" style={{ color: theme.text }}>
+              <h2 className="font-semibold flex items-center gap-2" style={{ color: theme.text }}>
                 Compose {type === 'email' ? 'Email' : 'SMS'}
+                <span 
+                  className="text-xs font-normal px-2 py-0.5 rounded-full flex items-center gap-1"
+                  style={{ 
+                    backgroundColor: type === 'email' ? 'rgba(147, 51, 234, 0.1)' : 'rgba(6, 182, 212, 0.1)',
+                    color: type === 'email' ? '#a855f7' : '#06b6d4',
+                  }}
+                >
+                  <Hash className="h-3 w-3" />
+                  {sequenceLabel}
+                </span>
               </h2>
               <p className="text-sm" style={{ color: theme.textMuted }}>
                 To: {lead.contact_name || lead.business_name} 
@@ -282,6 +331,27 @@ export default function ComposerModal({
 
         {/* Content */}
         <div className="p-6 space-y-4">
+          {/* Sequence Info Banner */}
+          <div 
+            className="flex items-center gap-3 rounded-lg p-3"
+            style={{ 
+              backgroundColor: type === 'email' 
+                ? (isDark ? 'rgba(147, 51, 234, 0.08)' : 'rgba(147, 51, 234, 0.05)')
+                : (isDark ? 'rgba(6, 182, 212, 0.08)' : 'rgba(6, 182, 212, 0.05)'),
+              border: `1px solid ${type === 'email' ? 'rgba(147, 51, 234, 0.2)' : 'rgba(6, 182, 212, 0.2)'}`,
+            }}
+          >
+            <Hash className="h-4 w-4" style={{ color: type === 'email' ? '#a855f7' : '#06b6d4' }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: type === 'email' ? '#a855f7' : '#06b6d4' }}>
+                This will be {sequenceLabel}
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>
+                {type === 'email' ? 'Emails' : 'SMS'} sent to this lead: {type === 'email' ? outreachCounts.email : outreachCounts.sms}
+              </p>
+            </div>
+          </div>
+
           {/* Template Selector */}
           <div className="relative">
             <label className="block text-sm mb-1.5" style={{ color: theme.textMuted }}>

@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Loader2, Phone, Mail, Globe, Building2, User,
   Calendar, DollarSign, Tag, FileText, Save, Trash2, Clock,
-  CheckCircle, XCircle, MessageSquare, PhoneCall
+  CheckCircle, XCircle, MessageSquare, PhoneCall, Send,
+  Hash, TrendingUp
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import ActivityLog from '../../../../components/ActivityLog';
@@ -27,6 +28,23 @@ interface Lead {
   next_follow_up: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface OutreachStats {
+  email_count: number;
+  sms_count: number;
+  total_count: number;
+  last_email: { sent_at: string; subject: string } | null;
+  last_sms: { sent_at: string } | null;
+  last_outreach: { type: string; sent_at: string } | null;
+  next_email_number: number;
+  next_sms_number: number;
+  history: Array<{
+    id: string;
+    type: string;
+    sent_at: string;
+    subject: string | null;
+  }>;
 }
 
 const STATUS_OPTIONS = [
@@ -65,6 +83,28 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
+function getOutreachLabel(type: 'email' | 'sms', number: number): string {
+  if (number === 1) {
+    return type === 'email' ? 'Initial Email' : 'Initial SMS';
+  } else if (number === 2) {
+    return type === 'email' ? 'Follow-up Email' : 'Follow-up SMS';
+  } else {
+    return type === 'email' ? `Follow-up Email #${number - 1}` : `Follow-up SMS #${number - 1}`;
+  }
+}
+
+function timeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return date.toLocaleDateString();
+}
+
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -72,6 +112,7 @@ export default function LeadDetailPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   
   const [lead, setLead] = useState<Lead | null>(null);
+  const [outreach, setOutreach] = useState<OutreachStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -157,6 +198,7 @@ export default function LeadDetailPage() {
 
       const data = await response.json();
       setLead(data.lead);
+      setOutreach(data.outreach || null);
       
       setFormData({
         business_name: data.lead.business_name || '',
@@ -216,6 +258,7 @@ export default function LeadDetailPage() {
 
       const data = await response.json();
       setLead(data.lead);
+      setOutreach(data.outreach || outreach);
       setSuccessMessage('Lead updated successfully');
       setActivityKey(prev => prev + 1);
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -293,6 +336,8 @@ export default function LeadDetailPage() {
 
   const handleOutreachSent = () => {
     setActivityKey(prev => prev + 1);
+    // Refresh lead data to get updated outreach stats
+    fetchLead();
   };
 
   if (contextLoading || loading) {
@@ -334,6 +379,10 @@ export default function LeadDetailPage() {
       </div>
     );
   }
+
+  // Determine if email/sms buttons should be enabled
+  const canSendEmail = Boolean(formData.email && formData.email.includes('@'));
+  const canSendSms = Boolean(formData.phone && formData.phone.length >= 10);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -428,36 +477,132 @@ export default function LeadDetailPage() {
         </div>
       )}
 
-      {/* Quick Actions Bar */}
-      <div className="mb-6 sm:mb-8">
-        <span className="text-xs sm:text-sm block mb-2 sm:mb-3" style={{ color: mutedTextColor }}>Quick Actions:</span>
+      {/* Outreach Progress Card */}
+      <div 
+        className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
+        style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
+          <h3 className="font-medium text-sm sm:text-base">Outreach Progress</h3>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+          {/* Email Count */}
+          <div 
+            className="rounded-lg p-3"
+            style={{ backgroundColor: isDark ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.05)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Mail className="h-4 w-4" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }} />
+              <span className="text-xs" style={{ color: mutedTextColor }}>Emails</span>
+            </div>
+            <p className="text-xl font-semibold" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>
+              {outreach?.email_count || 0}
+            </p>
+            {outreach?.last_email && (
+              <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+                Last: {timeAgo(outreach.last_email.sent_at)}
+              </p>
+            )}
+          </div>
+          
+          {/* SMS Count */}
+          <div 
+            className="rounded-lg p-3"
+            style={{ backgroundColor: isDark ? 'rgba(6,182,212,0.1)' : 'rgba(6,182,212,0.05)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <MessageSquare className="h-4 w-4" style={{ color: isDark ? '#22d3ee' : '#0891b2' }} />
+              <span className="text-xs" style={{ color: mutedTextColor }}>SMS</span>
+            </div>
+            <p className="text-xl font-semibold" style={{ color: isDark ? '#22d3ee' : '#0891b2' }}>
+              {outreach?.sms_count || 0}
+            </p>
+            {outreach?.last_sms && (
+              <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+                Last: {timeAgo(outreach.last_sms.sent_at)}
+              </p>
+            )}
+          </div>
+          
+          {/* Total Touches */}
+          <div 
+            className="rounded-lg p-3"
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Hash className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <span className="text-xs" style={{ color: mutedTextColor }}>Total</span>
+            </div>
+            <p className="text-xl font-semibold">
+              {outreach?.total_count || 0}
+            </p>
+            <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+              touches
+            </p>
+          </div>
+          
+          {/* Last Contact */}
+          <div 
+            className="rounded-lg p-3"
+            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <span className="text-xs" style={{ color: mutedTextColor }}>Last Contact</span>
+            </div>
+            <p className="text-sm font-medium truncate">
+              {outreach?.last_outreach 
+                ? timeAgo(outreach.last_outreach.sent_at)
+                : 'Never'}
+            </p>
+            {outreach?.last_outreach && (
+              <p className="text-[10px] sm:text-xs mt-1 capitalize" style={{ color: mutedTextColor }}>
+                via {outreach.last_outreach.type}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Actions with Sequence Labels */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => openComposer('email')}
-            disabled={!lead?.email}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canSendEmail}
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: 'rgba(168,85,247,0.1)',
-              border: '1px solid rgba(168,85,247,0.3)',
-              color: isDark ? '#a78bfa' : '#7c3aed',
+              backgroundColor: canSendEmail ? 'rgba(168,85,247,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : borderColor}`,
+              color: canSendEmail ? (isDark ? '#a78bfa' : '#7c3aed') : mutedTextColor,
             }}
+            title={!canSendEmail ? 'Add email address to send' : undefined}
           >
             <Mail className="h-4 w-4" />
-            Email
+            <span>
+              {getOutreachLabel('email', outreach?.next_email_number || 1)}
+            </span>
+            <Send className="h-3 w-3" />
           </button>
+          
           <button
             onClick={() => openComposer('sms')}
-            disabled={!lead?.phone}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canSendSms}
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: 'rgba(6,182,212,0.1)',
-              border: '1px solid rgba(6,182,212,0.3)',
-              color: isDark ? '#22d3ee' : '#0891b2',
+              backgroundColor: canSendSms ? 'rgba(6,182,212,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : borderColor}`,
+              color: canSendSms ? (isDark ? '#22d3ee' : '#0891b2') : mutedTextColor,
             }}
+            title={!canSendSms ? 'Add phone number to send' : undefined}
           >
             <MessageSquare className="h-4 w-4" />
-            SMS
+            <span>
+              {getOutreachLabel('sms', outreach?.next_sms_number || 1)}
+            </span>
+            <Send className="h-3 w-3" />
           </button>
+          
           {lead?.phone && (
             <a
               href={`tel:${lead.phone}`}
@@ -473,6 +618,22 @@ export default function LeadDetailPage() {
             </a>
           )}
         </div>
+
+        {/* Missing contact info warnings */}
+        {(!canSendEmail || !canSendSms) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {!canSendEmail && (
+              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.05)', color: isDark ? '#fbbf24' : '#d97706' }}>
+                Add email to enable email outreach
+              </span>
+            )}
+            {!canSendSms && (
+              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.05)', color: isDark ? '#fbbf24' : '#d97706' }}>
+                Add phone to enable SMS outreach
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Quick Status Buttons */}
@@ -701,7 +862,10 @@ export default function LeadDetailPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Next Follow-up</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>
+                  Scheduled Follow-up
+                  <span className="ml-1 text-[10px]" style={{ color: mutedTextColor }}>(optional)</span>
+                </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                   <input
@@ -712,6 +876,9 @@ export default function LeadDetailPage() {
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
+                <p className="text-[10px] mt-1" style={{ color: mutedTextColor }}>
+                  Set a reminder date for manual follow-up
+                </p>
               </div>
             </div>
           </div>
@@ -734,6 +901,12 @@ export default function LeadDetailPage() {
                 <span style={{ color: mutedTextColor }}>Last Updated</span>
                 <span>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '—'}</span>
               </div>
+              {outreach?.last_outreach && (
+                <div className="flex justify-between">
+                  <span style={{ color: mutedTextColor }}>Last Outreach</span>
+                  <span>{new Date(outreach.last_outreach.sent_at).toLocaleString()}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -745,7 +918,11 @@ export default function LeadDetailPage() {
           isOpen={composerOpen}
           onClose={() => setComposerOpen(false)}
           agencyId={agency.id}
-          lead={lead}
+          lead={{
+            ...lead,
+            email: formData.email,  // Use form data in case user just added it
+            phone: formData.phone,
+          }}
           type={composerType}
           onSent={handleOutreachSent}
         />
