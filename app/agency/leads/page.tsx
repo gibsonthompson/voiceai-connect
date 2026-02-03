@@ -39,6 +39,12 @@ interface LeadStats {
 
 const LEAD_TIPS = [
   {
+    title: 'How to Find Leads on Google Maps',
+    description: 'Free method to find 50+ qualified leads per hour.',
+    url: '/blog/how-to-find-leads-google-maps',
+    category: 'Prospecting',
+  },
+  {
     title: 'How to Pitch AI Receptionists',
     description: 'Pain points, ROI arguments, and objection handling.',
     url: '/blog/pitch-ai-receptionists-home-services',
@@ -49,12 +55,6 @@ const LEAD_TIPS = [
     description: 'Email templates with 10-15% reply rates.',
     url: '/blog/cold-outreach-templates-that-work',
     category: 'Outreach',
-  },
-  {
-    title: 'Building a Referral Program',
-    description: 'Get client referrals with incentive structures.',
-    url: '/blog/building-referral-program-agency',
-    category: 'Growth',
   },
 ];
 
@@ -324,11 +324,9 @@ export default function AgencyLeadsPage() {
           </div>
           <div className="grid gap-2 sm:gap-3 p-3 sm:p-5 sm:grid-cols-3">
             {LEAD_TIPS.map((tip, index) => (
-              <a
+              <Link
                 key={index}
                 href={tip.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 className={`group rounded-lg p-3 sm:p-4 transition-colors ${isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'}`}
                 style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
               >
@@ -343,7 +341,7 @@ export default function AgencyLeadsPage() {
                 </div>
                 <h4 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1 line-clamp-2">{tip.title}</h4>
                 <p className="text-[10px] sm:text-xs line-clamp-2 hidden sm:block" style={{ color: mutedTextColor }}>{tip.description}</p>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
