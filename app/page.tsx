@@ -1054,9 +1054,8 @@ export default function LandingPage() {
                   description: 'For established agencies',
                   features: [
                     'Unlimited clients',
+                    'Unlimited calls & minutes',
                     'Everything in Professional',
-                    'White-label emails',
-                    'Custom integrations',
                     'Dedicated success manager',
                     'Phone support',
                     'SLA guarantee',
@@ -1064,7 +1063,7 @@ export default function LandingPage() {
                   ],
                   limitations: [],
                   highlighted: false,
-                  cta: 'Contact Sales',
+                  cta: 'Start Free Trial',
                 },
               ].map((tier) => (
                 <div
@@ -1109,7 +1108,7 @@ export default function LandingPage() {
                   </ul>
                   
                   <Link
-                    href={tier.name === 'Scale' ? '/contact' : '/signup'}
+                    href={tier.name === 'Scale' ? '/signup?plan=enterprise' : '/signup'}
                     className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
                       tier.highlighted
                         ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10'

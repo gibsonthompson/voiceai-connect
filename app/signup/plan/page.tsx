@@ -705,12 +705,12 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     { 
       id: 'starter', 
       name: 'Starter', 
-      price: 19900, 
-      clients: '25',
+      price: 9900, 
+      clients: '15',
       icon: Zap,
       description: 'For new agencies',
       features: [
-        'Up to 25 clients',
+        'Up to 15 clients',
         'Embeddable signup widget',
         'White-label branding',
         'Agency dashboard',
@@ -724,7 +724,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     { 
       id: 'professional', 
       name: 'Professional', 
-      price: 29900, 
+      price: 19900, 
       clients: '100', 
       icon: Shield,
       popular: true,
@@ -749,12 +749,12 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
       description: 'For established agencies',
       features: [
         'Unlimited clients',
+        'Unlimited calls & minutes',
         'Everything in Professional',
-        'White-label emails',
         'Dedicated success manager',
-        'Custom integrations',
-        'SLA guarantee',
         'Phone support',
+        'SLA guarantee',
+        'Early feature access',
       ],
       limitations: [],
     },
@@ -914,7 +914,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                     </>
                   ) : (
                     <>
-                      {plan.id === 'enterprise' ? 'Contact Sales' : 'Start Free Trial'}
+                      Start Free Trial
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </>
                   )}
