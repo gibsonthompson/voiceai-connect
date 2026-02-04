@@ -1,10 +1,86 @@
 // components/MarketingPage.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import '@/styles/marketing.css';
+
+// ============================================================================
+// COLOR UTILITIES
+// ============================================================================
+
+/**
+ * Converts hex color to RGB values
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  // Remove # if present
+  const cleanHex = hex.replace(/^#/, '');
+  
+  // Handle 3-character hex
+  const fullHex = cleanHex.length === 3
+    ? cleanHex.split('').map(c => c + c).join('')
+    : cleanHex;
+  
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
+
+/**
+ * Calculates relative luminance of a color (0-1)
+ * Based on WCAG 2.1 formula
+ */
+function getLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0.5;
+  
+  const { r, g, b } = rgb;
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+/**
+ * Determines if a color is "light" (needs dark text) or "dark" (needs light text)
+ * Threshold of 0.5 is standard; we use 0.45 to be slightly more conservative
+ */
+function isLightColor(hex: string): boolean {
+  return getLuminance(hex) > 0.45;
+}
+
+/**
+ * Returns appropriate text color (black or white) for a given background
+ */
+function getContrastTextColor(bgHex: string): string {
+  return isLightColor(bgHex) ? '#1f2937' : '#ffffff';
+}
+
+/**
+ * Returns a semi-transparent version of the contrast color for secondary text
+ */
+function getContrastTextColorMuted(bgHex: string): string {
+  return isLightColor(bgHex) ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.9)';
+}
+
+/**
+ * Returns appropriate button background for overlays on primary color
+ */
+function getOverlayButtonBg(bgHex: string): string {
+  return isLightColor(bgHex) ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+}
+
+function getOverlayButtonHoverBg(bgHex: string): string {
+  return isLightColor(bgHex) ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.3)';
+}
 
 // ============================================================================
 // SVG ICONS
@@ -187,6 +263,17 @@ const getIcon = (name: string) => {
 };
 
 // ============================================================================
+// SHARED TYPES
+// ============================================================================
+interface ContrastColors {
+  text: string;
+  textMuted: string;
+  buttonBg: string;
+  buttonHoverBg: string;
+  isLight: boolean;
+}
+
+// ============================================================================
 // NAVIGATION
 // ============================================================================
 interface NavProps {
@@ -195,7 +282,7 @@ interface NavProps {
 
 function Navigation({ config }: NavProps) {
   const { branding } = config;
-  const isDark = config.theme === 'dark';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   return (
     <nav className="navbar">
@@ -218,11 +305,11 @@ function Navigation({ config }: NavProps) {
             )}
           </a>
           
-          <ul className="nav-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#how-it-works">How It Works</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#faq">FAQ</a></li>
+          <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+            <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
+            <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
+            <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
+            <li><a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
           </ul>
           
           <div className="nav-actions">
@@ -234,13 +321,22 @@ function Navigation({ config }: NavProps) {
             </a>
           </div>
           
-          <button className="mobile-menu-toggle" aria-label="Toggle menu">
+          <button 
+            className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
+            aria-label="Toggle menu"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
             <span></span>
             <span></span>
             <span></span>
           </button>
         </div>
       </div>
+      
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
     </nav>
   );
 }
@@ -248,8 +344,8 @@ function Navigation({ config }: NavProps) {
 // ============================================================================
 // HERO SECTION
 // ============================================================================
-function HeroSection({ config }: { config: MarketingConfig }) {
-  const { hero } = config;
+function HeroSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
+  const { hero, branding } = config;
   
   return (
     <section className="hero">
@@ -269,22 +365,37 @@ function HeroSection({ config }: { config: MarketingConfig }) {
           
           <p className="hero-subtitle">{hero.description}</p>
 
-          {/* Demo CTA */}
+          {/* Demo CTA - with contrast-aware colors */}
           {hero.demoPhone && (
             <div className="demo-cta">
-              <div className="demo-box">
-                <div className="demo-icon" style={{ color: 'white' }}>
+              <div 
+                className="demo-box"
+                style={{
+                  background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`,
+                  color: contrastColors.text,
+                }}
+              >
+                <div className="demo-icon" style={{ color: contrastColors.text }}>
                   {Icons.headphones}
                 </div>
                 <div className="demo-content">
-                  <h3>EXPERIENCE IT LIVE:</h3>
-                  <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="demo-phone">
+                  <h3 style={{ color: contrastColors.text }}>EXPERIENCE IT LIVE:</h3>
+                  <a 
+                    href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} 
+                    className="demo-phone"
+                    style={{ 
+                      color: contrastColors.text,
+                      background: contrastColors.buttonBg,
+                    }}
+                  >
                     <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>
                       {Icons.phone}
                     </span>
                     Call: {hero.demoPhone}
                   </a>
-                  <p className="demo-instructions">{hero.demoInstructions}</p>
+                  <p className="demo-instructions" style={{ color: contrastColors.textMuted }}>
+                    {hero.demoInstructions}
+                  </p>
                 </div>
               </div>
             </div>
@@ -355,7 +466,7 @@ function StatsSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // PROBLEM/SOLUTION SECTION
 // ============================================================================
-function ProblemSolutionSection({ config }: { config: MarketingConfig }) {
+function ProblemSolutionSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { problems, solution, branding } = config;
   
   return (
@@ -375,15 +486,32 @@ function ProblemSolutionSection({ config }: { config: MarketingConfig }) {
           ))}
         </div>
 
-        <div className="solution-box">
-          <h2>{branding.name} Is {solution.headline}</h2>
+        <div 
+          className="solution-box"
+          style={{
+            background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`,
+            color: contrastColors.text,
+          }}
+        >
+          <h2 style={{ color: contrastColors.text }}>{branding.name} Is {solution.headline}</h2>
           {solution.paragraphs.map((p, i) => (
-            <p key={i} className="solution-text">{p}</p>
+            <p key={i} className="solution-text" style={{ color: contrastColors.textMuted }}>{p}</p>
           ))}
-          <p className="solution-highlight">
-            <strong>And here's the best part:</strong> {solution.highlight}
+          <p 
+            className="solution-highlight"
+            style={{ 
+              background: contrastColors.buttonBg,
+              color: contrastColors.text,
+            }}
+          >
+            <strong style={{ color: contrastColors.isLight ? branding.primaryHoverColor : branding.accentColor }}>
+              And here's the best part:
+            </strong>{' '}
+            {solution.highlight}
           </p>
-          <p className="solution-text">You stay in control without being chained to your phone.</p>
+          <p className="solution-text" style={{ color: contrastColors.textMuted }}>
+            You stay in control without being chained to your phone.
+          </p>
         </div>
       </div>
     </section>
@@ -460,7 +588,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
                 
                 {/* Screen base - fill with primary color to avoid white corners */}
-                <rect x="18" y="18" width="284" height="604" rx="32" fill="var(--primary-color, #10b981)"/>
+                <rect x="18" y="18" width="284" height="604" rx="32" fill={branding.primaryColor}/>
                 
                 {/* Notch/Dynamic Island */}
                 <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
@@ -469,7 +597,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <text x="160" y="44" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="white">9:41</text>
                 
                 {/* App Header */}
-                <rect x="18" y="56" width="284" height="52" fill="var(--primary-color, #10b981)"/>
+                <rect x="18" y="56" width="284" height="52" fill={branding.primaryColor}/>
                 
                 {/* Back Arrow */}
                 <path d="M38 82 L48 72 L48 74 L40 82 L48 90 L48 92 Z" fill="white"/>
@@ -491,7 +619,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <rect x="30" y="120" width="260" height="88" rx="12" fill="white"/>
                 
                 {/* Avatar */}
-                <circle cx="66" cy="164" r="24" fill="var(--primary-color, #10b981)"/>
+                <circle cx="66" cy="164" r="24" fill={branding.primaryColor}/>
                 <text x="66" y="171" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="18" fontWeight="700" fill="white">JD</text>
                 
                 {/* Caller Info */}
@@ -506,7 +634,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <circle cx="56" cy="245" r="14" fill="#ecfdf5"/>
                 <text x="56" y="250" textAnchor="middle" fontSize="12">📞</text>
                 <text x="80" y="239" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fill="#6b7280">Phone</text>
-                <text x="80" y="255" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill="var(--primary-color, #10b981)">(555) 123-4567</text>
+                <text x="80" y="255" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600" fill={branding.primaryColor}>(555) 123-4567</text>
                 
                 {/* AI Summary Card */}
                 <rect x="30" y="282" width="260" height="148" rx="12" fill="white"/>
@@ -514,7 +642,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 {/* AI Summary Header */}
                 <circle cx="50" cy="304" r="10" fill="#f0fdf4"/>
                 <text x="50" y="308" textAnchor="middle" fontSize="9">🤖</text>
-                <text x="68" y="308" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill="var(--primary-color, #10b981)">AI Summary</text>
+                <text x="68" y="308" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="600" fill={branding.primaryColor}>AI Summary</text>
                 
                 {/* Summary Text */}
                 <text fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fill="#374151">
@@ -543,7 +671,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <rect x="42" y="482" width="236" height="18" rx="4" fill="#f3f4f6"/>
                 
                 {/* Waveform bars - played */}
-                <g fill="var(--primary-color, #10b981)">
+                <g fill={branding.primaryColor}>
                   <rect x="48" y="486" width="2" height="10" rx="1"/><rect x="53" y="488" width="2" height="6" rx="1"/>
                   <rect x="58" y="484" width="2" height="14" rx="1"/><rect x="63" y="487" width="2" height="8" rx="1"/>
                   <rect x="68" y="485" width="2" height="12" rx="1"/><rect x="73" y="489" width="2" height="4" rx="1"/>
@@ -577,11 +705,11 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 <text x="272" y="514" textAnchor="end" fontFamily="system-ui, -apple-system, sans-serif" fontSize="10" fill="#6b7280">3:42</text>
                 
                 {/* Play Button */}
-                <circle cx="160" cy="508" r="12" fill="var(--primary-color, #10b981)"/>
+                <circle cx="160" cy="508" r="12" fill={branding.primaryColor}/>
                 <path d="M157 502 L166 508 L157 514 Z" fill="white"/>
                 
                 {/* Action Buttons */}
-                <rect x="30" y="540" width="125" height="38" rx="19" fill="var(--primary-color, #10b981)"/>
+                <rect x="30" y="540" width="125" height="38" rx="19" fill={branding.primaryColor}/>
                 <text x="92" y="564" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" fontSize="12" fontWeight="600" fill="white">📞 Call Back</text>
                 
                 <rect x="165" y="540" width="125" height="38" rx="19" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
@@ -609,7 +737,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
         {/* SMS Example */}
         <div className="sms-example">
           <div className="sms-mockup">
-            <div className="sms-header">Messages</div>
+            <div className="sms-header" style={{ background: branding.primaryColor }}>Messages</div>
             <div className="sms-content">
               <div className="sms-message">
                 <strong>{branding.name}</strong>
@@ -984,18 +1112,23 @@ function FAQSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // FINAL CTA SECTION
 // ============================================================================
-function FinalCTASection({ config }: { config: MarketingConfig }) {
+function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { hero, branding } = config;
   
   return (
-    <section className="final-cta">
+    <section 
+      className="final-cta"
+      style={{
+        background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`,
+      }}
+    >
       <div className="container">
         <div className="final-cta-content">
-          <h2>Stop Losing Customers to Voicemail</h2>
-          <p className="final-cta-text">
-            Every missed call is money out the door. While you're on the job, helping a customer, in a meeting, closed for the night, or on vacation—<strong>your competitors are answering their phones.</strong>
+          <h2 style={{ color: contrastColors.text }}>Stop Losing Customers to Voicemail</h2>
+          <p className="final-cta-text" style={{ color: contrastColors.textMuted }}>
+            Every missed call is money out the door. While you're on the job, helping a customer, in a meeting, closed for the night, or on vacation—<strong style={{ color: contrastColors.text }}>your competitors are answering their phones.</strong>
           </p>
-          <p className="final-cta-text">
+          <p className="final-cta-text" style={{ color: contrastColors.textMuted }}>
             {branding.name} makes sure you never lose another opportunity because your phone went to voicemail.
           </p>
 
@@ -1014,28 +1147,31 @@ function FinalCTASection({ config }: { config: MarketingConfig }) {
                   <p>"Hear it work before you sign up"</p>
                 </div>
 
-                <div className="cta-box-divider">or</div>
+                <div className="cta-box-divider" style={{ color: contrastColors.textMuted }}>or</div>
               </>
             )}
 
-            <div className="cta-box-secondary">
-              <a href="/get-started" className="btn-large btn-primary">
+            <div 
+              className="cta-box-secondary"
+              style={{ background: contrastColors.buttonBg }}
+            >
+              <a href="/get-started" className="btn-large btn-primary" style={{ background: contrastColors.isLight ? branding.primaryHoverColor : 'white', color: contrastColors.isLight ? 'white' : branding.primaryColor }}>
                 Start Your 7-Day Free Trial
               </a>
               <div className="cta-benefits">
-                <span>✓ Setup in 10 minutes</span>
-                <span>✓ No credit card required</span>
-                <span>✓ Cancel anytime</span>
+                <span style={{ color: contrastColors.text }}>✓ Setup in 10 minutes</span>
+                <span style={{ color: contrastColors.text }}>✓ No credit card required</span>
+                <span style={{ color: contrastColors.text }}>✓ Cancel anytime</span>
               </div>
             </div>
           </div>
 
           <div className="final-trust">
-            <p><strong>Join 200+ businesses using {branding.name}:</strong></p>
+            <p style={{ color: contrastColors.textMuted }}><strong style={{ color: contrastColors.text }}>Join 200+ businesses using {branding.name}:</strong></p>
             <div className="trust-stats">
-              <span>✓ 96% customer satisfaction</span>
-              <span>✓ 30-day money-back guarantee</span>
-              <span>✓ A2P 10DLC compliant</span>
+              <span style={{ color: contrastColors.text }}>✓ 96% customer satisfaction</span>
+              <span style={{ color: contrastColors.text }}>✓ 30-day money-back guarantee</span>
+              <span style={{ color: contrastColors.text }}>✓ A2P 10DLC compliant</span>
             </div>
           </div>
         </div>
@@ -1172,6 +1308,18 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
   // Determine theme
   const theme = config.theme || 'light';
   
+  // Calculate contrast colors based on primary color
+  const contrastColors = useMemo<ContrastColors>(() => {
+    const primaryColor = config.branding.primaryColor || '#122092';
+    return {
+      text: getContrastTextColor(primaryColor),
+      textMuted: getContrastTextColorMuted(primaryColor),
+      buttonBg: getOverlayButtonBg(primaryColor),
+      buttonHoverBg: getOverlayButtonHoverBg(primaryColor),
+      isLight: isLightColor(primaryColor),
+    };
+  }, [config.branding.primaryColor]);
+  
   // Apply theme colors via CSS variables
   const themeStyle = {
     '--primary-color': config.branding.primaryColor,
@@ -1206,9 +1354,9 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     <div className={`marketing-page theme-${theme}`} style={themeStyle}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       <Navigation config={config} />
-      <HeroSection config={config} />
+      <HeroSection config={config} contrastColors={contrastColors} />
       <StatsSection config={config} />
-      <ProblemSolutionSection config={config} />
+      <ProblemSolutionSection config={config} contrastColors={contrastColors} />
       <HowItWorksSection config={config} />
       <AppShowcaseSection config={config} />
       <FeaturesSection config={config} />
@@ -1217,7 +1365,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       {config.showTestimonials && <TestimonialsSection config={config} />}
       <PricingSection config={config} />
       <FAQSection config={config} />
-      <FinalCTASection config={config} />
+      <FinalCTASection config={config} contrastColors={contrastColors} />
       <Footer config={config} />
       <StickyCTA config={config} />
     </div>
