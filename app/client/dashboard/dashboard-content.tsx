@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { 
   Phone, PhoneCall, Clock, Copy, 
   ChevronRight, AlertCircle, CheckCircle,
@@ -54,7 +53,6 @@ function hexToRgba(hex: string, alpha: number): string {
 function formatPhoneNumber(phone: string): string {
   if (!phone) return '';
   
-  const hasPlus = phone.startsWith('+');
   const digits = phone.replace(/\D/g, '');
   
   if (digits.length === 11 && digits.startsWith('1')) {
@@ -79,9 +77,7 @@ export function ClientDashboardClient({
   recentCalls,
   stats,
 }: ClientDashboardClientProps) {
-  const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
 
   // Determine theme - default to light for client dashboard (cleaner look)
   const isDark = branding.websiteTheme === 'dark';
@@ -113,33 +109,9 @@ export function ClientDashboardClient({
     }
   };
 
-  const handleUpgrade = async () => {
-    setUpgrading(true);
-    try {
-      const response = await fetch('/api/client/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({
-          clientId: client.id,
-          planTier: client.plan_type || 'pro',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        console.error('No checkout URL returned');
-        setUpgrading(false);
-      }
-    } catch (error) {
-      console.error('Failed to create checkout:', error);
-      setUpgrading(false);
-    }
+  // Simple redirect to upgrade page - lets user choose plan
+  const handleUpgrade = () => {
+    window.location.href = '/client/upgrade';
   };
 
   const hasPhoneNumber = !!client.vapi_phone_number;
@@ -188,21 +160,13 @@ export function ClientDashboardClient({
           </div>
           <button 
             onClick={handleUpgrade}
-            disabled={upgrading}
-            className="rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+            className="rounded-full px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-all hover:scale-105 w-full sm:w-auto"
             style={{ 
               backgroundColor: branding.primaryColor, 
               color: isLightColor(branding.primaryColor) ? '#111827' : '#ffffff' 
             }}
           >
-            {upgrading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
-              </span>
-            ) : (
-              'Upgrade Now'
-            )}
+            Upgrade Now
           </button>
         </div>
       )}
