@@ -135,13 +135,12 @@ function ClientLoginContent() {
   };
 
   const primaryColor = agency?.primary_color || '#2563eb';
-  const accentColor = agency?.accent_color || '#3b82f6';
   const primaryLight = isLightColor(primaryColor);
 
   // Theme detection - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
 
-  // Theme-based colors
+  // Theme-based colors - FIXED: Use theme-appropriate colors, not agency secondary/accent
   const bgColor = isDark ? '#0a0a0a' : '#ffffff';
   const textColor = isDark ? '#f5f5f0' : '#111827';
   const textMuted = isDark ? 'rgba(245,245,240,0.5)' : '#6b7280';
@@ -154,7 +153,10 @@ function ClientLoginContent() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const headerBg = isDark ? 'rgba(10,10,10,0.8)' : 'rgba(255,255,255,0.8)';
   const headerBorder = isDark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
+  
+  // FIXED: Autofill colors - must be solid colors that work with the theme
   const autofillBg = isDark ? '#1a1a1a' : '#f9fafb';
+  const autofillText = isDark ? '#f5f5f0' : '#111827';
 
   if (pageLoading) {
     return (
@@ -164,25 +166,43 @@ function ClientLoginContent() {
     );
   }
 
-  // Dynamic styles for autofill and focus
+  // FIXED: Dynamic styles for autofill and focus - explicit colors, no agency colors for text
   const dynamicStyles = `
+    /* Autofill styling - MUST use !important and explicit colors */
     input:-webkit-autofill,
     input:-webkit-autofill:hover,
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
-      -webkit-box-shadow: 0 0 0 30px ${autofillBg} inset !important;
-      -webkit-text-fill-color: ${textColor} !important;
+      -webkit-box-shadow: 0 0 0 9999px ${autofillBg} inset !important;
+      box-shadow: 0 0 0 9999px ${autofillBg} inset !important;
+      -webkit-text-fill-color: ${autofillText} !important;
+      background-color: ${autofillBg} !important;
       border-color: ${inputBorder} !important;
-      caret-color: ${textColor} !important;
+      caret-color: ${autofillText} !important;
+      transition: background-color 0s 600000s, color 0s 600000s !important;
     }
+    
+    /* Focus styling */
     .client-login input:focus {
       outline: none;
       border-color: ${primaryColor} !important;
       box-shadow: 0 0 0 3px ${primaryColor}20 !important;
     }
+    
+    /* Selection styling - explicit visible colors */
     .client-login ::selection {
-      background-color: ${primaryColor}40;
-      color: inherit;
+      background-color: ${primaryColor};
+      color: ${primaryLight ? '#111827' : '#ffffff'};
+    }
+    .client-login ::-moz-selection {
+      background-color: ${primaryColor};
+      color: ${primaryLight ? '#111827' : '#ffffff'};
+    }
+    
+    /* Placeholder styling */
+    .client-login input::placeholder {
+      color: ${textSubtle};
+      opacity: 1;
     }
   `;
 
