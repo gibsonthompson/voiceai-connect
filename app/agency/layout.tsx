@@ -42,6 +42,11 @@ function isPaymentFailed(status: string | null | undefined): boolean {
   return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'cancelled';
 }
 
+// Helper to check if agency is suspended and should be blocked
+function isSuspended(status: string | null | undefined): boolean {
+  return status === 'suspended' || status === 'canceled' || status === 'cancelled';
+}
+
 // Calculate trial days remaining
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null {
   if (!trialEndsAt) return null;
@@ -51,6 +56,13 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
 }
+
+// Routes that are always accessible (even when payment failed)
+const ALWAYS_ACCESSIBLE_ROUTES = [
+  '/agency/settings/billing',
+  '/agency/settings',
+  '/agency/login',
+];
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -77,8 +89,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   
-  // Only block access if payment has failed (not for trial - Stripe auto-charges)
+  // Check for payment/subscription issues
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
+  const agencyIsSuspended = isSuspended(agency?.status);
+  
+  // Determine if current route should be blocked
+  const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
+  const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
 
   // Detect mobile
   useEffect(() => {
@@ -102,6 +119,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
+
+  // Redirect to billing if blocked
+  useEffect(() => {
+    if (!loading && shouldBlockAccess) {
+      window.location.href = '/agency/settings/billing';
+    }
+  }, [loading, shouldBlockAccess]);
 
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
@@ -149,6 +173,61 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // Show blocking screen while redirecting
+  if (shouldBlockAccess) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: bgColor }}
+      >
+        <div 
+          className="max-w-md w-full rounded-2xl p-8 text-center"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
+            border: `1px solid ${isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}`,
+          }}
+        >
+          <div 
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2' }}
+          >
+            <CreditCard className="h-8 w-8 text-red-500" />
+          </div>
+          <h1 
+            className="text-2xl font-bold mb-3"
+            style={{ color: textColor }}
+          >
+            Payment Required
+          </h1>
+          <p 
+            className="mb-6"
+            style={{ color: mutedTextColor }}
+          >
+            {agencyIsSuspended 
+              ? 'Your agency has been suspended. Please update your payment method to restore access.'
+              : 'Your payment has failed. Please update your payment method to continue using your agency.'
+            }
+          </p>
+          <a
+            href="/agency/settings/billing"
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors"
+            style={{ backgroundColor: '#ef4444' }}
+          >
+            <CreditCard className="h-5 w-5" />
+            Update Payment Method
+          </a>
+          <button
+            onClick={handleSignOut}
+            className="block w-full mt-4 text-sm transition-colors"
+            style={{ color: mutedTextColor }}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       className="min-h-screen"
@@ -171,7 +250,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Payment Failed Banner - Only shows if payment failed (not for trial) */}
-      {hasPaymentIssue && (
+      {hasPaymentIssue && isAccessibleRoute && (
         <div 
           className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between gap-3"
           style={{
@@ -190,16 +269,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               </p>
             </div>
           </div>
-          <a 
-            href="/agency/settings/billing"
-            className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
-            style={{ 
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-            }}
-          >
-            Update Payment
-          </a>
+          {!pathname?.startsWith('/agency/settings/billing') && (
+            <a 
+              href="/agency/settings/billing"
+              className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
+              style={{ 
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+              }}
+            >
+              Update Payment
+            </a>
+          )}
         </div>
       )}
 
@@ -209,7 +290,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         style={{ 
           backgroundColor: sidebarBg, 
           paddingTop: 'env(safe-area-inset-top)',
-          top: hasPaymentIssue ? '60px' : 0,
+          top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0,
         }}
       >
         <header 
@@ -273,7 +354,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           backgroundColor: sidebarBg, 
           borderRight: `1px solid ${borderColor}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
-          top: hasPaymentIssue && !isMobile ? '60px' : 0,
+          top: hasPaymentIssue && isAccessibleRoute && !isMobile ? '60px' : 0,
         }}
       >
         {/* Mobile Header in Sidebar */}
