@@ -34,20 +34,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // DEBUG: Log branding to see what websiteTheme actually is
-  useEffect(() => {
-    console.log('🎨 BRANDING DEBUG:', {
-      websiteTheme: branding.websiteTheme,
-      primaryColor: branding.primaryColor,
-      fullBranding: branding,
-    });
-  }, [branding]);
-
   // Determine if using light or dark theme
   // IMPORTANT: Check for 'light' explicitly since undefined should default to dark
   const isDark = branding.websiteTheme !== 'light';
-  
-  console.log('🎨 isDark:', isDark, 'websiteTheme:', branding.websiteTheme);
 
   // Theme colors - clean and consistent
   const theme = isDark ? {
@@ -62,10 +51,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     mainBg: '#0a0a0a',
     poweredByBg: 'rgba(255, 255, 255, 0.05)',
   } : {
-    // Light theme - VERY DARK TEXT for debugging
+    // Light theme
     navBg: '#ffffff',
-    navText: '#000000',  // Pure black
-    navTextMuted: '#000000',  // Pure black for debugging
+    navText: '#111827',
+    navTextMuted: '#374151',
     navBorder: '#e5e7eb',
     navActiveItemBg: `${branding.primaryColor}15`,
     navActiveItemColor: branding.primaryColor,
@@ -177,29 +166,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.mainBg }}>
-      {/* DEBUG BANNER */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 9999, 
-        backgroundColor: 'red', 
-        color: 'white', 
-        padding: '4px 8px', 
-        fontSize: '12px',
-        textAlign: 'center'
-      }}>
-        DEBUG: isDark={String(isDark)} | websiteTheme={String(branding.websiteTheme)} | navTextMuted={theme.navTextMuted}
-      </div>
-
       {/* Mobile Header - STICKY (not fixed), extends into safe area */}
       <div 
         className="sticky top-0 z-30 md:hidden"
         style={{ 
           backgroundColor: theme.navBg,
           paddingTop: 'env(safe-area-inset-top)',
-          marginTop: '24px', // Account for debug banner
         }}
       >
         <header 
@@ -271,7 +243,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           backgroundColor: theme.navBg,
           borderRight: `1px solid ${theme.navBorder}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
-          marginTop: isMobile ? 0 : '24px', // Account for debug banner on desktop
         }}
       >
         {/* Mobile Header in Sidebar */}
@@ -374,7 +345,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main 
         className="md:pl-64 min-h-screen"
-        style={{ backgroundColor: theme.mainBg, paddingTop: '24px' }}
+        style={{ backgroundColor: theme.mainBg }}
       >
         {children}
       </main>
