@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Phone, ArrowRight, Loader2, Check, ArrowLeft, Sparkles, 
@@ -166,10 +166,20 @@ function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }:
 // CLIENT PLAN SELECTION (for agency subdomains) - NOW WITH THEME SUPPORT
 // ============================================================================
 function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupData: SignupData }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [redirecting, setRedirecting] = useState(false);
+  
+  // Use ref to track if component is mounted (prevents state updates after unmount)
+  const isMountedRef = React.useRef(true);
+  
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Theme detection
   const theme: 'light' | 'dark' = agency.website_theme === 'dark' ? 'dark' : 'light';
@@ -186,7 +196,19 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const cardHoverBorder = isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db';
 
+  // Safe redirect function that prevents React state updates
+  const safeRedirect = (url: string) => {
+    console.log('[ClientSignup] Redirecting to:', url);
+    setRedirecting(true);
+    // Use setTimeout to let React finish current render cycle before navigation
+    setTimeout(() => {
+      window.location.replace(url);
+    }, 100);
+  };
+
   const handleSelectPlan = async (planType: string) => {
+    if (loading || redirecting) return; // Prevent double-clicks
+    
     setSelectedPlan(planType);
     setLoading(true);
     setError('');
@@ -234,8 +256,10 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       console.log('[ClientSignup] Response data:', {
         hasToken: !!data.token,
         hasCheckoutUrl: !!data.checkoutUrl,
+        hasSessionToken: !!data.sessionToken,
         hasError: !!data.error,
         keys: Object.keys(data),
+        fullData: data, // Log full response for debugging
       });
 
       if (!response.ok) {
@@ -249,55 +273,94 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
 
       // Handle the response - check for token first (password setup flow)
       if (data.token) {
-        console.log('[ClientSignup] Redirecting to set-password with token');
+        console.log('[ClientSignup] Has token, redirecting to set-password');
         const returnTo = encodeURIComponent('/client/dashboard');
-        window.location.href = `/auth/set-password?token=${data.token}&returnTo=${returnTo}`;
-        return; // Explicit return to prevent further execution
+        safeRedirect(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
+        return;
       }
       
       // Check for Stripe checkout URL (paid plan flow)
       if (data.checkoutUrl) {
-        console.log('[ClientSignup] Redirecting to Stripe checkout');
-        window.location.href = data.checkoutUrl;
-        return; // Explicit return to prevent further execution
+        console.log('[ClientSignup] Has checkoutUrl, redirecting to Stripe');
+        safeRedirect(data.checkoutUrl);
+        return;
       }
       
       // If user already exists and has password, they may get a session token
       if (data.sessionToken) {
-        console.log('[ClientSignup] User exists, setting session and redirecting to dashboard');
-        // Set the session
-        await fetch('/api/auth/set-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: data.sessionToken }),
-        });
-        window.location.href = '/client/dashboard';
+        console.log('[ClientSignup] Has sessionToken, setting session');
+        try {
+          await fetch('/api/auth/set-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: data.sessionToken }),
+          });
+        } catch (sessionErr) {
+          console.error('[ClientSignup] Failed to set session:', sessionErr);
+        }
+        safeRedirect('/client/dashboard');
         return;
       }
       
       // Fallback: if we got here with a successful response but no token/checkout
-      // This might mean the user already exists - redirect to login
-      console.warn('[ClientSignup] No token or checkout URL in response, redirecting to login');
+      console.warn('[ClientSignup] No token or checkout URL in response');
+      console.warn('[ClientSignup] Full response was:', JSON.stringify(data, null, 2));
       
       // Check if response indicates user already exists
       if (data.message?.includes('already exists') || data.exists) {
-        setError('An account with this email already exists. Please sign in.');
-        setLoading(false);
-        setSelectedPlan(null);
+        if (isMountedRef.current) {
+          setError('An account with this email already exists. Please sign in.');
+          setLoading(false);
+          setSelectedPlan(null);
+        }
+        return;
+      }
+      
+      // Check if we got a client ID back (successful creation but no token?)
+      if (data.clientId || data.client?.id) {
+        console.log('[ClientSignup] Got client ID but no token - backend may need to return token');
+        // Try redirecting to login as fallback
+        safeRedirect('/client/login?message=account-created');
         return;
       }
       
       // Last resort fallback
-      window.location.href = '/client/login';
+      console.warn('[ClientSignup] Falling back to login redirect');
+      safeRedirect('/client/login');
       
     } catch (err) {
       console.error('[ClientSignup] Error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
-      setError(errorMessage);
-      setSelectedPlan(null);
-      setLoading(false);
+      if (isMountedRef.current && !redirecting) {
+        const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+        setError(errorMessage);
+        setSelectedPlan(null);
+        setLoading(false);
+      }
     }
   };
+  
+  // Show redirecting state
+  if (redirecting) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: bgColor }}
+      >
+        <div className="text-center">
+          <Loader2 
+            className="h-8 w-8 animate-spin mx-auto" 
+            style={{ color: primaryColor }}
+          />
+          <p 
+            className="mt-4 text-sm"
+            style={{ color: mutedTextColor }}
+          >
+            Setting up your account...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const plans = [
     {
