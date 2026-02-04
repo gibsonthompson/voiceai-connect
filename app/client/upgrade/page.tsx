@@ -1,8 +1,66 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Loader2, AlertTriangle, Phone, Clock, Zap } from 'lucide-react';
+
+// ============================================================================
+// COLOR CONTRAST UTILITIES
+// ============================================================================
+
+/**
+ * Converts hex color to RGB values
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const cleanHex = hex.replace(/^#/, '');
+  const fullHex = cleanHex.length === 3
+    ? cleanHex.split('').map(c => c + c).join('')
+    : cleanHex;
+  
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
+
+/**
+ * Calculates relative luminance of a color (0-1)
+ * Based on WCAG 2.1 formula
+ */
+function getLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0.5;
+  
+  const { r, g, b } = rgb;
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+/**
+ * Determines if a color is "light" (needs dark text) or "dark" (needs light text)
+ */
+function isLightColor(hex: string): boolean {
+  return getLuminance(hex) > 0.45;
+}
+
+/**
+ * Returns appropriate text color for a given background
+ */
+function getContrastTextColor(bgHex: string): string {
+  return isLightColor(bgHex) ? '#1f2937' : '#ffffff';
+}
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 interface Agency {
   id: string;
@@ -10,12 +68,12 @@ interface Agency {
   logo_url: string | null;
   primary_color: string;
   accent_color: string;
-  price_starter: number;
-  price_pro: number;
-  price_growth: number;
-  limit_starter: number;
-  limit_pro: number;
-  limit_growth: number;
+  price_starter?: number;
+  price_pro?: number;
+  price_growth?: number;
+  limit_starter?: number;
+  limit_pro?: number;
+  limit_growth?: number;
   website_theme?: string;
 }
 
@@ -28,13 +86,31 @@ interface Client {
   agency_id: string;
 }
 
-function formatPrice(cents: number): string {
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function formatPrice(cents: number | undefined | null): string {
+  if (cents === undefined || cents === null || isNaN(cents)) {
+    return '$--';
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
   }).format(cents / 100);
 }
+
+function formatLimit(limit: number | undefined | null): string {
+  if (limit === undefined || limit === null || isNaN(limit)) {
+    return 'Unlimited';
+  }
+  return limit.toLocaleString();
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 function ClientUpgradeContent() {
   const searchParams = useSearchParams();
@@ -50,6 +126,29 @@ function ClientUpgradeContent() {
   // Theme
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = agency?.primary_color || '#10b981';
+  
+  // Calculate contrast colors
+  const contrastColors = useMemo(() => {
+    const color = primaryColor || '#10b981';
+    const isLight = isLightColor(color);
+    return {
+      textOnPrimary: getContrastTextColor(color),
+      isLightPrimary: isLight,
+      // For borders and subtle backgrounds when primary is light
+      borderColor: isLight ? color : color,
+      // Text color to use when primary color is the text (not background)
+      primaryAsText: color,
+    };
+  }, [primaryColor]);
+
+  // Check if pricing is configured
+  const isPricingConfigured = agency && 
+    typeof agency.price_starter === 'number' && 
+    typeof agency.price_pro === 'number' && 
+    typeof agency.price_growth === 'number' &&
+    !isNaN(agency.price_starter) &&
+    !isNaN(agency.price_pro) &&
+    !isNaN(agency.price_growth);
 
   useEffect(() => {
     fetchClientData();
@@ -60,14 +159,12 @@ function ClientUpgradeContent() {
       const token = localStorage.getItem('auth_token');
       const storedClient = localStorage.getItem('client');
       
-      // Check for auth token
       if (!token) {
         console.log('No auth token found, redirecting to login');
         window.location.href = '/client/login';
         return;
       }
 
-      // Try to get client ID from localStorage first (set during login)
       let clientId: string | null = null;
       
       if (storedClient) {
@@ -80,7 +177,6 @@ function ClientUpgradeContent() {
         }
       }
 
-      // If no client in localStorage, try verify endpoint as fallback
       if (!clientId) {
         console.log('No client in localStorage, trying verify endpoint');
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -99,7 +195,6 @@ function ClientUpgradeContent() {
         }
 
         const verifyData = await verifyResponse.json();
-        // The verify endpoint returns user.client_id, not client.id
         clientId = verifyData.user?.client_id;
         console.log('Got client ID from verify endpoint:', clientId);
       }
@@ -110,7 +205,6 @@ function ClientUpgradeContent() {
         return;
       }
 
-      // Fetch fresh client data (includes agency info)
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const clientResponse = await fetch(`${backendUrl}/api/client/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
@@ -137,13 +231,17 @@ function ClientUpgradeContent() {
   const handleSelectPlan = async (planTier: 'starter' | 'pro' | 'growth') => {
     if (!client) return;
     
+    if (!isPricingConfigured) {
+      setError('Pricing plans are not yet configured. Please contact support.');
+      return;
+    }
+    
     setCheckoutLoading(planTier);
     setError(null);
 
     try {
       const token = localStorage.getItem('auth_token');
 
-      // Call the Next.js API route which forwards to backend
       const response = await fetch('/api/client/create-checkout', {
         method: 'POST',
         headers: {
@@ -163,7 +261,6 @@ function ClientUpgradeContent() {
 
       const { url } = await response.json();
       
-      // Redirect to Stripe Checkout
       if (url) {
         window.location.href = url;
       } else {
@@ -207,7 +304,10 @@ function ClientUpgradeContent() {
           <a
             href="/client/login"
             className="inline-flex items-center px-4 py-2 rounded-lg font-medium"
-            style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+            style={{ 
+              backgroundColor: primaryColor, 
+              color: contrastColors.textOnPrimary 
+            }}
           >
             Go to Login
           </a>
@@ -223,7 +323,7 @@ function ClientUpgradeContent() {
       price: agency.price_starter,
       limit: agency.limit_starter,
       features: [
-        `${agency.limit_starter} calls/month`,
+        `${formatLimit(agency.limit_starter)} calls/month`,
         '24/7 AI receptionist',
         'Call summaries & transcripts',
         'SMS notifications',
@@ -237,7 +337,7 @@ function ClientUpgradeContent() {
       price: agency.price_pro,
       limit: agency.limit_pro,
       features: [
-        `${agency.limit_pro} calls/month`,
+        `${formatLimit(agency.limit_pro)} calls/month`,
         'Everything in Starter',
         'Priority support',
         'Advanced analytics',
@@ -251,7 +351,7 @@ function ClientUpgradeContent() {
       price: agency.price_growth,
       limit: agency.limit_growth,
       features: [
-        `${agency.limit_growth} calls/month`,
+        `${formatLimit(agency.limit_growth)} calls/month`,
         'Everything in Professional',
         'Dedicated support',
         'API access',
@@ -336,14 +436,19 @@ function ClientUpgradeContent() {
               className="relative rounded-2xl p-6 transition-all"
               style={{
                 backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
-                border: `1px solid ${plan.popular ? primaryColor : (isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb')}`,
-                boxShadow: plan.popular ? `0 0 0 2px ${primaryColor}` : 'none',
+                border: `2px solid ${plan.popular ? primaryColor : (isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb')}`,
+                boxShadow: plan.popular 
+                  ? `0 0 0 1px ${primaryColor}, 0 4px 20px ${primaryColor}20` 
+                  : 'none',
               }}
             >
               {plan.popular && (
                 <div 
                   className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold"
-                  style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                  style={{ 
+                    backgroundColor: primaryColor, 
+                    color: contrastColors.textOnPrimary 
+                  }}
                 >
                   Most Popular
                 </div>
@@ -390,7 +495,7 @@ function ClientUpgradeContent() {
                 className="w-full py-3 px-4 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: plan.popular ? primaryColor : 'transparent',
-                  color: plan.popular ? '#ffffff' : primaryColor,
+                  color: plan.popular ? contrastColors.textOnPrimary : primaryColor,
                   border: plan.popular ? 'none' : `2px solid ${primaryColor}`,
                 }}
               >
