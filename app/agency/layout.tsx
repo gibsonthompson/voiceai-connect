@@ -4,9 +4,11 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight, Gift, AlertTriangle, CreditCard
+  Menu, X, ChevronRight, Gift, CreditCard, Lock,
+  type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 
 // Waveform icon component with color prop
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -21,15 +23,6 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
       <rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
     </svg>
   );
-}
-
-// Helper to check if color is light
-function isLightColor(hex: string): boolean {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 }
 
 // Helper to check if subscription is in trial state (handles both 'trial' and 'trialing')
@@ -64,9 +57,19 @@ const ALWAYS_ACCESSIBLE_ROUTES = [
   '/agency/login',
 ];
 
+// Nav item type with optional locked state
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  locked?: boolean;
+  upgradeRequired?: string;
+}
+
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading } = useAgency();
+  const { canUseMarketingSite, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -96,6 +99,24 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // Determine if current route should be blocked
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
   const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
+
+  // Build nav items with feature gating
+  const navItems: NavItem[] = [
+    { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/agency/clients', label: 'Clients', icon: Users },
+    { href: '/agency/leads', label: 'Leads', icon: Target },
+    { href: '/agency/outreach', label: 'Outreach', icon: Send },
+    { href: '/agency/analytics', label: 'Analytics', icon: BarChart3 },
+    { 
+      href: '/agency/marketing', 
+      label: 'Marketing Website', 
+      icon: Globe,
+      locked: !canUseMarketingSite,
+      upgradeRequired: 'Professional',
+    },
+    { href: '/agency/referrals', label: 'Referrals', icon: Gift },
+    { href: '/agency/settings', label: 'Settings', icon: Settings },
+  ];
 
   // Detect mobile
   useEffect(() => {
@@ -134,17 +155,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/agency/login';
   };
 
-  const navItems = [
-    { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/agency/clients', label: 'Clients', icon: Users },
-    { href: '/agency/leads', label: 'Leads', icon: Target },
-    { href: '/agency/outreach', label: 'Outreach', icon: Send },
-    { href: '/agency/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/agency/marketing', label: 'Marketing Website', icon: Globe },
-    { href: '/agency/referrals', label: 'Referrals', icon: Gift },
-    { href: '/agency/settings', label: 'Settings', icon: Settings },
-  ];
-
   const isActive = (href: string) => {
     if (href === '/agency/dashboard') {
       return pathname === '/agency/dashboard' || pathname === '/agency';
@@ -156,10 +166,16 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // Handle navigation - use window.location for proper middleware handling
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isLocked?: boolean) => {
     e.preventDefault();
     setSidebarOpen(false);
-    window.location.href = href;
+    
+    if (isLocked) {
+      // Redirect to billing with upgrade param
+      window.location.href = '/agency/settings/billing?upgrade=professional';
+    } else {
+      window.location.href = href;
+    }
   };
 
   if (loading) {
@@ -405,26 +421,49 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.href);
+            const isLocked = item.locked === true;
+            const IconComponent = item.icon;
+            
             return (
               <a
                 key={item.href}
-                href={item.href}
-                onClick={(e) => handleNavClick(e, item.href)}
+                href={isLocked ? '#' : item.href}
+                onClick={(e) => handleNavClick(e, item.href, isLocked)}
                 className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
-                  !active ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''
+                  isLocked 
+                    ? 'cursor-pointer' 
+                    : !active 
+                      ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') 
+                      : ''
                 }`}
-                style={active ? {
-                  backgroundColor: `${primaryColor}15`,
-                  color: primaryColor,
-                } : {
-                  color: mutedTextColor,
-                }}
+                style={
+                  isLocked 
+                    ? { color: mutedTextColor, opacity: 0.6 }
+                    : active 
+                      ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
+                      : { color: mutedTextColor }
+                }
+                title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
+                  <IconComponent className="h-5 w-5" />
+                  <span>{item.label}</span>
+                  {isLocked && (
+                    <Lock className="h-3.5 w-3.5 ml-1" />
+                  )}
                 </div>
-                {active && <ChevronRight className="h-4 w-4 md:hidden" />}
+                {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
+                {isLocked && (
+                  <span 
+                    className="text-[10px] px-1.5 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                      color: mutedTextColor,
+                    }}
+                  >
+                    Pro
+                  </span>
+                )}
               </a>
             );
           })}
@@ -484,7 +523,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             >
               <p className="text-xs" style={{ color: `${primaryColor}99` }}>Current Plan</p>
               <p className="text-sm font-medium capitalize" style={{ color: primaryColor }}>
-                {agency.plan_type || 'Starter'}
+                {planName || agency?.plan_type || 'Starter'}
               </p>
             </div>
           )}
