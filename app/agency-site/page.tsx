@@ -217,6 +217,7 @@ export default function AgencySiteHomePage() {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [redirecting, setRedirecting] = useState(false);
   const [detectedLogoBackground, setDetectedLogoBackground] = useState<string | null>(null);
   const [detectedTheme, setDetectedTheme] = useState<'light' | 'dark'>('light');
   const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
@@ -245,8 +246,9 @@ export default function AgencySiteHomePage() {
         // ============================================================
         if (!hasMarketingSiteAccess(agencyData.plan_type)) {
           console.log('📍 Starter plan detected - redirecting to /get-started');
+          setRedirecting(true);
           window.location.href = '/get-started';
-          return;
+          return; // Don't continue processing
         }
         
         setAgency(agencyData);
@@ -271,10 +273,11 @@ export default function AgencySiteHomePage() {
           // Only set dark theme if explicitly configured (not auto-detect)
           // Auto now defaults to light for better readability
         }
+        
+        setLoading(false);
       } catch (err) {
         console.error('Failed to fetch agency:', err);
         setError('Unable to load. Please check the URL.');
-      } finally {
         setLoading(false);
       }
     };
@@ -282,7 +285,8 @@ export default function AgencySiteHomePage() {
     fetchAgency();
   }, []);
 
-  if (loading) {
+  // Show blank loading screen while redirecting
+  if (redirecting || loading) {
     return <ThemedLoading theme={cachedTheme} />;
   }
 
