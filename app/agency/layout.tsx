@@ -8,7 +8,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
-import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 
 // Waveform icon component with color prop
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -52,7 +52,6 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
 
 // Routes that are always accessible (even when payment failed)
 const ALWAYS_ACCESSIBLE_ROUTES = [
-  '/agency/settings/billing',
   '/agency/settings',
   '/agency/login',
 ];
@@ -144,7 +143,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // Redirect to billing if blocked
   useEffect(() => {
     if (!loading && shouldBlockAccess) {
-      window.location.href = '/agency/settings/billing';
+      window.location.href = '/agency/settings';
     }
   }, [loading, shouldBlockAccess]);
 
@@ -172,7 +171,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     
     if (isLocked) {
       // Redirect to billing with upgrade param
-      window.location.href = '/agency/settings/billing?upgrade=professional';
+      window.location.href = '/agency/settings?upgrade=professional';
     } else {
       window.location.href = href;
     }
@@ -225,7 +224,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             }
           </p>
           <a
-            href="/agency/settings/billing"
+            href="/agency/settings"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors"
             style={{ backgroundColor: '#ef4444' }}
           >
@@ -285,9 +284,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               </p>
             </div>
           </div>
-          {!pathname?.startsWith('/agency/settings/billing') && (
+          {!pathname?.startsWith('/agency/settings') && (
             <a 
-              href="/agency/settings/billing"
+              href="/agency/settings"
               className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
               style={{ 
                 backgroundColor: '#ef4444',
@@ -498,7 +497,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Payment Issue Badge */}
           {hasPaymentIssue && (
             <a
-              href="/agency/settings/billing"
+              href="/agency/settings"
               className="block rounded-xl p-3 transition-opacity hover:opacity-90"
               style={{
                 backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)',
