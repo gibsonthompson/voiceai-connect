@@ -8,7 +8,7 @@ import {
   Sun, Moon, Wand2, Lock
 } from 'lucide-react';
 import { useAgency } from '../context';
-import { usePlanFeatures } from '../../hooks/usePlanFeatures';
+import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 
 type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
