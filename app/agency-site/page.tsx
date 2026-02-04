@@ -20,6 +20,8 @@ interface Agency {
   website_headline: string | null;
   website_subheadline: string | null;
   website_theme: 'auto' | 'light' | 'dark' | null;
+  // Plan type (for feature gating)
+  plan_type: string | null;
   // Pricing (stored in cents)
   price_starter: number;
   price_pro: number;
@@ -38,6 +40,15 @@ interface Agency {
 
 // Platform default demo phone number
 const PLATFORM_DEMO_PHONE = '(770) 809-2820';
+
+// ============================================================================
+// HELPER: Check if agency has marketing site access
+// ============================================================================
+function hasMarketingSiteAccess(planType: string | null | undefined): boolean {
+  if (!planType) return false;
+  const plan = planType.toLowerCase();
+  return plan === 'professional' || plan === 'enterprise' || plan === 'scale';
+}
 
 // ============================================================================
 // HELPER: Cache theme for subsequent pages
@@ -227,23 +238,34 @@ export default function AgencySiteHomePage() {
         }
         
         const data = await response.json();
-        setAgency(data.agency);
+        const agencyData = data.agency;
+        
+        // ============================================================
+        // FEATURE GATE: Redirect Starter plan to /get-started
+        // ============================================================
+        if (!hasMarketingSiteAccess(agencyData.plan_type)) {
+          console.log('📍 Starter plan detected - redirecting to /get-started');
+          window.location.href = '/get-started';
+          return;
+        }
+        
+        setAgency(agencyData);
         
         // Cache the theme for subsequent pages (get-started, etc.)
-        setCachedTheme(data.agency.website_theme);
+        setCachedTheme(agencyData.website_theme);
         
         // Set page title
-        setPageTitle(`${data.agency.name} - AI Receptionist`);
+        setPageTitle(`${agencyData.name} - AI Receptionist`);
         
         // Set favicon - prefer favicon_url, fall back to logo_url
-        const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
+        const faviconUrl = agencyData.favicon_url || agencyData.logo_url;
         if (faviconUrl) {
           setFavicon(faviconUrl);
         }
         
         // Detect logo background color if we have a logo
-        if (data.agency.logo_url) {
-          const bgColor = await detectLogoBackgroundColor(data.agency.logo_url);
+        if (agencyData.logo_url) {
+          const bgColor = await detectLogoBackgroundColor(agencyData.logo_url);
           setDetectedLogoBackground(bgColor);
           
           // Only set dark theme if explicitly configured (not auto-detect)

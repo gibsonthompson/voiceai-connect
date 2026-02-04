@@ -1,17 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2
+  Sun, Moon, Wand2, Lock
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 
 type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
 export default function MarketingWebsitePage() {
-  const { agency, branding, refreshAgency } = useAgency();
+  const router = useRouter();
+  const { agency, branding, loading: agencyLoading, refreshAgency } = useAgency();
+  const { canUseMarketingSite, planName } = usePlanFeatures();
+  
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   
@@ -53,6 +58,16 @@ export default function MarketingWebsitePage() {
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
+
+  // ============================================================
+  // FEATURE GATE: Redirect Starter plan to settings
+  // ============================================================
+  useEffect(() => {
+    if (!agencyLoading && !canUseMarketingSite) {
+      console.log('📍 Marketing site not available on current plan - redirecting to settings');
+      window.location.href = '/agency/settings?upgrade=professional';
+    }
+  }, [agencyLoading, canUseMarketingSite]);
 
   useEffect(() => {
     const fetchDnsConfig = async () => {
@@ -341,6 +356,47 @@ export default function MarketingWebsitePage() {
     setSecondaryColor(preset.secondary);
     setAccentColor(preset.accent);
   };
+
+  // Show loading while checking access
+  if (agencyLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  // If no access, show upgrade prompt (will redirect via useEffect)
+  if (!canUseMarketingSite) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div 
+          className="max-w-md mx-auto rounded-2xl p-8 text-center"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <div 
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: `${agencyPrimaryColor}15` }}
+          >
+            <Lock className="h-8 w-8" style={{ color: agencyPrimaryColor }} />
+          </div>
+          <h1 className="text-2xl font-bold mb-3" style={{ color: textColor }}>
+            Upgrade to Professional
+          </h1>
+          <p className="mb-6" style={{ color: mutedTextColor }}>
+            The Marketing Website feature is available on Professional and Enterprise plans.
+          </p>
+          <a
+            href="/agency/settings?upgrade=professional"
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors"
+            style={{ backgroundColor: agencyPrimaryColor }}
+          >
+            View Plans
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
