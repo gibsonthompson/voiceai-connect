@@ -58,33 +58,60 @@ function ClientUpgradeContent() {
   const fetchClientData = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      const storedClient = localStorage.getItem('client');
+      
+      // Check for auth token
       if (!token) {
+        console.log('No auth token found, redirecting to login');
         window.location.href = '/client/login';
         return;
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
-
-      // Verify token and get client ID
-      const verifyResponse = await fetch(`${backendUrl}/api/auth/verify`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (!verifyResponse.ok) {
-        localStorage.removeItem('auth_token');
-        window.location.href = '/client/login';
-        return;
+      // Try to get client ID from localStorage first (set during login)
+      let clientId: string | null = null;
+      
+      if (storedClient) {
+        try {
+          const parsed = JSON.parse(storedClient);
+          clientId = parsed.id;
+          console.log('Got client ID from localStorage:', clientId);
+        } catch (e) {
+          console.error('Failed to parse stored client:', e);
+        }
       }
 
-      const verifyData = await verifyResponse.json();
-      const clientId = verifyData.client?.id || verifyData.clientId;
+      // If no client in localStorage, try verify endpoint as fallback
+      if (!clientId) {
+        console.log('No client in localStorage, trying verify endpoint');
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+        
+        const verifyResponse = await fetch(`${backendUrl}/api/auth/verify`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!verifyResponse.ok) {
+          console.log('Token verification failed, clearing auth and redirecting');
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('client');
+          localStorage.removeItem('user');
+          window.location.href = '/client/login';
+          return;
+        }
+
+        const verifyData = await verifyResponse.json();
+        // The verify endpoint returns user.client_id, not client.id
+        clientId = verifyData.user?.client_id;
+        console.log('Got client ID from verify endpoint:', clientId);
+      }
 
       if (!clientId) {
+        console.log('No client ID found anywhere, redirecting to login');
         window.location.href = '/client/login';
         return;
       }
 
-      // Fetch client data (includes agency info)
+      // Fetch fresh client data (includes agency info)
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const clientResponse = await fetch(`${backendUrl}/api/client/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -94,6 +121,8 @@ function ClientUpgradeContent() {
       }
 
       const clientData = await clientResponse.json();
+      console.log('Fetched client data:', clientData);
+      
       setClient(clientData.client || clientData);
       setAgency(clientData.agency || clientData.client?.agency);
       
