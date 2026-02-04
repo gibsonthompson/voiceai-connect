@@ -53,7 +53,246 @@ const clientData = {
   ],
 };
 
-// Agency Dashboard Content
+// Mobile Agency Dashboard Content (simplified for phone view)
+function MobileAgencyDashboard({ activeTab }: { activeTab: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const iconMap: Record<string, any> = { users: Users, dollar: DollarSign, phone: PhoneCall };
+  const colors = ['#10b981', '#f59e0b', '#3b82f6'];
+
+  if (activeTab === 'clients') {
+    return (
+      <div className="p-3">
+        <h1 className="text-sm font-semibold mb-3">Clients</h1>
+        <div className="space-y-2">
+          {agencyData.recentClients.map((client) => (
+            <div key={client.id} className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10">
+                  <span className="text-[10px] font-medium text-emerald-400">{client.business_name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-[11px]">{client.business_name}</p>
+                  <p className="text-[9px] text-[#fafaf9]/50 capitalize">{client.plan_type}</p>
+                </div>
+              </div>
+              <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-medium ${
+                client.subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+              }`}>{client.subscription_status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'leads') {
+    const leads = [
+      { id: '1', business_name: 'Ace Garage Doors', status: 'hot' },
+      { id: '2', business_name: 'Comfort Air HVAC', status: 'warm' },
+      { id: '3', business_name: 'Quick Fix Plumbing', status: 'hot' },
+    ];
+    return (
+      <div className="p-3">
+        <h1 className="text-sm font-semibold mb-3">Leads</h1>
+        <div className="grid grid-cols-4 gap-1.5 mb-3">
+          {[
+            { label: 'Total', value: '124', color: '#3b82f6' },
+            { label: 'Hot', value: '18', color: '#ef4444' },
+            { label: 'Warm', value: '42', color: '#f59e0b' },
+            { label: 'Won', value: '47', color: '#10b981' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-md border border-white/[0.06] bg-white/[0.02] p-1.5 text-center">
+              <p className="text-xs font-semibold" style={{ color: stat.color }}>{stat.value}</p>
+              <p className="text-[8px] text-[#fafaf9]/40">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1.5">
+          {leads.map((lead) => (
+            <div key={lead.id} className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10">
+                  <span className="text-[9px] font-medium text-blue-400">{lead.business_name.charAt(0)}</span>
+                </div>
+                <p className="font-medium text-[10px]">{lead.business_name}</p>
+              </div>
+              <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-medium ${
+                lead.status === 'hot' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'
+              }`}>{lead.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Dashboard
+  return (
+    <div className="p-3">
+      <h1 className="text-sm font-semibold mb-1">Welcome, {agencyData.user.first_name}! 👋</h1>
+      <p className="text-[10px] text-[#fafaf9]/50 mb-3">Here&apos;s your agency overview.</p>
+
+      {/* Signup Link */}
+      <div className="mb-3 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[8px] text-[#fafaf9]/50">Client Signup Link</p>
+            <p className="text-[10px] font-medium text-emerald-300 truncate">{agencyData.signupLink}</p>
+          </div>
+          <button onClick={handleCopy} className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[8px] font-medium text-emerald-300">
+            {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {agencyData.stats.map((stat, i) => {
+          const Icon = iconMap[stat.icon];
+          return (
+            <div key={stat.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md mb-1" style={{ backgroundColor: `${colors[i]}15` }}>
+                <Icon className="h-3 w-3" style={{ color: colors[i] }} />
+              </div>
+              <p className="text-[8px] text-[#fafaf9]/50">{stat.label}</p>
+              <p className="text-sm font-semibold">{stat.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Clients */}
+      <div className="rounded-lg border border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-between border-b border-white/[0.06] p-2">
+          <h2 className="font-medium text-[10px]">Recent Clients</h2>
+          <span className="text-[8px] text-emerald-400">View all →</span>
+        </div>
+        <div className="p-2 space-y-1.5">
+          {agencyData.recentClients.slice(0, 3).map((client) => (
+            <div key={client.id} className="flex items-center justify-between rounded-md border border-white/[0.06] bg-white/[0.02] p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10">
+                  <span className="text-[9px] font-medium text-emerald-400">{client.business_name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-[10px]">{client.business_name}</p>
+                  <p className="text-[8px] text-[#fafaf9]/50 capitalize">{client.plan_type}</p>
+                </div>
+              </div>
+              <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-medium ${
+                client.subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+              }`}>{client.subscription_status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mobile Client Dashboard Content
+function MobileClientDashboard({ activeTab }: { activeTab: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  if (activeTab === 'calls') {
+    return (
+      <div className="p-3" style={{ backgroundColor: '#f9fafb', minHeight: '100%' }}>
+        <h1 className="text-sm font-semibold text-gray-900 mb-3">Call History</h1>
+        <div className="space-y-2">
+          {clientData.recentCalls.map((call) => (
+            <div key={call.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50">
+                  <PhoneCall className="h-3.5 w-3.5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-[11px] text-gray-900">{call.customer_name}</p>
+                  <p className="text-[9px] text-gray-500">{call.service_requested}</p>
+                </div>
+              </div>
+              <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-medium ${
+                call.urgency_level === 'high' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
+              }`}>{call.urgency_level}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Dashboard
+  return (
+    <div className="p-3" style={{ backgroundColor: '#f9fafb', minHeight: '100%' }}>
+      <h1 className="text-sm font-semibold text-gray-900 mb-1">Welcome back! 👋</h1>
+      <p className="text-[10px] text-gray-500 mb-3">Your AI receptionist activity.</p>
+
+      {/* Phone Number */}
+      <div className="mb-3 rounded-lg border border-emerald-200 bg-white p-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+              <Phone className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-[8px] text-gray-500">Your AI Number</p>
+              <p className="text-[11px] font-semibold text-gray-900">{clientData.phone_number}</p>
+            </div>
+          </div>
+          <button onClick={handleCopy} className="rounded border border-gray-200 p-1.5">
+            {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-gray-400" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {[
+          { label: 'Calls', value: clientData.stats.callsThisMonth, icon: PhoneCall, color: '#10b981' },
+          { label: 'Urgent', value: clientData.stats.highUrgency, icon: AlertCircle, color: '#f59e0b' },
+          { label: 'Status', value: 'Active', icon: Zap, color: '#10b981' },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md mb-1" style={{ backgroundColor: `${stat.color}15` }}>
+              <stat.icon className="h-3 w-3" style={{ color: stat.color }} />
+            </div>
+            <p className="text-[8px] text-gray-500">{stat.label}</p>
+            <p className="text-sm font-semibold text-gray-900">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Calls */}
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex items-center justify-between border-b border-gray-100 p-2">
+          <h2 className="font-semibold text-[10px] text-gray-900">Recent Calls</h2>
+          <span className="text-[8px] text-emerald-600">View all →</span>
+        </div>
+        <div className="p-2 space-y-1.5">
+          {clientData.recentCalls.slice(0, 3).map((call) => (
+            <div key={call.id} className="flex items-center justify-between rounded-md border border-gray-100 p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
+                  <PhoneCall className="h-3 w-3 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-[10px] text-gray-900">{call.customer_name}</p>
+                  <p className="text-[8px] text-gray-500">{call.service_requested}</p>
+                </div>
+              </div>
+              <span className={`rounded-full px-1.5 py-0.5 text-[8px] font-medium ${
+                call.urgency_level === 'high' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
+              }`}>{call.urgency_level}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Agency Dashboard Content (Desktop)
 function AgencyDashboard({ activeTab }: { activeTab: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -344,7 +583,7 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
   );
 }
 
-// Client Dashboard Content
+// Client Dashboard Content (Desktop)
 function ClientDashboard({ activeTab }: { activeTab: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -512,11 +751,11 @@ export default function DashboardSandbox() {
   return (
     <div className="w-full max-w-5xl mx-auto">
       {/* Toggle */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-4 sm:mb-6">
         <div className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
           <button
             onClick={() => setView('agency')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
               view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
             }`}
           >
@@ -524,7 +763,7 @@ export default function DashboardSandbox() {
           </button>
           <button
             onClick={() => setView('client')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
               view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
             }`}
           >
@@ -533,8 +772,113 @@ export default function DashboardSandbox() {
         </div>
       </div>
 
-      {/* Browser Frame */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
+      {/* MOBILE: Phone Frame View */}
+      <div className="block md:hidden">
+        <div className="flex justify-center">
+          <div className="relative w-[280px] sm:w-[320px]">
+            {/* Phone frame */}
+            <div className="rounded-[2.5rem] border-4 border-white/10 bg-[#0a0a0a] p-2 shadow-2xl">
+              {/* Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-[#0a0a0a] rounded-b-2xl z-10" />
+              
+              {/* Screen */}
+              <div className="rounded-[2rem] overflow-hidden">
+                {/* Status bar */}
+                <div className="flex items-center justify-between px-5 py-1.5 text-[10px] bg-[#0a0a0a]">
+                  <span>9:41</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-2 border border-white/40 rounded-sm">
+                      <div className="w-3/4 h-full bg-emerald-400 rounded-sm" />
+                    </div>
+                  </div>
+                </div>
+                
+                {view === 'agency' ? (
+                  <div className="bg-[#050505] text-[#fafaf9]">
+                    {/* Mobile Header */}
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                        <WaveformIcon className="h-4 w-4 text-[#fafaf9]" />
+                      </div>
+                      <span className="font-semibold text-xs text-[#fafaf9]">Your Agency</span>
+                    </div>
+                    
+                    {/* Mobile Nav */}
+                    <div className="flex gap-1 px-2 py-2 border-b border-white/[0.06] overflow-x-auto scrollbar-hide">
+                      {agencyNavItems.slice(0, 3).map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setAgencyTab(item.id)}
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-medium whitespace-nowrap transition-all ${
+                            agencyTab === item.id
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : 'text-[#fafaf9]/50'
+                          }`}
+                        >
+                          <item.icon className="h-3 w-3" />
+                          {item.label}
+                        </button>
+                      ))}
+                      <span className="flex items-center px-2.5 py-1.5 text-[10px] font-medium text-[#fafaf9]/30 whitespace-nowrap">
+                        + more
+                      </span>
+                    </div>
+                    
+                    {/* Mobile Content */}
+                    <div className="h-[380px] sm:h-[420px] overflow-y-auto">
+                      <MobileAgencyDashboard activeTab={agencyTab} />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Client Mobile Header */}
+                    <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: 'rgb(23, 90, 72)' }}>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+                        <Phone className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <span className="font-medium text-xs text-white">Smith Plumbing</span>
+                    </div>
+                    
+                    {/* Client Mobile Nav */}
+                    <div className="flex gap-1 px-2 py-2 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)', backgroundColor: '#f9fafb' }}>
+                      {clientNavItems.slice(0, 2).map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setClientTab(item.id)}
+                          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-medium whitespace-nowrap transition-all ${
+                            clientTab === item.id
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          <item.icon className="h-3 w-3" />
+                          {item.label}
+                        </button>
+                      ))}
+                      <span className="flex items-center px-2.5 py-1.5 text-[10px] font-medium text-gray-300 whitespace-nowrap">
+                        + more
+                      </span>
+                    </div>
+                    
+                    {/* Client Mobile Content */}
+                    <div className="h-[380px] sm:h-[420px] overflow-y-auto">
+                      <MobileClientDashboard activeTab={clientTab} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Badge */}
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-emerald-500 text-[#050505] text-[10px] font-medium shadow-lg shadow-emerald-500/30 whitespace-nowrap">
+              {view === 'agency' ? 'Your brand, your dashboard' : '100% white-labeled'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* DESKTOP: Browser Frame View */}
+      <div className="hidden md:block rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
         {/* Browser Chrome */}
         <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.02] border-b border-white/[0.06]">
           <div className="flex gap-1.5">

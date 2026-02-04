@@ -194,47 +194,107 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
+      // Debug logging
+      console.log('[ClientSignup] Starting signup with:', {
+        backendUrl,
+        agencyId: agency.id,
+        planType,
+        email: signupData.email,
+      });
+      
       const nameParts = signupData.ownerName.trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
+      const requestBody = {
+        firstName: firstName,
+        lastName: lastName,
+        email: signupData.email,
+        phone: signupData.phone,
+        businessName: signupData.businessName,
+        businessCity: signupData.city,
+        businessState: signupData.state,
+        industry: signupData.industry,
+        agencyId: agency.id,
+        planType: planType,
+      };
+      
+      console.log('[ClientSignup] Request body:', requestBody);
+      
       const response = await fetch(`${backendUrl}/api/client/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: firstName,
-          lastName: lastName,
-          email: signupData.email,
-          phone: signupData.phone,
-          businessName: signupData.businessName,
-          businessCity: signupData.city,
-          businessState: signupData.state,
-          industry: signupData.industry,
-          agencyId: agency.id,
-          planType: planType,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[ClientSignup] Response status:', response.status);
+      
       const data = await response.json();
+      
+      console.log('[ClientSignup] Response data:', {
+        hasToken: !!data.token,
+        hasCheckoutUrl: !!data.checkoutUrl,
+        hasError: !!data.error,
+        keys: Object.keys(data),
+      });
 
       if (!response.ok) {
-        throw new Error(data.error || data.errors?.join(', ') || 'Failed to create account');
+        const errorMsg = data.error || data.errors?.join(', ') || 'Failed to create account';
+        console.error('[ClientSignup] API error:', errorMsg);
+        throw new Error(errorMsg);
       }
 
+      // Clear signup data from session storage
       sessionStorage.removeItem('client_signup_data');
 
+      // Handle the response - check for token first (password setup flow)
       if (data.token) {
+        console.log('[ClientSignup] Redirecting to set-password with token');
         const returnTo = encodeURIComponent('/client/dashboard');
         window.location.href = `/auth/set-password?token=${data.token}&returnTo=${returnTo}`;
-      } else if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        window.location.href = '/client/login';
+        return; // Explicit return to prevent further execution
       }
+      
+      // Check for Stripe checkout URL (paid plan flow)
+      if (data.checkoutUrl) {
+        console.log('[ClientSignup] Redirecting to Stripe checkout');
+        window.location.href = data.checkoutUrl;
+        return; // Explicit return to prevent further execution
+      }
+      
+      // If user already exists and has password, they may get a session token
+      if (data.sessionToken) {
+        console.log('[ClientSignup] User exists, setting session and redirecting to dashboard');
+        // Set the session
+        await fetch('/api/auth/set-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: data.sessionToken }),
+        });
+        window.location.href = '/client/dashboard';
+        return;
+      }
+      
+      // Fallback: if we got here with a successful response but no token/checkout
+      // This might mean the user already exists - redirect to login
+      console.warn('[ClientSignup] No token or checkout URL in response, redirecting to login');
+      
+      // Check if response indicates user already exists
+      if (data.message?.includes('already exists') || data.exists) {
+        setError('An account with this email already exists. Please sign in.');
+        setLoading(false);
+        setSelectedPlan(null);
+        return;
+      }
+      
+      // Last resort fallback
+      window.location.href = '/client/login';
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      console.error('[ClientSignup] Error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+      setError(errorMessage);
       setSelectedPlan(null);
-    } finally {
       setLoading(false);
     }
   };
@@ -400,6 +460,17 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
               }}
             >
               {error}
+              {error.includes('already exists') && (
+                <div className="mt-3">
+                  <a 
+                    href="/client/login" 
+                    className="underline font-medium"
+                    style={{ color: primaryColor }}
+                  >
+                    Sign in to your account
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -844,10 +915,13 @@ function PlanContent() {
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const agencyParam = searchParams.get('agency');
         
+        console.log('[PlanPage] Detecting context:', { host, platformDomain, agencyParam });
+        
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         
         if (platformDomains.includes(host)) {
           if (agencyParam) {
+            console.log('[PlanPage] Platform domain with agency param - showing agency plan selection');
             setAgencyIdFromUrl(agencyParam);
             setIsAgencySubdomain(false);
             setLoading(false);
@@ -858,21 +932,26 @@ function PlanContent() {
           if (stored) {
             const data = JSON.parse(stored);
             if (data.agency_slug) {
+              console.log('[PlanPage] Redirecting to agency subdomain:', data.agency_slug);
               window.location.href = `https://${data.agency_slug}.${platformDomain}/signup/plan`;
               return;
             }
           }
           
+          console.log('[PlanPage] Platform domain, no agency context');
           setIsAgencySubdomain(false);
           setLoading(false);
           return;
         }
         
+        // Agency subdomain - fetch agency data
+        console.log('[PlanPage] Agency subdomain detected:', host);
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
         if (response.ok) {
           const data = await response.json();
+          console.log('[PlanPage] Agency data loaded:', data.agency?.name);
           setAgency(data.agency);
           setIsAgencySubdomain(true);
           
@@ -887,17 +966,19 @@ function PlanContent() {
           
           const stored = sessionStorage.getItem('client_signup_data');
           if (stored) {
+            console.log('[PlanPage] Signup data found in session');
             setSignupData(JSON.parse(stored));
           } else {
-            // Use window.location for navigation to ensure middleware runs
+            console.log('[PlanPage] No signup data, redirecting to get-started');
             window.location.href = '/get-started';
             return;
           }
         } else {
+          console.error('[PlanPage] Failed to load agency:', response.status);
           setIsAgencySubdomain(false);
         }
       } catch (err) {
-        console.error('Failed to detect context:', err);
+        console.error('[PlanPage] Error detecting context:', err);
         setIsAgencySubdomain(false);
       } finally {
         setLoading(false);
