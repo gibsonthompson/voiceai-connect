@@ -33,6 +33,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
+
 export default function CallDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -42,13 +50,27 @@ export default function CallDetailPage() {
   const [call, setCall] = useState<Call | null>(null);
   const [callLoading, setCallLoading] = useState(true);
 
-  const theme = {
+  // Theme based on agency setting
+  const isDark = branding.websiteTheme === 'dark';
+  const primaryColor = branding.primaryColor;
+  const primaryLight = isLightColor(primaryColor);
+  
+  const theme = isDark ? {
+    bg: '#0a0a0a',
+    text: '#fafaf9',
+    textMuted: 'rgba(250, 250, 249, 0.7)',
+    textMuted4: 'rgba(250, 250, 249, 0.5)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    cardBg: '#111111',
+    hoverBg: 'rgba(255, 255, 255, 0.05)',
+  } : {
     bg: '#f9fafb',
     text: '#111827',
     textMuted: '#6b7280',
     textMuted4: '#9ca3af',
     border: '#e5e7eb',
     cardBg: '#ffffff',
+    hoverBg: '#f3f4f6',
   };
 
   useEffect(() => {
@@ -86,7 +108,7 @@ export default function CallDetailPage() {
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} />
       </div>
     );
   }
@@ -94,7 +116,7 @@ export default function CallDetailPage() {
   if (callLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} />
         <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading call details...</span>
       </div>
     );
@@ -102,9 +124,9 @@ export default function CallDetailPage() {
 
   if (!call) {
     return (
-      <div className="p-4 sm:p-8 text-center" style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
+      <div className="p-4 sm:p-8 text-center min-h-screen" style={{ backgroundColor: theme.bg }}>
         <p style={{ color: theme.textMuted }}>Call not found</p>
-        <a href="/client/calls" className="text-sm mt-2 inline-block" style={{ color: branding.primaryColor }}>
+        <a href="/client/calls" className="text-sm mt-2 inline-block" style={{ color: primaryColor }}>
           ← Back to Calls
         </a>
       </div>
@@ -113,7 +135,7 @@ export default function CallDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {/* Back button - use <a> tag */}
+      {/* Back button */}
       <a 
         href="/client/calls"
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
@@ -146,10 +168,10 @@ export default function CallDetailPage() {
             className="self-start rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border whitespace-nowrap"
             style={
               call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                ? { backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', borderColor: 'rgba(239, 68, 68, 0.2)' }
+                ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }
                 : call.urgency_level === 'medium'
-                ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#d97706', borderColor: 'rgba(245, 158, 11, 0.2)' }
-                : { backgroundColor: hexToRgba(branding.primaryColor, 0.1), color: theme.textMuted, borderColor: theme.border }
+                ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.3)' }
+                : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted, borderColor: theme.border }
             }
           >
             {call.urgency_level ? `${call.urgency_level.charAt(0).toUpperCase()}${call.urgency_level.slice(1)}` : 'Normal'} Priority
@@ -164,8 +186,11 @@ export default function CallDetailPage() {
           {call.ai_summary && (
             <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: hexToRgba(branding.primaryColor, 0.1) }}>
-                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: branding.primaryColor }} />
+                <div 
+                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg" 
+                  style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}
+                >
+                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColor }} />
                 </div>
                 <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>AI Summary</h2>
               </div>
@@ -180,7 +205,7 @@ export default function CallDetailPage() {
               <CallPlayback 
                 recordingUrl={call.recording_url}
                 callDuration={call.duration_seconds || undefined}
-                brandColor={branding.primaryColor}
+                brandColor={primaryColor}
               />
             </div>
           )}
@@ -189,7 +214,10 @@ export default function CallDetailPage() {
           {call.transcript && (
             <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
               <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Full Transcript</h2>
-              <div className="rounded-lg border p-3 sm:p-4 max-h-64 sm:max-h-96 overflow-y-auto" style={{ borderColor: theme.border, backgroundColor: theme.bg }}>
+              <div 
+                className="rounded-lg border p-3 sm:p-4 max-h-64 sm:max-h-96 overflow-y-auto" 
+                style={{ borderColor: theme.border, backgroundColor: theme.bg }}
+              >
                 <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed" style={{ color: theme.textMuted }}>{call.transcript}</p>
               </div>
             </div>
@@ -204,7 +232,10 @@ export default function CallDetailPage() {
             <div className="space-y-3 sm:space-y-4">
               {call.customer_name && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <User className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -216,7 +247,10 @@ export default function CallDetailPage() {
               
               {(call.customer_phone || call.caller_phone) && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -224,7 +258,7 @@ export default function CallDetailPage() {
                     <a 
                       href={`tel:${call.customer_phone || call.caller_phone}`}
                       className="text-xs sm:text-sm transition-colors hover:underline"
-                      style={{ color: branding.primaryColor }}
+                      style={{ color: primaryColor }}
                     >
                       {call.customer_phone || call.caller_phone}
                     </a>
@@ -234,7 +268,10 @@ export default function CallDetailPage() {
 
               {call.customer_email && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <MessageSquare className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -242,7 +279,7 @@ export default function CallDetailPage() {
                     <a 
                       href={`mailto:${call.customer_email}`}
                       className="text-xs sm:text-sm transition-colors hover:underline truncate block"
-                      style={{ color: branding.primaryColor }}
+                      style={{ color: primaryColor }}
                     >
                       {call.customer_email}
                     </a>
@@ -252,7 +289,10 @@ export default function CallDetailPage() {
               
               {call.customer_address && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -270,7 +310,10 @@ export default function CallDetailPage() {
             <div className="space-y-3 sm:space-y-4">
               {call.service_requested && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <Settings className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -282,7 +325,10 @@ export default function CallDetailPage() {
               
               {call.urgency_level && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <AlertCircle className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -294,7 +340,10 @@ export default function CallDetailPage() {
               
               {call.duration_seconds && (
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  <div 
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
+                    style={{ backgroundColor: theme.bg }}
+                  >
                     <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
@@ -312,15 +361,19 @@ export default function CallDetailPage() {
               <a 
                 href={`tel:${call.customer_phone || call.caller_phone}`}
                 className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors hover:opacity-90"
-                style={{ backgroundColor: branding.primaryColor, color: '#ffffff' }}
+                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
               >
                 <Phone className="h-4 w-4" />
                 Call Back
               </a>
             )}
             <button 
-              className="flex items-center justify-center gap-2 w-full rounded-full border px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ borderColor: theme.border, color: theme.textMuted }}
+              className="flex items-center justify-center gap-2 w-full rounded-full border px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                color: theme.textMuted,
+                backgroundColor: 'transparent',
+              }}
             >
               Mark as Resolved
             </button>

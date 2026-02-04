@@ -19,13 +19,27 @@ export default function ClientCallsPage() {
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const theme = {
+  // Theme based on agency setting
+  const isDark = branding.websiteTheme === 'dark';
+  
+  const theme = isDark ? {
+    bg: '#0a0a0a',
+    text: '#fafaf9',
+    textMuted: 'rgba(250, 250, 249, 0.7)',
+    textMuted4: 'rgba(250, 250, 249, 0.5)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    cardBg: '#111111',
+    hoverBg: 'rgba(255, 255, 255, 0.05)',
+    inputBg: 'rgba(255, 255, 255, 0.05)',
+  } : {
     bg: '#f9fafb',
     text: '#111827',
     textMuted: '#6b7280',
     textMuted4: '#9ca3af',
     border: '#e5e7eb',
     cardBg: '#ffffff',
+    hoverBg: '#f3f4f6',
+    inputBg: '#ffffff',
   };
 
   useEffect(() => {
@@ -65,7 +79,7 @@ export default function ClientCallsPage() {
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} />
       </div>
     );
   }
@@ -89,13 +103,21 @@ export default function ClientCallsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full sm:w-48 lg:w-64 rounded-lg border pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 transition-colors"
-                style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
+                style={{ 
+                  borderColor: theme.border, 
+                  backgroundColor: theme.inputBg, 
+                  color: theme.text,
+                }}
               />
             </div>
             
             <button 
-              className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 flex-shrink-0"
-              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.textMuted }}
+              className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
+              style={{ 
+                borderColor: theme.border, 
+                backgroundColor: theme.cardBg, 
+                color: theme.textMuted,
+              }}
             >
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">Filter</span>
@@ -115,7 +137,7 @@ export default function ClientCallsPage() {
           <div className="py-12 sm:py-20 text-center px-4">
             <div 
               className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: hexToRgba(branding.primaryColor, 0.1) }}
+              style={{ backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1) }}
             >
               <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted4 }} />
             </div>
@@ -132,7 +154,10 @@ export default function ClientCallsPage() {
               <a
                 key={call.id}
                 href={`/client/calls/${call.id}`}
-                className="block transition-colors hover:bg-gray-50"
+                className="block transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hoverBg}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {/* Mobile Layout */}
                 <div className="p-3 sm:hidden">
@@ -142,10 +167,10 @@ export default function ClientCallsPage() {
                       style={{
                         backgroundColor: 
                           call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? 'rgba(239, 68, 68, 0.1)'
+                            ? isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'
                             : call.urgency_level === 'medium'
-                            ? 'rgba(245, 158, 11, 0.1)'
-                            : hexToRgba(branding.primaryColor, 0.1)
+                            ? isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)'
+                            : hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1)
                       }}
                     >
                       <PhoneCall 
@@ -153,9 +178,9 @@ export default function ClientCallsPage() {
                         style={{
                           color: 
                             call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? '#dc2626'
+                              ? '#ef4444'
                               : call.urgency_level === 'medium'
-                              ? '#d97706'
+                              ? '#f59e0b'
                               : branding.primaryColor
                         }}
                       />
@@ -169,10 +194,10 @@ export default function ClientCallsPage() {
                           className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0"
                           style={
                             call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? { backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }
+                              ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
                               : call.urgency_level === 'medium'
-                              ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }
-                              : { backgroundColor: hexToRgba(branding.primaryColor, 0.1), color: theme.textMuted }
+                              ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                              : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
                           }
                         >
                           {call.urgency_level || 'normal'}
@@ -202,10 +227,10 @@ export default function ClientCallsPage() {
                       style={{
                         backgroundColor: 
                           call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? 'rgba(239, 68, 68, 0.1)'
+                            ? isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'
                             : call.urgency_level === 'medium'
-                            ? 'rgba(245, 158, 11, 0.1)'
-                            : hexToRgba(branding.primaryColor, 0.1)
+                            ? isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)'
+                            : hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1)
                       }}
                     >
                       <PhoneCall 
@@ -213,9 +238,9 @@ export default function ClientCallsPage() {
                         style={{
                           color: 
                             call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? '#dc2626'
+                              ? '#ef4444'
                               : call.urgency_level === 'medium'
-                              ? '#d97706'
+                              ? '#f59e0b'
                               : branding.primaryColor
                         }}
                       />
@@ -245,10 +270,10 @@ export default function ClientCallsPage() {
                         className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
                         style={
                           call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? { backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }
+                            ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
                             : call.urgency_level === 'medium'
-                            ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }
-                            : { backgroundColor: hexToRgba(branding.primaryColor, 0.1), color: theme.textMuted }
+                            ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                            : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
                         }
                       >
                         {call.urgency_level || 'normal'}

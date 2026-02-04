@@ -44,6 +44,7 @@ interface Branding {
   logoUrl: string | null;
   supportEmail: string | null;
   supportPhone: string | null;
+  websiteTheme?: 'light' | 'dark' | 'auto';
 }
 
 interface Props {
@@ -96,13 +97,27 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
-  const theme = {
+  // Theme based on agency setting
+  const isDark = branding.websiteTheme === 'dark';
+  const primaryColor = branding.primaryColor;
+  const primaryLight = isLightColor(primaryColor);
+
+  const theme = isDark ? {
+    bg: '#0a0a0a',
+    text: '#fafaf9',
+    textMuted: 'rgba(250, 250, 249, 0.7)',
+    textMuted4: 'rgba(250, 250, 249, 0.5)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    cardBg: '#111111',
+    inputBg: 'rgba(255, 255, 255, 0.05)',
+  } : {
     bg: '#f9fafb',
     text: '#111827',
     textMuted: '#6b7280',
     textMuted4: '#9ca3af',
     border: '#e5e7eb',
     cardBg: '#ffffff',
+    inputBg: '#ffffff',
   };
 
   const handleSave = async () => {
@@ -211,8 +226,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const primaryColor = branding.primaryColor;
-  const primaryLight = isLightColor(primaryColor);
   const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '');
   const daysRemaining = getDaysRemaining();
 
@@ -222,8 +235,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       {message && (
         <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
           message.includes('success') || message.includes('Success')
-            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-            : 'bg-red-50 text-red-700 border border-red-200'
+            ? isDark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : isDark ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {message}
         </div>
@@ -291,7 +304,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button
                 onClick={handleCopyNumber}
                 disabled={!client.vapi_phone_number}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-gray-100 disabled:opacity-50 flex-shrink-0"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition disabled:opacity-50 flex-shrink-0"
                 style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
                 {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
@@ -318,7 +331,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 value={ownerPhone} 
                 onChange={(e) => setOwnerPhone(e.target.value)}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
+                style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
                 placeholder="+1 (555) 123-4567" 
               />
               <p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>📱 SMS notifications sent here</p>
@@ -330,7 +343,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: theme.border, backgroundColor: theme.bg, color: theme.text }}
+                style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
                 placeholder="your@email.com" 
               />
             </div>
@@ -367,8 +380,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 </div>
               </div>
               <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
-                client.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
-                client.subscription_status === 'trial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                client.subscription_status === 'active' 
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+                  : client.subscription_status === 'trial' 
+                  ? isDark ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-700'
+                  : isDark ? 'bg-red-500/20 text-red-300' : 'bg-red-100 text-red-700'
               }`}>
                 {client.subscription_status === 'active' ? 'Active' : 
                  client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}
@@ -376,11 +392,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
             
             {client.subscription_status === 'trial' && daysRemaining !== null && (
-              <div className="bg-amber-50 border border-amber-200 p-2 sm:p-3 rounded-lg">
-                <div className="text-amber-700 font-semibold text-xs sm:text-sm">
+              <div 
+                className="p-2 sm:p-3 rounded-lg"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
+                  border: isDark ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid #fde68a',
+                }}
+              >
+                <div className="font-semibold text-xs sm:text-sm" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
                   {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial
                 </div>
-                <div className="text-amber-600 text-[10px] sm:text-xs mt-0.5">Ends {formatDate(client.trial_ends_at)}</div>
+                <div className="text-[10px] sm:text-xs mt-0.5" style={{ color: isDark ? '#fcd34d' : '#b45309' }}>
+                  Ends {formatDate(client.trial_ends_at)}
+                </div>
               </div>
             )}
             
@@ -419,7 +443,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               </button>
             ) : (
               <button 
-                className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm hover:bg-gray-100 transition"
+                className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition"
                 style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
                 Manage Subscription
@@ -441,15 +465,24 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
           >
             {/* Coming Soon Overlay */}
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center">
-              <div className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+            <div 
+              className="absolute inset-0 z-10 flex items-center justify-center"
+              style={{ backgroundColor: isDark ? 'rgba(17, 17, 17, 0.7)' : 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(1px)' }}
+            >
+              <div 
+                className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
+                style={{ backgroundColor: isDark ? '#fafaf9' : '#111827', color: isDark ? '#111827' : '#ffffff' }}
+              >
                 🚀 Coming Soon
               </div>
             </div>
 
             {/* Original Content (dimmed behind overlay) */}
             <div className="flex items-center gap-2 sm:gap-3 mb-3 opacity-60">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border }}>
+              <div 
+                className="w-8 h-8 sm:w-10 sm:h-10 border rounded-lg flex items-center justify-center flex-shrink-0" 
+                style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+              >
                 <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -478,7 +511,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         <section className="mb-4 sm:mb-6">
           <div 
             className="rounded-xl p-3 sm:p-4"
-            style={{ backgroundColor: hexToRgba(primaryColor, 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
+            style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
           >
             <div className="flex items-start gap-2 sm:gap-3">
               <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
