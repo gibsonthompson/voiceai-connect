@@ -1,10 +1,11 @@
 // lib/plan-limits.ts
 // Centralized plan configuration for feature gating
+// IMPORTANT: Plan names must match backend (starter, professional, enterprise)
 
 export const PLAN_LIMITS = {
   starter: {
-    // Capacity
-    maxClients: 15,
+    // Capacity - matches backend (25 clients)
+    maxClients: 25,
     
     // Branding & Marketing
     customDomain: false,
@@ -42,7 +43,7 @@ export const PLAN_LIMITS = {
   },
   
   professional: {
-    // Capacity
+    // Capacity - matches backend (100 clients)
     maxClients: 100,
     
     // Branding & Marketing
@@ -80,8 +81,9 @@ export const PLAN_LIMITS = {
     onboardingType: 'guided' as const,
   },
   
-  scale: {
-    // Capacity
+  // RENAMED from 'scale' to 'enterprise' to match backend
+  enterprise: {
+    // Capacity - matches backend (unlimited)
     maxClients: Infinity,
     
     // Branding & Marketing
@@ -123,13 +125,13 @@ export const PLAN_LIMITS = {
 export const PLAN_PRICES = {
   starter: 99,
   professional: 199,
-  scale: 499,
+  enterprise: 499,  // RENAMED from 'scale'
 } as const;
 
 export const PLAN_NAMES = {
   starter: 'Starter',
   professional: 'Professional',
-  scale: 'Scale',
+  enterprise: 'Enterprise',  // RENAMED from 'Scale'
 } as const;
 
 export type PlanType = keyof typeof PLAN_LIMITS;
@@ -137,25 +139,29 @@ export type PlanFeature = keyof typeof PLAN_LIMITS.starter;
 
 // Helper functions
 export function canAccessFeature(plan: PlanType, feature: PlanFeature): boolean {
-  const value = PLAN_LIMITS[plan][feature];
+  const planLimits = PLAN_LIMITS[plan];
+  if (!planLimits) return false;
+  const value = planLimits[feature];
   return typeof value === 'boolean' ? value : true;
 }
 
 export function getClientLimit(plan: PlanType): number {
-  return PLAN_LIMITS[plan].maxClients;
+  const planLimits = PLAN_LIMITS[plan];
+  if (!planLimits) return 25; // Default to starter limit
+  return planLimits.maxClients;
 }
 
 export function getClientLimitDisplay(plan: PlanType): string {
-  const limit = PLAN_LIMITS[plan].maxClients;
+  const limit = getClientLimit(plan);
   return limit === Infinity ? 'Unlimited' : limit.toString();
 }
 
 export function getPlanPrice(plan: PlanType): number {
-  return PLAN_PRICES[plan];
+  return PLAN_PRICES[plan] || 99;
 }
 
 export function isAtClientLimit(plan: PlanType, currentClients: number): boolean {
-  return currentClients >= PLAN_LIMITS[plan].maxClients;
+  return currentClients >= getClientLimit(plan);
 }
 
 export function getUpgradeReason(plan: PlanType, feature: PlanFeature): string | null {
@@ -191,10 +197,15 @@ export function getUpgradeReason(plan: PlanType, feature: PlanFeature): string |
 }
 
 // Plan hierarchy for comparison
-export const PLAN_HIERARCHY: PlanType[] = ['starter', 'professional', 'scale'];
+export const PLAN_HIERARCHY: PlanType[] = ['starter', 'professional', 'enterprise'];
 
 export function isPlanHigherOrEqual(currentPlan: PlanType, requiredPlan: PlanType): boolean {
-  return PLAN_HIERARCHY.indexOf(currentPlan) >= PLAN_HIERARCHY.indexOf(requiredPlan);
+  const currentIndex = PLAN_HIERARCHY.indexOf(currentPlan);
+  const requiredIndex = PLAN_HIERARCHY.indexOf(requiredPlan);
+  // Handle unknown plans gracefully
+  if (currentIndex === -1) return false;
+  if (requiredIndex === -1) return true;
+  return currentIndex >= requiredIndex;
 }
 
 export function getMinimumPlanForFeature(feature: PlanFeature): PlanType {
@@ -203,5 +214,20 @@ export function getMinimumPlanForFeature(feature: PlanFeature): PlanType {
       return plan;
     }
   }
-  return 'scale';
+  return 'enterprise';
+}
+
+// Legacy alias for backwards compatibility (if any code still uses 'scale')
+export const LEGACY_PLAN_MAP: Record<string, PlanType> = {
+  'scale': 'enterprise',
+};
+
+export function normalizePlanType(plan: string): PlanType {
+  if (LEGACY_PLAN_MAP[plan]) {
+    return LEGACY_PLAN_MAP[plan];
+  }
+  if (PLAN_HIERARCHY.includes(plan as PlanType)) {
+    return plan as PlanType;
+  }
+  return 'starter'; // Default fallback
 }

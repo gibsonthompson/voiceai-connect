@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { Lock, ArrowRight, Sparkles, Zap, Crown } from 'lucide-react';
-import { PLAN_NAMES, PLAN_PRICES, PlanType } from '@/lib/plan-limits';
+import { PLAN_NAMES, PLAN_PRICES, PlanType, normalizePlanType } from '@/lib/plan-limits';
 
 interface UpgradeBannerProps {
   feature: string;
@@ -25,12 +25,16 @@ export function UpgradeBanner({
   const planIcons = {
     starter: Zap,
     professional: Sparkles,
-    scale: Crown,
+    enterprise: Crown,  // CHANGED from 'scale' to 'enterprise'
   };
   
-  const PlanIcon = planIcons[requiredPlan];
-  const price = PLAN_PRICES[requiredPlan];
-  const planName = PLAN_NAMES[requiredPlan];
+  // Normalize plan types in case legacy 'scale' is passed
+  const normalizedRequired = normalizePlanType(requiredPlan);
+  const normalizedCurrent = normalizePlanType(currentPlan);
+  
+  const PlanIcon = planIcons[normalizedRequired] || Crown;
+  const price = PLAN_PRICES[normalizedRequired];
+  const planName = PLAN_NAMES[normalizedRequired];
   
   if (variant === 'subtle') {
     return (
@@ -118,9 +122,15 @@ export function FeatureGate({
   fallback,
   showUpgradeBanner = true,
 }: FeatureGateProps) {
-  const planHierarchy: PlanType[] = ['starter', 'professional', 'scale'];
-  const currentLevel = planHierarchy.indexOf(currentPlan);
-  const requiredLevel = planHierarchy.indexOf(requiredPlan);
+  // CHANGED from 'scale' to 'enterprise'
+  const planHierarchy: PlanType[] = ['starter', 'professional', 'enterprise'];
+  
+  // Normalize plan types
+  const normalizedCurrent = normalizePlanType(currentPlan);
+  const normalizedRequired = normalizePlanType(requiredPlan);
+  
+  const currentLevel = planHierarchy.indexOf(normalizedCurrent);
+  const requiredLevel = planHierarchy.indexOf(normalizedRequired);
   
   const hasAccess = currentLevel >= requiredLevel;
   
@@ -136,8 +146,8 @@ export function FeatureGate({
     return (
       <UpgradeBanner 
         feature={feature}
-        requiredPlan={requiredPlan}
-        currentPlan={currentPlan}
+        requiredPlan={normalizedRequired}
+        currentPlan={normalizedCurrent}
       />
     );
   }
@@ -167,8 +177,12 @@ export function ClientLimitBanner({
     return null;
   }
   
-  const nextPlan: PlanType = currentPlan === 'starter' ? 'professional' : 'scale';
-  const nextPlanLimit = currentPlan === 'starter' ? 100 : '∞';
+  // Normalize current plan
+  const normalizedCurrent = normalizePlanType(currentPlan);
+  
+  // CHANGED from 'scale' to 'enterprise'
+  const nextPlan: PlanType = normalizedCurrent === 'starter' ? 'professional' : 'enterprise';
+  const nextPlanLimit = normalizedCurrent === 'starter' ? 100 : '∞';
   
   if (isAtLimit) {
     return (
@@ -180,7 +194,7 @@ export function ClientLimitBanner({
           <div className="flex-1">
             <h4 className="font-medium text-red-200 mb-1">Client limit reached</h4>
             <p className="text-sm text-red-200/70 mb-3">
-              You&apos;ve reached the maximum of {maxClients} clients on your {PLAN_NAMES[currentPlan]} plan.
+              You&apos;ve reached the maximum of {maxClients} clients on your {PLAN_NAMES[normalizedCurrent]} plan.
               Upgrade to {PLAN_NAMES[nextPlan]} for up to {nextPlanLimit} clients.
             </p>
             <Link
@@ -205,7 +219,7 @@ export function ClientLimitBanner({
         </div>
         <div className="flex-1">
           <p className="text-sm text-amber-200">
-            <strong>{remaining} client{remaining !== 1 ? 's' : ''} remaining</strong> on your {PLAN_NAMES[currentPlan]} plan.{' '}
+            <strong>{remaining} client{remaining !== 1 ? 's' : ''} remaining</strong> on your {PLAN_NAMES[normalizedCurrent]} plan.{' '}
             <Link
               href="/agency/settings/billing"
               className="text-amber-400 hover:text-amber-300 transition-colors underline"
