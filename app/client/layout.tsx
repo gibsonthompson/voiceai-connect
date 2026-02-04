@@ -8,25 +8,6 @@ import {
 } from 'lucide-react';
 import { ClientProvider, useClient } from './context';
 
-// Darken a hex color
-const darkenColor = (hex: string, percent: number): string => {
-  const c = hex.replace('#', '');
-  const r = Math.max(0, parseInt(c.substring(0, 2), 16) - (255 * percent / 100));
-  const g = Math.max(0, parseInt(c.substring(2, 4), 16) - (255 * percent / 100));
-  const b = Math.max(0, parseInt(c.substring(4, 6), 16) - (255 * percent / 100));
-  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-};
-
-// Convert rgb to hex for meta tag
-const rgbToHex = (rgb: string): string => {
-  const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  if (!match) return '#050505';
-  const r = parseInt(match[1]).toString(16).padStart(2, '0');
-  const g = parseInt(match[2]).toString(16).padStart(2, '0');
-  const b = parseInt(match[3]).toString(16).padStart(2, '0');
-  return `#${r}${g}${b}`;
-};
-
 // Set dynamic favicon
 function setFavicon(url: string) {
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
@@ -53,18 +34,38 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Determine if using light or dark theme for nav
-  const isDarkNav = branding.websiteTheme === 'dark';
+  // Determine if using light or dark theme
+  const isDark = branding.websiteTheme === 'dark';
 
-  // Nav colors based on theme
-  const navBg = isDarkNav 
-    ? darkenColor(branding.primaryColor, 40)
-    : '#ffffff';
-  const navTextColor = isDarkNav ? '#ffffff' : '#111827';
-  const navTextMuted = isDarkNav ? 'rgba(255, 255, 255, 0.7)' : '#6b7280';
-  const navBorder = isDarkNav ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
-  const navActiveItemBg = isDarkNav ? 'rgba(255,255,255,0.15)' : `${branding.primaryColor}15`;
-  const navActiveItemColor = isDarkNav ? '#ffffff' : branding.primaryColor;
+  // Theme colors - clean and consistent
+  const theme = isDark ? {
+    // Dark theme
+    navBg: '#111111',
+    navText: '#fafaf9',
+    navTextMuted: 'rgba(250, 250, 249, 0.7)',
+    navBorder: 'rgba(255, 255, 255, 0.1)',
+    navActiveItemBg: 'rgba(255, 255, 255, 0.1)',
+    navActiveItemColor: '#ffffff',
+    navHoverBg: 'rgba(255, 255, 255, 0.05)',
+    mainBg: '#0a0a0a',
+    poweredByBg: 'rgba(255, 255, 255, 0.05)',
+  } : {
+    // Light theme
+    navBg: '#ffffff',
+    navText: '#111827',
+    navTextMuted: '#6b7280',
+    navBorder: '#e5e7eb',
+    navActiveItemBg: `rgba(16, 185, 129, 0.1)`, // Will be overridden with primary color
+    navActiveItemColor: branding.primaryColor,
+    navHoverBg: '#f9fafb',
+    mainBg: '#f9fafb',
+    poweredByBg: '#f9fafb',
+  };
+
+  // Override active item bg with primary color for light theme
+  if (!isDark) {
+    theme.navActiveItemBg = `${branding.primaryColor}15`;
+  }
 
   // Detect mobile
   useEffect(() => {
@@ -96,27 +97,23 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [branding.logoUrl]);
 
-  // CRITICAL: Set html background color for status bar on iOS
+  // Set html background color for status bar on iOS
   useEffect(() => {
-    if (branding.primaryColor) {
-      const bgColor = isDarkNav ? darkenColor(branding.primaryColor, 40) : '#ffffff';
-      document.documentElement.style.background = bgColor;
-      
-      // Also update theme-color meta tag
-      const hexColor = isDarkNav ? rgbToHex(bgColor) : '#ffffff';
-      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', hexColor);
-      }
-      
-      return () => {
-        document.documentElement.style.background = '#050505';
-        if (metaThemeColor) {
-          metaThemeColor.setAttribute('content', '#050505');
-        }
-      };
+    document.documentElement.style.background = theme.navBg;
+    
+    // Update theme-color meta tag
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', theme.navBg);
     }
-  }, [branding.primaryColor, isDarkNav]);
+    
+    return () => {
+      document.documentElement.style.background = '#050505';
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', '#050505');
+      }
+    };
+  }, [theme.navBg]);
 
   // Update apple-mobile-web-app-title dynamically
   useEffect(() => {
@@ -157,33 +154,35 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   // Handle nav click - close sidebar and navigate
   const handleNavClick = (href: string) => {
     setSidebarOpen(false);
-    // Use window.location for proper middleware handling
     window.location.href = href;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: theme.mainBg }}
+      >
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.navTextMuted }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: theme.mainBg }}>
       {/* Mobile Header - STICKY (not fixed), extends into safe area */}
       <div 
         className="sticky top-0 z-30 md:hidden"
         style={{ 
-          backgroundColor: navBg,
+          backgroundColor: theme.navBg,
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
         <header 
           className="flex items-center justify-between h-16 px-4"
           style={{ 
-            boxShadow: isDarkNav ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
-            borderBottom: isDarkNav ? 'none' : `1px solid ${navBorder}`,
+            boxShadow: isDark ? '0 4px 6px -1px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+            borderBottom: `1px solid ${theme.navBorder}`,
           }}
         >
           {/* Left - Logo & Business Name */}
@@ -201,15 +200,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                 style={{ 
                   height: '40px', 
                   width: '40px', 
-                  backgroundColor: isDarkNav ? 'rgba(255,255,255,0.2)' : `${branding.primaryColor}15`,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : `${branding.primaryColor}15`,
                 }}
               >
-                <Phone className="h-6 w-6" style={{ color: isDarkNav ? '#ffffff' : branding.primaryColor }} />
+                <Phone className="h-6 w-6" style={{ color: isDark ? '#ffffff' : branding.primaryColor }} />
               </div>
             )}
             <span 
               className="font-semibold text-lg truncate max-w-[180px]"
-              style={{ color: navTextColor }}
+              style={{ color: theme.navText }}
             >
               {client?.business_name || 'Loading...'}
             </span>
@@ -219,7 +218,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setSidebarOpen(true)}
             className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
-            style={{ color: navTextColor }}
+            style={{ color: theme.navText }}
           >
             <Menu className="h-7 w-7" />
           </button>
@@ -245,21 +244,21 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           }
         `}
         style={{ 
-          backgroundColor: navBg,
-          borderRight: `1px solid ${navBorder}`,
+          backgroundColor: theme.navBg,
+          borderRight: `1px solid ${theme.navBorder}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
         }}
       >
         {/* Mobile Header in Sidebar */}
         <div 
           className="flex md:hidden items-center justify-between h-16 px-4 border-b"
-          style={{ borderColor: navBorder }}
+          style={{ borderColor: theme.navBorder }}
         >
-          <span className="font-semibold text-lg" style={{ color: navTextColor }}>Menu</span>
+          <span className="font-semibold text-lg" style={{ color: theme.navText }}>Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
             className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
-            style={{ color: navTextColor }}
+            style={{ color: theme.navText }}
           >
             <X className="h-7 w-7" />
           </button>
@@ -268,7 +267,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         {/* Desktop Logo & Business Name */}
         <div 
           className="hidden md:flex h-16 items-center gap-3 border-b px-6"
-          style={{ borderColor: navBorder }}
+          style={{ borderColor: theme.navBorder }}
         >
           {branding.logoUrl ? (
             <img 
@@ -283,18 +282,18 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               style={{ 
                 height: '32px', 
                 width: '32px', 
-                backgroundColor: isDarkNav ? 'rgba(255,255,255,0.2)' : `${branding.primaryColor}15`,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : `${branding.primaryColor}15`,
               }}
             >
-              <Phone className="h-4 w-4" style={{ color: isDarkNav ? '#ffffff' : branding.primaryColor }} />
+              <Phone className="h-4 w-4" style={{ color: isDark ? '#ffffff' : branding.primaryColor }} />
             </div>
           )}
-          <span className="font-medium truncate" style={{ color: navTextColor }}>
+          <span className="font-medium truncate" style={{ color: theme.navText }}>
             {client?.business_name || 'Loading...'}
           </span>
         </div>
 
-        {/* Navigation - Use buttons with onClick for proper navigation */}
+        {/* Navigation */}
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
             const active = isActive(item.href);
@@ -304,15 +303,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                 onClick={() => handleNavClick(item.href)}
                 className="w-full flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors text-left"
                 style={{
-                  backgroundColor: active ? navActiveItemBg : 'transparent',
-                  color: active ? navActiveItemColor : navTextMuted,
+                  backgroundColor: active ? theme.navActiveItemBg : 'transparent',
+                  color: active ? theme.navActiveItemColor : theme.navTextMuted,
                 }}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="h-5 w-5" />
                   {item.label}
                 </div>
-                {active && <ChevronRight className="h-4 w-4 md:hidden" style={{ color: navTextMuted }} />}
+                {active && <ChevronRight className="h-4 w-4 md:hidden" style={{ color: theme.navTextMuted }} />}
               </button>
             );
           })}
@@ -327,19 +326,19 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           <div 
             className="rounded-xl border p-3"
             style={{ 
-              borderColor: navBorder, 
-              backgroundColor: isDarkNav ? 'rgba(255,255,255,0.05)' : '#f9fafb',
+              borderColor: theme.navBorder, 
+              backgroundColor: theme.poweredByBg,
             }}
           >
-            <p className="text-xs" style={{ color: navTextMuted }}>Powered by</p>
-            <p className="text-sm font-medium" style={{ color: navTextColor }}>{branding.agencyName}</p>
+            <p className="text-xs" style={{ color: theme.navTextMuted }}>Powered by</p>
+            <p className="text-sm font-medium" style={{ color: theme.navText }}>{branding.agencyName}</p>
           </div>
           
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
             className="flex items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors w-full"
-            style={{ color: navTextMuted }}
+            style={{ color: theme.navTextMuted }}
           >
             <LogOut className="h-5 w-5" />
             Sign Out
@@ -347,8 +346,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content - Light mode */}
-      <main className="md:pl-64 min-h-screen">
+      {/* Main Content */}
+      <main 
+        className="md:pl-64 min-h-screen"
+        style={{ backgroundColor: theme.mainBg }}
+      >
         {children}
       </main>
     </div>

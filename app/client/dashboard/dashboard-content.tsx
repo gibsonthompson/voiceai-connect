@@ -17,6 +17,7 @@ interface Branding {
   agencyName: string;
   supportEmail: string | null;
   supportPhone: string | null;
+  websiteTheme?: 'light' | 'dark' | 'auto';
 }
 
 interface Stats {
@@ -82,6 +83,28 @@ export function ClientDashboardClient({
   const [copied, setCopied] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
+  // Determine theme - default to light for client dashboard (cleaner look)
+  const isDark = branding.websiteTheme === 'dark';
+
+  // Theme colors based on agency setting
+  const theme = isDark ? {
+    bg: '#0a0a0a',
+    text: '#fafaf9',
+    textMuted: 'rgba(250, 250, 249, 0.7)',
+    textMuted4: 'rgba(250, 250, 249, 0.5)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    cardBg: '#111111',
+    hoverBg: 'rgba(255, 255, 255, 0.05)',
+  } : {
+    bg: '#f9fafb',
+    text: '#111827',
+    textMuted: '#6b7280',
+    textMuted4: '#9ca3af',
+    border: '#e5e7eb',
+    cardBg: '#ffffff',
+    hoverBg: '#f3f4f6',
+  };
+
   const copyPhoneNumber = () => {
     if (client.vapi_phone_number) {
       navigator.clipboard.writeText(client.vapi_phone_number);
@@ -119,15 +142,6 @@ export function ClientDashboardClient({
     }
   };
 
-  const theme = {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-  };
-
   const hasPhoneNumber = !!client.vapi_phone_number;
   const hasAssistant = !!client.vapi_assistant_id;
   const isProvisioned = hasPhoneNumber && hasAssistant;
@@ -136,7 +150,7 @@ export function ClientDashboardClient({
   const formattedPhone = formatPhoneNumber(client.vapi_phone_number);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
+    <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>
@@ -153,7 +167,7 @@ export function ClientDashboardClient({
           className="mb-6 sm:mb-8 rounded-xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
           style={{ 
             borderColor: hexToRgba(branding.primaryColor, 0.3),
-            backgroundColor: hexToRgba(branding.primaryColor, 0.05),
+            backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.1 : 0.05),
           }}
         >
           <div className="flex items-center gap-3">
@@ -228,8 +242,12 @@ export function ClientDashboardClient({
           {hasPhoneNumber && (
             <button 
               onClick={copyPhoneNumber}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 w-full sm:w-auto"
-              style={{ borderColor: theme.border, color: theme.text }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors w-full sm:w-auto"
+              style={{ 
+                borderColor: theme.border, 
+                color: theme.text,
+                backgroundColor: 'transparent',
+              }}
             >
               {copied ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copied!' : 'Copy Number'}
@@ -311,7 +329,7 @@ export function ClientDashboardClient({
               </div>
               <div 
                 className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0"
-                style={{ backgroundColor: hexToRgba(stat.color, 0.1) }}
+                style={{ backgroundColor: hexToRgba(stat.color, isDark ? 0.2 : 0.1) }}
               >
                 <stat.icon 
                   className={`h-4 w-4 sm:h-6 sm:w-6 ${stat.icon === Loader2 ? 'animate-spin' : ''}`} 
@@ -348,7 +366,7 @@ export function ClientDashboardClient({
             <div className="py-8 sm:py-12 text-center">
               <div 
                 className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-                style={{ backgroundColor: hexToRgba(branding.primaryColor, 0.1) }}
+                style={{ backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1) }}
               >
                 <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted4 }} />
               </div>
@@ -365,15 +383,20 @@ export function ClientDashboardClient({
                 <Link
                   key={call.id}
                   href={`/client/calls/${call.id}`}
-                  className="block rounded-lg border p-3 sm:p-4 transition-colors hover:bg-gray-50"
-                  style={{ borderColor: theme.border }}
+                  className="block rounded-lg border p-3 sm:p-4 transition-colors"
+                  style={{ 
+                    borderColor: theme.border,
+                    backgroundColor: 'transparent',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hoverBg}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {/* Mobile Layout */}
                   <div className="sm:hidden">
                     <div className="flex items-start gap-3">
                       <div 
                         className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0"
-                        style={{ backgroundColor: hexToRgba(branding.primaryColor, 0.1) }}
+                        style={{ backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1) }}
                       >
                         <PhoneCall className="h-4 w-4" style={{ color: branding.primaryColor }} />
                       </div>
@@ -386,10 +409,10 @@ export function ClientDashboardClient({
                             className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0"
                             style={
                               call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                                ? { backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }
+                                ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
                                 : call.urgency_level === 'medium'
-                                ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }
-                                : { backgroundColor: hexToRgba(branding.primaryColor, 0.1), color: theme.textMuted }
+                                ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                                : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
                             }
                           >
                             {call.urgency_level || 'normal'}
@@ -415,7 +438,7 @@ export function ClientDashboardClient({
                     <div className="flex items-center gap-4">
                       <div 
                         className="flex h-10 w-10 items-center justify-center rounded-full"
-                        style={{ backgroundColor: hexToRgba(branding.primaryColor, 0.1) }}
+                        style={{ backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1) }}
                       >
                         <PhoneCall className="h-5 w-5" style={{ color: branding.primaryColor }} />
                       </div>
@@ -433,10 +456,10 @@ export function ClientDashboardClient({
                         className="rounded-full px-3 py-1 text-xs font-medium"
                         style={
                           call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? { backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }
+                            ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
                             : call.urgency_level === 'medium'
-                            ? { backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }
-                            : { backgroundColor: hexToRgba(branding.primaryColor, 0.1), color: theme.textMuted }
+                            ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                            : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
                         }
                       >
                         {call.urgency_level || 'normal'}
