@@ -15,12 +15,16 @@ import {
   getUpgradeReason,
   isPlanHigherOrEqual,
   getMinimumPlanForFeature,
+  normalizePlanType,
 } from '@/lib/plan-limits';
 
 export function usePlanFeatures() {
   const { agency } = useAgency();
   const agencyData = agency as any;
-  const plan = (agencyData?.plan || 'starter') as PlanType;
+  
+  // Normalize plan type to handle legacy 'scale' values
+  const rawPlan = agencyData?.plan_type || agencyData?.plan || 'starter';
+  const plan = normalizePlanType(rawPlan);
   const limits = PLAN_LIMITS[plan];
   const currentClients = agencyData?.client_count || 0;
   
@@ -74,7 +78,7 @@ export function usePlanFeatures() {
     isPlanHigherOrEqual: (requiredPlan: PlanType) => isPlanHigherOrEqual(plan, requiredPlan),
     isStarter: plan === 'starter',
     isProfessional: plan === 'professional',
-    isScale: plan === 'scale',
+    isEnterprise: plan === 'enterprise',  // CHANGED from isScale
   };
 }
 
