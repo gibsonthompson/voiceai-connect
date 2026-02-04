@@ -53,13 +53,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     // Light theme
     navBg: '#ffffff',
     navText: '#111827',
-    navTextMuted: '#6b7280',
+    navTextMuted: '#374151',  // Darker gray for better visibility
     navBorder: '#e5e7eb',
     navActiveItemBg: `rgba(16, 185, 129, 0.1)`, // Will be overridden with primary color
     navActiveItemColor: branding.primaryColor,
-    navHoverBg: '#f9fafb',
+    navHoverBg: '#f3f4f6',
     mainBg: '#f9fafb',
-    poweredByBg: '#f9fafb',
+    poweredByBg: '#f3f4f6',
   };
 
   // Override active item bg with primary color for light theme
