@@ -1352,6 +1352,7 @@ export default function LandingPage() {
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
+              <Link href="/demo" className="hover:text-[#fafaf9] transition-colors">Book a Demo</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
             </div>
             
