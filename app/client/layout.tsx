@@ -53,7 +53,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     // Light theme
     navBg: '#ffffff',
     navText: '#111827',
-    navTextMuted: '#374151',  // Darker gray for better visibility
+    navTextMuted: '#1f2937',  // Very dark gray - guaranteed visible
     navBorder: '#e5e7eb',
     navActiveItemBg: `rgba(16, 185, 129, 0.1)`, // Will be overridden with primary color
     navActiveItemColor: branding.primaryColor,
