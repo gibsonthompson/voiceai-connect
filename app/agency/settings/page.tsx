@@ -289,7 +289,7 @@ function AgencySettingsContent() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/portal`, {
+      const response = await fetch(`${backendUrl}/api/agency/billing/portal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
