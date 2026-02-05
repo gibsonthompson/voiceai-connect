@@ -103,6 +103,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isEnterprise = agency?.plan_type === 'enterprise';
 
   // Build nav items with feature gating
+  // Order: Dashboard, Clients, Leads, Outreach, Analytics, Marketing Website, AI Templates, Referrals, Settings
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/agency/clients', label: 'Clients', icon: Users },
@@ -110,18 +111,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/outreach', label: 'Outreach', icon: Send },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3 },
     { 
-      href: '/agency/templates', 
-      label: 'AI Templates', 
-      icon: Cpu,
-      locked: !isEnterprise,
-      upgradeRequired: 'Enterprise',
-    },
-    { 
       href: '/agency/marketing', 
       label: 'Marketing Website', 
       icon: Globe,
       locked: !canUseMarketingSite,
       upgradeRequired: 'Professional',
+    },
+    { 
+      href: '/agency/templates', 
+      label: 'AI Templates', 
+      icon: Cpu,
+      locked: !isEnterprise,
+      upgradeRequired: 'Enterprise',
     },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
