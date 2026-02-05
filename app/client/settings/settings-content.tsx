@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
-  Check, Copy, Mail, Building2
+  Check, Copy, Mail, Building2, Lock, Eye, EyeOff
 } from 'lucide-react';
 
 interface Client {
@@ -97,6 +97,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Theme based on agency setting
   const isDark = branding.websiteTheme === 'dark';
   const primaryColor = branding.primaryColor;
@@ -150,6 +159,55 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       setMessage('Error saving settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMessage('');
+
+    if (!currentPassword) {
+      setPasswordMessage('Current password is required');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordMessage('New password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage('Passwords do not match');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(`${backendUrl}/api/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPasswordMessage('Password changed successfully!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPasswordMessage(''), 3000);
+      } else {
+        setPasswordMessage(data.error || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordMessage('Error changing password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -228,6 +286,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '');
   const daysRemaining = getDaysRemaining();
+  const hasPasswordChanges = currentPassword || newPassword || confirmPassword;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
@@ -358,6 +417,95 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               }}
             >
               {saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}
+            </button>
+          </div>
+        </section>
+
+        {/* Change Password */}
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+            <Lock className="w-4 h-4" style={{ color: primaryColor }} />
+            Change Password
+          </h2>
+          <div 
+            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
+            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
+          >
+            {passwordMessage && (
+              <div className={`p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium ${
+                passwordMessage.includes('success') || passwordMessage.includes('Success')
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : isDark ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {passwordMessage}
+              </div>
+            )}
+            <div>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label>
+              <div className="relative">
+                <input 
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword} 
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10"
+                  style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                  placeholder="Enter current password" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: theme.textMuted4 }}
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label>
+                <div className="relative">
+                  <input 
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10"
+                    style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                    placeholder="Min 6 characters" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    style={{ color: theme.textMuted4 }}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Confirm New Password</label>
+                <input 
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={confirmPassword} 
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
+                  style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                  placeholder="Confirm new password" 
+                />
+              </div>
+            </div>
+            <button 
+              onClick={handleChangePassword} 
+              disabled={changingPassword || !hasPasswordChanges}
+              className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                backgroundColor: hasPasswordChanges ? primaryColor : theme.bg,
+                color: hasPasswordChanges ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted4,
+                border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}`,
+              }}
+            >
+              {changingPassword ? 'Changing...' : 'Change Password'}
             </button>
           </div>
         </section>
