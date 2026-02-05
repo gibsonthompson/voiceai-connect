@@ -7,7 +7,7 @@ import {
   Check, Info, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
-import { useAgency } from '../../context';
+import { useAgency } from '@/app/agency/context';
 
 interface Voice {
   id: string;

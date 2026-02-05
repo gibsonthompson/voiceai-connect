@@ -7,8 +7,8 @@ import {
   ChevronRight, Check, ExternalLink, BookOpen
 } from 'lucide-react';
 import Link from 'next/link';
-import { useAgency } from '../context';
-import LockedFeature from '../../../components/LockedFeature';
+import { useAgency } from '@/app/agency/context';
+import LockedFeature from '@/components/LockedFeature';
 
 // Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {

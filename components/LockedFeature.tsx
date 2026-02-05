@@ -2,7 +2,7 @@
 
 import { Lock, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useAgency } from '../app/agency/context';
+import { useAgency } from '@/app/agency/context';
 
 interface LockedFeatureProps {
   title: string;
