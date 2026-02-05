@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
@@ -99,6 +99,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
   const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
 
+  // Check if agency is on enterprise plan (for AI Templates)
+  const isEnterprise = agency?.plan_type === 'enterprise';
+
   // Build nav items with feature gating
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -106,6 +109,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/leads', label: 'Leads', icon: Target },
     { href: '/agency/outreach', label: 'Outreach', icon: Send },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3 },
+    { 
+      href: '/agency/templates', 
+      label: 'AI Templates', 
+      icon: Cpu,
+      locked: !isEnterprise,
+      upgradeRequired: 'Enterprise',
+    },
     { 
       href: '/agency/marketing', 
       label: 'Marketing Website', 
@@ -161,17 +171,20 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     if (href === '/agency/settings') {
       return pathname?.startsWith('/agency/settings');
     }
+    if (href === '/agency/templates') {
+      return pathname?.startsWith('/agency/templates');
+    }
     return pathname?.startsWith(href);
   };
 
   // Handle navigation - use window.location for proper middleware handling
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isLocked?: boolean) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isLocked?: boolean, upgradeRequired?: string) => {
     e.preventDefault();
     setSidebarOpen(false);
     
     if (isLocked) {
-      // Redirect to billing with upgrade param
-      window.location.href = '/agency/settings?upgrade=professional';
+      // For locked features, still navigate to the page - it will show the locked state
+      window.location.href = href;
     } else {
       window.location.href = href;
     }
@@ -426,8 +439,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             return (
               <a
                 key={item.href}
-                href={isLocked ? '#' : item.href}
-                onClick={(e) => handleNavClick(e, item.href, isLocked)}
+                href={item.href}
+                onClick={(e) => handleNavClick(e, item.href, isLocked, item.upgradeRequired)}
                 className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
                   isLocked 
                     ? 'cursor-pointer' 
@@ -460,7 +473,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                       color: mutedTextColor,
                     }}
                   >
-                    Pro
+                    {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
                   </span>
                 )}
               </a>
