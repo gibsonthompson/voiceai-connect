@@ -45,26 +45,22 @@ export default function LockedFeatureOverlay({
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Background: Actual page content - slightly visible */}
+      {/* Background: Actual page content - visible as preview */}
       <div 
         className="pointer-events-none select-none"
-        style={{ 
-          filter: 'blur(2px)',
-          opacity: isDark ? 0.35 : 0.45,
-        }}
         aria-hidden="true"
       >
         {children}
       </div>
 
-      {/* Gradient overlay for depth */}
+      {/* Light overlay - just enough to indicate locked state */}
       <div 
         className="absolute inset-0"
         style={{ 
           background: isDark 
-            ? 'radial-gradient(ellipse at center, rgba(5,5,5,0.7) 0%, rgba(5,5,5,0.9) 100%)'
-            : 'radial-gradient(ellipse at center, rgba(249,250,251,0.75) 0%, rgba(249,250,251,0.92) 100%)',
-          backdropFilter: 'blur(4px)',
+            ? 'radial-gradient(ellipse at center, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.75) 100%)'
+            : 'radial-gradient(ellipse at center, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.7) 100%)',
+          backdropFilter: 'blur(1px)',
         }}
       />
 
