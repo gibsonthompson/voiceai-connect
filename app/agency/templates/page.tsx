@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
-import LockedFeature from '@/components/LockedFeature';
+import LockedFeatureOverlay from '@/components/LockedFeatureOverlay';
 
 // Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -36,6 +36,16 @@ interface Industry {
   isActive: boolean;
   updatedAt: string | null;
 }
+
+// Demo industries for preview when locked
+const DEMO_INDUSTRIES: Industry[] = [
+  { frontendKey: 'home_services', backendKey: 'home_services', label: 'Home Services', description: 'Plumbing, HVAC, electrical, contractors', icon: 'Wrench', hasCustomTemplate: false, isActive: true, updatedAt: null },
+  { frontendKey: 'medical_dental', backendKey: 'medical', label: 'Medical & Dental', description: 'Medical practices, dental offices', icon: 'Stethoscope', hasCustomTemplate: true, isActive: true, updatedAt: '2024-01-15' },
+  { frontendKey: 'legal', backendKey: 'legal', label: 'Legal Services', description: 'Law firms, attorneys, consultants', icon: 'Scale', hasCustomTemplate: false, isActive: true, updatedAt: null },
+  { frontendKey: 'real_estate', backendKey: 'real_estate', label: 'Real Estate', description: 'Agents, property management', icon: 'Home', hasCustomTemplate: true, isActive: true, updatedAt: '2024-01-10' },
+  { frontendKey: 'financial_services', backendKey: 'financial_services', label: 'Financial Services', description: 'Accountants, financial advisors', icon: 'Calculator', hasCustomTemplate: false, isActive: true, updatedAt: null },
+  { frontendKey: 'professional_services', backendKey: 'professional_services', label: 'Professional Services', description: 'Consultants, agencies, B2B', icon: 'Briefcase', hasCustomTemplate: false, isActive: true, updatedAt: null },
+];
 
 export default function AITemplatesPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
@@ -95,32 +105,14 @@ export default function AITemplatesPage() {
     }
   };
 
-  if (contextLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
-      </div>
-    );
-  }
-
-  // Show locked state if not enterprise
-  if (hasAccess === false) {
-    return (
-      <LockedFeature
-        title="AI Templates"
-        description="Customize AI receptionist prompts for each industry. Create unique voice experiences that match your agency's brand and methodology."
-        requiredPlan="Enterprise"
-        learnMoreUrl="/blog/ai-receptionist-prompt-guide"
-        learnMoreText="Read Prompt Guide"
-      />
-    );
-  }
-
-  return (
+  // Shared page content component (used for both preview and actual)
+  const PageContent = ({ industryList, isInteractive = true }: { industryList: Industry[], isInteractive?: boolean }) => (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">AI Templates</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: textColor }}>
+          AI Templates
+        </h1>
         <p className="mt-1 text-sm sm:text-base" style={{ color: mutedTextColor }}>
           Customize AI receptionist prompts for each industry
         </p>
@@ -148,28 +140,35 @@ export default function AITemplatesPage() {
             Custom templates only apply to <strong>new clients</strong>. Existing clients keep their current configuration.
           </p>
         </div>
-        <a
-          href="/blog/ai-receptionist-prompt-guide"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-medium flex-shrink-0"
-          style={{ color: primaryColor }}
-        >
-          <BookOpen className="h-4 w-4" />
-          Prompt Guide
-          <ExternalLink className="h-3 w-3" />
-        </a>
+        {isInteractive && (
+          <a
+            href="/blog/ai-receptionist-prompt-guide"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium flex-shrink-0"
+            style={{ color: primaryColor }}
+          >
+            <BookOpen className="h-4 w-4" />
+            Prompt Guide
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
 
       {/* Industry Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {industries.map((industry) => {
+        {industryList.map((industry) => {
           const IconComponent = ICON_MAP[industry.icon] || Building2;
           
+          const CardWrapper = isInteractive ? Link : 'div';
+          const cardProps = isInteractive 
+            ? { href: `/agency/templates/${industry.frontendKey}` }
+            : {};
+          
           return (
-            <Link
+            <CardWrapper
               key={industry.frontendKey}
-              href={`/agency/templates/${industry.frontendKey}`}
+              {...cardProps}
               className={`group rounded-xl p-5 transition-all ${
                 isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
               }`}
@@ -237,7 +236,7 @@ export default function AITemplatesPage() {
                   style={{ color: mutedTextColor }} 
                 />
               </div>
-            </Link>
+            </CardWrapper>
           );
         })}
       </div>
@@ -257,50 +256,57 @@ export default function AITemplatesPage() {
           Check out our guides for writing effective AI receptionist prompts:
         </p>
         <div className="flex flex-wrap gap-3">
-          <a
-            href="/blog/ai-receptionist-prompt-guide"
-            className={`inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-colors ${
-              isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-            }`}
-            style={{ 
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${borderColor}`,
-              color: textColor,
-            }}
-          >
-            <BookOpen className="h-4 w-4" />
-            Prompt Engineering Guide
-          </a>
-          <a
-            href="/blog/best-prompts-home-services-ai-receptionist"
-            className={`inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-colors ${
-              isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-            }`}
-            style={{ 
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${borderColor}`,
-              color: textColor,
-            }}
-          >
-            <Wrench className="h-4 w-4" />
-            Home Services Prompts
-          </a>
-          <a
-            href="/blog/best-prompts-medical-dental-ai-receptionist"
-            className={`inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-colors ${
-              isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-            }`}
-            style={{ 
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${borderColor}`,
-              color: textColor,
-            }}
-          >
-            <Stethoscope className="h-4 w-4" />
-            Medical & Dental Prompts
-          </a>
+          {[
+            { icon: BookOpen, label: 'Prompt Engineering Guide' },
+            { icon: Wrench, label: 'Home Services Prompts' },
+            { icon: Stethoscope, label: 'Medical & Dental Prompts' },
+          ].map((guide) => (
+            <div
+              key={guide.label}
+              className={`inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 ${
+                isDark ? 'bg-white/[0.02]' : 'bg-black/[0.02]'
+              }`}
+              style={{ 
+                border: `1px solid ${borderColor}`,
+                color: textColor,
+              }}
+            >
+              <guide.icon className="h-4 w-4" />
+              {guide.label}
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
+
+  if (contextLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+      </div>
+    );
+  }
+
+  // Show locked overlay with preview content
+  if (hasAccess === false) {
+    return (
+      <LockedFeatureOverlay
+        title="AI Templates"
+        description="Customize AI receptionist prompts, voices, and conversation flows for each industry your clients serve."
+        requiredPlan="Enterprise"
+        features={[
+          'Custom prompts for 11 industries',
+          'Voice selection per industry',
+          'Fine-tune temperature & behavior',
+          'Industry-specific knowledge bases',
+        ]}
+      >
+        <PageContent industryList={DEMO_INDUSTRIES} isInteractive={false} />
+      </LockedFeatureOverlay>
+    );
+  }
+
+  // Full access - render interactive page
+  return <PageContent industryList={industries} isInteractive={true} />;
 }

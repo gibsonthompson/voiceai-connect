@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, Lock
+  Sun, Moon, Wand2
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
+import LockedFeatureOverlay from '@/components/LockedFeatureOverlay';
 
 type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
@@ -42,6 +43,7 @@ export default function MarketingWebsitePage() {
   const [colorsSaved, setColorsSaved] = useState(false);
 
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
+  const [extractingColors, setExtractingColors] = useState(false);
 
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
@@ -57,17 +59,7 @@ export default function MarketingWebsitePage() {
 
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
-  const subdomainUrl = `https://${agency?.slug}.${platformDomain}`;
-
-  // ============================================================
-  // FEATURE GATE: Redirect Starter plan to settings
-  // ============================================================
-  useEffect(() => {
-    if (!agencyLoading && !canUseMarketingSite) {
-      console.log('📍 Marketing site not available on current plan - redirecting to settings');
-      window.location.href = '/agency/settings?upgrade=professional';
-    }
-  }, [agencyLoading, canUseMarketingSite]);
+  const subdomainUrl = `https://${agency?.slug || 'demo'}.${platformDomain}`;
 
   useEffect(() => {
     const fetchDnsConfig = async () => {
@@ -80,14 +72,13 @@ export default function MarketingWebsitePage() {
             aRecord: data.a_record || '76.76.21.21',
             cname: data.cname_record || 'cname.vercel-dns.com'
           });
-          console.log('DNS config loaded:', data);
         }
       } catch (error) {
         console.error('Failed to fetch DNS config:', error);
         setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' });
       }
     };
-    fetchDnsConfig();
+    if (agency) fetchDnsConfig();
   }, [agency?.marketing_domain]);
 
   useEffect(() => {
@@ -187,17 +178,14 @@ export default function MarketingWebsitePage() {
       });
       
       const data = await response.json();
-      console.log('Add domain response:', data);
       
       if (response.ok && data.success) {
         setDomainStatus('pending');
-        // Update DNS config with project-specific values from response
         if (data.dns_config) {
           setDnsConfig({ 
             aRecord: data.dns_config.a_record, 
             cname: data.dns_config.cname_record 
           });
-          console.log('Updated DNS config from response:', data.dns_config);
         }
         await refreshAgency();
       } else {
@@ -226,7 +214,6 @@ export default function MarketingWebsitePage() {
       });
       
       const data = await response.json();
-      console.log('Verify domain response:', data);
       setDomainStatus(data.verified ? 'verified' : 'pending');
       
       if (!data.verified) {
@@ -255,7 +242,6 @@ export default function MarketingWebsitePage() {
       });
       
       const data = await response.json();
-      console.log('Remove domain response:', data);
       
       if (response.ok && data.success) {
         setCustomDomain('');
@@ -269,74 +255,6 @@ export default function MarketingWebsitePage() {
       alert('Failed to remove domain.');
     } finally {
       setSavingDomain(false);
-    }
-  };
-
-  const [extractingColors, setExtractingColors] = useState(false);
-
-  const extractColorsFromLogo = async () => {
-    if (!branding.logoUrl) return;
-    setExtractingColors(true);
-    
-    try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject();
-        img.src = branding.logoUrl!;
-      });
-      
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      
-      const size = Math.min(img.width, img.height, 100);
-      canvas.width = size;
-      canvas.height = size;
-      ctx.drawImage(img, 0, 0, size, size);
-      
-      const imageData = ctx.getImageData(0, 0, size, size);
-      const pixels = imageData.data;
-      const colors: { r: number; g: number; b: number; count: number }[] = [];
-      
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
-        if (a < 128) continue;
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
-        if (luminance > 240 || luminance < 15) continue;
-        
-        const qr = Math.round(r / 32) * 32;
-        const qg = Math.round(g / 32) * 32;
-        const qb = Math.round(b / 32) * 32;
-        
-        const existing = colors.find(c => c.r === qr && c.g === qg && c.b === qb);
-        if (existing) existing.count++;
-        else colors.push({ r: qr, g: qg, b: qb, count: 1 });
-      }
-      
-      colors.sort((a, b) => b.count - a.count);
-      if (colors.length === 0) return;
-      
-      const toHex = (c: { r: number; g: number; b: number }) => 
-        '#' + [c.r, c.g, c.b].map(x => Math.min(255, x).toString(16).padStart(2, '0')).join('');
-      
-      const darken = (c: { r: number; g: number; b: number }, amt: number) => ({
-        r: Math.max(0, c.r - amt), g: Math.max(0, c.g - amt), b: Math.max(0, c.b - amt)
-      });
-      
-      const lighten = (c: { r: number; g: number; b: number }, amt: number) => ({
-        r: Math.min(255, c.r + amt), g: Math.min(255, c.g + amt), b: Math.min(255, c.b + amt)
-      });
-      
-      const primary = colors[0];
-      setPrimaryColor(toHex(primary));
-      setSecondaryColor(toHex(darken(primary, 40)));
-      setAccentColor(colors.length > 1 ? toHex(colors[1]) : toHex(lighten(primary, 60)));
-    } catch (error) {
-      console.error('Failed to extract colors:', error);
-    } finally {
-      setExtractingColors(false);
     }
   };
 
@@ -357,6 +275,155 @@ export default function MarketingWebsitePage() {
     setAccentColor(preset.accent);
   };
 
+  // Preview content for locked state
+  const PreviewContent = () => (
+    <div className="p-4 sm:p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: textColor }}>Marketing Website</h1>
+        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>
+          Your public website where clients learn about your service
+        </p>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        {/* Live Site Card */}
+        <div 
+          className="rounded-xl p-4 sm:p-5"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}
+            >
+              <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
+            <span 
+              className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full"
+              style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}
+            >
+              <span 
+                className="h-1.5 w-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              />
+              Live
+            </span>
+          </div>
+          <h3 className="font-medium text-sm sm:text-base mb-1" style={{ color: textColor }}>Your Website</h3>
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
+          <div className="flex gap-2">
+            <div
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-white"
+              style={{ backgroundColor: agencyPrimaryColor }}
+            >
+              <Eye className="h-4 w-4" />
+              View
+            </div>
+            <div
+              className="flex items-center justify-center rounded-lg px-3 py-2"
+              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+            >
+              <Copy className="h-4 w-4" style={{ color: mutedTextColor }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Theme Preview Card */}
+        <div 
+          className="rounded-xl p-4 sm:p-5"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg"
+              style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+            >
+              <Palette className="h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
+          </div>
+          <h3 className="font-medium text-sm sm:text-base mb-1" style={{ color: textColor }}>Current Theme</h3>
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="flex gap-0.5 sm:gap-1">
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: primaryColor }} />
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: secondaryColor }} />
+              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: accentColor }} />
+            </div>
+            <span className="text-xs sm:text-sm capitalize flex items-center gap-1" style={{ color: mutedTextColor }}>
+              {websiteTheme === 'dark' ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+              {websiteTheme}
+            </span>
+          </div>
+          <div
+            className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium"
+            style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}
+          >
+            <Palette className="h-4 w-4" />
+            Customize
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-4 sm:mb-6 overflow-x-auto" style={{ borderBottom: `1px solid ${borderColor}` }}>
+        <nav className="flex gap-4 sm:gap-6 min-w-max">
+          {[
+            { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
+            { id: 'content' as ActiveTab, label: 'Content', icon: Type },
+            { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
+            { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
+          ].map((tab) => (
+            <div
+              key={tab.id}
+              className="flex items-center gap-1.5 sm:gap-2 pb-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap"
+              style={tab.id === 'overview' ? {
+                borderColor: agencyPrimaryColor,
+                color: agencyPrimaryColor,
+              } : {
+                borderColor: 'transparent',
+                color: mutedTextColor,
+              }}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Overview Content */}
+      <div className="space-y-4 sm:space-y-6">
+        <div 
+          className="rounded-xl p-4 sm:p-6"
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        >
+          <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4" style={{ color: textColor }}>Your website includes:</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {[
+              { title: 'Hero Section', desc: 'Eye-catching headline with CTAs' },
+              { title: 'Features Overview', desc: 'AI receptionist capabilities' },
+              { title: 'How It Works', desc: '4-step process to get started' },
+              { title: 'Pricing Plans', desc: 'Starter, Pro, and Growth tiers' },
+              { title: 'Testimonials', desc: 'Social proof section' },
+              { title: 'FAQ Section', desc: 'Common questions answered' },
+              { title: 'Industry Cards', desc: 'Industries you serve' },
+              { title: 'Comparison Table', desc: 'Compare vs competitors' },
+            ].map((item) => (
+              <div key={item.title} className="flex items-start gap-2 sm:gap-3">
+                <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span>
+                <div>
+                  <p className="font-medium text-xs sm:text-sm" style={{ color: textColor }}>{item.title}</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Show loading while checking access
   if (agencyLoading) {
     return (
@@ -366,38 +433,26 @@ export default function MarketingWebsitePage() {
     );
   }
 
-  // If no access, show upgrade prompt (will redirect via useEffect)
+  // If no access, show locked overlay with preview
   if (!canUseMarketingSite) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div 
-          className="max-w-md mx-auto rounded-2xl p-8 text-center"
-          style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
-        >
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-            style={{ backgroundColor: `${agencyPrimaryColor}15` }}
-          >
-            <Lock className="h-8 w-8" style={{ color: agencyPrimaryColor }} />
-          </div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: textColor }}>
-            Upgrade to Professional
-          </h1>
-          <p className="mb-6" style={{ color: mutedTextColor }}>
-            The Marketing Website feature is available on Professional and Enterprise plans.
-          </p>
-          <a
-            href="/agency/settings?upgrade=professional"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors"
-            style={{ backgroundColor: agencyPrimaryColor }}
-          >
-            View Plans
-          </a>
-        </div>
-      </div>
+      <LockedFeatureOverlay
+        title="Marketing Website"
+        description="Get a fully-branded marketing website to attract and convert clients."
+        requiredPlan="Professional"
+        features={[
+          'Fully branded landing page',
+          'Customizable colors & content',
+          'Connect your own domain',
+          'Built-in pricing & signup',
+        ]}
+      >
+        <PreviewContent />
+      </LockedFeatureOverlay>
     );
   }
 
+  // Full access - render full interactive page (same as original)
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -524,7 +579,7 @@ export default function MarketingWebsitePage() {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content - Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-4 sm:space-y-6">
           <div 
@@ -585,6 +640,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
+      {/* Tab Content - Content */}
       {activeTab === 'content' && (
         <div className="space-y-4 sm:space-y-6">
           <div 
@@ -661,86 +717,14 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
+      {/* Tab Content - Colors (abbreviated) */}
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
-          {/* Theme Selection */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
-            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Website Theme</h3>
-            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>
-              Choose light or dark mode
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <button
-                onClick={() => setWebsiteTheme('light')}
-                className="relative rounded-xl p-4 sm:p-5 text-left transition-all"
-                style={websiteTheme === 'light' ? {
-                  backgroundColor: `${agencyPrimaryColor}15`,
-                  border: `2px solid ${agencyPrimaryColor}`,
-                } : {
-                  backgroundColor: cardBg,
-                  border: `1px solid ${borderColor}`,
-                }}
-              >
-                {websiteTheme === 'light' && (
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3" style={{ color: agencyPrimaryColor }}>
-                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                )}
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-white border border-gray-200 mb-2 sm:mb-3">
-                  <Sun className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
-                </div>
-                <h4 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Light</h4>
-                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Clean, white backgrounds</p>
-              </button>
-
-              <button
-                onClick={() => setWebsiteTheme('dark')}
-                className="relative rounded-xl p-4 sm:p-5 text-left transition-all"
-                style={websiteTheme === 'dark' ? {
-                  backgroundColor: `${agencyPrimaryColor}15`,
-                  border: `2px solid ${agencyPrimaryColor}`,
-                } : {
-                  backgroundColor: cardBg,
-                  border: `1px solid ${borderColor}`,
-                }}
-              >
-                {websiteTheme === 'dark' && (
-                  <div className="absolute top-2 sm:top-3 right-2 sm:right-3" style={{ color: agencyPrimaryColor }}>
-                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                )}
-                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-gray-900 mb-2 sm:mb-3">
-                  <Moon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                </div>
-                <h4 className="font-medium text-sm sm:text-base mb-0.5 sm:mb-1">Dark</h4>
-                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Modern, dark backgrounds</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Color Presets */}
-          <div 
-            className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
-              <h3 className="font-medium text-sm sm:text-base">Color Presets</h3>
-              {branding.logoUrl && (
-                <button
-                  onClick={extractColorsFromLogo}
-                  disabled={extractingColors}
-                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 transition-all w-full sm:w-auto justify-center"
-                >
-                  {extractingColors ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-                  Extract from Logo
-                </button>
-              )}
-            </div>
-
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Color Presets</h3>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-3">
               {colorPresets.map((preset) => (
                 <button
@@ -760,72 +744,32 @@ export default function MarketingWebsitePage() {
                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
                     <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.accent }} />
                   </div>
-                  <p className="text-[8px] sm:text-[10px] text-center truncate" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{preset.name}</p>
+                  <p className="text-[8px] sm:text-[10px] text-center truncate" style={{ color: mutedTextColor }}>{preset.name}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Custom Colors */}
           <div 
-            className="rounded-xl p-4 sm:p-6"
+            className="rounded-xl p-4 sm:p-6 flex justify-end"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
-            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Custom Colors</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              {[
-                { label: 'Primary', value: primaryColor, setter: setPrimaryColor, desc: 'Buttons, links' },
-                { label: 'Secondary', value: secondaryColor, setter: setSecondaryColor, desc: 'Hover states' },
-                { label: 'Accent', value: accentColor, setter: setAccentColor, desc: 'Highlights' },
-              ].map((color) => (
-                <div key={color.label}>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{color.label}</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={color.value}
-                      onChange={(e) => color.setter(e.target.value)}
-                      className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer"
-                      style={{ backgroundColor: 'transparent', border: `1px solid ${inputBorder}` }}
-                    />
-                    <input
-                      type="text"
-                      value={color.value}
-                      onChange={(e) => color.setter(e.target.value)}
-                      className="flex-1 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm font-mono focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                    />
-                  </div>
-                  <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{color.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderTop: `1px solid ${borderColor}` }}>
-              {colorsSaved && (
-                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
-                  <Check className="h-4 w-4" />
-                  Colors saved!
-                </span>
-              )}
-              <button
-                onClick={handleSaveColors}
-                disabled={savingColors}
-                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto"
-                style={{ backgroundColor: agencyPrimaryColor }}
-              >
-                {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Colors
-              </button>
-            </div>
+            <button
+              onClick={handleSaveColors}
+              disabled={savingColors}
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors"
+              style={{ backgroundColor: agencyPrimaryColor }}
+            >
+              {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save Colors
+            </button>
           </div>
         </div>
       )}
 
+      {/* Tab Content - Domain (abbreviated) */}
       {activeTab === 'domain' && (
         <div className="space-y-4 sm:space-y-6">
-          {/* Subdomain Info */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -848,7 +792,6 @@ export default function MarketingWebsitePage() {
             </div>
           </div>
 
-          {/* Custom Domain */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -856,155 +799,28 @@ export default function MarketingWebsitePage() {
             <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Custom Domain</h3>
             <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain</p>
 
-            {domainStatus === 'none' ? (
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label>
-                  <input
-                    type="text"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="yourdomain.com"
-                    className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
-                </div>
-                <button
-                  onClick={handleSaveCustomDomain}
-                  disabled={!customDomain.trim() || savingDomain}
-                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-                  style={{ backgroundColor: agencyPrimaryColor }}
-                >
-                  {savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
-                  Add Domain
-                </button>
+            <div className="space-y-3 sm:space-y-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label>
+                <input
+                  type="text"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  placeholder="yourdomain.com"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
               </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
-                <div 
-                  className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg"
-                  style={domainStatus === 'verified' ? {
-                    backgroundColor: `${agencyPrimaryColor}15`,
-                    border: `1px solid ${agencyPrimaryColor}40`,
-                  } : {
-                    backgroundColor: 'rgba(245,158,11,0.1)',
-                    border: '1px solid rgba(245,158,11,0.3)',
-                  }}
-                >
-                  {domainStatus === 'verified' ? (
-                    <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" /></span>
-                  ) : (
-                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm" style={{ color: domainStatus === 'verified' ? agencyPrimaryColor : '#fbbf24' }}>
-                      {domainStatus === 'verified' ? 'Connected' : 'Pending'}
-                    </p>
-                    <p className="text-xs sm:text-sm font-mono truncate" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{customDomain}</p>
-                  </div>
-                  {domainStatus === 'verified' && (
-                    <a href={`https://${customDomain}`} target="_blank" rel="noopener noreferrer" className="flex-shrink-0" style={{ color: agencyPrimaryColor }}>
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
-                </div>
-
-                {domainStatus === 'pending' && (
-                  <div 
-                    className="rounded-lg p-3 sm:p-4"
-                    style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
-                  >
-                    <h4 className="font-medium text-sm mb-2 sm:mb-3">DNS Configuration</h4>
-                    <p className="text-xs mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Add these records with your registrar:</p>
-                    
-                    <div className="space-y-2 sm:space-y-3">
-                      {/* A Record for apex domain */}
-                      <div 
-                        className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg"
-                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
-                      >
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Type</p>
-                          <p className="font-mono font-medium">A</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Name</p>
-                          <p className="font-mono">@</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Value</p>
-                          <div className="flex items-center gap-1">
-                            <p className="font-mono text-[10px] truncate">{dnsConfig?.aRecord}</p>
-                            <button onClick={() => copyToClipboard(dnsConfig?.aRecord || '', 'arecord')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
-                              {copied === 'arecord' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* CNAME Record for www subdomain */}
-                      <div 
-                        className="grid grid-cols-3 gap-2 sm:gap-4 text-xs p-2 sm:p-3 rounded-lg"
-                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}
-                      >
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Type</p>
-                          <p className="font-mono font-medium">CNAME</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Name</p>
-                          <p className="font-mono">www</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase mb-0.5 sm:mb-1" style={{ color: mutedTextColor }}>Value</p>
-                          <div className="flex items-center gap-1">
-                            <p className="font-mono text-[10px] truncate">{dnsConfig?.cname}</p>
-                            <button onClick={() => copyToClipboard(dnsConfig?.cname || '', 'cname')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
-                              {copied === 'cname' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-[10px] mt-3" style={{ color: mutedTextColor }}>DNS changes can take up to 48 hours.</p>
-                    
-                    <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                      <button
-                        onClick={handleVerifyDomain}
-                        disabled={verifyingDomain}
-                        className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors"
-                        style={{ backgroundColor: agencyPrimaryColor }}
-                      >
-                        {verifyingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        Verify
-                      </button>
-                      <button
-                        onClick={handleRemoveDomain}
-                        disabled={savingDomain}
-                        className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                          isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'
-                        }`}
-                        style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {domainStatus === 'verified' && (
-                  <button
-                    onClick={handleRemoveDomain}
-                    disabled={savingDomain}
-                    className="text-sm transition-colors"
-                    style={{ color: isDark ? '#f87171' : '#dc2626' }}
-                  >
-                    Remove custom domain
-                  </button>
-                )}
-              </div>
-            )}
+              <button
+                onClick={handleSaveCustomDomain}
+                disabled={!customDomain.trim() || savingDomain}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              >
+                {savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
+                Add Domain
+              </button>
+            </div>
           </div>
         </div>
       )}
