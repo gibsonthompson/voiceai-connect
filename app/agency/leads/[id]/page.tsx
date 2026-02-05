@@ -57,11 +57,17 @@ const STATUS_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
+  { value: 'google_maps', label: 'Google Maps' },
+  { value: 'google_search', label: 'Google Search' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'yelp', label: 'Yelp' },
   { value: 'referral', label: 'Referral' },
-  { value: 'cold_outreach', label: 'Cold Outreach' },
-  { value: 'website', label: 'Website' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'event', label: 'Event/Trade Show' },
+  { value: 'in_person', label: 'In Person' },
+  { value: 'event', label: 'Event / Trade Show' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -668,7 +674,7 @@ export default function LeadDetailPage() {
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left Column - Contact & Business Info */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Business Information */}
+          {/* Business Information - Business Name, Industry, Phone, Website */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -699,7 +705,20 @@ export default function LeadDetailPage() {
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                  />
+                </div>
+              </div>
+              <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Website</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
@@ -707,7 +726,7 @@ export default function LeadDetailPage() {
                     type="url"
                     value={formData.website}
                     onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                    placeholder="https://example.com"
+                    placeholder="example.com"
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
@@ -716,7 +735,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          {/* Contact Information */}
+          {/* Contact Information - Contact Name, Email */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -737,19 +756,6 @@ export default function LeadDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />

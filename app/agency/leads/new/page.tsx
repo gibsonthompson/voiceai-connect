@@ -17,11 +17,17 @@ const STATUS_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
+  { value: 'google_maps', label: 'Google Maps' },
+  { value: 'google_search', label: 'Google Search' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'yelp', label: 'Yelp' },
   { value: 'referral', label: 'Referral' },
-  { value: 'cold_outreach', label: 'Cold Outreach' },
-  { value: 'website', label: 'Website' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'event', label: 'Event/Trade Show' },
+  { value: 'in_person', label: 'In Person' },
+  { value: 'event', label: 'Event / Trade Show' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -34,6 +40,16 @@ const getContrastColor = (hexColor: string): string => {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.5 ? '#050505' : '#ffffff';
 };
+
+// Auto-format website URL with protocol
+function formatWebsiteUrl(url: string): string {
+  if (!url || !url.trim()) return '';
+  let formatted = url.trim();
+  if (!/^https?:\/\//i.test(formatted)) {
+    formatted = `https://${formatted}`;
+  }
+  return formatted;
+}
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -69,6 +85,12 @@ export default function NewLeadPage() {
   const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
+  const handleWebsiteBlur = () => {
+    if (formData.website.trim()) {
+      setFormData(prev => ({ ...prev, website: formatWebsiteUrl(prev.website) }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agency) return;
@@ -87,6 +109,7 @@ export default function NewLeadPage() {
 
       const payload = {
         ...formData,
+        website: formatWebsiteUrl(formData.website),
         estimated_value: formData.estimated_value 
           ? Math.round(parseFloat(formData.estimated_value) * 100) 
           : null,
@@ -192,15 +215,29 @@ export default function NewLeadPage() {
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Website</label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                     <input
-                      type="url"
+                      type="text"
                       value={formData.website}
                       onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://example.com"
+                      onBlur={handleWebsiteBlur}
+                      placeholder="example.com"
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                       style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                     />
@@ -230,19 +267,6 @@ export default function NewLeadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                    />
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />

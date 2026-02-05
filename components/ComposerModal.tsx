@@ -254,7 +254,7 @@ export default function ComposerModal({
   const selectedTemplateData = templates.find(t => t.id === selectedTemplate);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 backdrop-blur-sm"
@@ -262,50 +262,58 @@ export default function ComposerModal({
         onClick={onClose}
       />
       
-      {/* Modal */}
+      {/* Modal - slides up from bottom on mobile */}
       <div 
-        className="relative w-full max-w-2xl rounded-2xl shadow-2xl"
+        className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col"
         style={{ 
           backgroundColor: theme.bg,
           border: `1px solid ${theme.border}`,
         }}
       >
+        {/* Drag handle - mobile only */}
+        <div className="sm:hidden flex justify-center pt-2 pb-1">
+          <div 
+            className="w-10 h-1 rounded-full"
+            style={{ backgroundColor: theme.border }}
+          />
+        </div>
+
         {/* Header */}
         <div 
-          className="flex items-center justify-between px-6 py-4"
+          className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 shrink-0"
           style={{ borderBottom: `1px solid ${theme.borderLight}` }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {type === 'email' ? (
               <div 
-                className="flex h-10 w-10 items-center justify-center rounded-lg"
+                className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
                 style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)' }}
               >
-                <Mail className="h-5 w-5" style={{ color: '#a855f7' }} />
+                <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#a855f7' }} />
               </div>
             ) : (
               <div 
-                className="flex h-10 w-10 items-center justify-center rounded-lg"
+                className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
                 style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)' }}
               >
-                <MessageSquare className="h-5 w-5" style={{ color: '#06b6d4' }} />
+                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#06b6d4' }} />
               </div>
             )}
-            <div>
-              <h2 className="font-semibold flex items-center gap-2" style={{ color: theme.text }}>
+            <div className="min-w-0">
+              <h2 className="font-semibold flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
                 Compose {type === 'email' ? 'Email' : 'SMS'}
                 <span 
-                  className="text-xs font-normal px-2 py-0.5 rounded-full flex items-center gap-1"
+                  className="text-[10px] sm:text-xs font-normal px-1.5 sm:px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0"
                   style={{ 
                     backgroundColor: type === 'email' ? 'rgba(147, 51, 234, 0.1)' : 'rgba(6, 182, 212, 0.1)',
                     color: type === 'email' ? '#a855f7' : '#06b6d4',
                   }}
                 >
-                  <Hash className="h-3 w-3" />
+                  <Hash className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   {sequenceLabel}
                 </span>
               </h2>
-              <p className="text-sm" style={{ color: theme.textMuted }}>
+              <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>
                 To: {lead.contact_name || lead.business_name} 
                 {type === 'email' && lead.email && ` (${lead.email})`}
                 {type === 'sms' && lead.phone && ` (${lead.phone})`}
@@ -314,7 +322,7 @@ export default function ComposerModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 transition-colors"
+            className="rounded-lg p-2 transition-colors shrink-0"
             style={{ color: theme.textMuted }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = theme.hoverBg;
@@ -329,8 +337,8 @@ export default function ComposerModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        {/* Content - scrollable */}
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
           {/* Sequence Info Banner */}
           <div 
             className="flex items-center gap-3 rounded-lg p-3"
@@ -480,29 +488,35 @@ export default function ComposerModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Mobile optimized */}
         <div 
-          className="flex items-center justify-between px-6 py-4"
-          style={{ borderTop: `1px solid ${theme.borderLight}` }}
+          className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom"
+          style={{ 
+            borderTop: `1px solid ${theme.borderLight}`,
+            backgroundColor: theme.bg,
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+          }}
         >
-          <button
-            onClick={onClose}
-            className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-            style={{ 
-              backgroundColor: theme.cardBg,
-              border: `1px solid ${theme.border}`,
-              color: theme.textMuted,
-            }}
-          >
-            Cancel
-          </button>
-          
+          {/* Mobile: all 3 buttons in a single row, equal sizing */}
           <div className="flex items-center gap-2">
+            {/* Cancel */}
+            <button
+              onClick={onClose}
+              className="flex-1 sm:flex-none rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors text-center"
+              style={{ 
+                backgroundColor: theme.cardBg,
+                border: `1px solid ${theme.border}`,
+                color: theme.textMuted,
+              }}
+            >
+              Cancel
+            </button>
+
             {/* Copy only */}
             <button
               onClick={handleCopy}
               disabled={!body}
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
               style={{ 
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.border}`,
@@ -511,22 +525,22 @@ export default function ComposerModal({
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4" style={{ color: primaryColor }} />
-                  Copied
+                  <Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} />
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4" />
-                  Copy Only
+                  <Copy className="h-4 w-4 shrink-0" />
+                  <span>Copy Only</span>
                 </>
               )}
             </button>
             
-            {/* Copy & Log - Primary button with agency color */}
+            {/* Copy & Log - Primary */}
             <button
               onClick={handleCopyAndLog}
               disabled={!body || loggedSuccess}
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+              className="flex-[1.3] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
               style={{ 
                 backgroundColor: primaryColor,
                 color: primaryLight ? '#050505' : '#ffffff',
@@ -534,13 +548,13 @@ export default function ComposerModal({
             >
               {loggedSuccess ? (
                 <>
-                  <Check className="h-4 w-4" />
-                  Logged
+                  <Check className="h-4 w-4 shrink-0" />
+                  <span>Logged</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4" />
-                  Copy & Log as Sent
+                  <Copy className="h-4 w-4 shrink-0" />
+                  <span className="whitespace-nowrap">Copy & Log</span>
                 </>
               )}
             </button>
