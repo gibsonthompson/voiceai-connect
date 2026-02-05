@@ -164,22 +164,15 @@ export default function AgencyCallDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-1.5 text-sm mb-4 sm:mb-6 flex-wrap" style={{ color: theme.textMuted4 }}>
-        <Link href="/agency/clients" className="hover:opacity-80 transition-colors" style={{ color: theme.textMuted }}>
-          Clients
-        </Link>
-        <span>/</span>
-        <Link href={`/agency/clients/${clientId}`} className="hover:opacity-80 transition-colors" style={{ color: theme.textMuted }}>
-          {client?.business_name || 'Client'}
-        </Link>
-        <span>/</span>
-        <Link href={`/agency/clients/${clientId}/calls`} className="hover:opacity-80 transition-colors" style={{ color: theme.textMuted }}>
-          Calls
-        </Link>
-        <span>/</span>
-        <span style={{ color: theme.text }}>Detail</span>
-      </div>
+      {/* Back Navigation */}
+      <Link 
+        href={`/agency/clients/${clientId}/calls`}
+        className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
+        style={{ color: theme.textMuted }}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to {client?.business_name ? `${client.business_name} Calls` : 'Calls'}
+      </Link>
 
       {/* Header */}
       <div className="mb-4 sm:mb-6 lg:mb-8">
@@ -401,16 +394,6 @@ export default function AgencyCallDetailPage() {
 
           {/* Actions */}
           <div className="space-y-2 sm:space-y-3">
-            {(call.customer_phone || call.caller_phone) && (
-              <a 
-                href={`tel:${call.customer_phone || call.caller_phone}`}
-                className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors hover:opacity-90"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-              >
-                <Phone className="h-4 w-4" />
-                Call Back
-              </a>
-            )}
             <Link 
               href={`/agency/clients/${clientId}/calls`}
               className="flex items-center justify-center gap-2 w-full rounded-full border px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors"
