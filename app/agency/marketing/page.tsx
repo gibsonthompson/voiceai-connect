@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
-import LockedFeatureOverlay from '@/components/LockedFeatureOverlay';
+import LockedFeature from '@/components/LockedFeature';
 
 type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
@@ -436,7 +436,7 @@ export default function MarketingWebsitePage() {
   // If no access, show locked overlay with preview
   if (!canUseMarketingSite) {
     return (
-      <LockedFeatureOverlay
+      <LockedFeature
         title="Marketing Website"
         description="Get a fully-branded marketing website to attract and convert clients."
         requiredPlan="Professional"
@@ -448,7 +448,7 @@ export default function MarketingWebsitePage() {
         ]}
       >
         <PreviewContent />
-      </LockedFeatureOverlay>
+      </LockedFeature>
     );
   }
 
