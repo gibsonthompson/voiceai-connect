@@ -10,7 +10,7 @@ export async function GET(request) {
   console.log(`📋 DNS config requested for domain: ${domain || '(none)'}`)
 
   const DEFAULT_CONFIG = {
-    a_record: '76.76.21.21',
+    a_record: '216.198.79.1',
     cname_record: 'cname.vercel-dns.com',
     source: 'fallback'
   }
