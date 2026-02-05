@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
-import LockedFeature from '@/components/LockedFeature';
+import LockedFeatureOverlay from '@/components/LockedFeatureOverlay';
 
 // Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -160,23 +160,16 @@ export default function AITemplatesPage() {
         {industryList.map((industry) => {
           const IconComponent = ICON_MAP[industry.icon] || Building2;
           
-          const CardWrapper = isInteractive ? Link : 'div';
-          const cardProps = isInteractive 
-            ? { href: `/agency/templates/${industry.frontendKey}` }
-            : {};
+          const cardClassName = `group rounded-xl p-5 transition-all ${
+            isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
+          }`;
+          const cardStyle = { 
+            backgroundColor: cardBg,
+            border: `1px solid ${borderColor}`,
+          };
           
-          return (
-            <CardWrapper
-              key={industry.frontendKey}
-              {...cardProps}
-              className={`group rounded-xl p-5 transition-all ${
-                isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-              }`}
-              style={{ 
-                backgroundColor: cardBg,
-                border: `1px solid ${borderColor}`,
-              }}
-            >
+          const cardContent = (
+            <>
               <div className="flex items-start justify-between mb-4">
                 <div 
                   className="flex h-12 w-12 items-center justify-center rounded-xl"
@@ -236,7 +229,26 @@ export default function AITemplatesPage() {
                   style={{ color: mutedTextColor }} 
                 />
               </div>
-            </CardWrapper>
+            </>
+          );
+          
+          return isInteractive ? (
+            <Link
+              key={industry.frontendKey}
+              href={`/agency/templates/${industry.frontendKey}`}
+              className={cardClassName}
+              style={cardStyle}
+            >
+              {cardContent}
+            </Link>
+          ) : (
+            <div
+              key={industry.frontendKey}
+              className={cardClassName}
+              style={cardStyle}
+            >
+              {cardContent}
+            </div>
           );
         })}
       </div>
@@ -291,7 +303,7 @@ export default function AITemplatesPage() {
   // Show locked overlay with preview content
   if (hasAccess === false) {
     return (
-      <LockedFeature
+      <LockedFeatureOverlay
         title="AI Templates"
         description="Customize AI receptionist prompts, voices, and conversation flows for each industry your clients serve."
         requiredPlan="Enterprise"
@@ -303,7 +315,7 @@ export default function AITemplatesPage() {
         ]}
       >
         <PageContent industryList={DEMO_INDUSTRIES} isInteractive={false} />
-      </LockedFeature>
+      </LockedFeatureOverlay>
     );
   }
 
