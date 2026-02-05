@@ -64,8 +64,8 @@ export default function LockedFeatureOverlay({
         }}
       />
 
-      {/* Centered upgrade card */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+      {/* Centered upgrade card - top on mobile, center on desktop */}
+      <div className="absolute inset-0 flex items-start md:items-center justify-center p-4 pt-8 sm:p-6 md:pt-6">
         <div 
           className="w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-2xl animate-scale-in"
           style={{ 
