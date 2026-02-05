@@ -144,7 +144,7 @@ export default function LockedFeatureOverlay({
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
             style={{ 
               backgroundColor: primaryColor,
-              color: '#ffffff',
+              color: isDark ? '#050505' : '#ffffff',
             }}
           >
             Upgrade to {requiredPlan}
