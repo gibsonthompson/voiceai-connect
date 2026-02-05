@@ -18,8 +18,26 @@ import {
   Sparkles,
   Lock,
   Info,
-  Building
+  Building,
+  ChevronDown
 } from 'lucide-react';
+
+// ============================================================================
+// REFERRAL SOURCE OPTIONS
+// ============================================================================
+const REFERRAL_OPTIONS = [
+  { value: '', label: 'Select an option...' },
+  { value: 'google_search', label: 'Google Search' },
+  { value: 'ai_recommendation', label: 'AI Recommendation (ChatGPT, Claude, Perplexity)' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'twitter', label: 'Twitter / X' },
+  { value: 'facebook_instagram', label: 'Facebook / Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'podcast', label: 'Podcast' },
+  { value: 'friend_colleague', label: 'Friend / Colleague' },
+  { value: 'blog_article', label: 'Blog / Article' },
+  { value: 'other', label: 'Other' },
+];
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -225,6 +243,7 @@ function OnboardingContent() {
   const [agencyDetails, setAgencyDetails] = useState({
     name: '',
     phone: '',
+    referralSource: '',
   });
   
   const [logoUrl, setLogoUrl] = useState('');
@@ -295,6 +314,7 @@ function OnboardingContent() {
           setAgencyDetails({
             name: data.agency.name || '',
             phone: data.agency.phone || '',
+            referralSource: data.agency.referral_source || '',
           });
         }
         if (data.agency.logo_url) setLogoUrl(data.agency.logo_url);
@@ -389,6 +409,7 @@ function OnboardingContent() {
         stepData = { 
           name: agencyDetails.name.trim(),
           phone: agencyDetails.phone,
+          referral_source: agencyDetails.referralSource,
         };
         break;
       case 2:
@@ -530,6 +551,25 @@ function OnboardingContent() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">For support and account verification (optional)</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
+                <div className="relative">
+                  <select
+                    value={agencyDetails.referralSource}
+                    onChange={(e) => setAgencyDetails({ ...agencyDetails, referralSource: e.target.value })}
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
+                  >
+                    {REFERRAL_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value} className="bg-[#1a1a1a] text-[#fafaf9]">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30 pointer-events-none" />
+                </div>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">This helps us improve our marketing (optional)</p>
               </div>
             </div>
 
