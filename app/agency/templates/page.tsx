@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
-import LockedFeatureOverlay from '@/components/LockedFeatureOverlay';
+import LockedFeature from '@/components/LockedFeature';
 
 // Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -303,7 +303,7 @@ export default function AITemplatesPage() {
   // Show locked overlay with preview content
   if (hasAccess === false) {
     return (
-      <LockedFeatureOverlay
+      <LockedFeature
         title="AI Templates"
         description="Customize AI receptionist prompts, voices, and conversation flows for each industry your clients serve."
         requiredPlan="Enterprise"
@@ -315,7 +315,7 @@ export default function AITemplatesPage() {
         ]}
       >
         <PageContent industryList={DEMO_INDUSTRIES} isInteractive={false} />
-      </LockedFeatureOverlay>
+      </LockedFeature>
     );
   }
 
