@@ -47,13 +47,12 @@ interface BlogPost {
 }
 
 // ============================================================================
-// CATEGORIES
+// CATEGORIES (removed case-studies)
 // ============================================================================
 const categories = [
   { id: 'all', name: 'All Posts' },
   { id: 'guides', name: 'Guides' },
-  { id: 'case-studies', name: 'Case Studies' },
-  { id: 'industry', name: 'Industry Insights' },
+  { id: 'industry', name: 'Industry' },
   { id: 'product', name: 'Product Updates' },
 ];
 
@@ -62,7 +61,51 @@ const categories = [
 // ============================================================================
 const blogPosts: BlogPost[] = [
   // =========================================================================
-  // FEATURED / NEWEST POSTS (February 2026)
+  // PRODUCT UPDATES (February 2026)
+  // =========================================================================
+  {
+    slug: 'introducing-ai-templates-enterprise',
+    title: 'Introducing AI Templates: Custom Prompts for Enterprise Agencies',
+    excerpt: 'Enterprise agencies can now customize AI receptionist prompts, voices, and conversation flows for each industry. Set once, apply to all new clients automatically.',
+    category: 'product',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-05',
+    readTime: '4 min read',
+    featured: true,
+  },
+  // =========================================================================
+  // INDUSTRY INSIGHTS (February 2026)
+  // =========================================================================
+  {
+    slug: 'ai-receptionist-vs-answering-service',
+    title: 'AI Receptionist vs Answering Service vs Virtual Receptionist',
+    excerpt: 'Complete 2026 comparison: AI receptionists cost $30-300/month, answering services $200-2,000+, virtual receptionists $500-3,000+. Find the right fit for your business.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-04',
+    readTime: '11 min read',
+    featured: true,
+  },
+  {
+    slug: 'ai-receptionist-cost-pricing-guide',
+    title: 'How Much Does an AI Receptionist Cost? Complete Pricing Guide',
+    excerpt: 'AI receptionist pricing from $30-500/month. Compare providers, understand pricing models (flat-rate vs per-minute), hidden fees, and calculate your ROI.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-03',
+    readTime: '9 min read',
+  },
+  {
+    slug: 'state-of-ai-receptionists-2026',
+    title: 'The State of AI Receptionists in 2026: Market Size, Trends & Predictions',
+    excerpt: 'AI receptionist market analysis: $1.2B market size, 34% CAGR, 2.4M businesses using AI. Adoption trends by industry and predictions for 2027.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-02',
+    readTime: '12 min read',
+  },
+  // =========================================================================
+  // GUIDES - PROMPT ENGINEERING (February 2026)
   // =========================================================================
   {
     slug: 'how-to-find-leads-google-maps',
@@ -82,11 +125,7 @@ const blogPosts: BlogPost[] = [
     author: { name: 'Gibson Thompson' },
     publishedAt: '2026-02-01',
     readTime: '18 min read',
-    featured: true,
   },
-  // =========================================================================
-  // INDUSTRY-SPECIFIC PROMPT GUIDES (February 2026)
-  // =========================================================================
   {
     slug: 'home-services-ai-receptionist-prompts',
     title: 'Home Services AI Receptionist Prompts',
@@ -106,7 +145,7 @@ const blogPosts: BlogPost[] = [
     readTime: '15 min read',
   },
   // =========================================================================
-  // JANUARY 30, 2026
+  // GUIDES - BUSINESS (January 30, 2026)
   // =========================================================================
   {
     slug: 'best-recurring-revenue-business-ideas-2026',
@@ -116,7 +155,6 @@ const blogPosts: BlogPost[] = [
     author: { name: 'Gibson Thompson' },
     publishedAt: '2026-01-30',
     readTime: '16 min read',
-    featured: true,
   },
   {
     slug: 'ai-receptionist-agency-vs-smma',
@@ -154,6 +192,9 @@ const blogPosts: BlogPost[] = [
     publishedAt: '2026-01-30',
     readTime: '11 min read',
   },
+  // =========================================================================
+  // INDUSTRY (January 30, 2026)
+  // =========================================================================
   {
     slug: 'my-ai-front-desk-alternative',
     title: 'My AI Front Desk Alternative: Compare White Label Options (2026)',
@@ -164,7 +205,7 @@ const blogPosts: BlogPost[] = [
     readTime: '10 min read',
   },
   // =========================================================================
-  // EARLIER JANUARY 2026
+  // GUIDES - SALES & OUTREACH (Earlier January 2026)
   // =========================================================================
   {
     slug: 'pitch-ai-receptionists-home-services',
@@ -211,6 +252,9 @@ const blogPosts: BlogPost[] = [
     publishedAt: '2026-01-08',
     readTime: '10 min read',
   },
+  // =========================================================================
+  // INDUSTRY (Earlier January 2026)
+  // =========================================================================
   {
     slug: 'best-industries-ai-receptionist',
     title: 'The 10 Best Industries for AI Receptionist Services',
@@ -237,7 +281,6 @@ const blogPosts: BlogPost[] = [
 function BlogCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
   const categoryColor = {
     guides: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'case-studies': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     industry: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     product: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
   }[post.category] || 'bg-white/10 text-white/70 border-white/20';
@@ -424,7 +467,7 @@ export default function BlogPage() {
               Insights & Resources
             </h1>
             <p className="mt-4 text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              Guides, case studies, and industry insights to help you build and grow your AI voice agency.
+              Guides, industry insights, and product updates to help you build and grow your AI voice agency.
             </p>
           </div>
 
@@ -515,7 +558,7 @@ export default function BlogPage() {
                   Stay in the loop
                 </h2>
                 <p className="mt-3 text-[#fafaf9]/50">
-                  Get the latest guides, case studies, and product updates delivered to your inbox.
+                  Get the latest guides, industry insights, and product updates delivered to your inbox.
                 </p>
 
                 <form className="mt-6 flex flex-col sm:flex-row gap-3">
