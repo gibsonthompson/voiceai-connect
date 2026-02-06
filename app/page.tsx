@@ -184,21 +184,21 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* CTA buttons */}
-            <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* CTA buttons - Mobile optimized */}
+            <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link 
                 href="/signup" 
-                className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-white px-6 sm:px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
+                className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-5 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
               >
                 <span>Start Your 14-Day Free Trial</span>
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <button 
                 onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-6 sm:px-8 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/[0.03] px-5 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
-                  <Play className="h-4 w-4 fill-current ml-0.5" />
+                <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
+                  <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current ml-0.5" />
                 </span>
                 <span>Watch Demo</span>
               </button>
@@ -1318,10 +1318,10 @@ export default function LandingPage() {
               <div className="mt-8 sm:mt-10">
                 <Link 
                   href="/signup" 
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
+                  className="group inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
                 >
                   Start Your Free Trial
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
               
