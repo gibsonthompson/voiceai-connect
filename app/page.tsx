@@ -6,7 +6,7 @@ import {
   Phone, ArrowRight, Check, Play, Star, Zap, Shield, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Building2, Sparkles, Menu, X, Coffee, Palmtree, Target
+  Building2, Sparkles, Menu, X, Target
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import DashboardSandbox from '@/components/dashboard-sandbox';
@@ -313,33 +313,16 @@ export default function LandingPage() {
                 and manage your entire agency from anywhere. No laptop required.
               </p>
               
-              <div className="mt-8 sm:mt-10 space-y-4">
-                <p className="text-sm text-[#fafaf9]/40 uppercase tracking-wider">A day in the life</p>
+              <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3">
                 {[
-                  {
-                    time: 'Morning',
-                    icon: Coffee,
-                    activity: 'Check overnight signups from bed. Two new clients joined.',
-                  },
-                  {
-                    time: 'Afternoon',
-                    icon: Palmtree,
-                    activity: 'Reply to a lead on Instagram while out. Close the deal.',
-                  },
-                  {
-                    time: 'Evening',
-                    icon: BarChart3,
-                    activity: 'Quick revenue check—$147 in new MRR today. Done.',
-                  },
-                ].map((item) => (
-                  <div key={item.time} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                      <item.icon className="h-5 w-5 text-amber-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-amber-400">{item.time}</p>
-                      <p className="text-sm text-[#fafaf9]/60 mt-0.5">{item.activity}</p>
-                    </div>
+                  'Complete dashboard access',
+                  'Real-time push notifications',
+                  'Client onboarding flow',
+                  'Revenue & analytics tracking',
+                ].map((feature) => (
+                  <div key={feature} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <Check className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span className="text-sm text-[#fafaf9]/70">{feature}</span>
                   </div>
                 ))}
               </div>
