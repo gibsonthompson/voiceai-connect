@@ -47,6 +47,28 @@ const DEMO_INDUSTRIES: Industry[] = [
   { frontendKey: 'professional_services', backendKey: 'professional_services', label: 'Professional Services', description: 'Consultants, agencies, B2B', icon: 'Briefcase', hasCustomTemplate: false, isActive: true, updatedAt: null },
 ];
 
+// Blog post links for help section
+const PROMPT_GUIDES = [
+  { 
+    icon: BookOpen, 
+    label: 'Prompt Engineering Guide',
+    href: '/blog/ai-receptionist-prompt-guide',
+    description: 'Fundamentals of writing effective AI prompts'
+  },
+  { 
+    icon: Wrench, 
+    label: 'Home Services Prompts',
+    href: '/blog/home-services-ai-receptionist-prompts',
+    description: 'HVAC, plumbing, electrical, contractors'
+  },
+  { 
+    icon: Stethoscope, 
+    label: 'Medical & Dental Prompts',
+    href: '/blog/medical-dental-ai-receptionist-prompts',
+    description: 'Healthcare practices and dental offices'
+  },
+];
+
 export default function AITemplatesPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const [industries, setIndustries] = useState<Industry[]>([]);
@@ -141,7 +163,7 @@ export default function AITemplatesPage() {
           </p>
         </div>
         {isInteractive && (
-          <a
+          <Link
             href="/blog/ai-receptionist-prompt-guide"
             target="_blank"
             rel="noopener noreferrer"
@@ -151,7 +173,7 @@ export default function AITemplatesPage() {
             <BookOpen className="h-4 w-4" />
             Prompt Guide
             <ExternalLink className="h-3 w-3" />
-          </a>
+          </Link>
         )}
       </div>
 
@@ -268,24 +290,29 @@ export default function AITemplatesPage() {
           Check out our guides for writing effective AI receptionist prompts:
         </p>
         <div className="flex flex-wrap gap-3">
-          {[
-            { icon: BookOpen, label: 'Prompt Engineering Guide' },
-            { icon: Wrench, label: 'Home Services Prompts' },
-            { icon: Stethoscope, label: 'Medical & Dental Prompts' },
-          ].map((guide) => (
-            <div
+          {PROMPT_GUIDES.map((guide) => (
+            <Link
               key={guide.label}
-              className={`inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 ${
-                isDark ? 'bg-white/[0.02]' : 'bg-black/[0.02]'
+              href={guide.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-all ${
+                isDark 
+                  ? 'bg-white/[0.02] hover:bg-white/[0.06]' 
+                  : 'bg-black/[0.02] hover:bg-black/[0.04]'
               }`}
               style={{ 
                 border: `1px solid ${borderColor}`,
                 color: textColor,
               }}
             >
-              <guide.icon className="h-4 w-4" />
-              {guide.label}
-            </div>
+              <guide.icon className="h-4 w-4" style={{ color: primaryColor }} />
+              <span>{guide.label}</span>
+              <ExternalLink 
+                className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" 
+                style={{ color: mutedTextColor }} 
+              />
+            </Link>
           ))}
         </div>
       </div>

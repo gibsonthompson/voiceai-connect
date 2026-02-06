@@ -1118,7 +1118,7 @@ export default function LandingPage() {
           </blockquote>
           <div className="mt-6 sm:mt-8">
             <p className="font-semibold text-lg">Jonathan Rowe</p>
-            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, CallBird AI</p>
+            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, SmartDesk AI</p>
             <p className="text-sm text-emerald-400 mt-1">First client in 11 days • Profitable from month 1</p>
           </div>
         </div>

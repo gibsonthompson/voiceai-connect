@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import BlogPostLayout, { Callout, ComparisonTable } from '../BlogPostLayout';
+import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata: Metadata = {
   title: 'AI Receptionist Prompt Engineering Guide 2026 | VAPI & ElevenLabs Best Practices',

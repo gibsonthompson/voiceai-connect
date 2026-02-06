@@ -47,7 +47,7 @@ interface BlogPost {
 }
 
 // ============================================================================
-// SAMPLE DATA - Replace with CMS/API data
+// CATEGORIES
 // ============================================================================
 const categories = [
   { id: 'all', name: 'All Posts' },
@@ -57,8 +57,13 @@ const categories = [
   { id: 'product', name: 'Product Updates' },
 ];
 
+// ============================================================================
+// BLOG POSTS DATA
+// ============================================================================
 const blogPosts: BlogPost[] = [
-  // NEWEST POSTS (February 2026)
+  // =========================================================================
+  // FEATURED / NEWEST POSTS (February 2026)
+  // =========================================================================
   {
     slug: 'how-to-find-leads-google-maps',
     title: 'How to Find Leads on Google Maps (Free Method for AI Agencies)',
@@ -69,7 +74,40 @@ const blogPosts: BlogPost[] = [
     readTime: '11 min read',
     featured: true,
   },
-  // January 30, 2026
+  {
+    slug: 'ai-receptionist-prompt-guide',
+    title: 'AI Receptionist Prompt Engineering Guide',
+    excerpt: 'Complete guide to AI receptionist prompts based on official VAPI and ElevenLabs documentation. Learn prompt structure, voice settings, conversation flow design, and production-ready templates.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-01',
+    readTime: '18 min read',
+    featured: true,
+  },
+  // =========================================================================
+  // INDUSTRY-SPECIFIC PROMPT GUIDES (February 2026)
+  // =========================================================================
+  {
+    slug: 'home-services-ai-receptionist-prompts',
+    title: 'Home Services AI Receptionist Prompts',
+    excerpt: 'Ready-to-use AI receptionist templates for HVAC, plumbing, electrical, roofing, and general contractors. Emergency handling, scheduling flows, and service area verification.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-01',
+    readTime: '16 min read',
+  },
+  {
+    slug: 'medical-dental-ai-receptionist-prompts',
+    title: 'Medical & Dental AI Receptionist Prompts',
+    excerpt: 'HIPAA-aware AI receptionist prompts for medical practices and dental offices. Patient intake, insurance handling, appointment scheduling, and emergency triage templates.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-01',
+    readTime: '15 min read',
+  },
+  // =========================================================================
+  // JANUARY 30, 2026
+  // =========================================================================
   {
     slug: 'best-recurring-revenue-business-ideas-2026',
     title: 'Best Recurring Revenue Business Ideas in 2026 (Ranked by Profit Margin)',
@@ -125,7 +163,9 @@ const blogPosts: BlogPost[] = [
     publishedAt: '2026-01-30',
     readTime: '10 min read',
   },
-  // PREVIOUS POSTS
+  // =========================================================================
+  // EARLIER JANUARY 2026
+  // =========================================================================
   {
     slug: 'pitch-ai-receptionists-home-services',
     title: 'How to Pitch AI Receptionists to Home Service Businesses',
@@ -192,7 +232,7 @@ const blogPosts: BlogPost[] = [
 ];
 
 // ============================================================================
-// COMPONENTS
+// BLOG CARD COMPONENT
 // ============================================================================
 function BlogCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
   const categoryColor = {
@@ -427,7 +467,7 @@ export default function BlogPage() {
                 Featured
               </h2>
               <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                {featuredPosts.map((post) => (
+                {featuredPosts.slice(0, 2).map((post) => (
                   <BlogCard key={post.slug} post={post} featured />
                 ))}
               </div>
