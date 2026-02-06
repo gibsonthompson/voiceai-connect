@@ -173,10 +173,10 @@ export default function ReferralProgramPage() {
             {/* CTA buttons */}
             <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link 
-                href="/signup?ref=referral-program" 
+                href="/signup" 
                 className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-5 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
               >
-                <span>Join the Referral Program</span>
+                <span>Start Your Free Trial</span>
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link 
@@ -223,10 +223,10 @@ export default function ReferralProgramPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                   {[
-                    { label: 'Total Referrals', value: '23', color: 'text-[#fafaf9]' },
-                    { label: 'Active Subscriptions', value: '19', color: 'text-[#fafaf9]' },
-                    { label: 'This Month', value: '$1,556', color: 'text-emerald-400' },
-                    { label: 'All Time', value: '$12,847', color: 'text-emerald-400' },
+                    { label: 'Total Referrals', value: '82', color: 'text-[#fafaf9]' },
+                    { label: 'Active Subscriptions', value: '73', color: 'text-[#fafaf9]' },
+                    { label: 'This Month', value: '$5,572', color: 'text-emerald-400' },
+                    { label: 'All Time', value: '$47,219', color: 'text-emerald-400' },
                   ].map((stat) => (
                     <div key={stat.label} className="p-3 sm:p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                       <p className="text-xs text-[#fafaf9]/40">{stat.label}</p>
@@ -348,24 +348,24 @@ export default function ReferralProgramPage() {
                 
                 <div className="space-y-6">
                   <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
-                    <span className="text-[#fafaf9]/60">10 referrals × $199/mo (Professional)</span>
-                    <span className="text-2xl font-semibold">$1,990</span>
+                    <span className="text-[#fafaf9]/60">70 referrals × $199/mo (Professional)</span>
+                    <span className="text-2xl font-semibold">$13,930</span>
                   </div>
                   <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
                     <span className="text-[#fafaf9]/60">Your 40% commission</span>
-                    <span className="text-2xl font-semibold text-emerald-400">$796/mo</span>
+                    <span className="text-2xl font-semibold text-emerald-400">$5,572/mo</span>
                   </div>
                   <div className="flex justify-between items-baseline pt-2">
                     <span className="text-[#fafaf9]/80 font-medium">Annual passive income</span>
-                    <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$9,552</span>
+                    <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$66,864</span>
                   </div>
                 </div>
                 
                 <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
                   <p className="text-sm text-emerald-300/80">
-                    <strong className="text-emerald-300">That&apos;s from just 10 referrals.</strong> Many of our partners 
-                    refer 25-50+ agencies. At 50 Professional referrals, you&apos;d earn $3,980/month—$47,760/year 
-                    in recurring passive income.
+                    <strong className="text-emerald-300">$5,572/month in passive recurring income.</strong> Referrals 
+                    compound over time—each new agency you refer adds to your monthly earnings permanently. 
+                    Your 40% commission never expires.
                   </p>
                 </div>
               </div>
@@ -766,7 +766,7 @@ export default function ReferralProgramPage() {
             {[
               {
                 q: 'How much can I earn with the VoiceAI Connect referral program?',
-                a: 'You earn 40% of every subscription payment your referrals make—for the lifetime of their subscription. On a single Professional plan referral ($199/month), that\'s $79.60/month or $955/year. Ten Professional referrals would earn you $796/month ($9,552/year). There\'s no cap on how many people you can refer or how much you can earn.',
+                a: 'You earn 40% of every subscription payment your referrals make—for the lifetime of their subscription. On a single Professional plan referral ($199/month), that\'s $79.60/month or $955/year. With 70 Professional referrals, you\'d earn $5,572/month—$66,864/year in passive recurring income. There\'s no cap on how many people you can refer or how much you can earn.',
               },
               {
                 q: 'Do I need to be a VoiceAI Connect customer to join?',
@@ -835,21 +835,14 @@ export default function ReferralProgramPage() {
                 Join the VoiceAI Connect agency referral program today. Free to join, no minimums, lifetime commissions.
               </p>
               
-              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <div className="mt-8 sm:mt-10">
                 <Link 
-                  href="/signup?ref=referral-program" 
+                  href="/signup" 
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
                 >
-                  Join the Referral Program
+                  Start Your Free Trial
                   <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
-                <a 
-                  href="mailto:partners@voiceaiconnect.com"
-                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
-                >
-                  <Mail className="h-4 w-4" />
-                  Contact Partnerships
-                </a>
               </div>
               
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
@@ -878,7 +871,7 @@ export default function ReferralProgramPage() {
                   "name": "How much can I earn with the VoiceAI Connect referral program?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "You earn 40% of every subscription payment your referrals make for the lifetime of their subscription. On a single Professional plan referral ($199/month), that's $79.60/month or $955/year. Ten Professional referrals would earn you $796/month ($9,552/year). There's no cap on earnings."
+                    "text": "You earn 40% of every subscription payment your referrals make for the lifetime of their subscription. On a single Professional plan referral ($199/month), that's $79.60/month or $955/year. With 70 Professional referrals, you'd earn $5,572/month or $66,864/year in passive recurring income. There's no cap on earnings."
                   }
                 },
                 {
