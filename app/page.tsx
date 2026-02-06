@@ -154,7 +154,7 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
               </span>
-              <span className="text-emerald-300/90">Now serving 12,000+ businesses worldwide</span>
+              <span className="text-emerald-300/90">White-label AI receptionist platform</span>
             </div>
 
             {/* Headline */}
@@ -222,32 +222,6 @@ export default function LandingPage() {
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="text-[#fafaf9]/70">Your clients see <span className="text-[#fafaf9]">your brand</span>, not ours</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof Bar */}
-      <section className="border-y border-white/[0.06] bg-white/[0.01] py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="grid grid-cols-3 gap-8 sm:gap-12 lg:gap-16">
-              {[
-                { value: '$2.4M+', label: 'Revenue for partners' },
-                { value: '847', label: 'Active agencies' },
-                { value: '12,400+', label: 'Businesses served' },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center lg:text-left">
-                  <p className="text-2xl sm:text-3xl font-semibold tracking-tight">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-400 text-amber-400" />
-              ))}
-              <span className="ml-2 text-sm text-[#fafaf9]/60">4.9/5 from 200+ reviews</span>
             </div>
           </div>
         </div>
@@ -1312,7 +1286,7 @@ export default function LandingPage() {
                 </span>
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Join 800+ agencies already building recurring revenue with VoiceAI Connect.
+                Launch your AI receptionist agency in under 24 hours.
               </p>
               
               <div className="mt-8 sm:mt-10">
