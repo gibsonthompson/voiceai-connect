@@ -1085,7 +1085,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonial - Original */}
+      {/* Testimonial */}
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center gap-1 mb-6 sm:mb-8">
@@ -1095,7 +1095,7 @@ export default function LandingPage() {
           </div>
           <blockquote className="text-xl sm:text-2xl lg:text-3xl font-medium leading-relaxed">
             &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
-            VoiceAI Connect let me launch CallBird in a weekend. Signed my first paying client 
+            VoiceAI Connect let me launch SmartDesk AI in a weekend. Signed my first paying client 
             within 11 days—that one client covered my entire monthly cost. Saved so much time 
             and tech headaches.&rdquo;
           </blockquote>
@@ -1107,7 +1107,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* From the Blog - NEW */}
+      {/* From the Blog */}
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-10 sm:mb-12">
@@ -1306,6 +1306,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
+              <Link href="/referral-program" className="hover:text-[#fafaf9] transition-colors">Referral Program</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>

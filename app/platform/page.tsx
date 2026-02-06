@@ -79,6 +79,7 @@ export default function PlatformPage() {
                 { name: 'How It Works', href: '/how-it-works' },
                 { name: 'Pricing', href: '/#pricing' },
                 { name: 'Blog', href: '/blog' },
+                { name: 'Referral Program', href: '/referral-program' },
               ].map((item) => (
                 <Link 
                   key={item.name}
@@ -115,6 +116,7 @@ export default function PlatformPage() {
               { name: 'How It Works', href: '/how-it-works' },
               { name: 'Pricing', href: '/#pricing' },
               { name: 'Blog', href: '/blog' },
+              { name: 'Referral Program', href: '/referral-program' },
             ].map((item) => (
               <Link 
                 key={item.name}
@@ -724,6 +726,7 @@ export default function PlatformPage() {
               <Link href="/platform" className="text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/#pricing" className="hover:text-[#fafaf9] transition-colors">Pricing</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
+              <Link href="/referral-program" className="hover:text-[#fafaf9] transition-colors">Referral Program</Link>
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
