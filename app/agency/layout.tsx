@@ -263,6 +263,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       style={{
         backgroundColor: bgColor,
         color: textColor,
+        zoom: 0.8,
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
         '--color-accent': accentColor,
