@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAgency } from '../context';
-import { DEMO_REFERRALS } from '@/lib/demoData';
+import { DEMO_REFERRALS } from '../demoData';
 import { 
   Users, DollarSign, TrendingUp, Copy, Check, ExternalLink, 
   Loader2, ArrowUpRight, Clock, Sparkles, Gift, Edit2, X,
