@@ -17,6 +17,7 @@ interface Agency {
   trial_ends_at: string | null;
   stripe_account_id: string | null;
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   marketing_domain: string | null;
   domain_verified: boolean;
   price_starter: number;
