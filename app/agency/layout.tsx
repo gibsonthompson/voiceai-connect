@@ -279,8 +279,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
           <a
             href={`/signup/plan?agency=${agency?.id}`}
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold text-white transition-all hover:opacity-90"
-            style={{ backgroundColor: primaryColor }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90"
+            style={{ 
+              backgroundColor: primaryColor,
+              color: isDark ? '#050505' : '#ffffff',
+            }}
           >
             <Zap className="h-5 w-5" />
             Choose a Plan &amp; Start Free Trial
