@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { 
   PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft
 } from 'lucide-react';
-import { useAgency } from '../../../context';
-import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../../demoData';
+import { useAgency } from '../../context';
+import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../demoData';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
