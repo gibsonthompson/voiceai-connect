@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     //   status: 'trial'
     //   subscription_status: 'trialing'
     //   stripe_subscription_id
-    //   trial_ends_at
+    //   trial_ends_at 
     // This only fires AFTER the user completes payment on Stripe's checkout page.
 
     return NextResponse.json({
