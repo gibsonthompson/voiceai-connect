@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Rocket,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
@@ -38,6 +38,14 @@ function isPaymentFailed(status: string | null | undefined): boolean {
 // Helper to check if agency is suspended and should be blocked
 function isSuspended(status: string | null | undefined): boolean {
   return status === 'suspended' || status === 'canceled' || status === 'cancelled';
+}
+
+// Helper to check if agency never completed Stripe checkout
+function needsSubscription(agency: any): boolean {
+  if (!agency) return false;
+  // No stripe_subscription_id means they never completed Stripe Checkout
+  // Also check subscription_status isn't already active (edge case safety)
+  return !agency.stripe_subscription_id && agency.subscription_status !== 'active';
 }
 
 // Calculate trial days remaining
@@ -94,6 +102,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // Check for payment/subscription issues
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
   const agencyIsSuspended = isSuspended(agency?.status);
+
+  // Check if agency needs to complete Stripe checkout (never paid)
+  const agencyNeedsSubscription = needsSubscription(agency);
   
   // Determine if current route should be blocked
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
@@ -202,7 +213,92 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Show blocking screen while redirecting
+  // ============================================================================
+  // SUBSCRIPTION GATE - Agency never completed Stripe Checkout
+  // Shows a blocking screen that directs them to pick a plan and start trial
+  // ============================================================================
+  if (agencyNeedsSubscription) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: bgColor }}
+      >
+        <div 
+          className="max-w-lg w-full rounded-2xl p-8 text-center"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
+            border: `1px solid ${isDark ? `${primaryColor}30` : `${primaryColor}20`}`,
+            boxShadow: isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* Logo */}
+          <div className="mb-6">
+            {branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt={branding.name}
+                style={{ height: '48px', width: 'auto' }}
+                className="object-contain mx-auto"
+              />
+            ) : (
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <WaveformIcon className="h-8 w-8" color={primaryColor} />
+              </div>
+            )}
+          </div>
+
+          {/* Icon */}
+          <div 
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ backgroundColor: `${primaryColor}12` }}
+          >
+            <Rocket className="h-7 w-7" style={{ color: primaryColor }} />
+          </div>
+
+          <h1 
+            className="text-2xl font-bold mb-3"
+            style={{ color: textColor }}
+          >
+            Finish Setting Up Your Agency
+          </h1>
+          <p 
+            className="mb-2 text-base"
+            style={{ color: mutedTextColor }}
+          >
+            You&apos;re almost there! Select a plan to start your <strong style={{ color: textColor }}>14-day free trial</strong> and unlock your agency dashboard.
+          </p>
+          <p 
+            className="mb-8 text-sm"
+            style={{ color: mutedTextColor }}
+          >
+            No charge until your trial ends. Cancel anytime.
+          </p>
+
+          <a
+            href={`/signup/plan?agency=${agency?.id}`}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold text-white transition-all hover:opacity-90"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <Rocket className="h-5 w-5" />
+            Choose a Plan &amp; Start Free Trial
+          </a>
+
+          <button
+            onClick={handleSignOut}
+            className="block w-full mt-5 text-sm transition-colors hover:opacity-70"
+            style={{ color: mutedTextColor }}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show blocking screen while redirecting (payment failed / suspended)
   if (shouldBlockAccess) {
     return (
       <div 

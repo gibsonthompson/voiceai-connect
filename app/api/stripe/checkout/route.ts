@@ -98,15 +98,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update agency with subscription info
-    await supabase
-      .from('agencies')
-      .update({
-        plan_type: planType,
-        subscription_status: 'trialing',
-        status: 'active',
-      })
-      .eq('id', agencyId);
+    // DO NOT update agency status here.
+    // The Stripe webhook (handleAgencyCheckoutCompleted) handles setting:
+    //   status: 'trial'
+    //   subscription_status: 'trialing'
+    //   stripe_subscription_id
+    //   trial_ends_at
+    // This only fires AFTER the user completes payment on Stripe's checkout page.
 
     return NextResponse.json({
       success: true,
