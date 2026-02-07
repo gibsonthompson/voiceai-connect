@@ -7,6 +7,7 @@ import {
   PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft
 } from 'lucide-react';
 import { useAgency } from '../../../context';
+import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../../demoData';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -24,7 +25,7 @@ interface ClientInfo {
 export default function AgencyClientCallsPage() {
   const params = useParams();
   const clientId = params.id as string;
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [calls, setCalls] = useState<any[]>([]);
@@ -56,10 +57,19 @@ export default function AgencyClientCallsPage() {
   };
 
   useEffect(() => {
-    if (agency && clientId) {
-      fetchClientAndCalls();
+    if (!agency || !clientId) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      const demoClient = DEMO_CLIENTS.find(c => c.id === clientId) || DEMO_CLIENTS[0];
+      setClient({ id: demoClient.id, business_name: demoClient.business_name, email: demoClient.email });
+      setCalls(DEMO_CLIENT_CALLS);
+      setCallsLoading(false);
+      return;
     }
-  }, [agency, clientId]);
+
+    fetchClientAndCalls();
+  }, [agency, clientId, demoMode]);
 
   const fetchClientAndCalls = async () => {
     if (!agency || !clientId) return;
@@ -301,7 +311,7 @@ export default function AgencyClientCallsPage() {
                         {call.service_requested || 'General inquiry'}
                       </p>
                       <p className="text-xs" style={{ color: theme.textMuted4 }}>
-                        {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : '—'}
+                        {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : '—'}
                       </p>
                     </div>
                     

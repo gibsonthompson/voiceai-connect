@@ -7,6 +7,7 @@ import {
   ChevronRight, Loader2
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { DEMO_ANALYTICS } from '../demoData';
 
 interface Stats {
   mrr: number;
@@ -49,7 +50,7 @@ function formatMonth(monthStr: string): string {
 }
 
 export default function AgencyAnalyticsPage() {
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   const [stats, setStats] = useState<Stats>({
     mrr: 0,
     totalEarned: 0,
@@ -74,10 +75,20 @@ export default function AgencyAnalyticsPage() {
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
 
   useEffect(() => {
-    if (agency) {
-      fetchRevenueData();
+    if (!agency) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      setStats(DEMO_ANALYTICS.stats as Stats);
+      setRevenueByMonth(DEMO_ANALYTICS.revenueByMonth);
+      setPayments(DEMO_ANALYTICS.payments as Payment[]);
+      setClients(DEMO_ANALYTICS.clients as Client[]);
+      setLoading(false);
+      return;
     }
-  }, [agency]);
+
+    fetchRevenueData();
+  }, [agency, demoMode]);
 
   const fetchRevenueData = async () => {
     if (!agency) return;
@@ -347,7 +358,8 @@ export default function AgencyAnalyticsPage() {
             <div>
               {payments.slice(0, 10).map((payment, idx) => {
                 const client = clients.find(c => c.id === payment.client_id);
-                const statusColor = payment.status === 'succeeded'
+                const clientName = (payment as any).client_name || client?.business_name || 'Unknown';
+                const statusColor = payment.status === 'succeeded' || payment.status === 'paid'
                   ? { bg: `${primaryColor}15`, text: primaryColor }
                   : payment.status === 'pending'
                   ? { bg: 'rgba(245,158,11,0.1)', text: isDark ? '#fbbf24' : '#d97706' }
@@ -367,9 +379,9 @@ export default function AgencyAnalyticsPage() {
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0"
                             style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
                           >
-                            {client?.business_name?.charAt(0) || '?'}
+                            {clientName.charAt(0) || '?'}
                           </div>
-                          <span className="truncate text-sm">{client?.business_name || 'Unknown'}</span>
+                          <span className="truncate text-sm">{clientName}</span>
                         </div>
                         <span className="font-medium text-sm">{formatCurrency(payment.amount)}</span>
                       </div>
@@ -393,9 +405,9 @@ export default function AgencyAnalyticsPage() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium"
                           style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
                         >
-                          {client?.business_name?.charAt(0) || '?'}
+                          {clientName.charAt(0) || '?'}
                         </div>
-                        <span className="truncate">{client?.business_name || 'Unknown'}</span>
+                        <span className="truncate">{clientName}</span>
                       </div>
                       
                       <div className="col-span-2 font-medium">
@@ -428,7 +440,7 @@ export default function AgencyAnalyticsPage() {
       </div>
 
       {/* Stripe Connect Status */}
-      {agency && !agency.stripe_account_id && (
+      {agency && !agency.stripe_account_id && !demoMode && (
         <div 
           className="mt-4 sm:mt-6 rounded-xl p-4 sm:p-6"
           style={{ 

@@ -62,6 +62,9 @@ interface AgencyContextType {
   isExpired: boolean;
   trialDaysLeft: number | null;
   refreshAgency: () => Promise<void>;
+  // Demo mode
+  demoMode: boolean;
+  toggleDemoMode: () => void;
 }
 
 const defaultBranding: Branding = {
@@ -81,6 +84,8 @@ const AgencyContext = createContext<AgencyContextType>({
   isExpired: false,
   trialDaysLeft: null,
   refreshAgency: async () => {},
+  demoMode: false,
+  toggleDemoMode: () => {},
 });
 
 export function useAgency() {
@@ -116,6 +121,33 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [branding, setBranding] = useState<Branding>(defaultBranding);
   const [loading, setLoading] = useState(true);
+
+  // Demo mode state — persisted in localStorage
+  const [demoMode, setDemoMode] = useState(false);
+
+  // Initialize demo mode from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('voiceai_demo_mode');
+      if (stored === 'true') {
+        setDemoMode(true);
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  const toggleDemoMode = () => {
+    setDemoMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('voiceai_demo_mode', next.toString());
+      } catch {
+        // localStorage unavailable
+      }
+      return next;
+    });
+  };
 
   const fetchAgencyData = async () => {
     try {
@@ -201,7 +233,9 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       isTrialActive,
       isExpired,
       trialDaysLeft,
-      refreshAgency: fetchAgencyData 
+      refreshAgency: fetchAgencyData,
+      demoMode,
+      toggleDemoMode,
     }}>
       {children}
     </AgencyContext.Provider>

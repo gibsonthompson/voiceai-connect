@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
@@ -67,7 +67,7 @@ interface NavItem {
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading } = useAgency();
+  const { agency, branding, loading, demoMode, toggleDemoMode } = useAgency();
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -281,8 +281,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {/* Payment Failed Banner - Only shows if payment failed (not for trial) */}
       {hasPaymentIssue && isAccessibleRoute && (
         <div 
-          className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between gap-3"
+          className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3"
           style={{
+            top: 0,
             backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2',
             borderBottom: '1px solid rgba(239,68,68,0.3)',
           }}
@@ -315,7 +316,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Header */}
       <div 
-        className="sticky top-0 z-30 md:hidden"
+        className="sticky z-30 md:hidden"
         style={{ 
           backgroundColor: sidebarBg, 
           paddingTop: 'env(safe-area-inset-top)',
@@ -383,7 +384,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           backgroundColor: sidebarBg, 
           borderRight: `1px solid ${borderColor}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
-          top: hasPaymentIssue && isAccessibleRoute && !isMobile ? '60px' : 0,
+          top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0,
         }}
       >
         {/* Mobile Header in Sidebar */}
@@ -487,6 +488,42 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           className="absolute bottom-0 left-0 right-0 p-4 space-y-3"
           style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}
         >
+          {/* Demo Mode Toggle */}
+          <button
+            onClick={toggleDemoMode}
+            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+              demoMode 
+                ? '' 
+                : (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]')
+            }`}
+            style={demoMode ? {
+              backgroundColor: `${primaryColor}15`,
+              border: `1px solid ${primaryColor}30`,
+            } : {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${borderColor}`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Eye className="h-4 w-4" style={{ color: demoMode ? primaryColor : mutedTextColor }} />
+              <span style={{ color: demoMode ? primaryColor : mutedTextColor }}>Demo Mode</span>
+            </div>
+            {/* Mini toggle switch */}
+            <div
+              className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200"
+              style={{ 
+                backgroundColor: demoMode ? primaryColor : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+              }}
+            >
+              <span
+                className="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition duration-200"
+                style={{ 
+                  transform: demoMode ? 'translate(16px, 3px)' : 'translate(3px, 3px)',
+                }}
+              />
+            </div>
+          </button>
+
           {/* Trial Badge - Informational only (Stripe auto-charges when trial ends) */}
           {isOnTrial && trialDaysLeft !== null && (
             <div 

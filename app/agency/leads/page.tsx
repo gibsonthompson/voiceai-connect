@@ -9,6 +9,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { DEMO_LEADS, DEMO_LEAD_STATS } from '../demoData';
 
 interface Lead {
   id: string;
@@ -93,7 +94,7 @@ function isOverdue(dateStr: string): boolean {
 type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active';
 
 export default function AgencyLeadsPage() {
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -147,10 +148,18 @@ export default function AgencyLeadsPage() {
   };
 
   useEffect(() => {
-    if (agency) {
-      fetchLeads();
+    if (!agency) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      setLeads(DEMO_LEADS as Lead[]);
+      setStats(DEMO_LEAD_STATS as LeadStats);
+      setLoading(false);
+      return;
     }
-  }, [agency]);
+
+    fetchLeads();
+  }, [agency, demoMode]);
 
   const fetchLeads = async () => {
     if (!agency) return;

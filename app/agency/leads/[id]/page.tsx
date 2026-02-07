@@ -10,6 +10,7 @@ import {
   Hash, TrendingUp
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
 import ComposerModal from '../../../../components/ComposerModal';
 
@@ -115,7 +116,7 @@ export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
   const leadId = params.id as string;
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   
   const [lead, setLead] = useState<Lead | null>(null);
   const [outreach, setOutreach] = useState<OutreachStats | null>(null);
@@ -176,10 +177,33 @@ export default function LeadDetailPage() {
   };
 
   useEffect(() => {
-    if (agency && leadId) {
-      fetchLead();
+    if (!agency || !leadId) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      const demoData = getDemoLeadDetail(leadId);
+      const demoLead = demoData.lead as Lead;
+      setLead(demoLead);
+      setOutreach(demoData.outreachStats as OutreachStats);
+      setFormData({
+        business_name: demoLead.business_name || '',
+        contact_name: demoLead.contact_name || '',
+        email: demoLead.email || '',
+        phone: demoLead.phone || '',
+        website: demoLead.website || '',
+        industry: demoLead.industry || '',
+        source: demoLead.source || '',
+        status: demoLead.status || 'new',
+        notes: demoLead.notes || '',
+        estimated_value: demoLead.estimated_value ? String(demoLead.estimated_value / 100) : '',
+        next_follow_up: demoLead.next_follow_up ? demoLead.next_follow_up.split('T')[0] : '',
+      });
+      setLoading(false);
+      return;
     }
-  }, [agency, leadId]);
+
+    fetchLead();
+  }, [agency, leadId, demoMode]);
 
   const fetchLead = async () => {
     if (!agency || !leadId) return;
@@ -228,6 +252,7 @@ export default function LeadDetailPage() {
   };
 
   const handleSave = async () => {
+    if (demoMode) return;
     if (!agency || !leadId) return;
     
     setSaving(true);
@@ -276,6 +301,7 @@ export default function LeadDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (demoMode) return;
     if (!agency || !leadId) return;
     
     if (!confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
@@ -306,6 +332,13 @@ export default function LeadDetailPage() {
   };
 
   const handleQuickStatusChange = async (newStatus: string) => {
+    if (demoMode) {
+      // In demo mode, just update the UI locally
+      setFormData(prev => ({ ...prev, status: newStatus }));
+      setSuccessMessage('Status updated (demo)');
+      setTimeout(() => setSuccessMessage(''), 2000);
+      return;
+    }
     if (!agency || !leadId) return;
 
     try {
@@ -336,6 +369,7 @@ export default function LeadDetailPage() {
   };
 
   const openComposer = (type: 'email' | 'sms') => {
+    if (demoMode) return;
     setComposerType(type);
     setComposerOpen(true);
   };
@@ -387,8 +421,8 @@ export default function LeadDetailPage() {
   }
 
   // Determine if email/sms buttons should be enabled
-  const canSendEmail = Boolean(formData.email && formData.email.includes('@'));
-  const canSendSms = Boolean(formData.phone && formData.phone.length >= 10);
+  const canSendEmail = !demoMode && Boolean(formData.email && formData.email.includes('@'));
+  const canSendSms = !demoMode && Boolean(formData.phone && formData.phone.length >= 10);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -421,38 +455,40 @@ export default function LeadDetailPage() {
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
-              style={{
-                backgroundColor: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.3)',
-                color: isDark ? '#f87171' : '#dc2626',
-              }}
-            >
-              {deleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">Delete</span>
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
-              style={{ backgroundColor: primaryColor, color: buttonTextColor }}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              Save Changes
-            </button>
-          </div>
+          {!demoMode && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  color: isDark ? '#f87171' : '#dc2626',
+                }}
+              >
+                {deleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Delete</span>
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
+                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Changes
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -582,7 +618,7 @@ export default function LeadDetailPage() {
               border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : borderColor}`,
               color: canSendEmail ? (isDark ? '#a78bfa' : '#7c3aed') : mutedTextColor,
             }}
-            title={!canSendEmail ? 'Add email address to send' : undefined}
+            title={demoMode ? 'Disabled in demo mode' : !canSendEmail ? 'Add email address to send' : undefined}
           >
             <Mail className="h-4 w-4" />
             <span>
@@ -600,7 +636,7 @@ export default function LeadDetailPage() {
               border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : borderColor}`,
               color: canSendSms ? (isDark ? '#22d3ee' : '#0891b2') : mutedTextColor,
             }}
-            title={!canSendSms ? 'Add phone number to send' : undefined}
+            title={demoMode ? 'Disabled in demo mode' : !canSendSms ? 'Add phone number to send' : undefined}
           >
             <MessageSquare className="h-4 w-4" />
             <span>
@@ -611,7 +647,8 @@ export default function LeadDetailPage() {
           
           {lead?.phone && (
             <a
-              href={`tel:${lead.phone}`}
+              href={demoMode ? '#' : `tel:${lead.phone}`}
+              onClick={demoMode ? (e: React.MouseEvent) => e.preventDefault() : undefined}
               className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
               style={{
                 backgroundColor: 'rgba(34,197,94,0.1)',
@@ -626,7 +663,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Missing contact info warnings */}
-        {(!canSendEmail || !canSendSms) && (
+        {!demoMode && (!canSendEmail || !canSendSms) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {!canSendEmail && (
               <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.05)', color: isDark ? '#fbbf24' : '#d97706' }}>
@@ -674,7 +711,7 @@ export default function LeadDetailPage() {
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left Column - Contact & Business Info */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Business Information - Business Name, Industry, Phone, Website */}
+          {/* Business Information */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -690,6 +727,7 @@ export default function LeadDetailPage() {
                   type="text"
                   value={formData.business_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
+                  readOnly={demoMode}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
@@ -700,6 +738,7 @@ export default function LeadDetailPage() {
                   type="text"
                   value={formData.industry}
                   onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
+                  readOnly={demoMode}
                   placeholder="e.g., Plumbing, HVAC"
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
@@ -713,6 +752,7 @@ export default function LeadDetailPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    readOnly={demoMode}
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
@@ -726,6 +766,7 @@ export default function LeadDetailPage() {
                     type="url"
                     value={formData.website}
                     onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                    readOnly={demoMode}
                     placeholder="example.com"
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
@@ -735,7 +776,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          {/* Contact Information - Contact Name, Email */}
+          {/* Contact Information */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
@@ -751,6 +792,7 @@ export default function LeadDetailPage() {
                   type="text"
                   value={formData.contact_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+                  readOnly={demoMode}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
@@ -763,6 +805,7 @@ export default function LeadDetailPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    readOnly={demoMode}
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
@@ -783,6 +826,7 @@ export default function LeadDetailPage() {
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              readOnly={demoMode}
               placeholder="Add notes about this lead..."
               rows={4}
               className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none"
@@ -791,7 +835,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Activity Log */}
-          {agency && lead && (
+          {!demoMode && agency && lead && (
             <ActivityLog 
               key={activityKey}
               agencyId={agency.id} 
@@ -818,6 +862,7 @@ export default function LeadDetailPage() {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  disabled={demoMode}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 >
@@ -831,6 +876,7 @@ export default function LeadDetailPage() {
                 <select
                   value={formData.source}
                   onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
+                  disabled={demoMode}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 >
@@ -861,6 +907,7 @@ export default function LeadDetailPage() {
                     type="number"
                     value={formData.estimated_value}
                     onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
+                    readOnly={demoMode}
                     placeholder="99"
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
@@ -878,6 +925,7 @@ export default function LeadDetailPage() {
                     type="date"
                     value={formData.next_follow_up}
                     onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))}
+                    readOnly={demoMode}
                     className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                   />
@@ -919,14 +967,14 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Composer Modal */}
-      {agency && lead && (
+      {!demoMode && agency && lead && (
         <ComposerModal
           isOpen={composerOpen}
           onClose={() => setComposerOpen(false)}
           agencyId={agency.id}
           lead={{
             ...lead,
-            email: formData.email,  // Use form data in case user just added it
+            email: formData.email,
             phone: formData.phone,
           }}
           type={composerType}

@@ -15,7 +15,7 @@ type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
 export default function MarketingWebsitePage() {
   const router = useRouter();
-  const { agency, branding, loading: agencyLoading, refreshAgency } = useAgency();
+  const { agency, branding, loading: agencyLoading, refreshAgency, demoMode } = useAgency();
   const { canUseMarketingSite, planName } = usePlanFeatures();
   
   const [copied, setCopied] = useState<string | null>(null);
@@ -61,7 +61,16 @@ export default function MarketingWebsitePage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug || 'demo'}.${platformDomain}`;
 
+  // Demo mode: grant access even if plan doesn't allow it
+  const hasAccess = canUseMarketingSite || demoMode;
+
   useEffect(() => {
+    // Skip DNS fetch in demo mode
+    if (demoMode) {
+      setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' });
+      return;
+    }
+
     const fetchDnsConfig = async () => {
       try {
         const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
@@ -79,9 +88,23 @@ export default function MarketingWebsitePage() {
       }
     };
     if (agency) fetchDnsConfig();
-  }, [agency?.marketing_domain]);
+  }, [agency?.marketing_domain, demoMode]);
 
   useEffect(() => {
+    // Demo mode: seed with sample content values
+    if (demoMode) {
+      setTagline('AI-Powered Phone Answering');
+      setHeadline('Never Miss Another Call');
+      setSubheadline('Our AI receptionist answers calls 24/7, books appointments, and captures leads — starting at just $49/month.');
+      setCustomDomain('voiceai.youragency.com');
+      setDomainStatus('verified');
+      setPrimaryColor(agency?.primary_color || '#10b981');
+      setSecondaryColor(agency?.secondary_color || '#059669');
+      setAccentColor(agency?.accent_color || '#34d399');
+      setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light');
+      return;
+    }
+
     if (agency) {
       if (agency.marketing_domain) {
         setCustomDomain(agency.marketing_domain);
@@ -95,7 +118,7 @@ export default function MarketingWebsitePage() {
       setAccentColor(agency.accent_color || '#34d399');
       setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light');
     }
-  }, [agency]);
+  }, [agency, demoMode]);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -104,6 +127,13 @@ export default function MarketingWebsitePage() {
   };
 
   const handleSaveContent = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setContentSaved(true);
+      setTimeout(() => setContentSaved(false), 3000);
+      return;
+    }
+
     if (!agency) return;
     setSavingContent(true);
     setContentSaved(false);
@@ -133,6 +163,13 @@ export default function MarketingWebsitePage() {
   };
 
   const handleSaveColors = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setColorsSaved(true);
+      setTimeout(() => setColorsSaved(false), 3000);
+      return;
+    }
+
     if (!agency) return;
     setSavingColors(true);
     setColorsSaved(false);
@@ -163,6 +200,12 @@ export default function MarketingWebsitePage() {
   };
 
   const handleSaveCustomDomain = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setDomainStatus('pending');
+      return;
+    }
+
     if (!customDomain.trim() || !agency) return;
     setSavingDomain(true);
     
@@ -200,6 +243,12 @@ export default function MarketingWebsitePage() {
   };
 
   const handleVerifyDomain = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setDomainStatus('verified');
+      return;
+    }
+
     if (!agency) return;
     setVerifyingDomain(true);
     
@@ -228,6 +277,13 @@ export default function MarketingWebsitePage() {
   };
 
   const handleRemoveDomain = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setCustomDomain('');
+      setDomainStatus('none');
+      return;
+    }
+
     if (!agency || !confirm('Remove this custom domain? Your site will only be accessible via the subdomain.')) return;
     setSavingDomain(true);
     
@@ -433,8 +489,8 @@ export default function MarketingWebsitePage() {
     );
   }
 
-  // If no access, show locked overlay with preview
-  if (!canUseMarketingSite) {
+  // If no access (and not in demo mode), show locked overlay with preview
+  if (!hasAccess) {
     return (
       <LockedFeature
         title="Marketing Website"
@@ -452,7 +508,7 @@ export default function MarketingWebsitePage() {
     );
   }
 
-  // Full access - render full interactive page (same as original)
+  // Full access - render full interactive page
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -492,9 +548,10 @@ export default function MarketingWebsitePage() {
           <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
           <div className="flex gap-2">
             <a
-              href={subdomainUrl}
-              target="_blank"
+              href={demoMode ? '#' : subdomainUrl}
+              target={demoMode ? undefined : '_blank'}
               rel="noopener noreferrer"
+              onClick={demoMode ? (e) => e.preventDefault() : undefined}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-white transition-colors"
               style={{ backgroundColor: agencyPrimaryColor }}
             >
@@ -617,15 +674,15 @@ export default function MarketingWebsitePage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div>
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Tagline</p>
-                <p className="text-xs sm:text-sm truncate">{agency?.company_tagline || 'AI-Powered Phone Answering'}</p>
+                <p className="text-xs sm:text-sm truncate">{tagline || agency?.company_tagline || 'AI-Powered Phone Answering'}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Headline</p>
-                <p className="text-xs sm:text-sm truncate">{agency?.website_headline || 'Never Miss Another Call'}</p>
+                <p className="text-xs sm:text-sm truncate">{headline || agency?.website_headline || 'Never Miss Another Call'}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Theme</p>
-                <p className="text-xs sm:text-sm capitalize">{agency?.website_theme === 'dark' ? 'Dark' : 'Light'}</p>
+                <p className="text-xs sm:text-sm capitalize">{websiteTheme === 'dark' ? 'Dark' : 'Light'}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Logo</p>
@@ -700,7 +757,7 @@ export default function MarketingWebsitePage() {
               {contentSaved && (
                 <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
                   <Check className="h-4 w-4" />
-                  Saved!
+                  {demoMode ? 'Saved! (demo)' : 'Saved!'}
                 </span>
               )}
               <button
@@ -717,7 +774,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab Content - Colors (abbreviated) */}
+      {/* Tab Content - Colors */}
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
           <div 
@@ -754,6 +811,12 @@ export default function MarketingWebsitePage() {
             className="rounded-xl p-4 sm:p-6 flex justify-end"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
+            {colorsSaved && (
+              <span className="flex items-center gap-2 text-xs sm:text-sm mr-4" style={{ color: agencyPrimaryColor }}>
+                <Check className="h-4 w-4" />
+                {demoMode ? 'Saved! (demo)' : 'Saved!'}
+              </span>
+            )}
             <button
               onClick={handleSaveColors}
               disabled={savingColors}
@@ -767,7 +830,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab Content - Domain (abbreviated) */}
+      {/* Tab Content - Domain */}
       {activeTab === 'domain' && (
         <div className="space-y-4 sm:space-y-6">
           <div 
@@ -796,7 +859,27 @@ export default function MarketingWebsitePage() {
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
-            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Custom Domain</h3>
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <h3 className="font-medium text-sm sm:text-base">Custom Domain</h3>
+              {domainStatus === 'verified' && (
+                <span 
+                  className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full"
+                  style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Verified
+                </span>
+              )}
+              {domainStatus === 'pending' && (
+                <span 
+                  className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full"
+                  style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: isDark ? '#fbbf24' : '#d97706' }}
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Pending
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain</p>
 
             <div className="space-y-3 sm:space-y-4">
@@ -811,16 +894,86 @@ export default function MarketingWebsitePage() {
                   style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
                 />
               </div>
-              <button
-                onClick={handleSaveCustomDomain}
-                disabled={!customDomain.trim() || savingDomain}
-                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-                style={{ backgroundColor: agencyPrimaryColor }}
-              >
-                {savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
-                Add Domain
-              </button>
+
+              <div className="flex flex-wrap gap-2">
+                {domainStatus === 'none' && (
+                  <button
+                    onClick={handleSaveCustomDomain}
+                    disabled={!customDomain.trim() || savingDomain}
+                    className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    style={{ backgroundColor: agencyPrimaryColor }}
+                  >
+                    {savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
+                    Add Domain
+                  </button>
+                )}
+                {domainStatus === 'pending' && (
+                  <>
+                    <button
+                      onClick={handleVerifyDomain}
+                      disabled={verifyingDomain}
+                      className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors"
+                      style={{ backgroundColor: agencyPrimaryColor }}
+                    >
+                      {verifyingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      Verify DNS
+                    </button>
+                    <button
+                      onClick={handleRemoveDomain}
+                      disabled={savingDomain}
+                      className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors"
+                      style={{ 
+                        color: isDark ? '#f87171' : '#dc2626',
+                        backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                        border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </>
+                )}
+                {domainStatus === 'verified' && (
+                  <button
+                    onClick={handleRemoveDomain}
+                    disabled={savingDomain}
+                    className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors"
+                    style={{ 
+                      color: isDark ? '#f87171' : '#dc2626',
+                      backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+                      border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+                    }}
+                  >
+                    Remove Domain
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* DNS Instructions for pending */}
+            {domainStatus === 'pending' && dnsConfig && (
+              <div 
+                className="mt-4 rounded-lg p-4"
+                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}
+              >
+                <p className="text-xs font-medium mb-3" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Add these DNS records at your domain registrar:
+                </p>
+                <div className="space-y-2 text-xs font-mono">
+                  <div className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
+                    <span style={{ color: mutedTextColor }}>A Record → {dnsConfig.aRecord}</span>
+                    <button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>
+                      {copied === 'a-record' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
+                    <span style={{ color: mutedTextColor }}>CNAME → {dnsConfig.cname}</span>
+                    <button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>
+                      {copied === 'cname' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

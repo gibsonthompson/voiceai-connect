@@ -6,6 +6,7 @@ import {
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { DEMO_CLIENTS } from '../demoData';
 
 interface Client {
   id: string;
@@ -32,7 +33,7 @@ const getContrastColor = (hexColor: string): string => {
 };
 
 export default function AgencyClientsPage() {
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,10 +53,17 @@ export default function AgencyClientsPage() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
   useEffect(() => {
-    if (agency) {
-      fetchClients();
+    if (!agency) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      setClients(DEMO_CLIENTS as Client[]);
+      setLoading(false);
+      return;
     }
-  }, [agency]);
+
+    fetchClients();
+  }, [agency, demoMode]);
 
   const fetchClients = async () => {
     if (!agency) return;

@@ -6,6 +6,7 @@ import {
   ChevronRight, ArrowUpRight, Loader2
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { DEMO_DASHBOARD } from '../demoData';
 
 interface RecentClient {
   id: string;
@@ -38,7 +39,7 @@ function isTrialStatus(status: string | null | undefined): boolean {
 }
 
 export default function AgencyDashboardPage() {
-  const { agency, user, branding, loading: contextLoading } = useAgency();
+  const { agency, user, branding, loading: contextLoading, demoMode } = useAgency();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -55,10 +56,17 @@ export default function AgencyDashboardPage() {
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
 
   useEffect(() => {
-    if (agency) {
-      fetchDashboardData();
+    if (!agency) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      setStats(DEMO_DASHBOARD as DashboardStats);
+      setLoading(false);
+      return;
     }
-  }, [agency]);
+
+    fetchDashboardData();
+  }, [agency, demoMode]);
 
   const fetchDashboardData = async () => {
     if (!agency) return;
@@ -144,7 +152,7 @@ export default function AgencyDashboardPage() {
       </div>
 
       {/* Trial Info Banner - Informational only (Stripe auto-charges) */}
-      {isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
+      {!demoMode && isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
         <div 
           className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3"
           style={{

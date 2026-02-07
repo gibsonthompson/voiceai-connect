@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAgency } from '../context';
+import { DEMO_REFERRALS } from '@/lib/demoData';
 import { 
   Users, DollarSign, TrendingUp, Copy, Check, ExternalLink, 
   Loader2, ArrowUpRight, Clock, Sparkles, Gift, Edit2, X,
@@ -72,7 +73,7 @@ const formatDate = (dateString: string) => {
 // MAIN COMPONENT
 // ============================================================================
 export default function ReferralsPage() {
-  const { agency, branding } = useAgency();
+  const { agency, branding, demoMode } = useAgency();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,6 +105,7 @@ export default function ReferralsPage() {
           border: `${primaryColor}30` 
         };
       case 'trial':
+      case 'trialing':
         return { 
           text: isDark ? '#fbbf24' : '#d97706', 
           bg: 'rgba(245,158,11,0.1)', 
@@ -130,8 +132,17 @@ export default function ReferralsPage() {
     }
   };
 
-  // Fetch referral data
+  // Fetch referral data (or load demo data)
   useEffect(() => {
+    // ---- DEMO MODE: inject sample data ----
+    if (demoMode) {
+      setData(DEMO_REFERRALS as ReferralData);
+      setNewCode(DEMO_REFERRALS.referralCode);
+      setLoading(false);
+      setError('');
+      return;
+    }
+
     if (!agency?.id) return;
 
     const fetchData = async () => {
@@ -158,7 +169,7 @@ export default function ReferralsPage() {
     };
 
     fetchData();
-  }, [agency?.id]);
+  }, [agency?.id, demoMode]);
 
   // Copy referral link
   const handleCopy = async () => {
@@ -182,6 +193,17 @@ export default function ReferralsPage() {
 
   // Update referral code
   const handleUpdateCode = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setData(prev => prev ? {
+        ...prev,
+        referralCode: newCode,
+        referralLink: `https://${process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com'}/signup?ref=${newCode}`,
+      } : null);
+      setEditingCode(false);
+      return;
+    }
+
     if (!agency?.id || !newCode.trim()) return;
     
     setSavingCode(true);
@@ -219,6 +241,12 @@ export default function ReferralsPage() {
 
   // Request payout
   const handleRequestPayout = async () => {
+    // Block mutations in demo mode
+    if (demoMode) {
+      setPayoutMessage({ type: 'success', text: 'Demo: Payout request simulated successfully!' });
+      return;
+    }
+
     if (!agency?.id || !data?.canReceivePayouts) return;
     
     setRequestingPayout(true);

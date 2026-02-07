@@ -25,6 +25,7 @@ interface DashboardClientProps {
   recentClients: any[];
   signupLink: string;
   trialDaysLeft: number | null;
+  demoMode?: boolean;
 }
 
 // Helper to determine if a color is light
@@ -79,6 +80,7 @@ export function DashboardClient({
   recentClients,
   signupLink,
   trialDaysLeft,
+  demoMode = false,
 }: DashboardClientProps) {
   const [copied, setCopied] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
@@ -227,7 +229,7 @@ export function DashboardClient({
           </div>
 
           {/* Trial Banner */}
-          {agency.subscription_status === 'trial' && trialDaysLeft !== null && (
+          {!demoMode && agency.subscription_status === 'trial' && trialDaysLeft !== null && (
             <div 
               className="mb-8 rounded-xl border p-4 flex items-center justify-between"
               style={{ 

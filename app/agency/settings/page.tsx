@@ -6,11 +6,11 @@ import {
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
-  Receipt, XCircle
+  Receipt, XCircle, Eye
 } from 'lucide-react';
 import { useAgency } from '../context';
 
-type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing';
+type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'demo';
 
 interface StripeStatus {
   connected: boolean;
@@ -43,12 +43,12 @@ const PLAN_PRICING: Record<string, number> = {
 };
 
 function AgencySettingsContent() {
-  const { agency, user, branding, loading: contextLoading, refreshAgency } = useAgency();
+  const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode } = useAgency();
   const searchParams = useSearchParams();
   
   // Get initial tab from URL or default to 'profile'
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing'];
+  const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing', 'demo'];
   
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabs.includes(initialTab) ? initialTab : 'profile'
@@ -165,6 +165,7 @@ function AgencySettingsContent() {
     { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
     { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
+    { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
   ];
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,6 +382,15 @@ function AgencySettingsContent() {
 
   const subscriptionDisplay = getSubscriptionDisplay();
 
+  const demoFeatures = [
+    { label: 'Dashboard', desc: '14 clients, $1,185 MRR, 847 total calls' },
+    { label: 'Clients', desc: '14 realistic service businesses with plans & call data' },
+    { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' },
+    { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' },
+    { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' },
+    { label: 'Referrals', desc: '3 referred agencies, commissions, payout history' },
+  ];
+
   const dynamicStyles = `
     .agency-settings ::selection {
       background-color: ${primaryColorValue}40;
@@ -500,6 +510,13 @@ function AgencySettingsContent() {
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
+                {/* Green dot when demo mode is active */}
+                {tab.id === 'demo' && demoMode && (
+                  <div 
+                    className="w-2 h-2 rounded-full ml-auto flex-shrink-0"
+                    style={{ backgroundColor: primaryColorValue }}
+                  />
+                )}
               </button>
             ))}
           </nav>
@@ -877,8 +894,103 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button */}
-            {activeTab !== 'payments' && activeTab !== 'billing' && (
+            {/* Demo Mode Tab */}
+            {activeTab === 'demo' && (
+              <div className="space-y-4 sm:space-y-6">
+                {/* Header with toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: demoMode ? `${primaryColorValue}15` : (isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6') }}
+                    >
+                      <Eye className="h-5 w-5" style={{ color: demoMode ? primaryColorValue : mutedTextColor }} />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-medium">Demo Mode</h3>
+                      <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+                        Preview your dashboard with realistic sample data
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Toggle switch */}
+                  <button
+                    onClick={toggleDemoMode}
+                    className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                    style={{ 
+                      backgroundColor: demoMode ? primaryColorValue : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+                    }}
+                  >
+                    <span
+                      className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                      style={{ 
+                        transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Status indicator */}
+                <div 
+                  className="rounded-xl px-4 py-3 flex items-center gap-2"
+                  style={{ 
+                    backgroundColor: demoMode ? `${primaryColorValue}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb'),
+                    border: `1px solid ${demoMode ? `${primaryColorValue}30` : borderColor}`,
+                  }}
+                >
+                  <div 
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: demoMode ? primaryColorValue : mutedTextColor }}
+                  />
+                  <span className="text-sm font-medium" style={{ color: demoMode ? primaryColorValue : mutedTextColor }}>
+                    {demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}
+                  </span>
+                </div>
+
+                {/* What demo mode shows */}
+                <div>
+                  <h4 className="font-medium text-sm mb-3">What demo mode shows</h4>
+                  <div className="space-y-2.5">
+                    {demoFeatures.map((f) => (
+                      <div key={f.label} className="flex items-start gap-3">
+                        <div 
+                          className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                          style={{ backgroundColor: primaryColorValue }}
+                        />
+                        <div>
+                          <span className="text-sm font-medium">{f.label}</span>
+                          <span className="text-sm ml-2" style={{ color: mutedTextColor }}>{f.desc}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Info note */}
+                <div 
+                  className="rounded-xl p-4 flex items-start gap-3"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)',
+                    border: '1px solid rgba(59,130,246,0.15)',
+                  }}
+                >
+                  <div className="text-blue-400 mt-0.5 text-lg flex-shrink-0">ℹ</div>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                      Display only
+                    </p>
+                    <p className="text-sm" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+                      Demo mode only changes what you see. It doesn't affect your real data, clients, or billing. 
+                      Toggle it off anytime from the sidebar or this page.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Save Button — not shown for payments, billing, or demo tabs */}
+            {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'demo' && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${borderColor}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: primaryColorValue, color: isLightColor(primaryColorValue) ? '#050505' : '#ffffff' }}>
                   {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}

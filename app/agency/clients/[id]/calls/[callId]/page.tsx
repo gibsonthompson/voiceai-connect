@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useAgency } from '../../../../context';
+import { DEMO_CLIENTS, getDemoCallDetail } from '../../../../demoData';
 
 interface Call {
   id: string;
@@ -52,7 +53,7 @@ export default function AgencyCallDetailPage() {
   const params = useParams();
   const clientId = params.id as string;
   const callId = params.callId as string;
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   
   const [client, setClient] = useState<ClientInfo | null>(null);
   const [call, setCall] = useState<Call | null>(null);
@@ -82,10 +83,33 @@ export default function AgencyCallDetailPage() {
   };
 
   useEffect(() => {
-    if (agency && clientId && callId) {
-      fetchData();
+    if (!agency || !clientId || !callId) return;
+
+    // Demo mode: use sample data
+    if (demoMode) {
+      const demoClient = DEMO_CLIENTS.find(c => c.id === clientId) || DEMO_CLIENTS[0];
+      setClient({ id: demoClient.id, business_name: demoClient.business_name, email: demoClient.email });
+      const demoCall = getDemoCallDetail(callId);
+      setCall({
+        ...demoCall,
+        duration_seconds: demoCall.duration_seconds,
+        customer_phone: demoCall.customer_phone || demoCall.caller_phone,
+        caller_phone: demoCall.caller_phone,
+        customer_email: demoCall.customer_email,
+        customer_address: demoCall.customer_address,
+        service_requested: demoCall.service_requested,
+        urgency_level: demoCall.urgency_level,
+        ai_summary: demoCall.ai_summary,
+        transcript: demoCall.transcript,
+        recording_url: demoCall.recording_url,
+        call_status: demoCall.call_status,
+      } as Call);
+      setCallLoading(false);
+      return;
     }
-  }, [agency, clientId, callId]);
+
+    fetchData();
+  }, [agency, clientId, callId, demoMode]);
 
   const fetchData = async () => {
     if (!agency || !clientId || !callId) return;
