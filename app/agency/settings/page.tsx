@@ -6,9 +6,10 @@ import {
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
-  Receipt, XCircle, Eye
+  Receipt, XCircle, Eye, Phone, Users, ChevronRight
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { useTheme } from '@/hooks/useTheme';
 
 type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'demo';
 
@@ -44,6 +45,7 @@ const PLAN_PRICING: Record<string, number> = {
 
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode } = useAgency();
+  const theme = useTheme();
   const searchParams = useSearchParams();
   
   // Get initial tab from URL or default to 'profile'
@@ -87,17 +89,6 @@ function AgencySettingsContent() {
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
   // Trial calculations
   const isOnTrial = isTrialStatus(agency?.subscription_status);
@@ -342,14 +333,14 @@ function AgencySettingsContent() {
   if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: branding.primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
 
   const getStripeStatusDisplay = () => {
     if (!stripeStatus?.connected && !agency?.stripe_account_id) {
-      return { status: 'not_connected', label: 'Not Connected', color: mutedTextColor };
+      return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
     }
     if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) {
       return { status: 'active', label: 'Active', color: '#34d399' };
@@ -357,11 +348,10 @@ function AgencySettingsContent() {
     if (stripeStatus?.connected || agency?.stripe_account_id) {
       return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' };
     }
-    return { status: 'not_connected', label: 'Not Connected', color: mutedTextColor };
+    return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
   };
 
   const stripeDisplay = getStripeStatusDisplay();
-  const primaryColorValue = branding.primaryColor || '#10b981';
 
   const getSubscriptionDisplay = () => {
     const status = agency?.subscription_status;
@@ -377,7 +367,7 @@ function AgencySettingsContent() {
     if (status === 'canceled' || status === 'cancelled') {
       return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' };
     }
-    return { label: status || 'Unknown', color: mutedTextColor, bgColor: inputBg };
+    return { label: status || 'Unknown', color: theme.textMuted, bgColor: theme.input };
   };
 
   const subscriptionDisplay = getSubscriptionDisplay();
@@ -393,17 +383,28 @@ function AgencySettingsContent() {
 
   const dynamicStyles = `
     .agency-settings ::selection {
-      background-color: ${primaryColorValue}40;
+      background-color: ${theme.primary}40;
       color: inherit;
     }
     .agency-settings input:focus,
     .agency-settings select:focus,
     .agency-settings textarea:focus {
       outline: none;
-      border-color: ${primaryColorValue} !important;
-      box-shadow: 0 0 0 3px ${primaryColorValue}20 !important;
+      border-color: ${theme.primary} !important;
+      box-shadow: 0 0 0 3px ${theme.primary}20 !important;
     }
   `;
+
+  // Compute preview colors based on the *edited* branding values (not saved yet)
+  const previewIsDark = websiteTheme !== 'light';
+  const previewBg = previewIsDark ? '#050505' : '#f9fafb';
+  const previewText = previewIsDark ? '#fafaf9' : '#111827';
+  const previewMuted = previewIsDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const previewCard = previewIsDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const previewBorder = previewIsDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const previewInput = previewIsDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const previewSidebar = previewIsDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
+  const previewPrimaryText = isLightColor(primaryColor) ? '#050505' : '#ffffff';
 
   return (
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
@@ -419,31 +420,31 @@ function AgencySettingsContent() {
           <div 
             className="relative w-full max-w-md rounded-2xl p-6"
             style={{ 
-              backgroundColor: isDark ? '#0a0a0a' : '#ffffff',
-              border: `1px solid ${borderColor}`,
+              backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff',
+              border: `1px solid ${theme.border}`,
             }}
           >
             <div className="flex items-center gap-4 mb-4">
               <div 
                 className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+                style={{ backgroundColor: theme.errorBg }}
               >
-                <AlertTriangle className="h-6 w-6 text-red-500" />
+                <AlertTriangle className="h-6 w-6" style={{ color: theme.errorText }} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold" style={{ color: textColor }}>Cancel Trial?</h3>
-                <p className="text-sm" style={{ color: mutedTextColor }}>This action cannot be undone.</p>
+                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Cancel Trial?</h3>
+                <p className="text-sm" style={{ color: theme.textMuted }}>This action cannot be undone.</p>
               </div>
             </div>
 
             <div 
               className="rounded-xl p-4 mb-6"
-              style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.05)' : '#fef2f2' }}
+              style={{ backgroundColor: theme.errorBg }}
             >
-              <p className="text-sm" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
+              <p className="text-sm" style={{ color: theme.errorText }}>
                 If you cancel now:
               </p>
-              <ul className="mt-2 space-y-1 text-sm" style={{ color: isDark ? 'rgba(252,165,165,0.8)' : '#b91c1c' }}>
+              <ul className="mt-2 space-y-1 text-sm" style={{ color: theme.errorText }}>
                 <li>• You'll lose access to your agency dashboard immediately</li>
                 <li>• All client AI receptionists will be disabled</li>
                 <li>• You won't be charged</li>
@@ -454,13 +455,11 @@ function AgencySettingsContent() {
               <button
                 onClick={() => setShowCancelModal(false)}
                 disabled={cancelLoading}
-                className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
-                }`}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
                 style={{ 
-                  backgroundColor: inputBg, 
-                  border: `1px solid ${inputBorder}`,
-                  color: textColor,
+                  backgroundColor: theme.input, 
+                  border: `1px solid ${theme.inputBorder}`,
+                  color: theme.text,
                 }}
               >
                 Keep My Trial
@@ -487,7 +486,7 @@ function AgencySettingsContent() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Manage your agency settings</p>
+        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
@@ -499,22 +498,21 @@ function AgencySettingsContent() {
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  activeTab !== tab.id ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''
+                  activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''
                 }`}
                 style={activeTab === tab.id ? {
-                  backgroundColor: `${primaryColorValue}15`,
-                  color: primaryColorValue,
+                  backgroundColor: theme.primary15,
+                  color: theme.primary,
                 } : {
-                  color: mutedTextColor,
+                  color: theme.textMuted,
                 }}
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
-                {/* Green dot when demo mode is active */}
                 {tab.id === 'demo' && demoMode && (
                   <div 
                     className="w-2 h-2 rounded-full ml-auto flex-shrink-0"
-                    style={{ backgroundColor: primaryColorValue }}
+                    style={{ backgroundColor: theme.primary }}
                   />
                 )}
               </button>
@@ -528,12 +526,12 @@ function AgencySettingsContent() {
             <div 
               className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
               style={{
-                backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
-                border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+                backgroundColor: theme.errorBg,
+                border: `1px solid ${theme.errorBorder}`,
               }}
             >
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
-              <p className="text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>{error}</p>
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
+              <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
             </div>
           )}
           
@@ -541,21 +539,21 @@ function AgencySettingsContent() {
             <div 
               className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
               style={{
-                backgroundColor: `${primaryColorValue}15`,
-                border: `1px solid ${primaryColorValue}30`,
+                backgroundColor: theme.primary15,
+                border: `1px solid ${theme.primary30}`,
               }}
             >
-              <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryColorValue }} />
-              <p className="text-sm" style={{ color: primaryColorValue }}>Settings saved!</p>
+              <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
+              <p className="text-sm" style={{ color: theme.primary }}>Settings saved!</p>
             </div>
           )}
 
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ 
-              backgroundColor: cardBg, 
-              border: `1px solid ${borderColor}`,
-              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+              backgroundColor: theme.card, 
+              border: `1px solid ${theme.border}`,
+              boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
             {/* Profile Tab */}
@@ -563,7 +561,7 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Basic information about your agency.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p>
                 </div>
 
                 <div>
@@ -573,7 +571,7 @@ function AgencySettingsContent() {
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
                   />
                 </div>
 
@@ -582,106 +580,249 @@ function AgencySettingsContent() {
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div 
                       className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                      style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
                     >
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />
                       ) : (
-                        <Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: mutedTextColor }} />
+                        <Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />
                       )}
                     </div>
                     <div className="min-w-0">
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`}
-                        style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+                        className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`}
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
                       >
                         <Upload className="h-4 w-4" />
                         Upload
                       </button>
-                      <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>PNG, JPG up to 2MB</p>
+                      <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
-                  <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}>
+                  <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
                     {agency?.slug}
                   </div>
-                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: mutedTextColor }}>
+                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>
                     URL: https://{agency?.slug}.{platformDomain}/signup
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Branding Tab */}
+            {/* ================================================================ */}
+            {/* BRANDING TAB - REDESIGNED                                        */}
+            {/* ================================================================ */}
             {activeTab === 'branding' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Brand Colors</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Customize your client portal colors.</p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Dashboard Branding</h3>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                    These colors apply to your agency dashboard and client portal. Marketing website colors are managed in the <span style={{ color: theme.primary }}>Marketing Website</span> tab.
+                  </p>
                 </div>
 
+                {/* Theme Mode */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Theme Mode</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-1">Dashboard Style</label>
+                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+                    Controls the background, text, and surface colors across your entire dashboard.
+                  </p>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
-                      { value: 'light', label: 'Light', icon: Sun },
-                      { value: 'dark', label: 'Dark', icon: Moon },
-                      { value: 'auto', label: 'Auto', icon: Monitor },
+                      { value: 'light', label: 'Light', icon: Sun, desc: 'White backgrounds' },
+                      { value: 'dark', label: 'Dark', icon: Moon, desc: 'Dark backgrounds' },
+                      { value: 'auto', label: 'Auto', icon: Monitor, desc: 'System preference' },
                     ].map((option) => (
                       <button
                         key={option.value}
                         onClick={() => setWebsiteTheme(option.value as 'light' | 'dark' | 'auto')}
-                        className="flex flex-col items-center gap-2 rounded-xl p-3 sm:p-4 transition-all"
+                        className="flex flex-col items-center gap-1.5 rounded-xl p-3 sm:p-4 transition-all"
                         style={websiteTheme === option.value ? {
-                          backgroundColor: `${primaryColorValue}15`,
-                          border: `2px solid ${primaryColorValue}`,
+                          backgroundColor: `${primaryColor}15`,
+                          border: `2px solid ${primaryColor}`,
                         } : {
-                          backgroundColor: inputBg,
-                          border: `1px solid ${inputBorder}`,
+                          backgroundColor: theme.input,
+                          border: `1px solid ${theme.inputBorder}`,
                         }}
                       >
-                        <option.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: websiteTheme === option.value ? primaryColorValue : mutedTextColor }} />
-                        <span className="text-xs sm:text-sm font-medium" style={{ color: websiteTheme === option.value ? primaryColorValue : textColor }}>{option.label}</span>
+                        <option.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: websiteTheme === option.value ? primaryColor : theme.textMuted }} />
+                        <span className="text-xs sm:text-sm font-medium" style={{ color: websiteTheme === option.value ? primaryColor : theme.text }}>{option.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-3 sm:space-y-4">
-                  {[
-                    { label: 'Primary', value: primaryColor, setter: setPrimaryColor },
-                    { label: 'Secondary', value: secondaryColor, setter: setSecondaryColor },
-                    { label: 'Accent', value: accentColor, setter: setAccentColor },
-                  ].map((color) => (
-                    <div key={color.label}>
-                      <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">{color.label} Color</label>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <input type="color" value={color.value} onChange={(e) => color.setter(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                        <input
-                          type="text"
-                          value={color.value}
-                          onChange={(e) => color.setter(e.target.value)}
-                          className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
-                          style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                        />
-                      </div>
+                {/* Color Pickers with Descriptions */}
+                <div className="space-y-4">
+                  {/* Primary Color */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Primary Color</label>
+                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+                      Buttons, active nav items, badges, links, status indicators, and icon backgrounds throughout the dashboard.
+                    </p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                      <input
+                        type="text"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Secondary Color */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Secondary Color</label>
+                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+                      Hover states on the marketing website, gradient endpoints, and secondary button styles.
+                    </p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                      <input
+                        type="text"
+                        value={secondaryColor}
+                        onChange={(e) => setSecondaryColor(e.target.value)}
+                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Accent Color */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Accent Color</label>
+                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+                      Highlights and emphasis elements on the marketing website. Works best as a lighter variant of your primary.
+                    </p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                      <input
+                        type="text"
+                        value={accentColor}
+                        onChange={(e) => setAccentColor(e.target.value)}
+                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
+                {/* Live Preview — Dashboard UI Elements */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Preview</label>
-                  <div className="rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-                    <div className="flex flex-wrap gap-2">
-                      <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium" style={{ backgroundColor: primaryColor, color: isLightColor(primaryColor) ? '#0a0a0a' : '#fff' }}>Primary</button>
-                      <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium" style={{ backgroundColor: secondaryColor, color: isLightColor(secondaryColor) ? '#0a0a0a' : '#fff' }}>Secondary</button>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Live Preview</label>
+                  <div 
+                    className="rounded-xl overflow-hidden"
+                    style={{ border: `1px solid ${theme.inputBorder}` }}
+                  >
+                    {/* Preview: Mini sidebar + content area */}
+                    <div className="flex" style={{ minHeight: '220px' }}>
+                      {/* Mini Sidebar Preview */}
+                      <div 
+                        className="w-[140px] sm:w-[160px] flex-shrink-0 p-3 space-y-1.5 hidden sm:block"
+                        style={{ backgroundColor: previewSidebar, borderRight: `1px solid ${previewBorder}` }}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div 
+                            className="w-6 h-6 rounded-md flex items-center justify-center"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            <Phone className="h-3 w-3" style={{ color: previewPrimaryText }} />
+                          </div>
+                          <span className="text-[10px] font-semibold truncate" style={{ color: previewText }}>{agencyName || 'Agency'}</span>
+                        </div>
+                        {/* Active nav item */}
+                        <div 
+                          className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+                          style={{ backgroundColor: `${primaryColor}15` }}
+                        >
+                          <Users className="h-3 w-3" style={{ color: primaryColor }} />
+                          <span className="text-[10px] font-medium" style={{ color: primaryColor }}>Clients</span>
+                        </div>
+                        {/* Inactive nav items */}
+                        {['Analytics', 'Settings'].map((item) => (
+                          <div key={item} className="flex items-center gap-2 px-2 py-1.5">
+                            <div className="w-3 h-3 rounded" style={{ backgroundColor: previewBorder }} />
+                            <span className="text-[10px]" style={{ color: previewMuted }}>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Preview: Content area */}
+                      <div className="flex-1 p-3 sm:p-4 space-y-3" style={{ backgroundColor: previewBg }}>
+                        {/* Stat card */}
+                        <div 
+                          className="rounded-lg p-3 flex items-center gap-3"
+                          style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}
+                        >
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${primaryColor}15` }}
+                          >
+                            <Users className="h-4 w-4" style={{ color: primaryColor }} />
+                          </div>
+                          <div>
+                            <p className="text-[10px]" style={{ color: previewMuted }}>Total Clients</p>
+                            <p className="text-sm font-semibold" style={{ color: previewText }}>24</p>
+                          </div>
+                        </div>
+
+                        {/* Button row */}
+                        <div className="flex flex-wrap gap-2">
+                          <button 
+                            className="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium"
+                            style={{ backgroundColor: primaryColor, color: previewPrimaryText }}
+                          >
+                            Primary Button
+                          </button>
+                          <span 
+                            className="px-2 py-1 rounded-full text-[10px] font-medium"
+                            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                          >
+                            Active Badge
+                          </span>
+                          <span 
+                            className="px-2 py-1 rounded-full text-[10px] font-medium"
+                            style={{ backgroundColor: theme.infoBg, color: theme.infoText }}
+                          >
+                            Trial
+                          </span>
+                        </div>
+
+                        {/* Link + text example */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px]" style={{ color: previewMuted }}>Link example:</span>
+                          <span className="text-[10px] font-medium" style={{ color: primaryColor }}>View all clients →</span>
+                        </div>
+
+                        {/* Client row preview */}
+                        <div 
+                          className="rounded-lg p-2.5 flex items-center justify-between"
+                          style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-medium"
+                              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                            >
+                              A
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-medium" style={{ color: previewText }}>Acme Plumbing</p>
+                              <p className="text-[8px]" style={{ color: previewMuted }}>Pro plan</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-3 w-3" style={{ color: previewMuted }} />
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs sm:text-sm">An <span style={{ color: accentColor }} className="font-medium">accent link</span> example</p>
                   </div>
                 </div>
               </div>
@@ -692,51 +833,51 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Pricing</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Set prices and limits for your plans.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set prices and limits for your plans.</p>
                 </div>
 
                 <div className="space-y-3 sm:space-y-4">
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Starter Plan</h4>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
-                        <input type="number" value={priceStarter} onChange={(e) => setPriceStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
+                        <input type="number" value={priceStarter} onChange={(e) => setPriceStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
-                        <input type="number" value={limitStarter} onChange={(e) => setLimitStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
+                        <input type="number" value={limitStarter} onChange={(e) => setLimitStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: `${primaryColorValue}08`, border: `1px solid ${primaryColorValue}30` }}>
+                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` }}>
                     <div className="flex items-center gap-2 mb-2 sm:mb-3">
                       <h4 className="font-medium text-sm sm:text-base">Pro Plan</h4>
-                      <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColorValue}20`, color: primaryColorValue }}>Popular</span>
+                      <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
-                        <input type="number" value={pricePro} onChange={(e) => setPricePro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#ffffff', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
+                        <input type="number" value={pricePro} onChange={(e) => setPricePro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
-                        <input type="number" value={limitPro} onChange={(e) => setLimitPro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#ffffff', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
+                        <input type="number" value={limitPro} onChange={(e) => setLimitPro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Growth Plan</h4>
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Price ($)</label>
-                        <input type="number" value={priceGrowth} onChange={(e) => setPriceGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
+                        <input type="number" value={priceGrowth} onChange={(e) => setPriceGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                       <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: mutedTextColor }}>Calls</label>
-                        <input type="number" value={limitGrowth} onChange={(e) => setLimitGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: isDark ? '#050505' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor }} />
+                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
+                        <input type="number" value={limitGrowth} onChange={(e) => setLimitGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                     </div>
                   </div>
@@ -749,10 +890,10 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Connect Stripe to receive payments.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments.</p>
                 </div>
 
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0">
@@ -763,26 +904,26 @@ function AgencySettingsContent() {
                         <p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{loadingStripeStatus ? 'Loading...' : stripeDisplay.label}</p>
                       </div>
                     </div>
-                    {stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: primaryColorValue }} />}
+                    {stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />}
                     {stripeDisplay.status === 'restricted' && <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />}
                   </div>
 
                   {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                    <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${borderColor}` }}>
+                    <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
-                          <span style={{ color: mutedTextColor }}>Charges</span>
-                          {stripeStatus?.charges_enabled ? <span className="flex items-center gap-1" style={{ color: primaryColorValue }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
+                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}>
+                          <span style={{ color: theme.textMuted }}>Charges</span>
+                          {stripeStatus?.charges_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
                         </div>
-                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
-                          <span style={{ color: mutedTextColor }}>Payouts</span>
-                          {stripeStatus?.payouts_enabled ? <span className="flex items-center gap-1" style={{ color: primaryColorValue }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
+                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}>
+                          <span style={{ color: theme.textMuted }}>Payouts</span>
+                          {stripeStatus?.payouts_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
                         </div>
                       </div>
-                      <p className="text-[10px] sm:text-xs break-all" style={{ color: mutedTextColor }}>ID: {agency?.stripe_account_id}</p>
+                      <p className="text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>ID: {agency?.stripe_account_id}</p>
                       {stripeDisplay.status === 'restricted' && (
-                        <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                          <p className="text-xs sm:text-sm text-amber-400">Complete setup to receive payments.</p>
+                        <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                          <p className="text-xs sm:text-sm" style={{ color: theme.warningText }}>Complete setup to receive payments.</p>
                         </div>
                       )}
                       <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -792,10 +933,10 @@ function AgencySettingsContent() {
                             Complete
                           </button>
                         )}
-                        <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                        <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
                           <ExternalLink className="h-4 w-4" />Dashboard
                         </a>
-                        <button onClick={fetchStripeStatus} disabled={loadingStripeStatus} className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }} title="Refresh">
+                        <button onClick={fetchStripeStatus} disabled={loadingStripeStatus} className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }} title="Refresh">
                           <RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} />
                         </button>
                       </div>
@@ -803,24 +944,24 @@ function AgencySettingsContent() {
                   )}
 
                   {stripeDisplay.status === 'not_connected' && (
-                    <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
+                    <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
                         {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
                         Connect Stripe
                       </button>
-                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>You'll be redirected to Stripe.</p>
+                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You'll be redirected to Stripe.</p>
                     </div>
                   )}
                 </div>
 
                 {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.02)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.1)' : '1px solid #fecaca' }}>
+                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>Disconnect Stripe</p>
-                        <p className="text-xs mt-0.5" style={{ color: mutedTextColor }}>You won't receive payments until reconnected.</p>
+                        <p className="font-medium text-sm" style={{ color: theme.errorText }}>Disconnect Stripe</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won't receive payments until reconnected.</p>
                       </div>
-                      <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)', border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(239,68,68,0.2)', color: isDark ? '#f87171' : '#dc2626' }}>
+                      <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
                         {disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         Disconnect
                       </button>
@@ -835,56 +976,56 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Manage your VoiceAI Connect subscription.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p>
                 </div>
 
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
-                      <p className="text-sm" style={{ color: mutedTextColor }}>Current Plan</p>
+                      <p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p>
                       <p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{agency?.plan_type || 'Starter'}</p>
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
                   </div>
 
                   {isOnTrial && trialDaysLeft !== null && (
-                    <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                    <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                       <div className="flex items-center gap-2">
-                        <Receipt className="h-4 w-4" style={{ color: '#3b82f6' }} />
-                        <p className="text-sm font-medium" style={{ color: '#3b82f6' }}>{trialDaysLeft} days left in trial</p>
+                        <Receipt className="h-4 w-4" style={{ color: theme.infoText }} />
+                        <p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p>
                       </div>
-                      <p className="text-xs mt-1" style={{ color: 'rgba(59,130,246,0.8)' }}>Your card will be charged automatically on {agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.</p>
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Your card will be charged automatically on {agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.</p>
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
-                      <p className="text-xs" style={{ color: mutedTextColor }}>Price</p>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Price</p>
                       <p className="font-medium">${planPrice}/mo</p>
                     </div>
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
-                      <p className="text-xs" style={{ color: mutedTextColor }}>Status</p>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Status</p>
                       <p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
-                    <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: primaryColorValue, color: isLightColor(primaryColorValue) ? '#050505' : '#ffffff' }}>
+                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                       {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
                       Manage Subscription
                     </button>
-                    <p className="mt-2 text-xs" style={{ color: mutedTextColor }}>Update payment method, view invoices, or change plan.</p>
+                    <p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p>
                   </div>
                 </div>
 
                 {isOnTrial && (
-                  <div className="rounded-xl p-4" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.02)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.1)' : '1px solid #fecaca' }}>
+                  <div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>Cancel Trial</p>
-                        <p className="text-xs mt-0.5" style={{ color: mutedTextColor }}>You'll lose access immediately and won't be charged.</p>
+                        <p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You'll lose access immediately and won't be charged.</p>
                       </div>
-                      <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)', border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(239,68,68,0.2)', color: isDark ? '#f87171' : '#dc2626' }}>
+                      <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
                         <XCircle className="h-4 w-4" />
                         Cancel Trial
                       </button>
@@ -897,29 +1038,27 @@ function AgencySettingsContent() {
             {/* Demo Mode Tab */}
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
-                {/* Header with toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: demoMode ? `${primaryColorValue}15` : (isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6') }}
+                      style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}
                     >
-                      <Eye className="h-5 w-5" style={{ color: demoMode ? primaryColorValue : mutedTextColor }} />
+                      <Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} />
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-medium">Demo Mode</h3>
-                      <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
                         Preview your dashboard with realistic sample data
                       </p>
                     </div>
                   </div>
                   
-                  {/* Toggle switch */}
                   <button
                     onClick={toggleDemoMode}
                     className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
                     style={{ 
-                      backgroundColor: demoMode ? primaryColorValue : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+                      backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
                     }}
                   >
                     <span
@@ -931,24 +1070,22 @@ function AgencySettingsContent() {
                   </button>
                 </div>
 
-                {/* Status indicator */}
                 <div 
                   className="rounded-xl px-4 py-3 flex items-center gap-2"
                   style={{ 
-                    backgroundColor: demoMode ? `${primaryColorValue}10` : (isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb'),
-                    border: `1px solid ${demoMode ? `${primaryColorValue}30` : borderColor}`,
+                    backgroundColor: demoMode ? `${theme.primary}10` : theme.hover,
+                    border: `1px solid ${demoMode ? theme.primary30 : theme.border}`,
                   }}
                 >
                   <div 
                     className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: demoMode ? primaryColorValue : mutedTextColor }}
+                    style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }}
                   />
-                  <span className="text-sm font-medium" style={{ color: demoMode ? primaryColorValue : mutedTextColor }}>
+                  <span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>
                     {demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}
                   </span>
                 </div>
 
-                {/* What demo mode shows */}
                 <div>
                   <h4 className="font-medium text-sm mb-3">What demo mode shows</h4>
                   <div className="space-y-2.5">
@@ -956,31 +1093,30 @@ function AgencySettingsContent() {
                       <div key={f.label} className="flex items-start gap-3">
                         <div 
                           className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                          style={{ backgroundColor: primaryColorValue }}
+                          style={{ backgroundColor: theme.primary }}
                         />
                         <div>
                           <span className="text-sm font-medium">{f.label}</span>
-                          <span className="text-sm ml-2" style={{ color: mutedTextColor }}>{f.desc}</span>
+                          <span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Info note */}
                 <div 
                   className="rounded-xl p-4 flex items-start gap-3"
                   style={{ 
-                    backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)',
-                    border: '1px solid rgba(59,130,246,0.15)',
+                    backgroundColor: theme.infoBg,
+                    border: `1px solid ${theme.infoBorder}`,
                   }}
                 >
-                  <div className="text-blue-400 mt-0.5 text-lg flex-shrink-0">ℹ</div>
+                  <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: theme.infoText }}>ℹ</div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                    <p className="text-sm font-medium" style={{ color: theme.infoText }}>
                       Display only
                     </p>
-                    <p className="text-sm" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>
                       Demo mode only changes what you see. It doesn't affect your real data, clients, or billing. 
                       Toggle it off anytime from the sidebar or this page.
                     </p>
@@ -991,8 +1127,8 @@ function AgencySettingsContent() {
 
             {/* Save Button — not shown for payments, billing, or demo tabs */}
             {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'demo' && (
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${borderColor}` }}>
-                <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: primaryColorValue, color: isLightColor(primaryColorValue) ? '#050505' : '#ffffff' }}>
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}
                 </button>
               </div>

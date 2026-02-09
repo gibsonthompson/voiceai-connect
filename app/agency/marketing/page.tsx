@@ -13,6 +13,15 @@ import LockedFeature from '@/components/LockedFeature';
 
 type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
 
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5;
+}
+
 export default function MarketingWebsitePage() {
   const router = useRouter();
   const { agency, branding, loading: agencyLoading, refreshAgency, demoMode } = useAgency();
@@ -774,14 +783,43 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab Content - Colors */}
+      {/* ================================================================ */}
+      {/* Tab Content - Colors (REDESIGNED)                                */}
+      {/* ================================================================ */}
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
+          {/* Clarifying note — dashboard vs marketing */}
+          <div 
+            className="rounded-xl p-3 sm:p-4 flex items-start gap-3"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)',
+              border: '1px solid rgba(59,130,246,0.15)',
+            }}
+          >
+            <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>ℹ</div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                These colors control your public marketing website
+              </p>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+                Dashboard colors are configured separately in{' '}
+                <button 
+                  onClick={() => { window.location.href = '/agency/settings?tab=branding'; }}
+                  className="underline font-medium"
+                  style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}
+                >
+                  Settings → Branding
+                </button>.
+              </p>
+            </div>
+          </div>
+
+          {/* Color Presets */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
-            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Color Presets</h3>
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Quick Presets</h3>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-3">
               {colorPresets.map((preset) => (
                 <button
@@ -807,25 +845,229 @@ export default function MarketingWebsitePage() {
             </div>
           </div>
 
+          {/* Website Theme Toggle */}
           <div 
-            className="rounded-xl p-4 sm:p-6 flex justify-end"
+            className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
           >
-            {colorsSaved && (
-              <span className="flex items-center gap-2 text-xs sm:text-sm mr-4" style={{ color: agencyPrimaryColor }}>
-                <Check className="h-4 w-4" />
-                {demoMode ? 'Saved! (demo)' : 'Saved!'}
-              </span>
-            )}
-            <button
-              onClick={handleSaveColors}
-              disabled={savingColors}
-              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors"
-              style={{ backgroundColor: agencyPrimaryColor }}
-            >
-              {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save Colors
-            </button>
+            <h3 className="font-medium text-sm sm:text-base mb-1">Website Theme</h3>
+            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>
+              Controls the overall background and text colors of your marketing site.
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {[
+                { value: 'light' as const, label: 'Light', icon: Sun, desc: 'White backgrounds, dark text' },
+                { value: 'dark' as const, label: 'Dark', icon: Moon, desc: 'Dark backgrounds, light text' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setWebsiteTheme(option.value)}
+                  className="flex items-center gap-3 rounded-xl p-3 sm:p-4 transition-all text-left"
+                  style={websiteTheme === option.value ? {
+                    backgroundColor: `${agencyPrimaryColor}15`,
+                    border: `2px solid ${agencyPrimaryColor}`,
+                  } : {
+                    backgroundColor: inputBg,
+                    border: `1px solid ${inputBorder}`,
+                  }}
+                >
+                  <option.icon className="h-5 w-5 flex-shrink-0" style={{ color: websiteTheme === option.value ? agencyPrimaryColor : mutedTextColor }} />
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium block" style={{ color: websiteTheme === option.value ? agencyPrimaryColor : textColor }}>{option.label}</span>
+                    <span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{option.desc}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Individual Color Pickers with Descriptions */}
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1">Custom Colors</h3>
+            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>
+              Fine-tune each color individually, or use a preset above as a starting point.
+            </p>
+
+            <div className="space-y-4">
+              {/* Primary */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Primary Color</label>
+                <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>
+                  Buttons, CTAs, hero gradient, nav highlights, pricing column highlights, and "Start Free Trial" buttons.
+                </p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="flex-1 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                  />
+                </div>
+              </div>
+
+              {/* Secondary */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Secondary Color</label>
+                <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>
+                  Button hover states and gradient endpoints. Should be a darker shade of your primary color.
+                </p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                  <input
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="flex-1 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                  />
+                </div>
+              </div>
+
+              {/* Accent */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Accent Color</label>
+                <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>
+                  "Most Popular" pricing badge, star ratings, and highlight callouts. Works best as a warm contrast to your primary.
+                </p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    className="flex-1 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors focus:outline-none"
+                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Website Preview */}
+          <div 
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-3">Website Preview</h3>
+            {(() => {
+              const prevIsDark = websiteTheme === 'dark';
+              const prevBg = prevIsDark ? '#0f0f0f' : '#f9f9f7';
+              const prevText = prevIsDark ? '#f5f5f0' : '#1f2937';
+              const prevMuted = prevIsDark ? '#a3a3a3' : '#6b7280';
+              const prevCard = prevIsDark ? '#1f1f1f' : '#ffffff';
+              const prevBorder = prevIsDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+              const btnText = isLightColor(primaryColor) ? '#1f2937' : '#ffffff';
+              const primaryIsLight = isLightColor(primaryColor);
+              
+              return (
+                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${prevBorder}` }}>
+                  {/* Mini Nav */}
+                  <div 
+                    className="flex items-center justify-between px-4 py-2.5"
+                    style={{ backgroundColor: prevIsDark ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.95)', borderBottom: `1px solid ${prevBorder}` }}
+                  >
+                    <span className="text-xs font-bold" style={{ color: primaryColor }}>{agency?.name || 'Agency'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px]" style={{ color: prevMuted }}>Features</span>
+                      <span className="text-[10px]" style={{ color: prevMuted }}>Pricing</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: primaryColor, color: btnText }}>Free Trial</span>
+                    </div>
+                  </div>
+                  
+                  {/* Mini Hero */}
+                  <div className="px-4 py-6 text-center" style={{ backgroundColor: prevBg }}>
+                    <div 
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold mb-2"
+                      style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
+                      AI-Powered
+                    </div>
+                    <h4 className="text-sm font-bold mb-1" style={{ color: prevText }}>Never Miss Another Call</h4>
+                    <p className="text-[10px] mb-3" style={{ color: prevMuted }}>Professional AI receptionist for your business</p>
+                    
+                    {/* Demo box preview */}
+                    <div 
+                      className="rounded-lg p-3 mb-3 mx-auto max-w-[260px]"
+                      style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+                    >
+                      <p className="text-[10px] font-bold mb-1" style={{ color: btnText }}>EXPERIENCE IT LIVE</p>
+                      <span 
+                        className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: primaryIsLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)', color: btnText }}
+                      >
+                        📞 (555) 123-4567
+                      </span>
+                    </div>
+
+                    <div className="flex justify-center gap-2">
+                      <span className="text-[10px] px-3 py-1 rounded-full font-medium" style={{ backgroundColor: primaryColor, color: btnText }}>Start Free Trial</span>
+                      <span className="text-[10px] px-3 py-1 rounded-full font-medium" style={{ border: `1px solid ${prevBorder}`, color: prevText }}>How It Works</span>
+                    </div>
+                  </div>
+
+                  {/* Mini Pricing Preview */}
+                  <div className="px-4 py-4" style={{ backgroundColor: prevIsDark ? '#1a1a1a' : '#f3f4f6' }}>
+                    <div className="flex gap-2 justify-center">
+                      {['Starter', 'Pro', 'Growth'].map((plan, i) => (
+                        <div 
+                          key={plan}
+                          className="rounded-lg p-2 text-center flex-1 max-w-[90px]"
+                          style={{ 
+                            backgroundColor: prevCard, 
+                            border: i === 1 ? `2px solid ${primaryColor}` : `1px solid ${prevBorder}`,
+                          }}
+                        >
+                          {i === 1 && (
+                            <div 
+                              className="text-[7px] font-bold px-1.5 py-0.5 rounded-full mx-auto mb-1 inline-block"
+                              style={{ backgroundColor: accentColor, color: isLightColor(accentColor) ? '#1f2937' : '#fff' }}
+                            >
+                              Popular
+                            </div>
+                          )}
+                          <p className="text-[9px] font-medium" style={{ color: prevText }}>{plan}</p>
+                          <p className="text-sm font-bold" style={{ color: primaryColor }}>${[49, 99, 149][i]}</p>
+                          <p className="text-[8px]" style={{ color: prevMuted }}>/month</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Save button */}
+          <div 
+            className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+              Changes apply to your public marketing website immediately after saving.
+            </p>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {colorsSaved && (
+                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
+                  <Check className="h-4 w-4" />
+                  {demoMode ? 'Saved! (demo)' : 'Saved!'}
+                </span>
+              )}
+              <button
+                onClick={handleSaveColors}
+                disabled={savingColors}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              >
+                {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Colors
+              </button>
+            </div>
           </div>
         </div>
       )}
