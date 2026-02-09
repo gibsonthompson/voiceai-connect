@@ -70,7 +70,7 @@ const PROMPT_GUIDES = [
 ];
 
 export default function AITemplatesPage() {
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, effectivePlan } = useAgency();
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
@@ -91,10 +91,31 @@ export default function AITemplatesPage() {
     if (agency) {
       checkAccessAndFetch();
     }
-  }, [agency]);
+  }, [agency, effectivePlan]);
 
   const checkAccessAndFetch = async () => {
     if (!agency) return;
+
+    // Frontend shortcut: if effectivePlan is enterprise (e.g. during trial), grant access
+    // without waiting for the backend /check endpoint
+    if (effectivePlan === 'enterprise') {
+      setHasAccess(true);
+      try {
+        const token = localStorage.getItem('auth_token');
+        const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/industries`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (industriesResponse.ok) {
+          const data = await industriesResponse.json();
+          setIndustries(data.industries || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch industries:', error);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       const token = localStorage.getItem('auth_token');
