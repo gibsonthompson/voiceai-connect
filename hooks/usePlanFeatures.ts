@@ -19,12 +19,11 @@ import {
 } from '@/lib/plan-limits';
 
 export function usePlanFeatures() {
-  const { agency } = useAgency();
+  const { agency, effectivePlan } = useAgency();
   const agencyData = agency as any;
   
-  // Normalize plan type to handle legacy 'scale' values
-  const rawPlan = agencyData?.plan_type || agencyData?.plan || 'starter';
-  const plan = normalizePlanType(rawPlan);
+  // Use effectivePlan from context (enterprise during trial, real plan after)
+  const plan = normalizePlanType(effectivePlan);
   const limits = PLAN_LIMITS[plan];
   const currentClients = agencyData?.client_count || 0;
   
@@ -78,7 +77,7 @@ export function usePlanFeatures() {
     isPlanHigherOrEqual: (requiredPlan: PlanType) => isPlanHigherOrEqual(plan, requiredPlan),
     isStarter: plan === 'starter',
     isProfessional: plan === 'professional',
-    isEnterprise: plan === 'enterprise',  // CHANGED from isScale
+    isEnterprise: plan === 'enterprise',
   };
 }
 

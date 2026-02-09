@@ -75,7 +75,7 @@ interface NavItem {
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, demoMode, toggleDemoMode } = useAgency();
+  const { agency, branding, loading, demoMode, toggleDemoMode, effectivePlan } = useAgency();
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -110,8 +110,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
   const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
 
-  // Check if agency is on enterprise plan (for AI Templates)
-  const isEnterprise = agency?.plan_type === 'enterprise';
+  // Use effectivePlan for feature gating (enterprise during trial)
+  const isEnterprise = effectivePlan === 'enterprise';
 
   // Build nav items with feature gating
   // Order: Dashboard, Clients, Leads, Outreach, Analytics, Marketing Website, AI Templates, Referrals, Settings
