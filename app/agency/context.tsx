@@ -62,6 +62,7 @@ interface AgencyContextType {
   isTrialActive: boolean;
   isExpired: boolean;
   trialDaysLeft: number | null;
+  effectivePlan: string;
   refreshAgency: () => Promise<void>;
   // Demo mode
   demoMode: boolean;
@@ -84,6 +85,7 @@ const AgencyContext = createContext<AgencyContextType>({
   isTrialActive: false,
   isExpired: false,
   trialDaysLeft: null,
+  effectivePlan: 'starter',
   refreshAgency: async () => {},
   demoMode: false,
   toggleDemoMode: () => {},
@@ -225,6 +227,10 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const isExpired = isExpiredStatus(agency?.subscription_status) || 
     (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
 
+  // During trial, grant full enterprise access regardless of chosen plan.
+  // After trial ends and they're on an active subscription, use their actual plan.
+  const effectivePlan = isTrialActive ? 'enterprise' : (agency?.plan_type || 'starter');
+
   return (
     <AgencyContext.Provider value={{ 
       agency, 
@@ -234,6 +240,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       isTrialActive,
       isExpired,
       trialDaysLeft,
+      effectivePlan,
       refreshAgency: fetchAgencyData,
       demoMode,
       toggleDemoMode,
