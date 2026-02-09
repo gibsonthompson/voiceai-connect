@@ -6,6 +6,7 @@ import {
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { useTheme } from '@/hooks/useTheme';
 import { DEMO_CLIENTS } from '../demoData';
 
 interface Client {
@@ -22,40 +23,17 @@ interface Client {
   vapi_phone_number: string;
 }
 
-// Helper to determine text color based on background luminance
-const getContrastColor = (hexColor: string): string => {
-  const hex = hexColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#050505' : '#ffffff';
-};
-
 export default function AgencyClientsPage() {
-  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
+  const { agency, loading: contextLoading, demoMode } = useAgency();
+  const theme = useTheme();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-  const buttonTextColor = getContrastColor(primaryColor);
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-
   useEffect(() => {
     if (!agency) return;
 
-    // Demo mode: use sample data
     if (demoMode) {
       setClients(DEMO_CLIENTS as Client[]);
       setLoading(false);
@@ -104,16 +82,16 @@ export default function AgencyClientsPage() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'active':
-        return { bg: `${primaryColor}15`, text: primaryColor, border: `${primaryColor}30` };
+        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
       case 'trial':
-        return { bg: 'rgba(245,158,11,0.1)', text: isDark ? '#fbbf24' : '#d97706', border: 'rgba(245,158,11,0.2)' };
+        return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
       case 'past_due':
-        return { bg: 'rgba(249,115,22,0.1)', text: isDark ? '#fb923c' : '#ea580c', border: 'rgba(249,115,22,0.2)' };
+        return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
       case 'suspended':
       case 'cancelled':
-        return { bg: 'rgba(239,68,68,0.1)', text: isDark ? '#f87171' : '#dc2626', border: 'rgba(239,68,68,0.2)' };
+        return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
       default:
-        return { bg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', text: mutedTextColor, border: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb' };
+        return { bg: theme.hover, text: theme.textMuted, border: theme.border };
     }
   };
 
@@ -131,7 +109,7 @@ export default function AgencyClientsPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
@@ -143,14 +121,13 @@ export default function AgencyClientsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
-            <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>{clients.length} total clients</p>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>{clients.length} total clients</p>
           </div>
           
-          {/* Add Client Button */}
           <Link
             href="/agency/clients/new"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto"
-            style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
           >
             <Plus className="h-4 w-4" />
             Add Client
@@ -159,25 +136,23 @@ export default function AgencyClientsPage() {
         
         {/* Search & Filter Row */}
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
             <input
               type="text"
               placeholder="Search clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-colors focus:outline-none"
-              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+              style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
             />
           </div>
           
-          {/* Filter */}
           <select
             value={statusFilter || ''}
             onChange={(e) => setStatusFilter(e.target.value || null)}
             className="rounded-xl px-4 py-2.5 text-sm transition-colors focus:outline-none w-full sm:w-auto"
-            style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
+            style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -191,20 +166,20 @@ export default function AgencyClientsPage() {
       {/* Clients List */}
       <div 
         className="rounded-xl overflow-hidden"
-        style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
         {filteredClients.length === 0 ? (
           <div className="py-16 sm:py-20 text-center px-4">
             <div 
               className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: `${primaryColor}15` }}
+              style={{ backgroundColor: theme.primary15 }}
             >
-              <Users className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: `${primaryColor}80` }} />
+              <Users className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: theme.primary80 }} />
             </div>
-            <p className="mt-4 font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+            <p className="mt-4 font-medium" style={{ color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
               {searchQuery || statusFilter ? 'No clients match your search' : 'No clients yet'}
             </p>
-            <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
+            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
               {searchQuery || statusFilter ? 'Try adjusting your filters' : 'Share your signup link to get started!'}
             </p>
           </div>
@@ -213,7 +188,7 @@ export default function AgencyClientsPage() {
             {/* Table Header - Desktop Only */}
             <div 
               className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 text-xs font-medium uppercase tracking-wide"
-              style={{ color: mutedTextColor, borderBottom: `1px solid ${borderColor}` }}
+              style={{ color: theme.textMuted, borderBottom: `1px solid ${theme.border}` }}
             >
               <div className="col-span-4">Business</div>
               <div className="col-span-2">Plan</div>
@@ -230,8 +205,12 @@ export default function AgencyClientsPage() {
                   <Link
                     key={client.id}
                     href={`/agency/clients/${client.id}`}
-                    className={`block px-4 sm:px-6 py-4 transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'}`}
-                    style={{ borderBottom: idx < filteredClients.length - 1 ? `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}
+                    className="block px-4 sm:px-6 py-4 transition-colors"
+                    style={{ 
+                      borderBottom: idx < filteredClients.length - 1 ? `1px solid ${theme.borderSubtle}` : 'none',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     {/* Mobile Layout */}
                     <div className="lg:hidden">
@@ -239,18 +218,18 @@ export default function AgencyClientsPage() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div 
                             className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0"
-                            style={{ backgroundColor: `${primaryColor}15` }}
+                            style={{ backgroundColor: theme.primary15 }}
                           >
-                            <span className="text-sm font-medium" style={{ color: primaryColor }}>
+                            <span className="text-sm font-medium" style={{ color: theme.primary }}>
                               {client.business_name?.charAt(0) || '?'}
                             </span>
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium truncate">{client.business_name}</p>
-                            <p className="text-sm truncate" style={{ color: mutedTextColor }}>{client.email}</p>
+                            <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
                           </div>
                         </div>
-                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
                       </div>
                       <div className="flex items-center justify-between text-sm pl-[52px]">
                         <span 
@@ -259,7 +238,7 @@ export default function AgencyClientsPage() {
                         >
                           {client.subscription_status || client.status}
                         </span>
-                        <div className="flex items-center gap-3" style={{ color: mutedTextColor }}>
+                        <div className="flex items-center gap-3" style={{ color: theme.textMuted }}>
                           <span className="capitalize">{client.plan_type || 'starter'}</span>
                           <span>•</span>
                           <span>{client.calls_this_month || 0} calls</span>
@@ -272,29 +251,29 @@ export default function AgencyClientsPage() {
                       <div className="col-span-4 flex items-center gap-3">
                         <div 
                           className="flex h-10 w-10 items-center justify-center rounded-lg"
-                          style={{ backgroundColor: `${primaryColor}15` }}
+                          style={{ backgroundColor: theme.primary15 }}
                         >
-                          <span className="text-sm font-medium" style={{ color: primaryColor }}>
+                          <span className="text-sm font-medium" style={{ color: theme.primary }}>
                             {client.business_name?.charAt(0) || '?'}
                           </span>
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium truncate">{client.business_name}</p>
-                          <p className="text-sm truncate" style={{ color: mutedTextColor }}>{client.email}</p>
+                          <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
                         </div>
                       </div>
                       
                       <div className="col-span-2">
                         <p className="text-sm capitalize">{client.plan_type || 'starter'}</p>
-                        <p className="text-xs" style={{ color: mutedTextColor }}>
+                        <p className="text-xs" style={{ color: theme.textMuted }}>
                           ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo
                         </p>
                       </div>
                       
                       <div className="col-span-2 flex items-center gap-2">
-                        <PhoneCall className="h-4 w-4" style={{ color: mutedTextColor }} />
+                        <PhoneCall className="h-4 w-4" style={{ color: theme.textMuted }} />
                         <span className="text-sm">{client.calls_this_month || 0}</span>
-                        <span className="text-xs" style={{ color: mutedTextColor }}>this month</span>
+                        <span className="text-xs" style={{ color: theme.textMuted }}>this month</span>
                       </div>
                       
                       <div className="col-span-2">
@@ -307,10 +286,10 @@ export default function AgencyClientsPage() {
                       </div>
                       
                       <div className="col-span-2 flex items-center justify-end gap-2">
-                        <span className="text-sm" style={{ color: mutedTextColor }}>
+                        <span className="text-sm" style={{ color: theme.textMuted }}>
                           {new Date(client.created_at).toLocaleDateString()}
                         </span>
-                        <ChevronRight className="h-4 w-4" style={{ color: mutedTextColor }} />
+                        <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
                       </div>
                     </div>
                   </Link>

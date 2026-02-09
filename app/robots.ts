@@ -1,25 +1,11 @@
-import type { MetadataRoute } from 'next'
+User-Agent: *
+Allow: /
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://www.myvoiceaiconnect.com'
+Disallow: /agency/
+Disallow: /client/
+Disallow: /auth/
+Disallow: /onboarding
+Disallow: /api/
+Disallow: /_next/
 
-  return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        disallow: [
-          '/api/',
-          '/dashboard/',
-          '/admin/',
-          '/auth/',
-          '/login/',
-          '/signup/success',
-          '/_next/',
-          '/private/',
-        ],
-      },
-    ],
-    sitemap: `${baseUrl}/sitemap.xml`,
-  }
-}
+Sitemap: https://www.myvoiceaiconnect.com/sitemap.xml
