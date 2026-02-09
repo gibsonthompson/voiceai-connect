@@ -8,6 +8,7 @@ import {
   Calendar, DollarSign, Tag, FileText, Save
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { addDemoLead } from '../../demoData';
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New' },
@@ -53,7 +54,7 @@ function formatWebsiteUrl(url: string): string {
 
 export default function NewLeadPage() {
   const router = useRouter();
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -97,6 +98,20 @@ export default function NewLeadPage() {
     
     if (!formData.business_name.trim()) {
       setError('Business name is required');
+      return;
+    }
+
+    // Demo mode: add to in-memory store and redirect
+    if (demoMode) {
+      const newLead = addDemoLead({
+        ...formData,
+        website: formatWebsiteUrl(formData.website),
+        estimated_value: formData.estimated_value
+          ? Math.round(parseFloat(formData.estimated_value) * 100)
+          : null,
+        next_follow_up: formData.next_follow_up || null,
+      });
+      router.push(`/agency/leads/${newLead.id}`);
       return;
     }
 

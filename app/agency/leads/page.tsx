@@ -9,7 +9,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useAgency } from '../context';
-import { DEMO_LEADS, DEMO_LEAD_STATS } from '../demoData';
+import { getDemoLeads, getDemoLeadStats } from '../demoData';
 
 interface Lead {
   id: string;
@@ -150,10 +150,10 @@ export default function AgencyLeadsPage() {
   useEffect(() => {
     if (!agency) return;
 
-    // Demo mode: use sample data
+    // Demo mode: use sample data (mutable store)
     if (demoMode) {
-      setLeads(DEMO_LEADS as Lead[]);
-      setStats(DEMO_LEAD_STATS as LeadStats);
+      setLeads(getDemoLeads() as Lead[]);
+      setStats(getDemoLeadStats() as LeadStats);
       setLoading(false);
       return;
     }

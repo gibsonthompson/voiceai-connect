@@ -6,6 +6,7 @@ import {
   ChevronDown, Info, Hash
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
+import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
 
 interface Lead {
   id: string;
@@ -69,7 +70,7 @@ export default function ComposerModal({
   type,
   onSent 
 }: ComposerModalProps) {
-  const { agency, branding } = useAgency();
+  const { agency, branding, demoMode } = useAgency();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
@@ -120,6 +121,12 @@ export default function ComposerModal({
   }, [isOpen, agencyId, type, lead.id]);
 
   const fetchOutreachCounts = async () => {
+    // Demo mode: use zero counts
+    if (demoMode) {
+      setOutreachCounts({ email: 0, sms: 0 });
+      return;
+    }
+
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -142,6 +149,15 @@ export default function ComposerModal({
   };
 
   const fetchTemplates = async () => {
+    // Demo mode: use demo templates
+    if (demoMode) {
+      setLoading(true);
+      const demoTemplates = getDemoTemplates(type);
+      setTemplates(demoTemplates as Template[]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
@@ -166,6 +182,16 @@ export default function ComposerModal({
   const handleTemplateSelect = async (templateId: string) => {
     setSelectedTemplate(templateId);
     setShowTemplateDropdown(false);
+
+    // Demo mode: compose locally with variable replacement
+    if (demoMode) {
+      const agencyName = agency?.name || branding?.name || 'Our Team';
+      const result = composeDemoMessage(templateId, lead, agencyName);
+      setSubject(result.subject);
+      setBody(result.body);
+      return;
+    }
+
     setComposing(true);
 
     try {
@@ -210,6 +236,22 @@ export default function ComposerModal({
   };
 
   const handleLogAsSent = async () => {
+    // Demo mode: log to in-memory store
+    if (demoMode) {
+      logDemoOutreach({
+        leadId: lead.id,
+        type,
+        subject: type === 'email' ? subject : null,
+        body,
+      });
+      setLoggedSuccess(true);
+      onSent?.();
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('auth_token');
       const user = JSON.parse(localStorage.getItem('user') || '{}');

@@ -369,7 +369,6 @@ export default function LeadDetailPage() {
   };
 
   const openComposer = (type: 'email' | 'sms') => {
-    if (demoMode) return;
     setComposerType(type);
     setComposerOpen(true);
   };
@@ -420,9 +419,9 @@ export default function LeadDetailPage() {
     );
   }
 
-  // Determine if email/sms buttons should be enabled
-  const canSendEmail = !demoMode && Boolean(formData.email && formData.email.includes('@'));
-  const canSendSms = !demoMode && Boolean(formData.phone && formData.phone.length >= 10);
+  // Determine if email/sms buttons should be enabled (works in both demo and live mode)
+  const canSendEmail = Boolean(formData.email && formData.email.includes('@'));
+  const canSendSms = Boolean(formData.phone && formData.phone.length >= 10);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -618,7 +617,7 @@ export default function LeadDetailPage() {
               border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : borderColor}`,
               color: canSendEmail ? (isDark ? '#a78bfa' : '#7c3aed') : mutedTextColor,
             }}
-            title={demoMode ? 'Disabled in demo mode' : !canSendEmail ? 'Add email address to send' : undefined}
+            title={!canSendEmail ? 'Add email address to send' : undefined}
           >
             <Mail className="h-4 w-4" />
             <span>
@@ -636,7 +635,7 @@ export default function LeadDetailPage() {
               border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : borderColor}`,
               color: canSendSms ? (isDark ? '#22d3ee' : '#0891b2') : mutedTextColor,
             }}
-            title={demoMode ? 'Disabled in demo mode' : !canSendSms ? 'Add phone number to send' : undefined}
+            title={!canSendSms ? 'Add phone number to send' : undefined}
           >
             <MessageSquare className="h-4 w-4" />
             <span>
@@ -966,8 +965,8 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Composer Modal */}
-      {!demoMode && agency && lead && (
+      {/* Composer Modal — now renders in both demo and live mode */}
+      {agency && lead && (
         <ComposerModal
           isOpen={composerOpen}
           onClose={() => setComposerOpen(false)}

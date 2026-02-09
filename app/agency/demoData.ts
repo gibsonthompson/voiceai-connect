@@ -480,21 +480,25 @@ export const DEMO_ANALYTICS = {
 };
 
 // ============================================================================
-// LEADS PAGE
+// LEADS PAGE — Mutable Store
 // ============================================================================
-export const DEMO_LEADS = [
+
+// Seed data (used to initialize the mutable array)
+const _seedLeads = [
   {
     id: 'demo-lead-1',
     business_name: 'Velocity Garage Doors',
     contact_name: 'Nathan Price',
     email: 'nathan@velocitydoors.com',
     phone: '+14045553001',
+    website: '',
     industry: 'Home Services',
     source: 'google_maps',
     status: 'qualified',
     estimated_value: 9900,
     next_follow_up: daysFromNow(1),
     created_at: daysAgo(7),
+    updated_at: daysAgo(1),
     notes: 'Very interested in the pro plan. Currently handling 40+ calls/month manually.',
   },
   {
@@ -503,12 +507,14 @@ export const DEMO_LEADS = [
     contact_name: 'Mike Reynolds',
     email: 'mike@coastalpw.com',
     phone: '+14045553002',
+    website: '',
     industry: 'Home Services',
     source: 'referral',
     status: 'proposal',
     estimated_value: 14900,
     next_follow_up: daysFromNow(0),
     created_at: daysAgo(14),
+    updated_at: daysAgo(2),
     notes: 'Referred by Summit Roofing. Wants growth plan for his 3-truck operation.',
   },
   {
@@ -517,12 +523,14 @@ export const DEMO_LEADS = [
     contact_name: 'Diana Cooper',
     email: 'diana@allstarappliance.com',
     phone: '+14045553003',
+    website: '',
     industry: 'Home Services',
     source: 'google_search',
     status: 'contacted',
     estimated_value: 9900,
     next_follow_up: daysFromNow(2),
     created_at: daysAgo(3),
+    updated_at: daysAgo(1),
     notes: 'Found us through Google. Wants to see a demo first.',
   },
   {
@@ -531,12 +539,14 @@ export const DEMO_LEADS = [
     contact_name: 'Greg Hoffman',
     email: 'greg@precisiontree.com',
     phone: '+14045553004',
+    website: '',
     industry: 'Home Services',
     source: 'facebook',
     status: 'new',
     estimated_value: 4900,
     next_follow_up: daysFromNow(0),
     created_at: daysAgo(1),
+    updated_at: daysAgo(1),
     notes: '',
   },
   {
@@ -545,12 +555,14 @@ export const DEMO_LEADS = [
     contact_name: 'Angela Foster',
     email: 'angela@metrocarpet.com',
     phone: '+14045553005',
+    website: '',
     industry: 'Home Services',
     source: 'instagram',
     status: 'new',
     estimated_value: 4900,
     next_follow_up: null,
     created_at: daysAgo(0),
+    updated_at: daysAgo(0),
     notes: '',
   },
   {
@@ -559,12 +571,14 @@ export const DEMO_LEADS = [
     contact_name: 'Walter Reed',
     email: 'walter@heritageinspect.com',
     phone: '+14045553006',
+    website: '',
     industry: 'Real Estate',
     source: 'linkedin',
     status: 'won',
     estimated_value: 9900,
     next_follow_up: null,
     created_at: daysAgo(30),
+    updated_at: daysAgo(5),
     notes: 'Closed! Signed up for pro plan.',
   },
   {
@@ -573,12 +587,14 @@ export const DEMO_LEADS = [
     contact_name: 'Tony Sanchez',
     email: 'tony@budgetmovers.com',
     phone: '+14045553007',
+    website: '',
     industry: 'Home Services',
     source: 'google_maps',
     status: 'lost',
     estimated_value: 4900,
     next_follow_up: null,
     created_at: daysAgo(21),
+    updated_at: daysAgo(10),
     notes: 'Went with a competitor. Price was the main concern.',
   },
   {
@@ -587,15 +603,103 @@ export const DEMO_LEADS = [
     contact_name: 'Rachel Adams',
     email: 'rachel@sunstatesolar.com',
     phone: '+14045553008',
+    website: '',
     industry: 'Home Services',
     source: 'referral',
     status: 'qualified',
     estimated_value: 14900,
     next_follow_up: daysAgo(1), // overdue
     created_at: daysAgo(10),
+    updated_at: daysAgo(2),
     notes: 'High-value lead. Runs a team of 8. Needs growth plan.',
   },
 ];
+
+// Mutable in-memory leads store (resets on page refresh — intentional)
+let _demoLeads = [..._seedLeads];
+let _demoLeadIdCounter = 100;
+
+/** Get the current list of demo leads (includes user-added ones). */
+export function getDemoLeads() {
+  return _demoLeads;
+}
+
+/** Calculate stats from the current mutable leads array. */
+export function getDemoLeadStats() {
+  const all = _demoLeads;
+
+  function isToday(dateStr: string): boolean {
+    const date = new Date(dateStr);
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }
+
+  function isOverdue(dateStr: string): boolean {
+    const date = new Date(dateStr);
+    date.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  }
+
+  return {
+    total: all.length,
+    new: all.filter(l => l.status === 'new').length,
+    contacted: all.filter(l => l.status === 'contacted').length,
+    qualified: all.filter(l => l.status === 'qualified').length,
+    proposal: all.filter(l => l.status === 'proposal').length,
+    won: all.filter(l => l.status === 'won').length,
+    lost: all.filter(l => l.status === 'lost').length,
+    totalEstimatedValue: all
+      .filter(l => l.status !== 'lost')
+      .reduce((sum, l) => sum + (l.estimated_value || 0), 0),
+    followUpsToday: all.filter(l => l.next_follow_up ? isToday(l.next_follow_up) : false).length,
+    overdueFollowUps: all.filter(l => {
+      if (!l.next_follow_up) return false;
+      if (['won', 'lost'].includes(l.status)) return false;
+      return isOverdue(l.next_follow_up);
+    }).length,
+  };
+}
+
+/** Add a new demo lead and return it (with generated id + timestamps). */
+export function addDemoLead(data: {
+  business_name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  website?: string | null;
+  industry?: string;
+  source?: string;
+  status?: string;
+  notes?: string;
+  estimated_value?: number | null;
+  next_follow_up?: string | null;
+}): typeof _demoLeads[0] {
+  _demoLeadIdCounter++;
+  const now = new Date().toISOString();
+  const newLead = {
+    id: `demo-lead-new-${_demoLeadIdCounter}`,
+    business_name: data.business_name,
+    contact_name: data.contact_name || '',
+    email: data.email || '',
+    phone: data.phone || '',
+    website: data.website || '',
+    industry: data.industry || '',
+    source: data.source || '',
+    status: data.status || 'new',
+    estimated_value: data.estimated_value ?? 0,
+    next_follow_up: data.next_follow_up || null,
+    created_at: now,
+    updated_at: now,
+    notes: data.notes || '',
+  };
+  _demoLeads = [newLead, ..._demoLeads];
+  return newLead;
+}
+
+// Legacy static exports — kept for any other files still importing them.
+export const DEMO_LEADS = _seedLeads;
 
 export const DEMO_LEAD_STATS = {
   total: 8,
@@ -614,7 +718,8 @@ export const DEMO_LEAD_STATS = {
 // LEAD DETAIL PAGE
 // ============================================================================
 export function getDemoLeadDetail(leadId: string) {
-  const lead = DEMO_LEADS.find(l => l.id === leadId) || DEMO_LEADS[0];
+  // Look up from the mutable store so user-added leads are found too
+  const lead = _demoLeads.find(l => l.id === leadId) || _demoLeads[0];
   return {
     lead,
     outreachStats: {
@@ -634,6 +739,161 @@ export function getDemoLeadDetail(leadId: string) {
       { id: 'a3', type: 'created', description: 'Lead created', created_at: lead.created_at },
     ],
   };
+}
+
+// ============================================================================
+// OUTREACH — Demo Templates & Composer
+// ============================================================================
+
+interface DemoTemplate {
+  id: string;
+  name: string;
+  type: 'email' | 'sms';
+  subject: string;
+  body: string;
+  description: string;
+}
+
+const _demoEmailTemplates: DemoTemplate[] = [
+  {
+    id: 'demo-tpl-email-1',
+    name: 'Initial Outreach',
+    type: 'email',
+    subject: 'Stop losing customers to voicemail — {{business_name}}',
+    body: `Hi {{contact_name}},
+
+I noticed {{business_name}} is growing fast — congrats! I wanted to reach out because many businesses like yours are losing 30-40% of inbound calls to voicemail, especially after hours.
+
+We built an AI receptionist that answers every call 24/7, books appointments, and sends you a summary — all for a fraction of the cost of a full-time receptionist.
+
+Would you be open to a quick 10-minute demo this week? I think you'd be impressed.
+
+Best,
+{{agency_name}}`,
+    description: 'First-touch cold email for new leads',
+  },
+  {
+    id: 'demo-tpl-email-2',
+    name: 'Follow-Up Email',
+    type: 'email',
+    subject: 'Quick follow-up — AI receptionist for {{business_name}}',
+    body: `Hi {{contact_name}},
+
+Just circling back on my previous email. I know things get busy, so I'll keep this short:
+
+• Every missed call = a lost customer (industry average: $250+ per missed lead)
+• Our AI receptionist answers in under 2 seconds, 24/7
+• No contracts — cancel anytime
+
+One of our clients, a plumbing company your size, went from missing 12 calls/week to zero within the first month.
+
+Worth a quick chat? I can show you exactly how it works in 10 minutes.
+
+{{agency_name}}`,
+    description: 'Second-touch follow-up with social proof',
+  },
+  {
+    id: 'demo-tpl-email-3',
+    name: 'Break-Up Email',
+    type: 'email',
+    subject: 'Closing the loop — {{business_name}}',
+    body: `Hi {{contact_name}},
+
+I've reached out a couple of times and haven't heard back, so I don't want to keep bugging you.
+
+If now isn't the right time, totally understand. But if you ever want to explore how an AI receptionist could help {{business_name}} capture more leads and book more jobs, just reply to this email and we'll pick it up.
+
+Wishing you continued success!
+
+{{agency_name}}`,
+    description: 'Final follow-up before closing the lead',
+  },
+];
+
+const _demoSmsTemplates: DemoTemplate[] = [
+  {
+    id: 'demo-tpl-sms-1',
+    name: 'Initial SMS',
+    type: 'sms',
+    subject: '',
+    body: `Hey {{contact_name}}, this is {{agency_name}}. I help businesses like {{business_name}} stop missing calls with an AI receptionist that answers 24/7. Worth a quick chat this week?`,
+    description: 'First-touch SMS outreach',
+  },
+  {
+    id: 'demo-tpl-sms-2',
+    name: 'Follow-Up SMS',
+    type: 'sms',
+    subject: '',
+    body: `Hi {{contact_name}} — following up on my last message. Our AI receptionist has helped similar businesses capture 30%+ more leads. Happy to do a free 10-min demo whenever works for you. — {{agency_name}}`,
+    description: 'Second-touch SMS follow-up',
+  },
+  {
+    id: 'demo-tpl-sms-3',
+    name: 'Quick Value SMS',
+    type: 'sms',
+    subject: '',
+    body: `{{contact_name}}, quick question — how many calls does {{business_name}} miss per week? Most of our clients were surprised to find out it was 10-15+. We can fix that overnight. Interested? — {{agency_name}}`,
+    description: 'Pain-point focused SMS',
+  },
+];
+
+/** Get demo templates filtered by type. */
+export function getDemoTemplates(type: 'email' | 'sms'): DemoTemplate[] {
+  return type === 'email' ? _demoEmailTemplates : _demoSmsTemplates;
+}
+
+/** Compose a demo message by filling in template variables. */
+export function composeDemoMessage(
+  templateId: string,
+  lead: { business_name?: string; contact_name?: string },
+  agencyName?: string,
+): { subject: string; body: string } {
+  const allTemplates = [..._demoEmailTemplates, ..._demoSmsTemplates];
+  const tpl = allTemplates.find(t => t.id === templateId);
+  if (!tpl) return { subject: '', body: '' };
+
+  const replacements: Record<string, string> = {
+    '{{business_name}}': lead.business_name || 'your business',
+    '{{contact_name}}': lead.contact_name || 'there',
+    '{{agency_name}}': agencyName || 'Our Team',
+  };
+
+  let subject = tpl.subject;
+  let body = tpl.body;
+
+  for (const [token, value] of Object.entries(replacements)) {
+    subject = subject.replaceAll(token, value);
+    body = body.replaceAll(token, value);
+  }
+
+  return { subject, body };
+}
+
+// Mutable outreach log (resets on refresh — intentional)
+const _demoOutreachLog: Array<{
+  id: string;
+  leadId: string;
+  type: 'email' | 'sms';
+  subject: string | null;
+  body: string;
+  sentAt: string;
+}> = [];
+
+/** Log a demo outreach event (in-memory only). */
+export function logDemoOutreach(entry: {
+  leadId: string;
+  type: 'email' | 'sms';
+  subject?: string | null;
+  body: string;
+}): void {
+  _demoOutreachLog.push({
+    id: `demo-outreach-${Date.now()}`,
+    leadId: entry.leadId,
+    type: entry.type,
+    subject: entry.subject ?? null,
+    body: entry.body,
+    sentAt: new Date().toISOString(),
+  });
 }
 
 // ============================================================================
