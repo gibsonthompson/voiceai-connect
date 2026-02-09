@@ -169,6 +169,16 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, shouldBlockAccess]);
 
+  // Sync body + html background with theme (prevents zoom gap showing wrong color)
+  useEffect(() => {
+    document.documentElement.style.setProperty('background', bgColor, 'important');
+    document.body.style.setProperty('background', bgColor, 'important');
+    return () => {
+      document.documentElement.style.removeProperty('background');
+      document.body.style.removeProperty('background');
+    };
+  }, [bgColor]);
+
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('agency');
@@ -362,7 +372,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       style={{
         backgroundColor: bgColor,
         color: textColor,
-        zoom: 0.8,
+        zoom: 0.9,
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
         '--color-accent': accentColor,
