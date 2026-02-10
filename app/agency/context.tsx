@@ -35,6 +35,10 @@ interface Agency {
   // Theme settings
   website_theme: 'auto' | 'light' | 'dark' | null;
   logo_background_color: string | null;
+  // Demo phone (auto-provisioned via VAPI)
+  demo_phone_number: string | null;
+  demo_assistant_id: string | null;
+  demo_vapi_phone_id: string | null;
 }
 
 interface User {
