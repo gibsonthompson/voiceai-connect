@@ -9,12 +9,17 @@ function GoogleSuccessContent() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const passwordToken = searchParams.get('passwordToken');
-    const agencyId = searchParams.get('agencyId');
-    const redirect = searchParams.get('redirect') || '/agency/dashboard';
+    const handleAuth = async () => {
+      const token = searchParams.get('token');
+      const passwordToken = searchParams.get('passwordToken');
+      const agencyId = searchParams.get('agencyId');
+      const redirect = searchParams.get('redirect') || '/agency/dashboard';
 
-    if (token) {
+      if (!token) {
+        router.push('/signup?error=no_token');
+        return;
+      }
+
       // IMPORTANT: Clear ALL old auth/agency data first to prevent wrong agency bug
       localStorage.removeItem('auth_token');
       localStorage.removeItem('agency_password_token');
@@ -35,13 +40,50 @@ function GoogleSuccessContent() {
       if (agencyId) {
         localStorage.setItem('onboarding_agency_id', agencyId);
       }
-      
+
+      // Fetch user and agency data so login page doesn't loop
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const verifyRes = await fetch(`${backendUrl}/api/auth/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        if (verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          
+          if (verifyData.user) {
+            localStorage.setItem('user', JSON.stringify(verifyData.user));
+          }
+
+          // Fetch agency settings if we have an agency ID
+          const resolvedAgencyId = agencyId || verifyData.user?.agency_id;
+          if (resolvedAgencyId) {
+            const agencyRes = await fetch(`${backendUrl}/api/agency/${resolvedAgencyId}/settings`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (agencyRes.ok) {
+              const agencyData = await agencyRes.json();
+              const agency = agencyData.agency || agencyData;
+              localStorage.setItem('agency', JSON.stringify(agency));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user/agency data (non-blocking):', err);
+        // Non-blocking — the dashboard context will fetch it anyway
+      }
+
       // Redirect to specified page
-      router.push(redirect);
-    } else {
-      // No token - redirect to signup with error
-      router.push('/signup?error=no_token');
-    }
+      window.location.href = redirect;
+    };
+
+    handleAuth();
   }, [searchParams, router]);
 
   return (
