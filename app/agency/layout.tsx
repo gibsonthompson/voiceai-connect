@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
-  LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe,
+  LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
   Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap,
   type LucideIcon
 } from 'lucide-react';
@@ -126,6 +126,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       label: 'Marketing Website', 
       icon: Globe,
       locked: !canUseMarketingSite,
+      upgradeRequired: 'Professional',
+    },
+    { 
+      href: '/agency/demo-phone', 
+      label: 'Demo Phone', 
+      icon: Phone,
+      locked: !isEnterprise && agency?.subscription_status !== 'active',
       upgradeRequired: 'Professional',
     },
     { 
