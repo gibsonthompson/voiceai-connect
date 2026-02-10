@@ -153,7 +153,7 @@ export default function DemoPhonePage() {
       <LockedFeature
         title="Demo Phone Number"
         description="Get a dedicated phone number that showcases your AI receptionist to prospects."
-        requiredPlan="Any paid plan"
+        requiredPlan="Professional"
         features={[
           'Dedicated demo phone number',
           'AI roleplays as prospect\'s receptionist',
