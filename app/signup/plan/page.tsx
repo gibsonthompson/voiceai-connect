@@ -407,7 +407,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
         'Dedicated support',
         'API access',
         'Custom integrations',
-        'White-glove onboarding',
+        'Priority onboarding',
       ],
       limitations: [],
     },
