@@ -7,6 +7,7 @@ interface Agency {
   name: string;
   slug: string;
   email: string;
+  phone: string | null;
   logo_url: string | null;
   primary_color: string;
   secondary_color: string;
