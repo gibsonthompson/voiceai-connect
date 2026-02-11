@@ -361,11 +361,11 @@ export default function AgencySiteHomePage() {
         : ['Never Miss', 'Another Call'],
       subtitle: agency.website_subheadline || `AI Receptionist Starting at $${starterPrice}/month`,
       description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
-      // Only include demoPhone if agency has one — no platform fallback
-      ...(demoPhone && {
-        demoPhone: demoPhone,
-        demoInstructions: "Call now to hear our AI in action. Tell it about your business and see how it handles calls.",
-      }),
+      // Only show demo if agency has their own number — empty string hides the section
+      demoPhone: demoPhone || '',
+      demoInstructions: demoPhone
+        ? "Call now to hear our AI in action. Tell it about your business and see how it handles calls."
+        : '',
       trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
     },
     pricing: [
