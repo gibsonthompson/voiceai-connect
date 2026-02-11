@@ -270,7 +270,7 @@ export default function AgencyLoginPage() {
                   <span className="text-sm text-[#fafaf9]/50 group-hover:text-[#fafaf9]/70 transition-colors">Remember me</span>
                 </label>
                 <Link 
-                  href="/forgot-password" 
+                  href="/auth/forgot-password" 
                   className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   Forgot password?
