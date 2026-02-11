@@ -32,14 +32,26 @@ interface Agency {
   // Contact
   support_email: string | null;
   support_phone: string | null;
-  // Demo phone (optional - agencies can set their own)
+  // Demo phone — auto-provisioned via Demo Phone tab
+  demo_phone_number: string | null;
+  // Legacy manual override (if agency set one manually)
   demo_phone: string | null;
   // Advanced config (JSONB)
   marketing_config?: Partial<MarketingConfig>;
 }
 
-// Platform default demo phone number
-const PLATFORM_DEMO_PHONE = '(770) 809-2820';
+// ============================================================================
+// HELPER: Format E.164 phone to display format
+// ============================================================================
+function formatPhoneDisplay(phone: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  const ten = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+  if (ten.length === 10) {
+    return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  }
+  return phone;
+}
 
 // ============================================================================
 // HELPER: Check if agency has marketing site access
@@ -269,9 +281,6 @@ export default function AgencySiteHomePage() {
         if (agencyData.logo_url) {
           const bgColor = await detectLogoBackgroundColor(agencyData.logo_url);
           setDetectedLogoBackground(bgColor);
-          
-          // Only set dark theme if explicitly configured (not auto-detect)
-          // Auto now defaults to light for better readability
         }
         
         setLoading(false);
@@ -310,7 +319,7 @@ export default function AgencySiteHomePage() {
         </div>
       </div>
     );
-  }
+}
 
   // Convert cents to dollars for display
   const starterPrice = (agency.price_starter || 4900) / 100;
@@ -322,13 +331,17 @@ export default function AgencySiteHomePage() {
   if (agency.website_theme === 'dark') {
     theme = 'dark';
   }
-  // 'auto' and 'light' both result in light theme for better default experience
 
   // Use stored or detected logo background color
   const logoBackgroundColor = agency.logo_background_color || detectedLogoBackground;
 
-  // Demo phone: use agency's demo_phone, fallback to support_phone, fallback to platform default
-  const demoPhone = agency.demo_phone || PLATFORM_DEMO_PHONE;
+  // ============================================================================
+  // DEMO PHONE RESOLUTION
+  // Priority: manual override (demo_phone) → auto-provisioned (demo_phone_number)
+  // If neither exists → NO demo section (don't show platform's 770 number)
+  // ============================================================================
+  const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || null;
+  const demoPhone = rawDemoPhone ? formatPhoneDisplay(rawDemoPhone) : undefined;
 
   // Build marketing config from agency data
   const marketingConfig: Partial<MarketingConfig> = {
@@ -348,8 +361,11 @@ export default function AgencySiteHomePage() {
         : ['Never Miss', 'Another Call'],
       subtitle: agency.website_subheadline || `AI Receptionist Starting at $${starterPrice}/month`,
       description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
-      demoPhone: demoPhone,
-      demoInstructions: "Call now to hear our AI in action. Tell it about your business and see how it handles calls.",
+      // Only include demoPhone if agency has one — no platform fallback
+      ...(demoPhone && {
+        demoPhone: demoPhone,
+        demoInstructions: "Call now to hear our AI in action. Tell it about your business and see how it handles calls.",
+      }),
       trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
     },
     pricing: [
@@ -406,7 +422,8 @@ export default function AgencySiteHomePage() {
     ],
     footer: {
       address: '',
-      phone: agency.support_phone || demoPhone,
+      // Footer phone: use support_phone if available, or demo phone, or empty
+      phone: agency.support_phone || (demoPhone ? demoPhone : ''),
       email: agency.support_email || '',
       productLinks: [
         { label: 'Features', href: '#features' },
