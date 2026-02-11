@@ -61,6 +61,203 @@ const categories = [
 // ============================================================================
 const blogPosts: BlogPost[] = [
   // =========================================================================
+  // PILLAR 5: TRUST & SOCIAL PROOF (February 2026)
+  // =========================================================================
+  {
+    slug: 'mistakes-new-ai-agency-owners-make',
+    title: '9 Mistakes New AI Receptionist Agency Owners Make (and How to Avoid Them)',
+    excerpt: 'The most common reasons AI receptionist agencies fail in the first 90 days and the simple fixes for each one. Real patterns, not theory.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '13 min read',
+    featured: true,
+  },
+  {
+    slug: 'signs-ai-receptionist-agency-is-right-for-you',
+    title: '7 Signs an AI Receptionist Agency Is (or Isn\'t) Right for You',
+    excerpt: 'An honest self-assessment for anyone considering starting an AI receptionist agency. Not everyone should do this — here are the signals that tell you.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  // =========================================================================
+  // PILLAR 4: AEO DEFINITIVE GUIDES (February 2026)
+  // =========================================================================
+  {
+    slug: 'ai-receptionist-vs-human-receptionist-cost',
+    title: 'AI Receptionist vs Human Receptionist: The Complete Cost Comparison',
+    excerpt: 'A human receptionist costs $32,000-$45,000/year. An AI receptionist costs $99-$299/month. Full comparison including capabilities, limitations, and when each makes sense.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '12 min read',
+    featured: true,
+  },
+  {
+    slug: 'ai-receptionist-agency-profit-calculator',
+    title: 'AI Receptionist Agency Profit Calculator: Real Numbers at Every Scale',
+    excerpt: 'Detailed profit analysis at 5, 15, 30, 50, and 100 clients. Real platform costs, client pricing strategies, and margin calculations — no hype, just math.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '13 min read',
+  },
+  {
+    slug: 'complete-guide-white-label-ai-receptionist-business',
+    title: 'The Complete Guide to White-Label AI Receptionist Businesses',
+    excerpt: 'Everything about the white-label AI receptionist business model — what it is, how the value chain works, who makes money, and why it\'s one of the best agency models in 2026.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '16 min read',
+  },
+  // =========================================================================
+  // PILLAR 3: INDUSTRY SALES PLAYBOOKS (February 2026)
+  // =========================================================================
+  {
+    slug: 'sell-ai-receptionist-to-auto-shops',
+    title: 'How to Sell AI Receptionists to Auto Repair Shops (Agency Playbook)',
+    excerpt: 'Auto shops lose thousands in repairs when they can\'t answer the phone. The complete playbook for selling AI receptionists to mechanics, body shops, and dealers.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  {
+    slug: 'sell-ai-receptionist-to-restaurants',
+    title: 'How to Sell AI Receptionists to Restaurants (Agency Playbook)',
+    excerpt: 'Restaurants miss calls during every rush. How to sell them AI phone answering that handles reservations, hours, and takeout orders. Scripts, objections, and pricing.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  {
+    slug: 'sell-ai-receptionist-to-law-firms',
+    title: 'How to Sell AI Receptionists to Law Firms (Agency Playbook)',
+    excerpt: 'Law firms spend $500-2,000/month on answering services. How to sell them an AI receptionist at better margins. Pitch scripts, objections, and pricing for the legal niche.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '11 min read',
+  },
+  {
+    slug: 'sell-ai-receptionist-to-dental-offices',
+    title: 'How to Sell AI Receptionists to Dental Offices (Agency Playbook)',
+    excerpt: 'The complete playbook for selling AI receptionist services to dentists. Pain points, pitch scripts, pricing, and why dental is a high-value niche for AI agencies.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '11 min read',
+  },
+  {
+    slug: 'sell-ai-receptionist-to-plumbers',
+    title: 'How to Sell AI Receptionists to Plumbers & Home Service Businesses',
+    excerpt: 'The complete agency playbook for selling AI receptionists to plumbers, HVAC, electricians, and roofers. Scripts, objection handling, pricing, and why home services is the easiest niche.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '12 min read',
+  },
+  // =========================================================================
+  // PILLAR 2: COMPETITOR COMPARISONS (February 2026)
+  // =========================================================================
+  {
+    slug: 'why-agencies-switch-answering-services-to-ai',
+    title: 'Why Agencies Are Switching From Answering Services to AI Receptionists',
+    excerpt: 'Answering services charge $2-5 per call. AI receptionists handle unlimited calls for a flat fee. The economics behind the migration and how to make the switch.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  {
+    slug: 'best-ai-receptionist-platforms-compared-2026',
+    title: 'Best AI Receptionist Platforms Compared (2026): Pricing, Features & Reviews',
+    excerpt: 'Comprehensive comparison of every major AI receptionist platform — white-label and D2C. Real pricing, honest pros/cons, and specific recommendations by use case.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '14 min read',
+  },
+  {
+    slug: 'voiceai-connect-vs-smith-ai',
+    title: 'VoiceAI Connect vs Smith.ai: AI-Only vs Human+AI — Which Wins for Agencies?',
+    excerpt: 'Comparing a white-label AI platform with a hybrid human+AI answering service. Pricing, margins, scalability, and which model makes more sense for agencies.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '9 min read',
+  },
+  {
+    slug: 'voiceai-connect-vs-goodcall',
+    title: 'VoiceAI Connect vs Goodcall: Which AI Receptionist Platform Should Agencies Use?',
+    excerpt: 'Goodcall is built for small businesses. VoiceAI Connect is built for agencies. Here\'s why that distinction matters and which platform fits your goals.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '9 min read',
+  },
+  {
+    slug: 'voiceai-connect-vs-trillet',
+    title: 'VoiceAI Connect vs Trillet: Which White-Label AI Platform Is Better for Agencies?',
+    excerpt: 'Detailed comparison of VoiceAI Connect and Trillet for agencies building AI receptionist businesses. Pricing, features, white-label quality, and which delivers better margins.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  // =========================================================================
+  // PILLAR 1: START A BUSINESS / MMO (February 2026)
+  // =========================================================================
+  {
+    slug: 'can-you-start-ai-business-no-technical-skills',
+    title: 'Can You Start an AI Business With No Technical Skills? (Yes — Here\'s How)',
+    excerpt: 'The #1 objection to starting an AI business, answered honestly. What you actually need to know, what the platform handles, and where your time goes.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '10 min read',
+  },
+  {
+    slug: 'first-month-ai-receptionist-agency',
+    title: 'Your First Month Running an AI Receptionist Agency: What to Expect',
+    excerpt: 'A realistic week-by-week breakdown of month one. What you\'ll do, what you\'ll earn, what will go wrong, and what separates people who make it from those who quit.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '11 min read',
+  },
+  {
+    slug: 'recurring-revenue-business-no-code',
+    title: 'How to Build a Recurring Revenue Business Without Writing Code',
+    excerpt: 'Three no-code business models that generate predictable monthly income — and why white-label AI agencies have the best unit economics of any of them.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '12 min read',
+  },
+  {
+    slug: 'ai-agency-vs-dropshipping',
+    title: 'AI Agency vs Dropshipping in 2026: Which Business Model Actually Works?',
+    excerpt: 'An honest comparison of AI receptionist agencies and dropshipping across 8 factors: startup cost, margins, time investment, competition, and long-term potential.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '11 min read',
+  },
+  {
+    slug: 'best-online-businesses-no-experience',
+    title: 'Best Online Businesses to Start With No Experience (2026 Guide)',
+    excerpt: 'Seven online businesses ranked by startup cost, learning curve, and income potential. Why white-label AI agencies are the best option for complete beginners.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-10',
+    readTime: '13 min read',
+  },
+  // =========================================================================
   // PRODUCT UPDATES (February 2026)
   // =========================================================================
   {
@@ -71,7 +268,6 @@ const blogPosts: BlogPost[] = [
     author: { name: 'Gibson Thompson' },
     publishedAt: '2026-02-05',
     readTime: '4 min read',
-    featured: true,
   },
   // =========================================================================
   // INDUSTRY INSIGHTS (February 2026)
