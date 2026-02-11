@@ -264,7 +264,7 @@ export default function sitemap() {
       priority: 0.8,
     },
 
-    // Blog Posts
+    // Blog Posts (Existing)
     {
       url: `${baseUrl}/blog/how-to-find-leads-google-maps`,
       lastModified: new Date(),
@@ -345,6 +345,136 @@ export default function sitemap() {
     },
     {
       url: `${baseUrl}/blog/white-label-vs-build-ai-receptionist`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — Pillar 1: Start a Business / MMO
+    {
+      url: `${baseUrl}/blog/best-online-businesses-no-experience`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/ai-agency-vs-dropshipping`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/recurring-revenue-business-no-code`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/first-month-ai-receptionist-agency`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/can-you-start-ai-business-no-technical-skills`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — Pillar 2: Competitor Comparisons
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-trillet`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-goodcall`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-smith-ai`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/best-ai-receptionist-platforms-compared-2026`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/why-agencies-switch-answering-services-to-ai`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — Pillar 3: Industry Sales Playbooks
+    {
+      url: `${baseUrl}/blog/sell-ai-receptionist-to-plumbers`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/sell-ai-receptionist-to-dental-offices`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/sell-ai-receptionist-to-law-firms`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/sell-ai-receptionist-to-restaurants`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/sell-ai-receptionist-to-auto-shops`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — Pillar 4: AEO Definitive Guides
+    {
+      url: `${baseUrl}/blog/complete-guide-white-label-ai-receptionist-business`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/ai-receptionist-agency-profit-calculator`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/ai-receptionist-vs-human-receptionist-cost`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — Pillar 5: Trust & Social Proof
+    {
+      url: `${baseUrl}/blog/signs-ai-receptionist-agency-is-right-for-you`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/mistakes-new-ai-agency-owners-make`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,
