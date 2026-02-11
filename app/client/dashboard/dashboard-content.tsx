@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { 
   Phone, PhoneCall, Clock, Copy, 
   ChevronRight, AlertCircle, CheckCircle,
@@ -123,6 +122,12 @@ export function ClientDashboardClient({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      {/* CSS hover styles - avoids JS onMouseEnter/onMouseLeave which cause double-click bug */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .call-link-hover { transition: background-color 0.15s ease; }
+        .call-link-hover:hover { background-color: ${theme.hoverBg} !important; }
+      `}} />
+
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>
@@ -315,14 +320,14 @@ export function ClientDashboardClient({
           style={{ borderColor: theme.border }}
         >
           <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Recent Calls</h2>
-          <Link 
+          <a 
             href="/client/calls" 
             className="flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors hover:opacity-80"
             style={{ color: branding.primaryColor }}
           >
             View all
             <ChevronRight className="h-4 w-4" />
-          </Link>
+          </a>
         </div>
         
         <div className="p-4 sm:p-6">
@@ -344,16 +349,14 @@ export function ClientDashboardClient({
           ) : (
             <div className="space-y-2 sm:space-y-3">
               {recentCalls.map((call) => (
-                <Link
+                <a
                   key={call.id}
                   href={`/client/calls/${call.id}`}
-                  className="block rounded-lg border p-3 sm:p-4 transition-colors"
+                  className="block rounded-lg border p-3 sm:p-4 call-link-hover"
                   style={{ 
                     borderColor: theme.border,
                     backgroundColor: 'transparent',
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hoverBg}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {/* Mobile Layout */}
                   <div className="sm:hidden">
@@ -433,7 +436,7 @@ export function ClientDashboardClient({
                       </p>
                     </div>
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
           )}
