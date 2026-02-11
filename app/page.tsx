@@ -10,10 +10,12 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import DashboardSandbox from '@/components/dashboard-sandbox';
+import { usePrice } from '@/hooks/usePrice';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { formatPrice: fmtPrice } = usePrice();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -1045,7 +1047,7 @@ export default function LandingPage() {
                   </div>
                   
                   <div className="mb-6">
-                    <span className="text-4xl sm:text-5xl font-semibold">${tier.price}</span>
+                    <span className="text-4xl sm:text-5xl font-semibold">{fmtPrice(tier.price)}</span>
                     <span className="text-[#fafaf9]/50">/month</span>
                   </div>
                   

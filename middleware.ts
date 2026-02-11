@@ -11,6 +11,13 @@ const PLATFORM_DOMAINS = [
   'localhost',
 ];
 
+// Stripe-supported countries (for geo-detection validation)
+const SUPPORTED_COUNTRIES = new Set([
+  'US','CA','MX','GB','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR',
+  'DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','NO','PL','PT','RO',
+  'SK','SI','ES','SE','CH','AU','NZ','JP','SG','HK','MY','TH','IN','AE','BR',
+]);
+
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const pathname = request.nextUrl.pathname;
@@ -31,6 +38,21 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
+
+  // =========================================================================
+  // GEO-DETECTION: Set country cookie from Vercel headers
+  // =========================================================================
+  const existingCountryCookie = request.cookies.get('vc_country')?.value;
+  if (!existingCountryCookie) {
+    const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+    // Only set if it's a Stripe-supported country, otherwise default to US
+    const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+    response.cookies.set('vc_country', validCountry, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: 'lax',
+    });
+  }
 
   // Create Supabase client for middleware
   const supabase = createServerClient(
@@ -100,11 +122,31 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = `/agency-site${pathname}`;
         
-        return NextResponse.rewrite(url, {
+        // Preserve geo cookie on rewrite response
+        const rewriteResponse = NextResponse.rewrite(url, {
           request: {
             headers: requestHeaders,
           },
         });
+        
+        // Copy cookies to rewrite response
+        if (!existingCountryCookie) {
+          const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+          const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+          rewriteResponse.cookies.set('vc_country', validCountry, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30,
+            sameSite: 'lax',
+          });
+        }
+        rewriteResponse.cookies.set('agency_id', agency.id, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+        });
+        
+        return rewriteResponse;
       }
       
       // For all other routes (/signup, /agency, /client, /login, etc.)
@@ -147,11 +189,30 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = `/agency-site${pathname}`;
       
-      return NextResponse.rewrite(url, {
+      const rewriteResponse = NextResponse.rewrite(url, {
         request: {
           headers: requestHeaders,
         },
       });
+      
+      // Copy cookies to rewrite response
+      if (!existingCountryCookie) {
+        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+        rewriteResponse.cookies.set('vc_country', validCountry, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        });
+      }
+      rewriteResponse.cookies.set('agency_id', customDomainAgency.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+      
+      return rewriteResponse;
     }
     
     // For all other routes, pass through with agency cookie

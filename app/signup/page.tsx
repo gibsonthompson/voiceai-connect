@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
   Phone, ArrowRight, Loader2, Building, Mail, User, MapPin,
-  ArrowLeft, Sparkles, Shield, Clock, Zap
+  ArrowLeft, Sparkles, Shield, Clock, Zap, Globe
 } from 'lucide-react';
+import { countries as supportedCountries } from '@/lib/currency';
+import { getCountryFromCookie } from '@/lib/geo';
 
 // ============================================================================
 // TYPES
@@ -563,7 +565,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 }
 
 // ============================================================================
-// AGENCY SIGNUP FORM (SIMPLIFIED - just name + email + Google)
+// AGENCY SIGNUP FORM (SIMPLIFIED - name + email + country + Google)
 // ============================================================================
 function AgencySignupForm() {
   const searchParams = useSearchParams();
@@ -576,7 +578,14 @@ function AgencySignupForm() {
     firstName: '',
     lastName: '',
     email: '',
+    country: '',
   });
+
+  // Auto-detect country on mount
+  useEffect(() => {
+    const detected = getCountryFromCookie() || 'US';
+    setFormData(prev => ({ ...prev, country: detected }));
+  }, []);
 
   // Check for errors from Google OAuth
   useEffect(() => {
@@ -612,7 +621,7 @@ function AgencySignupForm() {
     }
   }, [searchParams]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
@@ -620,7 +629,11 @@ function AgencySignupForm() {
   const handleGoogleSignup = () => {
     setGoogleLoading(true);
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const state = referralCode ? `?ref=${referralCode}` : '';
+    // Pass country in Google OAuth state so backend can save it
+    const params = new URLSearchParams();
+    if (referralCode) params.set('ref', referralCode);
+    if (formData.country) params.set('country', formData.country);
+    const state = params.toString() ? `?${params.toString()}` : '';
     window.location.href = `${backendUrl}/api/auth/google${state}`;
   };
 
@@ -638,6 +651,7 @@ function AgencySignupForm() {
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          country: formData.country,
           referralCode: referralCode,
         }),
       });
@@ -797,6 +811,37 @@ function AgencySignupForm() {
                 icon={Mail}
                 isDark={true}
               />
+
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-[#fafaf9]/70">
+                  Country
+                </label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#fafaf9]/30" />
+                  <select
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-11 pr-10 py-3.5 text-[#fafaf9] transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:border-white/20 focus:bg-white/[0.05]"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 1rem center',
+                      backgroundSize: '1.25rem',
+                      '--tw-ring-color': '#10b98130',
+                    } as React.CSSProperties}
+                  >
+                    <option value="" disabled>Select your country</option>
+                    {supportedCountries.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               {error && (
                 <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">

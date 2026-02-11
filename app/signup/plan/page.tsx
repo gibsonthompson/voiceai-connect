@@ -6,6 +6,8 @@ import {
   Phone, ArrowRight, Loader2, Check, ArrowLeft, Sparkles, 
   Zap, Shield, Users, Crown, X
 } from 'lucide-react';
+import { formatPrice as formatLocalPrice } from '@/lib/currency';
+import { getCountryFromCookie } from '@/lib/geo';
 
 // ============================================================================
 // TYPES
@@ -52,7 +54,8 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
-const formatPrice = (cents: number) => `$${(cents / 100).toFixed(0)}`;
+// Client plan prices are set by the agency in their own currency — always display as USD
+const formatPriceUSD = (cents: number) => `$${(cents / 100).toFixed(0)}`;
 
 // ============================================================================
 // THEME CACHING HELPERS
@@ -583,7 +586,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
                   <div className="mt-3">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatPrice(plan.price)}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">{formatPriceUSD(plan.price)}</span>
                     <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
                   </div>
                   <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
@@ -671,6 +674,14 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [countryCode, setCountryCode] = useState('US');
+
+  useEffect(() => {
+    const detected = getCountryFromCookie();
+    if (detected) setCountryCode(detected);
+  }, []);
+
+  const fmtPrice = (cents: number) => formatLocalPrice(cents / 100, countryCode);
 
   const handleSelectPlan = async (planType: string) => {
     setSelectedPlan(planType);
@@ -869,7 +880,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                   <p className="text-sm text-[#fafaf9]/50 mb-1">{plan.description}</p>
                   <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
                   <div className="mt-3">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatPrice(plan.price)}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">{fmtPrice(plan.price)}</span>
                     <span className="text-[#fafaf9]/50 text-sm">/month</span>
                   </div>
                   <p className="mt-2 text-sm text-[#fafaf9]/40">
