@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/server';
+import { getCurrencyForCountry, convertToLocalCurrency } from '@/lib/currency';
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -8,10 +9,17 @@ function getStripe() {
   });
 }
 
-const PRICE_IDS: Record<string, string> = {
-  starter: process.env.STRIPE_PRICE_AGENCY_STARTER || '',
-  professional: process.env.STRIPE_PRICE_AGENCY_PRO || '',
-  enterprise: process.env.STRIPE_PRICE_AGENCY_ENTERPRISE || '',
+// USD amounts in cents for each plan
+const PLAN_PRICES_USD_CENTS: Record<string, number> = {
+  starter: 9900,       // $99
+  professional: 19900,  // $199
+  enterprise: 49900,    // $499
+};
+
+const PLAN_NAMES: Record<string, string> = {
+  starter: 'Starter',
+  professional: 'Professional',
+  enterprise: 'Scale',
 };
 
 export async function POST(request: NextRequest) {
@@ -26,8 +34,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const priceId = PRICE_IDS[planType];
-    if (!priceId) {
+    const usdCents = PLAN_PRICES_USD_CENTS[planType];
+    if (!usdCents) {
       return NextResponse.json(
         { error: 'Invalid plan type' },
         { status: 400 }
@@ -36,10 +44,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // Get agency details
+    // Get agency details including country
     const { data: agency, error: agencyError } = await supabase
       .from('agencies')
-      .select('id, email, name, stripe_customer_id')
+      .select('id, email, name, stripe_customer_id, country')
       .eq('id', agencyId)
       .single();
 
@@ -49,6 +57,26 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Determine currency from agency's country
+    const countryCode = agency.country || 'US';
+    const currencyConfig = getCurrencyForCountry(countryCode);
+    const currency = currencyConfig.code.toLowerCase(); // Stripe expects lowercase
+    const localAmount = convertToLocalCurrency(usdCents / 100, countryCode); // convertToLocalCurrency expects dollars
+    const localAmountCents = Math.round(localAmount * (currencyConfig.decimals === 0 ? 1 : 100));
+    
+    // For zero-decimal currencies (JPY, HUF, etc.), Stripe expects the amount as-is
+    // For normal currencies, Stripe expects cents
+    // Our convertToLocalCurrency returns rounded whole numbers since decimals=0 in our config
+    // So for JPY: $99 * 152 = 15048 yen (pass 15048 to Stripe)
+    // For GBP: $99 * 0.79 = 78 pounds (pass 7800 to Stripe as pence)
+    const ZERO_DECIMAL_CURRENCIES = [
+      'jpy', 'krw', 'vnd', 'clp', 'pyg', 'ugx', 'gnf', 'rwf', 'xof', 'xaf',
+      'bif', 'djf', 'kmf', 'mga', 'xpf'
+    ];
+    
+    const isZeroDecimal = ZERO_DECIMAL_CURRENCIES.includes(currency);
+    const stripeAmount = isZeroDecimal ? localAmount : localAmount * 100;
 
     // Create or retrieve Stripe customer
     let customerId = agency.stripe_customer_id;
@@ -63,14 +91,13 @@ export async function POST(request: NextRequest) {
       });
       customerId = customer.id;
 
-      // Save customer ID to database
       await supabase
         .from('agencies')
         .update({ stripe_customer_id: customerId })
         .eq('id', agencyId);
     }
 
-    // Create checkout session with 14-day trial
+    // Create checkout session with price_data (dynamic currency)
     const baseUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://myvoiceaiconnect.com';
     
     const session = await getStripe().checkout.sessions.create({
@@ -79,7 +106,15 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: currency,
+            unit_amount: stripeAmount,
+            recurring: { interval: 'month' },
+            product_data: {
+              name: `VoiceAI Connect ${PLAN_NAMES[planType]} Plan`,
+              description: `White-label AI receptionist platform — ${PLAN_NAMES[planType]}`,
+            },
+          },
           quantity: 1,
         },
       ],
@@ -98,13 +133,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // DO NOT update agency status here.
-    // The Stripe webhook (handleAgencyCheckoutCompleted) handles setting:
-    //   status: 'trial'
-    //   subscription_status: 'trialing'
-    //   stripe_subscription_id
-    //   trial_ends_at 
-    // This only fires AFTER the user completes payment on Stripe's checkout page.
+    console.log(`✅ Agency checkout created: ${session.id} | ${currency.toUpperCase()} ${stripeAmount} (${PLAN_NAMES[planType]})`);
 
     return NextResponse.json({
       success: true,
