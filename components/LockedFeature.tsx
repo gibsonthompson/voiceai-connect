@@ -18,6 +18,12 @@ interface LockedFeatureOverlayProps {
   features?: string[];
   /** URL to upgrade page */
   upgradeUrl?: string;
+  /** Custom badge text (defaults to "{requiredPlan} Feature") */
+  badgeText?: string;
+  /** Custom CTA button text (defaults to "Upgrade to {requiredPlan}") */
+  ctaText?: string;
+  /** Custom text below CTA (defaults to "You're on the {plan} plan") */
+  currentPlanText?: string;
 }
 
 export default function LockedFeatureOverlay({
@@ -27,6 +33,9 @@ export default function LockedFeatureOverlay({
   requiredPlan,
   features = [],
   upgradeUrl = '/agency/settings?tab=billing',
+  badgeText,
+  ctaText,
+  currentPlanText,
 }: LockedFeatureOverlayProps) {
   const { agency, branding } = useAgency();
   
@@ -42,6 +51,12 @@ export default function LockedFeatureOverlay({
   const overlayBg = isDark 
     ? 'rgba(5,5,5,0.75)' 
     : 'rgba(249,250,251,0.80)';
+
+  // Determine current plan display
+  const isTrialing = agency?.subscription_status === 'trialing' || agency?.subscription_status === 'trial';
+  const defaultPlanText = isTrialing
+    ? `You're currently on a free trial`
+    : `You're on the ${agency?.plan_type || 'Starter'} plan`;
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
@@ -86,7 +101,7 @@ export default function LockedFeatureOverlay({
           >
             <Sparkles className="h-3.5 w-3.5" style={{ color: primaryColor }} />
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: primaryColor }}>
-              {requiredPlan} Feature
+              {badgeText || `${requiredPlan} Feature`}
             </span>
           </div>
 
@@ -147,7 +162,7 @@ export default function LockedFeatureOverlay({
               color: isDark ? '#050505' : '#ffffff',
             }}
           >
-            Upgrade to {requiredPlan}
+            {ctaText || `Upgrade to ${requiredPlan}`}
             <ArrowRight className="h-4 w-4" />
           </Link>
 
@@ -156,7 +171,7 @@ export default function LockedFeatureOverlay({
             className="mt-4 text-center text-xs"
             style={{ color: mutedTextColor }}
           >
-            You're on the <span className="font-medium capitalize">{agency?.plan_type || 'Starter'}</span> plan
+            {currentPlanText || defaultPlanText}
           </p>
         </div>
       </div>

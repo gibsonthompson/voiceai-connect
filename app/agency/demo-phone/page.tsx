@@ -46,8 +46,12 @@ export default function DemoPhonePage() {
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#ffffff';
   const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
 
-  // Plan check — paid plans only (not trial)
-  const isPaid = agency?.subscription_status === 'active';
+  // Subscription checks
+  const subscriptionStatus = agency?.subscription_status;
+  const isTrialing = subscriptionStatus === 'trialing' || subscriptionStatus === 'trial';
+  const isActive = subscriptionStatus === 'active';
+  // Paid = active subscription that is NOT a trial
+  const isPaid = isActive && !isTrialing;
   const hasDemo = !!agency?.demo_phone_number;
 
   // Pre-fill area code from agency phone
@@ -146,14 +150,21 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // LOCKED STATE — Trial / Starter
+  // LOCKED STATE — Trial or unpaid
   // ============================================================================
   if (!isPaid && !demoMode) {
     return (
       <LockedFeature
         title="Demo Phone Number"
-        description="Get a dedicated phone number that showcases your AI receptionist to prospects."
+        description="Get a dedicated phone number that showcases your AI receptionist to prospects. Available on paid plans after your trial ends."
         requiredPlan="Professional"
+        badgeText="Paid Feature"
+        ctaText={isTrialing ? 'Subscribe to Unlock' : 'Upgrade to Unlock'}
+        currentPlanText={
+          isTrialing
+            ? "This feature is available once your trial converts to a paid subscription"
+            : `You're on the ${agency?.plan_type || 'Starter'} plan`
+        }
         features={[
           'Dedicated demo phone number',
           'AI roleplays as prospect\'s receptionist',
