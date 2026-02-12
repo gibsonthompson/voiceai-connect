@@ -1314,6 +1314,7 @@ export default function LandingPage() {
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
               <Link href="/demo" className="hover:text-[#fafaf9] transition-colors">Book a Demo</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
+              <a href="https://www.aitoolzdir.com" target="_blank" rel="noopener" className="hover:text-[#fafaf9] transition-colors">AI Toolz Dir</a>
             </div>
             
             {/* Copyright */}
