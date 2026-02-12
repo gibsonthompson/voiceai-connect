@@ -264,6 +264,20 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Blog Posts — SEO Gap Posts (February 2026)
+    {
+      url: `${baseUrl}/blog/smma-profit-margins-2026`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/ai-agency-profit-margins-2026`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
     // Blog Posts (Existing)
     {
       url: `${baseUrl}/blog/how-to-find-leads-google-maps`,

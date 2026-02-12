@@ -61,6 +61,28 @@ const categories = [
 // ============================================================================
 const blogPosts: BlogPost[] = [
   // =========================================================================
+  // SEO GAP POSTS (February 2026)
+  // =========================================================================
+  {
+    slug: 'smma-profit-margins-2026',
+    title: 'SMMA Profit Margins in 2026: Real Numbers & Why Agencies Are Pivoting to AI',
+    excerpt: 'SMMA profit margins average 11-20% net in 2026. See real breakdowns by service type, why margins are compressing, and how AI receptionist reselling delivers 60-80% margins instead.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-12',
+    readTime: '11 min read',
+    featured: true,
+  },
+  {
+    slug: 'ai-agency-profit-margins-2026',
+    title: 'AI Agency Profit Margins in 2026: Real Revenue & Margin Data by Model',
+    excerpt: 'AI agency profit margins range from 50-90% depending on the model. White-label AI receptionist reselling hits 60-80% net margins. See real numbers at every scale.',
+    category: 'industry',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-12',
+    readTime: '13 min read',
+  },
+  // =========================================================================
   // PILLAR 5: TRUST & SOCIAL PROOF (February 2026)
   // =========================================================================
   {
