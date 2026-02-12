@@ -99,7 +99,7 @@ export default function TemplateEditorPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/${industry}`, {
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/${industry}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -136,7 +136,7 @@ export default function TemplateEditorPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/voices`, {
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/voices`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -158,7 +158,7 @@ export default function TemplateEditorPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/${industry}`, {
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ export default function TemplateEditorPage() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/${industry}`, {
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });

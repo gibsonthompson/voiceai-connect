@@ -102,7 +102,7 @@ export default function AITemplatesPage() {
       setHasAccess(true);
       try {
         const token = localStorage.getItem('auth_token');
-        const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/industries`, {
+        const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/industries`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (industriesResponse.ok) {
@@ -121,7 +121,7 @@ export default function AITemplatesPage() {
       const token = localStorage.getItem('auth_token');
 
       // Check access first
-      const checkResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/check`, {
+      const checkResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/check`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -131,7 +131,7 @@ export default function AITemplatesPage() {
 
         if (checkData.hasAccess) {
           // Fetch industries
-          const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/templates/industries`, {
+          const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/industries`, {
             headers: { 'Authorization': `Bearer ${token}` },
           });
 
