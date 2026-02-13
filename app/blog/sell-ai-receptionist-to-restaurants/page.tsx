@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/sell-ai-receptionist-to-restaurants",
+  },
   title: 'How to Sell AI Receptionists to Restaurants (Agency Playbook)',
   description: 'Restaurants miss calls during every rush. Here\'s how to sell them AI phone answering that handles reservations, hours, and takeout orders. Scripts, objections, and pricing.',
   keywords: 'sell AI receptionist to restaurants, AI phone answering restaurant, restaurant missed calls, AI hostess phone, restaurant reservation AI',

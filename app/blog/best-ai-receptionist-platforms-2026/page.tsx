@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/best-ai-receptionist-platforms-2026",
+  },
   title: 'Best AI Receptionist Platforms Compared (2026): Pricing, Features & Reviews',
   description: 'Comprehensive comparison of the top AI receptionist platforms in 2026. Includes white-label platforms for agencies and direct-to-business solutions. Real pricing, features, and honest recommendations.',
   keywords: 'best AI receptionist platforms 2026, AI receptionist comparison, top AI phone answering, AI receptionist pricing, AI receptionist for business',

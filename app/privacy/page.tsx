@@ -26,6 +26,9 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 export const metadata = {
+  alternates: {
+    canonical: "/privacy",
+  },
   title: 'Privacy Policy | VoiceAI Connect',
   description: 'VoiceAI Connect Privacy Policy. Learn how we collect, use, and protect your data.',
 };

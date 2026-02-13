@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/ai-receptionist-agency-profit-calculator",
+  },
   title: 'AI Receptionist Agency Profit Calculator: Real Numbers at Every Scale (2026)',
   description: 'Detailed profit analysis for AI receptionist agencies at 5, 15, 30, 50, and 100 clients. Real platform costs, client pricing strategies, and margin calculations with no hype — just math.',
   keywords: 'AI receptionist agency profit, how much AI agency makes, AI receptionist revenue calculator, agency profit margins, AI business income',

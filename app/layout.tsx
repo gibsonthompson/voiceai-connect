@@ -44,16 +44,19 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "VoiceAI",
   },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://myvoiceaiconnect.com",
+    url: "https://www.myvoiceaiconnect.com",
     siteName: "VoiceAI Connect",
     title: "VoiceAI Connect - Launch Your AI Voice Agency",
     description:
       "The complete white-label platform to resell AI receptionists under your brand.",
   },
-  metadataBase: new URL("https://myvoiceaiconnect.com"),
+  metadataBase: new URL("https://www.myvoiceaiconnect.com"),
 };
 
 export default function RootLayout({

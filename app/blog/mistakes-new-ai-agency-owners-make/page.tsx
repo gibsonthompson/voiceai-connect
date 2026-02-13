@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/mistakes-new-ai-agency-owners-make",
+  },
   title: '9 Mistakes New AI Receptionist Agency Owners Make (and How to Avoid Them)',
   description: 'The most common reasons AI receptionist agencies fail in the first 90 days and the simple fixes for each one. Real patterns from real agency owners, not theory.',
   keywords: 'AI agency mistakes, new AI agency pitfalls, AI receptionist business mistakes, why AI agencies fail, AI agency tips',

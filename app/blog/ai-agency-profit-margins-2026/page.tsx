@@ -10,6 +10,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/ai-agency-profit-margins-2026",
+  },
   title: 'AI Agency Profit Margins in 2026: Real Revenue & Margin Data by Model',
   description: 'AI agency profit margins range from 50-90% depending on the model. White-label AI receptionist reselling hits 60-80% net margins. See real numbers at every scale from 5 to 100 clients.',
   keywords: 'ai agency profit margins, ai agency profit margins 2026, ai receptionist agency revenue, ai automation agency margins, white label ai profit margins, ai reseller margins',

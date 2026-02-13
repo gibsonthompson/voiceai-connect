@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/how-much-do-ai-receptionist-agencies-make",
+  },
   title: 'How Much Do AI Receptionist Agencies Make? Real Numbers (2026)',
   description: 'Realistic income breakdown for AI receptionist agencies: $3,000-$15,000/month is achievable within 12 months. See month-by-month progression, profit margins, and what top earners do differently.',
   keywords: 'AI receptionist agency income, how much can you make AI agency, AI agency revenue, AI receptionist business profit, AI agency earnings 2026',

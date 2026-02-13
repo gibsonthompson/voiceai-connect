@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/white-label-vs-build-ai-receptionist",
+  },
   title: 'White-Label vs Building Your Own AI Receptionist Platform (2026 Analysis)',
   description: 'Should you use a white-label AI receptionist platform or build your own? Complete comparison of costs ($500K+ to build vs $199/mo white-label), timelines, and when each makes sense.',
   keywords: 'white label AI receptionist vs build, should I build AI platform, AI voice agent development cost, build vs buy AI receptionist, white label AI phone answering',

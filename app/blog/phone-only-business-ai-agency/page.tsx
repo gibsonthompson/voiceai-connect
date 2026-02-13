@@ -11,6 +11,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/phone-only-business-ai-agency",
+  },
   title: 'Phone-Only Business: How to Run an AI Agency Entirely From Your Phone (2026)',
   description: 'The rise of phone-only businesses in 2026. Learn how to run a profitable AI receptionist agency without ever opening a laptop. Real-world examples and day-in-the-life breakdown.',
   keywords: 'run business from phone, phone only business 2026, business from phone, no laptop business, mobile only business, AI agency from phone',

@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/how-to-start-ai-receptionist-agency",
+  },
   title: 'How to Start an AI Receptionist Agency in 2026 (Complete Guide)',
   description: 'Learn how to start an AI receptionist agency with under $300. Step-by-step guide covering white-label platforms, target markets, pricing, and scaling to $10k/month.',
   keywords: 'AI receptionist agency, start AI voice business, white label AI receptionist, AI answering service business, how to sell AI receptionists',

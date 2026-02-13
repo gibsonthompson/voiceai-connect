@@ -11,6 +11,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/white-label-ai-receptionist-platform",
+  },
   title: 'White Label AI Receptionist Platform: The Complete Guide (2026)',
   description: 'Everything you need to know about white label AI receptionist platforms. Compare options, understand pricing ($199-499/mo), and learn how to launch your own AI receptionist business.',
   keywords: 'white label AI receptionist platform, white label AI receptionist, AI receptionist reseller, resell AI receptionist, AI receptionist white label program',

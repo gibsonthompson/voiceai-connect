@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/how-to-price-ai-receptionist-services",
+  },
   title: 'How to Price AI Receptionist Services (2026 Pricing Guide)',
   description: 'Learn the optimal pricing for AI receptionist services: $99-$149/month for most businesses. Complete guide with industry-specific rates, pricing psychology, and profit calculations.',
   keywords: 'AI receptionist pricing, how much to charge for AI receptionist, AI answering service rates, virtual receptionist pricing, AI phone agent cost',

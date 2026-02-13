@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/best-online-businesses-no-experience",
+  },
   title: 'Best Online Businesses to Start With No Experience (2026)',
   description: 'The 7 best online businesses for complete beginners in 2026. Real income data, startup costs, and why AI service businesses are outperforming dropshipping, SMMA, and freelancing.',
   keywords: 'best online business no experience, easy business to start 2026, make money online beginner, online business ideas no skills needed, beginner friendly business 2026',

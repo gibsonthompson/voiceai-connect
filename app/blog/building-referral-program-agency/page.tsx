@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/building-referral-program-agency",
+  },
   title: 'Building a Referral Program for Your Agency (Complete 2026 Guide)',
   description: '84% of B2B buyers enter the sales cycle through referrals. Learn how to build a systematic referral program with incentive structures, timing frameworks, and ready-to-use templates.',
   keywords: 'B2B referral program, agency referral program, client referral incentives, referral marketing B2B, how to get client referrals',

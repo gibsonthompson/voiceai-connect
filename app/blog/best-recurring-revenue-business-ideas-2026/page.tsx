@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/best-recurring-revenue-business-ideas-2026",
+  },
   title: 'Best Recurring Revenue Business Ideas in 2026 (Ranked by Profit Margin)',
   description: 'The 7 best recurring revenue business models for 2026, ranked by profit margin, startup cost, and time to profitability. From AI agencies to SaaS to digital products.',
   keywords: 'recurring revenue business ideas 2026, passive income business, monthly recurring revenue, subscription business ideas, MRR business models',

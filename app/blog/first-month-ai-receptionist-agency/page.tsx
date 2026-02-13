@@ -7,6 +7,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/first-month-ai-receptionist-agency",
+  },
   title: 'Your First Month Running an AI Receptionist Agency: What to Expect',
   description: 'Week-by-week timeline of starting an AI receptionist agency. Real milestones, common mistakes, and honest expectations for month one.',
   keywords: 'first month AI agency, starting AI business timeline, AI agency first clients, what to expect AI agency, AI receptionist agency month one',

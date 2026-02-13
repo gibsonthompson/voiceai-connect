@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/best-industries-ai-receptionist",
+  },
   title: 'The 10 Best Industries for AI Receptionist Services (2026)',
   description: 'Discover which industries are most profitable for AI receptionist services. Ranked list with revenue potential, pricing, and sales strategies for HVAC, legal, medical, and more.',
   keywords: 'best industries AI receptionist, AI receptionist HVAC, AI answering service medical, AI phone agent law firms, who buys AI receptionists',

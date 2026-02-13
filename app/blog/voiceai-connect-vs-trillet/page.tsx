@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/voiceai-connect-vs-trillet",
+  },
   title: 'VoiceAI Connect vs Trillet: Which White-Label AI Platform Is Better for Agencies? (2026)',
   description: 'Detailed comparison of VoiceAI Connect and Trillet for agencies building AI receptionist businesses. Pricing, features, white-label quality, and which platform delivers better margins.',
   keywords: 'VoiceAI Connect vs Trillet, Trillet alternative, white label AI receptionist comparison, best AI agency platform 2026, Trillet review',

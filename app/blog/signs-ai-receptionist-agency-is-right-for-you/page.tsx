@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/signs-ai-receptionist-agency-is-right-for-you",
+  },
   title: '7 Signs an AI Receptionist Agency Is (or Isn\'t) Right for You',
   description: 'An honest self-assessment for anyone considering starting an AI receptionist agency. Not everyone should do this — here are the signals that it\'s a good or bad fit for your personality, skills, and goals.',
   keywords: 'is AI agency right for me, should I start AI receptionist business, AI agency personality fit, who should start AI agency, AI business self-assessment',

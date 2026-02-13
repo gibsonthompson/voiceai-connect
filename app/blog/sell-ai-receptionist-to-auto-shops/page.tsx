@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/sell-ai-receptionist-to-auto-shops",
+  },
   title: 'How to Sell AI Receptionists to Auto Repair Shops (Agency Playbook)',
   description: 'Auto shops lose thousands in repairs when they can\'t answer the phone. Here\'s the complete playbook for selling AI receptionists to mechanics, body shops, and auto dealers.',
   keywords: 'sell AI receptionist to auto shops, AI phone answering auto repair, mechanic shop AI receptionist, auto body shop AI, auto dealer phone answering',

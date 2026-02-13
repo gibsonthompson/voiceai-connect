@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/can-you-start-ai-business-no-technical-skills",
+  },
   title: 'Can You Start an AI Business With No Technical Skills? (Honest Answer)',
   description: 'You don\'t need to code, build AI, or understand machine learning. Here\'s exactly what skills you DO need to run a profitable AI agency in 2026.',
   keywords: 'AI business no coding, start AI company no experience, non-technical AI business, AI agency no programming, do I need to code for AI business',

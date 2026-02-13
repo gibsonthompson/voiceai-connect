@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/ai-receptionist-vs-human-receptionist-cost",
+  },
   title: 'AI Receptionist vs Human Receptionist: The Complete Cost Comparison (2026)',
   description: 'A human receptionist costs $32,000-$45,000/year. An AI receptionist costs $99-$299/month. But cost isn\'t everything — here\'s the full comparison including capabilities, limitations, and when each makes sense.',
   keywords: 'AI receptionist vs human receptionist cost, AI vs human receptionist, cost of receptionist vs AI, replace receptionist with AI, AI receptionist savings',

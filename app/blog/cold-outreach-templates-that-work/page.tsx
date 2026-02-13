@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/cold-outreach-templates-that-work",
+  },
   title: '5 Cold Outreach Templates That Actually Work (2026 Data)',
   description: 'Data-backed email templates for reaching home service business owners. Average reply rates dropped to 5%—these templates hit 10-15%. Includes follow-up sequences.',
   keywords: 'cold email templates B2B, AI receptionist sales email, outreach templates contractors, cold email response rates 2026, B2B sales templates',

@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/pitch-ai-receptionists-home-services",
+  },
   title: 'How to Pitch AI Receptionists to Home Service Businesses (2026 Guide)',
   description: 'The pain points that matter, the ROI arguments that close deals, and how to handle every objection. Data shows home service businesses miss 27% of calls—here\'s how to sell the solution.',
   keywords: 'sell AI receptionist, pitch AI answering service, home service AI sales, HVAC AI receptionist, plumber missed calls, contractor phone answering',

@@ -26,6 +26,9 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 export const metadata = {
+  alternates: {
+    canonical: "/terms",
+  },
   title: 'Terms of Service | VoiceAI Connect',
   description: 'VoiceAI Connect Terms of Service. The legal agreement governing your use of our platform.',
 };

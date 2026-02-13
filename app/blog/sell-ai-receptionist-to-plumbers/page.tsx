@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/sell-ai-receptionist-to-plumbers",
+  },
   title: 'How to Sell AI Receptionists to Plumbers & Home Service Businesses (Agency Playbook)',
   description: 'The complete agency playbook for selling AI receptionists to plumbers, HVAC, electricians, and roofers. Scripts, objection handling, pricing, and why home services is the easiest niche to start.',
   keywords: 'sell AI receptionist to plumbers, AI receptionist plumbing, home services AI agency, plumber missed calls solution, HVAC AI receptionist',

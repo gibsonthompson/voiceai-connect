@@ -22,12 +22,6 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/get-started`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
       url: `${baseUrl}/signup`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -50,20 +44,6 @@ export default function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 0.3,
-    },
-
-    // Agency Site (Public Template)
-    {
-      url: `${baseUrl}/agency-site`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/agency-site/get-started`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
     },
 
     // Features Index

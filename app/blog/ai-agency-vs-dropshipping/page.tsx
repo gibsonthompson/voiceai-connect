@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/ai-agency-vs-dropshipping",
+  },
   title: 'AI Agency vs Dropshipping: Which Is More Profitable in 2026?',
   description: 'Honest comparison of AI agencies vs dropshipping in 2026. Revenue data, margins, startup costs, and which business model is better for beginners.',
   keywords: 'AI agency vs dropshipping, dropshipping alternative 2026, AI business vs ecommerce, online business comparison, which is better AI agency or dropshipping',

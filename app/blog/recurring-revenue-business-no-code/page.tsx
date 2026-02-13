@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/recurring-revenue-business-no-code",
+  },
   title: 'How to Build a Recurring Revenue Business Without Coding (2026)',
   description: 'You don\'t need to be a developer to earn MRR. 5 proven no-code models for building monthly recurring revenue, with real numbers and step-by-step paths.',
   keywords: 'recurring revenue business no code, MRR business ideas, SaaS without coding, monthly recurring revenue beginner, no code business 2026',

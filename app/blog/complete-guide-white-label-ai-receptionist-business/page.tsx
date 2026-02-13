@@ -10,6 +10,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/complete-guide-white-label-ai-receptionist-business",
+  },
   title: 'The Complete Guide to White-Label AI Receptionist Businesses (2026)',
   description: 'Everything you need to understand about the white-label AI receptionist business model — what it is, how the value chain works, who makes money, and why it\'s one of the best agency models in 2026.',
   keywords: 'white label AI receptionist business, what is white label AI receptionist, AI receptionist business model, white label AI agency explained, how AI receptionist agency works',

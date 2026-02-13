@@ -10,6 +10,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/smma-profit-margins-2026",
+  },
   title: 'SMMA Profit Margins in 2026: Real Numbers & Why Agencies Are Pivoting to AI',
   description: 'SMMA profit margins average 11-20% net in 2026, down from historical highs. See real margin breakdowns, why ad costs are compressing agency profits, and how AI reselling delivers 60-80% margins instead.',
   keywords: 'smma profit margins, smma profit margins 2026, social media marketing agency margins, digital marketing agency profit margins, smma vs ai agency, ai receptionist agency margins',

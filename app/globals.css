@@ -5,9 +5,6 @@
    Dark luxury aesthetic with emerald accents
    ============================================================================ */
 
-/* Import premium fonts */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
 @theme {
   /* Brand colors */
   --color-brand-dark: #050505;

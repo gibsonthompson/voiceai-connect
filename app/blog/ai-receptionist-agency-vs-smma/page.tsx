@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/ai-receptionist-agency-vs-smma",
+  },
   title: 'AI Receptionist Agency vs SMMA: Which Business Model in 2026?',
   description: 'Honest comparison of AI receptionist agencies vs social media marketing agencies. Profit margins, time requirements, competition, and which model suits you better.',
   keywords: 'AI agency vs SMMA, SMMA alternative 2026, best agency model, AI receptionist vs social media marketing, which agency to start',

@@ -11,6 +11,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/my-ai-front-desk-alternative",
+  },
   title: 'My AI Front Desk Alternative: VoiceAI Connect Comparison (2026)',
   description: 'Looking for a My AI Front Desk alternative? Compare features, pricing, and white-label capabilities. See which AI receptionist platform is right for your agency.',
   keywords: 'My AI Front Desk alternative, My AI Front Desk vs VoiceAI Connect, My AI Front Desk review, AI receptionist platform comparison, My AI Front Desk competitors',

@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/sell-ai-receptionist-to-law-firms",
+  },
   title: 'How to Sell AI Receptionists to Law Firms (Agency Playbook)',
   description: 'Law firms spend $500-2,000/month on answering services. Here\'s how to sell them an AI receptionist at better margins. Pitch scripts, objections, and pricing for the legal niche.',
   keywords: 'sell AI receptionist to law firms, AI receptionist lawyer, law firm phone answering AI, legal intake AI receptionist, attorney AI phone',

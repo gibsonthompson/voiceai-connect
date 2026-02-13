@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/sell-ai-receptionist-to-dental-offices",
+  },
   title: 'How to Sell AI Receptionists to Dental Offices (Agency Playbook)',
   description: 'The complete playbook for selling AI receptionist services to dentists. Pain points, pitch scripts, pricing, and why dental is a high-value niche for AI agencies.',
   keywords: 'sell AI receptionist to dentists, AI receptionist dental office, dental practice AI phone answering, dentist missed appointments, dental AI agency',

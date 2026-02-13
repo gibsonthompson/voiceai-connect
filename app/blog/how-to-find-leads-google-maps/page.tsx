@@ -9,6 +9,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/how-to-find-leads-google-maps",
+  },
   title: 'How to Find Leads on Google Maps (Free Method for AI Agencies)',
   description: 'Step-by-step guide to finding unlimited local business leads on Google Maps. Free prospecting method for AI receptionist agencies—no tools required.',
   keywords: 'find leads google maps, google maps lead generation, local business prospecting, AI receptionist leads, find clients google maps',

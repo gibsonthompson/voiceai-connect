@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable, StepList } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/why-agencies-switch-answering-services-to-ai",
+  },
   title: 'Why Agencies Are Switching From Answering Services to AI Receptionists (2026)',
   description: 'Answering services charge $2-5 per call. AI receptionists handle unlimited calls for a flat fee. Here\'s why agencies are making the switch and how the economics work.',
   keywords: 'answering service alternative AI, switch from answering service to AI, AI vs answering service, replace receptionist with AI, AI receptionist vs call center',

@@ -8,6 +8,9 @@
 import BlogPostLayout, { Callout, ComparisonTable } from '../blog-post-layout';
 
 export const metadata = {
+  alternates: {
+    canonical: "/blog/voiceai-connect-vs-goodcall",
+  },
   title: 'VoiceAI Connect vs Goodcall: Which AI Receptionist Platform Should Agencies Use? (2026)',
   description: 'Goodcall is built for small businesses. VoiceAI Connect is built for agencies. Here\'s why that distinction matters and which platform fits your goals.',
   keywords: 'VoiceAI Connect vs Goodcall, Goodcall alternative, Goodcall for agencies, AI receptionist agency vs small business, white label AI receptionist vs Goodcall',
