@@ -61,6 +61,28 @@ const categories = [
 // ============================================================================
 const blogPosts: BlogPost[] = [
   // =========================================================================
+  // INTERNATIONAL MARKET POSTS (February 2026)
+  // =========================================================================
+  {
+    slug: 'start-ai-receptionist-agency-from-india',
+    title: 'How to Start an AI Receptionist Agency from India (Sell to US Businesses)',
+    excerpt: 'Indian entrepreneurs can build a $5,000-$15,000/month AI receptionist agency serving US businesses. Complete guide covering setup, payments, outreach, and earning in USD.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-13',
+    readTime: '14 min read',
+    featured: true,
+  },
+  {
+    slug: 'start-ai-business-from-anywhere',
+    title: 'Start a US-Facing AI Receptionist Business from Anywhere in the World',
+    excerpt: 'You don\'t need to live in the US to sell AI receptionists to US businesses. Complete guide for international entrepreneurs earning $3K-$15K/month in USD remotely.',
+    category: 'guides',
+    author: { name: 'VoiceAI Team' },
+    publishedAt: '2026-02-13',
+    readTime: '12 min read',
+  },
+  // =========================================================================
   // SEO GAP POSTS (February 2026)
   // =========================================================================
   {
