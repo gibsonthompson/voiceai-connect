@@ -406,6 +406,10 @@ function OnboardingContent() {
           setError('Please enter your agency name');
           return;
         }
+        if (!agencyDetails.phone.trim()) {
+          setError('Please enter your phone number');
+          return;
+        }
         stepData = { 
           name: agencyDetails.name.trim(),
           phone: agencyDetails.phone,
@@ -547,10 +551,11 @@ function OnboardingContent() {
                     value={agencyDetails.phone}
                     onChange={(e) => setAgencyDetails({ ...agencyDetails, phone: e.target.value })}
                     placeholder="(555) 123-4567"
+                    required
                     className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
                   />
                 </div>
-                <p className="mt-2 text-xs text-[#fafaf9]/40">For support and account verification (optional)</p>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">For support, account updates, and important notifications</p>
               </div>
 
               <div>
