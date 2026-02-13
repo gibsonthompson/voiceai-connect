@@ -6,12 +6,14 @@ import {
   Upload, Check, AlertCircle, ExternalLink,
   Palette, CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
-  Receipt, XCircle, Eye, Phone, Users, ChevronRight
+  Receipt, XCircle, Eye, Phone, Users, ChevronRight,
+  Globe
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
+import BYOTSettings from './components/BYOTSettings';
 
-type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'demo';
+type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo';
 
 interface StripeStatus {
   connected: boolean;
@@ -50,7 +52,7 @@ function AgencySettingsContent() {
   
   // Get initial tab from URL or default to 'profile'
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing', 'demo'];
+  const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing', 'twilio', 'demo'];
   
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabs.includes(initialTab) ? initialTab : 'profile'
@@ -156,6 +158,7 @@ function AgencySettingsContent() {
     { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
     { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
+    { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe },
     { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
   ];
 
@@ -668,13 +671,7 @@ function AgencySettingsContent() {
                     </p>
                     <div className="flex items-center gap-2 sm:gap-3">
                       <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input
-                        type="text"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
-                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                      />
+                      <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                     </div>
                   </div>
 
@@ -686,13 +683,7 @@ function AgencySettingsContent() {
                     </p>
                     <div className="flex items-center gap-2 sm:gap-3">
                       <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input
-                        type="text"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
-                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                      />
+                      <input type="text" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                     </div>
                   </div>
 
@@ -704,13 +695,7 @@ function AgencySettingsContent() {
                     </p>
                     <div className="flex items-center gap-2 sm:gap-3">
                       <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input
-                        type="text"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors"
-                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                      />
+                      <input type="text" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                     </div>
                   </div>
                 </div>
@@ -718,35 +703,20 @@ function AgencySettingsContent() {
                 {/* Live Preview — Dashboard UI Elements */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Live Preview</label>
-                  <div 
-                    className="rounded-xl overflow-hidden"
-                    style={{ border: `1px solid ${theme.inputBorder}` }}
-                  >
-                    {/* Preview: Mini sidebar + content area */}
+                  <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex" style={{ minHeight: '220px' }}>
                       {/* Mini Sidebar Preview */}
-                      <div 
-                        className="w-[140px] sm:w-[160px] flex-shrink-0 p-3 space-y-1.5 hidden sm:block"
-                        style={{ backgroundColor: previewSidebar, borderRight: `1px solid ${previewBorder}` }}
-                      >
+                      <div className="w-[140px] sm:w-[160px] flex-shrink-0 p-3 space-y-1.5 hidden sm:block" style={{ backgroundColor: previewSidebar, borderRight: `1px solid ${previewBorder}` }}>
                         <div className="flex items-center gap-2 mb-3">
-                          <div 
-                            className="w-6 h-6 rounded-md flex items-center justify-center"
-                            style={{ backgroundColor: primaryColor }}
-                          >
+                          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
                             <Phone className="h-3 w-3" style={{ color: previewPrimaryText }} />
                           </div>
                           <span className="text-[10px] font-semibold truncate" style={{ color: previewText }}>{agencyName || 'Agency'}</span>
                         </div>
-                        {/* Active nav item */}
-                        <div 
-                          className="flex items-center gap-2 rounded-lg px-2 py-1.5"
-                          style={{ backgroundColor: `${primaryColor}15` }}
-                        >
+                        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ backgroundColor: `${primaryColor}15` }}>
                           <Users className="h-3 w-3" style={{ color: primaryColor }} />
                           <span className="text-[10px] font-medium" style={{ color: primaryColor }}>Clients</span>
                         </div>
-                        {/* Inactive nav items */}
                         {['Analytics', 'Settings'].map((item) => (
                           <div key={item} className="flex items-center gap-2 px-2 py-1.5">
                             <div className="w-3 h-3 rounded" style={{ backgroundColor: previewBorder }} />
@@ -757,15 +727,8 @@ function AgencySettingsContent() {
 
                       {/* Preview: Content area */}
                       <div className="flex-1 p-3 sm:p-4 space-y-3" style={{ backgroundColor: previewBg }}>
-                        {/* Stat card */}
-                        <div 
-                          className="rounded-lg p-3 flex items-center gap-3"
-                          style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}
-                        >
-                          <div 
-                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: `${primaryColor}15` }}
-                          >
+                        <div className="rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${primaryColor}15` }}>
                             <Users className="h-4 w-4" style={{ color: primaryColor }} />
                           </div>
                           <div>
@@ -774,46 +737,20 @@ function AgencySettingsContent() {
                           </div>
                         </div>
 
-                        {/* Button row */}
                         <div className="flex flex-wrap gap-2">
-                          <button 
-                            className="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium"
-                            style={{ backgroundColor: primaryColor, color: previewPrimaryText }}
-                          >
-                            Primary Button
-                          </button>
-                          <span 
-                            className="px-2 py-1 rounded-full text-[10px] font-medium"
-                            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                          >
-                            Active Badge
-                          </span>
-                          <span 
-                            className="px-2 py-1 rounded-full text-[10px] font-medium"
-                            style={{ backgroundColor: theme.infoBg, color: theme.infoText }}
-                          >
-                            Trial
-                          </span>
+                          <button className="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium" style={{ backgroundColor: primaryColor, color: previewPrimaryText }}>Primary Button</button>
+                          <span className="px-2 py-1 rounded-full text-[10px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>Active Badge</span>
+                          <span className="px-2 py-1 rounded-full text-[10px] font-medium" style={{ backgroundColor: theme.infoBg, color: theme.infoText }}>Trial</span>
                         </div>
 
-                        {/* Link + text example */}
                         <div className="flex items-center gap-2">
                           <span className="text-[10px]" style={{ color: previewMuted }}>Link example:</span>
                           <span className="text-[10px] font-medium" style={{ color: primaryColor }}>View all clients →</span>
                         </div>
 
-                        {/* Client row preview */}
-                        <div 
-                          className="rounded-lg p-2.5 flex items-center justify-between"
-                          style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}
-                        >
+                        <div className="rounded-lg p-2.5 flex items-center justify-between" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-medium"
-                              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                            >
-                              A
-                            </div>
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>A</div>
                             <div>
                               <p className="text-[10px] font-medium" style={{ color: previewText }}>Acme Plumbing</p>
                               <p className="text-[8px]" style={{ color: previewMuted }}>Pro plan</p>
@@ -1035,6 +972,16 @@ function AgencySettingsContent() {
               </div>
             )}
 
+            {/* Twilio / BYOT Tab */}
+            {activeTab === 'twilio' && (
+              <BYOTSettings
+                agencyId={agency?.id || ''}
+                planType={agency?.plan_type || 'starter'}
+                subscriptionStatus={agency?.subscription_status || ''}
+                theme={theme}
+              />
+            )}
+
             {/* Demo Mode Tab */}
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
@@ -1125,8 +1072,8 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button — not shown for payments, billing, or demo tabs */}
-            {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'demo' && (
+            {/* Save Button — not shown for payments, billing, twilio, or demo tabs */}
+            {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'twilio' && activeTab !== 'demo' && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}
