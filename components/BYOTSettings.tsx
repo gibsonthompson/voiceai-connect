@@ -276,6 +276,34 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
           </div>
         </div>
 
+        {/* Regulatory bundle reminder */}
+        <div 
+          className="rounded-xl p-4 flex items-start gap-3"
+          style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}
+        >
+          <div className="mt-0.5 flex-shrink-0">
+            <AlertCircle className="h-4 w-4" style={{ color: theme.infoText }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.infoText }}>
+              Regulatory Bundle Required
+            </p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+              Most countries outside the US require a Regulatory Compliance Bundle before you can purchase phone numbers. 
+              Complete this in your Twilio Console before your clients sign up, or number provisioning will fail.
+            </p>
+            <a 
+              href="https://console.twilio.com/us1/develop/phone-numbers/regulatory-compliance/bundles" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium mt-2"
+              style={{ color: theme.infoText }}
+            >
+              Complete Regulatory Bundle <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+
         {/* Test section */}
         <div 
           className="rounded-xl p-4 sm:p-5"
