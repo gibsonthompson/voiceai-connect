@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import BYOTSettings from './components/BYOTSettings';
+import BYOTSettings from '@/components/BYOTSettings';
 
 type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo';
 
