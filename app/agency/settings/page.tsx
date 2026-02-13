@@ -7,7 +7,7 @@ import {
   Palette, CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
   Receipt, XCircle, Eye, Phone, Users, ChevronRight,
-  Globe
+  Globe, ToggleLeft, ToggleRight, Info
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -33,24 +33,148 @@ function isLightColor(hex: string): boolean {
   return luminance > 0.5;
 }
 
-// Helper to check if subscription is in trial state
 function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
 
-// Plan pricing (matches stripe-platform.js PLAN_DETAILS)
 const PLAN_PRICING: Record<string, number> = {
   starter: 99,
   professional: 199,
   enterprise: 299,
 };
 
+// ============================================================================
+// PLAN FEATURE GATING CONSTANTS
+// ============================================================================
+const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
+  starter: {
+    sms_notifications: true,
+    email_summaries: false,
+    custom_greeting: false,
+    custom_voice: false,
+    knowledge_base: false,
+    business_hours: false,
+    advanced_analytics: false,
+    priority_support: false,
+  },
+  pro: {
+    sms_notifications: true,
+    email_summaries: true,
+    custom_greeting: true,
+    custom_voice: false,
+    knowledge_base: true,
+    business_hours: true,
+    advanced_analytics: true,
+    priority_support: false,
+  },
+  growth: {
+    sms_notifications: true,
+    email_summaries: true,
+    custom_greeting: true,
+    custom_voice: true,
+    knowledge_base: true,
+    business_hours: true,
+    advanced_analytics: true,
+    priority_support: true,
+  },
+};
+
+const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
+  sms_notifications: {
+    label: 'SMS Notifications',
+    description: 'Instant text after every call with caller info and summary',
+  },
+  email_summaries: {
+    label: 'Email Summaries',
+    description: 'Detailed email with call summary, transcript, and caller details',
+  },
+  custom_greeting: {
+    label: 'Custom Greeting',
+    description: 'Client can write their own AI opening message',
+  },
+  custom_voice: {
+    label: 'Custom Voice',
+    description: 'Client can choose from multiple AI voice options',
+  },
+  knowledge_base: {
+    label: 'Knowledge Base',
+    description: 'Client can upload business FAQs for the AI to reference',
+  },
+  business_hours: {
+    label: 'Business Hours',
+    description: 'Client can configure hours and after-hours behavior',
+  },
+  advanced_analytics: {
+    label: 'Advanced Analytics',
+    description: 'Detailed reporting beyond basic call counts',
+  },
+  priority_support: {
+    label: 'Priority Support',
+    description: 'Faster response times from your support team',
+  },
+};
+
+const FEATURE_ORDER = [
+  'sms_notifications',
+  'email_summaries',
+  'custom_greeting',
+  'custom_voice',
+  'knowledge_base',
+  'business_hours',
+  'advanced_analytics',
+  'priority_support',
+];
+
+// ============================================================================
+// FEATURE TOGGLE COMPONENT
+// ============================================================================
+function FeatureToggle({ 
+  featureKey, 
+  enabled, 
+  onToggle, 
+  theme 
+}: { 
+  featureKey: string; 
+  enabled: boolean; 
+  onToggle: () => void; 
+  theme: any;
+}) {
+  const info = FEATURE_LABELS[featureKey];
+  if (!info) return null;
+
+  return (
+    <div 
+      className="flex items-center justify-between py-2.5 px-1 group"
+    >
+      <div className="flex-1 min-w-0 mr-3">
+        <p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>
+          {info.label}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+        style={{ 
+          backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+        }}
+      >
+        <span
+          className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+          style={{ 
+            transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)',
+          }}
+        />
+      </button>
+    </div>
+  );
+}
+
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode } = useAgency();
   const theme = useTheme();
   const searchParams = useSearchParams();
   
-  // Get initial tab from URL or default to 'profile'
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing', 'twilio', 'demo'];
   
@@ -66,7 +190,6 @@ function AgencySettingsContent() {
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
 
-  // Billing state
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -87,18 +210,19 @@ function AgencySettingsContent() {
   const [limitPro, setLimitPro] = useState('150');
   const [limitGrowth, setLimitGrowth] = useState('500');
 
+  // Plan features state
+  const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean>>>(DEFAULT_PLAN_FEATURES);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
-  // Trial calculations
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  // Get plan price based on agency's plan_type
   const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
 
   useEffect(() => {
@@ -116,6 +240,7 @@ function AgencySettingsContent() {
       setLimitStarter((agency.limit_starter || 50).toString());
       setLimitPro((agency.limit_pro || 150).toString());
       setLimitGrowth((agency.limit_growth || 500).toString());
+      setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
     }
   }, [agency]);
 
@@ -125,7 +250,6 @@ function AgencySettingsContent() {
     }
   }, [activeTab, agency?.id]);
 
-  // Update URL when tab changes (without full page reload)
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
     const url = new URL(window.location.href);
@@ -175,6 +299,22 @@ function AgencySettingsContent() {
     }
   };
 
+  // Toggle a feature for a specific plan
+  const toggleFeature = (plan: string, feature: string) => {
+    setPlanFeatures(prev => ({
+      ...prev,
+      [plan]: {
+        ...prev[plan],
+        [feature]: !prev[plan]?.[feature],
+      }
+    }));
+  };
+
+  // Reset plan features to defaults
+  const resetPlanFeatures = () => {
+    setPlanFeatures(DEFAULT_PLAN_FEATURES);
+  };
+
   const handleSave = async () => {
     if (!agency) return;
     setSaving(true);
@@ -200,6 +340,7 @@ function AgencySettingsContent() {
         payload.limit_starter = parseInt(limitStarter);
         payload.limit_pro = parseInt(limitPro);
         payload.limit_growth = parseInt(limitGrowth);
+        payload.plan_features = planFeatures;
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
@@ -321,7 +462,6 @@ function AgencySettingsContent() {
         throw new Error(data.error || 'Failed to cancel subscription');
       }
 
-      // Clear auth and redirect
       localStorage.removeItem('auth_token');
       localStorage.removeItem('agency');
       localStorage.removeItem('user');
@@ -398,16 +538,20 @@ function AgencySettingsContent() {
     }
   `;
 
-  // Compute preview colors based on the *edited* branding values (not saved yet)
   const previewIsDark = websiteTheme !== 'light';
   const previewBg = previewIsDark ? '#050505' : '#f9fafb';
   const previewText = previewIsDark ? '#fafaf9' : '#111827';
   const previewMuted = previewIsDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const previewCard = previewIsDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
   const previewBorder = previewIsDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const previewInput = previewIsDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
   const previewSidebar = previewIsDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
   const previewPrimaryText = isLightColor(primaryColor) ? '#050505' : '#ffffff';
+
+  // Count enabled features per plan (for summary display)
+  const getFeatureCount = (plan: string) => {
+    const features = planFeatures[plan] || {};
+    return Object.values(features).filter(Boolean).length;
+  };
 
   return (
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
@@ -618,19 +762,16 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* ================================================================ */}
-            {/* BRANDING TAB - REDESIGNED                                        */}
-            {/* ================================================================ */}
+            {/* Branding Tab - same as original */}
             {activeTab === 'branding' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Dashboard Branding</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                    These colors apply to your agency dashboard and client portal. Marketing website colors are managed in the <span style={{ color: theme.primary }}>Marketing Website</span> tab.
+                    These colors apply to your agency dashboard and client portal.
                   </p>
                 </div>
 
-                {/* Theme Mode */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1">Dashboard Style</label>
                   <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
@@ -661,51 +802,28 @@ function AgencySettingsContent() {
                   </div>
                 </div>
 
-                {/* Color Pickers with Descriptions */}
                 <div className="space-y-4">
-                  {/* Primary Color */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Primary Color</label>
-                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-                      Buttons, active nav items, badges, links, status indicators, and icon backgrounds throughout the dashboard.
-                    </p>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  {[
+                    { label: 'Primary Color', desc: 'Buttons, active nav items, badges, links, and icon backgrounds.', value: primaryColor, setter: setPrimaryColor },
+                    { label: 'Secondary Color', desc: 'Hover states, gradient endpoints, and secondary button styles.', value: secondaryColor, setter: setSecondaryColor },
+                    { label: 'Accent Color', desc: 'Highlights and emphasis on the marketing website.', value: accentColor, setter: setAccentColor },
+                  ].map((color) => (
+                    <div key={color.label}>
+                      <label className="block text-xs sm:text-sm font-medium mb-0.5">{color.label}</label>
+                      <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>{color.desc}</p>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <input type="color" value={color.value} onChange={(e) => color.setter(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
+                        <input type="text" value={color.value} onChange={(e) => color.setter(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Secondary Color */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Secondary Color</label>
-                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-                      Hover states on the marketing website, gradient endpoints, and secondary button styles.
-                    </p>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input type="text" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                    </div>
-                  </div>
-
-                  {/* Accent Color */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium mb-0.5">Accent Color</label>
-                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-                      Highlights and emphasis elements on the marketing website. Works best as a lighter variant of your primary.
-                    </p>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                      <input type="text" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
-                {/* Live Preview — Dashboard UI Elements */}
+                {/* Live Preview */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Live Preview</label>
                   <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex" style={{ minHeight: '220px' }}>
-                      {/* Mini Sidebar Preview */}
                       <div className="w-[140px] sm:w-[160px] flex-shrink-0 p-3 space-y-1.5 hidden sm:block" style={{ backgroundColor: previewSidebar, borderRight: `1px solid ${previewBorder}` }}>
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
@@ -724,8 +842,6 @@ function AgencySettingsContent() {
                           </div>
                         ))}
                       </div>
-
-                      {/* Preview: Content area */}
                       <div className="flex-1 p-3 sm:p-4 space-y-3" style={{ backgroundColor: previewBg }}>
                         <div className="rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${primaryColor}15` }}>
@@ -736,18 +852,14 @@ function AgencySettingsContent() {
                             <p className="text-sm font-semibold" style={{ color: previewText }}>24</p>
                           </div>
                         </div>
-
                         <div className="flex flex-wrap gap-2">
                           <button className="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium" style={{ backgroundColor: primaryColor, color: previewPrimaryText }}>Primary Button</button>
                           <span className="px-2 py-1 rounded-full text-[10px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>Active Badge</span>
-                          <span className="px-2 py-1 rounded-full text-[10px] font-medium" style={{ backgroundColor: theme.infoBg, color: theme.infoText }}>Trial</span>
                         </div>
-
                         <div className="flex items-center gap-2">
                           <span className="text-[10px]" style={{ color: previewMuted }}>Link example:</span>
                           <span className="text-[10px] font-medium" style={{ color: primaryColor }}>View all clients →</span>
                         </div>
-
                         <div className="rounded-lg p-2.5 flex items-center justify-between" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>A</div>
@@ -765,64 +877,120 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Pricing Tab */}
+            {/* ================================================================ */}
+            {/* PRICING TAB - WITH PLAN FEATURE GATING                          */}
+            {/* ================================================================ */}
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Client Pricing</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set prices and limits for your plans.</p>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
 
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Starter Plan</h4>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
-                        <input type="number" value={priceStarter} onChange={(e) => setPriceStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
-                        <input type="number" value={limitStarter} onChange={(e) => setLimitStarter(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      </div>
-                    </div>
+                {/* Info banner */}
+                <div 
+                  className="rounded-xl p-3 sm:p-4 flex items-start gap-3"
+                  style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}
+                >
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                  <div>
+                    <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
+                      Every client gets the core AI receptionist (24/7 call answering, dedicated phone number, call history, recordings, and transcripts) regardless of plan. The features below are extras you can include or exclude per plan.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` }}>
-                    <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                      <h4 className="font-medium text-sm sm:text-base">Pro Plan</h4>
-                      <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
-                        <input type="number" value={pricePro} onChange={(e) => setPricePro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                {/* Plan Cards */}
+                <div className="space-y-4">
+                  {[
+                    { key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, highlight: false },
+                    { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, highlight: true },
+                    { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, highlight: false },
+                  ].map((plan) => (
+                    <div 
+                      key={plan.key}
+                      className="rounded-xl p-3 sm:p-4"
+                      style={plan.highlight ? { 
+                        backgroundColor: `${theme.primary}08`, 
+                        border: `1px solid ${theme.primary30}` 
+                      } : { 
+                        backgroundColor: theme.input, 
+                        border: `1px solid ${theme.inputBorder}` 
+                      }}
+                    >
+                      {/* Plan Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-sm sm:text-base">{plan.label} Plan</h4>
+                          {plan.highlight && (
+                            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>
+                          )}
+                        </div>
+                        <span className="text-xs" style={{ color: theme.textMuted }}>
+                          {getFeatureCount(plan.key)} features included
+                        </span>
                       </div>
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
-                        <input type="number" value={limitPro} onChange={(e) => setLimitPro(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <h4 className="font-medium text-sm sm:text-base mb-2 sm:mb-3">Growth Plan</h4>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Price ($)</label>
-                        <input type="number" value={priceGrowth} onChange={(e) => setPriceGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      {/* Price & Calls */}
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                        <div>
+                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
+                          <input 
+                            type="number" 
+                            value={plan.price} 
+                            onChange={(e) => plan.setPrice(e.target.value)} 
+                            className="w-full rounded-xl px-3 py-2 text-sm" 
+                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
+                          <input 
+                            type="number" 
+                            value={plan.limit} 
+                            onChange={(e) => plan.setLimit(e.target.value)} 
+                            className="w-full rounded-xl px-3 py-2 text-sm" 
+                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[10px] sm:text-sm mb-1" style={{ color: theme.textMuted }}>Calls</label>
-                        <input type="number" value={limitGrowth} onChange={(e) => setLimitGrowth(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+
+                      {/* Feature Toggles */}
+                      <div 
+                        className="rounded-lg px-3 py-1"
+                        style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                      >
+                        <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
+                        <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
+                          {FEATURE_ORDER.map((featureKey) => (
+                            <FeatureToggle
+                              key={featureKey}
+                              featureKey={featureKey}
+                              enabled={planFeatures[plan.key]?.[featureKey] ?? false}
+                              onToggle={() => toggleFeature(plan.key, featureKey)}
+                              theme={theme}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+
+                {/* Reset to defaults */}
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    onClick={resetPlanFeatures}
+                    className="text-xs transition-colors"
+                    style={{ color: theme.textMuted }}
+                  >
+                    Reset features to defaults
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* Payments Tab */}
+            {/* Payments Tab - same as original */}
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -908,7 +1076,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Billing Tab */}
+            {/* Billing Tab - same as original */}
             {activeTab === 'billing' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -982,7 +1150,7 @@ function AgencySettingsContent() {
               />
             )}
 
-            {/* Demo Mode Tab */}
+            {/* Demo Mode Tab - same as original */}
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-center justify-between">
@@ -1060,9 +1228,7 @@ function AgencySettingsContent() {
                 >
                   <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: theme.infoText }}>ℹ</div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: theme.infoText }}>
-                      Display only
-                    </p>
+                    <p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p>
                     <p className="text-sm" style={{ color: theme.textMuted }}>
                       Demo mode only changes what you see. It doesn't affect your real data, clients, or billing. 
                       Toggle it off anytime from the sidebar or this page.
@@ -1072,7 +1238,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button — not shown for payments, billing, twilio, or demo tabs */}
+            {/* Save Button */}
             {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'twilio' && activeTab !== 'demo' && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>

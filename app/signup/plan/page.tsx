@@ -29,6 +29,7 @@ interface Agency {
   limit_starter: number;
   limit_pro: number;
   limit_growth: number;
+  plan_features?: Record<string, Record<string, boolean>>;
 }
 
 interface SignupData {
@@ -56,6 +57,73 @@ const isLightColor = (hex: string): boolean => {
 
 // Client plan prices are set by the agency in their own currency — always display as USD
 const formatPriceUSD = (cents: number) => `$${(cents / 100).toFixed(0)}`;
+
+// ============================================================================
+// PLAN FEATURE DISPLAY CONFIG (for dynamic plan cards)
+// ============================================================================
+const FEATURE_DISPLAY: Record<string, string> = {
+  sms_notifications: 'SMS call notifications',
+  email_summaries: 'Email call summaries',
+  custom_greeting: 'Custom AI greeting',
+  custom_voice: 'Custom AI voice selection',
+  knowledge_base: 'Knowledge base management',
+  business_hours: 'Business hours configuration',
+  advanced_analytics: 'Advanced analytics',
+  priority_support: 'Priority support',
+};
+
+const FEATURE_DISPLAY_ORDER = [
+  'sms_notifications',
+  'email_summaries',
+  'custom_greeting',
+  'knowledge_base',
+  'business_hours',
+  'custom_voice',
+  'advanced_analytics',
+  'priority_support',
+];
+
+// Core features every plan gets (not gatable)
+const CORE_FEATURES = [
+  'AI receptionist 24/7',
+  'Dedicated phone number',
+  'Call recordings & transcripts',
+  'AI-powered call summaries',
+  'Call history dashboard',
+];
+
+// Build dynamic feature list from agency's plan_features config
+function buildPlanFeatures(
+  planKey: string, 
+  callLimit: number, 
+  planFeatures?: Record<string, Record<string, boolean>>
+): { included: string[]; excluded: string[] } {
+  const included: string[] = [
+    ...CORE_FEATURES,
+    `Up to ${callLimit} calls/month`,
+  ];
+  const excluded: string[] = [];
+
+  if (!planFeatures || !planFeatures[planKey]) {
+    // Fallback if agency hasn't configured plan_features yet
+    return { included, excluded };
+  }
+
+  const features = planFeatures[planKey];
+  
+  for (const key of FEATURE_DISPLAY_ORDER) {
+    const label = FEATURE_DISPLAY[key];
+    if (!label) continue;
+    
+    if (features[key]) {
+      included.push(label);
+    } else {
+      excluded.push(label);
+    }
+  }
+
+  return { included, excluded };
+}
 
 // ============================================================================
 // THEME CACHING HELPERS
@@ -365,6 +433,11 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
     );
   }
 
+  // Build plans with dynamic features from agency config
+  const starterFeatures = buildPlanFeatures('starter', agency.limit_starter || 50, agency.plan_features);
+  const proFeatures = buildPlanFeatures('pro', agency.limit_pro || 150, agency.plan_features);
+  const growthFeatures = buildPlanFeatures('growth', agency.limit_growth || 500, agency.plan_features);
+
   const plans = [
     {
       id: 'starter',
@@ -372,14 +445,8 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       price: agency.price_starter || 4900,
       calls: agency.limit_starter || 50,
       icon: Zap,
-      features: [
-        'AI receptionist 24/7',
-        `Up to ${agency.limit_starter || 50} calls/month`,
-        'SMS notifications',
-        'Call transcripts',
-        'Basic analytics',
-      ],
-      limitations: [],
+      included: starterFeatures.included,
+      excluded: starterFeatures.excluded,
     },
     {
       id: 'pro',
@@ -388,15 +455,8 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       calls: agency.limit_pro || 150,
       icon: Shield,
       popular: true,
-      features: [
-        'Everything in Starter',
-        `Up to ${agency.limit_pro || 150} calls/month`,
-        'Priority support',
-        'Custom AI greeting',
-        'Advanced analytics',
-        'Call recordings',
-      ],
-      limitations: [],
+      included: proFeatures.included,
+      excluded: proFeatures.excluded,
     },
     {
       id: 'growth',
@@ -404,15 +464,8 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       price: agency.price_growth || 14900,
       calls: agency.limit_growth || 500,
       icon: Crown,
-      features: [
-        'Everything in Professional',
-        `Up to ${agency.limit_growth || 500} calls/month`,
-        'Dedicated support',
-        'API access',
-        'Custom integrations',
-        'Priority onboarding',
-      ],
-      limitations: [],
+      included: growthFeatures.included,
+      excluded: growthFeatures.excluded,
     },
   ];
 
@@ -594,9 +647,9 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                   </p>
                 </div>
 
-                {/* Features */}
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature) => (
+                {/* Included Features */}
+                <ul className="space-y-3 mb-4">
+                  {plan.included.map((feature) => (
                     <li key={feature} className="flex items-start gap-3 text-sm">
                       <div 
                         className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5"
@@ -608,6 +661,26 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                     </li>
                   ))}
                 </ul>
+
+                {/* Excluded Features (shown dimmed with X) */}
+                {plan.excluded && plan.excluded.length > 0 && (
+                  <ul className="space-y-3 mb-6">
+                    {plan.excluded.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3 text-sm">
+                        <div 
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5"
+                          style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}
+                        >
+                          <X className="h-3 w-3" style={{ color: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db' }} />
+                        </div>
+                        <span style={{ color: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af' }}>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Spacer if no excluded features */}
+                {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-6" />}
 
                 {/* CTA Button */}
                 <button
