@@ -7,6 +7,7 @@ import {
   Plus, Trash2, Globe, Briefcase, HelpCircle, FileText
 } from 'lucide-react';
 import { useClient } from '../context';
+import UpgradePrompt from '@/components/client/UpgradePrompt';
 
 // ============================================================================
 // TYPES
@@ -87,7 +88,7 @@ const formatDate = (dateString: string | null) => {
 // MAIN COMPONENT
 // ============================================================================
 export default function ClientAIAgentPage() {
-  const { client, branding, loading } = useClient();
+  const { client, branding, loading, isFeatureEnabled } = useClient();
   const [message, setMessage] = useState('');
 
   // Theme based on agency setting
@@ -601,6 +602,24 @@ export default function ClientAIAgentPage() {
 
         {/* Voice Selection */}
         <section className="mb-4 sm:mb-6">
+          {!isFeatureEnabled('custom_voice') ? (
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
+                    <Mic className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Voice Selection</h3>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Choose your AI's voice</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={isDark} />
+              </div>
+            </div>
+          ) : (
           <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
             <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -713,10 +732,29 @@ export default function ClientAIAgentPage() {
               )}
             </div>
           </div>
+          )}
         </section>
 
         {/* Greeting Message */}
         <section className="mb-4 sm:mb-6">
+          {!isFeatureEnabled('custom_greeting') ? (
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
+                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Greeting Message</h3>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>What your AI says first</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={isDark} />
+              </div>
+            </div>
+          ) : (
           <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
             <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -773,10 +811,29 @@ export default function ClientAIAgentPage() {
               )}
             </div>
           </div>
+          )}
         </section>
 
         {/* Business Hours */}
         <section className="mb-4 sm:mb-6">
+          {!isFeatureEnabled('business_hours') ? (
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Business Hours</h3>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>When you're available</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <UpgradePrompt feature="business_hours" primaryColor={primaryColor} isDark={isDark} />
+              </div>
+            </div>
+          ) : (
           <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
             <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -853,10 +910,29 @@ export default function ClientAIAgentPage() {
               )}
             </div>
           </div>
+          )}
         </section>
 
         {/* Knowledge Base */}
         <section className="mb-4 sm:mb-6">
+          {!isFeatureEnabled('knowledge_base') ? (
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
+                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Knowledge Base</h3>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <UpgradePrompt feature="knowledge_base" primaryColor={primaryColor} isDark={isDark} />
+              </div>
+            </div>
+          ) : (
           <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
             <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -1016,6 +1092,7 @@ export default function ClientAIAgentPage() {
               )}
             </div>
           </div>
+          )}
         </section>
 
         {/* Pro Tip */}
