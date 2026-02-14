@@ -305,6 +305,25 @@ const blogPosts: BlogPost[] = [
   // PRODUCT UPDATES (February 2026)
   // =========================================================================
   {
+    slug: 'international-agency-support',
+    title: 'VoiceAI Connect Now Supports International Agencies — Sell AI Receptionists from Anywhere',
+    excerpt: 'International agencies now get automatic email call summaries, phone number provisioning via API, and multi-currency billing. Run your AI receptionist agency from any country.',
+    category: 'product',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-14',
+    readTime: '5 min read',
+    featured: true,
+  },
+  {
+    slug: 'customizable-plan-features',
+    title: 'Customizable Plan Features: Control Exactly What Each Client Tier Includes',
+    excerpt: 'Agencies can now toggle features per plan tier — email summaries, custom greetings, knowledge base, and more. Enforced automatically across dashboard and backend.',
+    category: 'product',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-14',
+    readTime: '6 min read',
+  },
+  {
     slug: 'introducing-ai-templates-enterprise',
     title: 'Introducing AI Templates: Custom Prompts for Enterprise Agencies',
     excerpt: 'Enterprise agencies can now customize AI receptionist prompts, voices, and conversation flows for each industry. Set once, apply to all new clients automatically.',
