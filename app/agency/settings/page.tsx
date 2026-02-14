@@ -48,7 +48,6 @@ const PLAN_PRICING: Record<string, number> = {
 // ============================================================================
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
   starter: {
-    sms_notifications: true,
     email_summaries: false,
     custom_greeting: false,
     custom_voice: false,
@@ -58,7 +57,6 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     priority_support: false,
   },
   pro: {
-    sms_notifications: true,
     email_summaries: true,
     custom_greeting: true,
     custom_voice: false,
@@ -68,7 +66,6 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     priority_support: false,
   },
   growth: {
-    sms_notifications: true,
     email_summaries: true,
     custom_greeting: true,
     custom_voice: true,
@@ -80,10 +77,6 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
 };
 
 const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
-  sms_notifications: {
-    label: 'SMS Notifications',
-    description: 'Instant text after every call with caller info and summary',
-  },
   email_summaries: {
     label: 'Email Summaries',
     description: 'Detailed email with call summary, transcript, and caller details',
@@ -115,7 +108,6 @@ const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
 };
 
 const FEATURE_ORDER = [
-  'sms_notifications',
   'email_summaries',
   'custom_greeting',
   'custom_voice',
