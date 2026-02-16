@@ -863,6 +863,7 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function ComparisonSection({ config }: { config: MarketingConfig }) {
   const { branding, pricing } = config;
+  const cs = config.currencySymbol || '$';
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const highestPrice = pricing.length > 0 ? pricing[pricing.length - 1].price : 197;
   
@@ -889,7 +890,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
             <tbody>
               <tr>
                 <td><strong>Monthly Cost</strong></td>
-                <td className="highlight-col"><strong>${lowestPrice}-{highestPrice}</strong></td>
+                <td className="highlight-col"><strong>{cs}{lowestPrice}-{highestPrice}</strong></td>
                 <td>$3,000-4,500</td>
                 <td>$299-600</td>
                 <td>$0</td>
@@ -960,7 +961,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
           <ol>
             <li><strong>Hire staff:</strong> Professional, but $36,000-54,000 per year + benefits + time off</li>
             <li><strong>Traditional answering service:</strong> Available 24/7, but generic, can't book appointments, $300-600/month</li>
-            <li><strong>{branding.name}:</strong> Custom AI trained on your business, books appointments, texts you summaries, all from an app—${lowestPrice}/month</li>
+            <li><strong>{branding.name}:</strong> Custom AI trained on your business, books appointments, texts you summaries, all from an app—{cs}{lowestPrice}/month</li>
           </ol>
           <p className="comparison-conclusion">The choice is obvious.</p>
         </div>
@@ -1015,6 +1016,7 @@ function TestimonialsSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function PricingSection({ config }: { config: MarketingConfig }) {
   const { pricing, branding } = config;
+  const cs = config.currencySymbol || '$';
   
   return (
     <section id="pricing" className="pricing">
@@ -1036,7 +1038,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
                 <div className="pricing-price">
-                  <span className="price-currency">$</span>
+                  <span className="price-currency">{cs}</span>
                   <span className="price-amount">{tier.price}</span>
                   <span className="price-period">/month</span>
                 </div>
