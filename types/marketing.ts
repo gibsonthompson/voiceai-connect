@@ -107,6 +107,8 @@ export interface FooterConfig {
 export interface MarketingConfig {
   // Theme: 'auto' detects from logo, 'light' or 'dark' forces theme
   theme?: 'auto' | 'light' | 'dark';
+  // Currency symbol for pricing display (e.g. '$', '£', '€')
+  currencySymbol?: string;
   branding: MarketingBranding;
   hero: HeroConfig;
   stats: StatsConfig;
