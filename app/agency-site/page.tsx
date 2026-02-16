@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import MarketingPage from '@/components/MarketingPage';
 import { MarketingConfig } from '@/types/marketing';
+import { getCurrencySymbol } from '@/lib/currency-symbols';
 
 interface Agency {
   id: string;
@@ -36,6 +37,9 @@ interface Agency {
   demo_phone_number: string | null;
   // Legacy manual override (if agency set one manually)
   demo_phone: string | null;
+  // Currency
+  currency: string | null;
+  display_currency: string | null;
   // Advanced config (JSONB)
   marketing_config?: Partial<MarketingConfig>;
 }
@@ -343,9 +347,16 @@ export default function AgencySiteHomePage() {
   const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || null;
   const demoPhone = rawDemoPhone ? formatPhoneDisplay(rawDemoPhone) : undefined;
 
+  // ============================================================================
+  // CURRENCY SYMBOL
+  // Priority: display_currency override → native currency → USD fallback
+  // ============================================================================
+  const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
+
   // Build marketing config from agency data
   const marketingConfig: Partial<MarketingConfig> = {
     theme,
+    currencySymbol: cs,
     branding: {
       name: agency.name,
       logoUrl: agency.logo_url || '',
@@ -359,7 +370,7 @@ export default function AgencySiteHomePage() {
       headline: agency.website_headline 
         ? [agency.website_headline] 
         : ['Never Miss', 'Another Call'],
-      subtitle: agency.website_subheadline || `AI Receptionist Starting at $${starterPrice}/month`,
+      subtitle: agency.website_subheadline || `AI Receptionist Starting at ${cs}${starterPrice}/month`,
       description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
       // Only show demo if agency has their own number — empty string hides the section
       demoPhone: demoPhone || '',

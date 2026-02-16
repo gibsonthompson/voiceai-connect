@@ -205,6 +205,9 @@ function AgencySettingsContent() {
   // Plan features state
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean>>>(DEFAULT_PLAN_FEATURES);
 
+  // Marketing page currency override
+  const [displayCurrency, setDisplayCurrency] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -233,6 +236,7 @@ function AgencySettingsContent() {
       setLimitPro((agency.limit_pro || 150).toString());
       setLimitGrowth((agency.limit_growth || 500).toString());
       setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
+      setDisplayCurrency((agency as any).display_currency || '');
     }
   }, [agency]);
 
@@ -333,6 +337,7 @@ function AgencySettingsContent() {
         payload.limit_pro = parseInt(limitPro);
         payload.limit_growth = parseInt(limitGrowth);
         payload.plan_features = planFeatures;
+        payload.display_currency = displayCurrency || null;
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
@@ -754,7 +759,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Branding Tab - same as original */}
+            {/* Branding Tab */}
             {activeTab === 'branding' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -870,7 +875,7 @@ function AgencySettingsContent() {
             )}
 
             {/* ================================================================ */}
-            {/* PRICING TAB - WITH PLAN FEATURE GATING                          */}
+            {/* PRICING TAB - WITH PLAN FEATURE GATING + CURRENCY OVERRIDE       */}
             {/* ================================================================ */}
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
@@ -890,6 +895,50 @@ function AgencySettingsContent() {
                       Every client gets the core AI receptionist (24/7 call answering, dedicated phone number, call history, recordings, and transcripts) regardless of plan. The features below are extras you can include or exclude per plan.
                     </p>
                   </div>
+                </div>
+
+                {/* Marketing Page Currency Override */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1">Marketing Page Currency</label>
+                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+                    Choose which currency symbol to display on your marketing site. Defaults to your account currency.
+                  </p>
+                  <select
+                    value={displayCurrency}
+                    onChange={(e) => setDisplayCurrency(e.target.value)}
+                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors appearance-none cursor-pointer"
+                    style={{ 
+                      backgroundColor: theme.input, 
+                      border: `1px solid ${theme.inputBorder}`, 
+                      color: theme.text,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${theme.isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 1rem center',
+                      backgroundSize: '1.25rem',
+                    }}
+                  >
+                    <option value="">Same as account currency</option>
+                    <option value="USD">$ — US Dollar (USD)</option>
+                    <option value="GBP">£ — British Pound (GBP)</option>
+                    <option value="EUR">€ — Euro (EUR)</option>
+                    <option value="CAD">C$ — Canadian Dollar (CAD)</option>
+                    <option value="AUD">A$ — Australian Dollar (AUD)</option>
+                    <option value="NZD">NZ$ — New Zealand Dollar (NZD)</option>
+                    <option value="JPY">¥ — Japanese Yen (JPY)</option>
+                    <option value="CHF">CHF — Swiss Franc (CHF)</option>
+                    <option value="SGD">S$ — Singapore Dollar (SGD)</option>
+                    <option value="HKD">HK$ — Hong Kong Dollar (HKD)</option>
+                    <option value="INR">₹ — Indian Rupee (INR)</option>
+                    <option value="BRL">R$ — Brazilian Real (BRL)</option>
+                    <option value="MXN">MX$ — Mexican Peso (MXN)</option>
+                    <option value="AED">AED — UAE Dirham (AED)</option>
+                    <option value="SEK">kr — Swedish Krona (SEK)</option>
+                    <option value="NOK">kr — Norwegian Krone (NOK)</option>
+                    <option value="DKK">kr — Danish Krone (DKK)</option>
+                    <option value="PLN">zł — Polish Zloty (PLN)</option>
+                    <option value="THB">฿ — Thai Baht (THB)</option>
+                    <option value="MYR">RM — Malaysian Ringgit (MYR)</option>
+                  </select>
                 </div>
 
                 {/* Plan Cards */}
@@ -982,7 +1031,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Payments Tab - same as original */}
+            {/* Payments Tab */}
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -1068,7 +1117,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Billing Tab - same as original */}
+            {/* Billing Tab */}
             {activeTab === 'billing' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -1142,7 +1191,7 @@ function AgencySettingsContent() {
               />
             )}
 
-            {/* Demo Mode Tab - same as original */}
+            {/* Demo Mode Tab */}
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-center justify-between">
