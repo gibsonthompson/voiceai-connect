@@ -122,6 +122,7 @@ export default function ClientAIAgentPage() {
   const [savingVoice, setSavingVoice] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
+  const [accentFilter, setAccentFilter] = useState<string>('all');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [greetingMessage, setGreetingMessage] = useState('');
@@ -513,10 +514,37 @@ export default function ClientAIAgentPage() {
     setBusinessHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   };
 
-  const getFilteredVoices = () => {
-    if (voiceFilter === 'female') return voices.female || [];
-    if (voiceFilter === 'male') return voices.male || [];
+  // ============================================================================
+  // VOICE FILTERING - Gender + Accent
+  // ============================================================================
+  const getAllVoices = (): VoiceOption[] => {
     return [...(voices.female || []), ...(voices.male || [])];
+  };
+
+  const getAvailableAccents = (): string[] => {
+    const all = getAllVoices();
+    const accents = [...new Set(all.map(v => v.accent))];
+    return accents.sort();
+  };
+
+  const getFilteredVoices = () => {
+    let filtered: VoiceOption[];
+    
+    // Gender filter
+    if (voiceFilter === 'female') {
+      filtered = voices.female || [];
+    } else if (voiceFilter === 'male') {
+      filtered = voices.male || [];
+    } else {
+      filtered = getAllVoices();
+    }
+    
+    // Accent filter
+    if (accentFilter !== 'all') {
+      filtered = filtered.filter(v => v.accent === accentFilter);
+    }
+    
+    return filtered;
   };
 
   const getHoursSummary = () => {
@@ -544,6 +572,8 @@ export default function ClientAIAgentPage() {
   const hasVoiceChanges = selectedVoiceId !== currentVoiceId;
   const hasGreetingChanges = greetingMessage !== originalGreeting;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
+  const filteredVoices = getFilteredVoices();
+  const availableAccents = getAvailableAccents();
 
   if (loading || !client) {
     return (
@@ -660,7 +690,8 @@ export default function ClientAIAgentPage() {
 
               {!voicesLoading && !voicesError && totalVoices > 0 && (
                 <>
-                  <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                  {/* Gender Filter */}
+                  <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-3">
                     {(['all', 'female', 'male'] as const).map((filter) => (
                       <button
                         key={filter}
@@ -676,47 +707,97 @@ export default function ClientAIAgentPage() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    {getFilteredVoices().map((voice) => {
-                      const isSelected = selectedVoiceId === voice.id;
-                      const isCurrent = currentVoiceId === voice.id;
-                      const isPlaying = playingVoiceId === voice.id;
+                  {/* Accent Filter */}
+                  {availableAccents.length > 1 && (
+                    <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                      <button
+                        onClick={() => setAccentFilter('all')}
+                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
+                        style={{
+                          backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, isDark ? 0.25 : 0.15) : theme.bg,
+                          color: accentFilter === 'all' ? primaryColor : theme.textMuted,
+                          border: accentFilter === 'all' ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : `1px solid transparent`,
+                        }}
+                      >
+                        🌍 All Accents
+                      </button>
+                      {availableAccents.map((accent) => {
+                        const flag = accent === 'British' ? '🇬🇧' : accent === 'American' ? '🇺🇸' : accent === 'Australian' ? '🇦🇺' : '🌍';
+                        return (
+                          <button
+                            key={accent}
+                            onClick={() => setAccentFilter(accent)}
+                            className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
+                            style={{
+                              backgroundColor: accentFilter === accent ? hexToRgba(primaryColor, isDark ? 0.25 : 0.15) : theme.bg,
+                              color: accentFilter === accent ? primaryColor : theme.textMuted,
+                              border: accentFilter === accent ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : `1px solid transparent`,
+                            }}
+                          >
+                            {flag} {accent}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                      return (
-                        <div
-                          key={voice.id}
-                          onClick={() => setSelectedVoiceId(voice.id)}
-                          className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer transition-all"
-                          style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, isDark ? 0.1 : 0.05) : theme.cardBg }}
-                        >
-                          {isCurrent && (
-                            <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500 text-white text-[8px] sm:text-[9px] font-bold rounded-full">CURRENT</span>
-                          )}
-                          {voice.recommended && !isCurrent && (
-                            <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}>★</span>
-                          )}
+                  {/* Voice Grid */}
+                  {filteredVoices.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      {filteredVoices.map((voice) => {
+                        const isSelected = selectedVoiceId === voice.id;
+                        const isCurrent = currentVoiceId === voice.id;
+                        const isPlaying = playingVoiceId === voice.id;
 
-                          <div className="flex items-start gap-1.5 sm:gap-2">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
-                              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
-                              style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted }}
-                            >
-                              {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />}
-                            </button>
+                        return (
+                          <div
+                            key={voice.id}
+                            onClick={() => setSelectedVoiceId(voice.id)}
+                            className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer transition-all"
+                            style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, isDark ? 0.1 : 0.05) : theme.cardBg }}
+                          >
+                            {isCurrent && (
+                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500 text-white text-[8px] sm:text-[9px] font-bold rounded-full">CURRENT</span>
+                            )}
+                            {voice.recommended && !isCurrent && (
+                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}>★</span>
+                            )}
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <span className="font-semibold text-xs sm:text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
-                                {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: primaryColor }} />}
+                            <div className="flex items-start gap-1.5 sm:gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
+                                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
+                                style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted }}
+                              >
+                                {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />}
+                              </button>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-xs sm:text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
+                                  {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: primaryColor }} />}
+                                </div>
+                                <p className="text-[9px] sm:text-[10px] truncate" style={{ color: theme.textMuted4 }}>
+                                  {voice.accent} · {voice.style}
+                                </p>
                               </div>
-                              <p className="text-[9px] sm:text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.accent}</p>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 sm:py-8">
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted4 }}>No voices match this filter</p>
+                      <button 
+                        onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }}
+                        className="mt-2 text-xs sm:text-sm font-medium hover:opacity-80 transition"
+                        style={{ color: primaryColor }}
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
 
                   {hasVoiceChanges && (
                     <button
