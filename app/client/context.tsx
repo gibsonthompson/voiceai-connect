@@ -32,6 +32,17 @@ interface Client {
     support_phone: string | null;
     website_theme: 'light' | 'dark' | 'auto' | null;
     plan_features?: Record<string, Record<string, boolean>>;
+    // Dashboard branding overrides (nav, bg, card, button colors)
+    branding_overrides?: {
+      nav_bg?: string;
+      nav_text?: string;
+      page_bg?: string;
+      card_bg?: string;
+      card_border?: string;
+      button_text?: string;
+      text_primary?: string;
+      text_muted?: string;
+    } | null;
   } | null;
 }
 

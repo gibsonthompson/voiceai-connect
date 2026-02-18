@@ -4,11 +4,12 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
+import { useTheme } from '../../hooks/useTheme';
 
 // Waveform icon component with color prop
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -43,8 +44,6 @@ function isSuspended(status: string | null | undefined): boolean {
 // Helper to check if agency never completed Stripe checkout
 function needsSubscription(agency: any): boolean {
   if (!agency) return false;
-  // No stripe_subscription_id means they never completed Stripe Checkout
-  // Also check subscription_status isn't already active (edge case safety)
   return !agency.stripe_subscription_id && agency.subscription_status !== 'active';
 }
 
@@ -80,20 +79,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
+  // ============================================================================
+  // THEME — useTheme() handles all colors including branding overrides.
+  // No more hardcoded color variables for layout. The theme auto-derives
+  // everything from agency.website_theme, primaryColor, and branding_overrides.
+  // ============================================================================
+  const theme = useTheme();
 
-  // Agency colors with fallbacks
+  // Agency colors still needed for CSS custom properties
   const primaryColor = branding.primaryColor || '#10b981';
   const secondaryColor = branding.secondaryColor || '#059669';
   const accentColor = branding.accentColor || '#34d399';
-
-  // Theme-based colors
-  const bgColor = isDark ? '#050505' : '#f9fafb';
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const sidebarBg = isDark ? '#050505' : '#ffffff';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
 
   // Calculate trial status
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
@@ -114,7 +110,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isEnterprise = effectivePlan === 'enterprise';
 
   // Build nav items with feature gating
-  // Order: Dashboard, Clients, Leads, Outreach, Analytics, Marketing Website, AI Templates, Referrals, Settings
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/agency/clients', label: 'Clients', icon: Users },
@@ -142,6 +137,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       locked: !isEnterprise,
       upgradeRequired: 'Enterprise',
     },
+    { href: '/agency/branding', label: 'Branding', icon: Paintbrush },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
@@ -178,13 +174,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // Sync body + html background with theme (prevents zoom gap showing wrong color)
   useEffect(() => {
-    document.documentElement.style.setProperty('background', bgColor, 'important');
-    document.body.style.setProperty('background', bgColor, 'important');
+    document.documentElement.style.setProperty('background', theme.bg, 'important');
+    document.body.style.setProperty('background', theme.bg, 'important');
     return () => {
       document.documentElement.style.removeProperty('background');
       document.body.style.removeProperty('background');
     };
-  }, [bgColor]);
+  }, [theme.bg]);
 
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
@@ -212,7 +208,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     setSidebarOpen(false);
     
     if (isLocked) {
-      // For locked features, still navigate to the page - it will show the locked state
       window.location.href = href;
     } else {
       window.location.href = href;
@@ -232,20 +227,19 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // ============================================================================
   // SUBSCRIPTION GATE - Agency never completed Stripe Checkout
-  // Shows a blocking screen that directs them to pick a plan and start trial
   // ============================================================================
   if (agencyNeedsSubscription) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: bgColor }}
+        style={{ backgroundColor: theme.bg }}
       >
         <div 
           className="max-w-lg w-full rounded-2xl p-8 text-center"
           style={{ 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
-            border: `1px solid ${isDark ? `${primaryColor}30` : `${primaryColor}20`}`,
-            boxShadow: isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
           {/* Logo */}
@@ -260,9 +254,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             ) : (
               <div 
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-                style={{ backgroundColor: `${primaryColor}15` }}
+                style={{ backgroundColor: theme.primary15 }}
               >
-                <WaveformIcon className="h-8 w-8" color={primaryColor} />
+                <WaveformIcon className="h-8 w-8" color={theme.primary} />
               </div>
             )}
           </div>
@@ -270,26 +264,26 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Icon */}
           <div 
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
-            style={{ backgroundColor: `${primaryColor}12` }}
+            style={{ backgroundColor: `${theme.primary}12` }}
           >
-            <Zap className="h-7 w-7" style={{ color: primaryColor }} />
+            <Zap className="h-7 w-7" style={{ color: theme.primary }} />
           </div>
 
           <h1 
             className="text-2xl font-bold mb-3"
-            style={{ color: textColor }}
+            style={{ color: theme.text }}
           >
             Finish Setting Up Your Agency
           </h1>
           <p 
             className="mb-2 text-base"
-            style={{ color: mutedTextColor }}
+            style={{ color: theme.textMuted }}
           >
-            You&apos;re almost there! Select a plan to start your <strong style={{ color: textColor }}>14-day free trial</strong> and unlock your agency dashboard.
+            You&apos;re almost there! Select a plan to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your agency dashboard.
           </p>
           <p 
             className="mb-8 text-sm"
-            style={{ color: mutedTextColor }}
+            style={{ color: theme.textMuted }}
           >
             No charge until your trial ends. Cancel anytime.
           </p>
@@ -298,8 +292,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             href={`/signup/plan?agency=${agency?.id}`}
             className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90"
             style={{ 
-              backgroundColor: primaryColor,
-              color: isDark ? '#050505' : '#ffffff',
+              backgroundColor: theme.primary,
+              color: theme.primaryText,
             }}
           >
             <Zap className="h-5 w-5" />
@@ -309,7 +303,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           <button
             onClick={handleSignOut}
             className="block w-full mt-5 text-sm transition-colors hover:opacity-70"
-            style={{ color: mutedTextColor }}
+            style={{ color: theme.textMuted }}
           >
             Sign out
           </button>
@@ -323,30 +317,30 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: bgColor }}
+        style={{ backgroundColor: theme.bg }}
       >
         <div 
           className="max-w-md w-full rounded-2xl p-8 text-center"
           style={{ 
-            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
-            border: `1px solid ${isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}`,
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}`,
           }}
         >
           <div 
             className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-            style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2' }}
+            style={{ backgroundColor: theme.errorBg }}
           >
             <CreditCard className="h-8 w-8 text-red-500" />
           </div>
           <h1 
             className="text-2xl font-bold mb-3"
-            style={{ color: textColor }}
+            style={{ color: theme.text }}
           >
             Payment Required
           </h1>
           <p 
             className="mb-6"
-            style={{ color: mutedTextColor }}
+            style={{ color: theme.textMuted }}
           >
             {agencyIsSuspended 
               ? 'Your agency has been suspended. Please update your payment method to restore access.'
@@ -364,7 +358,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           <button
             onClick={handleSignOut}
             className="block w-full mt-4 text-sm transition-colors"
-            style={{ color: mutedTextColor }}
+            style={{ color: theme.textMuted }}
           >
             Sign out
           </button>
@@ -377,8 +371,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     <div 
       className="min-h-screen"
       style={{
-        backgroundColor: bgColor,
-        color: textColor,
+        backgroundColor: theme.bg,
+        color: theme.text,
         zoom: 0.9,
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
@@ -386,7 +380,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       } as React.CSSProperties}
     >
       {/* Grain overlay - dark mode only */}
-      {isDark && (
+      {theme.isDark && (
         <div 
           className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{
@@ -395,23 +389,23 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Payment Failed Banner - Only shows if payment failed (not for trial) */}
+      {/* Payment Failed Banner */}
       {hasPaymentIssue && isAccessibleRoute && (
         <div 
           className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3"
           style={{
             top: 0,
-            backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2',
-            borderBottom: '1px solid rgba(239,68,68,0.3)',
+            backgroundColor: theme.errorBg,
+            borderBottom: `1px solid ${theme.errorBorder}`,
           }}
         >
           <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 text-red-500 flex-shrink-0" />
+            <CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} />
             <div>
-              <p className="font-medium text-sm" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
+              <p className="font-medium text-sm" style={{ color: theme.errorText }}>
                 Payment failed
               </p>
-              <p className="text-xs" style={{ color: isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>
+              <p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>
                 Please update your payment method to continue using your agency.
               </p>
             </div>
@@ -435,14 +429,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <div 
         className="sticky z-30 md:hidden"
         style={{ 
-          backgroundColor: sidebarBg, 
+          backgroundColor: theme.sidebarBg, 
           paddingTop: 'env(safe-area-inset-top)',
           top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0,
         }}
       >
         <header 
           className="flex items-center justify-between h-16 px-4"
-          style={{ borderBottom: `1px solid ${borderColor}` }}
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
         >
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
@@ -458,14 +452,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 style={{ 
                   height: '40px', 
                   width: '40px', 
-                  backgroundColor: `${primaryColor}15`,
-                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${primaryColor}20`,
+                  backgroundColor: theme.primary15,
+                  border: `1px solid ${theme.sidebarBorder}`,
                 }}
               >
-                <WaveformIcon className="h-6 w-6" color={primaryColor} />
+                <WaveformIcon className="h-6 w-6" color={theme.primary} />
               </div>
             )}
-            <span className="font-semibold text-lg truncate max-w-[180px]">
+            <span 
+              className="font-semibold text-lg truncate max-w-[180px]"
+              style={{ color: theme.sidebarText }}
+            >
               {agency?.name || 'Agency'}
             </span>
           </div>
@@ -473,6 +470,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setSidebarOpen(true)}
             className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            style={{ color: theme.sidebarText }}
           >
             <Menu className="h-7 w-7" />
           </button>
@@ -498,8 +496,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           }
         `}
         style={{ 
-          backgroundColor: sidebarBg, 
-          borderRight: `1px solid ${borderColor}`,
+          backgroundColor: theme.sidebarBg, 
+          borderRight: `1px solid ${theme.sidebarBorder}`,
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
           top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0,
         }}
@@ -507,12 +505,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         {/* Mobile Header in Sidebar */}
         <div 
           className="flex md:hidden items-center justify-between h-16 px-4"
-          style={{ borderBottom: `1px solid ${borderColor}` }}
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
         >
-          <span className="font-semibold text-lg">Menu</span>
+          <span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span>
           <button
             onClick={() => setSidebarOpen(false)}
             className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            style={{ color: theme.sidebarText }}
           >
             <X className="h-7 w-7" />
           </button>
@@ -521,7 +520,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         {/* Desktop Logo & Agency Name */}
         <div 
           className="hidden md:flex h-16 items-center gap-3 px-6"
-          style={{ borderBottom: `1px solid ${borderColor}` }}
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
         >
           {branding.logoUrl ? (
             <img 
@@ -536,14 +535,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               style={{ 
                 height: '32px', 
                 width: '32px', 
-                backgroundColor: `${primaryColor}15`,
-                border: isDark ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${primaryColor}20`,
+                backgroundColor: theme.primary15,
+                border: `1px solid ${theme.sidebarBorder}`,
               }}
             >
-              <WaveformIcon className="h-5 w-5" color={primaryColor} />
+              <WaveformIcon className="h-5 w-5" color={theme.primary} />
             </div>
           )}
-          <span className="font-semibold truncate">
+          <span className="font-semibold truncate" style={{ color: theme.sidebarText }}>
             {agency?.name || 'Agency'}
           </span>
         </div>
@@ -560,20 +559,24 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href, isLocked, item.upgradeRequired)}
-                className={`flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all ${
-                  isLocked 
-                    ? 'cursor-pointer' 
-                    : !active 
-                      ? (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') 
-                      : ''
-                }`}
+                className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all"
                 style={
                   isLocked 
-                    ? { color: mutedTextColor, opacity: 0.6 }
+                    ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' }
                     : active 
-                      ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
-                      : { color: mutedTextColor }
+                      ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor }
+                      : { color: theme.sidebarTextMuted }
                 }
+                onMouseEnter={(e) => {
+                  if (!isLocked && !active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLocked && !active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  }
+                }}
                 title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}
               >
                 <div className="flex items-center gap-3">
@@ -588,8 +591,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                   <span 
                     className="text-[10px] px-1.5 py-0.5 rounded-full"
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                      color: mutedTextColor,
+                      backgroundColor: theme.sidebarHover,
+                      color: theme.sidebarTextMuted,
                     }}
                   >
                     {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
@@ -608,28 +611,34 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Demo Mode Toggle */}
           <button
             onClick={toggleDemoMode}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              demoMode 
-                ? '' 
-                : (isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]')
-            }`}
+            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
             style={demoMode ? {
-              backgroundColor: `${primaryColor}15`,
-              border: `1px solid ${primaryColor}30`,
+              backgroundColor: theme.sidebarActiveItemBg,
+              border: `1px solid ${theme.primary30}`,
             } : {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${borderColor}`,
+              backgroundColor: theme.sidebarHover,
+              border: `1px solid ${theme.sidebarBorder}`,
+            }}
+            onMouseEnter={(e) => {
+              if (!demoMode) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!demoMode) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+              }
             }}
           >
             <div className="flex items-center gap-3">
-              <Eye className="h-4 w-4" style={{ color: demoMode ? primaryColor : mutedTextColor }} />
-              <span style={{ color: demoMode ? primaryColor : mutedTextColor }}>Demo Mode</span>
+              <Eye className="h-4 w-4" style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }} />
+              <span style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }}>Demo Mode</span>
             </div>
             {/* Mini toggle switch */}
             <div
               className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200"
               style={{ 
-                backgroundColor: demoMode ? primaryColor : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+                backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
               }}
             >
               <span
@@ -641,22 +650,22 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </button>
 
-          {/* Trial Badge - Informational only (Stripe auto-charges when trial ends) */}
+          {/* Trial Badge */}
           {isOnTrial && trialDaysLeft !== null && (
             <div 
               className="rounded-xl p-3"
               style={{
-                backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.1)',
-                border: '1px solid rgba(59,130,246,0.2)',
+                backgroundColor: theme.infoBg,
+                border: `1px solid ${theme.infoBorder}`,
               }}
             >
-              <p className="text-xs" style={{ color: isDark ? 'rgba(147,197,253,0.8)' : '#1e40af' }}>
+              <p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>
                 Trial Period
               </p>
-              <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>
+              <p className="text-sm font-medium" style={{ color: theme.infoText }}>
                 {trialDaysLeft} days remaining
               </p>
-              <p className="text-xs mt-1" style={{ color: isDark ? 'rgba(147,197,253,0.6)' : '#3b82f6' }}>
+              <p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>
                 Your card will be charged automatically
               </p>
             </div>
@@ -668,12 +677,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               href="/agency/settings"
               className="block rounded-xl p-3 transition-opacity hover:opacity-90"
               style={{
-                backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.3)',
+                backgroundColor: theme.errorBg,
+                border: `1px solid ${theme.errorBorder}`,
               }}
             >
-              <p className="text-xs" style={{ color: isDark ? 'rgba(252,165,165,0.8)' : '#991b1b' }}>Payment Issue</p>
-              <p className="text-sm font-medium" style={{ color: isDark ? '#fca5a5' : '#dc2626' }}>
+              <p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p>
+              <p className="text-sm font-medium" style={{ color: theme.errorText }}>
                 Update payment method
               </p>
             </a>
@@ -684,12 +693,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             <div 
               className="rounded-xl p-3"
               style={{
-                backgroundColor: `${primaryColor}10`,
-                border: `1px solid ${primaryColor}30`,
+                backgroundColor: theme.primary10,
+                border: `1px solid ${theme.primary30}`,
               }}
             >
-              <p className="text-xs" style={{ color: `${primaryColor}99` }}>Current Plan</p>
-              <p className="text-sm font-medium capitalize" style={{ color: primaryColor }}>
+              <p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p>
+              <p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>
                 {planName || agency?.plan_type || 'Starter'}
               </p>
             </div>
@@ -698,12 +707,16 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4 ${
-              isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-            }`}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4"
             style={{ 
-              color: mutedTextColor,
-              borderTop: `1px solid ${borderColor}`,
+              color: theme.sidebarTextMuted,
+              borderTop: `1px solid ${theme.sidebarBorder}`,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
             }}
           >
             <LogOut className="h-5 w-5" />

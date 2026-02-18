@@ -4,16 +4,16 @@ import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   Upload, Check, AlertCircle, ExternalLink,
-  Palette, CreditCard, Building, Loader2, DollarSign,
-  AlertTriangle, RefreshCw, Trash2, Sun, Moon, Monitor,
-  Receipt, XCircle, Eye, Phone, Users, ChevronRight,
-  Globe, ToggleLeft, ToggleRight, Info
+  CreditCard, Building, Loader2, DollarSign,
+  AlertTriangle, RefreshCw, Trash2,
+  Receipt, XCircle, Eye, Phone, Users,
+  Globe, Info
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import BYOTSettings from '@/components/BYOTSettings';
 
-type SettingsTab = 'profile' | 'branding' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo';
 
 interface StripeStatus {
   connected: boolean;
@@ -22,15 +22,6 @@ interface StripeStatus {
   charges_enabled: boolean;
   payouts_enabled: boolean;
   details_submitted?: boolean;
-}
-
-function isLightColor(hex: string): boolean {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5;
 }
 
 function isTrialStatus(status: string | null | undefined): boolean {
@@ -168,8 +159,9 @@ function AgencySettingsContent() {
   const searchParams = useSearchParams();
   
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'branding', 'pricing', 'payments', 'billing', 'twilio', 'demo'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo'];
   
+  // Redirect old branding tab links to profile
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabs.includes(initialTab) ? initialTab : 'profile'
   );
@@ -189,11 +181,6 @@ function AgencySettingsContent() {
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  
-  const [primaryColor, setPrimaryColor] = useState('#10b981');
-  const [secondaryColor, setSecondaryColor] = useState('#059669');
-  const [accentColor, setAccentColor] = useState('#34d399');
-  const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark' | 'auto'>('dark');
   
   const [priceStarter, setPriceStarter] = useState('49');
   const [pricePro, setPricePro] = useState('99');
@@ -225,10 +212,6 @@ function AgencySettingsContent() {
       setAgencyName(agency.name || '');
       setLogoUrl(agency.logo_url || '');
       setLogoPreview(agency.logo_url);
-      setPrimaryColor(agency.primary_color || '#10b981');
-      setSecondaryColor(agency.secondary_color || '#059669');
-      setAccentColor(agency.accent_color || '#34d399');
-      setWebsiteTheme(agency.website_theme || 'dark');
       setPriceStarter(((agency.price_starter || 4900) / 100).toString());
       setPricePro(((agency.price_pro || 9900) / 100).toString());
       setPriceGrowth(((agency.price_growth || 14900) / 100).toString());
@@ -274,7 +257,6 @@ function AgencySettingsContent() {
 
   const settingsTabs = [
     { id: 'profile' as SettingsTab, label: 'Profile', icon: Building },
-    { id: 'branding' as SettingsTab, label: 'Branding', icon: Palette },
     { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
     { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
@@ -324,11 +306,6 @@ function AgencySettingsContent() {
       if (activeTab === 'profile') {
         payload.name = agencyName;
         payload.logo_url = logoUrl;
-      } else if (activeTab === 'branding') {
-        payload.primary_color = primaryColor;
-        payload.secondary_color = secondaryColor;
-        payload.accent_color = accentColor;
-        payload.website_theme = websiteTheme;
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
@@ -534,15 +511,6 @@ function AgencySettingsContent() {
       box-shadow: 0 0 0 3px ${theme.primary}20 !important;
     }
   `;
-
-  const previewIsDark = websiteTheme !== 'light';
-  const previewBg = previewIsDark ? '#050505' : '#f9fafb';
-  const previewText = previewIsDark ? '#fafaf9' : '#111827';
-  const previewMuted = previewIsDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const previewCard = previewIsDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const previewBorder = previewIsDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const previewSidebar = previewIsDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
-  const previewPrimaryText = isLightColor(primaryColor) ? '#050505' : '#ffffff';
 
   // Count enabled features per plan (for summary display)
   const getFeatureCount = (plan: string) => {
@@ -755,121 +723,6 @@ function AgencySettingsContent() {
                   <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>
                     URL: https://{agency?.slug}.{platformDomain}/signup
                   </p>
-                </div>
-              </div>
-            )}
-
-            {/* Branding Tab */}
-            {activeTab === 'branding' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Dashboard Branding</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                    These colors apply to your agency dashboard and client portal.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1">Dashboard Style</label>
-                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-                    Controls the background, text, and surface colors across your entire dashboard.
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    {[
-                      { value: 'light', label: 'Light', icon: Sun, desc: 'White backgrounds' },
-                      { value: 'dark', label: 'Dark', icon: Moon, desc: 'Dark backgrounds' },
-                      { value: 'auto', label: 'Auto', icon: Monitor, desc: 'System preference' },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setWebsiteTheme(option.value as 'light' | 'dark' | 'auto')}
-                        className="flex flex-col items-center gap-1.5 rounded-xl p-3 sm:p-4 transition-all"
-                        style={websiteTheme === option.value ? {
-                          backgroundColor: `${primaryColor}15`,
-                          border: `2px solid ${primaryColor}`,
-                        } : {
-                          backgroundColor: theme.input,
-                          border: `1px solid ${theme.inputBorder}`,
-                        }}
-                      >
-                        <option.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: websiteTheme === option.value ? primaryColor : theme.textMuted }} />
-                        <span className="text-xs sm:text-sm font-medium" style={{ color: websiteTheme === option.value ? primaryColor : theme.text }}>{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {[
-                    { label: 'Primary Color', desc: 'Buttons, active nav items, badges, links, and icon backgrounds.', value: primaryColor, setter: setPrimaryColor },
-                    { label: 'Secondary Color', desc: 'Hover states, gradient endpoints, and secondary button styles.', value: secondaryColor, setter: setSecondaryColor },
-                    { label: 'Accent Color', desc: 'Highlights and emphasis on the marketing website.', value: accentColor, setter: setAccentColor },
-                  ].map((color) => (
-                    <div key={color.label}>
-                      <label className="block text-xs sm:text-sm font-medium mb-0.5">{color.label}</label>
-                      <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>{color.desc}</p>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <input type="color" value={color.value} onChange={(e) => color.setter(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
-                        <input type="text" value={color.value} onChange={(e) => color.setter(e.target.value)} className="flex-1 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Live Preview */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Live Preview</label>
-                  <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
-                    <div className="flex" style={{ minHeight: '220px' }}>
-                      <div className="w-[140px] sm:w-[160px] flex-shrink-0 p-3 space-y-1.5 hidden sm:block" style={{ backgroundColor: previewSidebar, borderRight: `1px solid ${previewBorder}` }}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-                            <Phone className="h-3 w-3" style={{ color: previewPrimaryText }} />
-                          </div>
-                          <span className="text-[10px] font-semibold truncate" style={{ color: previewText }}>{agencyName || 'Agency'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ backgroundColor: `${primaryColor}15` }}>
-                          <Users className="h-3 w-3" style={{ color: primaryColor }} />
-                          <span className="text-[10px] font-medium" style={{ color: primaryColor }}>Clients</span>
-                        </div>
-                        {['Analytics', 'Settings'].map((item) => (
-                          <div key={item} className="flex items-center gap-2 px-2 py-1.5">
-                            <div className="w-3 h-3 rounded" style={{ backgroundColor: previewBorder }} />
-                            <span className="text-[10px]" style={{ color: previewMuted }}>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex-1 p-3 sm:p-4 space-y-3" style={{ backgroundColor: previewBg }}>
-                        <div className="rounded-lg p-3 flex items-center gap-3" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${primaryColor}15` }}>
-                            <Users className="h-4 w-4" style={{ color: primaryColor }} />
-                          </div>
-                          <div>
-                            <p className="text-[10px]" style={{ color: previewMuted }}>Total Clients</p>
-                            <p className="text-sm font-semibold" style={{ color: previewText }}>24</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button className="px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium" style={{ backgroundColor: primaryColor, color: previewPrimaryText }}>Primary Button</button>
-                          <span className="px-2 py-1 rounded-full text-[10px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>Active Badge</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px]" style={{ color: previewMuted }}>Link example:</span>
-                          <span className="text-[10px] font-medium" style={{ color: primaryColor }}>View all clients →</span>
-                        </div>
-                        <div className="rounded-lg p-2.5 flex items-center justify-between" style={{ backgroundColor: previewCard, border: `1px solid ${previewBorder}` }}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-medium" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>A</div>
-                            <div>
-                              <p className="text-[10px] font-medium" style={{ color: previewText }}>Acme Plumbing</p>
-                              <p className="text-[8px]" style={{ color: previewMuted }}>Pro plan</p>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-3 w-3" style={{ color: previewMuted }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
@@ -1279,8 +1132,8 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button */}
-            {activeTab !== 'payments' && activeTab !== 'billing' && activeTab !== 'twilio' && activeTab !== 'demo' && (
+            {/* Save Button — only for tabs with editable content */}
+            {(activeTab === 'profile' || activeTab === 'pricing') && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}

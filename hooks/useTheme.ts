@@ -1,28 +1,52 @@
 // ============================================================================
 // useTheme() - Centralized Theme System for Agency Dashboard
+// WITH BRANDING OVERRIDES SUPPORT
 // ============================================================================
 // 
-// Replaces the pattern of every page doing:
-//   const isDark = agency?.website_theme !== 'light';
-//   const textColor = isDark ? '#fafaf9' : '#111827';
-//   ... 8 more lines
-//
-// Usage:
-//   import { useTheme } from '@/hooks/useTheme';
-//   const theme = useTheme();
-//   <div style={{ backgroundColor: theme.bg, color: theme.text }}>
-//
-// The theme is derived from TWO agency settings:
-//   1. website_theme: 'dark' | 'light' (base mode - set in branding settings)
+// The theme is derived from THREE agency settings:
+//   1. website_theme: 'dark' | 'light' (base mode)
 //   2. primary_color: hex string (brand color - buttons, accents, active states)
+//   3. branding_overrides: JSON object with optional color overrides
 //
-// Everything else (backgrounds, text, borders, surfaces) is auto-calculated.
+// Branding overrides let agencies customize:
+//   - nav_bg / nav_text           → Sidebar/navigation colors
+//   - page_bg                     → Main content area background
+//   - card_bg / card_border       → Card/surface colors
+//   - button_text                 → Text color on primary-colored buttons
+//   - text_primary / text_muted   → Main text colors
+//
+// Everything auto-calculates from the base theme, then overrides are applied
+// on top. Pages using useTheme() get overrides automatically.
 // ============================================================================
 
 'use client';
 
 import { useMemo } from 'react';
 import { useAgency } from '@/app/agency/context';
+
+// ============================================================================
+// BRANDING OVERRIDES INTERFACE
+// ============================================================================
+
+export interface BrandingOverrides {
+  // Navigation / Sidebar
+  nav_bg?: string;
+  nav_text?: string;
+
+  // Page background
+  page_bg?: string;
+
+  // Cards / Surfaces
+  card_bg?: string;
+  card_border?: string;
+
+  // Button text (on primary-colored buttons)
+  button_text?: string;
+
+  // Text colors
+  text_primary?: string;
+  text_muted?: string;
+}
 
 // ============================================================================
 // COLOR UTILITIES
@@ -63,6 +87,53 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+/**
+ * Validate that a string looks like a hex color
+ */
+function isValidHex(val: string | undefined | null): val is string {
+  if (!val) return false;
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val);
+}
+
+/**
+ * Auto-compute a subtle hover/muted variant from a solid background color.
+ * Used when overrides provide a nav_bg but not nav_text, etc.
+ */
+function autoNavText(navBg: string): string {
+  return isLightColor(navBg) ? '#111827' : '#fafaf9';
+}
+
+function autoNavTextMuted(navBg: string): string {
+  return isLightColor(navBg) ? '#6b7280' : 'rgba(250,250,249,0.6)';
+}
+
+function autoNavBorder(navBg: string): string {
+  return isLightColor(navBg) ? '#e5e7eb' : 'rgba(255,255,255,0.08)';
+}
+
+function autoNavHover(navBg: string): string {
+  return isLightColor(navBg) ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
+}
+
+function autoCardHover(cardBg: string, isDark: boolean): string {
+  if (isLightColor(cardBg)) {
+    return '#f3f4f6';
+  }
+  return 'rgba(255,255,255,0.04)';
+}
+
+function autoInputBg(cardBg: string, isDark: boolean): string {
+  // Input bg is usually slightly different from card bg
+  if (isDark) return 'rgba(255,255,255,0.04)';
+  return '#ffffff';
+}
+
+function autoInputBorder(cardBorder: string | undefined, isDark: boolean): string {
+  if (cardBorder) return cardBorder;
+  if (isDark) return 'rgba(255,255,255,0.08)';
+  return '#e5e7eb';
+}
+
 // ============================================================================
 // THEME INTERFACE
 // ============================================================================
@@ -78,102 +149,127 @@ export interface Theme {
   primaryText: string;
 
   // Primary with various opacities (for backgrounds, borders, badges)
-  primary10: string; // very subtle bg
-  primary15: string; // icon/avatar bg, badge bg
-  primary20: string; // border accent
-  primary30: string; // stronger border
-  primary80: string; // muted icon color
+  primary10: string;
+  primary15: string;
+  primary20: string;
+  primary30: string;
+  primary80: string;
 
   // Core layout colors
-  bg: string;         // page background
-  text: string;       // primary text
-  textMuted: string;  // secondary/muted text
-  textSubtle: string; // even more subtle (timestamps, hints)
+  bg: string;
+  text: string;
+  textMuted: string;
+  textSubtle: string;
 
   // Surface colors (cards, modals, sections)
-  card: string;       // card/section background
-  cardHover: string;  // card hover state
+  card: string;
+  cardHover: string;
 
   // Input/form colors
-  input: string;      // input background
-  inputBorder: string; // input border
-  inputFocus: string; // input focus ring (uses primary)
+  input: string;
+  inputBorder: string;
+  inputFocus: string;
 
   // Border colors
-  border: string;     // default border
-  borderSubtle: string; // very subtle dividers
+  border: string;
+  borderSubtle: string;
 
   // Interactive states
-  hover: string;      // generic hover bg
-  active: string;     // active/selected bg (uses primary)
+  hover: string;
+  active: string;
 
-  // Status colors (not affected by theme - universal)
+  // Status colors
   success: string;
   warning: string;
   error: string;
   info: string;
 
-  // Status text (slightly different in dark/light for readability)
   successText: string;
   warningText: string;
   errorText: string;
   infoText: string;
 
-  // Status backgrounds
   successBg: string;
   warningBg: string;
   errorBg: string;
   infoBg: string;
 
-  // Status borders
   successBorder: string;
   warningBorder: string;
   errorBorder: string;
   infoBorder: string;
 
-  // Sidebar-specific (may differ slightly from main content)
+  // Sidebar-specific
   sidebarBg: string;
   sidebarBorder: string;
+  sidebarText: string;
+  sidebarTextMuted: string;
+  sidebarHover: string;
+  sidebarActiveItemBg: string;
+  sidebarActiveItemColor: string;
 
-  // Utility function: get contrast text for any color
+  // Utility functions
   getContrastText: (hex: string) => string;
-  // Utility function: create alpha variant of any color
   withAlpha: (hex: string, alpha: number) => string;
 }
 
 // ============================================================================
 // DARK THEME GENERATOR
 // ============================================================================
-function buildDarkTheme(primary: string): Theme {
+function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
+  // Base values
+  const baseBg = '#050505';
+  const baseText = '#fafaf9';
+  const baseTextMuted = 'rgba(250,250,249,0.5)';
+  const baseCard = 'rgba(255,255,255,0.02)';
+  const baseBorder = 'rgba(255,255,255,0.06)';
+  const baseSidebarBg = '#050505';
+
+  // Apply overrides
+  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg : baseBg;
+  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary : baseText;
+  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted : baseTextMuted;
+  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg : baseCard;
+  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border : baseBorder;
+  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, true);
+
+  // Sidebar overrides — auto-derive text/border from bg if not specified
+  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : baseSidebarBg;
+  const hasNavBgOverride = isValidHex(overrides?.nav_bg);
+  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : 'rgba(250,250,249,0.5)';
+  const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
+  const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(255,255,255,0.04)';
+
   return {
     isDark: true,
     primary,
-    primaryText: getContrastText(primary, true),
+    primaryText: buttonText,
     primary10: withAlpha(primary, 0.10),
     primary15: withAlpha(primary, 0.15),
     primary20: withAlpha(primary, 0.20),
     primary30: withAlpha(primary, 0.30),
     primary80: withAlpha(primary, 0.80),
 
-    bg: '#050505',
-    text: '#fafaf9',
-    textMuted: 'rgba(250,250,249,0.5)',
+    bg: pageBg,
+    text: textPrimary,
+    textMuted: textMuted,
     textSubtle: 'rgba(250,250,249,0.35)',
 
-    card: 'rgba(255,255,255,0.02)',
-    cardHover: 'rgba(255,255,255,0.04)',
+    card: cardBg,
+    cardHover: autoCardHover(cardBg, true),
 
-    input: 'rgba(255,255,255,0.04)',
-    inputBorder: 'rgba(255,255,255,0.08)',
+    input: autoInputBg(cardBg, true),
+    inputBorder: autoInputBorder(cardBorder !== baseBorder ? cardBorder : undefined, true),
     inputFocus: withAlpha(primary, 0.3),
 
-    border: 'rgba(255,255,255,0.06)',
+    border: cardBorder,
     borderSubtle: 'rgba(255,255,255,0.04)',
 
     hover: 'rgba(255,255,255,0.04)',
     active: withAlpha(primary, 0.15),
 
-    // Status colors - dark mode variants
+    // Status colors — universal, not affected by overrides
     success: '#34d399',
     warning: '#fbbf24',
     error: '#f87171',
@@ -194,8 +290,14 @@ function buildDarkTheme(primary: string): Theme {
     errorBorder: 'rgba(239,68,68,0.2)',
     infoBorder: 'rgba(59,130,246,0.2)',
 
-    sidebarBg: '#050505',
-    sidebarBorder: 'rgba(255,255,255,0.06)',
+    // Sidebar
+    sidebarBg: navBg,
+    sidebarBorder: navBorder,
+    sidebarText: navText,
+    sidebarTextMuted: navTextMuted,
+    sidebarHover: navHover,
+    sidebarActiveItemBg: withAlpha(primary, 0.15),
+    sidebarActiveItemColor: primary,
 
     getContrastText: (hex: string) => getContrastText(hex, true),
     withAlpha,
@@ -205,36 +307,60 @@ function buildDarkTheme(primary: string): Theme {
 // ============================================================================
 // LIGHT THEME GENERATOR
 // ============================================================================
-function buildLightTheme(primary: string): Theme {
+function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme {
+  // Base values
+  const baseBg = '#f9fafb';
+  const baseText = '#111827';
+  const baseTextMuted = '#6b7280';
+  const baseCard = '#ffffff';
+  const baseBorder = '#e5e7eb';
+  const baseSidebarBg = '#ffffff';
+
+  // Apply overrides
+  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg : baseBg;
+  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary : baseText;
+  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted : baseTextMuted;
+  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg : baseCard;
+  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border : baseBorder;
+  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, false);
+
+  // Sidebar overrides
+  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : baseSidebarBg;
+  const hasNavBgOverride = isValidHex(overrides?.nav_bg);
+  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : '#6b7280';
+  const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
+  const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(0,0,0,0.02)';
+
   return {
     isDark: false,
     primary,
-    primaryText: getContrastText(primary, false),
+    primaryText: buttonText,
     primary10: withAlpha(primary, 0.10),
     primary15: withAlpha(primary, 0.15),
     primary20: withAlpha(primary, 0.20),
     primary30: withAlpha(primary, 0.30),
     primary80: withAlpha(primary, 0.80),
 
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
+    bg: pageBg,
+    text: textPrimary,
+    textMuted: textMuted,
     textSubtle: '#9ca3af',
 
-    card: '#ffffff',
-    cardHover: '#f9fafb',
+    card: cardBg,
+    cardHover: autoCardHover(cardBg, false),
 
-    input: '#ffffff',
-    inputBorder: '#e5e7eb',
+    input: autoInputBg(cardBg, false),
+    inputBorder: autoInputBorder(cardBorder !== baseBorder ? cardBorder : undefined, false),
     inputFocus: withAlpha(primary, 0.3),
 
-    border: '#e5e7eb',
+    border: cardBorder,
     borderSubtle: '#f3f4f6',
 
     hover: 'rgba(0,0,0,0.02)',
     active: withAlpha(primary, 0.15),
 
-    // Status colors - light mode variants
+    // Status colors — light mode variants
     success: '#059669',
     warning: '#d97706',
     error: '#dc2626',
@@ -255,8 +381,14 @@ function buildLightTheme(primary: string): Theme {
     errorBorder: '#fecaca',
     infoBorder: 'rgba(59,130,246,0.2)',
 
-    sidebarBg: '#ffffff',
-    sidebarBorder: '#e5e7eb',
+    // Sidebar
+    sidebarBg: navBg,
+    sidebarBorder: navBorder,
+    sidebarText: navText,
+    sidebarTextMuted: navTextMuted,
+    sidebarHover: navHover,
+    sidebarActiveItemBg: withAlpha(primary, 0.15),
+    sidebarActiveItemColor: primary,
 
     getContrastText: (hex: string) => getContrastText(hex, false),
     withAlpha,
@@ -273,38 +405,23 @@ function buildLightTheme(primary: string): Theme {
  * Reads from AgencyContext:
  *   - agency.website_theme → 'dark' | 'light' (defaults to 'dark')
  *   - branding.primaryColor → hex string (defaults to '#10b981')
+ *   - agency.branding_overrides → BrandingOverrides object (optional)
  * 
- * Returns a Theme object with all colors pre-computed.
- * Memoized so it only recalculates when inputs change.
- * 
- * Example migration:
- * 
- * BEFORE (in every page):
- *   const isDark = agency?.website_theme !== 'light';
- *   const primaryColor = branding.primaryColor || '#10b981';
- *   const textColor = isDark ? '#fafaf9' : '#111827';
- *   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
- *   const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
- *   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
- *   const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
- *   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
- *   ...
- *   <div style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
- * 
- * AFTER:
- *   const theme = useTheme();
- *   ...
- *   <div style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+ * Returns a Theme object with all colors pre-computed, including sidebar-specific
+ * colors that layout.tsx can consume directly.
  */
 export function useTheme(): Theme {
   const { agency, branding } = useAgency();
 
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
   const primary = branding.primaryColor || '#10b981';
+  const overrides = (agency as any)?.branding_overrides as BrandingOverrides | undefined;
 
   const theme = useMemo(() => {
-    return mode === 'dark' ? buildDarkTheme(primary) : buildLightTheme(primary);
-  }, [mode, primary]);
+    return mode === 'dark' 
+      ? buildDarkTheme(primary, overrides) 
+      : buildLightTheme(primary, overrides);
+  }, [mode, primary, overrides]);
 
   return theme;
 }
@@ -313,10 +430,13 @@ export function useTheme(): Theme {
 // STANDALONE THEME BUILDER (for use outside React components)
 // ============================================================================
 
-/**
- * buildTheme() — same logic as useTheme() but doesn't require React context.
- * Useful for server-side rendering, utility functions, or non-component code.
- */
-export function buildTheme(mode: 'dark' | 'light', primary: string = '#10b981'): Theme {
-  return mode === 'dark' ? buildDarkTheme(primary) : buildLightTheme(primary);
+export function buildTheme(
+  mode: 'dark' | 'light', 
+  primary: string = '#10b981',
+  overrides?: BrandingOverrides
+): Theme {
+  return mode === 'dark' ? buildDarkTheme(primary, overrides) : buildLightTheme(primary, overrides);
 }
+
+// Re-export utilities for use in components that need them directly
+export { isLightColor, withAlpha, getContrastText, isValidHex };

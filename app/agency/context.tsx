@@ -36,6 +36,17 @@ interface Agency {
   // Theme settings
   website_theme: 'auto' | 'light' | 'dark' | null;
   logo_background_color: string | null;
+  // Dashboard branding overrides (nav, bg, card, button colors)
+  branding_overrides: {
+    nav_bg?: string;
+    nav_text?: string;
+    page_bg?: string;
+    card_bg?: string;
+    card_border?: string;
+    button_text?: string;
+    text_primary?: string;
+    text_muted?: string;
+  } | null;
   // Demo phone (auto-provisioned via VAPI)
   demo_phone_number: string | null;
   demo_assistant_id: string | null;
