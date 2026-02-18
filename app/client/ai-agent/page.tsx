@@ -7,6 +7,7 @@ import {
   Plus, Trash2, Globe, Briefcase, HelpCircle, FileText
 } from 'lucide-react';
 import { useClient } from '../context';
+import { useClientTheme } from '@/hooks/useClientTheme';
 import UpgradePrompt from '@/components/client/UpgradePrompt';
 
 // ============================================================================
@@ -47,16 +48,8 @@ interface FAQ {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================================================
-const isLightColor = (hex: string): boolean => {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-};
-
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -76,11 +69,7 @@ const TIME_OPTIONS = [
 const formatDate = (dateString: string | null) => {
   if (!dateString) return 'Never';
   return new Date(dateString).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
   });
 };
 
@@ -89,30 +78,10 @@ const formatDate = (dateString: string | null) => {
 // ============================================================================
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
+  const theme = useClientTheme();
   const [message, setMessage] = useState('');
 
-  // Theme based on agency setting
-  const isDark = branding.websiteTheme === 'dark';
-  const primaryColor = branding.primaryColor;
-  const primaryLight = isLightColor(primaryColor);
-  
-  const theme = isDark ? {
-    bg: '#0a0a0a',
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.7)',
-    textMuted4: 'rgba(250, 250, 249, 0.5)',
-    border: 'rgba(255, 255, 255, 0.1)',
-    cardBg: '#111111',
-    inputBg: 'rgba(255, 255, 255, 0.05)',
-  } : {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-    inputBg: '#ffffff',
-  };
+  const primaryColor = theme.primary;
   
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
   const [voicesLoading, setVoicesLoading] = useState(true);
@@ -265,43 +234,26 @@ export default function ClientAIAgentPage() {
   const parseServices = (servicesText: string) => {
     const lines = servicesText.split('\n').filter(l => l.trim());
     const parsed: Service[] = [];
-    
     lines.forEach((line, index) => {
       const cleanLine = line.trim().replace(/^-\s*/, '');
       if (!cleanLine) return;
-      
       const parts = cleanLine.split(/\s+-\s+/);
-      
-      let name = '';
-      let price = '';
-      let descParts: string[] = [];
-      
+      let name = '', price = '', descParts: string[] = [];
       parts.forEach((part, i) => {
         const trimmed = part.trim();
-        if (i === 0) {
-          name = trimmed;
-        } else if (trimmed.startsWith('$')) {
-          price = trimmed;
-        } else if (trimmed) {
-          descParts.push(trimmed);
-        }
+        if (i === 0) name = trimmed;
+        else if (trimmed.startsWith('$')) price = trimmed;
+        else if (trimmed) descParts.push(trimmed);
       });
-      
-      const description = descParts.join(' - ');
-      
-      if (name) {
-        parsed.push({ id: `${index + 1}`, name, price, description });
-      }
+      if (name) parsed.push({ id: `${index + 1}`, name, price, description: descParts.join(' - ') });
     });
-    
     setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
   };
 
   const parseFAQs = (faqsText: string) => {
     const parsed: FAQ[] = [];
     const lines = faqsText.split('\n');
-    let currentQ = '';
-    let currentA = '';
+    let currentQ = '', currentA = '';
     lines.forEach(line => {
       if (line.trim().startsWith('Q:')) {
         if (currentQ && currentA) parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
@@ -339,15 +291,12 @@ export default function ClientAIAgentPage() {
   };
 
   const formatServices = (): string => {
-    return services
-      .filter(s => s.name.trim())
-      .map(s => {
-        const parts = [`- ${s.name}`];
-        if (s.price) parts.push(s.price);
-        if (s.description) parts.push(s.description);
-        return parts.join(' - ');
-      })
-      .join('\n');
+    return services.filter(s => s.name.trim()).map(s => {
+      const parts = [`- ${s.name}`];
+      if (s.price) parts.push(s.price);
+      if (s.description) parts.push(s.description);
+      return parts.join(' - ');
+    }).join('\n');
   };
 
   const formatFAQs = (): string => {
@@ -356,9 +305,9 @@ export default function ClientAIAgentPage() {
 
   const formatBusinessHoursForSave = (): string => {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    return days.map(day => {
-      const dayData = businessHours[day as keyof BusinessHours];
-      const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+    return days.map(d => {
+      const dayData = businessHours[d as keyof BusinessHours];
+      const dayName = d.charAt(0).toUpperCase() + d.slice(1);
       return dayData.closed ? `${dayName}: Closed` : `${dayName}: ${dayData.open} - ${dayData.close}`;
     }).join('\n');
   };
@@ -514,36 +463,19 @@ export default function ClientAIAgentPage() {
     setBusinessHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   };
 
-  // ============================================================================
-  // VOICE FILTERING - Gender + Accent
-  // ============================================================================
-  const getAllVoices = (): VoiceOption[] => {
-    return [...(voices.female || []), ...(voices.male || [])];
-  };
+  const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
 
   const getAvailableAccents = (): string[] => {
-    const all = getAllVoices();
-    const accents = [...new Set(all.map(v => v.accent))];
+    const accents = [...new Set(getAllVoices().map(v => v.accent))];
     return accents.sort();
   };
 
   const getFilteredVoices = () => {
     let filtered: VoiceOption[];
-    
-    // Gender filter
-    if (voiceFilter === 'female') {
-      filtered = voices.female || [];
-    } else if (voiceFilter === 'male') {
-      filtered = voices.male || [];
-    } else {
-      filtered = getAllVoices();
-    }
-    
-    // Accent filter
-    if (accentFilter !== 'all') {
-      filtered = filtered.filter(v => v.accent === accentFilter);
-    }
-    
+    if (voiceFilter === 'female') filtered = voices.female || [];
+    else if (voiceFilter === 'male') filtered = voices.male || [];
+    else filtered = getAllVoices();
+    if (accentFilter !== 'all') filtered = filtered.filter(v => v.accent === accentFilter);
     return filtered;
   };
 
@@ -583,15 +515,49 @@ export default function ClientAIAgentPage() {
     );
   }
 
+  // Helper for section headers with feature gating
+  const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
+    <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm" style={{ color: theme.text }}>{title}</h3>
+          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{subtitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const SectionHeaderLive = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
+    <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <h3 className="font-semibold text-sm" style={{ color: theme.text }}>{title}</h3>
+            <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
+          </div>
+          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{subtitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Status Message */}
       {message && (
-        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
-          message.includes('✅') 
-            ? isDark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : isDark ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
+        <div 
+          className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto"
+          style={message.includes('✅') 
+            ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
+            : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }
+          }
+        >
           {message}
         </div>
       )}
@@ -600,7 +566,7 @@ export default function ClientAIAgentPage() {
       <div className="mb-4 sm:mb-6 text-center">
         <div 
           className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3"
-          style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}
+          style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}
         >
           <Bot className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: primaryColor }} />
         </div>
@@ -620,7 +586,7 @@ export default function ClientAIAgentPage() {
             onClick={handleTestCall}
             disabled={!client?.vapi_phone_number}
             className="w-full rounded-xl p-3 sm:p-4 flex items-center justify-center gap-2 sm:gap-3 transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
+            style={{ backgroundColor: primaryColor, color: theme.primaryText }}
           >
             <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="font-semibold text-sm sm:text-base">Test Your AI Receptionist</span>
@@ -633,39 +599,15 @@ export default function ClientAIAgentPage() {
         {/* Voice Selection */}
         <section className="mb-4 sm:mb-6">
           {!isFeatureEnabled('custom_voice') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                    <Mic className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Voice Selection</h3>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Choose your AI's voice</p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+              <SectionHeader icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" />
               <div className="p-4">
-                <UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={isDark} />
+                <UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} />
               </div>
             </div>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                  <Mic className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Voice Selection</h3>
-                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
-                  </div>
-                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Choose your AI's voice</p>
-                </div>
-              </div>
-            </div>
-
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <SectionHeaderLive icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" />
             <div className="p-3 sm:p-4">
               {voicesLoading && (
                 <div className="flex items-center justify-center py-6 sm:py-8">
@@ -675,16 +617,10 @@ export default function ClientAIAgentPage() {
               )}
 
               {voicesError && !voicesLoading && (
-                <div 
-                  className="rounded-lg p-3 sm:p-4 text-center"
-                  style={{ 
-                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2',
-                    border: isDark ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #fecaca',
-                  }}
-                >
-                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
-                  <p className="text-xs sm:text-sm font-medium mb-2" style={{ color: isDark ? '#f87171' : '#dc2626' }}>{voicesError}</p>
-                  <button onClick={fetchVoices} className="text-xs sm:text-sm underline hover:no-underline" style={{ color: isDark ? '#f87171' : '#dc2626' }}>Try again</button>
+                <div className="rounded-lg p-3 sm:p-4 text-center" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" style={{ color: theme.error }} />
+                  <p className="text-xs sm:text-sm font-medium mb-2" style={{ color: theme.error }}>{voicesError}</p>
+                  <button onClick={fetchVoices} className="text-xs sm:text-sm underline hover:no-underline" style={{ color: theme.error }}>Try again</button>
                 </div>
               )}
 
@@ -699,7 +635,7 @@ export default function ClientAIAgentPage() {
                         className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition"
                         style={{
                           backgroundColor: voiceFilter === filter ? primaryColor : theme.bg,
-                          color: voiceFilter === filter ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted,
+                          color: voiceFilter === filter ? theme.primaryText : theme.textMuted,
                         }}
                       >
                         {filter === 'all' ? `All (${totalVoices})` : filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -714,9 +650,9 @@ export default function ClientAIAgentPage() {
                         onClick={() => setAccentFilter('all')}
                         className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
                         style={{
-                          backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, isDark ? 0.25 : 0.15) : theme.bg,
+                          backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, theme.isDark ? 0.25 : 0.15) : theme.bg,
                           color: accentFilter === 'all' ? primaryColor : theme.textMuted,
-                          border: accentFilter === 'all' ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : `1px solid transparent`,
+                          border: accentFilter === 'all' ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : '1px solid transparent',
                         }}
                       >
                         🌍 All Accents
@@ -729,9 +665,9 @@ export default function ClientAIAgentPage() {
                             onClick={() => setAccentFilter(accent)}
                             className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
                             style={{
-                              backgroundColor: accentFilter === accent ? hexToRgba(primaryColor, isDark ? 0.25 : 0.15) : theme.bg,
+                              backgroundColor: accentFilter === accent ? hexToRgba(primaryColor, theme.isDark ? 0.25 : 0.15) : theme.bg,
                               color: accentFilter === accent ? primaryColor : theme.textMuted,
-                              border: accentFilter === accent ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : `1px solid transparent`,
+                              border: accentFilter === accent ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : '1px solid transparent',
                             }}
                           >
                             {flag} {accent}
@@ -748,30 +684,27 @@ export default function ClientAIAgentPage() {
                         const isSelected = selectedVoiceId === voice.id;
                         const isCurrent = currentVoiceId === voice.id;
                         const isPlaying = playingVoiceId === voice.id;
-
                         return (
                           <div
                             key={voice.id}
                             onClick={() => setSelectedVoiceId(voice.id)}
                             className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer transition-all"
-                            style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, isDark ? 0.1 : 0.05) : theme.cardBg }}
+                            style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) : theme.card }}
                           >
                             {isCurrent && (
-                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500 text-white text-[8px] sm:text-[9px] font-bold rounded-full">CURRENT</span>
+                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-white text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: theme.success }}>CURRENT</span>
                             )}
                             {voice.recommended && !isCurrent && (
-                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}>★</span>
+                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>★</span>
                             )}
-
                             <div className="flex items-start gap-1.5 sm:gap-2">
                               <button
                                 onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
                                 className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
-                                style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted }}
+                                style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? theme.primaryText : theme.textMuted }}
                               >
                                 {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />}
                               </button>
-
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1">
                                   <span className="font-semibold text-xs sm:text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
@@ -789,23 +722,12 @@ export default function ClientAIAgentPage() {
                   ) : (
                     <div className="text-center py-6 sm:py-8">
                       <p className="text-xs sm:text-sm" style={{ color: theme.textMuted4 }}>No voices match this filter</p>
-                      <button 
-                        onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }}
-                        className="mt-2 text-xs sm:text-sm font-medium hover:opacity-80 transition"
-                        style={{ color: primaryColor }}
-                      >
-                        Clear filters
-                      </button>
+                      <button onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }} className="mt-2 text-xs sm:text-sm font-medium hover:opacity-80 transition" style={{ color: primaryColor }}>Clear filters</button>
                     </div>
                   )}
 
                   {hasVoiceChanges && (
-                    <button
-                      onClick={handleSaveVoice}
-                      disabled={savingVoice}
-                      className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-                    >
+                    <button onClick={handleSaveVoice} disabled={savingVoice} className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
                       {savingVoice ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Voice'}
                     </button>
                   )}
@@ -819,39 +741,15 @@ export default function ClientAIAgentPage() {
         {/* Greeting Message */}
         <section className="mb-4 sm:mb-6">
           {!isFeatureEnabled('custom_greeting') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Greeting Message</h3>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>What your AI says first</p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+              <SectionHeader icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" />
               <div className="p-4">
-                <UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={isDark} />
+                <UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} />
               </div>
             </div>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Greeting Message</h3>
-                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
-                  </div>
-                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>What your AI says first</p>
-                </div>
-              </div>
-            </div>
-            
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <SectionHeaderLive icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" />
             <div className="p-3 sm:p-4">
               {greetingLoading ? (
                 <div className="flex items-center justify-center py-4 sm:py-6">
@@ -866,25 +764,17 @@ export default function ClientAIAgentPage() {
                     rows={3}
                     maxLength={500}
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 transition"
-                    style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                    style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }}
                     placeholder="Hi, you've reached [Business Name]. How can I help you today?"
                   />
-                  
                   <div className="flex items-center justify-between mt-1.5 sm:mt-2">
                     <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[10px] sm:text-xs hover:opacity-80 transition" style={{ color: theme.textMuted4 }}>
-                      <RotateCcw className="w-3 h-3" />
-                      Reset
+                      <RotateCcw className="w-3 h-3" /> Reset
                     </button>
                     <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
                   </div>
-
                   {hasGreetingChanges && (
-                    <button
-                      onClick={handleSaveGreeting}
-                      disabled={savingGreeting || greetingMessage.length < 10}
-                      className="w-full mt-2 sm:mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-                    >
+                    <button onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} className="w-full mt-2 sm:mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
                       {savingGreeting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Greeting'}
                     </button>
                   )}
@@ -898,39 +788,15 @@ export default function ClientAIAgentPage() {
         {/* Business Hours */}
         <section className="mb-4 sm:mb-6">
           {!isFeatureEnabled('business_hours') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Business Hours</h3>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>When you're available</p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+              <SectionHeader icon={Clock} title="Business Hours" subtitle="When you're available" />
               <div className="p-4">
-                <UpgradePrompt feature="business_hours" primaryColor={primaryColor} isDark={isDark} />
+                <UpgradePrompt feature="business_hours" primaryColor={primaryColor} isDark={theme.isDark} />
               </div>
             </div>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Business Hours</h3>
-                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
-                  </div>
-                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>When you're available</p>
-                </div>
-              </div>
-            </div>
-            
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <SectionHeaderLive icon={Clock} title="Business Hours" subtitle="When you're available" />
             <div className="p-3 sm:p-4">
               <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
                 <div className="flex flex-wrap gap-1 sm:gap-2 flex-1 min-w-0">
@@ -949,42 +815,24 @@ export default function ClientAIAgentPage() {
                   {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => (
                     <div key={day} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-lg" style={{ backgroundColor: theme.bg }}>
                       <span className="w-10 sm:w-16 text-[10px] sm:text-xs font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0, 3)}</span>
-                      
                       <label className="flex items-center gap-1">
                         <input type="checkbox" checked={businessHours[day].closed} onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded" />
                         <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Closed</span>
                       </label>
-
                       {!businessHours[day].closed && (
                         <div className="flex items-center gap-1 ml-auto">
-                          <select
-                            value={businessHours[day].open}
-                            onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)}
-                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none"
-                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                          >
+                          <select value={businessHours[day].open} onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)} className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }}>
                             {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
                           </select>
                           <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>-</span>
-                          <select
-                            value={businessHours[day].close}
-                            onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)}
-                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none"
-                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                          >
+                          <select value={businessHours[day].close} onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)} className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }}>
                             {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
                           </select>
                         </div>
                       )}
                     </div>
                   ))}
-
-                  <button
-                    onClick={handleSaveBusinessHours}
-                    disabled={savingHours}
-                    className="w-full mt-2 sm:mt-3 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50"
-                    style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-                  >
+                  <button onClick={handleSaveBusinessHours} disabled={savingHours} className="w-full mt-2 sm:mt-3 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
                     {savingHours ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Sparkles className="w-4 h-4" /> Save Hours</>}
                   </button>
                 </div>
@@ -997,44 +845,18 @@ export default function ClientAIAgentPage() {
         {/* Knowledge Base */}
         <section className="mb-4 sm:mb-6">
           {!isFeatureEnabled('knowledge_base') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-              <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Knowledge Base</h3>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+              <SectionHeader icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business" />
               <div className="p-4">
-                <UpgradePrompt feature="knowledge_base" primaryColor={primaryColor} isDark={isDark} />
+                <UpgradePrompt feature="knowledge_base" primaryColor={primaryColor} isDark={theme.isDark} />
               </div>
             </div>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-            <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}>
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Knowledge Base</h3>
-                    <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
-                  </div>
-                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Teach your AI about your business</p>
-                </div>
-              </div>
-            </div>
-            
+          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <SectionHeaderLive icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business" />
             <div className="p-3 sm:p-4">
               <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
-                <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                  Updated: {formatDate(kbLastUpdated)}
-                </div>
+                <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Updated: {formatDate(kbLastUpdated)}</div>
                 <button className="flex items-center gap-1 text-xs sm:text-sm font-medium group-hover:opacity-80 transition" style={{ color: primaryColor }}>
                   {kbExpanded ? 'Hide' : 'Edit'}
                   <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
@@ -1043,130 +865,62 @@ export default function ClientAIAgentPage() {
 
               {kbExpanded && (
                 <div className="mt-3 sm:mt-4 space-y-4 sm:space-y-5">
-                  {/* Website URL */}
                   <div>
                     <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
-                      Website
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Website
                     </label>
-                    <input
-                      type="url"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      placeholder="https://yourbusiness.com"
-                      className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none transition"
-                      style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
-                    />
+                    <input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none transition" style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }} />
                   </div>
 
-                  {/* Services */}
                   <div>
                     <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
-                      Services & Pricing
+                      <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Services & Pricing
                     </label>
                     <div className="space-y-2">
                       {services.map((service) => (
                         <div key={service.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
                           <div className="flex gap-1.5 sm:gap-2">
-                            <input
-                              type="text"
-                              value={service.name}
-                              onChange={(e) => updateService(service.id, 'name', e.target.value)}
-                              placeholder="Service name"
-                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0"
-                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                            />
-                            <input
-                              type="text"
-                              value={service.price}
-                              onChange={(e) => updateService(service.id, 'price', e.target.value)}
-                              placeholder="$100"
-                              className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none"
-                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                            />
-                            <button onClick={() => removeService(service.id)} disabled={services.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}>
-                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </button>
+                            <input type="text" value={service.name} onChange={(e) => updateService(service.id, 'name', e.target.value)} placeholder="Service name" className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
+                            <input type="text" value={service.price} onChange={(e) => updateService(service.id, 'price', e.target.value)} placeholder="$100" className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
+                            <button onClick={() => removeService(service.id)} disabled={services.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
                           </div>
-                          <textarea
-                            value={service.description}
-                            onChange={(e) => updateService(service.id, 'description', e.target.value)}
-                            placeholder="Brief description..."
-                            rows={2}
-                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none"
-                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                          />
+                          <textarea value={service.description} onChange={(e) => updateService(service.id, 'description', e.target.value)} placeholder="Brief description..." rows={2} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
                         </div>
                       ))}
                     </div>
-                    <button onClick={addService} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.05) }}>
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      Add Service
+                    <button onClick={addService} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) }}>
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Add Service
                     </button>
                   </div>
 
-                  {/* FAQs */}
                   <div>
                     <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
-                      FAQs
+                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> FAQs
                     </label>
                     <div className="space-y-2">
                       {faqs.map((faq) => (
                         <div key={faq.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
                           <div className="flex gap-1.5 sm:gap-2">
-                            <input
-                              type="text"
-                              value={faq.question}
-                              onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)}
-                              placeholder="Question..."
-                              className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0"
-                              style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                            />
-                            <button onClick={() => removeFAQ(faq.id)} disabled={faqs.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}>
-                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </button>
+                            <input type="text" value={faq.question} onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)} placeholder="Question..." className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
+                            <button onClick={() => removeFAQ(faq.id)} disabled={faqs.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
                           </div>
-                          <textarea
-                            value={faq.answer}
-                            onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)}
-                            placeholder="Answer..."
-                            rows={2}
-                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none"
-                            style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text }}
-                          />
+                          <textarea value={faq.answer} onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)} placeholder="Answer..." rows={2} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
                         </div>
                       ))}
                     </div>
-                    <button onClick={addFAQ} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.05) }}>
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      Add FAQ
+                    <button onClick={addFAQ} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) }}>
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Add FAQ
                     </button>
                   </div>
 
-                  {/* Additional Info */}
                   <div>
                     <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} />
-                      Additional Info
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Additional Info
                     </label>
-                    <textarea
-                      value={additionalInfo}
-                      onChange={(e) => setAdditionalInfo(e.target.value)}
-                      placeholder="Policies, service areas, payment methods, etc."
-                      rows={3}
-                      className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition"
-                      style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
-                    />
+                    <textarea value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods, etc." rows={3} className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition" style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }} />
                   </div>
 
-                  <button
-                    onClick={handleSaveKnowledgeBase}
-                    disabled={savingKB}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50"
-                    style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
-                  >
+                  <button onClick={handleSaveKnowledgeBase} disabled={savingKB} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
                     {savingKB ? <><Loader2 className="w-4 h-4 animate-spin" />Updating...</> : <><Sparkles className="w-4 h-4" />Update AI Knowledge</>}
                   </button>
                 </div>
@@ -1177,7 +931,7 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Pro Tip */}
-        <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}>
+        <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}>
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="text-base sm:text-xl flex-shrink-0">💡</div>
             <div>

@@ -6,6 +6,7 @@ import {
   Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
   Check, Copy, Mail, Building2, Lock, Eye, EyeOff
 } from 'lucide-react';
+import { useClientTheme } from '@/hooks/useClientTheme';
 
 interface Client {
   id: string;
@@ -52,14 +53,6 @@ interface Props {
   branding: Branding;
 }
 
-const isLightColor = (hex: string): boolean => {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-};
-
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -88,6 +81,7 @@ const formatDate = (dateString: string | null): string => {
 
 export function ClientSettingsContent({ client: initialClient, branding }: Props) {
   const router = useRouter();
+  const theme = useClientTheme();
   const [client, setClient] = useState(initialClient);
   const [email, setEmail] = useState(client.email || '');
   const [ownerPhone, setOwnerPhone] = useState(client.owner_phone || '');
@@ -97,7 +91,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
-  // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -106,48 +99,18 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Theme based on agency setting
-  const isDark = branding.websiteTheme === 'dark';
-  const primaryColor = branding.primaryColor;
-  const primaryLight = isLightColor(primaryColor);
-
-  const theme = isDark ? {
-    bg: '#0a0a0a',
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.7)',
-    textMuted4: 'rgba(250, 250, 249, 0.5)',
-    border: 'rgba(255, 255, 255, 0.1)',
-    cardBg: '#111111',
-    inputBg: 'rgba(255, 255, 255, 0.05)',
-  } : {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-    inputBg: '#ffffff',
-  };
-
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
-
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('auth_token');
-      
       const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ email, owner_phone: ownerPhone }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setMessage('Settings saved successfully!');
         setClient({ ...client, email, owner_phone: ownerPhone });
@@ -164,42 +127,22 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const handleChangePassword = async () => {
     setPasswordMessage('');
-
-    if (!currentPassword) {
-      setPasswordMessage('Current password is required');
-      return;
-    }
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordMessage('New password must be at least 6 characters');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage('Passwords do not match');
-      return;
-    }
-
+    if (!currentPassword) { setPasswordMessage('Current password is required'); return; }
+    if (!newPassword || newPassword.length < 6) { setPasswordMessage('New password must be at least 6 characters'); return; }
+    if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; }
     setChangingPassword(true);
-
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('auth_token');
-
       const response = await fetch(`${backendUrl}/api/auth/change-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setPasswordMessage('Password changed successfully!');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+        setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
         setTimeout(() => setPasswordMessage(''), 3000);
       } else {
         setPasswordMessage(data.error || 'Failed to change password');
@@ -214,10 +157,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const handleCopyNumber = async () => {
     if (!client.vapi_phone_number) return;
     const digitsOnly = client.vapi_phone_number.replace(/\D/g, '');
-    const formattedForCopy = `+${digitsOnly}`;
-    
     try {
-      await navigator.clipboard.writeText(formattedForCopy);
+      await navigator.clipboard.writeText(`+${digitsOnly}`);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
@@ -225,27 +166,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     }
   };
 
-  const handleConnectCalendar = () => {
-    window.location.href = '/api/auth/google-calendar';
-  };
+  const handleConnectCalendar = () => { window.location.href = '/api/auth/google-calendar'; };
 
   const handleDisconnectCalendar = async () => {
     if (!confirm('Are you sure you want to disconnect Google Calendar?')) return;
-
     setDisconnectingCalendar(true);
     try {
       const response = await fetch('/api/auth/google-calendar/disconnect', { method: 'POST' });
       if (response.ok) {
         setMessage('Google Calendar disconnected');
         setClient({ ...client, google_calendar_connected: false });
-      } else {
-        setMessage('Failed to disconnect calendar');
-      }
-    } catch (error) {
-      setMessage('Error disconnecting calendar');
-    } finally {
-      setDisconnectingCalendar(false);
-    }
+      } else { setMessage('Failed to disconnect calendar'); }
+    } catch (error) { setMessage('Error disconnecting calendar'); }
+    finally { setDisconnectingCalendar(false); }
   };
 
   const handleUpgrade = async () => {
@@ -253,28 +186,13 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     try {
       const response = await fetch('/api/client/create-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({
-          clientId: client.id,
-          planTier: client.plan_type || 'pro',
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
+        body: JSON.stringify({ clientId: client.id, planTier: client.plan_type || 'pro' }),
       });
-
       const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setMessage('Failed to create checkout');
-        setUpgrading(false);
-      }
-    } catch (error) {
-      setMessage('Error creating checkout');
-      setUpgrading(false);
-    }
+      if (data.url) { window.location.href = data.url; }
+      else { setMessage('Failed to create checkout'); setUpgrading(false); }
+    } catch (error) { setMessage('Error creating checkout'); setUpgrading(false); }
   };
 
   const getDaysRemaining = (): number | null => {
@@ -288,15 +206,26 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const daysRemaining = getDaysRemaining();
   const hasPasswordChanges = currentPassword || newPassword || confirmPassword;
 
+  const getMessageStyle = (msg: string) => {
+    const isSuccess = msg.includes('success') || msg.includes('Success');
+    return isSuccess
+      ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
+      : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` };
+  };
+
+  const getStatusStyle = (status: string) => {
+    if (status === 'active') return { backgroundColor: theme.successBg, color: theme.success };
+    if (status === 'trial') return { backgroundColor: theme.warningBg, color: theme.warning };
+    return { backgroundColor: theme.errorBg, color: theme.error };
+  };
+
+  const statusStyle = getStatusStyle(client.subscription_status);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Status Message */}
       {message && (
-        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto ${
-          message.includes('success') || message.includes('Success')
-            ? isDark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            : isDark ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto" style={getMessageStyle(message)}>
           {message}
         </div>
       )}
@@ -311,13 +240,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* Business Overview */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <Building2 className="w-4 h-4" style={{ color: primaryColor }} />
+            <Building2 className="w-4 h-4" style={{ color: theme.primary }} />
             Business Details
           </h2>
-          <div 
-            className="rounded-xl border p-3 sm:p-4 shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
+          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
@@ -330,9 +256,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <div>
                 <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Location</label>
                 <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>
-                  {client.business_city && client.business_state 
-                    ? `${client.business_city}, ${client.business_state}` 
-                    : 'Not set'}
+                  {client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : 'Not set'}
                 </div>
               </div>
               <div>
@@ -346,17 +270,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* AI Phone Number */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <Phone className="w-4 h-4" style={{ color: primaryColor }} />
+            <Phone className="w-4 h-4" style={{ color: theme.primary }} />
             AI Phone Number
           </h2>
-          <div 
-            className="rounded-xl border p-3 sm:p-4 shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
+          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="flex items-center justify-between gap-3 sm:gap-4">
               <div className="min-w-0">
                 <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label>
-                <div className="text-base sm:text-xl font-bold truncate" style={{ color: primaryColor }}>
+                <div className="text-base sm:text-xl font-bold truncate" style={{ color: theme.primary }}>
                   {client.vapi_phone_number ? formatPhoneNumber(client.vapi_phone_number) : 'Setting up...'}
                 </div>
               </div>
@@ -366,7 +287,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition disabled:opacity-50 flex-shrink-0"
                 style={{ backgroundColor: theme.bg, color: theme.textMuted }}
               >
-                {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                {isCopied ? <Check className="w-4 h-4" style={{ color: theme.success }} /> : <Copy className="w-4 h-4" />}
                 {isCopied ? 'Copied!' : 'Copy'}
               </button>
             </div>
@@ -376,21 +297,16 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* Contact Information */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <User className="w-4 h-4" style={{ color: primaryColor }} />
+            <User className="w-4 h-4" style={{ color: theme.primary }} />
             Contact Information
           </h2>
-          <div 
-            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
+          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label>
               <input 
-                type="tel" 
-                value={ownerPhone} 
-                onChange={(e) => setOwnerPhone(e.target.value)}
+                type="tel" value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
                 placeholder="+1 (555) 123-4567" 
               />
               <p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>📱 SMS notifications sent here</p>
@@ -398,21 +314,18 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label>
               <input 
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)}
+                type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
-                style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
                 placeholder="your@email.com" 
               />
             </div>
             <button 
-              onClick={handleSave} 
-              disabled={saving || !hasChanges}
+              onClick={handleSave} disabled={saving || !hasChanges}
               className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
-                backgroundColor: hasChanges ? primaryColor : theme.bg,
-                color: hasChanges ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted4,
+                backgroundColor: hasChanges ? theme.primary : theme.bg,
+                color: hasChanges ? theme.primaryText : theme.textMuted4,
                 border: hasChanges ? 'none' : `1px solid ${theme.border}`,
               }}
             >
@@ -424,19 +337,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* Change Password */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <Lock className="w-4 h-4" style={{ color: primaryColor }} />
+            <Lock className="w-4 h-4" style={{ color: theme.primary }} />
             Change Password
           </h2>
-          <div 
-            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
+          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             {passwordMessage && (
-              <div className={`p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium ${
-                passwordMessage.includes('success') || passwordMessage.includes('Success')
-                  ? isDark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : isDark ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
+              <div className="p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(passwordMessage)}>
                 {passwordMessage}
               </div>
             )}
@@ -444,19 +350,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label>
               <div className="relative">
                 <input 
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  value={currentPassword} 
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10"
-                  style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                  style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
                   placeholder="Enter current password" 
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: theme.textMuted4 }}
-                >
+                <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>
                   {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -466,19 +365,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label>
                 <div className="relative">
                   <input 
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword} 
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10"
-                    style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                    style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
                     placeholder="Min 6 characters" 
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: theme.textMuted4 }}
-                  >
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -486,22 +378,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Confirm New Password</label>
                 <input 
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type={showNewPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition"
-                  style={{ borderColor: theme.border, backgroundColor: theme.inputBg, color: theme.text }}
+                  style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
                   placeholder="Confirm new password" 
                 />
               </div>
             </div>
             <button 
-              onClick={handleChangePassword} 
-              disabled={changingPassword || !hasPasswordChanges}
+              onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges}
               className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
-                backgroundColor: hasPasswordChanges ? primaryColor : theme.bg,
-                color: hasPasswordChanges ? (primaryLight ? '#111827' : '#ffffff') : theme.textMuted4,
+                backgroundColor: hasPasswordChanges ? theme.primary : theme.bg,
+                color: hasPasswordChanges ? theme.primaryText : theme.textMuted4,
                 border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}`,
               }}
             >
@@ -513,44 +402,29 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* Subscription & Billing */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <CreditCard className="w-4 h-4" style={{ color: primaryColor }} />
+            <CreditCard className="w-4 h-4" style={{ color: theme.primary }} />
             Subscription
           </h2>
-          <div 
-            className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
+          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label>
-                <div className="text-base sm:text-xl font-bold capitalize" style={{ color: primaryColor }}>
+                <div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>
                   {client.plan_type || 'Trial'}
                 </div>
               </div>
-              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
-                client.subscription_status === 'active' 
-                  ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
-                  : client.subscription_status === 'trial' 
-                  ? isDark ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-700'
-                  : isDark ? 'bg-red-500/20 text-red-300' : 'bg-red-100 text-red-700'
-              }`}>
+              <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>
                 {client.subscription_status === 'active' ? 'Active' : 
                  client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}
               </span>
             </div>
             
             {client.subscription_status === 'trial' && daysRemaining !== null && (
-              <div 
-                className="p-2 sm:p-3 rounded-lg"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
-                  border: isDark ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid #fde68a',
-                }}
-              >
-                <div className="font-semibold text-xs sm:text-sm" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
+              <div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                <div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>
                   {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial
                 </div>
-                <div className="text-[10px] sm:text-xs mt-0.5" style={{ color: isDark ? '#fcd34d' : '#b45309' }}>
+                <div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>
                   Ends {formatDate(client.trial_ends_at)}
                 </div>
               </div>
@@ -558,15 +432,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>{client.monthly_call_limit || '∞'}</div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div>
                 <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div>
               </div>
               <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>{client.calls_this_month || 0}</div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div>
                 <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div>
               </div>
               <div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}>
-                <div className="text-base sm:text-lg font-bold" style={{ color: primaryColor }}>
+                <div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>
                   {client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}
                 </div>
                 <div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div>
@@ -575,25 +449,16 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             
             {client.subscription_status === 'trial' ? (
               <button 
-                onClick={handleUpgrade}
-                disabled={upgrading}
+                onClick={handleUpgrade} disabled={upgrading}
                 className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#111827' : '#ffffff' }}
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}
               >
                 {upgrading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading...
-                  </span>
-                ) : (
-                  'Upgrade Now'
-                )}
+                  <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Loading...</span>
+                ) : 'Upgrade Now'}
               </button>
             ) : (
-              <button 
-                className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition"
-                style={{ backgroundColor: theme.bg, color: theme.textMuted }}
-              >
+              <button className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>
                 Manage Subscription
               </button>
             )}
@@ -603,34 +468,17 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         {/* Integrations */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-            <Link2 className="w-4 h-4" style={{ color: primaryColor }} />
+            <Link2 className="w-4 h-4" style={{ color: theme.primary }} />
             Integrations
           </h2>
-          
-          {/* Google Calendar - Coming Soon */}
-          <div 
-            className="rounded-xl border p-3 sm:p-4 mb-3 shadow-sm relative overflow-hidden"
-            style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-          >
-            {/* Coming Soon Overlay */}
-            <div 
-              className="absolute inset-0 z-10 flex items-center justify-center"
-              style={{ backgroundColor: isDark ? 'rgba(17, 17, 17, 0.7)' : 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(1px)' }}
-            >
-              <div 
-                className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
-                style={{ backgroundColor: isDark ? '#fafaf9' : '#111827', color: isDark ? '#111827' : '#ffffff' }}
-              >
+          <div className="rounded-xl border p-3 sm:p-4 mb-3 shadow-sm relative overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ backgroundColor: theme.isDark ? 'rgba(17,17,17,0.7)' : 'rgba(255,255,255,0.7)', backdropFilter: 'blur(1px)' }}>
+              <div className="px-4 py-2 rounded-full text-sm font-semibold shadow-lg" style={{ backgroundColor: theme.isDark ? '#fafaf9' : '#111827', color: theme.isDark ? '#111827' : '#ffffff' }}>
                 🚀 Coming Soon
               </div>
             </div>
-
-            {/* Original Content (dimmed behind overlay) */}
             <div className="flex items-center gap-2 sm:gap-3 mb-3 opacity-60">
-              <div 
-                className="w-8 h-8 sm:w-10 sm:h-10 border rounded-lg flex items-center justify-center flex-shrink-0" 
-                style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
-              >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
                 <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -644,11 +492,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               </div>
             </div>
             <div className="opacity-60">
-              <button 
-                disabled
-                className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-not-allowed"
-                style={{ backgroundColor: theme.bg, color: theme.textMuted4 }}
-              >
+              <button disabled className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-not-allowed" style={{ backgroundColor: theme.bg, color: theme.textMuted4 }}>
                 Connect Calendar
               </button>
             </div>
@@ -657,31 +501,20 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Support */}
         <section className="mb-4 sm:mb-6">
-          <div 
-            className="rounded-xl p-3 sm:p-4"
-            style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}
-          >
+          <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
             <div className="flex items-start gap-2 sm:gap-3">
-              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
               <div className="min-w-0">
                 <h4 className="font-semibold text-xs sm:text-sm mb-1" style={{ color: theme.text }}>Need Help?</h4>
                 <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} for support:</p>
                 {branding.supportPhone && (
-                  <a 
-                    href={`tel:${branding.supportPhone}`}
-                    className="flex items-center gap-1.5 sm:gap-2 font-semibold text-sm sm:text-lg hover:opacity-80 transition"
-                    style={{ color: primaryColor }}
-                  >
+                  <a href={`tel:${branding.supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 font-semibold text-sm sm:text-lg hover:opacity-80 transition" style={{ color: theme.primary }}>
                     <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     {formatPhoneNumber(branding.supportPhone)}
                   </a>
                 )}
                 {branding.supportEmail && (
-                  <a 
-                    href={`mailto:${branding.supportEmail}`}
-                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm hover:opacity-80 transition mt-1 truncate"
-                    style={{ color: primaryColor }}
-                  >
+                  <a href={`mailto:${branding.supportEmail}`} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm hover:opacity-80 transition mt-1 truncate" style={{ color: theme.primary }}>
                     <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                     <span className="truncate">{branding.supportEmail}</span>
                   </a>

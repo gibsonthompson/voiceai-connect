@@ -5,6 +5,7 @@ import {
   PhoneCall, Search, Filter, ChevronRight, Loader2
 } from 'lucide-react';
 import { useClient } from '../context';
+import { useClientTheme } from '@/hooks/useClientTheme';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -14,33 +15,11 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function ClientCallsPage() {
-  const { client, branding, loading } = useClient();
+  const { client, loading } = useClient();
+  const theme = useClientTheme();
   const [calls, setCalls] = useState<any[]>([]);
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Theme based on agency setting
-  const isDark = branding.websiteTheme === 'dark';
-  
-  const theme = isDark ? {
-    bg: '#0a0a0a',
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.7)',
-    textMuted4: 'rgba(250, 250, 249, 0.5)',
-    border: 'rgba(255, 255, 255, 0.1)',
-    cardBg: '#111111',
-    hoverBg: 'rgba(255, 255, 255, 0.05)',
-    inputBg: 'rgba(255, 255, 255, 0.05)',
-  } : {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-    hoverBg: '#f3f4f6',
-    inputBg: '#ffffff',
-  };
 
   useEffect(() => {
     if (client) fetchCalls();
@@ -76,6 +55,22 @@ export default function ClientCallsPage() {
     );
   });
 
+  const getUrgencyStyle = (urgency: string | null) => {
+    if (urgency === 'high' || urgency === 'emergency') {
+      return { bg: theme.errorBg, color: theme.error };
+    }
+    if (urgency === 'medium') {
+      return { bg: theme.warningBg, color: theme.warning };
+    }
+    return { bg: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.textMuted };
+  };
+
+  const getUrgencyIconColor = (urgency: string | null) => {
+    if (urgency === 'high' || urgency === 'emergency') return theme.error;
+    if (urgency === 'medium') return theme.warning;
+    return theme.primary;
+  };
+
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
@@ -103,21 +98,13 @@ export default function ClientCallsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full sm:w-48 lg:w-64 rounded-lg border pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 transition-colors"
-                style={{ 
-                  borderColor: theme.border, 
-                  backgroundColor: theme.inputBg, 
-                  color: theme.text,
-                }}
+                style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }}
               />
             </div>
             
             <button 
               className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
-              style={{ 
-                borderColor: theme.border, 
-                backgroundColor: theme.cardBg, 
-                color: theme.textMuted,
-              }}
+              style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.textMuted }}
             >
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">Filter</span>
@@ -127,7 +114,7 @@ export default function ClientCallsPage() {
       </div>
 
       {/* Calls List */}
-      <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+      <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
         {callsLoading ? (
           <div className="py-12 sm:py-20 flex items-center justify-center">
             <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" style={{ color: theme.textMuted4 }} />
@@ -137,7 +124,7 @@ export default function ClientCallsPage() {
           <div className="py-12 sm:py-20 text-center px-4">
             <div 
               className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1) }}
+              style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) }}
             >
               <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted4 }} />
             </div>
@@ -150,144 +137,103 @@ export default function ClientCallsPage() {
           </div>
         ) : (
           <div className="divide-y" style={{ borderColor: theme.border }}>
-            {filteredCalls.map((call) => (
-              <a
-                key={call.id}
-                href={`/client/calls/${call.id}`}
-                className="block transition-colors"
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hoverBg}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                {/* Mobile Layout */}
-                <div className="p-3 sm:hidden">
-                  <div className="flex items-start gap-3">
-                    <div 
-                      className="flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor: 
-                          call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'
-                            : call.urgency_level === 'medium'
-                            ? isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)'
-                            : hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1)
-                      }}
-                    >
-                      <PhoneCall 
-                        className="h-5 w-5"
-                        style={{
-                          color: 
-                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? '#ef4444'
-                              : call.urgency_level === 'medium'
-                              ? '#f59e0b'
-                              : branding.primaryColor
-                        }}
-                      />
+            {filteredCalls.map((call) => {
+              const urgStyle = getUrgencyStyle(call.urgency_level);
+              const iconColor = getUrgencyIconColor(call.urgency_level);
+
+              return (
+                <a
+                  key={call.id}
+                  href={`/client/calls/${call.id}`}
+                  className="block transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  {/* Mobile Layout */}
+                  <div className="p-3 sm:hidden">
+                    <div className="flex items-start gap-3">
+                      <div 
+                        className="flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0"
+                        style={{ backgroundColor: urgStyle.bg }}
+                      >
+                        <PhoneCall className="h-5 w-5" style={{ color: iconColor }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="font-medium text-sm truncate" style={{ color: theme.text }}>
+                            {call.customer_name || 'Unknown Caller'}
+                          </p>
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0"
+                            style={{ backgroundColor: urgStyle.bg, color: urgStyle.color }}
+                          >
+                            {call.urgency_level || 'normal'}
+                          </span>
+                        </div>
+                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>
+                          {call.customer_phone || call.caller_phone}
+                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>
+                            {call.service_requested || 'General inquiry'}
+                          </p>
+                          <p className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>
+                            {new Date(call.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 self-center" style={{ color: theme.textMuted4 }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className="font-medium text-sm truncate" style={{ color: theme.text }}>
+                  </div>
+
+                  {/* Desktop Layout */}
+                  <div className="hidden sm:flex items-center justify-between p-4 lg:p-6">
+                    <div className="flex items-center gap-3 lg:gap-4">
+                      <div 
+                        className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full"
+                        style={{ backgroundColor: urgStyle.bg }}
+                      >
+                        <PhoneCall className="h-5 w-5 lg:h-6 lg:w-6" style={{ color: iconColor }} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm lg:text-base" style={{ color: theme.text }}>
                           {call.customer_name || 'Unknown Caller'}
                         </p>
+                        <p className="text-xs lg:text-sm" style={{ color: theme.textMuted }}>
+                          {call.customer_phone || call.caller_phone}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 lg:gap-6">
+                      <div className="text-right hidden lg:block">
+                        <p className="text-sm" style={{ color: theme.textMuted }}>
+                          {call.service_requested || 'General inquiry'}
+                        </p>
+                        <p className="text-xs" style={{ color: theme.textMuted4 }}>
+                          {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : '—'}
+                        </p>
+                      </div>
+                      
+                      <div className="text-right min-w-[80px] lg:min-w-[100px]">
                         <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0"
-                          style={
-                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                              : call.urgency_level === 'medium'
-                              ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                              : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                          }
+                          className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
+                          style={{ backgroundColor: urgStyle.bg, color: urgStyle.color }}
                         >
                           {call.urgency_level || 'normal'}
                         </span>
-                      </div>
-                      <p className="text-xs truncate" style={{ color: theme.textMuted }}>
-                        {call.customer_phone || call.caller_phone}
-                      </p>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>
-                          {call.service_requested || 'General inquiry'}
-                        </p>
-                        <p className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>
+                        <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textMuted4 }}>
                           {new Date(call.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 self-center" style={{ color: theme.textMuted4 }} />
-                  </div>
-                </div>
-
-                {/* Desktop Layout */}
-                <div className="hidden sm:flex items-center justify-between p-4 lg:p-6">
-                  <div className="flex items-center gap-3 lg:gap-4">
-                    <div 
-                      className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-full"
-                      style={{
-                        backgroundColor: 
-                          call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'
-                            : call.urgency_level === 'medium'
-                            ? isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)'
-                            : hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1)
-                      }}
-                    >
-                      <PhoneCall 
-                        className="h-5 w-5 lg:h-6 lg:w-6"
-                        style={{
-                          color: 
-                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? '#ef4444'
-                              : call.urgency_level === 'medium'
-                              ? '#f59e0b'
-                              : branding.primaryColor
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm lg:text-base" style={{ color: theme.text }}>
-                        {call.customer_name || 'Unknown Caller'}
-                      </p>
-                      <p className="text-xs lg:text-sm" style={{ color: theme.textMuted }}>
-                        {call.customer_phone || call.caller_phone}
-                      </p>
+                      
+                      <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" style={{ color: theme.textMuted4 }} />
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 lg:gap-6">
-                    <div className="text-right hidden lg:block">
-                      <p className="text-sm" style={{ color: theme.textMuted }}>
-                        {call.service_requested || 'General inquiry'}
-                      </p>
-                      <p className="text-xs" style={{ color: theme.textMuted4 }}>
-                        {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : '—'}
-                      </p>
-                    </div>
-                    
-                    <div className="text-right min-w-[80px] lg:min-w-[100px]">
-                      <span
-                        className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
-                        style={
-                          call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                            : call.urgency_level === 'medium'
-                            ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                            : { backgroundColor: hexToRgba(branding.primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                        }
-                      >
-                        {call.urgency_level || 'normal'}
-                      </span>
-                      <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textMuted4 }}>
-                        {new Date(call.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" style={{ color: theme.textMuted4 }} />
-                  </div>
-                </div>
-              </a>
-            ))}
+                </a>
+              );
+            })}
           </div>
         )}
       </div>
