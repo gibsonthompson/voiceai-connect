@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAgency } from '../context';
+import { useTheme } from '../../../hooks/useTheme';
 import { DEMO_REFERRALS } from '../demoData';
 import { 
   Users, DollarSign, TrendingUp, Copy, Check, ExternalLink, 
@@ -73,7 +74,8 @@ const formatDate = (dateString: string) => {
 // MAIN COMPONENT
 // ============================================================================
 export default function ReferralsPage() {
-  const { agency, branding, demoMode } = useAgency();
+  const { agency, demoMode } = useAgency();
+  const theme = useTheme();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -84,57 +86,23 @@ export default function ReferralsPage() {
   const [requestingPayout, setRequestingPayout] = useState(false);
   const [payoutMessage, setPayoutMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? '#0a0a0a' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return { 
-          text: primaryColor, 
-          bg: `${primaryColor}15`, 
-          border: `${primaryColor}30` 
-        };
+        return { text: theme.primary, bg: theme.primary15, border: theme.primary30 };
       case 'trial':
       case 'trialing':
-        return { 
-          text: isDark ? '#fbbf24' : '#d97706', 
-          bg: 'rgba(245,158,11,0.1)', 
-          border: 'rgba(245,158,11,0.2)' 
-        };
+        return { text: theme.warning, bg: theme.warningBg, border: theme.warningBorder };
       case 'pending':
-        return { 
-          text: isDark ? '#60a5fa' : '#2563eb', 
-          bg: 'rgba(59,130,246,0.1)', 
-          border: 'rgba(59,130,246,0.2)' 
-        };
+        return { text: theme.info, bg: theme.infoBg, border: theme.infoBorder };
       case 'transferred':
-        return { 
-          text: primaryColor, 
-          bg: `${primaryColor}15`, 
-          border: `${primaryColor}30` 
-        };
+        return { text: theme.primary, bg: theme.primary15, border: theme.primary30 };
       default:
-        return { 
-          text: mutedTextColor, 
-          bg: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', 
-          border: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' 
-        };
+        return { text: theme.textMuted, bg: theme.hover, border: theme.border };
     }
   };
 
-  // Fetch referral data (or load demo data)
   useEffect(() => {
-    // ---- DEMO MODE: inject sample data ----
     if (demoMode) {
       setData(DEMO_REFERRALS as ReferralData);
       setNewCode(DEMO_REFERRALS.referralCode);
@@ -171,7 +139,6 @@ export default function ReferralsPage() {
     fetchData();
   }, [agency?.id, demoMode]);
 
-  // Copy referral link
   const handleCopy = async () => {
     if (!data?.referralLink) return;
     
@@ -191,9 +158,7 @@ export default function ReferralsPage() {
     }
   };
 
-  // Update referral code
   const handleUpdateCode = async () => {
-    // Block mutations in demo mode
     if (demoMode) {
       setData(prev => prev ? {
         ...prev,
@@ -239,9 +204,7 @@ export default function ReferralsPage() {
     }
   };
 
-  // Request payout
   const handleRequestPayout = async () => {
-    // Block mutations in demo mode
     if (demoMode) {
       setPayoutMessage({ type: 'success', text: 'Demo: Payout request simulated successfully!' });
       return;
@@ -289,7 +252,6 @@ export default function ReferralsPage() {
     }
   };
 
-  // Stat Card Component
   function StatCard({ 
     label, 
     value, 
@@ -309,31 +271,31 @@ export default function ReferralsPage() {
       <div 
         className="rounded-2xl p-5 transition-all"
         style={{ 
-          backgroundColor: highlight ? `${primaryColor}10` : cardBg,
-          border: highlight ? `1px solid ${primaryColor}30` : `1px solid ${borderColor}`,
-          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          backgroundColor: highlight ? theme.primary + '10' : theme.card,
+          border: highlight ? `1px solid ${theme.primary30}` : `1px solid ${theme.border}`,
+          boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
         <div className="flex items-start justify-between mb-3">
           <div 
             className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: highlight ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: highlight ? primaryColor : mutedTextColor }}
+            style={{ backgroundColor: highlight ? theme.primary + '20' : theme.hover, color: highlight ? theme.primary : theme.textMuted }}
           >
             <Icon className="h-5 w-5" />
           </div>
           {trend && (
-            <span className="flex items-center gap-1 text-xs" style={{ color: primaryColor }}>
+            <span className="flex items-center gap-1 text-xs" style={{ color: theme.primary }}>
               <ArrowUpRight className="h-3 w-3" />
               {trend}
             </span>
           )}
         </div>
-        <p className="text-sm mb-1" style={{ color: mutedTextColor }}>{label}</p>
-        <p className="text-2xl font-semibold" style={{ color: highlight ? primaryColor : textColor }}>
+        <p className="text-sm mb-1" style={{ color: theme.textMuted }}>{label}</p>
+        <p className="text-2xl font-semibold" style={{ color: highlight ? theme.primary : theme.text }}>
           {value}
         </p>
         {subValue && (
-          <p className="text-xs mt-1" style={{ color: mutedTextColor }}>{subValue}</p>
+          <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{subValue}</p>
         )}
       </div>
     );
@@ -342,9 +304,9 @@ export default function ReferralsPage() {
   if (loading) {
     return (
       <div className="p-6 md:p-8 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center" style={{ color: primaryColor }}>
+        <div className="text-center" style={{ color: theme.primary }}>
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="mt-4 text-sm" style={{ color: mutedTextColor }}>Loading referrals...</p>
+          <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Loading referrals...</p>
         </div>
       </div>
     );
@@ -356,11 +318,11 @@ export default function ReferralsPage() {
         <div 
           className="rounded-2xl p-6 text-center"
           style={{
-            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
-            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+            backgroundColor: theme.errorBg,
+            border: `1px solid ${theme.errorBorder}`,
           }}
         >
-          <p style={{ color: isDark ? '#f87171' : '#dc2626' }}>{error}</p>
+          <p style={{ color: theme.error }}>{error}</p>
         </div>
       </div>
     );
@@ -373,13 +335,13 @@ export default function ReferralsPage() {
         <div className="flex items-center gap-3 mb-2">
           <div 
             className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+            style={{ backgroundColor: theme.primary + '20', color: theme.primary }}
           >
             <Gift className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-semibold">Referral Program</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Referral Program</h1>
         </div>
-        <p style={{ color: mutedTextColor }}>
+        <p style={{ color: theme.textMuted }}>
           Earn 40% recurring commission for every agency you refer
         </p>
       </div>
@@ -388,17 +350,17 @@ export default function ReferralsPage() {
       <div 
         className="rounded-2xl p-6 mb-8"
         style={{ 
-          backgroundColor: `${primaryColor}08`,
-          border: `1px solid ${primaryColor}30`,
+          backgroundColor: theme.primary + '08',
+          border: `1px solid ${theme.primary30}`,
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h2 className="font-medium flex items-center gap-2">
-              <span style={{ color: primaryColor }}><Sparkles className="h-4 w-4" /></span>
+            <h2 className="font-medium flex items-center gap-2" style={{ color: theme.text }}>
+              <span style={{ color: theme.primary }}><Sparkles className="h-4 w-4" /></span>
               Your Referral Link
             </h2>
-            <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
+            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
               Share this link to earn commissions
             </p>
           </div>
@@ -407,7 +369,7 @@ export default function ReferralsPage() {
             <button
               onClick={() => setEditingCode(true)}
               className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: primaryColor }}
+              style={{ color: theme.primary }}
             >
               <Edit2 className="h-4 w-4" />
               Customize Code
@@ -419,7 +381,7 @@ export default function ReferralsPage() {
                 setNewCode(data?.referralCode || '');
               }}
               className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: mutedTextColor }}
+              style={{ color: theme.textMuted }}
             >
               <X className="h-4 w-4" />
               Cancel
@@ -431,9 +393,9 @@ export default function ReferralsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div 
               className="flex-1 flex items-center gap-2 rounded-xl px-4 py-3"
-              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+              style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
             >
-              <span className="text-sm whitespace-nowrap" style={{ color: mutedTextColor }}>
+              <span className="text-sm whitespace-nowrap" style={{ color: theme.textMuted }}>
                 {process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com'}/signup?ref=
               </span>
               <input
@@ -441,7 +403,7 @@ export default function ReferralsPage() {
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 className="flex-1 bg-transparent outline-none min-w-0"
-                style={{ color: textColor }}
+                style={{ color: theme.text }}
                 placeholder="your-code"
                 maxLength={30}
               />
@@ -450,7 +412,7 @@ export default function ReferralsPage() {
               onClick={handleUpdateCode}
               disabled={savingCode || !newCode.trim()}
               className="px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{ backgroundColor: primaryColor, color: '#050505' }}
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
             >
               {savingCode ? (
                 <>
@@ -466,25 +428,26 @@ export default function ReferralsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div 
               className="flex-1 flex items-center gap-3 rounded-xl px-4 py-3"
-              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}
+              style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
             >
-              <span className="text-sm truncate flex-1">
+              <span className="text-sm truncate flex-1" style={{ color: theme.text }}>
                 {data?.referralLink}
               </span>
             </div>
             <button
               onClick={handleCopy}
-              className={`px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${
-                isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.02]'
-              }`}
+              className="px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
               style={{ 
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
-                border: `1px solid ${inputBorder}`,
+                backgroundColor: theme.hover,
+                border: `1px solid ${theme.inputBorder}`,
+                color: theme.text,
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.04)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.hover}
             >
               {copied ? (
                 <>
-                  <span style={{ color: primaryColor }}><Check className="h-4 w-4" /></span>
+                  <span style={{ color: theme.primary }}><Check className="h-4 w-4" /></span>
                   Copied!
                 </>
               ) : (
@@ -529,15 +492,15 @@ export default function ReferralsPage() {
         <div 
           className="rounded-2xl p-6 mb-8"
           style={{ 
-            backgroundColor: cardBg, 
-            border: `1px solid ${borderColor}`,
-            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: theme.card, 
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
           }}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-medium">Request Payout</h3>
-              <p className="text-sm mt-1" style={{ color: mutedTextColor }}>
+              <h3 className="font-medium" style={{ color: theme.text }}>Request Payout</h3>
+              <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
                 {data?.canReceivePayouts 
                   ? `Minimum payout: $10. Your balance: ${formatCurrency(data?.stats.availableBalance || 0)}`
                   : 'Complete Stripe Connect onboarding to receive payouts'
@@ -552,7 +515,7 @@ export default function ReferralsPage() {
                 (data?.stats.availableBalance || 0) < 1000
               }
               className="px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
-              style={{ backgroundColor: primaryColor, color: '#050505' }}
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
             >
               {requestingPayout ? (
                 <>
@@ -572,17 +535,17 @@ export default function ReferralsPage() {
             <div 
               className="mt-4 rounded-xl p-4 flex items-center gap-3"
               style={{
-                backgroundColor: payoutMessage.type === 'success' ? `${primaryColor}15` : (isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2'),
-                border: payoutMessage.type === 'success' ? `1px solid ${primaryColor}30` : (isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca'),
+                backgroundColor: payoutMessage.type === 'success' ? theme.primary15 : theme.errorBg,
+                border: `1px solid ${payoutMessage.type === 'success' ? theme.primary30 : theme.errorBorder}`,
               }}
             >
               {payoutMessage.type === 'success' ? (
-                <span style={{ color: primaryColor }}><Check className="h-5 w-5 flex-shrink-0" /></span>
+                <span style={{ color: theme.primary }}><Check className="h-5 w-5 flex-shrink-0" /></span>
               ) : (
-                <span style={{ color: isDark ? '#f87171' : '#dc2626' }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
+                <span style={{ color: theme.error }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
               )}
               <p className="text-sm" style={{ 
-                color: payoutMessage.type === 'success' ? primaryColor : (isDark ? '#f87171' : '#dc2626')
+                color: payoutMessage.type === 'success' ? theme.primary : theme.error
               }}>
                 {payoutMessage.text}
               </p>
@@ -593,12 +556,12 @@ export default function ReferralsPage() {
             <div 
               className="mt-4 rounded-xl p-4 flex items-center gap-3"
               style={{
-                backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.1)',
-                border: '1px solid rgba(245,158,11,0.2)',
+                backgroundColor: theme.warningBg,
+                border: `1px solid ${theme.warningBorder}`,
               }}
             >
-              <span style={{ color: isDark ? '#fbbf24' : '#d97706' }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
-              <p className="text-sm" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
+              <span style={{ color: theme.warning }}><AlertCircle className="h-5 w-5 flex-shrink-0" /></span>
+              <p className="text-sm" style={{ color: theme.warningText }}>
                 Set up Stripe Connect in Settings → Billing to receive payouts
               </p>
             </div>
@@ -612,29 +575,31 @@ export default function ReferralsPage() {
         <div 
           className="rounded-2xl overflow-hidden"
           style={{ 
-            backgroundColor: cardBg, 
-            border: `1px solid ${borderColor}`,
-            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: theme.card, 
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
           }}
         >
-          <div className="p-5" style={{ borderBottom: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium">Your Referrals</h3>
+          <div className="p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium" style={{ color: theme.text }}>Your Referrals</h3>
           </div>
           
           {data?.referrals && data.referrals.length > 0 ? (
-            <div style={{ borderTop: `1px solid ${borderColor}` }}>
+            <div style={{ borderTop: `1px solid ${theme.border}` }}>
               {data.referrals.map((referral, idx) => {
                 const statusColors = getStatusColor(referral.subscription_status);
                 return (
                   <div 
                     key={referral.id} 
-                    className={`p-4 transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'}`}
-                    style={{ borderBottom: idx < data.referrals.length - 1 ? `1px solid ${borderColor}` : 'none' }}
+                    className="p-4 transition-colors"
+                    style={{ borderBottom: idx < data.referrals.length - 1 ? `1px solid ${theme.border}` : 'none' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{referral.name}</p>
-                        <p className="text-sm" style={{ color: mutedTextColor }}>
+                        <p className="font-medium" style={{ color: theme.text }}>{referral.name}</p>
+                        <p className="text-sm" style={{ color: theme.textMuted }}>
                           Joined {formatDate(referral.created_at)}
                         </p>
                       </div>
@@ -654,7 +619,7 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center" style={{ color: mutedTextColor }}>
+            <div className="p-8 text-center" style={{ color: theme.textMuted }}>
               <Users className="h-10 w-10 mx-auto mb-3" />
               <p className="text-sm">No referrals yet</p>
               <p className="text-xs mt-1">Share your link to start earning</p>
@@ -666,31 +631,33 @@ export default function ReferralsPage() {
         <div 
           className="rounded-2xl overflow-hidden"
           style={{ 
-            backgroundColor: cardBg, 
-            border: `1px solid ${borderColor}`,
-            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            backgroundColor: theme.card, 
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
           }}
         >
-          <div className="p-5" style={{ borderBottom: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium">Commission History</h3>
+          <div className="p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium" style={{ color: theme.text }}>Commission History</h3>
           </div>
           
           {data?.commissions && data.commissions.length > 0 ? (
-            <div style={{ borderTop: `1px solid ${borderColor}` }}>
+            <div style={{ borderTop: `1px solid ${theme.border}` }}>
               {data.commissions.map((commission, idx) => {
                 const statusColors = getStatusColor(commission.status);
                 return (
                   <div 
                     key={commission.id} 
-                    className={`p-4 transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'}`}
-                    style={{ borderBottom: idx < data.commissions.length - 1 ? `1px solid ${borderColor}` : 'none' }}
+                    className="p-4 transition-colors"
+                    style={{ borderBottom: idx < data.commissions.length - 1 ? `1px solid ${theme.border}` : 'none' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium" style={{ color: primaryColor }}>
+                        <p className="font-medium" style={{ color: theme.primary }}>
                           +{formatCurrency(commission.commission_amount_cents)}
                         </p>
-                        <p className="text-sm" style={{ color: mutedTextColor }}>
+                        <p className="text-sm" style={{ color: theme.textMuted }}>
                           From {commission.referred?.name || 'Unknown'}
                         </p>
                       </div>
@@ -705,7 +672,7 @@ export default function ReferralsPage() {
                         >
                           {commission.status}
                         </span>
-                        <p className="text-xs mt-1" style={{ color: mutedTextColor }}>
+                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
                           {formatDate(commission.created_at)}
                         </p>
                       </div>
@@ -715,7 +682,7 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center" style={{ color: mutedTextColor }}>
+            <div className="p-8 text-center" style={{ color: theme.textMuted }}>
               <DollarSign className="h-10 w-10 mx-auto mb-3" />
               <p className="text-sm">No commissions yet</p>
               <p className="text-xs mt-1">Commissions appear when referrals pay</p>
@@ -728,12 +695,12 @@ export default function ReferralsPage() {
       <div 
         className="mt-8 rounded-2xl p-6"
         style={{ 
-          backgroundColor: cardBg, 
-          border: `1px solid ${borderColor}`,
-          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          backgroundColor: theme.card, 
+          border: `1px solid ${theme.border}`,
+          boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
-        <h3 className="font-medium mb-4">How It Works</h3>
+        <h3 className="font-medium mb-4" style={{ color: theme.text }}>How It Works</h3>
         <div className="grid sm:grid-cols-3 gap-6">
           {[
             { num: '1', title: 'Share Your Link', desc: 'Share your unique referral link with other agency owners' },
@@ -743,13 +710,13 @@ export default function ReferralsPage() {
             <div key={step.num} className="flex gap-4">
               <div 
                 className="flex h-8 w-8 items-center justify-center rounded-lg font-semibold text-sm flex-shrink-0"
-                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                style={{ backgroundColor: theme.primary + '20', color: theme.primary }}
               >
                 {step.num}
               </div>
               <div>
-                <p className="font-medium text-sm">{step.title}</p>
-                <p className="text-xs mt-1" style={{ color: mutedTextColor }}>
+                <p className="font-medium text-sm" style={{ color: theme.text }}>{step.title}</p>
+                <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
                   {step.desc}
                 </p>
               </div>

@@ -8,22 +8,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
+import { useTheme } from '@/hooks/useTheme';
 import LockedFeature from '@/components/LockedFeature';
 
-// Icon mapping
 const ICON_MAP: Record<string, React.ElementType> = {
-  Wrench,
-  Stethoscope,
-  Scale,
-  Home,
-  Calculator,
-  Briefcase,
-  UtensilsCrossed,
-  Sparkles,
-  Dumbbell,
-  ShoppingBag,
-  Car,
-  Building2,
+  Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
+  UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag, Car, Building2,
 };
 
 interface Industry {
@@ -37,7 +27,6 @@ interface Industry {
   updatedAt: string | null;
 }
 
-// Demo industries for preview when locked
 const DEMO_INDUSTRIES: Industry[] = [
   { frontendKey: 'home_services', backendKey: 'home_services', label: 'Home Services', description: 'Plumbing, HVAC, electrical, contractors', icon: 'Wrench', hasCustomTemplate: false, isActive: true, updatedAt: null },
   { frontendKey: 'medical_dental', backendKey: 'medical', label: 'Medical & Dental', description: 'Medical practices, dental offices', icon: 'Stethoscope', hasCustomTemplate: true, isActive: true, updatedAt: '2024-01-15' },
@@ -47,43 +36,18 @@ const DEMO_INDUSTRIES: Industry[] = [
   { frontendKey: 'professional_services', backendKey: 'professional_services', label: 'Professional Services', description: 'Consultants, agencies, B2B', icon: 'Briefcase', hasCustomTemplate: false, isActive: true, updatedAt: null },
 ];
 
-// Blog post links for help section
 const PROMPT_GUIDES = [
-  { 
-    icon: BookOpen, 
-    label: 'Prompt Engineering Guide',
-    href: '/blog/ai-receptionist-prompt-guide',
-    description: 'Fundamentals of writing effective AI prompts'
-  },
-  { 
-    icon: Wrench, 
-    label: 'Home Services Prompts',
-    href: '/blog/home-services-ai-receptionist-prompts',
-    description: 'HVAC, plumbing, electrical, contractors'
-  },
-  { 
-    icon: Stethoscope, 
-    label: 'Medical & Dental Prompts',
-    href: '/blog/medical-dental-ai-receptionist-prompts',
-    description: 'Healthcare practices and dental offices'
-  },
+  { icon: BookOpen, label: 'Prompt Engineering Guide', href: '/blog/ai-receptionist-prompt-guide', description: 'Fundamentals of writing effective AI prompts' },
+  { icon: Wrench, label: 'Home Services Prompts', href: '/blog/home-services-ai-receptionist-prompts', description: 'HVAC, plumbing, electrical, contractors' },
+  { icon: Stethoscope, label: 'Medical & Dental Prompts', href: '/blog/medical-dental-ai-receptionist-prompts', description: 'Healthcare practices and dental offices' },
 ];
 
 export default function AITemplatesPage() {
-  const { agency, branding, loading: contextLoading, effectivePlan } = useAgency();
+  const { agency, loading: contextLoading, effectivePlan } = useAgency();
+  const theme = useTheme();
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  // Theme
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -96,8 +60,6 @@ export default function AITemplatesPage() {
   const checkAccessAndFetch = async () => {
     if (!agency) return;
 
-    // Frontend shortcut: if effectivePlan is enterprise (e.g. during trial), grant access
-    // without waiting for the backend /check endpoint
     if (effectivePlan === 'enterprise') {
       setHasAccess(true);
       try {
@@ -120,7 +82,6 @@ export default function AITemplatesPage() {
     try {
       const token = localStorage.getItem('auth_token');
 
-      // Check access first
       const checkResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/check`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -130,7 +91,6 @@ export default function AITemplatesPage() {
         setHasAccess(checkData.hasAccess);
 
         if (checkData.hasAccess) {
-          // Fetch industries
           const industriesResponse = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-templates/industries`, {
             headers: { 'Authorization': `Bearer ${token}` },
           });
@@ -148,15 +108,14 @@ export default function AITemplatesPage() {
     }
   };
 
-  // Shared page content component (used for both preview and actual)
   const PageContent = ({ industryList, isInteractive = true }: { industryList: Industry[], isInteractive?: boolean }) => (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: textColor }}>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
           AI Templates
         </h1>
-        <p className="mt-1 text-sm sm:text-base" style={{ color: mutedTextColor }}>
+        <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>
           Customize AI receptionist prompts for each industry
         </p>
       </div>
@@ -165,22 +124,22 @@ export default function AITemplatesPage() {
       <div 
         className="mb-6 sm:mb-8 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4"
         style={{
-          backgroundColor: `${primaryColor}08`,
-          border: `1px solid ${primaryColor}20`,
+          backgroundColor: theme.primary + '08',
+          border: `1px solid ${theme.primary}20`,
         }}
       >
         <div 
           className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0"
-          style={{ backgroundColor: `${primaryColor}15` }}
+          style={{ backgroundColor: theme.primary15 }}
         >
-          <Sparkles className="h-5 w-5" style={{ color: primaryColor }} />
+          <Sparkles className="h-5 w-5" style={{ color: theme.primary }} />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-sm" style={{ color: textColor }}>
+          <p className="font-medium text-sm" style={{ color: theme.text }}>
             Enterprise Feature
           </p>
-          <p className="text-sm" style={{ color: mutedTextColor }}>
-            Custom templates only apply to <strong>new clients</strong>. Existing clients keep their current configuration.
+          <p className="text-sm" style={{ color: theme.textMuted }}>
+            Custom templates only apply to <strong style={{ color: theme.text }}>new clients</strong>. Existing clients keep their current configuration.
           </p>
         </div>
         {isInteractive && (
@@ -189,7 +148,7 @@ export default function AITemplatesPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-medium flex-shrink-0"
-            style={{ color: primaryColor }}
+            style={{ color: theme.primary }}
           >
             <BookOpen className="h-4 w-4" />
             Prompt Guide
@@ -200,15 +159,12 @@ export default function AITemplatesPage() {
 
       {/* Industry Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {industryList.map((industry) => {
-          const IconComponent = ICON_MAP[industry.icon] || Building2;
+        {industryList.map((ind) => {
+          const IconComponent = ICON_MAP[ind.icon] || Building2;
           
-          const cardClassName = `group rounded-xl p-5 transition-all ${
-            isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-          }`;
           const cardStyle = { 
-            backgroundColor: cardBg,
-            border: `1px solid ${borderColor}`,
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.border}`,
           };
           
           const cardContent = (
@@ -217,26 +173,19 @@ export default function AITemplatesPage() {
                 <div 
                   className="flex h-12 w-12 items-center justify-center rounded-xl"
                   style={{ 
-                    backgroundColor: industry.hasCustomTemplate 
-                      ? `${primaryColor}15` 
-                      : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                    backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover,
                   }}
                 >
                   <IconComponent 
                     className="h-6 w-6" 
-                    style={{ 
-                      color: industry.hasCustomTemplate ? primaryColor : mutedTextColor 
-                    }} 
+                    style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} 
                   />
                 </div>
 
-                {industry.hasCustomTemplate ? (
+                {ind.hasCustomTemplate ? (
                   <span 
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-                    style={{ 
-                      backgroundColor: `${primaryColor}15`,
-                      color: primaryColor,
-                    }}
+                    style={{ backgroundColor: theme.primary15, color: theme.primary }}
                   >
                     <Check className="h-3 w-3" />
                     Custom
@@ -244,32 +193,29 @@ export default function AITemplatesPage() {
                 ) : (
                   <span 
                     className="rounded-full px-2 py-1 text-xs font-medium"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-                      color: mutedTextColor,
-                    }}
+                    style={{ backgroundColor: theme.hover, color: theme.textMuted }}
                   >
                     Default
                   </span>
                 )}
               </div>
 
-              <h3 className="font-medium mb-1" style={{ color: textColor }}>
-                {industry.label}
+              <h3 className="font-medium mb-1" style={{ color: theme.text }}>
+                {ind.label}
               </h3>
-              <p className="text-sm mb-4" style={{ color: mutedTextColor }}>
-                {industry.description}
+              <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
+                {ind.description}
               </p>
 
               <div className="flex items-center justify-between">
-                {industry.updatedAt && (
-                  <span className="text-xs" style={{ color: mutedTextColor }}>
-                    Updated {new Date(industry.updatedAt).toLocaleDateString()}
+                {ind.updatedAt && (
+                  <span className="text-xs" style={{ color: theme.textMuted }}>
+                    Updated {new Date(ind.updatedAt).toLocaleDateString()}
                   </span>
                 )}
                 <ChevronRight 
                   className="h-5 w-5 ml-auto transition-transform group-hover:translate-x-1" 
-                  style={{ color: mutedTextColor }} 
+                  style={{ color: theme.textMuted }} 
                 />
               </div>
             </>
@@ -277,17 +223,19 @@ export default function AITemplatesPage() {
           
           return isInteractive ? (
             <Link
-              key={industry.frontendKey}
-              href={`/agency/templates/${industry.frontendKey}`}
-              className={cardClassName}
+              key={ind.frontendKey}
+              href={`/agency/templates/${ind.frontendKey}`}
+              className="group rounded-xl p-5 transition-all"
               style={cardStyle}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.card}
             >
               {cardContent}
             </Link>
           ) : (
             <div
-              key={industry.frontendKey}
-              className={cardClassName}
+              key={ind.frontendKey}
+              className="group rounded-xl p-5 transition-all"
               style={cardStyle}
             >
               {cardContent}
@@ -299,15 +247,12 @@ export default function AITemplatesPage() {
       {/* Help Section */}
       <div 
         className="mt-8 rounded-xl p-6"
-        style={{ 
-          backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
-        }}
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
-        <h3 className="font-medium mb-2" style={{ color: textColor }}>
+        <h3 className="font-medium mb-2" style={{ color: theme.text }}>
           Need help with prompts?
         </h3>
-        <p className="text-sm mb-4" style={{ color: mutedTextColor }}>
+        <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
           Check out our guides for writing effective AI receptionist prompts:
         </p>
         <div className="flex flex-wrap gap-3">
@@ -317,21 +262,20 @@ export default function AITemplatesPage() {
               href={guide.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`group inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-all ${
-                isDark 
-                  ? 'bg-white/[0.02] hover:bg-white/[0.06]' 
-                  : 'bg-black/[0.02] hover:bg-black/[0.04]'
-              }`}
+              className="group inline-flex items-center gap-2 text-sm rounded-lg px-4 py-2 transition-all"
               style={{ 
-                border: `1px solid ${borderColor}`,
-                color: textColor,
+                backgroundColor: theme.hover,
+                border: `1px solid ${theme.border}`,
+                color: theme.text,
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.hover}
             >
-              <guide.icon className="h-4 w-4" style={{ color: primaryColor }} />
+              <guide.icon className="h-4 w-4" style={{ color: theme.primary }} />
               <span>{guide.label}</span>
               <ExternalLink 
                 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" 
-                style={{ color: mutedTextColor }} 
+                style={{ color: theme.textMuted }} 
               />
             </Link>
           ))}
@@ -343,12 +287,11 @@ export default function AITemplatesPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
 
-  // Show locked overlay with preview content
   if (hasAccess === false) {
     return (
       <LockedFeature
@@ -367,6 +310,5 @@ export default function AITemplatesPage() {
     );
   }
 
-  // Full access - render interactive page
   return <PageContent industryList={industries} isInteractive={true} />;
 }

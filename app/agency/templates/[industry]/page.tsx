@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
+import { useTheme } from '@/hooks/useTheme';
 
 interface Voice {
   id: string;
@@ -53,7 +54,8 @@ export default function TemplateEditorPage() {
   const router = useRouter();
   const industry = params.industry as string;
   
-  const { agency, branding, loading: contextLoading } = useAgency();
+  const { agency, loading: contextLoading } = useAgency();
+  const theme = useTheme();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,25 +69,18 @@ export default function TemplateEditorPage() {
   const [placeholders, setPlaceholders] = useState<Placeholder[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
   
-  // Form state
   const [systemPrompt, setSystemPrompt] = useState('');
   const [firstMessage, setFirstMessage] = useState('');
   const [voiceId, setVoiceId] = useState('');
   const [temperature, setTemperature] = useState(0.7);
 
-  // Theme
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+  const inputStyle = {
+    backgroundColor: theme.input,
+    border: `1px solid ${theme.inputBorder}`,
+    color: theme.text,
+  };
 
   useEffect(() => {
     if (agency && industry) {
@@ -118,7 +113,6 @@ export default function TemplateEditorPage() {
       setDefaults(data.defaults);
       setPlaceholders(data.placeholders || []);
       
-      // Set form values
       setSystemPrompt(data.template.system_prompt);
       setFirstMessage(data.template.first_message);
       setVoiceId(data.template.voice_id);
@@ -180,8 +174,6 @@ export default function TemplateEditorPage() {
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      
-      // Refresh data
       await fetchTemplateData();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to save');
@@ -208,7 +200,6 @@ export default function TemplateEditorPage() {
         throw new Error('Failed to reset template');
       }
 
-      // Reset form to defaults
       if (defaults) {
         setSystemPrompt(defaults.system_prompt);
         setFirstMessage(defaults.first_message);
@@ -216,7 +207,6 @@ export default function TemplateEditorPage() {
         setTemperature(defaults.temperature);
       }
       
-      // Refresh data
       await fetchTemplateData();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to reset');
@@ -225,7 +215,6 @@ export default function TemplateEditorPage() {
     }
   };
 
-  // Check if form has changes from current saved state
   const hasChanges = template && (
     systemPrompt !== template.system_prompt ||
     firstMessage !== template.first_message ||
@@ -236,7 +225,7 @@ export default function TemplateEditorPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
@@ -250,7 +239,7 @@ export default function TemplateEditorPage() {
         <Link 
           href="/agency/templates"
           className="inline-flex items-center gap-2 text-sm mb-4 transition-colors"
-          style={{ color: mutedTextColor }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Templates
@@ -258,10 +247,10 @@ export default function TemplateEditorPage() {
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
               {industryInfo?.label || 'Edit Template'}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {industryInfo?.description}
             </p>
           </div>
@@ -269,10 +258,7 @@ export default function TemplateEditorPage() {
           {template?.isCustom && (
             <span 
               className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium flex-shrink-0"
-              style={{ 
-                backgroundColor: `${primaryColor}15`,
-                color: primaryColor,
-              }}
+              style={{ backgroundColor: theme.primary15, color: theme.primary }}
             >
               <Check className="h-3 w-3" />
               Custom Template
@@ -286,12 +272,12 @@ export default function TemplateEditorPage() {
         <div 
           className="mb-6 rounded-xl p-4 flex items-center gap-3"
           style={{
-            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
-            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
+            backgroundColor: theme.errorBg,
+            border: `1px solid ${theme.errorBorder}`,
           }}
         >
-          <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: isDark ? '#f87171' : '#dc2626' }} />
-          <p className="text-sm" style={{ color: isDark ? '#f87171' : '#dc2626' }}>{error}</p>
+          <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} />
+          <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
         </div>
       )}
 
@@ -300,12 +286,12 @@ export default function TemplateEditorPage() {
         <div 
           className="mb-6 rounded-xl p-4 flex items-center gap-3"
           style={{
-            backgroundColor: `${primaryColor}15`,
-            border: `1px solid ${primaryColor}30`,
+            backgroundColor: theme.primary15,
+            border: `1px solid ${theme.primary30}`,
           }}
         >
-          <Check className="h-5 w-5" style={{ color: primaryColor }} />
-          <p className="text-sm" style={{ color: primaryColor }}>Template saved! New clients will use this configuration.</p>
+          <Check className="h-5 w-5" style={{ color: theme.primary }} />
+          <p className="text-sm" style={{ color: theme.primary }}>Template saved! New clients will use this configuration.</p>
         </div>
       )}
 
@@ -313,14 +299,14 @@ export default function TemplateEditorPage() {
       <div 
         className="mb-6 rounded-xl p-4"
         style={{
-          backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.1)',
-          border: '1px solid rgba(59,130,246,0.2)',
+          backgroundColor: theme.infoBg,
+          border: `1px solid ${theme.infoBorder}`,
         }}
       >
         <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }} />
+          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
           <div>
-            <p className="text-sm font-medium" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+            <p className="text-sm font-medium" style={{ color: theme.infoText }}>
               Available Placeholders
             </p>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -329,15 +315,15 @@ export default function TemplateEditorPage() {
                   key={p.variable}
                   className="text-xs px-2 py-1 rounded"
                   style={{ 
-                    backgroundColor: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.15)',
-                    color: isDark ? '#93c5fd' : '#1d4ed8',
+                    backgroundColor: theme.isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.15)',
+                    color: theme.info,
                   }}
                 >
                   {p.variable}
                 </code>
               ))}
             </div>
-            <p className="text-xs mt-2" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+            <p className="text-xs mt-2" style={{ color: theme.infoText, opacity: 0.7 }}>
               These will be replaced with actual client data when the assistant is created.
             </p>
           </div>
@@ -347,18 +333,15 @@ export default function TemplateEditorPage() {
       {/* Form */}
       <div 
         className="rounded-xl p-6"
-        style={{ 
-          backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
-        }}
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
         <div className="space-y-6">
           {/* System Prompt */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
               System Prompt
             </label>
-            <p className="text-xs mb-3" style={{ color: mutedTextColor }}>
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
               Instructions that define how the AI receptionist behaves. Include role, conversation flow, and boundaries.
             </p>
             <textarea
@@ -366,22 +349,17 @@ export default function TemplateEditorPage() {
               onChange={(e) => setSystemPrompt(e.target.value)}
               rows={16}
               className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y"
-              style={{ 
-                backgroundColor: inputBg, 
-                border: `1px solid ${inputBorder}`, 
-                color: textColor,
-                minHeight: '300px',
-              }}
+              style={{ ...inputStyle, minHeight: '300px' }}
               placeholder="Enter the system prompt..."
             />
           </div>
 
           {/* First Message */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
               First Message (Greeting)
             </label>
-            <p className="text-xs mb-3" style={{ color: mutedTextColor }}>
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
               The initial greeting the AI says when answering a call.
             </p>
             <textarea
@@ -389,32 +367,24 @@ export default function TemplateEditorPage() {
               onChange={(e) => setFirstMessage(e.target.value)}
               rows={3}
               className="w-full rounded-xl px-4 py-3 text-sm transition-colors resize-y"
-              style={{ 
-                backgroundColor: inputBg, 
-                border: `1px solid ${inputBorder}`, 
-                color: textColor,
-              }}
+              style={inputStyle}
               placeholder="Hi, you've reached {businessName}..."
             />
           </div>
 
           {/* Voice Selection */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
               Voice
             </label>
-            <p className="text-xs mb-3" style={{ color: mutedTextColor }}>
-              Powered by <span style={{ color: primaryColor }}>ElevenLabs</span> text-to-speech technology.
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+              Powered by <span style={{ color: theme.primary }}>ElevenLabs</span> text-to-speech technology.
             </p>
             <select
               value={voiceId}
               onChange={(e) => setVoiceId(e.target.value)}
               className="w-full rounded-xl px-4 py-3 text-sm transition-colors"
-              style={{ 
-                backgroundColor: inputBg, 
-                border: `1px solid ${inputBorder}`, 
-                color: textColor,
-              }}
+              style={inputStyle}
             >
               {voices.map((voice) => (
                 <option key={voice.id} value={voice.id}>
@@ -426,19 +396,17 @@ export default function TemplateEditorPage() {
             {selectedVoice && (
               <div 
                 className="mt-3 flex items-center gap-3 rounded-lg p-3"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-                }}
+                style={{ backgroundColor: theme.hover }}
               >
                 <div 
                   className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${primaryColor}15` }}
+                  style={{ backgroundColor: theme.primary15 }}
                 >
-                  <Volume2 className="h-5 w-5" style={{ color: primaryColor }} />
+                  <Volume2 className="h-5 w-5" style={{ color: theme.primary }} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{selectedVoice.name}</p>
-                  <p className="text-xs" style={{ color: mutedTextColor }}>
+                  <p className="text-sm font-medium" style={{ color: theme.text }}>{selectedVoice.name}</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>
                     {selectedVoice.gender} • {selectedVoice.description}
                   </p>
                 </div>
@@ -448,10 +416,10 @@ export default function TemplateEditorPage() {
 
           {/* Temperature */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
               Temperature: {temperature}
             </label>
-            <p className="text-xs mb-3" style={{ color: mutedTextColor }}>
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
               Lower = more consistent/predictable. Higher = more creative/varied. Recommended: 0.7
             </p>
             <input
@@ -462,9 +430,9 @@ export default function TemplateEditorPage() {
               value={temperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
               className="w-full"
-              style={{ accentColor: primaryColor }}
+              style={{ accentColor: theme.primary }}
             />
-            <div className="flex justify-between text-xs mt-1" style={{ color: mutedTextColor }}>
+            <div className="flex justify-between text-xs mt-1" style={{ color: theme.textMuted }}>
               <span>Precise (0)</span>
               <span>Creative (1)</span>
             </div>
@@ -474,19 +442,19 @@ export default function TemplateEditorPage() {
         {/* Actions */}
         <div 
           className="mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
-          style={{ borderTop: `1px solid ${borderColor}` }}
+          style={{ borderTop: `1px solid ${theme.border}` }}
         >
           <button
             onClick={handleReset}
             disabled={resetting || !template?.isCustom}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-              isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'
-            }`}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
             style={{ 
-              backgroundColor: inputBg, 
-              border: `1px solid ${inputBorder}`,
-              color: mutedTextColor,
+              backgroundColor: theme.input, 
+              border: `1px solid ${theme.inputBorder}`,
+              color: theme.textMuted,
             }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.input}
           >
             {resetting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -500,10 +468,7 @@ export default function TemplateEditorPage() {
             onClick={handleSave}
             disabled={saving || !hasChanges}
             className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
-            style={{ 
-              backgroundColor: primaryColor, 
-              color: isDark ? '#050505' : '#ffffff',
-            }}
+            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
           >
             {saving ? (
               <>

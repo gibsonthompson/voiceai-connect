@@ -31,7 +31,7 @@ function isTrialStatus(status: string | null | undefined): boolean {
 const PLAN_PRICING: Record<string, number> = {
   starter: 99,
   professional: 199,
-  enterprise: 299,
+  enterprise: 499,
 };
 
 // ============================================================================

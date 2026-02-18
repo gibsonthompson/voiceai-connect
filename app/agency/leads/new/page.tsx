@@ -8,6 +8,7 @@ import {
   Calendar, DollarSign, Tag, FileText, Save
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { useTheme } from '../../../../hooks/useTheme';
 import { addDemoLead } from '../../demoData';
 
 const STATUS_OPTIONS = [
@@ -32,17 +33,6 @@ const SOURCE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-// Helper to determine text color based on background luminance
-const getContrastColor = (hexColor: string): string => {
-  const hex = hexColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#050505' : '#ffffff';
-};
-
-// Auto-format website URL with protocol
 function formatWebsiteUrl(url: string): string {
   if (!url || !url.trim()) return '';
   let formatted = url.trim();
@@ -54,7 +44,8 @@ function formatWebsiteUrl(url: string): string {
 
 export default function NewLeadPage() {
   const router = useRouter();
-  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
+  const { agency, loading: contextLoading, demoMode } = useAgency();
+  const theme = useTheme();
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -73,19 +64,6 @@ export default function NewLeadPage() {
     next_follow_up: '',
   });
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-  const buttonTextColor = getContrastColor(primaryColor);
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-
   const handleWebsiteBlur = () => {
     if (formData.website.trim()) {
       setFormData(prev => ({ ...prev, website: formatWebsiteUrl(prev.website) }));
@@ -101,7 +79,6 @@ export default function NewLeadPage() {
       return;
     }
 
-    // Demo mode: add to in-memory store and redirect
     if (demoMode) {
       const newLead = addDemoLead({
         ...formData,
@@ -156,10 +133,16 @@ export default function NewLeadPage() {
   if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
+
+  const inputStyle = {
+    backgroundColor: theme.input,
+    border: `1px solid ${theme.inputBorder}`,
+    color: theme.text,
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -168,14 +151,14 @@ export default function NewLeadPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: mutedTextColor }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
         </Link>
         
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Add New Lead</h1>
-        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Track a potential client in your pipeline</p>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Add New Lead</h1>
+        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Track a potential client in your pipeline</p>
       </div>
 
       {/* Error Message */}
@@ -183,9 +166,9 @@ export default function NewLeadPage() {
         <div 
           className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 text-sm"
           style={{
-            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
-            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
-            color: isDark ? '#f87171' : '#dc2626',
+            backgroundColor: theme.errorBg,
+            border: `1px solid ${theme.errorBorder}`,
+            color: theme.errorText,
           }}
         >
           {error}
@@ -199,54 +182,54 @@ export default function NewLeadPage() {
             {/* Business Information */}
             <div 
               className="rounded-xl p-4 sm:p-6"
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
-              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-                <Building2 className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+                <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
                 Business Information
               </h3>
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>
-                    Business Name <span style={{ color: isDark ? '#f87171' : '#dc2626' }}>*</span>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                    Business Name <span style={{ color: theme.error }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.business_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={inputStyle}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Industry</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
                   <input
                     type="text"
                     value={formData.industry}
                     onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
                     placeholder="e.g., Plumbing, HVAC"
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Phone</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Website</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Website</label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
                     <input
                       type="text"
                       value={formData.website}
@@ -254,7 +237,7 @@ export default function NewLeadPage() {
                       onBlur={handleWebsiteBlur}
                       placeholder="example.com"
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
@@ -264,33 +247,33 @@ export default function NewLeadPage() {
             {/* Contact Information */}
             <div 
               className="rounded-xl p-4 sm:p-6"
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
-              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-                <User className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+                <User className="h-4 w-4" style={{ color: theme.textMuted }} />
                 Contact Information
               </h3>
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Contact Name</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Contact Name</label>
                   <input
                     type="text"
                     value={formData.contact_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Email</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
@@ -300,10 +283,10 @@ export default function NewLeadPage() {
             {/* Initial Notes */}
             <div 
               className="rounded-xl p-4 sm:p-6"
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
-              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-                <FileText className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+                <FileText className="h-4 w-4" style={{ color: theme.textMuted }} />
                 Initial Notes
               </h3>
               <textarea
@@ -312,7 +295,7 @@ export default function NewLeadPage() {
                 placeholder="How did you find this lead? Any initial impressions..."
                 rows={3}
                 className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none"
-                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                style={inputStyle}
               />
             </div>
           </div>
@@ -322,20 +305,20 @@ export default function NewLeadPage() {
             {/* Lead Status & Source */}
             <div 
               className="rounded-xl p-4 sm:p-6"
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
-              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-                <Tag className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+                <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />
                 Lead Details
               </h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Status</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={inputStyle}
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -343,12 +326,12 @@ export default function NewLeadPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Source</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
                   <select
                     value={formData.source}
                     onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                    style={inputStyle}
                   >
                     <option value="">Select source</option>
                     {SOURCE_OPTIONS.map((opt) => (
@@ -362,38 +345,38 @@ export default function NewLeadPage() {
             {/* Deal Value & Follow-up */}
             <div 
               className="rounded-xl p-4 sm:p-6"
-              style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
-              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-                <DollarSign className="h-4 w-4" style={{ color: mutedTextColor }} />
+              <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+                <DollarSign className="h-4 w-4" style={{ color: theme.textMuted }} />
                 Deal Info
               </h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Estimated Value ($/mo)</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Estimated Value ($/mo)</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
                     <input
                       type="number"
                       value={formData.estimated_value}
                       onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
                       placeholder="99"
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                      style={inputStyle}
                     />
                   </div>
-                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>Expected monthly revenue</p>
+                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Expected monthly revenue</p>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Next Follow-up</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Next Follow-up</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
                     <input
                       type="date"
                       value={formData.next_follow_up}
                       onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))}
                       className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
@@ -405,7 +388,7 @@ export default function NewLeadPage() {
               type="submit"
               disabled={saving}
               className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
             >
               {saving ? (
                 <>

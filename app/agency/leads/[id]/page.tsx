@@ -10,6 +10,7 @@ import {
   Hash, TrendingUp
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { useTheme } from '../../../../hooks/useTheme';
 import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
 import ComposerModal from '../../../../components/ComposerModal';
@@ -72,16 +73,6 @@ const SOURCE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-// Helper to determine text color based on background luminance
-const getContrastColor = (hexColor: string): string => {
-  const hex = hexColor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#050505' : '#ffffff';
-};
-
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -116,7 +107,8 @@ export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
   const leadId = params.id as string;
-  const { agency, branding, loading: contextLoading, demoMode } = useAgency();
+  const { agency, loading: contextLoading, demoMode } = useAgency();
+  const theme = useTheme();
   
   const [lead, setLead] = useState<Lead | null>(null);
   const [outreach, setOutreach] = useState<OutreachStats | null>(null);
@@ -144,42 +136,28 @@ export default function LeadDetailPage() {
     next_follow_up: '',
   });
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-  const buttonTextColor = getContrastColor(primaryColor);
-
-  // Theme-based colors
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'new':
-        return { bg: 'rgba(59,130,246,0.1)', text: isDark ? '#60a5fa' : '#2563eb', border: 'rgba(59,130,246,0.2)' };
+        return { bg: theme.infoBg, text: theme.info, border: theme.infoBorder };
       case 'contacted':
-        return { bg: 'rgba(245,158,11,0.1)', text: isDark ? '#fbbf24' : '#d97706', border: 'rgba(245,158,11,0.2)' };
+        return { bg: theme.warningBg, text: theme.warning, border: theme.warningBorder };
       case 'qualified':
-        return { bg: 'rgba(168,85,247,0.1)', text: isDark ? '#a78bfa' : '#7c3aed', border: 'rgba(168,85,247,0.2)' };
+        return { bg: 'rgba(168,85,247,0.1)', text: theme.isDark ? '#a78bfa' : '#7c3aed', border: 'rgba(168,85,247,0.2)' };
       case 'proposal':
-        return { bg: 'rgba(6,182,212,0.1)', text: isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
+        return { bg: 'rgba(6,182,212,0.1)', text: theme.isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
       case 'won':
-        return { bg: `${primaryColor}15`, text: primaryColor, border: `${primaryColor}30` };
+        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
       case 'lost':
-        return { bg: 'rgba(239,68,68,0.1)', text: isDark ? '#f87171' : '#dc2626', border: 'rgba(239,68,68,0.2)' };
+        return { bg: theme.errorBg, text: theme.error, border: theme.errorBorder };
       default:
-        return { bg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', text: mutedTextColor, border: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb' };
+        return { bg: theme.hover, text: theme.textMuted, border: theme.border };
     }
   };
 
   useEffect(() => {
     if (!agency || !leadId) return;
 
-    // Demo mode: use sample data
     if (demoMode) {
       const demoData = getDemoLeadDetail(leadId);
       const demoLead = demoData.lead as Lead;
@@ -333,7 +311,6 @@ export default function LeadDetailPage() {
 
   const handleQuickStatusChange = async (newStatus: string) => {
     if (demoMode) {
-      // In demo mode, just update the UI locally
       setFormData(prev => ({ ...prev, status: newStatus }));
       setSuccessMessage('Status updated (demo)');
       setTimeout(() => setSuccessMessage(''), 2000);
@@ -375,14 +352,13 @@ export default function LeadDetailPage() {
 
   const handleOutreachSent = () => {
     setActivityKey(prev => prev + 1);
-    // Refresh lead data to get updated outreach stats
     fetchLead();
   };
 
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
@@ -393,7 +369,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-8"
-          style={{ color: mutedTextColor }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -401,15 +377,15 @@ export default function LeadDetailPage() {
         <div className="text-center py-16 sm:py-20">
           <div 
             className="mx-auto flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: 'rgba(239,68,68,0.1)' }}
+            style={{ backgroundColor: theme.errorBg }}
           >
-            <XCircle className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: isDark ? '#f87171' : '#dc2626', opacity: 0.5 }} />
+            <XCircle className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: theme.error, opacity: 0.5 }} />
           </div>
-          <p className="mt-4 font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{error}</p>
+          <p className="mt-4 font-medium" style={{ color: theme.text, opacity: 0.7 }}>{error}</p>
           <Link 
             href="/agency/leads"
             className="mt-4 inline-flex items-center gap-2 text-sm transition-colors"
-            style={{ color: primaryColor }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="h-4 w-4" />
             Return to leads
@@ -419,9 +395,14 @@ export default function LeadDetailPage() {
     );
   }
 
-  // Determine if email/sms buttons should be enabled (works in both demo and live mode)
   const canSendEmail = Boolean(formData.email && formData.email.includes('@'));
   const canSendSms = Boolean(formData.phone && formData.phone.length >= 10);
+
+  const inputStyle = {
+    backgroundColor: theme.input,
+    border: `1px solid ${theme.inputBorder}`,
+    color: theme.text,
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -430,7 +411,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: mutedTextColor }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -440,15 +421,15 @@ export default function LeadDetailPage() {
           <div className="flex items-center gap-3 sm:gap-4">
             <div 
               className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0"
-              style={{ backgroundColor: 'rgba(59,130,246,0.1)' }}
+              style={{ backgroundColor: theme.infoBg }}
             >
-              <span className="text-lg sm:text-2xl font-medium" style={{ color: isDark ? '#60a5fa' : '#2563eb' }}>
+              <span className="text-lg sm:text-2xl font-medium" style={{ color: theme.info }}>
                 {lead?.business_name?.charAt(0) || '?'}
               </span>
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate">{lead?.business_name}</h1>
-              <p className="text-sm" style={{ color: mutedTextColor }}>
+              <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
+              <p className="text-sm" style={{ color: theme.textMuted }}>
                 Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '—'}
               </p>
             </div>
@@ -461,9 +442,9 @@ export default function LeadDetailPage() {
                 disabled={deleting}
                 className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
                 style={{
-                  backgroundColor: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.3)',
-                  color: isDark ? '#f87171' : '#dc2626',
+                  backgroundColor: theme.errorBg,
+                  border: `1px solid ${theme.errorBorder}`,
+                  color: theme.error,
                 }}
               >
                 {deleting ? (
@@ -477,7 +458,7 @@ export default function LeadDetailPage() {
                 onClick={handleSave}
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-none justify-center"
-                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -496,9 +477,9 @@ export default function LeadDetailPage() {
         <div 
           className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 text-sm"
           style={{
-            backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
-            border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca',
-            color: isDark ? '#f87171' : '#dc2626',
+            backgroundColor: theme.errorBg,
+            border: `1px solid ${theme.errorBorder}`,
+            color: theme.errorText,
           }}
         >
           {error}
@@ -508,9 +489,9 @@ export default function LeadDetailPage() {
         <div 
           className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 text-sm flex items-center gap-2"
           style={{
-            backgroundColor: `${primaryColor}15`,
-            border: `1px solid ${primaryColor}30`,
-            color: primaryColor,
+            backgroundColor: theme.primary15,
+            border: `1px solid ${theme.primary30}`,
+            color: theme.primary,
           }}
         >
           <CheckCircle className="h-4 w-4 flex-shrink-0" />
@@ -521,28 +502,28 @@ export default function LeadDetailPage() {
       {/* Outreach Progress Card */}
       <div 
         className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
-        style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-4 w-4" style={{ color: primaryColor }} />
-          <h3 className="font-medium text-sm sm:text-base">Outreach Progress</h3>
+          <TrendingUp className="h-4 w-4" style={{ color: theme.primary }} />
+          <h3 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Outreach Progress</h3>
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
           {/* Email Count */}
           <div 
             className="rounded-lg p-3"
-            style={{ backgroundColor: isDark ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.05)' }}
+            style={{ backgroundColor: 'rgba(168,85,247,0.1)' }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <Mail className="h-4 w-4" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }} />
-              <span className="text-xs" style={{ color: mutedTextColor }}>Emails</span>
+              <Mail className="h-4 w-4" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }} />
+              <span className="text-xs" style={{ color: theme.textMuted }}>Emails</span>
             </div>
-            <p className="text-xl font-semibold" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>
+            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }}>
               {outreach?.email_count || 0}
             </p>
             {outreach?.last_email && (
-              <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
                 Last: {timeAgo(outreach.last_email.sent_at)}
               </p>
             )}
@@ -551,17 +532,17 @@ export default function LeadDetailPage() {
           {/* SMS Count */}
           <div 
             className="rounded-lg p-3"
-            style={{ backgroundColor: isDark ? 'rgba(6,182,212,0.1)' : 'rgba(6,182,212,0.05)' }}
+            style={{ backgroundColor: 'rgba(6,182,212,0.1)' }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="h-4 w-4" style={{ color: isDark ? '#22d3ee' : '#0891b2' }} />
-              <span className="text-xs" style={{ color: mutedTextColor }}>SMS</span>
+              <MessageSquare className="h-4 w-4" style={{ color: theme.isDark ? '#22d3ee' : '#0891b2' }} />
+              <span className="text-xs" style={{ color: theme.textMuted }}>SMS</span>
             </div>
-            <p className="text-xl font-semibold" style={{ color: isDark ? '#22d3ee' : '#0891b2' }}>
+            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#22d3ee' : '#0891b2' }}>
               {outreach?.sms_count || 0}
             </p>
             {outreach?.last_sms && (
-              <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
                 Last: {timeAgo(outreach.last_sms.sent_at)}
               </p>
             )}
@@ -570,16 +551,16 @@ export default function LeadDetailPage() {
           {/* Total Touches */}
           <div 
             className="rounded-lg p-3"
-            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}
+            style={{ backgroundColor: theme.hover }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <Hash className="h-4 w-4" style={{ color: mutedTextColor }} />
-              <span className="text-xs" style={{ color: mutedTextColor }}>Total</span>
+              <Hash className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <span className="text-xs" style={{ color: theme.textMuted }}>Total</span>
             </div>
-            <p className="text-xl font-semibold">
+            <p className="text-xl font-semibold" style={{ color: theme.text }}>
               {outreach?.total_count || 0}
             </p>
-            <p className="text-[10px] sm:text-xs mt-1" style={{ color: mutedTextColor }}>
+            <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
               touches
             </p>
           </div>
@@ -587,42 +568,40 @@ export default function LeadDetailPage() {
           {/* Last Contact */}
           <div 
             className="rounded-lg p-3"
-            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' }}
+            style={{ backgroundColor: theme.hover }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4" style={{ color: mutedTextColor }} />
-              <span className="text-xs" style={{ color: mutedTextColor }}>Last Contact</span>
+              <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <span className="text-xs" style={{ color: theme.textMuted }}>Last Contact</span>
             </div>
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium truncate" style={{ color: theme.text }}>
               {outreach?.last_outreach 
                 ? timeAgo(outreach.last_outreach.sent_at)
                 : 'Never'}
             </p>
             {outreach?.last_outreach && (
-              <p className="text-[10px] sm:text-xs mt-1 capitalize" style={{ color: mutedTextColor }}>
+              <p className="text-[10px] sm:text-xs mt-1 capitalize" style={{ color: theme.textMuted }}>
                 via {outreach.last_outreach.type}
               </p>
             )}
           </div>
         </div>
 
-        {/* Quick Actions with Sequence Labels */}
+        {/* Quick Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => openComposer('email')}
             disabled={!canSendEmail}
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: canSendEmail ? 'rgba(168,85,247,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : borderColor}`,
-              color: canSendEmail ? (isDark ? '#a78bfa' : '#7c3aed') : mutedTextColor,
+              backgroundColor: canSendEmail ? 'rgba(168,85,247,0.1)' : theme.hover,
+              border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : theme.border}`,
+              color: canSendEmail ? (theme.isDark ? '#a78bfa' : '#7c3aed') : theme.textMuted,
             }}
             title={!canSendEmail ? 'Add email address to send' : undefined}
           >
             <Mail className="h-4 w-4" />
-            <span>
-              {getOutreachLabel('email', outreach?.next_email_number || 1)}
-            </span>
+            <span>{getOutreachLabel('email', outreach?.next_email_number || 1)}</span>
             <Send className="h-3 w-3" />
           </button>
           
@@ -631,16 +610,14 @@ export default function LeadDetailPage() {
             disabled={!canSendSms}
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              backgroundColor: canSendSms ? 'rgba(6,182,212,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : borderColor}`,
-              color: canSendSms ? (isDark ? '#22d3ee' : '#0891b2') : mutedTextColor,
+              backgroundColor: canSendSms ? 'rgba(6,182,212,0.1)' : theme.hover,
+              border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : theme.border}`,
+              color: canSendSms ? (theme.isDark ? '#22d3ee' : '#0891b2') : theme.textMuted,
             }}
             title={!canSendSms ? 'Add phone number to send' : undefined}
           >
             <MessageSquare className="h-4 w-4" />
-            <span>
-              {getOutreachLabel('sms', outreach?.next_sms_number || 1)}
-            </span>
+            <span>{getOutreachLabel('sms', outreach?.next_sms_number || 1)}</span>
             <Send className="h-3 w-3" />
           </button>
           
@@ -650,9 +627,9 @@ export default function LeadDetailPage() {
               onClick={demoMode ? (e: React.MouseEvent) => e.preventDefault() : undefined}
               className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
               style={{
-                backgroundColor: 'rgba(34,197,94,0.1)',
-                border: '1px solid rgba(34,197,94,0.3)',
-                color: isDark ? '#4ade80' : '#16a34a',
+                backgroundColor: theme.successBg,
+                border: `1px solid ${theme.successBorder}`,
+                color: theme.success,
               }}
             >
               <PhoneCall className="h-4 w-4" />
@@ -665,12 +642,12 @@ export default function LeadDetailPage() {
         {!demoMode && (!canSendEmail || !canSendSms) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {!canSendEmail && (
-              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.05)', color: isDark ? '#fbbf24' : '#d97706' }}>
+              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: theme.warningBg, color: theme.warning }}>
                 Add email to enable email outreach
               </span>
             )}
             {!canSendSms && (
-              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.05)', color: isDark ? '#fbbf24' : '#d97706' }}>
+              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: theme.warningBg, color: theme.warning }}>
                 Add phone to enable SMS outreach
               </span>
             )}
@@ -680,7 +657,7 @@ export default function LeadDetailPage() {
 
       {/* Quick Status Buttons */}
       <div className="mb-6 sm:mb-8">
-        <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: mutedTextColor }}>Pipeline Stage</p>
+        <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: theme.textMuted }}>Pipeline Stage</p>
         <div className="flex flex-wrap gap-2">
           {STATUS_OPTIONS.map((status) => {
             const style = getStatusStyle(status.value);
@@ -695,9 +672,9 @@ export default function LeadDetailPage() {
                   border: `1px solid ${style.text}`,
                   color: style.text,
                 } : {
-                  backgroundColor: cardBg,
-                  border: `1px solid ${inputBorder}`,
-                  color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
+                  backgroundColor: theme.card,
+                  border: `1px solid ${theme.inputBorder}`,
+                  color: theme.textMuted,
                 }}
               >
                 {status.label}
@@ -708,68 +685,38 @@ export default function LeadDetailPage() {
       </div>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        {/* Left Column - Contact & Business Info */}
+        {/* Left Column */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Business Information */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <Building2 className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
               Business Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Business Name *</label>
-                <input
-                  type="text"
-                  value={formData.business_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
-                  readOnly={demoMode}
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                />
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Business Name *</label>
+                <input type="text" value={formData.business_name} onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Industry</label>
-                <input
-                  type="text"
-                  value={formData.industry}
-                  onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
-                  readOnly={demoMode}
-                  placeholder="e.g., Plumbing, HVAC"
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                />
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
+                <input type="text" value={formData.industry} onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))} readOnly={demoMode} placeholder="e.g., Plumbing, HVAC" className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Phone</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Phone</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    readOnly={demoMode}
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Website</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Website</label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                    readOnly={demoMode}
-                    placeholder="example.com"
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <input type="url" value={formData.website} onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))} readOnly={demoMode} placeholder="example.com" className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
             </div>
@@ -778,59 +725,37 @@ export default function LeadDetailPage() {
           {/* Contact Information */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <User className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <User className="h-4 w-4" style={{ color: theme.textMuted }} />
               Contact Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Contact Name</label>
-                <input
-                  type="text"
-                  value={formData.contact_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                  readOnly={demoMode}
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                />
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Contact Name</label>
+                <input type="text" value={formData.contact_name} onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Email</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    readOnly={demoMode}
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <input type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Notes Section */}
+          {/* Notes */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <FileText className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <FileText className="h-4 w-4" style={{ color: theme.textMuted }} />
               Internal Notes
             </h3>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              readOnly={demoMode}
-              placeholder="Add notes about this lead..."
-              rows={4}
-              className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none"
-              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-            />
+            <textarea value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} readOnly={demoMode} placeholder="Add notes about this lead..." rows={4} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none" style={inputStyle} />
           </div>
 
           {/* Activity Log */}
@@ -844,41 +769,29 @@ export default function LeadDetailPage() {
           )}
         </div>
 
-        {/* Right Column - Lead Details */}
+        {/* Right Column */}
         <div className="space-y-4 sm:space-y-6">
           {/* Lead Status & Source */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <Tag className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />
               Lead Details
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  disabled={demoMode}
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                >
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
+                <select value={formData.status} onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))} disabled={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle}>
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Source</label>
-                <select
-                  value={formData.source}
-                  onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                  disabled={demoMode}
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                >
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
+                <select value={formData.source} onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))} disabled={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle}>
                   <option value="">Select source</option>
                   {SOURCE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -891,45 +804,30 @@ export default function LeadDetailPage() {
           {/* Deal Value & Follow-up */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base">
-              <DollarSign className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <DollarSign className="h-4 w-4" style={{ color: theme.textMuted }} />
               Deal Info
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>Estimated Value ($/mo)</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Estimated Value ($/mo)</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="number"
-                    value={formData.estimated_value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
-                    readOnly={demoMode}
-                    placeholder="99"
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <input type="number" value={formData.estimated_value} onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))} readOnly={demoMode} placeholder="99" className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: mutedTextColor }}>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
                   Scheduled Follow-up
-                  <span className="ml-1 text-[10px]" style={{ color: mutedTextColor }}>(optional)</span>
+                  <span className="ml-1 text-[10px]" style={{ color: theme.textMuted }}>(optional)</span>
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
-                  <input
-                    type="date"
-                    value={formData.next_follow_up}
-                    onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))}
-                    readOnly={demoMode}
-                    className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
-                  />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <input type="date" value={formData.next_follow_up} onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
-                <p className="text-[10px] mt-1" style={{ color: mutedTextColor }}>
+                <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>
                   Set a reminder date for manual follow-up
                 </p>
               </div>
@@ -939,25 +837,25 @@ export default function LeadDetailPage() {
           {/* Timestamps */}
           <div 
             className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
-            <h3 className="font-medium mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <Clock className="h-4 w-4" style={{ color: mutedTextColor }} />
+            <h3 className="font-medium mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
+              <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
               Timestamps
             </h3>
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between">
-                <span style={{ color: mutedTextColor }}>Created</span>
-                <span>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '—'}</span>
+                <span style={{ color: theme.textMuted }}>Created</span>
+                <span style={{ color: theme.text }}>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '—'}</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: mutedTextColor }}>Last Updated</span>
-                <span>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '—'}</span>
+                <span style={{ color: theme.textMuted }}>Last Updated</span>
+                <span style={{ color: theme.text }}>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '—'}</span>
               </div>
               {outreach?.last_outreach && (
                 <div className="flex justify-between">
-                  <span style={{ color: mutedTextColor }}>Last Outreach</span>
-                  <span>{new Date(outreach.last_outreach.sent_at).toLocaleString()}</span>
+                  <span style={{ color: theme.textMuted }}>Last Outreach</span>
+                  <span style={{ color: theme.text }}>{new Date(outreach.last_outreach.sent_at).toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -965,7 +863,7 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Composer Modal — now renders in both demo and live mode */}
+      {/* Composer Modal */}
       {agency && lead && (
         <ComposerModal
           isOpen={composerOpen}
