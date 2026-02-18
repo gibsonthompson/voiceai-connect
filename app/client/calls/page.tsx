@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   PhoneCall, Search, Filter, ChevronRight, Loader2
 } from 'lucide-react';
-import { useClient } from '../context';
+import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
 function hexToRgba(hex: string, alpha: number): string {

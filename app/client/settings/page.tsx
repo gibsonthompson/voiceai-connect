@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useClient } from '../context';
+import { useClient } from '@/lib/client-context';
 import { ClientSettingsContent } from './settings-content';
 
 export default function ClientSettingsPage() {

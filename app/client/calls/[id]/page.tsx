@@ -7,7 +7,7 @@ import {
   User, MapPin, AlertCircle, MessageSquare, Loader2
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
-import { useClient } from '../../context';
+import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
 interface Call {

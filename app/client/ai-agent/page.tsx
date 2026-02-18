@@ -6,7 +6,7 @@ import {
   Play, Pause, Check, ChevronDown, RotateCcw, Sparkles, AlertCircle,
   Plus, Trash2, Globe, Briefcase, HelpCircle, FileText
 } from 'lucide-react';
-import { useClient } from '../context';
+import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import UpgradePrompt from '@/components/client/UpgradePrompt';
 

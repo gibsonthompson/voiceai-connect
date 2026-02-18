@@ -6,7 +6,7 @@ import {
   Phone, TrendingUp, PhoneCall, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight
 } from 'lucide-react';
-import { ClientProvider, useClient } from './context';
+import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
 function setFavicon(url: string) {

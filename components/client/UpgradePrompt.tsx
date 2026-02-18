@@ -1,8 +1,8 @@
 'use client';
 
 import { Lock, ArrowUpRight } from 'lucide-react';
-import type { ClientFeatureKey } from '@/app/client/context';
-import { CLIENT_FEATURE_LABELS } from '@/app/client/context';
+import type { ClientFeatureKey } from '@/lib/client-context';
+import { CLIENT_FEATURE_LABELS } from '@/lib/client-context';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);

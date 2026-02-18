@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useClient } from '../context';
+import { useClient } from '@/lib/client-context';
 import { ClientDashboardClient } from './dashboard-content';
 
 export default function ClientDashboardPage() {
