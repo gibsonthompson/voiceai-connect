@@ -5,7 +5,7 @@ import { useAgency } from '../context';
 import { useTheme, buildTheme, BrandingOverrides, isValidHex } from '../../../hooks/useTheme';
 import {
   Save, RotateCcw, Loader2, Check, AlertCircle, Paintbrush, Eye,
-  PanelLeft, LayoutDashboard, Type, Square, MousePointer,
+  PanelLeft, LayoutDashboard, Type, Square, MousePointer, Shuffle, Sparkles,
 } from 'lucide-react';
 
 // ============================================================================
@@ -21,18 +21,13 @@ interface ColorField {
 }
 
 const COLOR_FIELDS: ColorField[] = [
-  // Sidebar
   { key: 'nav_bg', label: 'Sidebar Background', description: 'Navigation sidebar background color', group: 'sidebar', icon: PanelLeft },
   { key: 'nav_text', label: 'Sidebar Text', description: 'Text color in the navigation sidebar', group: 'sidebar', icon: Type },
-  // Page
   { key: 'page_bg', label: 'Page Background', description: 'Main content area background', group: 'page', icon: LayoutDashboard },
-  // Cards
   { key: 'card_bg', label: 'Card Background', description: 'Background color for cards and panels', group: 'cards', icon: Square },
   { key: 'card_border', label: 'Card Border', description: 'Border color for cards and panels', group: 'cards', icon: Square },
-  // Text
   { key: 'text_primary', label: 'Primary Text', description: 'Main body text color', group: 'text', icon: Type },
   { key: 'text_muted', label: 'Muted Text', description: 'Secondary/muted text color', group: 'text', icon: Type },
-  // Buttons
   { key: 'button_text', label: 'Button Text', description: 'Text color on primary-colored buttons', group: 'buttons', icon: MousePointer },
 ];
 
@@ -43,6 +38,194 @@ const GROUPS = [
   { key: 'text', label: 'Text Colors', icon: Type },
   { key: 'buttons', label: 'Buttons', icon: MousePointer },
 ] as const;
+
+// ============================================================================
+// COLOR UTILITIES
+// ============================================================================
+
+/** Darken a hex color by a factor (0-1, where 0.2 = 20% darker) */
+function darken(hex: string, factor: number): string {
+  const c = hex.replace('#', '');
+  const r = Math.max(0, Math.round(parseInt(c.substring(0, 2), 16) * (1 - factor)));
+  const g = Math.max(0, Math.round(parseInt(c.substring(2, 4), 16) * (1 - factor)));
+  const b = Math.max(0, Math.round(parseInt(c.substring(4, 6), 16) * (1 - factor)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/** Lighten a hex color by a factor (0-1, where 0.2 = 20% lighter) */
+function lighten(hex: string, factor: number): string {
+  const c = hex.replace('#', '');
+  const r = Math.min(255, Math.round(parseInt(c.substring(0, 2), 16) + (255 - parseInt(c.substring(0, 2), 16)) * factor));
+  const g = Math.min(255, Math.round(parseInt(c.substring(2, 4), 16) + (255 - parseInt(c.substring(2, 4), 16)) * factor));
+  const b = Math.min(255, Math.round(parseInt(c.substring(4, 6), 16) + (255 - parseInt(c.substring(4, 6), 16)) * factor));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/** Mix two hex colors (0 = all color1, 1 = all color2) */
+function mixColors(hex1: string, hex2: string, weight: number): string {
+  const c1 = hex1.replace('#', '');
+  const c2 = hex2.replace('#', '');
+  const r = Math.round(parseInt(c1.substring(0, 2), 16) * (1 - weight) + parseInt(c2.substring(0, 2), 16) * weight);
+  const g = Math.round(parseInt(c1.substring(2, 4), 16) * (1 - weight) + parseInt(c2.substring(2, 4), 16) * weight);
+  const b = Math.round(parseInt(c1.substring(4, 6), 16) * (1 - weight) + parseInt(c2.substring(4, 6), 16) * weight);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/** Check luminance */
+function isLight(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
+
+// ============================================================================
+// PALETTE SHUFFLER — uses agency's own brand colors
+// ============================================================================
+
+interface PaletteRecipe {
+  name: string;
+  build: (primary: string, secondary: string, accent: string, isDark: boolean) => BrandingOverrides;
+}
+
+/**
+ * Each recipe arranges the agency's existing primary, secondary, and accent
+ * colors into different dashboard slots. The colors always come from the
+ * agency's brand — we just move them around and derive tints/shades.
+ */
+const PALETTE_RECIPES: PaletteRecipe[] = [
+  {
+    name: 'Brand Sidebar',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(p, 0.6),
+      nav_text: '#ffffff',
+      page_bg: dark ? '#0a0a0a' : '#f8f9fa',
+      card_bg: dark ? darken(p, 0.85) : '#ffffff',
+      card_border: dark ? darken(p, 0.7) : lighten(p, 0.85),
+      text_primary: dark ? '#f0f0f0' : '#111827',
+      text_muted: dark ? '#a0a0a0' : '#6b7280',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Secondary Nav',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(s, 0.5),
+      nav_text: '#ffffff',
+      page_bg: dark ? '#070707' : '#fafafa',
+      card_bg: dark ? darken(s, 0.8) : '#ffffff',
+      card_border: dark ? darken(s, 0.65) : lighten(s, 0.8),
+      text_primary: dark ? '#f5f5f5' : '#1a1a1a',
+      text_muted: dark ? '#999999' : '#707070',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Accent Sidebar',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(a, 0.55),
+      nav_text: '#ffffff',
+      page_bg: dark ? '#080808' : '#f9fafb',
+      card_bg: dark ? darken(a, 0.82) : '#ffffff',
+      card_border: dark ? darken(a, 0.68) : lighten(a, 0.82),
+      text_primary: dark ? '#ebebeb' : '#111827',
+      text_muted: dark ? '#a5a5a5' : '#6b7280',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Deep Brand',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(p, 0.75),
+      nav_text: lighten(p, 0.7),
+      page_bg: dark ? darken(p, 0.9) : lighten(p, 0.95),
+      card_bg: dark ? darken(p, 0.82) : '#ffffff',
+      card_border: dark ? darken(p, 0.65) : lighten(p, 0.8),
+      text_primary: dark ? lighten(p, 0.8) : darken(p, 0.7),
+      text_muted: dark ? lighten(p, 0.5) : darken(p, 0.4),
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Warm Blend',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(mixColors(p, s, 0.5), 0.6),
+      nav_text: '#ffffff',
+      page_bg: dark ? '#0b0b0b' : lighten(a, 0.95),
+      card_bg: dark ? darken(mixColors(p, a, 0.3), 0.8) : '#ffffff',
+      card_border: dark ? darken(s, 0.6) : lighten(s, 0.8),
+      text_primary: dark ? '#f0f0f0' : '#111827',
+      text_muted: dark ? '#999999' : '#6b7280',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Soft Tint',
+    build: (p, s, a, dark) => ({
+      nav_bg: dark ? darken(s, 0.7) : lighten(s, 0.9),
+      nav_text: dark ? lighten(s, 0.7) : darken(s, 0.5),
+      page_bg: dark ? '#060606' : lighten(p, 0.96),
+      card_bg: dark ? darken(p, 0.88) : '#ffffff',
+      card_border: dark ? darken(p, 0.7) : lighten(p, 0.85),
+      text_primary: dark ? '#e8e8e8' : '#1a1a1a',
+      text_muted: dark ? '#888888' : '#777777',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Bold Accent',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(a, 0.65),
+      nav_text: lighten(a, 0.75),
+      page_bg: dark ? darken(s, 0.92) : lighten(s, 0.96),
+      card_bg: dark ? darken(a, 0.85) : '#ffffff',
+      card_border: dark ? darken(a, 0.6) : lighten(a, 0.8),
+      text_primary: dark ? '#f0f0f0' : '#111827',
+      text_muted: dark ? '#a0a0a0' : '#6b7280',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Midnight Brand',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(p, 0.82),
+      nav_text: a,
+      page_bg: dark ? '#050508' : '#f7f8fa',
+      card_bg: dark ? darken(p, 0.88) : '#ffffff',
+      card_border: dark ? darken(p, 0.72) : lighten(p, 0.88),
+      text_primary: dark ? '#e5e5e5' : '#111827',
+      text_muted: dark ? '#909090' : '#6b7280',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Tri-Tone',
+    build: (p, s, a, dark) => ({
+      nav_bg: darken(s, 0.65),
+      nav_text: lighten(a, 0.6),
+      page_bg: dark ? darken(p, 0.92) : lighten(a, 0.96),
+      card_bg: dark ? darken(s, 0.83) : '#ffffff',
+      card_border: dark ? mixColors(darken(p, 0.6), darken(a, 0.6), 0.5) : lighten(p, 0.82),
+      text_primary: dark ? lighten(a, 0.7) : darken(s, 0.6),
+      text_muted: dark ? lighten(s, 0.4) : darken(a, 0.3),
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+  {
+    name: 'Clean Slate',
+    build: (p, s, a, dark) => ({
+      nav_bg: dark ? '#111111' : '#ffffff',
+      nav_text: dark ? '#e0e0e0' : '#333333',
+      page_bg: dark ? '#080808' : '#f5f5f5',
+      card_bg: dark ? '#141414' : '#ffffff',
+      card_border: dark ? '#222222' : '#e0e0e0',
+      text_primary: dark ? '#f0f0f0' : '#111111',
+      text_muted: dark ? '#888888' : '#777777',
+      button_text: isLight(p) ? '#050505' : '#ffffff',
+    }),
+  },
+];
 
 // ============================================================================
 // COLOR INPUT COMPONENT
@@ -67,7 +250,6 @@ function ColorInput({
   const isOverridden = !!value && isValidHex(value);
   const displayColor = isOverridden ? value : defaultValue;
 
-  // Sync external value changes
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
@@ -80,7 +262,6 @@ function ColorInput({
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
-    // Auto-prepend # if they're typing a hex
     if (val && !val.startsWith('#')) {
       val = '#' + val;
     }
@@ -187,7 +368,6 @@ function LivePreview({
       className="rounded-xl overflow-hidden border"
       style={{ borderColor: previewTheme.border }}
     >
-      {/* Mini layout preview */}
       <div className="flex" style={{ height: '280px' }}>
         {/* Mini sidebar */}
         <div
@@ -197,7 +377,6 @@ function LivePreview({
             borderRight: `1px solid ${previewTheme.sidebarBorder}`,
           }}
         >
-          {/* Logo placeholder */}
           <div className="flex items-center gap-2 mb-3 px-1">
             <div
               className="w-6 h-6 rounded-md flex-shrink-0"
@@ -209,7 +388,6 @@ function LivePreview({
             />
           </div>
 
-          {/* Nav items */}
           {['Dashboard', 'Clients', 'Settings'].map((label, i) => (
             <div
               key={label}
@@ -217,13 +395,13 @@ function LivePreview({
               style={
                 i === 0
                   ? { backgroundColor: previewTheme.sidebarActiveItemBg, color: previewTheme.sidebarActiveItemColor }
-                  : { color: previewTheme.sidebarTextMuted }
+                  : { color: previewTheme.sidebarText }
               }
             >
               <div
                 className="w-3.5 h-3.5 rounded"
                 style={{
-                  backgroundColor: i === 0 ? previewTheme.sidebarActiveItemColor : previewTheme.sidebarTextMuted,
+                  backgroundColor: i === 0 ? previewTheme.sidebarActiveItemColor : previewTheme.sidebarText,
                   opacity: i === 0 ? 1 : 0.5,
                 }}
               />
@@ -231,10 +409,8 @@ function LivePreview({
             </div>
           ))}
 
-          {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Plan badge */}
           <div
             className="rounded-lg px-2 py-1.5"
             style={{
@@ -249,13 +425,11 @@ function LivePreview({
 
         {/* Main content area */}
         <div className="flex-1 p-4" style={{ backgroundColor: previewTheme.bg }}>
-          {/* Page title */}
           <div
             className="h-3 w-24 rounded-full mb-4"
             style={{ backgroundColor: previewTheme.text, opacity: 0.7 }}
           />
 
-          {/* Cards grid */}
           <div className="grid grid-cols-2 gap-2.5">
             {[1, 2, 3, 4].map((n) => (
               <div
@@ -282,7 +456,6 @@ function LivePreview({
             ))}
           </div>
 
-          {/* Button preview */}
           <div className="mt-3 flex gap-2">
             <div
               className="rounded-lg px-3 py-1.5"
@@ -305,7 +478,6 @@ function LivePreview({
             </div>
           </div>
 
-          {/* Text sample */}
           <div className="mt-3">
             <p className="text-[10px] font-medium" style={{ color: previewTheme.text }}>
               Primary text looks like this
@@ -328,7 +500,6 @@ export default function BrandingPage() {
   const { agency, branding, refreshAgency } = useAgency();
   const theme = useTheme();
 
-  // Backend URL
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   // Local overrides state (working copy)
@@ -336,6 +507,7 @@ export default function BrandingPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastShuffleIndex, setLastShuffleIndex] = useState(-1);
 
   // Initialize from agency data
   useEffect(() => {
@@ -346,21 +518,21 @@ export default function BrandingPage() {
     }
   }, [agency?.branding_overrides]);
 
-  // Determine base mode + primary for preview computation
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
   const primaryColor = branding.primaryColor || '#10b981';
+  const secondaryColor = branding.secondaryColor || '#059669';
+  const accentColor = branding.accentColor || '#34d399';
 
-  // Build a live preview theme from current working overrides
+  // Live preview theme from current working overrides
   const previewTheme = useMemo(() => {
     return buildTheme(mode as 'dark' | 'light', primaryColor, overrides);
   }, [mode, primaryColor, overrides]);
 
-  // Get default values (theme with NO overrides) for placeholder display
+  // Default theme (no overrides) for placeholder display
   const defaultTheme = useMemo(() => {
     return buildTheme(mode as 'dark' | 'light', primaryColor);
   }, [mode, primaryColor]);
 
-  // Map field keys to their default theme values
   const getDefaultForField = useCallback((key: keyof BrandingOverrides): string => {
     const map: Record<keyof BrandingOverrides, string> = {
       nav_bg: defaultTheme.sidebarBg,
@@ -375,19 +547,39 @@ export default function BrandingPage() {
     return map[key] || '#000000';
   }, [defaultTheme]);
 
-  // Check if anything has changed from saved state
   const hasChanges = useMemo(() => {
-    const saved = agency?.branding_overrides || {};
+    const savedOverrides = agency?.branding_overrides || {};
     for (const field of COLOR_FIELDS) {
-      const savedVal = (saved as any)[field.key];
+      const savedVal = (savedOverrides as any)[field.key];
       const currentVal = overrides[field.key];
       if ((savedVal || '') !== (currentVal || '')) return true;
     }
     return false;
   }, [overrides, agency?.branding_overrides]);
 
-  // Count active overrides
   const activeCount = COLOR_FIELDS.filter(f => isValidHex(overrides[f.key])).length;
+
+  // ============================================================================
+  // PALETTE SHUFFLER
+  // ============================================================================
+  const handleShuffle = () => {
+    const isDark = mode === 'dark';
+
+    // Pick a different recipe than last time
+    let idx = Math.floor(Math.random() * PALETTE_RECIPES.length);
+    if (PALETTE_RECIPES.length > 1) {
+      while (idx === lastShuffleIndex) {
+        idx = Math.floor(Math.random() * PALETTE_RECIPES.length);
+      }
+    }
+    setLastShuffleIndex(idx);
+
+    const recipe = PALETTE_RECIPES[idx];
+    const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark);
+    setOverrides(result);
+    setSaved(false);
+    setError(null);
+  };
 
   // Handlers
   const handleChange = (key: keyof BrandingOverrides, value: string) => {
@@ -421,7 +613,6 @@ export default function BrandingPage() {
     try {
       const token = localStorage.getItem('auth_token');
 
-      // Build clean overrides (only valid hex values)
       const cleanOverrides: BrandingOverrides = {};
       for (const field of COLOR_FIELDS) {
         const val = overrides[field.key];
@@ -430,7 +621,6 @@ export default function BrandingPage() {
         }
       }
 
-      // Send null if empty (resets to defaults)
       const payload = {
         branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null,
       };
@@ -483,7 +673,7 @@ export default function BrandingPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {activeCount > 0 && (
             <button
               onClick={handleResetAll}
@@ -535,6 +725,43 @@ export default function BrandingPage() {
         </div>
       )}
 
+      {/* Shuffle Banner */}
+      <div
+        className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+        style={{
+          backgroundColor: theme.card,
+          border: `1px solid ${theme.border}`,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: theme.primary15 }}
+          >
+            <Sparkles className="h-4.5 w-4.5" style={{ color: theme.primary }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.text }}>
+              Auto-generate a palette
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+              Shuffles your brand colors ({primaryColor}, {secondaryColor}, {accentColor}) into different arrangements. Press multiple times for different combos.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleShuffle}
+          className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 flex-shrink-0"
+          style={{
+            backgroundColor: theme.primary,
+            color: theme.primaryText,
+          }}
+        >
+          <Shuffle className="h-4 w-4" />
+          Shuffle
+        </button>
+      </div>
+
       {/* Two-column layout: controls + preview */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Color controls - 3 cols */}
@@ -580,7 +807,6 @@ export default function BrandingPage() {
                   border: `1px solid ${theme.border}`,
                 }}
               >
-                {/* Group header */}
                 <div
                   className="px-4 py-3 flex items-center gap-2"
                   style={{ borderBottom: `1px solid ${theme.border}` }}
@@ -591,7 +817,6 @@ export default function BrandingPage() {
                   </span>
                 </div>
 
-                {/* Fields */}
                 <div className="p-3 space-y-2">
                   {fields.map((field) => (
                     <ColorInput
@@ -613,7 +838,6 @@ export default function BrandingPage() {
         {/* Preview - 2 cols */}
         <div className="lg:col-span-2">
           <div className="sticky top-6 space-y-4">
-            {/* Preview header */}
             <div className="flex items-center gap-2">
               <Eye className="h-4 w-4" style={{ color: theme.primary }} />
               <span className="text-sm font-semibold" style={{ color: theme.text }}>
@@ -629,8 +853,38 @@ export default function BrandingPage() {
               )}
             </div>
 
-            {/* Preview panel */}
             <LivePreview previewTheme={previewTheme} primaryColor={primaryColor} />
+
+            {/* Brand colors reference */}
+            <div
+              className="rounded-xl p-3"
+              style={{
+                backgroundColor: theme.card,
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>
+                Your brand colors
+              </p>
+              <div className="flex gap-2">
+                {[
+                  { label: 'Primary', color: primaryColor },
+                  { label: 'Secondary', color: secondaryColor },
+                  { label: 'Accent', color: accentColor },
+                ].map(({ label, color }) => (
+                  <div key={label} className="flex items-center gap-1.5 flex-1">
+                    <div
+                      className="w-5 h-5 rounded-md flex-shrink-0 border"
+                      style={{ backgroundColor: color, borderColor: theme.border }}
+                    />
+                    <div>
+                      <p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p>
+                      <p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{color}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Info note */}
             <div
@@ -642,7 +896,7 @@ export default function BrandingPage() {
             >
               <p className="text-xs leading-relaxed" style={{ color: theme.infoText }}>
                 Changes apply to both your agency dashboard and all your client dashboards.
-                Colors auto-derive complementary values — you only need to set the ones you want to customize.
+                Use Shuffle to auto-arrange your brand colors, then fine-tune individual fields.
               </p>
             </div>
           </div>

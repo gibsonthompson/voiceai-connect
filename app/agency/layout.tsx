@@ -565,7 +565,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                     ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' }
                     : active 
                       ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor }
-                      : { color: theme.sidebarTextMuted }
+                      : { color: theme.sidebarText }
                 }
                 onMouseEnter={(e) => {
                   if (!isLocked && !active) {
