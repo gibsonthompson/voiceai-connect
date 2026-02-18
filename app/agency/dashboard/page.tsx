@@ -6,6 +6,7 @@ import {
   ChevronRight, ArrowUpRight, Loader2
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { useTheme } from '../../../hooks/useTheme';
 import { DEMO_DASHBOARD } from '../demoData';
 
 interface RecentClient {
@@ -39,26 +40,15 @@ function isTrialStatus(status: string | null | undefined): boolean {
 }
 
 export default function AgencyDashboardPage() {
-  const { agency, user, branding, loading: contextLoading, demoMode } = useAgency();
+  const { agency, user, loading: contextLoading, demoMode } = useAgency();
+  const theme = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
-
-  // Agency colors
-  const primaryColor = branding.primaryColor || '#10b981';
-
-  // Theme-based colors
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-
   useEffect(() => {
     if (!agency) return;
 
-    // Demo mode: use sample data
     if (demoMode) {
       setStats(DEMO_DASHBOARD as DashboardStats);
       setLoading(false);
@@ -113,7 +103,7 @@ export default function AgencyDashboardPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
       </div>
     );
   }
@@ -123,19 +113,19 @@ export default function AgencyDashboardPage() {
       label: 'Total Clients',
       value: stats?.clientCount || 0,
       icon: Users,
-      color: primaryColor,
+      color: theme.primary,
     },
     {
       label: 'Monthly Revenue',
       value: formatCurrency(stats?.mrr || 0),
       icon: DollarSign,
-      color: '#f59e0b',
+      color: theme.warning,
     },
     {
       label: 'Calls This Month',
       value: stats?.totalCalls || 0,
       icon: PhoneCall,
-      color: '#3b82f6',
+      color: theme.info,
     },
   ];
 
@@ -143,35 +133,35 @@ export default function AgencyDashboardPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
           Welcome back{user?.first_name ? `, ${user.first_name}` : ''}! 👋
         </h1>
-        <p className="mt-1 text-sm sm:text-base" style={{ color: mutedTextColor }}>
+        <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>
           Here&apos;s how your agency is performing.
         </p>
       </div>
 
-      {/* Trial Info Banner - Informational only (Stripe auto-charges) */}
+      {/* Trial Info Banner */}
       {!demoMode && isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
         <div 
           className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3"
           style={{
-            backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.1)',
-            border: '1px solid rgba(59,130,246,0.2)',
+            backgroundColor: theme.infoBg,
+            border: `1px solid ${theme.infoBorder}`,
           }}
         >
           <div className="flex items-center gap-3 flex-1">
             <div 
               className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-              style={{ backgroundColor: 'rgba(59,130,246,0.2)' }}
+              style={{ backgroundColor: theme.infoBg }}
             >
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }} />
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.info }} />
             </div>
             <div>
-              <p className="font-medium text-sm sm:text-base" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+              <p className="font-medium text-sm sm:text-base" style={{ color: theme.infoText }}>
                 {trialDaysLeft} days remaining in your trial
               </p>
-              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(147,197,253,0.7)' : '#3b82f6' }}>
+              <p className="text-xs sm:text-sm" style={{ color: theme.infoText, opacity: 0.7 }}>
                 Your card will be charged automatically when the trial ends. No action needed.
               </p>
             </div>
@@ -183,16 +173,16 @@ export default function AgencyDashboardPage() {
       <div 
         className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
         style={{
-          background: isDark 
-            ? `linear-gradient(to right, ${primaryColor}12, transparent)` 
-            : `linear-gradient(to right, ${primaryColor}08, transparent)`,
-          border: `1px solid ${primaryColor}30`,
+          background: theme.isDark 
+            ? `linear-gradient(to right, ${theme.primary}12, transparent)` 
+            : `linear-gradient(to right, ${theme.primary}08, transparent)`,
+          border: `1px solid ${theme.primary30}`,
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm mb-1" style={{ color: mutedTextColor }}>Your Client Signup Link</p>
-            <p className="text-sm sm:text-lg font-medium truncate" style={{ color: primaryColor }}>
+            <p className="text-xs sm:text-sm mb-1" style={{ color: theme.textMuted }}>Your Client Signup Link</p>
+            <p className="text-sm sm:text-lg font-medium truncate" style={{ color: theme.primary }}>
               {signupLink}
             </p>
           </div>
@@ -200,9 +190,9 @@ export default function AgencyDashboardPage() {
             onClick={copySignupLink}
             className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex-shrink-0"
             style={{
-              backgroundColor: `${primaryColor}15`,
-              border: `1px solid ${primaryColor}40`,
-              color: primaryColor,
+              backgroundColor: theme.primary15,
+              border: `1px solid ${theme.primary}40`,
+              color: theme.primary,
             }}
           >
             {copied ? (
@@ -227,15 +217,15 @@ export default function AgencyDashboardPage() {
             key={stat.label}
             className="rounded-xl p-4 sm:p-6"
             style={{ 
-              backgroundColor: cardBg,
-              border: `1px solid ${borderColor}`,
-              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+              backgroundColor: theme.card,
+              border: `1px solid ${theme.border}`,
+              boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
             <div className="flex items-center justify-between sm:justify-start sm:gap-4">
               <div className="order-2 sm:order-1">
-                <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>{stat.label}</p>
-                <p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold">{stat.value}</p>
+                <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>{stat.label}</p>
+                <p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p>
               </div>
               <div 
                 className="order-1 sm:order-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl"
@@ -252,20 +242,20 @@ export default function AgencyDashboardPage() {
       <div 
         className="rounded-xl"
         style={{ 
-          backgroundColor: cardBg,
-          border: `1px solid ${borderColor}`,
-          boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+          backgroundColor: theme.card,
+          border: `1px solid ${theme.border}`,
+          boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
         <div 
           className="flex items-center justify-between p-4 sm:p-5"
-          style={{ borderBottom: `1px solid ${borderColor}` }}
+          style={{ borderBottom: `1px solid ${theme.border}` }}
         >
-          <h2 className="font-medium text-sm sm:text-base">Recent Clients</h2>
+          <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent Clients</h2>
           <a 
             href="/agency/clients" 
             className="flex items-center gap-1 text-xs sm:text-sm transition-colors"
-            style={{ color: primaryColor }}
+            style={{ color: theme.primary }}
           >
             View all
             <ChevronRight className="h-4 w-4" />
@@ -277,22 +267,22 @@ export default function AgencyDashboardPage() {
             <div className="py-8 sm:py-12 text-center">
               <div 
                 className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${primaryColor}15` }}
+                style={{ backgroundColor: theme.primary15 }}
               >
-                <Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: mutedTextColor }} />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />
               </div>
-              <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#374151' }}>
+              <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>
                 No clients yet
               </p>
-              <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
                 Share your signup link to start acquiring clients.
               </p>
               <button
                 onClick={copySignupLink}
                 className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
                 style={{ 
-                  backgroundColor: primaryColor, 
-                  color: isDark ? '#050505' : '#ffffff',
+                  backgroundColor: theme.primary, 
+                  color: theme.primaryText,
                 }}
               >
                 <Copy className="h-4 w-4" />
@@ -305,26 +295,26 @@ export default function AgencyDashboardPage() {
                 <a
                   key={client.id}
                   href={`/agency/clients/${client.id}`}
-                  className={`flex items-center justify-between rounded-xl p-3 sm:p-4 transition-colors ${
-                    isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]'
-                  }`}
+                  className="flex items-center justify-between rounded-xl p-3 sm:p-4 transition-colors"
                   style={{ 
-                    backgroundColor: cardBg,
-                    border: `1px solid ${borderColor}`,
+                    backgroundColor: theme.card,
+                    border: `1px solid ${theme.border}`,
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.card}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div 
                       className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full flex-shrink-0"
-                      style={{ backgroundColor: `${primaryColor}15` }}
+                      style={{ backgroundColor: theme.primary15 }}
                     >
-                      <span className="text-xs sm:text-sm font-medium" style={{ color: primaryColor }}>
+                      <span className="text-xs sm:text-sm font-medium" style={{ color: theme.primary }}>
                         {client.business_name?.charAt(0) || '?'}
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-sm sm:text-base truncate">{client.business_name}</p>
-                      <p className="text-xs sm:text-sm capitalize" style={{ color: mutedTextColor }}>
+                      <p className="font-medium text-sm sm:text-base truncate" style={{ color: theme.text }}>{client.business_name}</p>
+                      <p className="text-xs sm:text-sm capitalize" style={{ color: theme.textMuted }}>
                         {client.plan_type || 'starter'} plan
                       </p>
                     </div>
@@ -334,15 +324,15 @@ export default function AgencyDashboardPage() {
                       className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium"
                       style={
                         client.subscription_status === 'active'
-                          ? { backgroundColor: `${primaryColor}15`, color: primaryColor }
+                          ? { backgroundColor: theme.successBg, color: theme.success }
                           : client.subscription_status === 'trial' || client.subscription_status === 'trialing'
-                          ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', color: isDark ? '#93c5fd' : '#1d4ed8' }
-                          : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: mutedTextColor }
+                          ? { backgroundColor: theme.infoBg, color: theme.info }
+                          : { backgroundColor: theme.hover, color: theme.textMuted }
                       }
                     >
                       {client.subscription_status === 'trialing' ? 'trial' : (client.subscription_status || 'pending')}
                     </span>
-                    <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: mutedTextColor }} />
+                    <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.textMuted }} />
                   </div>
                 </a>
               ))}
