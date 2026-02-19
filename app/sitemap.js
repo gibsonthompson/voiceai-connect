@@ -244,6 +244,14 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Blog Posts — Prompt Templates (February 2026)
+    {
+      url: `${baseUrl}/blog/ai-receptionist-prompt-templates`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
     // Blog Posts — SEO Gap Posts (February 2026)
     {
       url: `${baseUrl}/blog/smma-profit-margins-2026`,

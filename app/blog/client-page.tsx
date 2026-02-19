@@ -61,6 +61,19 @@ const categories = [
 // ============================================================================
 const blogPosts: BlogPost[] = [
   // =========================================================================
+  // PROMPT TEMPLATES (February 2026) — NEW
+  // =========================================================================
+  {
+    slug: 'ai-receptionist-prompt-templates',
+    title: '12 AI Receptionist Prompt Templates & Greeting Examples You Can Copy (2026)',
+    excerpt: 'Ready-to-use AI receptionist prompt templates for 6 industries. Copy-paste greeting examples, voice settings, and conversation flows. Works with VAPI, Bland, Retell & ElevenLabs.',
+    category: 'guides',
+    author: { name: 'Gibson Thompson' },
+    publishedAt: '2026-02-18',
+    readTime: '24 min read',
+    featured: true,
+  },
+  // =========================================================================
   // INTERNATIONAL MARKET POSTS (February 2026)
   // =========================================================================
   {
