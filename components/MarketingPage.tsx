@@ -407,6 +407,9 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
                 {/* Phone frame */}
                 <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
                 <rect x="18" y="18" width="284" height="604" rx="32" fill="#f8fafc"/>
+                {/* Dark bezel fill above header */}
+                <rect x="18" y="18" width="284" height="42" rx="32" fill="#1a1a1a"/>
+                <rect x="18" y="40" width="284" height="16" fill="#1a1a1a"/>
                 {/* Notch */}
                 <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
 
