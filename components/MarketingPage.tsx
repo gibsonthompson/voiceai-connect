@@ -1021,6 +1021,9 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       <Footer config={config} />
       <StickyCTA config={config} />
       {showExitModal && <ExitIntentModal config={config} onClose={() => setShowExitModal(false)} />}
+      {config.analytics?.customBodyScripts && (
+        <script dangerouslySetInnerHTML={{ __html: config.analytics.customBodyScripts }} />
+      )}
     </div>
   );
 }

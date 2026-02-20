@@ -37,7 +37,7 @@ interface Agency {
   google_analytics_id: string | null;
   custom_head_scripts: string | null;
   custom_body_scripts: string | null;
-  // OG meta fields
+  // OG meta fields (handled server-side in layout.tsx generateMetadata)
   og_title: string | null;
   og_description: string | null;
   og_image_url: string | null;
@@ -93,7 +93,7 @@ function getCachedTheme(): 'light' | 'dark' {
   return 'light';
 }
 
-// Set dynamic favicon
+// Set dynamic favicon (client-side supplement — layout.tsx also sets via metadata)
 function setFavicon(url: string) {
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
   existingLinks.forEach(link => link.remove());
@@ -108,44 +108,9 @@ function setFavicon(url: string) {
   document.head.appendChild(appleLink);
 }
 
-// Set dynamic page title
+// Set dynamic page title (client-side supplement — layout.tsx also sets via metadata)
 function setPageTitle(title: string) {
   document.title = title;
-}
-
-// Set OG meta tags dynamically
-function setOGMeta(agency: Agency) {
-  // Remove existing OG tags
-  document.querySelectorAll('meta[property^="og:"]').forEach(el => el.remove());
-  document.querySelectorAll('meta[name^="twitter:"]').forEach(el => el.remove());
-  document.querySelector('meta[name="description"]')?.remove();
-
-  const title = agency.og_title || `${agency.name} - AI Phone Answering`;
-  const description = agency.og_description || agency.company_tagline || 'Professional AI receptionist that answers every call 24/7.';
-  const image = agency.og_image_url || agency.logo_url || '';
-
-  const tags = [
-    { property: 'og:title', content: title },
-    { property: 'og:description', content: description },
-    { property: 'og:type', content: 'website' },
-    ...(image ? [{ property: 'og:image', content: image }] : []),
-    { name: 'twitter:card', content: image ? 'summary_large_image' : 'summary' },
-    { name: 'twitter:title', content: title },
-    { name: 'twitter:description', content: description },
-    ...(image ? [{ name: 'twitter:image', content: image }] : []),
-  ];
-
-  tags.forEach(attrs => {
-    const meta = document.createElement('meta');
-    Object.entries(attrs).forEach(([key, val]) => meta.setAttribute(key, val));
-    document.head.appendChild(meta);
-  });
-
-  // Also set standard description meta
-  const descMeta = document.createElement('meta');
-  descMeta.setAttribute('name', 'description');
-  descMeta.setAttribute('content', description);
-  document.head.appendChild(descMeta);
 }
 
 // ============================================================================
@@ -229,7 +194,7 @@ export default function AgencySitePage() {
     if (agency.logo_url) setFavicon(agency.logo_url);
     setPageTitle(`${agency.name} - AI Phone Answering`);
     setCachedTheme(agency.website_theme);
-    setOGMeta(agency);
+    // OG meta tags are now handled server-side by layout.tsx generateMetadata
   }
 
   if (loading) {
@@ -343,12 +308,6 @@ export default function AgencySitePage() {
       googleAnalyticsId: agency.google_analytics_id || undefined,
       customHeadScripts: agency.custom_head_scripts || undefined,
       customBodyScripts: agency.custom_body_scripts || undefined,
-    },
-    // OG config
-    og: {
-      title: agency.og_title || undefined,
-      description: agency.og_description || undefined,
-      imageUrl: agency.og_image_url || undefined,
     },
     // Merge any advanced config the agency has set via marketing_config JSONB
     ...(agency.marketing_config || {}),
