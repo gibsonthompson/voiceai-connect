@@ -598,7 +598,7 @@
   .marketing-page .hero-badge { font-size: 0.875rem; margin-bottom: 1.25rem; }
   .marketing-page .hero-subtitle { font-size: 1.125rem; padding: 0; }
   .marketing-page .demo-cta { padding: 0; }
-  .marketing-page .demo-box { flex-direction: row; text-align: left; padding: 1.5rem 2rem; gap: 1.5rem; align-items: center; }
+  .marketing-page .demo-box { flex-direction: row; text-align: left; padding: 1.5rem 2rem; gap: 1.5rem; align-items: center; justify-content: center; }
   .marketing-page .demo-icon svg { width: 3rem; height: 3rem; }
   .marketing-page .demo-content { align-items: flex-start; }
   .marketing-page .demo-content h3 { font-size: 1.125rem; text-align: left; }
