@@ -1,10 +1,11 @@
 // app/terms/page.tsx
 // 
 // VoiceAI Connect Terms of Service
-// Last Updated: January 2026
+// Last Updated: February 2026
 // 
 // Covers: White-label platform terms, AI receptionist usage, call recording compliance,
-// TCPA requirements, payment terms, intellectual property, liability limitations
+// TCPA requirements, payment terms, intellectual property, liability limitations,
+// Google Calendar integration terms
 
 import Link from 'next/link';
 
@@ -67,7 +68,7 @@ export default function TermsOfService() {
           <header className="mb-12">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Terms of Service</h1>
             <p className="mt-4 text-[#fafaf9]/60">
-              Last Updated: January 31, 2026
+              Last Updated: February 19, 2026
             </p>
           </header>
 
@@ -330,7 +331,7 @@ export default function TermsOfService() {
               the Service, including obtaining any necessary consents from End Clients and Callers.
             </p>
 
-            <h2>9. Third-Party Services</h2>
+            <h2>9. Third-Party Services and Integrations</h2>
 
             <p>
               The Service integrates with third-party services including:
@@ -339,12 +340,46 @@ export default function TermsOfService() {
               <li><strong>Authentication:</strong> Google Sign-In for account creation and login</li>
               <li><strong>Payments:</strong> Stripe for payment processing and Stripe Connect for agency payouts</li>
               <li><strong>Telephony:</strong> VAPI and related providers for voice AI services</li>
-              <li><strong>Integrations:</strong> Google Calendar, CRM systems, and other business tools</li>
+              <li><strong>Calendar integrations:</strong> Google Calendar for appointment scheduling (see Section 9.1)</li>
+              <li><strong>Other integrations:</strong> CRM systems and other business tools as made available through the Service</li>
             </ul>
             <p>
               Your use of these integrations is subject to the respective third party&apos;s terms of service. We are not 
               responsible for the availability, accuracy, or functionality of third-party services.
             </p>
+
+            <h3>9.1 Google Calendar Integration</h3>
+            
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-5 my-6">
+              <p className="text-purple-300 font-semibold mb-2">Google Calendar Terms</p>
+              <p className="text-[#fafaf9]/70 text-sm mb-0">
+                The following terms apply when End Clients connect their Google Calendar to the Service for appointment scheduling.
+              </p>
+            </div>
+
+            <p>
+              The Service offers an optional Google Calendar integration that allows the AI Receptionist to check appointment 
+              availability and book appointments directly on an End Client&apos;s Google Calendar. By connecting Google Calendar, 
+              End Clients authorize VoiceAI Connect to:
+            </p>
+            <ul>
+              <li>Read existing calendar events to determine available time slots and prevent double-booking</li>
+              <li>Create new calendar events when appointments are confirmed through the AI Receptionist</li>
+            </ul>
+
+            <p><strong>Scope of Access:</strong> The Service only accesses calendar event data (start times, end times, and busy/free status) on the user&apos;s primary Google Calendar. The Service does not access event descriptions, attendee details, attachments, or other calendars unless explicitly required for the scheduling functionality.</p>
+
+            <p><strong>Data Handling:</strong> Google Calendar data is accessed in real time and is not persistently stored or cached beyond what is necessary to complete the scheduling request. OAuth tokens used to maintain the calendar connection are stored securely in encrypted form. For complete details on how we handle Google Calendar data, see Section 2.3 of our <Link href="/privacy">Privacy Policy</Link>.</p>
+
+            <p><strong>Limited Use Compliance:</strong> VoiceAI Connect&apos;s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+            <p><strong>Revoking Access:</strong> End Clients may disconnect Google Calendar at any time through their dashboard settings. This immediately revokes the Service&apos;s access to their calendar and deletes stored OAuth tokens. End Clients may also revoke access directly through their <a href="https://myaccount.google.com/permissions" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a>.</p>
+
+            <p><strong>Consent Screen Branding:</strong> When connecting Google Calendar, the Google authorization screen will display &ldquo;VoiceAI Connect&rdquo; as the application requesting access. VoiceAI Connect is the technology platform that powers the AI receptionist service, regardless of the agency brand under which the service is offered.</p>
+
+            <p><strong>Accuracy of Scheduling:</strong> While the AI Receptionist uses best efforts to accurately check availability and book appointments, we do not guarantee that scheduling conflicts will never occur. Factors such as calendar sync delays, simultaneous booking attempts, or calendar events created outside the Service may affect accuracy. End Clients are responsible for reviewing and confirming appointments booked through the Service.</p>
+
+            <p><strong>Agency Responsibilities:</strong> Agencies are responsible for informing their End Clients about the Google Calendar integration, including that the authorization screen will display &ldquo;VoiceAI Connect&rdquo; as the requesting application. Agencies should ensure End Clients understand and consent to the calendar integration before enabling it.</p>
 
             <h2>10. Disclaimer of Warranties</h2>
 
@@ -354,7 +389,8 @@ export default function TermsOfService() {
                 OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
                 PURPOSE, TITLE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, 
                 OR COMPLETELY SECURE. WE DO NOT WARRANT THAT THE AI RECEPTIONIST WILL RESPOND ACCURATELY OR APPROPRIATELY 
-                IN ALL SITUATIONS.
+                IN ALL SITUATIONS. WE DO NOT WARRANT THAT THIRD-PARTY INTEGRATIONS, INCLUDING GOOGLE CALENDAR, WILL BE 
+                AVAILABLE, ACCURATE, OR FREE FROM ERRORS AT ALL TIMES.
               </p>
             </div>
 
@@ -366,7 +402,8 @@ export default function TermsOfService() {
                 EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, 
                 INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, BUSINESS, OR GOODWILL, ARISING OUT OF OR RELATED TO 
                 YOUR USE OF THE SERVICE, REGARDLESS OF WHETHER SUCH DAMAGES WERE FORESEEABLE OR WHETHER WE WERE ADVISED 
-                OF THE POSSIBILITY OF SUCH DAMAGES.
+                OF THE POSSIBILITY OF SUCH DAMAGES. THIS INCLUDES, WITHOUT LIMITATION, DAMAGES ARISING FROM SCHEDULING 
+                ERRORS, MISSED APPOINTMENTS, DOUBLE-BOOKINGS, OR ANY ISSUES RELATED TO THIRD-PARTY CALENDAR INTEGRATIONS.
               </p>
               <p className="text-[#fafaf9]/70 text-sm mb-0">
                 OUR TOTAL LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATED TO THESE TERMS OR THE SERVICE SHALL 
@@ -393,6 +430,7 @@ export default function TermsOfService() {
               <li>Your violation of any applicable law, including telecommunications laws</li>
               <li>Your violation of any third-party rights</li>
               <li>Any claims by your End Clients or their Callers</li>
+              <li>Any disputes arising from appointment scheduling, including missed or double-booked appointments</li>
             </ul>
 
             <h2>13. Term and Termination</h2>
@@ -425,6 +463,7 @@ export default function TermsOfService() {
             <p>Upon termination:</p>
             <ul>
               <li>Your access to the Service will cease</li>
+              <li>All third-party integrations (including Google Calendar connections) will be disconnected and associated tokens deleted</li>
               <li>Your data will be retained for 30 days, after which it may be deleted</li>
               <li>You remain liable for any fees owed</li>
               <li>Provisions that by their nature should survive termination will survive (e.g., intellectual property, indemnification, limitation of liability)</li>

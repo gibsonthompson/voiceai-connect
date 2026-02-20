@@ -44,6 +44,7 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     custom_voice: false,
     knowledge_base: false,
     business_hours: false,
+    google_calendar: false,
     advanced_analytics: false,
     priority_support: false,
   },
@@ -53,6 +54,7 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     custom_voice: false,
     knowledge_base: true,
     business_hours: true,
+    google_calendar: true,
     advanced_analytics: true,
     priority_support: false,
   },
@@ -62,6 +64,7 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     custom_voice: true,
     knowledge_base: true,
     business_hours: true,
+    google_calendar: true,
     advanced_analytics: true,
     priority_support: true,
   },
@@ -88,6 +91,10 @@ const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
     label: 'Business Hours',
     description: 'Client can configure hours and after-hours behavior',
   },
+  google_calendar: {
+    label: 'Google Calendar',
+    description: 'AI receptionist can check availability and book appointments directly',
+  },
   advanced_analytics: {
     label: 'Advanced Analytics',
     description: 'Detailed reporting beyond basic call counts',
@@ -104,6 +111,7 @@ const FEATURE_ORDER = [
   'custom_voice',
   'knowledge_base',
   'business_hours',
+  'google_calendar',
   'advanced_analytics',
   'priority_support',
 ];
@@ -293,6 +301,17 @@ function AgencySettingsContent() {
     setPlanFeatures(DEFAULT_PLAN_FEATURES);
   };
 
+  // Derive calendar_enabled_plans from plan_features for backend plan gating
+  const deriveCalendarEnabledPlans = (features: Record<string, Record<string, boolean>>): string[] => {
+    const plans: string[] = [];
+    for (const [plan, featureMap] of Object.entries(features)) {
+      if (featureMap.google_calendar) {
+        plans.push(plan);
+      }
+    }
+    return plans;
+  };
+
   const handleSave = async () => {
     if (!agency) return;
     setSaving(true);
@@ -315,6 +334,8 @@ function AgencySettingsContent() {
         payload.limit_growth = parseInt(limitGrowth);
         payload.plan_features = planFeatures;
         payload.display_currency = displayCurrency || null;
+        // Sync calendar_enabled_plans from plan_features for backend plan gating
+        payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {

@@ -1,10 +1,11 @@
 // app/privacy/page.tsx
 // 
 // VoiceAI Connect Privacy Policy
-// Last Updated: January 2025
+// Last Updated: February 2026
 // 
 // Covers: GDPR, CCPA/CPRA, TCPA, call recording consent, voice data, 
-// white-label platform specifics, Stripe payments, Google OAuth, data retention
+// white-label platform specifics, Stripe payments, Google OAuth, 
+// Google Calendar integration, data retention
 
 import Link from 'next/link';
 
@@ -67,7 +68,7 @@ export default function PrivacyPolicy() {
           <header className="mb-12">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Privacy Policy</h1>
             <p className="mt-4 text-[#fafaf9]/60">
-              Last Updated: January 31, 2025
+              Last Updated: February 19, 2026
             </p>
           </header>
 
@@ -134,18 +135,74 @@ export default function PrivacyPolicy() {
                 <li>• <strong>Profile picture:</strong> Your Google profile photo (optional, used for account display)</li>
               </ul>
               <p className="text-[#fafaf9]/70 text-sm mt-3 mb-0">
-                We only request basic profile information (email and profile scopes). We do not access your Google contacts, 
-                calendar, drive, or any other Google services. You can revoke our access at any time through your 
+                We only request basic profile information (email and profile scopes) during sign-in. We do not access your Google contacts, 
+                drive, or any other Google services through sign-in. You can revoke our access at any time through your 
                 <a href="https://myaccount.google.com/permissions" className="text-blue-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google Account permissions</a>.
               </p>
             </div>
 
+            <h3>2.3 Information from Google Calendar Integration</h3>
+
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-5 my-6">
+              <p className="text-purple-300 font-semibold mb-2">Google Calendar Data</p>
+              <p className="text-[#fafaf9]/70 text-sm mb-3">
+                End Clients may choose to connect their Google Calendar to enable the AI receptionist to check appointment 
+                availability and book appointments on their behalf. This integration is entirely optional and requires explicit 
+                authorization through Google&apos;s OAuth consent process. When connected, we access the following Google Calendar data:
+              </p>
+              <ul className="text-[#fafaf9]/70 text-sm mb-3 space-y-1">
+                <li>• <strong>Calendar events (read):</strong> We read existing event start and end times on your primary calendar to determine your availability and prevent double-booking. We do not read event descriptions, attendee lists, or other event details beyond what is necessary to check time-slot availability.</li>
+                <li>• <strong>Calendar events (write):</strong> When a caller requests an appointment and a time slot is available, we create a new calendar event on your primary calendar containing the appointment date, time, duration, and the caller&apos;s name and contact information as provided during the call.</li>
+              </ul>
+              
+              <p className="text-purple-300 font-semibold mb-2 mt-4">How We Use Google Calendar Data</p>
+              <ul className="text-[#fafaf9]/70 text-sm mb-3 space-y-1">
+                <li>• To check real-time calendar availability when callers request appointments</li>
+                <li>• To create new appointment events on your calendar when bookings are confirmed</li>
+                <li>• To prevent double-booking by verifying time slots are open before scheduling</li>
+              </ul>
+              <p className="text-[#fafaf9]/70 text-sm mb-3">
+                We do <strong>not</strong> use Google Calendar data for advertising, marketing, or any purpose unrelated to 
+                providing the AI receptionist appointment booking functionality. We do not sell, share, or transfer Google 
+                Calendar data to any third party except as necessary to provide and improve the Service.
+              </p>
+
+              <p className="text-purple-300 font-semibold mb-2 mt-4">How We Store Google Calendar Data</p>
+              <ul className="text-[#fafaf9]/70 text-sm mb-3 space-y-1">
+                <li>• <strong>OAuth tokens:</strong> We securely store encrypted Google OAuth access and refresh tokens to maintain your calendar connection. These tokens are stored in our encrypted database and are used solely to authenticate with Google Calendar on your behalf.</li>
+                <li>• <strong>Calendar event data:</strong> We do not persistently store copies of your existing calendar events. Event data is retrieved in real time during each availability check and is not cached or retained after the check is complete.</li>
+                <li>• <strong>Appointment records:</strong> When a new appointment is booked, a record of the appointment (date, time, caller name, and contact information) is stored in our system for your call history and dashboard. The event itself is created directly on your Google Calendar.</li>
+              </ul>
+
+              <p className="text-purple-300 font-semibold mb-2 mt-4">How to Disconnect and Revoke Access</p>
+              <p className="text-[#fafaf9]/70 text-sm mb-0">
+                You can disconnect Google Calendar at any time from your dashboard settings. Disconnecting will immediately 
+                delete your stored OAuth tokens from our system and stop all calendar access. You can also revoke VoiceAI Connect&apos;s 
+                access to your Google account at any time by visiting your 
+                <a href="https://myaccount.google.com/permissions" className="text-purple-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google Account permissions page</a> and 
+                removing VoiceAI Connect from the list of connected apps.
+              </p>
+            </div>
+
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 my-6">
+              <p className="text-emerald-400 font-semibold mb-2">Google API Services User Data Policy Compliance</p>
+              <p className="text-[#fafaf9]/70 text-sm mb-0">
+                VoiceAI Connect&apos;s use and transfer of information received from Google APIs adheres to the 
+                <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-emerald-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, 
+                including the Limited Use requirements. We limit our use of Google user data to providing and improving 
+                the AI receptionist appointment scheduling functionality. We do not use Google data for serving advertisements. 
+                We do not allow humans to read Google user data unless we have your affirmative agreement, it is necessary for 
+                security purposes, it is necessary to comply with applicable law, or our use is limited to internal operations 
+                and the data has been aggregated and anonymized.
+              </p>
+            </div>
+
             <p>
-              Your use of third-party authentication is also subject to that provider&apos;s privacy policy. We encourage you to review 
+              Your use of third-party authentication and integrations is also subject to that provider&apos;s privacy policy. We encourage you to review 
               <a href="https://policies.google.com/privacy" className="text-emerald-400 hover:underline ml-1" target="_blank" rel="noopener noreferrer">Google&apos;s Privacy Policy</a> for information about their data practices.
             </p>
 
-            <h3>2.3 Voice and Call Data</h3>
+            <h3>2.4 Voice and Call Data</h3>
             
             <p>
               <strong>Important:</strong> Our Service processes telephone calls using AI technology. When calls are made to 
@@ -169,7 +226,7 @@ export default function PrivacyPolicy() {
               </p>
             </div>
 
-            <h3>2.4 Information Collected Automatically</h3>
+            <h3>2.5 Information Collected Automatically</h3>
             
             <p>When you access our Service, we automatically collect:</p>
             
@@ -179,14 +236,15 @@ export default function PrivacyPolicy() {
               <li><strong>Cookies and similar technologies:</strong> We use cookies, pixels, and similar technologies to enhance your experience and collect analytics data.</li>
             </ul>
 
-            <h3>2.5 Information from Third Parties</h3>
+            <h3>2.6 Information from Third Parties</h3>
             
             <p>We may receive information from:</p>
             
             <ul>
               <li><strong>Authentication providers:</strong> Google provides basic profile information when you use Google Sign-In (see Section 2.2).</li>
+              <li><strong>Calendar providers:</strong> Google Calendar provides event availability data when you connect the calendar integration (see Section 2.3).</li>
               <li><strong>Payment processors:</strong> Stripe provides us with limited transaction information (we do not store full payment card details).</li>
-              <li><strong>Integration partners:</strong> If you connect third-party services (e.g., Google Calendar, CRM systems), we receive data necessary to provide the integration.</li>
+              <li><strong>Integration partners:</strong> If you connect third-party services (e.g., CRM systems), we receive data necessary to provide the integration.</li>
               <li><strong>Telephony providers:</strong> Our telephony partners provide call routing and metadata.</li>
             </ul>
 
@@ -199,6 +257,7 @@ export default function PrivacyPolicy() {
               <li>Create and authenticate user accounts</li>
               <li>Process transactions and send related information (confirmations, invoices)</li>
               <li>Power AI receptionist conversations and generate call transcripts</li>
+              <li>Check calendar availability and book appointments on behalf of End Clients (when Google Calendar is connected)</li>
               <li>Send notifications about calls, appointments, and service updates</li>
               <li>Respond to customer service requests and support needs</li>
               <li>Improve and personalize the Service</li>
@@ -214,7 +273,7 @@ export default function PrivacyPolicy() {
               We may use aggregated and de-identified call data to improve our AI models and Service quality. 
               This data is stripped of personally identifiable information and cannot be used to identify individual 
               callers or businesses. Agency Users can opt out of having their data used for AI improvement by 
-              contacting us at privacy@myvoiceaiconnect.com.
+              contacting us at privacy@myvoiceaiconnect.com. Google Calendar data is never used for AI training or model improvement.
             </p>
 
             <h2>4. Legal Basis for Processing (GDPR)</h2>
@@ -224,7 +283,7 @@ export default function PrivacyPolicy() {
             <ul>
               <li><strong>Contract performance:</strong> Processing necessary to provide our Service to you.</li>
               <li><strong>Legitimate interests:</strong> Processing for our legitimate business interests, such as improving our Service, preventing fraud, and marketing (where not overridden by your rights).</li>
-              <li><strong>Consent:</strong> Where you have given explicit consent (e.g., for marketing emails or using third-party sign-in).</li>
+              <li><strong>Consent:</strong> Where you have given explicit consent (e.g., for marketing emails, using third-party sign-in, or connecting Google Calendar).</li>
               <li><strong>Legal obligation:</strong> Processing necessary to comply with applicable laws.</li>
             </ul>
 
@@ -238,7 +297,7 @@ export default function PrivacyPolicy() {
             </p>
             <ul>
               <li><strong>Cloud hosting:</strong> Vercel, DigitalOcean, AWS</li>
-              <li><strong>Authentication:</strong> Google (for Google Sign-In)</li>
+              <li><strong>Authentication &amp; integrations:</strong> Google (for Google Sign-In and Google Calendar integration)</li>
               <li><strong>Payment processing:</strong> Stripe</li>
               <li><strong>Telephony services:</strong> VAPI, Twilio</li>
               <li><strong>Email delivery:</strong> Resend</li>
@@ -275,7 +334,9 @@ export default function PrivacyPolicy() {
               <p className="text-[#fafaf9]/70 text-sm mb-0">
                 VoiceAI Connect does not sell, rent, or trade your personal information to third parties for their 
                 marketing purposes. We do not &ldquo;sell&rdquo; or &ldquo;share&rdquo; personal information as defined under the 
-                California Consumer Privacy Act (CCPA/CPRA).
+                California Consumer Privacy Act (CCPA/CPRA). This includes data received from Google APIs, which is 
+                never sold, shared for advertising, or transferred to third parties for purposes unrelated to providing 
+                the Service.
               </p>
             </div>
 
@@ -294,6 +355,8 @@ export default function PrivacyPolicy() {
             <ul>
               <li><strong>Account data:</strong> Retained while your account is active and for 30 days after deletion request.</li>
               <li><strong>Call recordings and transcripts:</strong> Retained for 90 days by default. Agency Users can configure shorter retention periods or request immediate deletion.</li>
+              <li><strong>Google Calendar OAuth tokens:</strong> Retained while the integration is active. Immediately deleted when you disconnect Google Calendar from your dashboard or revoke access through your Google Account.</li>
+              <li><strong>Google Calendar event data:</strong> Not persistently stored. Retrieved in real time for availability checks and not cached after use.</li>
               <li><strong>Billing records:</strong> Retained for 7 years to comply with tax and accounting requirements.</li>
               <li><strong>Analytics data:</strong> Aggregated analytics retained indefinitely; individual-level analytics retained for 26 months.</li>
             </ul>
@@ -309,6 +372,7 @@ export default function PrivacyPolicy() {
               <li>Opt out of marketing communications</li>
               <li>Request a copy of your data in a portable format</li>
               <li>Disconnect third-party authentication providers (like Google) from your account</li>
+              <li>Disconnect Google Calendar and revoke calendar data access at any time</li>
             </ul>
 
             <h3>7.2 California Residents (CCPA/CPRA)</h3>
@@ -335,7 +399,7 @@ export default function PrivacyPolicy() {
               <li><strong>Right to Restriction:</strong> Request restriction of processing in certain circumstances.</li>
               <li><strong>Right to Data Portability:</strong> Receive your data in a structured, machine-readable format.</li>
               <li><strong>Right to Object:</strong> Object to processing based on legitimate interests or for direct marketing.</li>
-              <li><strong>Right to Withdraw Consent:</strong> Withdraw consent at any time where processing is based on consent.</li>
+              <li><strong>Right to Withdraw Consent:</strong> Withdraw consent at any time where processing is based on consent, including consent for Google Calendar access.</li>
               <li><strong>Right to Lodge a Complaint:</strong> Lodge a complaint with a supervisory authority.</li>
             </ul>
             <p>
@@ -359,7 +423,8 @@ export default function PrivacyPolicy() {
             <ul>
               <li>Encryption of data in transit (TLS 1.3) and at rest (AES-256)</li>
               <li>Secure cloud infrastructure with SOC 2 certified providers</li>
-              <li>OAuth 2.0 for secure third-party authentication</li>
+              <li>OAuth 2.0 for secure third-party authentication and Google Calendar integration</li>
+              <li>Encrypted storage of all OAuth tokens and API credentials</li>
               <li>Access controls and authentication requirements</li>
               <li>Regular security assessments and monitoring</li>
               <li>Employee training on data protection</li>
@@ -393,9 +458,9 @@ export default function PrivacyPolicy() {
             
             <p>
               Our Service may contain links to third-party websites or services, and we integrate with third-party 
-              providers for authentication (Google), payments (Stripe), and other functionality. We are not responsible 
-              for the privacy practices of these third parties. We encourage you to review the privacy policies of any 
-              third-party sites and services you use:
+              providers for authentication (Google), calendar scheduling (Google Calendar), payments (Stripe), and other functionality. 
+              We are not responsible for the privacy practices of these third parties. We encourage you to review the 
+              privacy policies of any third-party sites and services you use:
             </p>
             <ul>
               <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">Google Privacy Policy</a></li>
@@ -467,7 +532,7 @@ export default function PrivacyPolicy() {
               <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms of Service</Link>
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy Policy</Link>
             </div>
-            <p className="text-sm text-[#fafaf9]/30">© 2025 VoiceAI Connect</p>
+            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect</p>
           </div>
         </div>
       </footer>
