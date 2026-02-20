@@ -1,48 +1,51 @@
+// app/agency-site/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 import MarketingPage from '@/components/MarketingPage';
-import { MarketingConfig } from '@/types/marketing';
+import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 
+// ============================================================================
+// TYPES
+// ============================================================================
 interface Agency {
   id: string;
   name: string;
   slug: string;
+  status: string;
   logo_url: string | null;
-  favicon_url: string | null;
-  logo_background_color: string | null;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
-  // Content
   company_tagline: string | null;
   website_headline: string | null;
-  website_subheadline: string | null;
-  website_theme: 'auto' | 'light' | 'dark' | null;
-  // Plan type (for feature gating)
-  plan_type: string | null;
-  // Pricing (stored in cents)
-  price_starter: number;
-  price_pro: number;
-  price_growth: number;
-  limit_starter: number;
-  limit_pro: number;
-  limit_growth: number;
-  // Contact
+  website_theme: 'light' | 'dark' | 'auto' | null;
   support_email: string | null;
   support_phone: string | null;
-  // Demo phone — auto-provisioned via Demo Phone tab
-  demo_phone_number: string | null;
-  // Legacy manual override (if agency set one manually)
-  demo_phone: string | null;
-  // Currency
-  currency: string | null;
+  price_starter: number | null;
+  price_pro: number | null;
+  price_growth: number | null;
   display_currency: string | null;
-  // Advanced config (JSONB)
-  marketing_config?: Partial<MarketingConfig>;
+  marketing_config: Partial<MarketingConfig> | null;
+  demo_phone: string | null;
+  demo_phone_number: string | null;
+  logo_background_color: string | null;
+  // Analytics fields
+  gtm_id: string | null;
+  fb_pixel_id: string | null;
+  google_analytics_id: string | null;
+  custom_head_scripts: string | null;
+  custom_body_scripts: string | null;
+  // OG meta fields
+  og_title: string | null;
+  og_description: string | null;
+  og_image_url: string | null;
+  // Plan
+  plan_type: string | null;
 }
+
+const PLATFORM_DEMO_PHONE = '(470) 487-4561';
 
 // ============================================================================
 // HELPER: Format E.164 phone to display format
@@ -92,18 +95,13 @@ function getCachedTheme(): 'light' | 'dark' {
 
 // Set dynamic favicon
 function setFavicon(url: string) {
-  // Remove existing favicons
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
   existingLinks.forEach(link => link.remove());
-  
-  // Add new favicon
   const link = document.createElement('link');
   link.rel = 'icon';
   link.type = 'image/png';
   link.href = url;
   document.head.appendChild(link);
-  
-  // Also add apple-touch-icon
   const appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
   appleLink.href = url;
@@ -115,354 +113,44 @@ function setPageTitle(title: string) {
   document.title = title;
 }
 
-// Detect if a color is dark
-function isDarkColor(color: string): boolean {
-  // Handle rgb format
-  if (color.startsWith('rgb')) {
-    const matches = color.match(/\d+/g);
-    if (matches && matches.length >= 3) {
-      const r = parseInt(matches[0]);
-      const g = parseInt(matches[1]);
-      const b = parseInt(matches[2]);
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance < 0.5;
-    }
-  }
-  // Handle hex format
-  if (color.startsWith('#')) {
-    const hex = color.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.5;
-  }
-  return false;
-}
+// Set OG meta tags dynamically
+function setOGMeta(agency: Agency) {
+  // Remove existing OG tags
+  document.querySelectorAll('meta[property^="og:"]').forEach(el => el.remove());
+  document.querySelectorAll('meta[name^="twitter:"]').forEach(el => el.remove());
+  document.querySelector('meta[name="description"]')?.remove();
 
-// Detect logo background color from image
-function detectLogoBackgroundColor(imageUrl: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    img.crossOrigin = 'anonymous';
-    
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(null);
-          return;
-        }
-        
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        
-        // Sample corners to detect background
-        const corners = [
-          [0, 0],
-          [img.width - 1, 0],
-          [0, img.height - 1],
-          [img.width - 1, img.height - 1],
-        ];
-        
-        let totalR = 0, totalG = 0, totalB = 0, totalA = 0;
-        let count = 0;
-        
-        corners.forEach(([x, y]) => {
-          const pixel = ctx.getImageData(x, y, 1, 1).data;
-          totalR += pixel[0];
-          totalG += pixel[1];
-          totalB += pixel[2];
-          totalA += pixel[3];
-          count++;
-        });
-        
-        const avgR = Math.round(totalR / count);
-        const avgG = Math.round(totalG / count);
-        const avgB = Math.round(totalB / count);
-        const avgA = Math.round(totalA / count);
-        
-        // If mostly transparent, no background color needed
-        if (avgA < 128) {
-          resolve(null);
-          return;
-        }
-        
-        // If it's white or very light, no wrapper needed on light theme
-        if (avgR > 240 && avgG > 240 && avgB > 240) {
-          resolve(null);
-          return;
-        }
-        
-        resolve(`rgb(${avgR}, ${avgG}, ${avgB})`);
-      } catch (e) {
-        console.error('Error detecting logo background:', e);
-        resolve(null);
-      }
-    };
-    
-    img.onerror = () => {
-      resolve(null);
-    };
-    
-    img.src = imageUrl;
+  const title = agency.og_title || `${agency.name} - AI Phone Answering`;
+  const description = agency.og_description || agency.company_tagline || 'Professional AI receptionist that answers every call 24/7.';
+  const image = agency.og_image_url || agency.logo_url || '';
+
+  const tags = [
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    ...(image ? [{ property: 'og:image', content: image }] : []),
+    { name: 'twitter:card', content: image ? 'summary_large_image' : 'summary' },
+    { name: 'twitter:title', content: title },
+    { name: 'twitter:description', content: description },
+    ...(image ? [{ name: 'twitter:image', content: image }] : []),
+  ];
+
+  tags.forEach(attrs => {
+    const meta = document.createElement('meta');
+    Object.entries(attrs).forEach(([key, val]) => meta.setAttribute(key, val));
+    document.head.appendChild(meta);
   });
+
+  // Also set standard description meta
+  const descMeta = document.createElement('meta');
+  descMeta.setAttribute('name', 'description');
+  descMeta.setAttribute('content', description);
+  document.head.appendChild(descMeta);
 }
 
 // ============================================================================
-// THEMED LOADING COMPONENT
+// HELPER: Darken/lighten hex
 // ============================================================================
-function ThemedLoading({ theme }: { theme: 'light' | 'dark' }) {
-  const isDark = theme === 'dark';
-  return (
-    <div 
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
-    >
-      <Loader2 
-        className="h-8 w-8 animate-spin" 
-        style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-      />
-    </div>
-  );
-}
-
-export default function AgencySiteHomePage() {
-  const [agency, setAgency] = useState<Agency | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [redirecting, setRedirecting] = useState(false);
-  const [detectedLogoBackground, setDetectedLogoBackground] = useState<string | null>(null);
-  const [detectedTheme, setDetectedTheme] = useState<'light' | 'dark'>('light');
-  const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
-
-  // Get cached theme on mount (client-side only)
-  useEffect(() => {
-    setCachedThemeState(getCachedTheme());
-  }, []);
-
-  useEffect(() => {
-    const fetchAgency = async () => {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const host = window.location.host;
-        const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
-        
-        if (!response.ok) {
-          throw new Error('Agency not found');
-        }
-        
-        const data = await response.json();
-        const agencyData = data.agency;
-        
-        // ============================================================
-        // FEATURE GATE: Redirect Starter plan to /get-started
-        // ============================================================
-        if (!hasMarketingSiteAccess(agencyData.plan_type)) {
-          console.log('📍 Starter plan detected - redirecting to /get-started');
-          setRedirecting(true);
-          window.location.href = '/get-started';
-          return; // Don't continue processing
-        }
-        
-        setAgency(agencyData);
-        
-        // Cache the theme for subsequent pages (get-started, etc.)
-        setCachedTheme(agencyData.website_theme);
-        
-        // Set page title
-        setPageTitle(`${agencyData.name} - AI Receptionist`);
-        
-        // Set favicon - prefer favicon_url, fall back to logo_url
-        const faviconUrl = agencyData.favicon_url || agencyData.logo_url;
-        if (faviconUrl) {
-          setFavicon(faviconUrl);
-        }
-        
-        // Detect logo background color if we have a logo
-        if (agencyData.logo_url) {
-          const bgColor = await detectLogoBackgroundColor(agencyData.logo_url);
-          setDetectedLogoBackground(bgColor);
-        }
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('Failed to fetch agency:', err);
-        setError('Unable to load. Please check the URL.');
-        setLoading(false);
-      }
-    };
-
-    fetchAgency();
-  }, []);
-
-  // Show blank loading screen while redirecting
-  if (redirecting || loading) {
-    return <ThemedLoading theme={cachedTheme} />;
-  }
-
-  if (error || !agency) {
-    const isDark = cachedTheme === 'dark';
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: isDark ? '#050505' : '#ffffff' }}
-      >
-        <div className="text-center">
-          <h1 
-            className="text-2xl font-medium mb-2"
-            style={{ color: isDark ? '#fafaf9' : '#111827' }}
-          >
-            Site Not Found
-          </h1>
-          <p style={{ color: isDark ? '#6b7280' : '#6b7280' }}>
-            Please check the URL and try again.
-          </p>
-        </div>
-      </div>
-    );
-}
-
-  // Convert cents to dollars for display
-  const starterPrice = (agency.price_starter || 4900) / 100;
-  const proPrice = (agency.price_pro || 9900) / 100;
-  const growthPrice = (agency.price_growth || 14900) / 100;
-
-  // Determine final theme - default to light unless explicitly set to dark
-  let theme: 'light' | 'dark' = 'light';
-  if (agency.website_theme === 'dark') {
-    theme = 'dark';
-  }
-
-  // Use stored or detected logo background color
-  const logoBackgroundColor = agency.logo_background_color || detectedLogoBackground;
-
-  // ============================================================================
-  // DEMO PHONE RESOLUTION
-  // Priority: manual override (demo_phone) → auto-provisioned (demo_phone_number)
-  // If neither exists → NO demo section (don't show platform's 770 number)
-  // ============================================================================
-  const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || null;
-  const demoPhone = rawDemoPhone ? formatPhoneDisplay(rawDemoPhone) : undefined;
-
-  // ============================================================================
-  // CURRENCY SYMBOL
-  // Priority: display_currency override → native currency → USD fallback
-  // ============================================================================
-  const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
-
-  // Build marketing config from agency data
-  const marketingConfig: Partial<MarketingConfig> = {
-    theme,
-    currencySymbol: cs,
-    branding: {
-      name: agency.name,
-      logoUrl: agency.logo_url || '',
-      logoBackgroundColor: logoBackgroundColor || undefined,
-      primaryColor: agency.primary_color || '#10b981',
-      primaryHoverColor: adjustColor(agency.primary_color || '#10b981', -15),
-      accentColor: agency.accent_color || '#34d399',
-    },
-    hero: {
-      badge: agency.company_tagline || 'AI-Powered Phone Answering',
-      headline: agency.website_headline 
-        ? [agency.website_headline] 
-        : ['Never Miss', 'Another Call'],
-      subtitle: agency.website_subheadline || `AI Receptionist Starting at ${cs}${starterPrice}/month`,
-      description: `Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.`,
-      // Only show demo if agency has their own number — empty string hides the section
-      demoPhone: demoPhone || '',
-      demoInstructions: demoPhone
-        ? "Call now to hear our AI in action. Tell it about your business and see how it handles calls."
-        : '',
-      trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
-    },
-    pricing: [
-      {
-        name: 'Starter',
-        price: starterPrice,
-        subtitle: 'Perfect for solo operators',
-        features: [
-          '1 AI phone number',
-          `Up to ${agency.limit_starter || 50} calls per month`,
-          'Basic appointment booking',
-          'Google Calendar integration',
-          'Emergency call transfer',
-          'Text summaries after each call',
-          'Mobile app access',
-          'Call recordings & transcripts',
-          'Email support',
-        ],
-      },
-      {
-        name: 'Professional',
-        price: proPrice,
-        subtitle: 'For growing businesses',
-        isPopular: true,
-        features: [
-          'Everything in Starter, plus:',
-          `Up to ${agency.limit_pro || 150} calls per month`,
-          'Advanced appointment booking',
-          'Multiple calendar integration',
-          'Custom business hours',
-          'Lead qualification questions',
-          'Priority call transfer rules',
-          'Analytics dashboard',
-          'Priority email support',
-        ],
-      },
-      {
-        name: 'Growth',
-        price: growthPrice,
-        subtitle: 'For high-volume operations',
-        features: [
-          'Everything in Professional, plus:',
-          `Up to ${agency.limit_growth || 500} calls per month`,
-          'Up to 3 AI phone numbers',
-          'Advanced CRM integration',
-          'Custom AI training',
-          'Multi-language support',
-          'Dedicated account manager',
-          'Custom reporting',
-          'Priority phone support',
-        ],
-        note: 'Best value for high call volume',
-      },
-    ],
-    footer: {
-      address: '',
-      // Footer phone: use support_phone if available, or demo phone, or empty
-      phone: agency.support_phone || (demoPhone ? demoPhone : ''),
-      email: agency.support_email || '',
-      productLinks: [
-        { label: 'Features', href: '#features' },
-        { label: 'How It Works', href: '#how-it-works' },
-        { label: 'Pricing', href: '#pricing' },
-        { label: 'FAQ', href: '#faq' },
-      ],
-      industryLinks: [
-        { label: 'Home Services', href: '#' },
-        { label: 'Medical & Dental', href: '#' },
-        { label: 'Restaurants', href: '#' },
-        { label: 'Professional Services', href: '#' },
-      ],
-      companyLinks: [
-        { label: 'Get Started', href: '/get-started' },
-        { label: 'Contact', href: agency.support_email ? `mailto:${agency.support_email}` : '#' },
-        { label: 'Privacy Policy', href: '/privacy' },
-        { label: 'Terms & Conditions', href: '/terms' },
-      ],
-    },
-    // Merge any advanced config the agency has set
-    ...(agency.marketing_config || {}),
-  };
-
-  return <MarketingPage config={marketingConfig} />;
-}
-
-// Helper to darken/lighten a hex color
 function adjustColor(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -475,4 +163,196 @@ function adjustColor(hex: string, percent: number): string {
     (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
     (B < 255 ? (B < 1 ? 0 : B) : 255)
   ).toString(16).slice(1);
+}
+
+// ============================================================================
+// MAIN PAGE COMPONENT
+// ============================================================================
+export default function AgencySitePage() {
+  const [loading, setLoading] = useState(true);
+  const [agency, setAgency] = useState<Agency | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadAgency() {
+      try {
+        const host = window.location.hostname;
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        
+        // Check sessionStorage cache first (5-min TTL for marketing page data)
+        const cacheKey = `agency_site_${host}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const { data, ts } = JSON.parse(cached);
+            if (Date.now() - ts < 5 * 60 * 1000) { // 5 min cache
+              setAgency(data);
+              applyAgencyBranding(data);
+              setLoading(false);
+              return;
+            }
+          } catch {}
+        }
+
+        const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
+        if (!response.ok) {
+          setError('Site not found');
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.agency || !['active', 'trial'].includes(data.agency.status)) {
+          setError('Site not available');
+          setLoading(false);
+          return;
+        }
+
+        // Cache for 5 minutes
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ data: data.agency, ts: Date.now() }));
+        } catch {}
+
+        setAgency(data.agency);
+        applyAgencyBranding(data.agency);
+      } catch (err) {
+        setError('Failed to load site');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAgency();
+  }, []);
+
+  function applyAgencyBranding(agency: Agency) {
+    if (agency.logo_url) setFavicon(agency.logo_url);
+    setPageTitle(`${agency.name} - AI Phone Answering`);
+    setCachedTheme(agency.website_theme);
+    setOGMeta(agency);
+  }
+
+  if (loading) {
+    const cachedTheme = getCachedTheme();
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh',
+        background: cachedTheme === 'dark' ? '#0f0f0f' : '#ffffff',
+      }}>
+        <div style={{
+          width: 40, height: 40, border: '3px solid transparent',
+          borderTopColor: '#10b981', borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (error || !agency) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{error || 'Site not found'}</h1>
+          <p style={{ color: '#6b7280' }}>This site is not available.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If agency is on Starter plan, redirect to /get-started instead of showing marketing page
+  if (!hasMarketingSiteAccess(agency.plan_type)) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/get-started';
+    }
+    return null;
+  }
+
+  // Resolve demo phone: manual override → auto-provisioned → platform fallback
+  const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || PLATFORM_DEMO_PHONE;
+  const demoPhone = formatPhoneDisplay(rawDemoPhone);
+
+  // Currency symbol
+  const currencySymbol = getCurrencySymbol(agency.display_currency || 'USD');
+
+  // Build pricing from agency price columns
+  const agencyPricing = [];
+  if (agency.price_starter) {
+    agencyPricing.push({
+      ...defaultMarketingConfig.pricing[0],
+      price: Math.round(agency.price_starter / 100),
+    });
+  }
+  if (agency.price_pro) {
+    agencyPricing.push({
+      ...defaultMarketingConfig.pricing[1],
+      price: Math.round(agency.price_pro / 100),
+    });
+  }
+  if (agency.price_growth) {
+    agencyPricing.push({
+      ...defaultMarketingConfig.pricing[2],
+      price: Math.round(agency.price_growth / 100),
+    });
+  }
+
+  // Use logo_background_color from DB (pre-computed) instead of detecting on every load
+  const logoBgColor = agency.logo_background_color || '';
+
+  // Build marketing config
+  const marketingConfig: Partial<MarketingConfig> = {
+    theme: agency.website_theme || 'light',
+    currencySymbol,
+    branding: {
+      name: agency.name,
+      logoUrl: agency.logo_url || '',
+      logoBackgroundColor: logoBgColor,
+      primaryColor: agency.primary_color || '#10b981',
+      primaryHoverColor: agency.secondary_color || adjustColor(agency.primary_color || '#10b981', -15),
+      accentColor: agency.accent_color || '#34d399',
+    },
+    hero: {
+      ...defaultMarketingConfig.hero,
+      badge: agency.company_tagline || defaultMarketingConfig.hero.badge,
+      headline: agency.website_headline
+        ? agency.website_headline.split('\n').length > 1
+          ? agency.website_headline.split('\n')
+          : [agency.website_headline]
+        : defaultMarketingConfig.hero.headline,
+      subtitle: `AI Receptionist Starting at ${currencySymbol}${agencyPricing.length > 0 ? agencyPricing[0].price : defaultMarketingConfig.pricing[0].price}/month`,
+      demoPhone,
+    },
+    ...(agencyPricing.length > 0 ? { pricing: agencyPricing } : {}),
+    footer: {
+      ...defaultMarketingConfig.footer,
+      phone: agency.support_phone || '',
+      email: agency.support_email || '',
+      companyLinks: [
+        ...(agency.support_email ? [{ label: 'Contact', href: `mailto:${agency.support_email}` }] : [{ label: 'Contact', href: '#' }]),
+        { label: 'Privacy Policy', href: '/privacy' },
+        { label: 'Terms & Conditions', href: '/terms' },
+      ],
+    },
+    // Client login path — agency-domain specific
+    clientLoginPath: '/client/login',
+    // Analytics config
+    analytics: {
+      gtmId: agency.gtm_id || undefined,
+      fbPixelId: agency.fb_pixel_id || undefined,
+      googleAnalyticsId: agency.google_analytics_id || undefined,
+      customHeadScripts: agency.custom_head_scripts || undefined,
+      customBodyScripts: agency.custom_body_scripts || undefined,
+    },
+    // OG config
+    og: {
+      title: agency.og_title || undefined,
+      description: agency.og_description || undefined,
+      imageUrl: agency.og_image_url || undefined,
+    },
+    // Merge any advanced config the agency has set via marketing_config JSONB
+    ...(agency.marketing_config || {}),
+  };
+
+  return <MarketingPage config={marketingConfig} />;
 }

@@ -1,12 +1,9 @@
 // app/agency-site/layout.tsx
-// This layout wraps all agency marketing site pages
-// Individual pages handle their own theme - this just provides metadata defaults
-
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  // Default metadata - will be overridden by page.tsx dynamically
-  title: 'AI Receptionist',
+  title: 'AI Phone Answering',
+  description: 'Professional AI receptionist that answers every call 24/7.',
 };
 
 export default function AgencySiteLayout({
@@ -17,22 +14,28 @@ export default function AgencySiteLayout({
   return (
     <>
       {/* 
-        Override the dark body background from globals.css for agency sites.
-        Default to white - individual pages will set their own background.
-        This prevents the black flash during initial load.
+        Inline script to prevent white flash on dark-themed agency sites.
+        Reads cached theme from sessionStorage BEFORE React hydrates.
+        This runs synchronously before paint.
       */}
-      <style
+      <script
         dangerouslySetInnerHTML={{
           __html: `
-            html, body {
-              background: #ffffff !important;
-              background-color: #ffffff !important;
-            }
-            /* Dark theme pages set their own bg via inline styles */
+            (function() {
+              try {
+                var t = sessionStorage.getItem('agency_theme');
+                if (t === 'dark') {
+                  document.documentElement.style.backgroundColor = '#0f0f0f';
+                  document.documentElement.style.colorScheme = 'dark';
+                }
+              } catch(e) {}
+            })();
           `,
         }}
       />
-      {children}
+      <div style={{ minHeight: '100vh' }}>
+        {children}
+      </div>
     </>
   );
 }

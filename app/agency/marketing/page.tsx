@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2
+  Sun, Moon, Wand2, BarChart3, Share2
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 
-type ActiveTab = 'overview' | 'content' | 'colors' | 'domain';
+type ActiveTab = 'overview' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -50,6 +50,22 @@ export default function MarketingWebsitePage() {
   const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>('light');
   const [savingColors, setSavingColors] = useState(false);
   const [colorsSaved, setColorsSaved] = useState(false);
+
+  // Tracking / Analytics state
+  const [gtmId, setGtmId] = useState('');
+  const [fbPixelId, setFbPixelId] = useState('');
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState('');
+  const [customHeadScripts, setCustomHeadScripts] = useState('');
+  const [customBodyScripts, setCustomBodyScripts] = useState('');
+  const [savingTracking, setSavingTracking] = useState(false);
+  const [trackingSaved, setTrackingSaved] = useState(false);
+
+  // SEO / Social state
+  const [ogTitle, setOgTitle] = useState('');
+  const [ogDescription, setOgDescription] = useState('');
+  const [ogImageUrl, setOgImageUrl] = useState('');
+  const [savingSeo, setSavingSeo] = useState(false);
+  const [seoSaved, setSeoSaved] = useState(false);
 
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
   const [extractingColors, setExtractingColors] = useState(false);
@@ -111,6 +127,15 @@ export default function MarketingWebsitePage() {
       setSecondaryColor(agency?.secondary_color || '#059669');
       setAccentColor(agency?.accent_color || '#34d399');
       setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light');
+      // Demo tracking/SEO
+      setGtmId('');
+      setFbPixelId('');
+      setGoogleAnalyticsId('');
+      setCustomHeadScripts('');
+      setCustomBodyScripts('');
+      setOgTitle('');
+      setOgDescription('');
+      setOgImageUrl('');
       return;
     }
 
@@ -126,6 +151,16 @@ export default function MarketingWebsitePage() {
       setSecondaryColor(agency.secondary_color || '#059669');
       setAccentColor(agency.accent_color || '#34d399');
       setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light');
+      // Tracking / Analytics
+      setGtmId(agency.gtm_id || '');
+      setFbPixelId(agency.fb_pixel_id || '');
+      setGoogleAnalyticsId(agency.google_analytics_id || '');
+      setCustomHeadScripts(agency.custom_head_scripts || '');
+      setCustomBodyScripts(agency.custom_body_scripts || '');
+      // SEO / Social
+      setOgTitle(agency.og_title || '');
+      setOgDescription(agency.og_description || '');
+      setOgImageUrl(agency.og_image_url || '');
     }
   }, [agency, demoMode]);
 
@@ -205,6 +240,84 @@ export default function MarketingWebsitePage() {
       console.error('Failed to save colors:', error);
     } finally {
       setSavingColors(false);
+    }
+  };
+
+  const handleSaveTracking = async () => {
+    if (demoMode) {
+      setTrackingSaved(true);
+      setTimeout(() => setTrackingSaved(false), 3000);
+      return;
+    }
+
+    if (!agency) return;
+    setSavingTracking(true);
+    setTrackingSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          gtm_id: gtmId || null,
+          fb_pixel_id: fbPixelId || null,
+          google_analytics_id: googleAnalyticsId || null,
+          custom_head_scripts: customHeadScripts || null,
+          custom_body_scripts: customBodyScripts || null,
+        }),
+      });
+
+      if (response.ok) {
+        await refreshAgency();
+        setTrackingSaved(true);
+        setTimeout(() => setTrackingSaved(false), 3000);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to save tracking settings');
+      }
+    } catch (error) {
+      console.error('Failed to save tracking:', error);
+    } finally {
+      setSavingTracking(false);
+    }
+  };
+
+  const handleSaveSeo = async () => {
+    if (demoMode) {
+      setSeoSaved(true);
+      setTimeout(() => setSeoSaved(false), 3000);
+      return;
+    }
+
+    if (!agency) return;
+    setSavingSeo(true);
+    setSeoSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          og_title: ogTitle || null,
+          og_description: ogDescription || null,
+          og_image_url: ogImageUrl || null,
+        }),
+      });
+
+      if (response.ok) {
+        await refreshAgency();
+        setSeoSaved(true);
+        setTimeout(() => setSeoSaved(false), 3000);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to save SEO settings');
+      }
+    } catch (error) {
+      console.error('Failed to save SEO:', error);
+    } finally {
+      setSavingSeo(false);
     }
   };
 
@@ -340,6 +453,16 @@ export default function MarketingWebsitePage() {
     setAccentColor(preset.accent);
   };
 
+  // Tab definitions
+  const tabs = [
+    { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
+    { id: 'content' as ActiveTab, label: 'Content', icon: Type },
+    { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
+    { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
+    { id: 'tracking' as ActiveTab, label: 'Tracking', icon: BarChart3 },
+    { id: 'seo' as ActiveTab, label: 'SEO & Social', icon: Share2 },
+  ];
+
   // Preview content for locked state
   const PreviewContent = () => (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -433,12 +556,7 @@ export default function MarketingWebsitePage() {
       {/* Tabs */}
       <div className="mb-4 sm:mb-6 overflow-x-auto" style={{ borderBottom: `1px solid ${borderColor}` }}>
         <nav className="flex gap-4 sm:gap-6 min-w-max">
-          {[
-            { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
-            { id: 'content' as ActiveTab, label: 'Content', icon: Type },
-            { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
-            { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <div
               key={tab.id}
               className="flex items-center gap-1.5 sm:gap-2 pb-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap"
@@ -620,12 +738,7 @@ export default function MarketingWebsitePage() {
       {/* Tabs */}
       <div className="mb-4 sm:mb-6 overflow-x-auto" style={{ borderBottom: `1px solid ${borderColor}` }}>
         <nav className="flex gap-4 sm:gap-6 min-w-max">
-          {[
-            { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
-            { id: 'content' as ActiveTab, label: 'Content', icon: Type },
-            { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
-            { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -896,7 +1009,7 @@ export default function MarketingWebsitePage() {
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Primary Color</label>
                 <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>
-                  Buttons, CTAs, hero gradient, nav highlights, pricing column highlights, and "Start Free Trial" buttons.
+                  Buttons, CTAs, hero gradient, nav highlights, pricing column highlights, and &quot;Start Free Trial&quot; buttons.
                 </p>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
@@ -932,7 +1045,7 @@ export default function MarketingWebsitePage() {
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Accent Color</label>
                 <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>
-                  "Most Popular" pricing badge, star ratings, and highlight callouts. Works best as a warm contrast to your primary.
+                  &quot;Most Popular&quot; pricing badge, star ratings, and highlight callouts. Works best as a warm contrast to your primary.
                 </p>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="h-9 sm:h-10 w-12 sm:w-14 rounded cursor-pointer border-0 bg-transparent" />
@@ -1216,6 +1329,314 @@ export default function MarketingWebsitePage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* Tab Content - Tracking & Analytics                               */}
+      {/* ================================================================ */}
+      {activeTab === 'tracking' && (
+        <div className="space-y-4 sm:space-y-6">
+          <div
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Conversion Tracking</h3>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>
+              Add tracking pixels and analytics to your marketing website. These scripts will be injected into your site&apos;s code automatically.
+            </p>
+
+            <div className="space-y-4 sm:space-y-5">
+              {/* Google Tag Manager */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Google Tag Manager ID
+                </label>
+                <input
+                  type="text"
+                  value={gtmId}
+                  onChange={(e) => setGtmId(e.target.value)}
+                  placeholder="GTM-XXXXXXX"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  Manages all your tags (GA4, Facebook, etc.) in one place. Find it at tagmanager.google.com → Container ID.
+                </p>
+              </div>
+
+              {/* Google Analytics 4 */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Google Analytics 4 Measurement ID
+                </label>
+                <input
+                  type="text"
+                  value={googleAnalyticsId}
+                  onChange={(e) => setGoogleAnalyticsId(e.target.value)}
+                  placeholder="G-XXXXXXXXXX"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  Track visitor behavior and conversions. Find it at analytics.google.com → Admin → Data Streams.
+                </p>
+              </div>
+
+              {/* Facebook / Meta Pixel */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Facebook / Meta Pixel ID
+                </label>
+                <input
+                  type="text"
+                  value={fbPixelId}
+                  onChange={(e) => setFbPixelId(e.target.value)}
+                  placeholder="123456789012345"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  Required for Facebook/Instagram ad tracking. Find it at business.facebook.com → Events Manager → Pixel ID.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Scripts */}
+          <div
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Custom Scripts</h3>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>
+              Add any other tracking scripts or custom code. These run on your marketing website only.
+            </p>
+
+            <div className="space-y-4 sm:space-y-5">
+              {/* Head Scripts */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Custom Head Scripts
+                </label>
+                <textarea
+                  value={customHeadScripts}
+                  onChange={(e) => setCustomHeadScripts(e.target.value)}
+                  placeholder={'<!-- Paste scripts that go in <head> -->\n<script>...</script>'}
+                  rows={4}
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm font-mono transition-colors focus:outline-none resize-y"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  Injected into the &lt;head&gt; tag. Use for analytics, chat widgets, or any script that needs to load early.
+                </p>
+              </div>
+
+              {/* Body Scripts */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Custom Body Scripts
+                </label>
+                <textarea
+                  value={customBodyScripts}
+                  onChange={(e) => setCustomBodyScripts(e.target.value)}
+                  placeholder={'<!-- Paste scripts that go before </body> -->\n<script>...</script>'}
+                  rows={4}
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm font-mono transition-colors focus:outline-none resize-y"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  Injected before the closing &lt;/body&gt; tag. Use for chat widgets, retargeting pixels, or any script that should load after the page.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info box */}
+          <div
+            className="rounded-xl p-3 sm:p-4 flex items-start gap-3"
+            style={{
+              backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)',
+              border: '1px solid rgba(59,130,246,0.15)',
+            }}
+          >
+            <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>ℹ</div>
+            <div>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}>
+                <strong>Tip:</strong> If you use Google Tag Manager, you only need the GTM ID — you can manage GA4, Facebook Pixel, and all other tags from within GTM instead of adding them individually here.
+              </p>
+            </div>
+          </div>
+
+          {/* Save button */}
+          <div 
+            className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+              Tracking scripts are injected into your marketing website automatically.
+            </p>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {trackingSaved && (
+                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
+                  <Check className="h-4 w-4" />
+                  {demoMode ? 'Saved! (demo)' : 'Saved!'}
+                </span>
+              )}
+              <button
+                onClick={handleSaveTracking}
+                disabled={savingTracking}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              >
+                {savingTracking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Tracking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* Tab Content - SEO & Social                                       */}
+      {/* ================================================================ */}
+      {activeTab === 'seo' && (
+        <div className="space-y-4 sm:space-y-6">
+          <div
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Social Sharing Preview</h3>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>
+              Control how your site looks when shared on Facebook, Twitter, LinkedIn, and iMessage. These Open Graph tags are also used by search engines.
+            </p>
+
+            <div className="space-y-4 sm:space-y-5">
+              {/* OG Title */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={ogTitle}
+                  onChange={(e) => setOgTitle(e.target.value)}
+                  placeholder={`${agency?.name || 'Your Business'} - AI Phone Answering`}
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  The headline shown when your site is shared on social media. Keep it under 60 characters.
+                </p>
+              </div>
+
+              {/* OG Description */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Description
+                </label>
+                <textarea
+                  value={ogDescription}
+                  onChange={(e) => setOgDescription(e.target.value)}
+                  placeholder="Professional AI receptionist that answers every call 24/7. Never miss another customer."
+                  rows={3}
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none resize-y"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  A brief summary shown below the title in social previews. Keep it under 160 characters.
+                </p>
+              </div>
+
+              {/* OG Image */}
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                  Social Image URL
+                </label>
+                <input
+                  type="url"
+                  value={ogImageUrl}
+                  onChange={(e) => setOgImageUrl(e.target.value)}
+                  placeholder="https://your-domain.com/og-image.jpg"
+                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>
+                  The image shown when shared. Recommended: 1200×630px. If empty, your logo will be used.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview Card */}
+          <div
+            className="rounded-xl p-4 sm:p-6"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Preview</h3>
+            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>
+              Approximate preview of how your link will appear when shared:
+            </p>
+
+            {/* Facebook-style link preview */}
+            <div
+              className="rounded-lg overflow-hidden max-w-md mx-auto"
+              style={{ border: `1px solid ${borderColor}`, backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5' }}
+            >
+              {/* Image area */}
+              <div
+                className="h-40 flex items-center justify-center"
+                style={{ backgroundColor: isDark ? '#333' : '#e5e7eb' }}
+              >
+                {ogImageUrl ? (
+                  <img src={ogImageUrl} alt="Social preview" className="w-full h-full object-cover" />
+                ) : branding.logoUrl ? (
+                  <img src={branding.logoUrl} alt="Logo" className="h-16 w-auto" />
+                ) : (
+                  <span className="text-4xl">🌐</span>
+                )}
+              </div>
+              {/* Text area */}
+              <div className="p-3">
+                <p className="text-[10px] uppercase tracking-wide mb-1" style={{ color: mutedTextColor }}>
+                  {agency?.marketing_domain || `${agency?.slug || 'demo'}.${platformDomain}`}
+                </p>
+                <p className="text-sm font-semibold mb-1" style={{ color: textColor }}>
+                  {ogTitle || `${agency?.name || 'Your Business'} - AI Phone Answering`}
+                </p>
+                <p className="text-xs line-clamp-2" style={{ color: mutedTextColor }}>
+                  {ogDescription || 'Professional AI receptionist that answers every call 24/7.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Save button */}
+          <div 
+            className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3"
+            style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
+          >
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+              Social sharing previews update automatically when saved.
+            </p>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {seoSaved && (
+                <span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}>
+                  <Check className="h-4 w-4" />
+                  {demoMode ? 'Saved! (demo)' : 'Saved!'}
+                </span>
+              )}
+              <button
+                onClick={handleSaveSeo}
+                disabled={savingSeo}
+                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto"
+                style={{ backgroundColor: agencyPrimaryColor }}
+              >
+                {savingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save SEO
+              </button>
+            </div>
           </div>
         </div>
       )}

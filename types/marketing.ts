@@ -3,7 +3,7 @@
 export interface MarketingBranding {
   name: string;
   logoUrl: string;
-  logoBackgroundColor?: string; // Detected from logo or set manually
+  logoBackgroundColor?: string;
   primaryColor: string;
   primaryHoverColor: string;
   accentColor: string;
@@ -17,6 +17,7 @@ export interface HeroConfig {
   demoPhone: string;
   demoInstructions: string;
   trustItems: string[];
+  videoUrl?: string; // Optional explainer video (YouTube/Vimeo embed URL)
 }
 
 export interface StatsConfig {
@@ -104,10 +105,24 @@ export interface FooterConfig {
   companyLinks: FooterLink[];
 }
 
+// Analytics / Tracking
+export interface AnalyticsConfig {
+  gtmId?: string;
+  fbPixelId?: string;
+  googleAnalyticsId?: string;
+  customHeadScripts?: string;
+  customBodyScripts?: string;
+}
+
+// Open Graph / Social Meta
+export interface OGConfig {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+}
+
 export interface MarketingConfig {
-  // Theme: 'auto' detects from logo, 'light' or 'dark' forces theme
   theme?: 'auto' | 'light' | 'dark';
-  // Currency symbol for pricing display (e.g. '$', '£', '€')
   currencySymbol?: string;
   branding: MarketingBranding;
   hero: HeroConfig;
@@ -122,9 +137,13 @@ export interface MarketingConfig {
   pricing: PricingTier[];
   faqs: FAQItem[];
   footer: FooterConfig;
+  analytics?: AnalyticsConfig;
+  og?: OGConfig;
   showIndustries?: boolean;
   showComparison?: boolean;
   showTestimonials?: boolean;
+  // Client login link (renders in nav + footer)
+  clientLoginPath?: string;
 }
 
 // ============================================================================
@@ -435,6 +454,7 @@ export const defaultMarketingConfig: MarketingConfig = {
       { label: 'Terms & Conditions', href: '/terms' },
     ],
   },
+  clientLoginPath: '/client/login',
   showIndustries: true,
   showComparison: true,
   showTestimonials: true,
