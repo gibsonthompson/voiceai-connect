@@ -15,6 +15,12 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
 }
 
+/** Returns "r, g, b" string for use in CSS rgba(var(--x), alpha) */
+function hexToRgbString(hex: string): string {
+  const rgb = hexToRgb(hex);
+  return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '18, 32, 146';
+}
+
 function getLuminance(hex: string): number {
   const rgb = hexToRgb(hex);
   if (!rgb) return 0.5;
@@ -76,8 +82,6 @@ interface ContrastColors {
 // SAFE FAQ RENDERER (replaces dangerouslySetInnerHTML)
 // ============================================================================
 function SafeFAQContent({ html }: { html: string }) {
-  // Strip to text content only — safe from XSS
-  // We parse basic <p>, <ul>, <li>, <strong>, <br> tags
   const parts = html.split(/(<\/?(?:p|ul|ol|li|strong|br)\s*\/?>)/gi);
   const elements: React.ReactNode[] = [];
   let inList = false;
@@ -99,12 +103,9 @@ function SafeFAQContent({ html }: { html: string }) {
     if (lower === '<br>' || lower === '<br/>') { elements.push(<br key={key++} />); continue; }
     if (lower === '<strong>' || lower === '</strong>') continue;
 
-    // Text content
     if (part.trim() && !part.startsWith('<')) {
-      // Check if previous tag was <strong>
       const prevTag = i > 0 ? parts[i - 1]?.toLowerCase().trim() : '';
       const textNode = prevTag === '<strong>' ? <strong key={key++}>{part}</strong> : <span key={key++}>{part}</span>;
-
       if (inList) {
         listItems.push(<li key={key++} style={{ marginBottom: '0.375rem' }}>{textNode}</li>);
       } else {
@@ -125,10 +126,7 @@ function SchemaOrg({ config }: { config: MarketingConfig }) {
     mainEntity: config.faqs.map(faq => ({
       '@type': 'Question',
       name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer.replace(/<[^>]*>/g, ''),
-      },
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer.replace(/<[^>]*>/g, '') },
     })),
   };
 
@@ -139,11 +137,7 @@ function SchemaOrg({ config }: { config: MarketingConfig }) {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: config.pricing.map(tier => ({
-      '@type': 'Offer',
-      name: tier.name,
-      price: tier.price,
-      priceCurrency: 'USD',
-      description: tier.subtitle,
+      '@type': 'Offer', name: tier.name, price: tier.price, priceCurrency: 'USD', description: tier.subtitle,
     })),
   };
 
@@ -236,7 +230,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// HERO SECTION (Streamlined — less vertical space)
+// HERO SECTION
 // ============================================================================
 function HeroSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { hero, branding } = config;
@@ -256,7 +250,6 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
 
           <p className="hero-subtitle">{hero.description}</p>
 
-          {/* CTAs first — most important action */}
           <div className="hero-ctas">
             <a href="/get-started" className="btn-large btn-primary">Start Free Trial — 7 Days Free</a>
             {hero.demoPhone ? (
@@ -269,12 +262,10 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
             )}
           </div>
 
-          {/* Trust bar — compact */}
           <div className="trust-bar">
             {hero.trustItems.map((item, i) => (<div key={i} className="trust-item">✓ {item}</div>))}
           </div>
 
-          {/* Video embed (if provided) */}
           {hero.videoUrl && (
             <div className="hero-video">
               <div className="hero-video-wrapper">
@@ -288,7 +279,6 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
             </div>
           )}
 
-          {/* Demo phone — moved below CTAs, only if exists */}
           {hero.demoPhone && (
             <div className="demo-cta">
               <div className="demo-box" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`, color: contrastColors.text }}>
@@ -391,11 +381,16 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// APP SHOWCASE (Simplified — removed 200-line inline SVG)
+// APP SHOWCASE — SVG mockup mirrors real Call Detail page
 // ============================================================================
 function AppShowcaseSection({ config }: { config: MarketingConfig }) {
   const { benefits, branding } = config;
   const benefitIcons: Record<string, React.ReactElement> = { smartphone: Icons.smartphone, phone: Icons.phone, chart: Icons.chart, bell: Icons.bell };
+
+  // Derive lighter tint from primary for backgrounds
+  const primaryRgb = hexToRgb(branding.primaryColor);
+  const tintBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.08)` : 'rgba(18, 32, 146, 0.08)';
+  const tintBgStrong = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.15)` : 'rgba(18, 32, 146, 0.15)';
 
   return (
     <section className="app-showcase">
@@ -408,44 +403,86 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
         <div className="app-features">
           <div className="app-screenshot">
             <div className="dashboard-mockup">
-              {/* Simplified phone mockup — key UI elements only */}
-              <svg viewBox="0 0 320 580" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
-                <rect x="8" y="8" width="304" height="564" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
-                <rect x="18" y="18" width="284" height="544" rx="32" fill={branding.primaryColor}/>
+              <svg viewBox="0 0 320 620" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
+                {/* Phone frame */}
+                <rect x="8" y="8" width="304" height="604" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
+                <rect x="18" y="18" width="284" height="584" rx="32" fill="#f8fafc"/>
+                {/* Notch */}
                 <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
+
+                {/* ── Header bar ── */}
                 <rect x="18" y="56" width="284" height="52" fill={branding.primaryColor}/>
-                <text x="160" y="88" textAnchor="middle" fontFamily="system-ui" fontSize="17" fontWeight="600" fill="white">Call Details</text>
-                <rect x="18" y="108" width="284" height="422" fill="#f8fafc"/>
-                <path d="M18 530 L18 538 Q18 562 42 562 L278 562 Q302 562 302 538 L302 530 Z" fill="white"/>
-                {/* Caller card */}
-                <rect x="30" y="120" width="260" height="72" rx="12" fill="white"/>
-                <circle cx="66" cy="156" r="22" fill={branding.primaryColor}/>
-                <text x="66" y="163" textAnchor="middle" fontFamily="system-ui" fontSize="16" fontWeight="700" fill="white">JD</text>
-                <text x="100" y="148" fontFamily="system-ui" fontSize="15" fontWeight="600" fill="#1f2937">John Davidson</text>
-                <text x="100" y="168" fontFamily="system-ui" fontSize="12" fill="#6b7280">Today, 2:34 PM • 3:42</text>
-                {/* AI Summary */}
-                <rect x="30" y="204" width="260" height="120" rx="12" fill="white"/>
-                <text x="50" y="228" fontFamily="system-ui" fontSize="13" fontWeight="600" fill={branding.primaryColor}>🤖 AI Summary</text>
-                <text fontFamily="system-ui" fontSize="12" fill="#374151">
-                  <tspan x="42" y="250">Caller interested in getting a</tspan>
-                  <tspan x="42" dy="16">quote for a project next month.</tspan>
-                  <tspan x="42" dy="16">Requested a callback.</tspan>
+                {/* Back arrow */}
+                <path d="M38 82 L46 74 M38 82 L46 90" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <text x="60" y="86" fontFamily="system-ui" fontSize="11" fill="rgba(255,255,255,0.8)">Back to Calls</text>
+                <text x="160" y="86" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill="white">Call Details</text>
+
+                {/* ── Caller header ── */}
+                <rect x="18" y="108" width="284" height="64" fill="white"/>
+                <text x="32" y="132" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
+                <text x="32" y="150" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM • 3m 42s</text>
+                {/* Priority badge */}
+                <rect x="222" y="120" width="68" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
+                <text x="256" y="136" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
+
+                {/* ── AI Summary card ── */}
+                <rect x="26" y="184" width="268" height="130" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                {/* Icon badge */}
+                <rect x="38" y="196" width="28" height="28" rx="8" fill={tintBg}/>
+                <path d="M48 206 L48 214 M52 206 L56 210 L52 214 M48 210 L56 210" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <text x="74" y="215" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
+                {/* Summary text */}
+                <text fontFamily="system-ui" fontSize="11" fill="#6b7280">
+                  <tspan x="38" y="240">Caller interested in getting a quote</tspan>
+                  <tspan x="38" dy="16">for a project starting next month.</tspan>
+                  <tspan x="38" dy="16">Requested a callback at their</tspan>
+                  <tspan x="38" dy="16">earliest convenience.</tspan>
                 </text>
-                <rect x="42" y="298" width="60" height="18" rx="9" fill="#dbeafe"/>
-                <text x="72" y="310" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill="#2563eb">New Lead</text>
-                <rect x="108" y="298" width="64" height="18" rx="9" fill="#fef3c7"/>
-                <text x="140" y="310" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill="#d97706">Callback</text>
-                {/* Recording */}
-                <rect x="30" y="336" width="260" height="60" rx="12" fill="white"/>
-                <text x="50" y="360" fontFamily="system-ui" fontSize="13" fontWeight="600" fill="#1f2937">🎙️ Call Recording</text>
-                <rect x="42" y="370" width="236" height="14" rx="4" fill="#f3f4f6"/>
-                <rect x="42" y="370" width="100" height="14" rx="4" fill={branding.primaryColor} opacity="0.6"/>
-                {/* Action buttons */}
-                <rect x="30" y="410" width="125" height="36" rx="18" fill={branding.primaryColor}/>
-                <text x="92" y="432" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="white">📞 Call Back</text>
-                <rect x="165" y="410" width="125" height="36" rx="18" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="227" y="432" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">💬 SMS</text>
-                <rect x="120" y="548" width="80" height="4" rx="2" fill="#1a1a1a"/>
+                {/* Tags */}
+                <rect x="38" y="296" width="60" height="18" rx="9" fill={tintBg}/>
+                <text x="68" y="308" textAnchor="middle" fontFamily="system-ui" fontSize="9" fontWeight="600" fill={branding.primaryColor}>New Lead</text>
+                <rect x="104" y="296" width="64" height="18" rx="9" fill={tintBg}/>
+                <text x="136" y="308" textAnchor="middle" fontFamily="system-ui" fontSize="9" fontWeight="600" fill={branding.primaryColor}>Callback</text>
+
+                {/* ── Recording card ── */}
+                <rect x="26" y="326" width="268" height="60" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="38" y="350" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">🎙️ Call Recording</text>
+                {/* Waveform visualization */}
+                <rect x="38" y="360" width="244" height="14" rx="4" fill="#f3f4f6"/>
+                <rect x="38" y="360" width="110" height="14" rx="4" fill={branding.primaryColor} opacity="0.5"/>
+                {/* Play button */}
+                <circle cx="50" y="367" r="7" fill={branding.primaryColor}/>
+                <polygon points="48,364 48,370 53,367" fill="white"/>
+                <text x="258" y="370" textAnchor="end" fontFamily="system-ui" fontSize="9" fill="#6b7280">1:24 / 3:42</text>
+
+                {/* ── Contact Details card ── */}
+                <rect x="26" y="398" width="268" height="110" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="38" y="420" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Contact Details</text>
+                {/* Name row */}
+                <rect x="38" y="430" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <circle cx="50" cy="438" r="4" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
+                <path d="M44 448 Q50 444 56 448" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
+                <text x="70" y="436" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
+                <text x="70" y="448" fontFamily="system-ui" fontSize="11" fill="#1f2937">John Davidson</text>
+                {/* Phone row */}
+                <rect x="38" y="460" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <path d="M47 466 Q47 474 51 478" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
+                <text x="70" y="468" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
+                <text x="70" y="480" fontFamily="system-ui" fontSize="11" fill={branding.primaryColor}>(555) 123-4567</text>
+                {/* Service row */}
+                <rect x="38" y="490" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <rect x="45" y="496" width="10" height="10" rx="2" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
+                <text x="70" y="498" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
+                <text x="70" y="510" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project Estimate</text>
+
+                {/* ── Action buttons ── */}
+                <rect x="26" y="522" width="130" height="38" rx="19" fill={branding.primaryColor}/>
+                <text x="91" y="545" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="white">📞 Call Back</text>
+                <rect x="164" y="522" width="130" height="38" rx="19" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="229" y="545" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">💬 SMS</text>
+
+                {/* Home indicator */}
+                <rect x="120" y="588" width="80" height="4" rx="2" fill="#1a1a1a"/>
               </svg>
             </div>
           </div>
@@ -538,7 +575,7 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// COMPARISON SECTION (with mobile card layout)
+// COMPARISON SECTION
 // ============================================================================
 function ComparisonSection({ config }: { config: MarketingConfig }) {
   const { branding, pricing } = config;
@@ -712,7 +749,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// FAQ SECTION (Safe rendering, no dangerouslySetInnerHTML)
+// FAQ SECTION
 // ============================================================================
 function FAQSection({ config }: { config: MarketingConfig }) {
   const { faqs } = config;
@@ -733,50 +770,6 @@ function FAQSection({ config }: { config: MarketingConfig }) {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// EMAIL CAPTURE SECTION
-// ============================================================================
-function EmailCaptureSection({ config }: { config: MarketingConfig }) {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    // Track conversion if GTM/analytics available
-    if (typeof window !== 'undefined' && (window as any).dataLayer) {
-      (window as any).dataLayer.push({ event: 'email_capture', email_value: email });
-    }
-    setSubmitted(true);
-    // In production, POST to your email capture endpoint
-  };
-
-  return (
-    <section className="email-capture-section">
-      <div className="container">
-        <div className="email-capture-box">
-          {submitted ? (
-            <>
-              <h3>You&apos;re on the list!</h3>
-              <p>We&apos;ll send you tips on how AI can help grow your business.</p>
-            </>
-          ) : (
-            <>
-              <h3>Not Ready Yet? Get Our Free Guide</h3>
-              <p>Learn how AI receptionists are helping small businesses capture 40% more leads.</p>
-              <form className="email-capture-form" onSubmit={handleSubmit}>
-                <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                <button type="submit" className="btn-primary">Get Free Guide</button>
-              </form>
-              <p className="email-capture-note">No spam. Unsubscribe anytime.</p>
-            </>
-          )}
         </div>
       </div>
     </section>
@@ -830,41 +823,47 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
 // EXIT INTENT MODAL
 // ============================================================================
 function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose: () => void }) {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    if (typeof window !== 'undefined' && (window as any).dataLayer) {
-      (window as any).dataLayer.push({ event: 'exit_intent_capture', email_value: email });
-    }
-    setSubmitted(true);
-    setTimeout(onClose, 2000);
-  };
+  const { hero, branding } = config;
+  const demoPhone = hero.demoPhone;
 
   return (
     <div className="exit-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="exit-modal">
+      <div className="exit-modal" style={{ textAlign: 'center' }}>
         <button className="exit-modal-close" onClick={onClose} aria-label="Close">
           <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.close}</span>
         </button>
-        {submitted ? (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+          <span style={{ width: '3rem', height: '3rem', color: branding.primaryColor }}>{Icons.headphones}</span>
+        </div>
+        <h3>Wait — Hear It Before You Leave!</h3>
+        <p>Call our AI receptionist right now. No signup, no commitment — just see how it handles a real call for your business.</p>
+        {demoPhone ? (
           <>
-            <h3>Check Your Inbox!</h3>
-            <p>We sent you a guide on how AI receptionists are transforming small businesses.</p>
+            <a
+              href={`tel:+1${demoPhone.replace(/\D/g, '')}`}
+              className="btn-large btn-primary"
+              style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
+              onClick={() => {
+                if (typeof window !== 'undefined' && (window as any).dataLayer) {
+                  (window as any).dataLayer.push({ event: 'exit_intent_demo_call' });
+                }
+              }}
+            >
+              <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>
+              {demoPhone}
+            </a>
+            <p style={{ fontSize: '0.813rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
+              {hero.demoInstructions || 'Takes 30 seconds. Your phone will ring with a live demo.'}
+            </p>
           </>
         ) : (
-          <>
-            <h3>Wait — Before You Go!</h3>
-            <p>Get our free guide on how AI receptionists help capture 40% more leads. No commitment required.</p>
-            <form className="email-capture-form" onSubmit={handleSubmit}>
-              <input type="email" placeholder="Your email address" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <button type="submit" className="btn-primary">Send Me the Guide</button>
-            </form>
-            <p className="email-capture-note">No spam, ever. Unsubscribe anytime.</p>
-          </>
+          <a href="/get-started" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>
+            Start Your 7-Day Free Trial
+          </a>
         )}
+        <a href="/get-started" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>
+          Or start your free trial →
+        </a>
       </div>
     </div>
   );
@@ -979,7 +978,6 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
       if (e.clientY <= 0 && !exitShownRef.current) {
-        // Only show after 30s on page and if not on mobile
         if (window.innerWidth >= 768 && performance.now() > 30000) {
           exitShownRef.current = true;
           try { sessionStorage.setItem('exit_shown', '1'); } catch {}
@@ -987,16 +985,21 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
         }
       }
     };
-    // Don't show if already shown this session
     try { if (sessionStorage.getItem('exit_shown')) { exitShownRef.current = true; } } catch {}
     document.addEventListener('mouseleave', handleMouseLeave);
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
+  // Compute RGB channels for CSS rgba() usage
+  const primaryRgbStr = hexToRgbString(config.branding.primaryColor || '#122092');
+  const accentRgbStr = hexToRgbString(config.branding.accentColor || '#f6b828');
+
   const themeStyle = {
     '--primary-color': config.branding.primaryColor,
     '--primary-hover': config.branding.primaryHoverColor,
     '--accent-color': config.branding.accentColor,
+    '--primary-rgb': primaryRgbStr,
+    '--accent-rgb': accentRgbStr,
   } as React.CSSProperties;
 
   const dynamicStyles = `
@@ -1024,7 +1027,6 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       {config.showTestimonials && <TestimonialsSection config={config} />}
       <PricingSection config={config} />
       <FAQSection config={config} />
-      <EmailCaptureSection config={config} />
       <FinalCTASection config={config} contrastColors={contrastColors} />
       <Footer config={config} />
       <StickyCTA config={config} />
