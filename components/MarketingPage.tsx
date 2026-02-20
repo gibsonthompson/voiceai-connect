@@ -383,7 +383,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // APP SHOWCASE — SVG mockup mirrors real Call Detail page
 // ============================================================================
-function AppShowcaseSection({ config }: { config: MarketingConfig }) {
+function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { benefits, branding } = config;
   const benefitIcons: Record<string, React.ReactElement> = { smartphone: Icons.smartphone, phone: Icons.phone, chart: Icons.chart, bell: Icons.bell };
 
@@ -415,8 +415,8 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
 
                 {/* ── Header bar ── */}
                 <rect x="18" y="56" width="284" height="44" fill={branding.primaryColor}/>
-                <path d="M36 78 L44 70 M36 78 L44 86" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill="white">Call Details</text>
+                <path d="M36 78 L44 70 M36 78 L44 86" stroke={contrastColors.text} strokeWidth="2" strokeLinecap="round"/>
+                <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill={contrastColors.text}>Call Details</text>
 
                 {/* ── Caller header ── */}
                 <rect x="18" y="100" width="284" height="56" fill="white"/>
@@ -467,7 +467,7 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
 
                 {/* ── Action buttons ── */}
                 <rect x="26" y="550" width="130" height="40" rx="20" fill={branding.primaryColor}/>
-                <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="white">Call Back</text>
+                <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill={contrastColors.text}>Call Back</text>
                 <rect x="164" y="550" width="130" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <text x="229" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">Send SMS</text>
 
@@ -990,6 +990,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     '--accent-color': config.branding.accentColor,
     '--primary-rgb': primaryRgbStr,
     '--accent-rgb': accentRgbStr,
+    '--primary-text-color': contrastColors.text,
   } as React.CSSProperties;
 
   const dynamicStyles = `
@@ -1010,7 +1011,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       <StatsSection config={config} />
       <ProblemSolutionSection config={config} contrastColors={contrastColors} />
       <HowItWorksSection config={config} />
-      <AppShowcaseSection config={config} />
+      <AppShowcaseSection config={config} contrastColors={contrastColors} />
       <FeaturesSection config={config} />
       {config.showIndustries && <IndustriesSection config={config} />}
       {config.showComparison && <ComparisonSection config={config} />}
