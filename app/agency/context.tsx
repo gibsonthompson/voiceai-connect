@@ -51,6 +51,16 @@ interface Agency {
   demo_phone_number: string | null;
   demo_assistant_id: string | null;
   demo_vapi_phone_id: string | null;
+  // Analytics & Tracking
+  gtm_id: string | null;
+  fb_pixel_id: string | null;
+  google_analytics_id: string | null;
+  custom_head_scripts: string | null;
+  custom_body_scripts: string | null;
+  // OG / Social meta
+  og_title: string | null;
+  og_description: string | null;
+  og_image_url: string | null;
 }
 
 interface User {
