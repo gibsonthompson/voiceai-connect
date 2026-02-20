@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, DollarSign, PhoneCall, Clock, Copy, Check,
-  ChevronRight, ArrowUpRight, Loader2
+  ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -46,6 +46,13 @@ export default function AgencyDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Feedback modal state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!agency) return;
 
@@ -82,6 +89,42 @@ export default function AgencyDashboardPage() {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendFeedback = async () => {
+    if (!agency || !feedbackMessage.trim()) return;
+    setSendingFeedback(true);
+    setFeedbackError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: feedbackMessage.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send feedback');
+      }
+
+      setFeedbackSent(true);
+      setFeedbackMessage('');
+      setTimeout(() => {
+        setShowFeedbackModal(false);
+        setFeedbackSent(false);
+      }, 2000);
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback');
+    } finally {
+      setSendingFeedback(false);
     }
   };
 
@@ -131,14 +174,129 @@ export default function AgencyDashboardPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !sendingFeedback && setShowFeedbackModal(false)}
+          />
+          <div 
+            className="relative w-full max-w-md rounded-2xl p-6"
+            style={{ 
+              backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff',
+              border: `1px solid ${theme.border}`,
+            }}
+          >
+            <button
+              onClick={() => setShowFeedbackModal(false)}
+              className="absolute top-4 right-4 p-1 rounded-lg transition-colors"
+              style={{ color: theme.textMuted }}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {feedbackSent ? (
+              <div className="text-center py-4">
+                <div 
+                  className="mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3"
+                  style={{ backgroundColor: theme.primary15 }}
+                >
+                  <Check className="h-6 w-6" style={{ color: theme.primary }} />
+                </div>
+                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Feedback Sent</h3>
+                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Thanks for sharing your thoughts.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div 
+                    className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: theme.primary15 }}
+                  >
+                    <MessageSquare className="h-5 w-5" style={{ color: theme.primary }} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Send Feedback</h3>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests</p>
+                  </div>
+                </div>
+
+                {feedbackError && (
+                  <div 
+                    className="mb-4 rounded-xl p-3 text-sm"
+                    style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}
+                  >
+                    {feedbackError}
+                  </div>
+                )}
+
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  placeholder="What's on your mind?"
+                  rows={4}
+                  maxLength={2000}
+                  className="w-full rounded-xl px-4 py-3 text-sm resize-none transition-colors"
+                  style={{ 
+                    backgroundColor: theme.input, 
+                    border: `1px solid ${theme.inputBorder}`, 
+                    color: theme.text,
+                  }}
+                  autoFocus
+                />
+                <div className="flex items-center justify-between mt-1 mb-4">
+                  <span className="text-xs" style={{ color: theme.textMuted }}>
+                    {feedbackMessage.length}/2000
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleSendFeedback}
+                  disabled={sendingFeedback || !feedbackMessage.trim()}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                >
+                  {sendingFeedback ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send Feedback
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
-          Welcome back{user?.first_name ? `, ${user.first_name}` : ''}! 👋
-        </h1>
-        <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>
-          Here&apos;s how your agency is performing.
-        </p>
+      <div className="mb-6 sm:mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
+            Welcome back{user?.first_name ? `, ${user.first_name}` : ''}!
+          </h1>
+          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>
+            Here&apos;s how your agency is performing.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowFeedbackModal(true)}
+          className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`}
+          style={{ 
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.border}`,
+            color: theme.textMuted,
+          }}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">Feedback</span>
+        </button>
       </div>
 
       {/* Trial Info Banner */}

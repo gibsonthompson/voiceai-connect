@@ -7,13 +7,13 @@ import {
   CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2,
   Receipt, XCircle, Eye, Phone, Users,
-  Globe, Info
+  Globe, Info, MessageSquare, Send
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import BYOTSettings from '@/components/BYOTSettings';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo' | 'feedback';
 
 interface StripeStatus {
   connected: boolean;
@@ -22,6 +22,12 @@ interface StripeStatus {
   charges_enabled: boolean;
   payouts_enabled: boolean;
   details_submitted?: boolean;
+}
+
+interface FeedbackItem {
+  id: string;
+  message: string;
+  created_at: string;
 }
 
 function isTrialStatus(status: string | null | undefined): boolean {
@@ -167,7 +173,7 @@ function AgencySettingsContent() {
   const searchParams = useSearchParams();
   
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo', 'feedback'];
   
   // Redirect old branding tab links to profile
   const [activeTab, setActiveTab] = useState<SettingsTab>(
@@ -203,6 +209,14 @@ function AgencySettingsContent() {
   // Marketing page currency override
   const [displayCurrency, setDisplayCurrency] = useState('');
 
+  // Feedback state
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -237,6 +251,13 @@ function AgencySettingsContent() {
     }
   }, [activeTab, agency?.id]);
 
+  // Fetch feedback history when feedback tab is active
+  useEffect(() => {
+    if (activeTab === 'feedback' && agency?.id) {
+      fetchFeedbackHistory();
+    }
+  }, [activeTab, agency?.id]);
+
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
     const url = new URL(window.location.href);
@@ -263,6 +284,61 @@ function AgencySettingsContent() {
     }
   };
 
+  const fetchFeedbackHistory = async () => {
+    if (!agency) return;
+    setLoadingFeedback(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFeedbackHistory(data.feedback || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch feedback:', err);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  const handleSendFeedback = async () => {
+    if (!agency || !feedbackMessage.trim()) return;
+    setSendingFeedback(true);
+    setFeedbackError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: feedbackMessage.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send feedback');
+      }
+
+      const data = await response.json();
+      setFeedbackSent(true);
+      setFeedbackMessage('');
+      // Add to history
+      if (data.feedback) {
+        setFeedbackHistory(prev => [data.feedback, ...prev]);
+      }
+      setTimeout(() => setFeedbackSent(false), 3000);
+    } catch (err) {
+      setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback');
+    } finally {
+      setSendingFeedback(false);
+    }
+  };
+
   const settingsTabs = [
     { id: 'profile' as SettingsTab, label: 'Profile', icon: Building },
     { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
@@ -270,6 +346,7 @@ function AgencySettingsContent() {
     { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
     { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe },
     { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
+    { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
   ];
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1141,7 +1218,7 @@ function AgencySettingsContent() {
                     border: `1px solid ${theme.infoBorder}`,
                   }}
                 >
-                  <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: theme.infoText }}>ℹ</div>
+                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
                     <p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p>
                     <p className="text-sm" style={{ color: theme.textMuted }}>
@@ -1150,6 +1227,113 @@ function AgencySettingsContent() {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ================================================================ */}
+            {/* FEEDBACK TAB                                                     */}
+            {/* ================================================================ */}
+            {activeTab === 'feedback' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div>
+                  <h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                    Questions, issues, or feature requests — we read every message.
+                  </p>
+                </div>
+
+                {feedbackSent && (
+                  <div 
+                    className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+                    style={{
+                      backgroundColor: theme.primary15,
+                      border: `1px solid ${theme.primary30}`,
+                    }}
+                  >
+                    <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
+                    <p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p>
+                  </div>
+                )}
+
+                {feedbackError && (
+                  <div 
+                    className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+                    style={{
+                      backgroundColor: theme.errorBg,
+                      border: `1px solid ${theme.errorBorder}`,
+                    }}
+                  >
+                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
+                    <p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p>
+                  </div>
+                )}
+
+                {/* Feedback form */}
+                <div>
+                  <textarea
+                    value={feedbackMessage}
+                    onChange={(e) => setFeedbackMessage(e.target.value)}
+                    placeholder="What's on your mind?"
+                    rows={5}
+                    maxLength={2000}
+                    className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors"
+                    style={{ 
+                      backgroundColor: theme.input, 
+                      border: `1px solid ${theme.inputBorder}`, 
+                      color: theme.text,
+                    }}
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs" style={{ color: theme.textMuted }}>
+                      {feedbackMessage.length}/2000
+                    </span>
+                    <button
+                      onClick={handleSendFeedback}
+                      disabled={sendingFeedback || !feedbackMessage.trim()}
+                      className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                    >
+                      {sendingFeedback ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Past submissions */}
+                {loadingFeedback ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} />
+                  </div>
+                ) : feedbackHistory.length > 0 ? (
+                  <div>
+                    <h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4>
+                    <div className="space-y-2">
+                      {feedbackHistory.map((item) => (
+                        <div 
+                          key={item.id}
+                          className="rounded-xl p-3 sm:p-4"
+                          style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
+                        >
+                          <p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p>
+                          <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
+                            {new Date(item.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' 
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
 
