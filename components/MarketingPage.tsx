@@ -403,86 +403,73 @@ function AppShowcaseSection({ config }: { config: MarketingConfig }) {
         <div className="app-features">
           <div className="app-screenshot">
             <div className="dashboard-mockup">
-              <svg viewBox="0 0 320 620" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
+              <svg viewBox="0 0 320 640" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
                 {/* Phone frame */}
-                <rect x="8" y="8" width="304" height="604" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
-                <rect x="18" y="18" width="284" height="584" rx="32" fill="#f8fafc"/>
+                <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
+                <rect x="18" y="18" width="284" height="604" rx="32" fill="#f8fafc"/>
                 {/* Notch */}
                 <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
 
                 {/* ── Header bar ── */}
-                <rect x="18" y="56" width="284" height="52" fill={branding.primaryColor}/>
-                {/* Back arrow */}
-                <path d="M38 82 L46 74 M38 82 L46 90" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <text x="60" y="86" fontFamily="system-ui" fontSize="11" fill="rgba(255,255,255,0.8)">Back to Calls</text>
-                <text x="160" y="86" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill="white">Call Details</text>
+                <rect x="18" y="56" width="284" height="44" fill={branding.primaryColor}/>
+                <path d="M36 78 L44 70 M36 78 L44 86" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill="white">Call Details</text>
 
                 {/* ── Caller header ── */}
-                <rect x="18" y="108" width="284" height="64" fill="white"/>
-                <text x="32" y="132" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
-                <text x="32" y="150" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM • 3m 42s</text>
-                {/* Priority badge */}
-                <rect x="222" y="120" width="68" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
-                <text x="256" y="136" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
+                <rect x="18" y="100" width="284" height="56" fill="white"/>
+                <text x="32" y="124" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
+                <text x="32" y="142" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM · 3m 42s</text>
+                <rect x="224" y="114" width="64" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
+                <text x="256" y="130" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
 
                 {/* ── AI Summary card ── */}
-                <rect x="26" y="184" width="268" height="130" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                {/* Icon badge */}
-                <rect x="38" y="196" width="28" height="28" rx="8" fill={tintBg}/>
-                <path d="M48 206 L48 214 M52 206 L56 210 L52 214 M48 210 L56 210" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <text x="74" y="215" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
-                {/* Summary text */}
+                <rect x="26" y="170" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <rect x="38" y="182" width="28" height="28" rx="8" fill={tintBg}/>
+                <path d="M48 192 L48 200 M52 192 L56 196 L52 200 M48 196 L56 196" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <text x="74" y="201" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
                 <text fontFamily="system-ui" fontSize="11" fill="#6b7280">
-                  <tspan x="38" y="240">Caller interested in getting a quote</tspan>
-                  <tspan x="38" dy="16">for a project starting next month.</tspan>
-                  <tspan x="38" dy="16">Requested a callback at their</tspan>
-                  <tspan x="38" dy="16">earliest convenience.</tspan>
+                  <tspan x="38" y="228">Caller interested in getting a quote</tspan>
+                  <tspan x="38" dy="17">for a project starting next month.</tspan>
+                  <tspan x="38" dy="17">Requested a callback at their</tspan>
+                  <tspan x="38" dy="17">earliest convenience.</tspan>
                 </text>
-                {/* Tags */}
-                <rect x="38" y="296" width="60" height="18" rx="9" fill={tintBg}/>
-                <text x="68" y="308" textAnchor="middle" fontFamily="system-ui" fontSize="9" fontWeight="600" fill={branding.primaryColor}>New Lead</text>
-                <rect x="104" y="296" width="64" height="18" rx="9" fill={tintBg}/>
-                <text x="136" y="308" textAnchor="middle" fontFamily="system-ui" fontSize="9" fontWeight="600" fill={branding.primaryColor}>Callback</text>
 
                 {/* ── Recording card ── */}
-                <rect x="26" y="326" width="268" height="60" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="38" y="350" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">🎙️ Call Recording</text>
-                {/* Waveform visualization */}
-                <rect x="38" y="360" width="244" height="14" rx="4" fill="#f3f4f6"/>
-                <rect x="38" y="360" width="110" height="14" rx="4" fill={branding.primaryColor} opacity="0.5"/>
-                {/* Play button */}
-                <circle cx="50" y="367" r="7" fill={branding.primaryColor}/>
-                <polygon points="48,364 48,370 53,367" fill="white"/>
-                <text x="258" y="370" textAnchor="end" fontFamily="system-ui" fontSize="9" fill="#6b7280">1:24 / 3:42</text>
+                <rect x="26" y="320" width="268" height="64" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="38" y="345" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Call Recording</text>
+                <rect x="38" y="356" width="244" height="14" rx="7" fill="#f3f4f6"/>
+                <rect x="38" y="356" width="110" height="14" rx="7" fill={branding.primaryColor} opacity="0.4"/>
+                <circle cx="148" cy="363" r="5" fill={branding.primaryColor}/>
+                <text x="258" y="367" textAnchor="end" fontFamily="system-ui" fontSize="9" fill="#6b7280">1:24 / 3:42</text>
 
                 {/* ── Contact Details card ── */}
-                <rect x="26" y="398" width="268" height="110" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="38" y="420" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Contact Details</text>
-                {/* Name row */}
-                <rect x="38" y="430" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <circle cx="50" cy="438" r="4" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
-                <path d="M44 448 Q50 444 56 448" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
-                <text x="70" y="436" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
-                <text x="70" y="448" fontFamily="system-ui" fontSize="11" fill="#1f2937">John Davidson</text>
-                {/* Phone row */}
-                <rect x="38" y="460" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <path d="M47 466 Q47 474 51 478" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
-                <text x="70" y="468" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
-                <text x="70" y="480" fontFamily="system-ui" fontSize="11" fill={branding.primaryColor}>(555) 123-4567</text>
-                {/* Service row */}
-                <rect x="38" y="490" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <rect x="45" y="496" width="10" height="10" rx="2" stroke="#6b7280" strokeWidth="1.2" fill="none"/>
-                <text x="70" y="498" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
-                <text x="70" y="510" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project Estimate</text>
+                <rect x="26" y="398" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="38" y="422" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Contact Details</text>
+                {/* Name */}
+                <rect x="38" y="434" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <circle cx="50" cy="442" r="4" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
+                <path d="M44 451 Q50 447 56 451" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
+                <text x="70" y="440" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
+                <text x="70" y="453" fontFamily="system-ui" fontSize="11" fill="#1f2937">John Davidson</text>
+                {/* Phone */}
+                <rect x="38" y="468" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <path d="M47 474 C47 474 47 480 51 484" stroke="#9ca3af" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
+                <text x="70" y="476" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
+                <text x="70" y="489" fontFamily="system-ui" fontSize="11" fill={branding.primaryColor}>(555) 123-4567</text>
+                {/* Service */}
+                <rect x="38" y="502" width="24" height="24" rx="6" fill="#f3f4f6"/>
+                <rect x="45" y="509" width="10" height="10" rx="2" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
+                <text x="70" y="510" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
+                <text x="70" y="523" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project Estimate</text>
 
                 {/* ── Action buttons ── */}
-                <rect x="26" y="522" width="130" height="38" rx="19" fill={branding.primaryColor}/>
-                <text x="91" y="545" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="white">📞 Call Back</text>
-                <rect x="164" y="522" width="130" height="38" rx="19" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="229" y="545" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">💬 SMS</text>
+                <rect x="26" y="550" width="130" height="40" rx="20" fill={branding.primaryColor}/>
+                <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="white">Call Back</text>
+                <rect x="164" y="550" width="130" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
+                <text x="229" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">Send SMS</text>
 
                 {/* Home indicator */}
-                <rect x="120" y="588" width="80" height="4" rx="2" fill="#1a1a1a"/>
+                <rect x="120" y="606" width="80" height="4" rx="2" fill="#1a1a1a"/>
               </svg>
             </div>
           </div>
