@@ -202,7 +202,7 @@ export default function AgencySitePage() {
         }
 
         const data = await response.json();
-        if (!data.agency || !['active', 'trial'].includes(data.agency.status)) {
+        if (!data.agency || ['suspended', 'deleted'].includes(data.agency.status)) {
           setError('Site not available');
           setLoading(false);
           return;
