@@ -600,7 +600,7 @@
   .marketing-page .demo-cta { padding: 0; }
   .marketing-page .demo-box { flex-direction: row; text-align: left; padding: 1.5rem 2rem; gap: 1.5rem; align-items: center; justify-content: center; }
   .marketing-page .demo-icon svg { width: 3rem; height: 3rem; }
-  .marketing-page .demo-content { align-items: flex-start; }
+  .marketing-page .demo-content { align-items: flex-start; width: auto; }
   .marketing-page .demo-content h3 { font-size: 1.125rem; text-align: left; }
   .marketing-page .demo-phone { font-size: 1.25rem; }
   .marketing-page .demo-instructions { text-align: left; }
