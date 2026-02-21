@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "VoiceAI Connect - White-Label AI Voice Agency Platform",
+    default: "VoiceAI Connect - White-Label AI Receptionist Platform",
     template: "%s | VoiceAI Connect",
   },
   description:
