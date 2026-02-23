@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useAgency } from '../../context';
+import { countries as SUPPORTED_COUNTRIES } from '@/lib/currency';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -34,6 +35,38 @@ const US_STATES = [
   { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' },
   { value: 'DC', label: 'District of Columbia' }
 ];
+
+// Canadian provinces for CA country selection
+const CA_PROVINCES = [
+  { value: 'AB', label: 'Alberta' }, { value: 'BC', label: 'British Columbia' },
+  { value: 'MB', label: 'Manitoba' }, { value: 'NB', label: 'New Brunswick' },
+  { value: 'NL', label: 'Newfoundland and Labrador' }, { value: 'NS', label: 'Nova Scotia' },
+  { value: 'NT', label: 'Northwest Territories' }, { value: 'NU', label: 'Nunavut' },
+  { value: 'ON', label: 'Ontario' }, { value: 'PE', label: 'Prince Edward Island' },
+  { value: 'QC', label: 'Quebec' }, { value: 'SK', label: 'Saskatchewan' },
+  { value: 'YT', label: 'Yukon' }
+];
+
+// Country calling codes for phone formatting hints
+const COUNTRY_PHONE_CODES: Record<string, { code: string; placeholder: string; minDigits: number; maxDigits: number }> = {
+  US: { code: '+1', placeholder: '(770) 555-1234', minDigits: 10, maxDigits: 10 },
+  CA: { code: '+1', placeholder: '(416) 555-1234', minDigits: 10, maxDigits: 10 },
+  GB: { code: '+44', placeholder: '7911 123456', minDigits: 10, maxDigits: 11 },
+  AU: { code: '+61', placeholder: '0412 345 678', minDigits: 9, maxDigits: 10 },
+  DE: { code: '+49', placeholder: '0151 12345678', minDigits: 10, maxDigits: 12 },
+  FR: { code: '+33', placeholder: '06 12 34 56 78', minDigits: 9, maxDigits: 10 },
+  NL: { code: '+31', placeholder: '06 12345678', minDigits: 9, maxDigits: 10 },
+  IN: { code: '+91', placeholder: '98765 43210', minDigits: 10, maxDigits: 10 },
+  NZ: { code: '+64', placeholder: '021 123 4567', minDigits: 8, maxDigits: 10 },
+  SG: { code: '+65', placeholder: '9123 4567', minDigits: 8, maxDigits: 8 },
+  JP: { code: '+81', placeholder: '090-1234-5678', minDigits: 10, maxDigits: 11 },
+  BR: { code: '+55', placeholder: '11 91234-5678', minDigits: 10, maxDigits: 11 },
+  MX: { code: '+52', placeholder: '55 1234 5678', minDigits: 10, maxDigits: 10 },
+  AE: { code: '+971', placeholder: '50 123 4567', minDigits: 9, maxDigits: 9 },
+};
+
+// Fallback for countries not in the map
+const DEFAULT_PHONE_CONFIG = { code: '', placeholder: 'Phone number', minDigits: 7, maxDigits: 15 };
 
 const INDUSTRIES = [
   { value: 'home_services', label: 'Home Services' },
@@ -83,6 +116,7 @@ interface FormData {
   phone: string;
   businessCity: string;
   businessState: string;
+  businessCountry: string;
   websiteUrl: string;
   planType: string;
   tempPassword: string;
@@ -91,6 +125,9 @@ interface FormData {
 export default function AddClientPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const router = useRouter();
+
+  // Default country to agency's country, fallback to US
+  const defaultCountry = agency?.country?.toUpperCase() || 'US';
 
   const [form, setForm] = useState<FormData>({
     businessName: '',
@@ -101,6 +138,7 @@ export default function AddClientPage() {
     phone: '',
     businessCity: '',
     businessState: '',
+    businessCountry: defaultCountry,
     websiteUrl: '',
     planType: 'starter',
     tempPassword: generateTempPassword()
@@ -129,8 +167,23 @@ export default function AddClientPage() {
   const errorText = isDark ? '#f87171' : '#dc2626';
   const successBg = isDark ? `${primaryColor}10` : `${primaryColor}08`;
 
+  // Derived state
+  const isUS = form.businessCountry === 'US';
+  const isCA = form.businessCountry === 'CA';
+  const hasStateDropdown = isUS || isCA;
+  const phoneConfig = COUNTRY_PHONE_CODES[form.businessCountry] || DEFAULT_PHONE_CONFIG;
+  const selectedCountryData = SUPPORTED_COUNTRIES.find(c => c.code === form.businessCountry);
+
   const updateForm = (field: keyof FormData, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Reset state when country changes
+      if (field === 'businessCountry' && value !== prev.businessCountry) {
+        updated.businessState = '';
+        updated.phone = ''; // Reset phone since format changes
+      }
+      return updated;
+    });
     if (error || fieldErrors.length) {
       setError('');
       setFieldErrors([]);
@@ -138,15 +191,32 @@ export default function AddClientPage() {
   };
 
   const formatPhoneDisplay = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 10);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    // Only format US/CA phones with the mask
+    if (isUS || isCA) {
+      const digits = value.replace(/\D/g, '').slice(0, 10);
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    // For international, just return the raw digits — let user format themselves
+    return value;
   };
 
   const handlePhoneChange = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 10);
-    updateForm('phone', digits);
+    if (isUS || isCA) {
+      // US/CA: strip to digits, max 10
+      const digits = value.replace(/\D/g, '').slice(0, 10);
+      updateForm('phone', digits);
+    } else {
+      // International: allow digits, spaces, dashes, parens — store as-is
+      // Strip everything except digits for storage
+      const cleaned = value.replace(/[^\d\s\-()+ ]/g, '');
+      updateForm('phone', cleaned);
+    }
+  };
+
+  const getPhoneDigitCount = (phone: string): number => {
+    return phone.replace(/\D/g, '').length;
   };
 
   const getPlanPrice = (planType: string) => {
@@ -165,9 +235,22 @@ export default function AddClientPage() {
     if (!form.industry) errs.push('Industry is required');
     if (!form.firstName.trim()) errs.push('First name is required');
     if (!form.email.trim() || !form.email.includes('@')) errs.push('Valid email is required');
-    if (form.phone.replace(/\D/g, '').length < 10) errs.push('Valid 10-digit phone number is required');
+
+    // Phone validation — adaptive to country
+    const digitCount = getPhoneDigitCount(form.phone);
+    const minDigits = phoneConfig.minDigits;
+    const maxDigits = phoneConfig.maxDigits;
+    if (digitCount < minDigits || digitCount > maxDigits) {
+      if (minDigits === maxDigits) {
+        errs.push(`Phone number must be ${minDigits} digits for ${selectedCountryData?.name || form.businessCountry}`);
+      } else {
+        errs.push(`Phone number must be ${minDigits}-${maxDigits} digits for ${selectedCountryData?.name || form.businessCountry}`);
+      }
+    }
+
     if (!form.businessCity.trim()) errs.push('City is required');
-    if (!form.businessState) errs.push('State is required');
+    if (!form.businessState.trim()) errs.push(isUS ? 'State is required' : isCA ? 'Province is required' : 'State / Region is required');
+    if (!form.businessCountry) errs.push('Country is required');
     if (!form.tempPassword || form.tempPassword.length < 6) errs.push('Temporary password is required (min 6 characters)');
     if (errs.length > 0) {
       setFieldErrors(errs);
@@ -188,6 +271,9 @@ export default function AddClientPage() {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
+      // Strip phone to digits only for backend
+      const phoneDigits = form.phone.replace(/\D/g, '');
+
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/add`, {
         method: 'POST',
         headers: {
@@ -198,11 +284,12 @@ export default function AddClientPage() {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim().toLowerCase(),
-          phone: form.phone,
+          phone: phoneDigits,
           businessName: form.businessName.trim(),
           industry: form.industry,
           businessCity: form.businessCity.trim(),
-          businessState: form.businessState,
+          businessState: form.businessState.trim(),
+          businessCountry: form.businessCountry,
           websiteUrl: form.websiteUrl.trim() || undefined,
           planType: form.planType,
           tempPassword: form.tempPassword
@@ -316,6 +403,7 @@ export default function AddClientPage() {
                 setForm({
                   businessName: '', industry: '', firstName: '', lastName: '',
                   email: '', phone: '', businessCity: '', businessState: '',
+                  businessCountry: defaultCountry,
                   websiteUrl: '', planType: 'starter', tempPassword: generateTempPassword()
                 });
               }}
@@ -335,6 +423,9 @@ export default function AddClientPage() {
     border: `1px solid ${inputBorder}`,
     color: textColor
   };
+
+  // Build the state/region label based on country
+  const stateLabel = isUS ? 'State' : isCA ? 'Province' : 'State / Region';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
@@ -442,6 +533,27 @@ export default function AddClientPage() {
               </div>
             </div>
 
+            {/* Country Picker */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
+                Country <span style={{ color: errorText }}>*</span>
+              </label>
+              <select
+                value={form.businessCountry}
+                onChange={(e) => updateForm('businessCountry', e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                style={inputStyle}
+                disabled={submitting}
+              >
+                {SUPPORTED_COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* City + State/Region */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
@@ -449,7 +561,7 @@ export default function AddClientPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Atlanta"
+                  placeholder={isUS ? 'e.g. Atlanta' : isCA ? 'e.g. Toronto' : 'e.g. London'}
                   value={form.businessCity}
                   onChange={(e) => updateForm('businessCity', e.target.value)}
                   className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
@@ -459,20 +571,45 @@ export default function AddClientPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
-                  State <span style={{ color: errorText }}>*</span>
+                  {stateLabel} <span style={{ color: errorText }}>*</span>
                 </label>
-                <select
-                  value={form.businessState}
-                  onChange={(e) => updateForm('businessState', e.target.value)}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                  style={inputStyle}
-                  disabled={submitting}
-                >
-                  <option value="">Select state...</option>
-                  {US_STATES.map(s => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
+                {isUS ? (
+                  <select
+                    value={form.businessState}
+                    onChange={(e) => updateForm('businessState', e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                    style={inputStyle}
+                    disabled={submitting}
+                  >
+                    <option value="">Select state...</option>
+                    {US_STATES.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                ) : isCA ? (
+                  <select
+                    value={form.businessState}
+                    onChange={(e) => updateForm('businessState', e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                    style={inputStyle}
+                    disabled={submitting}
+                  >
+                    <option value="">Select province...</option>
+                    {CA_PROVINCES.map(p => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="e.g. Greater London"
+                    value={form.businessState}
+                    onChange={(e) => updateForm('businessState', e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                    style={inputStyle}
+                    disabled={submitting}
+                  />
+                )}
               </div>
             </div>
 
@@ -558,19 +695,27 @@ export default function AddClientPage() {
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
                 Phone <span style={{ color: errorText }}>*</span>
+                {phoneConfig.code && (
+                  <span className="font-normal ml-1.5" style={{ color: mutedTextColor }}>({phoneConfig.code})</span>
+                )}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
                 <input
                   type="tel"
-                  placeholder="(770) 555-1234"
-                  value={formatPhoneDisplay(form.phone)}
+                  placeholder={phoneConfig.placeholder}
+                  value={(isUS || isCA) ? formatPhoneDisplay(form.phone) : form.phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
                   style={inputStyle}
                   disabled={submitting}
                 />
               </div>
+              {!isUS && !isCA && phoneConfig.code && (
+                <p className="text-xs mt-1" style={{ color: mutedTextColor }}>
+                  Enter the local number without country code. We&apos;ll add {phoneConfig.code} automatically.
+                </p>
+              )}
             </div>
           </div>
         </div>
