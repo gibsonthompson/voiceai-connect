@@ -19,6 +19,7 @@ interface Agency {
   stripe_account_id: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  country: string | null;
   marketing_domain: string | null;
   domain_verified: boolean;
   price_starter: number;
