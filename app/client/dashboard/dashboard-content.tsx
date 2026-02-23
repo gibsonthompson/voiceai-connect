@@ -78,6 +78,9 @@ export function ClientDashboardClient({
   const isProvisioningPending = !isProvisioned && client.subscription_status !== 'cancelled';
   const formattedPhone = formatPhoneNumber(client.vapi_phone_number);
 
+  // Unlimited plan detection
+  const isUnlimited = stats.callLimit === -1;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: `
@@ -215,7 +218,7 @@ export function ClientDashboardClient({
           {
             label: 'Calls This Month',
             value: stats.callsThisMonth,
-            subtext: `of ${stats.callLimit} included`,
+            subtext: isUnlimited ? 'Unlimited plan' : `of ${stats.callLimit} included`,
             icon: PhoneCall,
             color: theme.primary,
           },

@@ -175,7 +175,6 @@ function AgencySettingsContent() {
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo', 'feedback'];
   
-  // Redirect old branding tab links to profile
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     validTabs.includes(initialTab) ? initialTab : 'profile'
   );
@@ -202,6 +201,9 @@ function AgencySettingsContent() {
   const [limitStarter, setLimitStarter] = useState('50');
   const [limitPro, setLimitPro] = useState('150');
   const [limitGrowth, setLimitGrowth] = useState('500');
+  const [unlimitedStarter, setUnlimitedStarter] = useState(false);
+  const [unlimitedPro, setUnlimitedPro] = useState(false);
+  const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
 
   // Plan features state
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean>>>(DEFAULT_PLAN_FEATURES);
@@ -237,9 +239,18 @@ function AgencySettingsContent() {
       setPriceStarter(((agency.price_starter || 4900) / 100).toString());
       setPricePro(((agency.price_pro || 9900) / 100).toString());
       setPriceGrowth(((agency.price_growth || 14900) / 100).toString());
-      setLimitStarter((agency.limit_starter || 50).toString());
-      setLimitPro((agency.limit_pro || 150).toString());
-      setLimitGrowth((agency.limit_growth || 500).toString());
+      
+      // Detect unlimited (-1) from DB
+      const ls = agency.limit_starter;
+      const lp = agency.limit_pro;
+      const lg = agency.limit_growth;
+      setUnlimitedStarter(ls === -1);
+      setUnlimitedPro(lp === -1);
+      setUnlimitedGrowth(lg === -1);
+      setLimitStarter(ls === -1 ? '50' : (ls || 50).toString());
+      setLimitPro(lp === -1 ? '150' : (lp || 150).toString());
+      setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString());
+      
       setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
       setDisplayCurrency((agency as any).display_currency || '');
     }
@@ -251,7 +262,6 @@ function AgencySettingsContent() {
     }
   }, [activeTab, agency?.id]);
 
-  // Fetch feedback history when feedback tab is active
   useEffect(() => {
     if (activeTab === 'feedback' && agency?.id) {
       fetchFeedbackHistory();
@@ -327,7 +337,6 @@ function AgencySettingsContent() {
       const data = await response.json();
       setFeedbackSent(true);
       setFeedbackMessage('');
-      // Add to history
       if (data.feedback) {
         setFeedbackHistory(prev => [data.feedback, ...prev]);
       }
@@ -362,7 +371,6 @@ function AgencySettingsContent() {
     }
   };
 
-  // Toggle a feature for a specific plan
   const toggleFeature = (plan: string, feature: string) => {
     setPlanFeatures(prev => ({
       ...prev,
@@ -373,12 +381,10 @@ function AgencySettingsContent() {
     }));
   };
 
-  // Reset plan features to defaults
   const resetPlanFeatures = () => {
     setPlanFeatures(DEFAULT_PLAN_FEATURES);
   };
 
-  // Derive calendar_enabled_plans from plan_features for backend plan gating
   const deriveCalendarEnabledPlans = (features: Record<string, Record<string, boolean>>): string[] => {
     const plans: string[] = [];
     for (const [plan, featureMap] of Object.entries(features)) {
@@ -406,12 +412,12 @@ function AgencySettingsContent() {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
         payload.price_growth = Math.round(parseFloat(priceGrowth) * 100);
-        payload.limit_starter = parseInt(limitStarter);
-        payload.limit_pro = parseInt(limitPro);
-        payload.limit_growth = parseInt(limitGrowth);
+        // Send -1 when unlimited is toggled on
+        payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter);
+        payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro);
+        payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
         payload.plan_features = planFeatures;
         payload.display_currency = displayCurrency || null;
-        // Sync calendar_enabled_plans from plan_features for backend plan gating
         payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
       }
 
@@ -610,7 +616,6 @@ function AgencySettingsContent() {
     }
   `;
 
-  // Count enabled features per plan (for summary display)
   const getFeatureCount = (plan: string) => {
     const features = planFeatures[plan] || {};
     return Object.values(features).filter(Boolean).length;
@@ -623,22 +628,10 @@ function AgencySettingsContent() {
       {/* Cancel Trial Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => !cancelLoading && setShowCancelModal(false)}
-          />
-          <div 
-            className="relative w-full max-w-md rounded-2xl p-6"
-            style={{ 
-              backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff',
-              border: `1px solid ${theme.border}`,
-            }}
-          >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !cancelLoading && setShowCancelModal(false)} />
+          <div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.border}` }}>
             <div className="flex items-center gap-4 mb-4">
-              <div 
-                className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: theme.errorBg }}
-              >
+              <div className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.errorBg }}>
                 <AlertTriangle className="h-6 w-6" style={{ color: theme.errorText }} />
               </div>
               <div>
@@ -646,47 +639,18 @@ function AgencySettingsContent() {
                 <p className="text-sm" style={{ color: theme.textMuted }}>This action cannot be undone.</p>
               </div>
             </div>
-
-            <div 
-              className="rounded-xl p-4 mb-6"
-              style={{ backgroundColor: theme.errorBg }}
-            >
-              <p className="text-sm" style={{ color: theme.errorText }}>
-                If you cancel now:
-              </p>
+            <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: theme.errorBg }}>
+              <p className="text-sm" style={{ color: theme.errorText }}>If you cancel now:</p>
               <ul className="mt-2 space-y-1 text-sm" style={{ color: theme.errorText }}>
-                <li>• You'll lose access to your agency dashboard immediately</li>
+                <li>• You&apos;ll lose access to your agency dashboard immediately</li>
                 <li>• All client AI receptionists will be disabled</li>
-                <li>• You won't be charged</li>
+                <li>• You won&apos;t be charged</li>
               </ul>
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                disabled={cancelLoading}
-                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-                style={{ 
-                  backgroundColor: theme.input, 
-                  border: `1px solid ${theme.inputBorder}`,
-                  color: theme.text,
-                }}
-              >
-                Keep My Trial
-              </button>
-              <button
-                onClick={handleCancelTrial}
-                disabled={cancelLoading}
-                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {cancelLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Canceling...
-                  </>
-                ) : (
-                  'Yes, Cancel Trial'
-                )}
+              <button onClick={() => setShowCancelModal(false)} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>Keep My Trial</button>
+              <button onClick={handleCancelTrial} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                {cancelLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Canceling...</>) : 'Yes, Cancel Trial'}
               </button>
             </div>
           </div>
@@ -707,23 +671,13 @@ function AgencySettingsContent() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''
-                }`}
-                style={activeTab === tab.id ? {
-                  backgroundColor: theme.primary15,
-                  color: theme.primary,
-                } : {
-                  color: theme.textMuted,
-                }}
+                className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`}
+                style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
                 {tab.id === 'demo' && demoMode && (
-                  <div 
-                    className="w-2 h-2 rounded-full ml-auto flex-shrink-0"
-                    style={{ backgroundColor: theme.primary }}
-                  />
+                  <div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />
                 )}
               </button>
             ))}
@@ -733,39 +687,21 @@ function AgencySettingsContent() {
         {/* Settings Content */}
         <div className="flex-1 max-w-2xl">
           {error && (
-            <div 
-              className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
-              style={{
-                backgroundColor: theme.errorBg,
-                border: `1px solid ${theme.errorBorder}`,
-              }}
-            >
+            <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
               <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
               <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
             </div>
           )}
           
           {saved && (
-            <div 
-              className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
-              style={{
-                backgroundColor: theme.primary15,
-                border: `1px solid ${theme.primary30}`,
-              }}
-            >
+            <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
               <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
               <p className="text-sm" style={{ color: theme.primary }}>Settings saved!</p>
             </div>
           )}
 
-          <div 
-            className="rounded-xl p-4 sm:p-6"
-            style={{ 
-              backgroundColor: theme.card, 
-              border: `1px solid ${theme.border}`,
-              boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
-            }}
-          >
+          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
+
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="space-y-4 sm:space-y-6">
@@ -773,60 +709,35 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p>
                 </div>
-
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label>
-                  <input
-                    type="text"
-                    value={agencyName}
-                    onChange={(e) => setAgencyName(e.target.value)}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
-                    style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                  />
+                  <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                 </div>
-
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label>
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div 
-                      className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                      style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
-                    >
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />
-                      ) : (
-                        <Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />
-                      )}
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                      {logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}
                     </div>
                     <div className="min-w-0">
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`}
-                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
-                      >
-                        <Upload className="h-4 w-4" />
-                        Upload
+                      <button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                        <Upload className="h-4 w-4" />Upload
                       </button>
                       <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p>
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
-                  <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
-                    {agency?.slug}
-                  </div>
-                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>
-                    URL: https://{agency?.slug}.{platformDomain}/signup
-                  </p>
+                  <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div>
+                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/signup</p>
                 </div>
               </div>
             )}
 
             {/* ================================================================ */}
-            {/* PRICING TAB - WITH PLAN FEATURE GATING + CURRENCY OVERRIDE       */}
+            {/* PRICING TAB — WITH UNLIMITED TOGGLE + PLAN FEATURES + CURRENCY   */}
             {/* ================================================================ */}
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
@@ -836,10 +747,7 @@ function AgencySettingsContent() {
                 </div>
 
                 {/* Info banner */}
-                <div 
-                  className="rounded-xl p-3 sm:p-4 flex items-start gap-3"
-                  style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}
-                >
+                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
                     <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
@@ -851,23 +759,8 @@ function AgencySettingsContent() {
                 {/* Marketing Page Currency Override */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1">Marketing Page Currency</label>
-                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-                    Choose which currency symbol to display on your marketing site. Defaults to your account currency.
-                  </p>
-                  <select
-                    value={displayCurrency}
-                    onChange={(e) => setDisplayCurrency(e.target.value)}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors appearance-none cursor-pointer"
-                    style={{ 
-                      backgroundColor: theme.input, 
-                      border: `1px solid ${theme.inputBorder}`, 
-                      color: theme.text,
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${theme.isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 1rem center',
-                      backgroundSize: '1.25rem',
-                    }}
-                  >
+                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Choose which currency symbol to display on your marketing site. Defaults to your account currency.</p>
+                  <select value={displayCurrency} onChange={(e) => setDisplayCurrency(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors appearance-none cursor-pointer" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${theme.isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}>
                     <option value="">Same as account currency</option>
                     <option value="USD">$ — US Dollar (USD)</option>
                     <option value="GBP">£ — British Pound (GBP)</option>
@@ -895,20 +788,14 @@ function AgencySettingsContent() {
                 {/* Plan Cards */}
                 <div className="space-y-4">
                   {[
-                    { key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, highlight: false },
-                    { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, highlight: true },
-                    { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, highlight: false },
+                    { key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false },
+                    { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true },
+                    { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false },
                   ].map((plan) => (
                     <div 
                       key={plan.key}
                       className="rounded-xl p-3 sm:p-4"
-                      style={plan.highlight ? { 
-                        backgroundColor: `${theme.primary}08`, 
-                        border: `1px solid ${theme.primary30}` 
-                      } : { 
-                        backgroundColor: theme.input, 
-                        border: `1px solid ${theme.inputBorder}` 
-                      }}
+                      style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
                     >
                       {/* Plan Header */}
                       <div className="flex items-center justify-between mb-3">
@@ -927,41 +814,49 @@ function AgencySettingsContent() {
                       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
-                          <input 
-                            type="number" 
-                            value={plan.price} 
-                            onChange={(e) => plan.setPrice(e.target.value)} 
-                            className="w-full rounded-xl px-3 py-2 text-sm" 
-                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
-                          />
+                          <input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                         </div>
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
-                          <input 
-                            type="number" 
-                            value={plan.limit} 
-                            onChange={(e) => plan.setLimit(e.target.value)} 
-                            className="w-full rounded-xl px-3 py-2 text-sm" 
-                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
-                          />
+                          {plan.unlimited ? (
+                            <div 
+                              className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center"
+                              style={{ 
+                                backgroundColor: theme.primary15, 
+                                border: `1px solid ${theme.primary30}`, 
+                                color: theme.primary,
+                                height: '38px',
+                              }}
+                            >
+                              Unlimited
+                            </div>
+                          ) : (
+                            <input 
+                              type="number" 
+                              value={plan.limit} 
+                              onChange={(e) => plan.setLimit(e.target.value)} 
+                              min="1"
+                              className="w-full rounded-xl px-3 py-2 text-sm" 
+                              style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => plan.setUnlimited(!plan.unlimited)}
+                            className="mt-1.5 text-[10px] sm:text-xs transition-colors"
+                            style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}
+                          >
+                            {plan.unlimited ? '✓ Unlimited — click to set a cap' : 'Set to unlimited'}
+                          </button>
                         </div>
                       </div>
 
                       {/* Feature Toggles */}
-                      <div 
-                        className="rounded-lg px-3 py-1"
-                        style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
-                      >
+                      <div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
                         <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
                         <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
                           {FEATURE_ORDER.map((featureKey) => (
-                            <FeatureToggle
-                              key={featureKey}
-                              featureKey={featureKey}
-                              enabled={planFeatures[plan.key]?.[featureKey] ?? false}
-                              onToggle={() => toggleFeature(plan.key, featureKey)}
-                              theme={theme}
-                            />
+                            <FeatureToggle key={featureKey} featureKey={featureKey} enabled={planFeatures[plan.key]?.[featureKey] ?? false} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} />
                           ))}
                         </div>
                       </div>
@@ -971,13 +866,7 @@ function AgencySettingsContent() {
 
                 {/* Reset to defaults */}
                 <div className="flex items-center justify-between pt-2">
-                  <button
-                    onClick={resetPlanFeatures}
-                    className="text-xs transition-colors"
-                    style={{ color: theme.textMuted }}
-                  >
-                    Reset features to defaults
-                  </button>
+                  <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
                 </div>
               </div>
             )}
@@ -989,13 +878,10 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments.</p>
                 </div>
-
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0">
-                        <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      </div>
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" /></div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
                         <p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{loadingStripeStatus ? 'Loading...' : stripeDisplay.label}</p>
@@ -1026,8 +912,7 @@ function AgencySettingsContent() {
                       <div className="flex flex-wrap items-center gap-2 pt-2">
                         {stripeDisplay.status === 'restricted' && (
                           <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
-                            {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
-                            Complete
+                            {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Complete
                           </button>
                         )}
                         <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
@@ -1043,10 +928,9 @@ function AgencySettingsContent() {
                   {stripeDisplay.status === 'not_connected' && (
                     <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
-                        {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
-                        Connect Stripe
+                        {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Connect Stripe
                       </button>
-                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You'll be redirected to Stripe.</p>
+                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You&apos;ll be redirected to Stripe.</p>
                     </div>
                   )}
                 </div>
@@ -1056,11 +940,10 @@ function AgencySettingsContent() {
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
                         <p className="font-medium text-sm" style={{ color: theme.errorText }}>Disconnect Stripe</p>
-                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won't receive payments until reconnected.</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won&apos;t receive payments until reconnected.</p>
                       </div>
                       <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
-                        {disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                        Disconnect
+                        {disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect
                       </button>
                     </div>
                   </div>
@@ -1075,7 +958,6 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p>
                 </div>
-
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
@@ -1084,7 +966,6 @@ function AgencySettingsContent() {
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
                   </div>
-
                   {isOnTrial && trialDaysLeft !== null && (
                     <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                       <div className="flex items-center gap-2">
@@ -1094,7 +975,6 @@ function AgencySettingsContent() {
                       <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Your card will be charged automatically on {agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.</p>
                     </div>
                   )}
-
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
                       <p className="text-xs" style={{ color: theme.textMuted }}>Price</p>
@@ -1105,26 +985,22 @@ function AgencySettingsContent() {
                       <p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p>
                     </div>
                   </div>
-
                   <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
                     <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                      {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
-                      Manage Subscription
+                      {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription
                     </button>
                     <p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p>
                   </div>
                 </div>
-
                 {isOnTrial && (
                   <div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div>
                         <p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p>
-                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You'll lose access immediately and won't be charged.</p>
+                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You&apos;ll lose access immediately and won&apos;t be charged.</p>
                       </div>
                       <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
-                        <XCircle className="h-4 w-4" />
-                        Cancel Trial
+                        <XCircle className="h-4 w-4" />Cancel Trial
                       </button>
                     </div>
                   </div>
@@ -1134,12 +1010,7 @@ function AgencySettingsContent() {
 
             {/* Twilio / BYOT Tab */}
             {activeTab === 'twilio' && (
-              <BYOTSettings
-                agencyId={agency?.id || ''}
-                planType={agency?.plan_type || 'starter'}
-                subscriptionStatus={agency?.subscription_status || ''}
-                theme={theme}
-              />
+              <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
             )}
 
             {/* Demo Mode Tab */}
@@ -1147,61 +1018,30 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}
-                    >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}>
                       <Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} />
                     </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-medium">Demo Mode</h3>
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                        Preview your dashboard with realistic sample data
-                      </p>
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p>
                     </div>
                   </div>
-                  
-                  <button
-                    onClick={toggleDemoMode}
-                    className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
-                    style={{ 
-                      backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
-                    }}
-                  >
-                    <span
-                      className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
-                      style={{ 
-                        transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)',
-                      }}
-                    />
+                  <button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                    <span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
                   </button>
                 </div>
-
-                <div 
-                  className="rounded-xl px-4 py-3 flex items-center gap-2"
-                  style={{ 
-                    backgroundColor: demoMode ? `${theme.primary}10` : theme.hover,
-                    border: `1px solid ${demoMode ? theme.primary30 : theme.border}`,
-                  }}
-                >
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }}
-                  />
+                <div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}>
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} />
                   <span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>
                     {demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}
                   </span>
                 </div>
-
                 <div>
                   <h4 className="font-medium text-sm mb-3">What demo mode shows</h4>
                   <div className="space-y-2.5">
                     {demoFeatures.map((f) => (
                       <div key={f.label} className="flex items-start gap-3">
-                        <div 
-                          className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                          style={{ backgroundColor: theme.primary }}
-                        />
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} />
                         <div>
                           <span className="text-sm font-medium">{f.label}</span>
                           <span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span>
@@ -1210,125 +1050,54 @@ function AgencySettingsContent() {
                     ))}
                   </div>
                 </div>
-
-                <div 
-                  className="rounded-xl p-4 flex items-start gap-3"
-                  style={{ 
-                    backgroundColor: theme.infoBg,
-                    border: `1px solid ${theme.infoBorder}`,
-                  }}
-                >
+                <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
                     <p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p>
-                    <p className="text-sm" style={{ color: theme.textMuted }}>
-                      Demo mode only changes what you see. It doesn't affect your real data, clients, or billing. 
-                      Toggle it off anytime from the sidebar or this page.
-                    </p>
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing. Toggle it off anytime from the sidebar or this page.</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ================================================================ */}
-            {/* FEEDBACK TAB                                                     */}
-            {/* ================================================================ */}
+            {/* Feedback Tab */}
             {activeTab === 'feedback' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                    Questions, issues, or feature requests — we read every message.
-                  </p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests — we read every message.</p>
                 </div>
-
                 {feedbackSent && (
-                  <div 
-                    className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
-                    style={{
-                      backgroundColor: theme.primary15,
-                      border: `1px solid ${theme.primary30}`,
-                    }}
-                  >
+                  <div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
                     <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
                     <p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p>
                   </div>
                 )}
-
                 {feedbackError && (
-                  <div 
-                    className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
-                    style={{
-                      backgroundColor: theme.errorBg,
-                      border: `1px solid ${theme.errorBorder}`,
-                    }}
-                  >
+                  <div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
                     <p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p>
                   </div>
                 )}
-
-                {/* Feedback form */}
                 <div>
-                  <textarea
-                    value={feedbackMessage}
-                    onChange={(e) => setFeedbackMessage(e.target.value)}
-                    placeholder="What's on your mind?"
-                    rows={5}
-                    maxLength={2000}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors"
-                    style={{ 
-                      backgroundColor: theme.input, 
-                      border: `1px solid ${theme.inputBorder}`, 
-                      color: theme.text,
-                    }}
-                  />
+                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs" style={{ color: theme.textMuted }}>
-                      {feedbackMessage.length}/2000
-                    </span>
-                    <button
-                      onClick={handleSendFeedback}
-                      disabled={sendingFeedback || !feedbackMessage.trim()}
-                      className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-                    >
-                      {sendingFeedback ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          Send
-                        </>
-                      )}
+                    <span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span>
+                    <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                      {sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}
                     </button>
                   </div>
                 </div>
-
-                {/* Past submissions */}
                 {loadingFeedback ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} />
-                  </div>
+                  <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
                 ) : feedbackHistory.length > 0 ? (
                   <div>
                     <h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4>
                     <div className="space-y-2">
                       {feedbackHistory.map((item) => (
-                        <div 
-                          key={item.id}
-                          className="rounded-xl p-3 sm:p-4"
-                          style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
-                        >
+                        <div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                           <p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p>
-                          <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
-                            {new Date(item.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' 
-                            })}
-                          </p>
+                          <p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
                         </div>
                       ))}
                     </div>
@@ -1337,7 +1106,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button — only for tabs with editable content */}
+            {/* Save Button */}
             {(activeTab === 'profile' || activeTab === 'pricing') && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>

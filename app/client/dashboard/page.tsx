@@ -38,7 +38,8 @@ export default function ClientDashboardPage() {
         setStats({
           callsThisMonth: data.stats?.callsThisMonth || client.calls_this_month || 0,
           highUrgency: data.stats?.highUrgency || 0,
-          callLimit: client.monthly_call_limit || 50,
+          // Use ?? so -1 (unlimited) passes through instead of being replaced by 50
+          callLimit: client.monthly_call_limit ?? 50,
           trialDaysLeft: client.trial_ends_at
             ? Math.max(0, Math.ceil((new Date(client.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
             : null,

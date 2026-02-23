@@ -117,7 +117,7 @@ function buildPlanFeatures(
 ): { included: string[]; excluded: string[] } {
   const included: string[] = [
     ...CORE_FEATURES,
-    `Up to ${callLimit} calls/month`,
+    callLimit === -1 ? 'Unlimited calls' : `Up to ${callLimit} calls/month`,
   ];
   const excluded: string[] = [];
 
@@ -659,7 +659,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                     <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
                   </div>
                   <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
-                    {plan.calls} calls included
+                    {plan.calls === -1 ? 'Unlimited calls' : `${plan.calls} calls included`}
                   </p>
                 </div>
 
