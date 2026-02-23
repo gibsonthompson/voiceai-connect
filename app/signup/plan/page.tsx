@@ -6,7 +6,7 @@ import {
   Phone, ArrowRight, Loader2, Check, ArrowLeft, Sparkles, 
   Zap, Shield, Users, Crown, X
 } from 'lucide-react';
-import { formatPrice as formatLocalPrice } from '@/lib/currency';
+import { formatPrice as formatLocalPrice, getCurrencyForCountry } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
 
 // ============================================================================
@@ -23,6 +23,7 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  country: string | null;
   price_starter: number;
   price_pro: number;
   price_growth: number;
@@ -39,6 +40,7 @@ interface SignupData {
   phone: string;
   city: string;
   state: string;
+  country?: string;
   industry: string;
   agency_id: string;
   agency_slug: string;
@@ -55,8 +57,23 @@ const isLightColor = (hex: string): boolean => {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
 
-// Client plan prices are set by the agency in their own currency — always display as USD
-const formatPriceUSD = (cents: number) => `$${(cents / 100).toFixed(0)}`;
+/**
+ * Format client plan price in the agency's local currency.
+ * Agency prices are stored as cents in their local currency context:
+ *   - A US agency with price_starter=4900 means $49
+ *   - A UK agency with price_starter=4900 means £49
+ * So we just need the correct symbol and position — no conversion needed.
+ */
+function formatAgencyPrice(cents: number, agencyCountry: string = 'US'): string {
+  const currency = getCurrencyForCountry(agencyCountry);
+  const amount = Math.round(cents / 100);
+  const formatted = amount.toLocaleString();
+  
+  if (currency.symbolPosition === 'before') {
+    return `${currency.symbol}${formatted}`;
+  }
+  return `${formatted} ${currency.symbol}`;
+}
 
 // ============================================================================
 // PLAN FEATURE DISPLAY CONFIG (for dynamic plan cards)
@@ -105,7 +122,6 @@ function buildPlanFeatures(
   const excluded: string[] = [];
 
   if (!planFeatures || !planFeatures[planKey]) {
-    // Fallback if agency hasn't configured plan_features yet
     return { included, excluded };
   }
 
@@ -234,7 +250,7 @@ function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }:
 }
 
 // ============================================================================
-// CLIENT PLAN SELECTION (for agency subdomains) - NOW WITH THEME SUPPORT
+// CLIENT PLAN SELECTION (for agency subdomains) - WITH AGENCY CURRENCY
 // ============================================================================
 function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupData: SignupData }) {
   const [loading, setLoading] = useState(false);
@@ -242,7 +258,6 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
   const [error, setError] = useState('');
   const [redirecting, setRedirecting] = useState(false);
   
-  // Use ref to track if component is mounted (prevents state updates after unmount)
   const isMountedRef = React.useRef(true);
   
   React.useEffect(() => {
@@ -259,6 +274,9 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
+  // Agency's country determines currency display for client plans
+  const agencyCountry = agency.country || 'US';
+
   // Theme-based colors
   const bgColor = isDark ? '#050505' : '#ffffff';
   const textColor = isDark ? '#fafaf9' : '#111827';
@@ -267,18 +285,17 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const cardHoverBorder = isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db';
 
-  // Safe redirect function that prevents React state updates
+  // Safe redirect function
   const safeRedirect = (url: string) => {
     console.log('[ClientSignup] Redirecting to:', url);
     setRedirecting(true);
-    // Use setTimeout to let React finish current render cycle before navigation
     setTimeout(() => {
       window.location.replace(url);
     }, 100);
   };
 
   const handleSelectPlan = async (planType: string) => {
-    if (loading || redirecting) return; // Prevent double-clicks
+    if (loading || redirecting) return;
     
     setSelectedPlan(planType);
     setLoading(true);
@@ -287,12 +304,12 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      // Debug logging
       console.log('[ClientSignup] Starting signup with:', {
         backendUrl,
         agencyId: agency.id,
         planType,
         email: signupData.email,
+        clientCountry: signupData.country,
       });
       
       const nameParts = signupData.ownerName.trim().split(' ');
@@ -307,6 +324,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
         businessName: signupData.businessName,
         businessCity: signupData.city,
         businessState: signupData.state,
+        businessCountry: signupData.country || agencyCountry,
         industry: signupData.industry,
         agencyId: agency.id,
         planType: planType,
@@ -330,7 +348,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
         hasSessionToken: !!data.sessionToken,
         hasError: !!data.error,
         keys: Object.keys(data),
-        fullData: data, // Log full response for debugging
+        fullData: data,
       });
 
       if (!response.ok) {
@@ -387,10 +405,9 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
         return;
       }
       
-      // Check if we got a client ID back (successful creation but no token?)
+      // Check if we got a client ID back
       if (data.clientId || data.client?.id) {
         console.log('[ClientSignup] Got client ID but no token - backend may need to return token');
-        // Try redirecting to login as fallback
         safeRedirect('/client/login?message=account-created');
         return;
       }
@@ -501,7 +518,6 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            {/* Use <a> instead of <Link> to ensure proper navigation */}
             <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {agency.logo_url ? (
                 <img 
@@ -533,7 +549,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-6xl">
-          {/* Back link - use <a> tag */}
+          {/* Back link */}
           <a 
             href="/get-started" 
             className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8"
@@ -639,7 +655,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
                   <div className="mt-3">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatPriceUSD(plan.price)}</span>
+                    <span className="text-3xl sm:text-4xl font-bold">{formatAgencyPrice(plan.price, agencyCountry)}</span>
                     <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
                   </div>
                   <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
@@ -741,6 +757,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
 
 // ============================================================================
 // AGENCY PLAN SELECTION (for platform domain) - ALWAYS DARK THEME
+// Already uses geo-detection + formatLocalPrice — no changes needed
 // ============================================================================
 function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
   const router = useRouter();
@@ -864,7 +881,6 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            {/* Use <a> instead of <Link> */}
             <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -881,7 +897,6 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
       {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-6xl">
-          {/* Back link - use <a> tag */}
           <a 
             href="/signup" 
             className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors mb-6 sm:mb-8"
@@ -1050,7 +1065,6 @@ function PlanContent() {
   const [agencyIdFromUrl, setAgencyIdFromUrl] = useState<string | null>(null);
   const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
 
-  // Get cached theme on mount (client-side only)
   useEffect(() => {
     setCachedThemeState(getCachedTheme());
   }, []);
@@ -1147,7 +1161,6 @@ function PlanContent() {
     return <AgencyPlanSelection agencyId={agencyIdFromUrl} />;
   }
 
-  // Use window.location for redirect to ensure middleware runs
   if (typeof window !== 'undefined') {
     window.location.href = '/get-started';
   }
