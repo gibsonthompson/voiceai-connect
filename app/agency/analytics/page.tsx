@@ -9,6 +9,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import { DEMO_ANALYTICS } from '../demoData';
+import { getCurrencyForCountry } from '@/lib/currency';
 
 interface Stats {
   mrr: number;
@@ -36,12 +37,23 @@ interface Client {
   subscription_status: string;
 }
 
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
+/**
+ * Format cents (USD) into the agency's local currency display.
+ * Uses the agency's country to look up currency symbol, rate, and position.
+ * All amounts stored in the DB are USD cents — this converts and formats.
+ */
+function formatCurrency(cents: number, countryCode: string = 'US'): string {
+  const currency = getCurrencyForCountry(countryCode);
+  const usdDollars = cents / 100;
+  const converted = Math.round(usdDollars * currency.rate);
+
+  const formatted = converted.toLocaleString();
+
+  if (currency.symbolPosition === 'before') {
+    return `${currency.symbol}${formatted}`;
+  } else {
+    return `${formatted} ${currency.symbol}`;
+  }
 }
 
 function formatMonth(monthStr: string): string {
@@ -65,6 +77,9 @@ export default function AgencyAnalyticsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Agency's country for currency formatting
+  const agencyCountry = agency?.country || 'US';
 
   useEffect(() => {
     if (!agency) return;
@@ -150,7 +165,7 @@ export default function AgencyAnalyticsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Monthly Recurring</p>
-              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.mrr)}</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.mrr, agencyCountry)}</p>
             </div>
           </div>
         </div>
@@ -169,7 +184,7 @@ export default function AgencyAnalyticsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Total Earned</p>
-              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.totalEarned)}</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.totalEarned, agencyCountry)}</p>
             </div>
           </div>
         </div>
@@ -188,7 +203,7 @@ export default function AgencyAnalyticsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Pending Payout</p>
-              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.pendingPayout)}</p>
+              <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.pendingPayout, agencyCountry)}</p>
             </div>
           </div>
         </div>
@@ -243,7 +258,7 @@ export default function AgencyAnalyticsPage() {
                             backgroundColor: theme.primary,
                             opacity: 0.6 + (index / revenueByMonth.length) * 0.4,
                           }}
-                          title={formatCurrency(item.amount)}
+                          title={formatCurrency(item.amount, agencyCountry)}
                         />
                       </div>
                       <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>
@@ -282,7 +297,7 @@ export default function AgencyAnalyticsPage() {
                 <div key={plan}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs sm:text-sm capitalize" style={{ color: theme.text }}>{plan}</span>
-                    <span className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{formatCurrency(planRevenue)}</span>
+                    <span className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{formatCurrency(planRevenue, agencyCountry)}</span>
                   </div>
                   <div 
                     className="h-1.5 sm:h-2 rounded-full overflow-hidden"
@@ -374,7 +389,7 @@ export default function AgencyAnalyticsPage() {
                           </div>
                           <span className="truncate text-sm" style={{ color: theme.text }}>{clientName}</span>
                         </div>
-                        <span className="font-medium text-sm" style={{ color: theme.text }}>{formatCurrency(payment.amount)}</span>
+                        <span className="font-medium text-sm" style={{ color: theme.text }}>{formatCurrency(payment.amount, agencyCountry)}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs sm:text-sm pl-10 sm:pl-11">
                         <span 
@@ -402,7 +417,7 @@ export default function AgencyAnalyticsPage() {
                       </div>
                       
                       <div className="col-span-2 font-medium" style={{ color: theme.text }}>
-                        {formatCurrency(payment.amount)}
+                        {formatCurrency(payment.amount, agencyCountry)}
                       </div>
                       
                       <div className="col-span-2">
