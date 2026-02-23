@@ -24,6 +24,7 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  country: string | null;
   price_starter: number;
   price_pro: number;
   price_growth: number;
@@ -31,6 +32,60 @@ interface Agency {
   limit_pro: number;
   limit_growth: number;
 }
+
+// ============================================================================
+// US STATES & CA PROVINCES
+// ============================================================================
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC',
+];
+
+const CA_PROVINCES = [
+  { code: 'AB', name: 'Alberta' },
+  { code: 'BC', name: 'British Columbia' },
+  { code: 'MB', name: 'Manitoba' },
+  { code: 'NB', name: 'New Brunswick' },
+  { code: 'NL', name: 'Newfoundland and Labrador' },
+  { code: 'NS', name: 'Nova Scotia' },
+  { code: 'NT', name: 'Northwest Territories' },
+  { code: 'NU', name: 'Nunavut' },
+  { code: 'ON', name: 'Ontario' },
+  { code: 'PE', name: 'Prince Edward Island' },
+  { code: 'QC', name: 'Quebec' },
+  { code: 'SK', name: 'Saskatchewan' },
+  { code: 'YT', name: 'Yukon' },
+];
+
+// ============================================================================
+// COUNTRY PHONE CODES & PLACEHOLDERS
+// ============================================================================
+const COUNTRY_PHONE_CONFIG: Record<string, { code: string; placeholder: string; mask?: boolean }> = {
+  US: { code: '+1', placeholder: '(555) 123-4567', mask: true },
+  CA: { code: '+1', placeholder: '(416) 555-0123', mask: true },
+  GB: { code: '+44', placeholder: '7911 123456' },
+  AU: { code: '+61', placeholder: '0412 345 678' },
+  NZ: { code: '+64', placeholder: '021 123 4567' },
+  DE: { code: '+49', placeholder: '151 12345678' },
+  FR: { code: '+33', placeholder: '6 12 34 56 78' },
+  NL: { code: '+31', placeholder: '6 12345678' },
+  IT: { code: '+39', placeholder: '312 345 6789' },
+  ES: { code: '+34', placeholder: '612 34 56 78' },
+  IE: { code: '+353', placeholder: '85 123 4567' },
+  SE: { code: '+46', placeholder: '70 123 45 67' },
+  NO: { code: '+47', placeholder: '412 34 567' },
+  DK: { code: '+45', placeholder: '20 12 34 56' },
+  FI: { code: '+358', placeholder: '41 2345678' },
+  JP: { code: '+81', placeholder: '90 1234 5678' },
+  SG: { code: '+65', placeholder: '9123 4567' },
+  HK: { code: '+852', placeholder: '5123 4567' },
+  IN: { code: '+91', placeholder: '98765 43210' },
+  AE: { code: '+971', placeholder: '50 123 4567' },
+  BR: { code: '+55', placeholder: '11 91234 5678' },
+  MX: { code: '+52', placeholder: '55 1234 5678' },
+};
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -42,6 +97,17 @@ const isLightColor = (hex: string): boolean => {
   const b = parseInt(c.substring(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 };
+
+/**
+ * Apply US/CA phone mask: (XXX) XXX-XXXX
+ */
+function applyPhoneMask(value: string): string {
+  const digits = value.replace(/\D/g, '').substring(0, 10);
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.substring(0, 3)}) ${digits.substring(3)}`;
+  return `(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}`;
+}
 
 // Set dynamic favicon
 function setFavicon(url: string) {
@@ -193,6 +259,64 @@ function ThemedFormInput({
 }
 
 // ============================================================================
+// THEMED SELECT (supports light/dark)
+// ============================================================================
+function ThemedSelect({
+  label,
+  name,
+  value,
+  onChange,
+  required = false,
+  icon: Icon,
+  children,
+  isDark = true,
+  primaryColor = '#10b981',
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  required?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  isDark?: boolean;
+  primaryColor?: string;
+}) {
+  return (
+    <div>
+      <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
+        {label}
+      </label>
+      <div className="relative">
+        {Icon && (
+          <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'} z-10 pointer-events-none`} />
+        )}
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          className={`w-full rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-10 py-3.5 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${
+            isDark 
+              ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20 focus:bg-white/[0.05]'
+              : 'border-gray-200 bg-white text-gray-900 focus:border-gray-300'
+          }`}
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 1rem center',
+            backgroundSize: '1.25rem',
+            '--tw-ring-color': `${primaryColor}30`,
+          } as React.CSSProperties}
+        >
+          {children}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // INDUSTRY OPTIONS - matches all 11 industries in vapi.js
 // ============================================================================
 const INDUSTRY_OPTIONS = [
@@ -211,11 +335,14 @@ const INDUSTRY_OPTIONS = [
 ];
 
 // ============================================================================
-// CLIENT SIGNUP FORM (for agency subdomains) - NOW WITH THEME SUPPORT
+// CLIENT SIGNUP FORM (for agency subdomains) - WITH INTERNATIONAL SUPPORT
 // ============================================================================
 function ClientSignupForm({ agency }: { agency: Agency }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Default client country to agency's country
+  const defaultCountry = agency.country?.toUpperCase() || 'US';
   
   const [formData, setFormData] = useState({
     businessName: '',
@@ -224,8 +351,12 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     phone: '',
     city: '',
     state: '',
+    country: defaultCountry,
     industry: 'general',
   });
+
+  const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
+  const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
   // Set favicon on mount
   useEffect(() => {
@@ -236,7 +367,22 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   }, [agency]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'country') {
+      // Reset state and phone when country changes
+      setFormData(prev => ({ ...prev, country: value, state: '', phone: '' }));
+      setError('');
+      return;
+    }
+
+    if (name === 'phone' && useMask) {
+      setFormData(prev => ({ ...prev, phone: applyPhoneMask(value) }));
+      setError('');
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
   };
 
@@ -245,8 +391,16 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     setLoading(true);
     setError('');
 
+    // Basic phone validation (7-15 digits for international support)
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+      setError('Please enter a valid phone number');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Save signup data to session storage
+      // Save signup data to session storage (including country)
       sessionStorage.setItem('client_signup_data', JSON.stringify({
         ...formData,
         agency_id: agency.id,
@@ -278,6 +432,60 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
   const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
+
+  // State field rendering — conditional on country
+  const renderStateField = () => {
+    if (formData.country === 'US') {
+      return (
+        <ThemedSelect
+          label="State"
+          name="state"
+          value={formData.state}
+          onChange={handleChange}
+          required
+          isDark={isDark}
+          primaryColor={primaryColor}
+        >
+          <option value="">Select state</option>
+          {US_STATES.map(st => (
+            <option key={st} value={st}>{st}</option>
+          ))}
+        </ThemedSelect>
+      );
+    }
+
+    if (formData.country === 'CA') {
+      return (
+        <ThemedSelect
+          label="Province"
+          name="state"
+          value={formData.state}
+          onChange={handleChange}
+          required
+          isDark={isDark}
+          primaryColor={primaryColor}
+        >
+          <option value="">Select province</option>
+          {CA_PROVINCES.map(p => (
+            <option key={p.code} value={p.code}>{p.code} — {p.name}</option>
+          ))}
+        </ThemedSelect>
+      );
+    }
+
+    return (
+      <ThemedFormInput
+        label="State / Region"
+        name="state"
+        placeholder="Region"
+        value={formData.state}
+        onChange={handleChange}
+        required
+        isDark={isDark}
+        primaryColor={primaryColor}
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
@@ -410,25 +618,60 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   isDark={isDark}
                   primaryColor={primaryColor}
                 />
-                <ThemedFormInput
-                  label="Phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="(555) 123-4567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  icon={Phone}
-                  isDark={isDark}
-                  primaryColor={primaryColor}
-                />
+
+                {/* Phone — adaptive to country */}
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
+                    Phone
+                  </label>
+                  <div className="relative">
+                    <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`} />
+                    <input
+                      name="phone"
+                      type="tel"
+                      placeholder={phoneConfig.placeholder}
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      className={`w-full rounded-xl border pl-11 pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                        isDark 
+                          ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
+                          : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300'
+                      }`}
+                      style={{ '--tw-ring-color': `${primaryColor}30` } as React.CSSProperties}
+                    />
+                    {/* Country code hint for non-masked countries */}
+                    {!useMask && phoneConfig.code && (
+                      <span className={`absolute right-4 top-1/2 -translate-y-1/2 text-xs ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`}>
+                        {phoneConfig.code}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
+              {/* Country */}
+              <ThemedSelect
+                label="Country"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                required
+                icon={Globe}
+                isDark={isDark}
+                primaryColor={primaryColor}
+              >
+                {supportedCountries.map(c => (
+                  <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                ))}
+              </ThemedSelect>
+
+              {/* City + State (conditional on country) */}
               <div className="grid grid-cols-2 gap-4">
                 <ThemedFormInput
                   label="City"
                   name="city"
-                  placeholder="Atlanta"
+                  placeholder={formData.country === 'GB' ? 'London' : formData.country === 'AU' ? 'Sydney' : 'Atlanta'}
                   value={formData.city}
                   onChange={handleChange}
                   required
@@ -436,54 +679,22 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                   isDark={isDark}
                   primaryColor={primaryColor}
                 />
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
-                    State
-                  </label>
-                  <input
-                    name="state"
-                    type="text"
-                    placeholder="GA"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                    maxLength={2}
-                    className={`w-full rounded-xl border px-4 py-3.5 transition-all uppercase text-center font-medium tracking-wider focus:outline-none focus:ring-2 ${
-                      isDark 
-                        ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
-                        : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300'
-                    }`}
-                    style={{ '--tw-ring-color': `${primaryColor}30` } as React.CSSProperties}
-                  />
-                </div>
+                {renderStateField()}
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>
-                  Industry
-                </label>
-                <select
-                  name="industry"
-                  value={formData.industry}
-                  onChange={handleChange}
-                  className={`w-full rounded-xl border px-4 py-3.5 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${
-                    isDark 
-                      ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20 focus:bg-white/[0.05]'
-                      : 'border-gray-200 bg-white text-gray-900 focus:border-gray-300'
-                  }`}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 1rem center',
-                    backgroundSize: '1.25rem',
-                    '--tw-ring-color': `${primaryColor}30`,
-                  } as React.CSSProperties}
-                >
-                  {INDUSTRY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Industry */}
+              <ThemedSelect
+                label="Industry"
+                name="industry"
+                value={formData.industry}
+                onChange={handleChange}
+                isDark={isDark}
+                primaryColor={primaryColor}
+              >
+                {INDUSTRY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </ThemedSelect>
 
               {error && (
                 <div 
