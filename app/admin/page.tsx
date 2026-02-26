@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
               {recentAgencies.map((agency) => (
                 <Link
                   key={agency.id}
-                  href={`/admin/agencies/${agency.id}`}
+                  href={`/admin/agencies?expand=${agency.id}`}
                   className="flex items-center justify-between rounded-lg border border-white/10 p-4 hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center gap-4">

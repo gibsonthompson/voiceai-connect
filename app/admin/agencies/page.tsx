@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Building2, Search, Filter, Users, ExternalLink,
@@ -42,7 +43,6 @@ interface Agency {
   referral_earnings_cents: number | null;
   demo_phone_number: string | null;
   byot_enabled: boolean;
-  // Aggregate counts from enriched endpoint
   client_count: number;
   call_count: number;
   lead_count: number;
@@ -66,6 +66,7 @@ interface Summary {
 }
 
 export default function AdminAgenciesPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -74,6 +75,24 @@ export default function AdminAgenciesPage() {
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+
+  // Read ?expand= param on mount
+  useEffect(() => {
+    const expandId = searchParams.get('expand');
+    if (expandId) {
+      setExpandedRow(expandId);
+    }
+  }, [searchParams]);
+
+  // Auto-scroll to expanded row after agencies load
+  useEffect(() => {
+    if (!loading && expandedRow && rowRefs.current[expandedRow]) {
+      setTimeout(() => {
+        rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [loading, expandedRow, agencies]);
 
   useEffect(() => {
     fetchAgencies();
@@ -337,8 +356,9 @@ export default function AdminAgenciesPage() {
                 {filteredAgencies.map((agency) => (
                   <>
                     <tr 
-                      key={agency.id} 
-                      className="hover:bg-white/5 transition-colors cursor-pointer"
+                      key={agency.id}
+                      ref={(el) => { rowRefs.current[agency.id] = el; }}
+                      className={`hover:bg-white/5 transition-colors cursor-pointer ${expandedRow === agency.id ? 'bg-white/[0.03]' : ''}`}
                       onClick={() => setExpandedRow(expandedRow === agency.id ? null : agency.id)}
                     >
                       <td className="px-6 py-4">
@@ -409,13 +429,21 @@ export default function AdminAgenciesPage() {
                                 onClick={() => setActionMenu(null)}
                               />
                               <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-800 border border-white/10 shadow-xl z-20">
-                                <Link
-                                  href={`/admin/agencies/${agency.id}`}
-                                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5"
+                                <button
+                                  onClick={() => {
+                                    setExpandedRow(expandedRow === agency.id ? null : agency.id);
+                                    setActionMenu(null);
+                                    if (expandedRow !== agency.id) {
+                                      setTimeout(() => {
+                                        rowRefs.current[agency.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }, 100);
+                                    }
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5 w-full text-left"
                                 >
-                                  <ChevronRight className="h-4 w-4" />
-                                  View Details
-                                </Link>
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedRow === agency.id ? 'rotate-180' : ''}`} />
+                                  {expandedRow === agency.id ? 'Collapse Details' : 'View Details'}
+                                </button>
                                 <button
                                   onClick={() => handleImpersonate(agency.id)}
                                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5 w-full text-left"
