@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   X, Loader2, Mail, MessageSquare, Copy, Check, 
   ChevronDown, Info, Hash
@@ -23,6 +23,9 @@ interface Template {
   subject: string;
   body: string;
   description?: string;
+  sequence_order?: number;
+  is_follow_up?: boolean;
+  sequence_name?: string;
 }
 
 interface ComposerModalProps {
@@ -84,6 +87,10 @@ export default function ComposerModal({
   // Outreach counts for sequence tracking
   const [outreachCounts, setOutreachCounts] = useState({ email: 0, sms: 0 });
 
+  // Refs to coordinate auto-select after both counts + templates load
+  const countsRef = useRef({ email: 0, sms: 0 });
+  const autoSelectDone = useRef(false);
+
   // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
   
@@ -110,20 +117,71 @@ export default function ComposerModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchTemplates();
-      fetchOutreachCounts();
+      // Reset state
       setSubject('');
       setBody('');
       setSelectedTemplate('');
       setCopied(false);
       setLoggedSuccess(false);
+      autoSelectDone.current = false;
+      countsRef.current = { email: 0, sms: 0 };
+
+      // Fetch both in parallel — auto-select is coordinated via refs
+      fetchOutreachCounts();
+      fetchTemplates();
     }
   }, [isOpen, agencyId, type, lead.id]);
+
+  // ── Auto-Template Selection ──────────────────────────────────────
+  // Picks the next template in the outreach sequence based on how
+  // many messages have already been sent to this lead.
+  // Uses counts param (not state) to avoid race condition.
+  const autoSelectTemplate = (templateList: Template[], counts: { email: number; sms: number }) => {
+    if (templateList.length === 0 || autoSelectDone.current) return;
+    autoSelectDone.current = true;
+
+    const targetSequenceOrder = type === 'email' 
+      ? counts.email + 1 
+      : counts.sms + 1;
+
+    // 1. Exact sequence_order match
+    const sequenceMatch = templateList.find(
+      (t) => t.sequence_order === targetSequenceOrder
+    );
+    if (sequenceMatch) {
+      handleTemplateSelect(sequenceMatch.id);
+      return;
+    }
+
+    // 2. First outreach → pick first non-follow-up template
+    if (targetSequenceOrder === 1) {
+      const initial = templateList.find((t) => !t.is_follow_up);
+      if (initial) {
+        handleTemplateSelect(initial.id);
+        return;
+      }
+    }
+
+    // 3. Past all templates → pick last in sequence
+    const maxOrder = templateList.reduce(
+      (max, t) => Math.max(max, t.sequence_order || 0), 0
+    );
+    if (targetSequenceOrder > maxOrder && maxOrder > 0) {
+      const lastInSequence = templateList.find(
+        (t) => t.sequence_order === maxOrder
+      );
+      if (lastInSequence) {
+        handleTemplateSelect(lastInSequence.id);
+      }
+    }
+  };
 
   const fetchOutreachCounts = async () => {
     // Demo mode: use zero counts
     if (demoMode) {
-      setOutreachCounts({ email: 0, sms: 0 });
+      const counts = { email: 0, sms: 0 };
+      countsRef.current = counts;
+      setOutreachCounts(counts);
       return;
     }
 
@@ -138,10 +196,12 @@ export default function ComposerModal({
 
       if (response.ok) {
         const data = await response.json();
-        setOutreachCounts({
+        const counts = {
           email: data.outreach?.email_count || 0,
           sms: data.outreach?.sms_count || 0,
-        });
+        };
+        countsRef.current = counts;
+        setOutreachCounts(counts);
       }
     } catch (error) {
       console.error('Failed to fetch outreach counts:', error);
@@ -152,8 +212,10 @@ export default function ComposerModal({
     // Demo mode: use demo templates
     if (demoMode) {
       setLoading(true);
-      const demoTemplates = getDemoTemplates(type);
-      setTemplates(demoTemplates as Template[]);
+      const demoTemplates = getDemoTemplates(type) as Template[];
+      setTemplates(demoTemplates);
+      // Small delay to let counts arrive first
+      setTimeout(() => autoSelectTemplate(demoTemplates, countsRef.current), 50);
       setLoading(false);
       return;
     }
@@ -170,7 +232,10 @@ export default function ComposerModal({
 
       if (response.ok) {
         const data = await response.json();
-        setTemplates(data.templates || []);
+        const loadedTemplates: Template[] = data.templates || [];
+        setTemplates(loadedTemplates);
+        // Small delay to let counts state settle (both fetch in parallel)
+        setTimeout(() => autoSelectTemplate(loadedTemplates, countsRef.current), 50);
       }
     } catch (error) {
       console.error('Failed to fetch templates:', error);
@@ -440,10 +505,32 @@ export default function ComposerModal({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hoverBg}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
-                    {template.description && (
-                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
+                        {template.description && (
+                          <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
+                        )}
+                      </div>
+                      {template.sequence_order != null && (
+                        <span 
+                          className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ml-2"
+                          style={{ 
+                            backgroundColor: template.sequence_order === currentNumber 
+                              ? (type === 'email' ? 'rgba(147,51,234,0.15)' : 'rgba(6,182,212,0.15)')
+                              : theme.cardBg,
+                            color: template.sequence_order === currentNumber 
+                              ? (type === 'email' ? '#a855f7' : '#06b6d4')
+                              : theme.textMuted2,
+                            border: template.sequence_order === currentNumber 
+                              ? `1px solid ${type === 'email' ? 'rgba(147,51,234,0.3)' : 'rgba(6,182,212,0.3)'}`
+                              : `1px solid ${theme.border}`,
+                          }}
+                        >
+                          Step {template.sequence_order}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>

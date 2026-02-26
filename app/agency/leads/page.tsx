@@ -6,11 +6,12 @@ import {
   Users, Search, Plus, ChevronRight, Loader2, ArrowUpRight,
   Target, Phone, Mail, Calendar, DollarSign, TrendingUp,
   ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X,
-  CheckCircle2
+  CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
+import CSVImportModal from '@/components/CSVImportModal';
 
 interface Lead {
   id: string;
@@ -94,6 +95,7 @@ export default function AgencyLeadsPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [showTips, setShowTips] = useState(true);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -245,14 +247,31 @@ export default function AgencyLeadsPage() {
             </p>
           </div>
           
-          <Link
-            href="/agency/leads/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-          >
-            <Plus className="h-4 w-4" />
-            Add Lead
-          </Link>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowCSVImport(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+                border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Import CSV
+            </button>
+
+            <Link
+              href="/agency/leads/new"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Lead
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -590,14 +609,26 @@ export default function AgencyLeadsPage() {
                 Clear Filters
               </button>
             ) : (
-              <Link
-                href="/agency/leads/new"
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-                style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-              >
-                <Plus className="h-4 w-4" />
-                Add First Lead
-              </Link>
+              <div className="flex items-center justify-center gap-3">
+                <Link
+                  href="/agency/leads/new"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add First Lead
+                </Link>
+                <button
+                  onClick={() => setShowCSVImport(true)}
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                  style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Import CSV
+                </button>
+              </div>
             )}
           </div>
         ) : (
@@ -754,6 +785,17 @@ export default function AgencyLeadsPage() {
           </div>
         )}
       </div>
+
+      {/* CSV Import Modal */}
+      {agency && (
+        <CSVImportModal
+          isOpen={showCSVImport}
+          onClose={() => setShowCSVImport(false)}
+          agencyId={agency.id}
+          onImportComplete={() => fetchLeads()}
+          theme={theme}
+        />
+      )}
     </div>
   );
 }
