@@ -49,6 +49,16 @@ interface OutreachStats {
   }>;
 }
 
+interface SequenceInfo {
+  next_type: string;
+  next_template_name: string;
+  next_sequence_order: number;
+  due_date: string;
+  urgency: 'overdue' | 'due_today' | 'upcoming';
+  days_overdue: number;
+  pending_steps: any[];
+}
+
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New', color: 'blue' },
   { value: 'contacted', label: 'Contacted', color: 'amber' },
@@ -121,6 +131,9 @@ export default function LeadDetailPage() {
   
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
+
+  // Sequence follow-up timing
+  const [sequenceInfo, setSequenceInfo] = useState<SequenceInfo | null>(null);
   
   const [formData, setFormData] = useState({
     business_name: '',
@@ -221,11 +234,35 @@ export default function LeadDetailPage() {
         estimated_value: data.lead.estimated_value ? String(data.lead.estimated_value / 100) : '',
         next_follow_up: data.lead.next_follow_up ? data.lead.next_follow_up.split('T')[0] : '',
       });
+
+      // Fetch sequence follow-up info
+      fetchSequenceInfo();
     } catch (err) {
       console.error('Failed to fetch lead:', err);
       setError('Failed to load lead');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSequenceInfo = async () => {
+    if (!agency || !leadId || demoMode) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/follow-up-queue`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const myItem = (data.queue || []).find((q: any) => q.lead_id === leadId);
+        setSequenceInfo(myItem || null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sequence info:', error);
     }
   };
 
@@ -353,6 +390,7 @@ export default function LeadDetailPage() {
   const handleOutreachSent = () => {
     setActivityKey(prev => prev + 1);
     fetchLead();
+    fetchSequenceInfo();
   };
 
   if (contextLoading || loading) {
@@ -637,6 +675,78 @@ export default function LeadDetailPage() {
             </a>
           )}
         </div>
+
+        {/* Sequence Follow-up Timing */}
+        {sequenceInfo && (
+          <div 
+            className="mt-4 rounded-lg p-3 flex items-center justify-between"
+            style={{ 
+              backgroundColor: sequenceInfo.urgency === 'overdue' 
+                ? theme.errorBg 
+                : sequenceInfo.urgency === 'due_today'
+                  ? theme.warningBg
+                  : 'rgba(168,85,247,0.08)',
+              border: `1px solid ${
+                sequenceInfo.urgency === 'overdue' 
+                  ? theme.errorBorder 
+                  : sequenceInfo.urgency === 'due_today'
+                    ? theme.warningBorder
+                    : 'rgba(168,85,247,0.2)'
+              }`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div 
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ 
+                  backgroundColor: sequenceInfo.urgency === 'overdue' 
+                    ? 'rgba(239,68,68,0.2)' 
+                    : sequenceInfo.urgency === 'due_today'
+                      ? 'rgba(245,158,11,0.2)'
+                      : 'rgba(168,85,247,0.15)',
+                }}
+              >
+                {sequenceInfo.next_type === 'email' 
+                  ? <Mail className="h-4 w-4" style={{ color: sequenceInfo.urgency === 'overdue' ? theme.error : sequenceInfo.urgency === 'due_today' ? theme.warning : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                  : <MessageSquare className="h-4 w-4" style={{ color: sequenceInfo.urgency === 'overdue' ? theme.error : sequenceInfo.urgency === 'due_today' ? theme.warning : (theme.isDark ? '#22d3ee' : '#0891b2') }} />
+                }
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ 
+                  color: sequenceInfo.urgency === 'overdue' 
+                    ? theme.error 
+                    : sequenceInfo.urgency === 'due_today'
+                      ? theme.warning
+                      : (theme.isDark ? '#a78bfa' : '#7c3aed')
+                }}>
+                  Next: {sequenceInfo.next_template_name}
+                </p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>
+                  {sequenceInfo.urgency === 'overdue' 
+                    ? `Overdue by ${sequenceInfo.days_overdue} day${sequenceInfo.days_overdue !== 1 ? 's' : ''}`
+                    : sequenceInfo.urgency === 'due_today'
+                      ? 'Due today'
+                      : `Due ${new Date(sequenceInfo.due_date).toLocaleDateString()}`
+                  }
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => openComposer(sequenceInfo.next_type as 'email' | 'sms')}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors shrink-0"
+              style={{
+                backgroundColor: sequenceInfo.urgency === 'overdue' 
+                  ? theme.error 
+                  : sequenceInfo.urgency === 'due_today'
+                    ? theme.warning
+                    : (theme.isDark ? '#a78bfa' : '#7c3aed'),
+                color: '#ffffff',
+              }}
+            >
+              Send Now
+            </button>
+          </div>
+        )}
 
         {/* Missing contact info warnings */}
         {!demoMode && (!canSendEmail || !canSendSms) && (

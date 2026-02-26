@@ -40,6 +40,18 @@ interface LeadStats {
   overdueFollowUps: number;
 }
 
+interface FollowUpItem {
+  lead_id: string;
+  business_name: string;
+  contact_name: string;
+  next_type: string;
+  next_template_name: string;
+  next_sequence_order: number;
+  due_date: string;
+  urgency: 'overdue' | 'due_today' | 'upcoming';
+  days_overdue: number;
+}
+
 const LEAD_TIPS = [
   {
     title: 'How to Find Leads on Google Maps',
@@ -83,7 +95,7 @@ function isOverdue(dateStr: string): boolean {
   return date < today;
 }
 
-type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active';
+type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active' | 'sequence-due';
 
 export default function AgencyLeadsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
@@ -96,6 +108,10 @@ export default function AgencyLeadsPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [showTips, setShowTips] = useState(true);
   const [showCSVImport, setShowCSVImport] = useState(false);
+
+  // Follow-up queue (sequence-based)
+  const [followUpQueue, setFollowUpQueue] = useState<FollowUpItem[]>([]);
+  const [followUpSummary, setFollowUpSummary] = useState<{ overdue: number; due_today: number; upcoming: number; total: number } | null>(null);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -139,6 +155,7 @@ export default function AgencyLeadsPage() {
     }
 
     fetchLeads();
+    fetchFollowUpQueue();
   }, [agency, demoMode]);
 
   const fetchLeads = async () => {
@@ -189,6 +206,27 @@ export default function AgencyLeadsPage() {
     }
   };
 
+  const fetchFollowUpQueue = async () => {
+    if (!agency || demoMode) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/follow-up-queue`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFollowUpQueue(data.queue || []);
+        setFollowUpSummary(data.summary || null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch follow-up queue:', error);
+    }
+  };
+
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = !searchQuery || 
       lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,6 +242,8 @@ export default function AgencyLeadsPage() {
       matchesFilterMode = lead.next_follow_up ? isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status) : false;
     } else if (filterMode === 'active') {
       matchesFilterMode = !['won', 'lost'].includes(lead.status);
+    } else if (filterMode === 'sequence-due') {
+      matchesFilterMode = followUpQueue.some(q => q.lead_id === lead.id);
     }
     
     return matchesSearch && matchesStatus && matchesFilterMode;
@@ -359,7 +399,7 @@ export default function AgencyLeadsPage() {
 
       {/* Stats Grid */}
       {stats && stats.total > 0 && (
-        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-8">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-5 mb-4 sm:mb-8">
           {/* Active Leads */}
           <button
             onClick={() => handleStatClick('active')}
@@ -437,6 +477,34 @@ export default function AgencyLeadsPage() {
               </div>
             </div>
           </div>
+
+          {/* Sequence Follow-ups Due */}
+          {followUpSummary && followUpSummary.total > 0 && (
+            <button
+              onClick={() => handleStatClick('sequence-due')}
+              className="rounded-xl p-3 sm:p-5 text-left transition-all"
+              style={filterMode === 'sequence-due' ? {
+                backgroundColor: 'rgba(168,85,247,0.1)',
+                border: '1px solid rgba(168,85,247,0.5)',
+              } : {
+                backgroundColor: theme.card,
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div 
+                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
+                  style={{ backgroundColor: followUpSummary.overdue > 0 ? theme.errorBg : 'rgba(168,85,247,0.1)' }}
+                >
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: followUpSummary.overdue > 0 ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                </div>
+                <div>
+                  <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Sequence Due</p>
+                  <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>{followUpSummary.total}</p>
+                </div>
+              </div>
+            </button>
+          )}
           
           {/* Follow-ups Today */}
           <button
@@ -498,6 +566,16 @@ export default function AgencyLeadsPage() {
             >
               <Target className="h-3 w-3" />
               Active
+            </span>
+          )}
+
+          {filterMode === 'sequence-due' && (
+            <span 
+              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
+              style={{ backgroundColor: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', color: theme.isDark ? '#a78bfa' : '#7c3aed' }}
+            >
+              <Mail className="h-3 w-3" />
+              Sequence Due
             </span>
           )}
           
@@ -652,6 +730,7 @@ export default function AgencyLeadsPage() {
                 const followUpToday = lead.next_follow_up && isToday(lead.next_follow_up);
                 const followUpOverdue = lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status);
                 const statusStyle = getStatusStyle(lead.status);
+                const queueItem = followUpQueue.find(q => q.lead_id === lead.id);
                 
                 return (
                   <Link
@@ -697,6 +776,9 @@ export default function AgencyLeadsPage() {
                           )}
                           {followUpToday && !followUpOverdue && (
                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: theme.warning }} />
+                          )}
+                          {!followUpOverdue && !followUpToday && queueItem && (
+                            <Mail className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
                           )}
                         </div>
                         <span style={{ color: theme.textMuted }}>
@@ -769,6 +851,18 @@ export default function AgencyLeadsPage() {
                               )}
                             </div>
                           </div>
+                        ) : queueItem ? (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 flex-shrink-0" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                            <div>
+                              <p className="text-sm truncate" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }}>
+                                {queueItem.next_template_name}
+                              </p>
+                              <p className="text-xs" style={{ color: queueItem.urgency === 'overdue' ? theme.error : theme.textMuted }}>
+                                {queueItem.urgency === 'overdue' ? `${queueItem.days_overdue}d overdue` : queueItem.urgency === 'due_today' ? 'Due today' : 'Due soon'}
+                              </p>
+                            </div>
+                          </div>
                         ) : (
                           <p className="text-sm" style={{ color: theme.textMuted }}>Not set</p>
                         )}
@@ -792,7 +886,7 @@ export default function AgencyLeadsPage() {
           isOpen={showCSVImport}
           onClose={() => setShowCSVImport(false)}
           agencyId={agency.id}
-          onImportComplete={() => fetchLeads()}
+          onImportComplete={() => { fetchLeads(); fetchFollowUpQueue(); }}
           theme={theme}
         />
       )}

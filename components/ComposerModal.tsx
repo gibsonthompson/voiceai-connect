@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   X, Loader2, Mail, MessageSquare, Copy, Check, 
-  ChevronDown, Info, Hash
+  ChevronDown, Info, Hash, Clipboard
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
@@ -80,7 +80,7 @@ export default function ComposerModal({
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [composing, setComposing] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'none' | 'subject' | 'body' | 'all'>('none');
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [loggedSuccess, setLoggedSuccess] = useState(false);
   
@@ -121,7 +121,7 @@ export default function ComposerModal({
       setSubject('');
       setBody('');
       setSelectedTemplate('');
-      setCopied(false);
+      setCopied('none');
       setLoggedSuccess(false);
       autoSelectDone.current = false;
       countsRef.current = { email: 0, sms: 0 };
@@ -133,9 +133,6 @@ export default function ComposerModal({
   }, [isOpen, agencyId, type, lead.id]);
 
   // ── Auto-Template Selection ──────────────────────────────────────
-  // Picks the next template in the outreach sequence based on how
-  // many messages have already been sent to this lead.
-  // Uses counts param (not state) to avoid race condition.
   const autoSelectTemplate = (templateList: Template[], counts: { email: number; sms: number }) => {
     if (templateList.length === 0 || autoSelectDone.current) return;
     autoSelectDone.current = true;
@@ -177,7 +174,6 @@ export default function ComposerModal({
   };
 
   const fetchOutreachCounts = async () => {
-    // Demo mode: use zero counts
     if (demoMode) {
       const counts = { email: 0, sms: 0 };
       countsRef.current = counts;
@@ -209,12 +205,10 @@ export default function ComposerModal({
   };
 
   const fetchTemplates = async () => {
-    // Demo mode: use demo templates
     if (demoMode) {
       setLoading(true);
       const demoTemplates = getDemoTemplates(type) as Template[];
       setTemplates(demoTemplates);
-      // Small delay to let counts arrive first
       setTimeout(() => autoSelectTemplate(demoTemplates, countsRef.current), 50);
       setLoading(false);
       return;
@@ -234,7 +228,6 @@ export default function ComposerModal({
         const data = await response.json();
         const loadedTemplates: Template[] = data.templates || [];
         setTemplates(loadedTemplates);
-        // Small delay to let counts state settle (both fetch in parallel)
         setTimeout(() => autoSelectTemplate(loadedTemplates, countsRef.current), 50);
       }
     } catch (error) {
@@ -248,7 +241,6 @@ export default function ComposerModal({
     setSelectedTemplate(templateId);
     setShowTemplateDropdown(false);
 
-    // Demo mode: compose locally with variable replacement
     if (demoMode) {
       const agencyName = agency?.name || branding?.name || 'Our Team';
       const result = composeDemoMessage(templateId, lead, agencyName);
@@ -290,18 +282,29 @@ export default function ComposerModal({
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopyAll = async () => {
     const textToCopy = type === 'email' 
       ? `Subject: ${subject}\n\n${body}`
       : body;
 
     await navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied('all');
+    setTimeout(() => setCopied('none'), 2000);
+  };
+
+  const handleCopySubject = async () => {
+    await navigator.clipboard.writeText(subject);
+    setCopied('subject');
+    setTimeout(() => setCopied('none'), 2000);
+  };
+
+  const handleCopyBody = async () => {
+    await navigator.clipboard.writeText(body);
+    setCopied('body');
+    setTimeout(() => setCopied('none'), 2000);
   };
 
   const handleLogAsSent = async () => {
-    // Demo mode: log to in-memory store
     if (demoMode) {
       logDemoOutreach({
         leadId: lead.id,
@@ -352,7 +355,7 @@ export default function ComposerModal({
   };
 
   const handleCopyAndLog = async () => {
-    await handleCopy();
+    await handleCopyAll();
     await handleLogAsSent();
   };
 
@@ -369,9 +372,9 @@ export default function ComposerModal({
         onClick={onClose}
       />
       
-      {/* Modal - slides up from bottom on mobile */}
+      {/* Modal - wider for email */}
       <div 
-        className="relative w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col"
+        className={`relative w-full ${type === 'email' ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col`}
         style={{ 
           backgroundColor: theme.bg,
           border: `1px solid ${theme.border}`,
@@ -545,18 +548,35 @@ export default function ComposerModal({
             </div>
           )}
 
-          {/* Subject (email only) */}
+          {/* Subject (email only) — with inline copy button */}
           {type === 'email' && (
             <div>
-              <label className="block text-sm mb-1.5" style={{ color: theme.textMuted }}>
-                Subject
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm" style={{ color: theme.textMuted }}>
+                  Subject
+                </label>
+                {subject && (
+                  <button
+                    onClick={handleCopySubject}
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors"
+                    style={{ 
+                      color: copied === 'subject' ? primaryColor : theme.textMuted2,
+                      backgroundColor: copied === 'subject' ? hexToRgba(primaryColor, 0.1) : 'transparent',
+                    }}
+                    onMouseEnter={(e) => { if (copied !== 'subject') e.currentTarget.style.backgroundColor = theme.hoverBg; }}
+                    onMouseLeave={(e) => { if (copied !== 'subject') e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    {copied === 'subject' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {copied === 'subject' ? 'Copied!' : 'Copy Subject'}
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Email subject line"
-                className="w-full rounded-xl px-4 py-3 transition-colors focus:outline-none"
+                className="w-full rounded-xl px-4 py-3 text-sm sm:text-base transition-colors focus:outline-none"
                 style={{ 
                   backgroundColor: theme.cardBg,
                   border: `1px solid ${theme.border}`,
@@ -574,21 +594,42 @@ export default function ComposerModal({
             </div>
           )}
 
-          {/* Body */}
-          <div>
-            <label className="block text-sm mb-1.5" style={{ color: theme.textMuted }}>
-              Message
-            </label>
+          {/* Body — with inline copy button, much bigger for email */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm" style={{ color: theme.textMuted }}>
+                {type === 'email' ? 'Email Body' : 'Message'}
+              </label>
+              {body && (
+                <button
+                  onClick={handleCopyBody}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors"
+                  style={{ 
+                    color: copied === 'body' ? primaryColor : theme.textMuted2,
+                    backgroundColor: copied === 'body' ? hexToRgba(primaryColor, 0.1) : 'transparent',
+                  }}
+                  onMouseEnter={(e) => { if (copied !== 'body') e.currentTarget.style.backgroundColor = theme.hoverBg; }}
+                  onMouseLeave={(e) => { if (copied !== 'body') e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  {copied === 'body' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied === 'body' ? 'Copied!' : 'Copy Body'}
+                </button>
+              )}
+            </div>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder={type === 'email' ? 'Write your email...' : 'Write your message...'}
-              rows={type === 'email' ? 10 : 4}
-              className="w-full rounded-xl px-4 py-3 resize-none transition-colors focus:outline-none"
+              rows={type === 'email' ? 18 : 5}
+              className="w-full rounded-xl px-4 sm:px-5 py-3 sm:py-4 transition-colors focus:outline-none"
               style={{ 
                 backgroundColor: theme.cardBg,
                 border: `1px solid ${theme.border}`,
                 color: theme.text,
+                fontSize: type === 'email' ? '15px' : '14px',
+                lineHeight: type === 'email' ? '1.75' : '1.5',
+                minHeight: type === 'email' ? '380px' : '120px',
+                resize: 'vertical',
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = primaryColor;
@@ -611,13 +652,13 @@ export default function ComposerModal({
           >
             <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: isDark ? '#93c5fd' : '#2563eb' }} />
             <p className="text-xs" style={{ color: isDark ? 'rgba(147, 197, 253, 0.8)' : '#1d4ed8' }}>
-              Copy this message and paste it into your email client or phone. 
-              Click "Copy & Log as Sent" to record this outreach in the activity log.
+              Copy the subject and body into your email client. Use the copy buttons above each field, 
+              or "Copy All & Log" below to copy everything at once and record it as sent.
             </p>
           </div>
         </div>
 
-        {/* Footer - Mobile optimized */}
+        {/* Footer */}
         <div 
           className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom"
           style={{ 
@@ -626,7 +667,6 @@ export default function ComposerModal({
             paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
           }}
         >
-          {/* Mobile: all 3 buttons in a single row, equal sizing */}
           <div className="flex items-center gap-2">
             {/* Cancel */}
             <button
@@ -641,9 +681,9 @@ export default function ComposerModal({
               Cancel
             </button>
 
-            {/* Copy only */}
+            {/* Copy All */}
             <button
-              onClick={handleCopy}
+              onClick={handleCopyAll}
               disabled={!body}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
               style={{ 
@@ -652,20 +692,20 @@ export default function ComposerModal({
                 color: theme.textMuted,
               }}
             >
-              {copied ? (
+              {copied === 'all' ? (
                 <>
                   <Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} />
-                  <span>Copied</span>
+                  <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4 shrink-0" />
-                  <span>Copy Only</span>
+                  <Clipboard className="h-4 w-4 shrink-0" />
+                  <span>Copy All</span>
                 </>
               )}
             </button>
             
-            {/* Copy & Log - Primary */}
+            {/* Copy All & Log - Primary */}
             <button
               onClick={handleCopyAndLog}
               disabled={!body || loggedSuccess}
@@ -678,12 +718,12 @@ export default function ComposerModal({
               {loggedSuccess ? (
                 <>
                   <Check className="h-4 w-4 shrink-0" />
-                  <span>Logged</span>
+                  <span>Logged!</span>
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">Copy & Log</span>
+                  <span className="whitespace-nowrap">Copy All & Log</span>
                 </>
               )}
             </button>
