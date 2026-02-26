@@ -366,7 +366,7 @@ export default function CSVImportModal({
         ? `${backendUrl}${apiBase}/leads/import`
         : `${backendUrl}/api/agency/${agencyId}/leads/import`;
 
-      // Build body: admin mode includes agencyId in body
+      // Build body
       const bodyPayload: any = {
         leads: processedRows,
         columnMapping,
@@ -374,10 +374,7 @@ export default function CSVImportModal({
         userId: user.id,
       };
 
-      // Admin import needs agencyId in body (not URL)
-      if (isAdminMode) {
-        bodyPayload.agencyId = agencyId;
-      }
+      // Admin mode: no agencyId needed — backend inserts with agency_id: null
 
       const response = await fetch(importUrl, {
         method: 'POST',
