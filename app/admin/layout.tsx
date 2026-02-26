@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  LayoutDashboard, Building2, Users, Target, LogOut, Loader2,
+  LayoutDashboard, Building2, Users, Target, Mail, LogOut, Loader2,
   Menu, X, ChevronRight, Shield
 } from 'lucide-react';
 
@@ -67,6 +67,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/admin/agencies', label: 'Agencies', icon: Building2 },
     { href: '/admin/clients', label: 'Clients', icon: Users },
     { href: '/admin/leads', label: 'Leads', icon: Target },
+    { href: '/admin/outreach', label: 'Outreach', icon: Mail },
   ];
 
   const isActive = (href: string) => {

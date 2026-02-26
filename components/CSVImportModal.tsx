@@ -56,7 +56,7 @@ const LEAD_FIELDS = [
 
 // Smart auto-mapping: CSV header → lead field
 const AUTO_MAP: Record<string, string> = {
-  // business_name
+  // business_name — exact matches
   'company': 'business_name',
   'company name': 'business_name',
   'company_name': 'business_name',
@@ -65,9 +65,25 @@ const AUTO_MAP: Record<string, string> = {
   'business_name': 'business_name',
   'organization': 'business_name',
   'organization name': 'business_name',
+  'organisation': 'business_name',
+  'organisation name': 'business_name',
   'account': 'business_name',
   'account name': 'business_name',
+  'agency': 'business_name',
+  'agency name': 'business_name',
+  'firm': 'business_name',
+  'firm name': 'business_name',
   'name': 'business_name',
+  'dba': 'business_name',
+  'legal name': 'business_name',
+  'brand': 'business_name',
+  'brand name': 'business_name',
+  'store': 'business_name',
+  'store name': 'business_name',
+  'shop name': 'business_name',
+  'merchant': 'business_name',
+  'merchant name': 'business_name',
+  'listing name': 'business_name',
   // contact_name
   'contact': 'contact_name',
   'contact name': 'contact_name',
@@ -76,29 +92,72 @@ const AUTO_MAP: Record<string, string> = {
   'full_name': 'contact_name',
   'person': 'contact_name',
   'person name': 'contact_name',
+  'owner': 'contact_name',
+  'owner name': 'contact_name',
+  'decision maker': 'contact_name',
+  'point of contact': 'contact_name',
+  'poc': 'contact_name',
+  'representative': 'contact_name',
+  'rep': 'contact_name',
+  'manager': 'contact_name',
+  'manager name': 'contact_name',
+  'ceo': 'contact_name',
+  'founder': 'contact_name',
+  'principal': 'contact_name',
   // first + last name combo handled separately
   'first name': '_first_name',
   'first_name': '_first_name',
   'firstname': '_first_name',
+  'first': '_first_name',
+  'given name': '_first_name',
   'last name': '_last_name',
   'last_name': '_last_name',
   'lastname': '_last_name',
+  'last': '_last_name',
+  'surname': '_last_name',
+  'family name': '_last_name',
   // email
   'email': 'email',
   'email address': 'email',
   'email_address': 'email',
   'e-mail': 'email',
+  'e mail': 'email',
   'work email': 'email',
   'business email': 'email',
+  'corporate email': 'email',
+  'company email': 'email',
+  'contact email': 'email',
+  'primary email': 'email',
+  'person email': 'email',
+  'personal email': 'email',
+  'mail': 'email',
   // phone
   'phone': 'phone',
   'phone number': 'phone',
   'phone_number': 'phone',
   'telephone': 'phone',
+  'tel': 'phone',
   'mobile': 'phone',
+  'mobile phone': 'phone',
+  'mobile number': 'phone',
   'cell': 'phone',
+  'cell phone': 'phone',
+  'cellphone': 'phone',
   'work phone': 'phone',
   'direct phone': 'phone',
+  'direct dial': 'phone',
+  'corporate phone': 'phone',
+  'company phone': 'phone',
+  'business phone': 'phone',
+  'office phone': 'phone',
+  'main phone': 'phone',
+  'primary phone': 'phone',
+  'contact phone': 'phone',
+  'landline': 'phone',
+  'fax': 'phone',
+  'number': 'phone',
+  'phone 1': 'phone',
+  'phone1': 'phone',
   // website
   'website': 'website',
   'website url': 'website',
@@ -107,29 +166,112 @@ const AUTO_MAP: Record<string, string> = {
   'domain': 'website',
   'company website': 'website',
   'web': 'website',
+  'web address': 'website',
+  'homepage': 'website',
+  'home page': 'website',
+  'site': 'website',
+  'site url': 'website',
+  'company url': 'website',
+  'company domain': 'website',
+  'link': 'website',
+  'web url': 'website',
+  'webpage': 'website',
   // industry
   'industry': 'industry',
   'sector': 'industry',
   'category': 'industry',
   'business type': 'industry',
+  'business category': 'industry',
+  'type': 'industry',
+  'vertical': 'industry',
+  'niche': 'industry',
+  'market': 'industry',
+  'segment': 'industry',
+  'sic code': 'industry',
+  'naics': 'industry',
+  'specialization': 'industry',
   // notes
   'notes': 'notes',
   'note': 'notes',
   'description': 'notes',
   'comments': 'notes',
+  'comment': 'notes',
+  'details': 'notes',
+  'info': 'notes',
+  'additional info': 'notes',
+  'remarks': 'notes',
+  'bio': 'notes',
+  'about': 'notes',
   // estimated_value
   'value': 'estimated_value',
   'deal value': 'estimated_value',
   'estimated value': 'estimated_value',
   'revenue': 'estimated_value',
   'mrr': 'estimated_value',
+  'arr': 'estimated_value',
+  'annual revenue': 'estimated_value',
+  'monthly revenue': 'estimated_value',
+  'deal size': 'estimated_value',
+  'budget': 'estimated_value',
+  'spend': 'estimated_value',
+  'ad spend': 'estimated_value',
   // company_size
   'company size': 'company_size',
   'company_size': 'company_size',
   'employees': 'company_size',
   'size': 'company_size',
   '# employees': 'company_size',
+  'num employees': 'company_size',
+  'number of employees': 'company_size',
+  'employee count': 'company_size',
+  'headcount': 'company_size',
+  'team size': 'company_size',
+  'staff': 'company_size',
+  'staff size': 'company_size',
 };
+
+// Fuzzy fallback: if exact match fails, check if header CONTAINS these keywords
+const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
+  { pattern: 'phone', field: 'phone' },
+  { pattern: 'tel', field: 'phone' },
+  { pattern: 'mobile', field: 'phone' },
+  { pattern: 'cell', field: 'phone' },
+  { pattern: 'dial', field: 'phone' },
+  { pattern: 'email', field: 'email' },
+  { pattern: 'e-mail', field: 'email' },
+  { pattern: 'mail', field: 'email' },
+  { pattern: 'website', field: 'website' },
+  { pattern: 'domain', field: 'website' },
+  { pattern: 'url', field: 'website' },
+  { pattern: 'homepage', field: 'website' },
+  { pattern: 'industry', field: 'industry' },
+  { pattern: 'sector', field: 'industry' },
+  { pattern: 'vertical', field: 'industry' },
+  { pattern: 'company', field: 'business_name' },
+  { pattern: 'business', field: 'business_name' },
+  { pattern: 'organization', field: 'business_name' },
+  { pattern: 'first name', field: '_first_name' },
+  { pattern: 'firstname', field: '_first_name' },
+  { pattern: 'last name', field: '_last_name' },
+  { pattern: 'lastname', field: '_last_name' },
+  { pattern: 'surname', field: '_last_name' },
+  { pattern: 'employee', field: 'company_size' },
+  { pattern: 'headcount', field: 'company_size' },
+  { pattern: 'revenue', field: 'estimated_value' },
+  { pattern: 'budget', field: 'estimated_value' },
+  { pattern: 'spend', field: 'estimated_value' },
+];
+
+function fuzzyMatch(header: string): string | null {
+  const lower = header.toLowerCase().trim();
+  // Try exact match first
+  if (AUTO_MAP[lower]) return AUTO_MAP[lower];
+  // Then fuzzy keyword match
+  for (const { pattern, field } of FUZZY_KEYWORDS) {
+    if (lower.includes(pattern)) return field;
+  }
+  return null;
+}
 
 const SOURCE_OPTIONS = [
   { value: 'csv_import', label: 'CSV Import' },
@@ -291,15 +433,14 @@ export default function CSVImportModal({
       let lnCol: string | null = null;
 
       headers.forEach(header => {
-        const normalized = header.toLowerCase().trim();
-        const match = AUTO_MAP[normalized];
+        const match = fuzzyMatch(header);
         if (match === '_first_name') {
           fnCol = header;
         } else if (match === '_last_name') {
           lnCol = header;
         } else if (match) {
-          // Only map if not already mapped (first match wins)
-          if (!Object.values(mapping).includes(header)) {
+          // Only map if this field isn't already mapped AND this column isn't used
+          if (!mapping[match] && !Object.values(mapping).includes(header)) {
             mapping[match] = header;
           }
         }

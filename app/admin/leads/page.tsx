@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { 
   Search, Loader2, Target, DollarSign, Plus, Trash2,
   FileSpreadsheet, BarChart3, Mail, Phone, Globe, Building2,
-  ChevronDown, X, Check, Copy, ExternalLink
+  ChevronDown, X, Check, Copy, ExternalLink, MessageSquare, Send
 } from 'lucide-react';
 import CSVImportModal from '@/components/CSVImportModal';
+import ComposerModal from '@/components/ComposerModal';
 
 interface Lead {
   id: string;
@@ -44,6 +45,11 @@ export default function AdminLeadsPage() {
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Composer state
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
+  const [composerLead, setComposerLead] = useState<Lead | null>(null);
 
   useEffect(() => {
     fetchLeads();
@@ -203,6 +209,17 @@ export default function AdminLeadsPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const openComposer = (lead: Lead, type: 'email' | 'sms') => {
+    setComposerLead(lead);
+    setComposerType(type);
+    setComposerOpen(true);
+  };
+
+  const handleOutreachSent = () => {
+    fetchLeads();
+    fetchStats();
   };
 
   const formatCurrency = (cents: number) => {
@@ -631,6 +648,33 @@ export default function AdminLeadsPage() {
                                   </div>
                                 </div>
 
+                                {/* Outreach Actions */}
+                                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/5">
+                                  {lead.email && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); openComposer(lead, 'email'); }}
+                                      className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 transition-colors"
+                                    >
+                                      <Mail className="h-3.5 w-3.5" />
+                                      Send Email
+                                      <Send className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                  {lead.phone && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); openComposer(lead, 'sms'); }}
+                                      className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                                    >
+                                      <MessageSquare className="h-3.5 w-3.5" />
+                                      Send SMS
+                                      <Send className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                  {!lead.email && !lead.phone && (
+                                    <span className="text-xs text-white/30">Add email or phone to enable outreach</span>
+                                  )}
+                                </div>
+
                                 {/* Quick Status + Edit */}
                                 <div className="flex items-center justify-between pt-3 border-t border-white/5">
                                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -684,6 +728,19 @@ export default function AdminLeadsPage() {
         onImportComplete={() => { fetchLeads(); fetchStats(); }}
         apiBase="/api/admin"
       />
+
+      {/* Composer Modal — admin mode */}
+      {composerLead && (
+        <ComposerModal
+          isOpen={composerOpen}
+          onClose={() => { setComposerOpen(false); setComposerLead(null); }}
+          agencyId="platform"
+          lead={composerLead}
+          type={composerType}
+          onSent={handleOutreachSent}
+          adminMode
+        />
+      )}
     </div>
   );
 }

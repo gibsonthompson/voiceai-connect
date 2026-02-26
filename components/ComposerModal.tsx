@@ -8,6 +8,15 @@ import {
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
 
+// Safe wrapper — allows ComposerModal to work outside AgencyProvider (admin mode)
+function useSafeAgency(adminMode: boolean) {
+  if (adminMode) {
+    return { agency: null, branding: null, demoMode: false };
+  }
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useAgency();
+}
+
 interface Lead {
   id: string;
   business_name: string;
@@ -35,6 +44,7 @@ interface ComposerModalProps {
   lead: Lead;
   type: 'email' | 'sms';
   onSent?: () => void;
+  adminMode?: boolean;  // When true, uses admin API endpoints + admin_token
 }
 
 // Helper to determine if a color is light
@@ -71,9 +81,11 @@ export default function ComposerModal({
   agencyId, 
   lead, 
   type,
-  onSent 
+  onSent,
+  adminMode = false,
 }: ComposerModalProps) {
-  const { agency, branding, demoMode } = useAgency();
+  // Agency context - safely handles admin mode (no AgencyProvider)
+  const { agency, branding, demoMode } = useSafeAgency(adminMode);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
@@ -92,11 +104,18 @@ export default function ComposerModal({
   const autoSelectDone = useRef(false);
 
   // Theme - default to dark unless explicitly light
-  const isDark = agency?.website_theme !== 'light';
+  const isDark = adminMode ? true : (agency?.website_theme !== 'light');
   
   // Agency primary color
-  const primaryColor = branding?.primaryColor || '#10b981';
+  const primaryColor = adminMode ? '#3b82f6' : (branding?.primaryColor || '#10b981');
   const primaryLight = isLightColor(primaryColor);
+
+  // API helpers for admin vs agency mode
+  const getToken = () => localStorage.getItem(adminMode ? 'admin_token' : 'auth_token');
+  const getApiBase = () => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+    return adminMode ? `${backendUrl}/api/admin` : `${backendUrl}/api/agency/${agencyId}`;
+  };
 
   // Theme-based colors
   const theme = {
@@ -182,11 +201,10 @@ export default function ComposerModal({
     }
 
     try {
-      const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = getToken();
 
       const response = await fetch(
-        `${backendUrl}/api/agency/${agencyId}/leads/${lead.id}/outreach`,
+        `${getApiBase()}/leads/${lead.id}/outreach`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
@@ -216,11 +234,10 @@ export default function ComposerModal({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = getToken();
 
       const response = await fetch(
-        `${backendUrl}/api/agency/${agencyId}/templates?type=${type}`,
+        `${getApiBase()}/templates?type=${type}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
@@ -252,11 +269,10 @@ export default function ComposerModal({
     setComposing(true);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = getToken();
 
       const response = await fetch(
-        `${backendUrl}/api/agency/${agencyId}/outreach/compose`,
+        `${getApiBase()}/outreach/compose`,
         {
           method: 'POST',
           headers: {
@@ -321,11 +337,10 @@ export default function ComposerModal({
     }
 
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getToken();
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-      await fetch(`${backendUrl}/api/agency/${agencyId}/outreach/log`, {
+      await fetch(`${getApiBase()}/outreach/log`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
