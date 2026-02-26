@@ -80,7 +80,7 @@ export default function ComposerModal({
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [composing, setComposing] = useState(false);
-  const [copied, setCopied] = useState<'none' | 'subject' | 'body' | 'all'>('none');
+  const [copied, setCopied] = useState<'none' | 'subject' | 'body' | 'all' | 'recipient'>('none');
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [loggedSuccess, setLoggedSuccess] = useState(false);
   
@@ -424,9 +424,7 @@ export default function ComposerModal({
                 </span>
               </h2>
               <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>
-                To: {lead.contact_name || lead.business_name} 
-                {type === 'email' && lead.email && ` (${lead.email})`}
-                {type === 'sms' && lead.phone && ` (${lead.phone})`}
+                To: {lead.contact_name || lead.business_name}
               </p>
             </div>
           </div>
@@ -446,6 +444,44 @@ export default function ComposerModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Recipient email/phone - prominent & copyable */}
+        {((type === 'email' && lead.email) || (type === 'sms' && lead.phone)) && (
+          <div className="px-4 sm:px-6 pb-2">
+            <div 
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: `1px solid ${theme.border}` }}
+            >
+              <span className="text-xs font-medium shrink-0 uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                {type === 'email' ? 'To' : 'Phone'}
+              </span>
+              <input
+                type="text"
+                readOnly
+                value={type === 'email' ? lead.email : lead.phone}
+                className="flex-1 bg-transparent text-sm font-medium focus:outline-none cursor-text select-all"
+                style={{ color: theme.text }}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <button
+                onClick={() => {
+                  const val = type === 'email' ? lead.email : lead.phone;
+                  navigator.clipboard.writeText(val);
+                  setCopied('recipient');
+                  setTimeout(() => setCopied(prev => prev === 'recipient' ? 'none' : prev), 2000);
+                }}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors shrink-0"
+                style={{
+                  backgroundColor: copied === 'recipient' ? 'rgba(16,185,129,0.1)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                  color: copied === 'recipient' ? '#10b981' : theme.textMuted,
+                  border: `1px solid ${copied === 'recipient' ? 'rgba(16,185,129,0.3)' : theme.border}`,
+                }}
+              >
+                {copied === 'recipient' ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Content - scrollable */}
         <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
