@@ -102,7 +102,7 @@ export default function AdminClientsPage() {
   };
 
   const formatPhone = (phone: string) => {
-    if (!phone) return '-';
+    if (!phone) return '—';
     const digits = phone.replace(/\D/g, '');
     if (digits.length === 11 && digits.startsWith('1')) {
       return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
@@ -116,7 +116,7 @@ export default function AdminClientsPage() {
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'trial':
       case 'trialing':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
       case 'trial_expired':
       case 'past_due':
         return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
@@ -124,38 +124,38 @@ export default function AdminClientsPage() {
       case 'suspended':
         return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
-        return 'bg-white/5 text-white/60 border-white/10';
+        return 'bg-white/[0.04] text-white/40 border-white/[0.06]';
     }
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-5 lg:p-8 max-w-[1400px]">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Clients</h1>
-        <p className="mt-1 text-white/50">All clients across all agencies</p>
+        <h1 className="text-[22px] font-semibold text-white tracking-tight">Clients</h1>
+        <p className="mt-1 text-sm text-white/30">All clients across all agencies</p>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <form onSubmit={handleSearch} className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
             <input
               type="text"
               placeholder="Search clients..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg bg-gray-900 border border-white/10 pl-10 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500"
+              className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-emerald-500/30 transition-colors"
             />
           </div>
         </form>
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="appearance-none rounded-lg bg-gray-900 border border-white/10 pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500"
+            className="appearance-none rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -168,86 +168,91 @@ export default function AdminClientsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl bg-gray-900 border border-white/10 overflow-hidden">
+      <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-500/50" />
           </div>
         ) : clients.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users className="h-12 w-12 mx-auto text-white/20 mb-3" />
-            <p className="text-white/50">No clients found</p>
+          <div className="p-16 text-center">
+            <div className="relative inline-flex mb-4">
+              <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+                <Users className="h-7 w-7 text-white/15" />
+              </div>
+            </div>
+            <p className="text-sm text-white/40">No clients found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Client</th>
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Agency</th>
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Status</th>
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">AI Phone</th>
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Calls</th>
-                  <th className="text-left text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Created</th>
-                  <th className="text-right text-xs font-medium text-white/50 uppercase tracking-wider px-6 py-4">Actions</th>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Client</th>
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Agency</th>
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Status</th>
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">AI Phone</th>
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Calls</th>
+                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Created</th>
+                  <th className="text-right text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-5 py-3.5">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-white/[0.03]">
                 {clients.map((client) => (
-                  <tr key={client.id} className="hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={client.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                          <Users className="h-5 w-5 text-emerald-400" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/[0.08] shrink-0">
+                          <Users className="h-4 w-4 text-emerald-400/70" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{client.business_name}</p>
-                          <p className="text-sm text-white/50">{client.email}</p>
+                          <p className="text-[13px] font-medium text-white/80">{client.business_name}</p>
+                          <p className="text-[11px] text-white/25">{client.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5">
                       <Link 
-                        href={`/admin/agencies/${client.agency_id}`}
-                        className="flex items-center gap-2 text-white/70 hover:text-white"
+                        href={`/admin/agencies?expand=${client.agency_id}`}
+                        className="flex items-center gap-1.5 text-white/40 hover:text-white/60 transition-colors"
                       >
-                        <Building2 className="h-4 w-4" />
-                        <span className="text-sm">{client.agencies?.name || 'Unknown'}</span>
+                        <Building2 className="h-3.5 w-3.5" />
+                        <span className="text-xs">{client.agencies?.name || 'Unknown'}</span>
                       </Link>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusColor(client.subscription_status)}`}>
+                    <td className="px-5 py-3.5">
+                      <span className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${getStatusColor(client.subscription_status)}`}>
                         {client.subscription_status || 'pending'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5">
                       {client.vapi_phone_number ? (
-                        <div className="flex items-center gap-2 text-white/70">
-                          <Phone className="h-4 w-4 text-emerald-400" />
-                          <span className="text-sm">{formatPhone(client.vapi_phone_number)}</span>
+                        <div className="flex items-center gap-1.5 text-white/50">
+                          <Phone className="h-3.5 w-3.5 text-emerald-400/60" />
+                          <span className="text-xs tabular-nums">{formatPhone(client.vapi_phone_number)}</span>
                         </div>
                       ) : (
-                        <span className="text-white/40 text-sm">Not assigned</span>
+                        <span className="text-[11px] text-white/20">Not assigned</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-white/70">
-                        <PhoneCall className="h-4 w-4" />
-                        <span className="text-sm">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-1.5 text-white/40">
+                        <PhoneCall className="h-3.5 w-3.5" />
+                        <span className="text-xs tabular-nums">
                           {client.calls_this_month || 0} / {client.monthly_call_limit || 50}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-white/50">
+                    <td className="px-5 py-3.5 text-xs text-white/30">
                       {formatDate(client.created_at)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 py-3.5 text-right">
                       <div className="relative inline-block">
                         <button
                           onClick={() => setActionMenu(actionMenu === client.id ? null : client.id)}
-                          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          className="p-1.5 hover:bg-white/[0.04] rounded-lg transition-colors"
                         >
-                          <MoreVertical className="h-5 w-5 text-white/50" />
+                          <MoreVertical className="h-4 w-4 text-white/25" />
                         </button>
                         
                         {actionMenu === client.id && (
@@ -256,29 +261,29 @@ export default function AdminClientsPage() {
                               className="fixed inset-0 z-10" 
                               onClick={() => setActionMenu(null)}
                             />
-                            <div className="absolute right-0 mt-2 w-48 rounded-lg bg-gray-800 border border-white/10 shadow-xl z-20">
+                            <div className="absolute right-0 mt-1 w-44 rounded-xl bg-[#111] border border-white/[0.08] shadow-2xl z-20 overflow-hidden">
                               <Link
                                 href={`/admin/clients/${client.id}`}
-                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/5"
+                                className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-white/70 hover:bg-white/[0.04]"
                               >
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-3.5 w-3.5" />
                                 View Details
                               </Link>
-                              <div className="border-t border-white/10 my-1" />
+                              <div className="mx-2 border-t border-white/[0.04]" />
                               {client.status !== 'suspended' ? (
                                 <button
                                   onClick={() => handleStatusUpdate(client.id, 'suspended', 'canceled')}
-                                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 w-full text-left"
+                                  className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-red-400/80 hover:bg-red-500/[0.06] w-full text-left"
                                 >
-                                  <Ban className="h-4 w-4" />
+                                  <Ban className="h-3.5 w-3.5" />
                                   Suspend Client
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleStatusUpdate(client.id, 'active', 'active')}
-                                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-emerald-400 hover:bg-white/5 w-full text-left"
+                                  className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-emerald-400/80 hover:bg-emerald-500/[0.06] w-full text-left"
                                 >
-                                  <UserCheck className="h-4 w-4" />
+                                  <UserCheck className="h-3.5 w-3.5" />
                                   Activate Client
                                 </button>
                               )}
@@ -297,7 +302,7 @@ export default function AdminClientsPage() {
 
       {/* Count */}
       {!loading && clients.length > 0 && (
-        <p className="mt-4 text-sm text-white/40">
+        <p className="mt-4 text-xs text-white/20">
           Showing {clients.length} clients
         </p>
       )}

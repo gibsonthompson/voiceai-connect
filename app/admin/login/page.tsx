@@ -2,7 +2,21 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Loader2, ArrowRight, Lock } from 'lucide-react';
+import { Loader2, ArrowRight, Lock } from 'lucide-react';
+
+function WaveformLogo({ size = 32, color = '#10b981' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="9" width="2" height="6" rx="1" fill={color} opacity="0.5" />
+      <rect x="5" y="7" width="2" height="10" rx="1" fill={color} opacity="0.7" />
+      <rect x="8" y="4" width="2" height="16" rx="1" fill={color} opacity="0.9" />
+      <rect x="11" y="6" width="2" height="12" rx="1" fill={color} />
+      <rect x="14" y="3" width="2" height="18" rx="1" fill={color} />
+      <rect x="17" y="7" width="2" height="10" rx="1" fill={color} opacity="0.7" />
+      <rect x="20" y="9" width="2" height="6" rx="1" fill={color} opacity="0.5" />
+    </svg>
+  );
+}
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -38,42 +52,48 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-6">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl bg-blue-600/10" />
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-6">
+      {/* Background effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-[120px] bg-emerald-500/[0.06]" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent" />
       </div>
 
-      <div className="relative w-full max-w-sm">
-        <div className="rounded-2xl bg-gray-900 border border-white/10 p-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600">
-                <Shield className="h-7 w-7 text-white" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-semibold text-white">Platform Admin</h1>
-            <p className="mt-2 text-white/50">Enter PIN to continue</p>
+      <div className="relative w-full max-w-[360px]">
+        {/* Logo area */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center mb-5 relative">
+            <div className="absolute inset-0 -m-3 blur-2xl bg-emerald-500/15 rounded-full" />
+            <WaveformLogo size={44} />
           </div>
+          <h1 className="text-[22px] font-semibold text-white tracking-tight">VoiceAI Connect</h1>
+          <p className="mt-1.5 text-sm text-white/30">Platform Administration</p>
+        </div>
 
+        {/* Login card */}
+        <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-7">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
+              <label className="block text-xs font-medium text-white/30 uppercase tracking-[0.1em] mb-2.5">
+                Access PIN
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/30" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
                 <input
                   type="password"
                   inputMode="numeric"
-                  placeholder="Enter PIN"
+                  placeholder="••••••"
                   value={pin}
                   onChange={(e) => { setPin(e.target.value); setError(''); }}
                   required
                   autoFocus
-                  className="w-full rounded-lg bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-white text-center text-xl tracking-widest placeholder:text-white/30 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-xl bg-white/[0.03] border border-white/[0.08] pl-11 pr-4 py-3.5 text-white text-center text-lg tracking-[0.3em] placeholder:text-white/15 placeholder:tracking-[0.3em] focus:outline-none focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20 transition-all"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400 text-center">
+              <div className="rounded-xl bg-red-500/[0.06] border border-red-500/10 p-3 text-xs text-red-400 text-center">
                 {error}
               </div>
             )}
@@ -81,22 +101,27 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading || pin.length < 4}
-              className="group w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3.5 text-base font-medium text-white transition-all hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group w-full flex items-center justify-center gap-2.5 rounded-xl bg-emerald-500 px-6 py-3.5 text-sm font-semibold text-[#050505] transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Signing in...
+                  Authenticating...
                 </>
               ) : (
                 <>
-                  Enter
+                  Continue
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
             </button>
           </form>
         </div>
+
+        {/* Footer */}
+        <p className="text-center mt-6 text-[11px] text-white/15">
+          Secured access · VoiceAI Connect Platform
+        </p>
       </div>
     </div>
   );
