@@ -153,7 +153,7 @@ export default function AdminTemplateEditorPage() {
       <div className="mb-7">
         <Link 
           href="/admin/outreach"
-          className="inline-flex items-center gap-1.5 text-xs text-white/30 hover:text-white/50 transition-colors mb-4"
+          className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white/60 transition-colors mb-4"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to Outreach
@@ -173,7 +173,7 @@ export default function AdminTemplateEditorPage() {
                   : <MessageSquare className="h-3 w-3 text-cyan-400" />
                 }
               </div>
-              <span className="text-xs text-white/30">
+              <span className="text-xs text-white/40">
                 {formData.type === 'email' ? 'Email template' : 'SMS template'}
               </span>
             </div>
@@ -200,25 +200,25 @@ export default function AdminTemplateEditorPage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Basic Info */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-6">
-            <h3 className="text-xs font-medium text-white/30 uppercase tracking-[0.1em] mb-5">Template Info</h3>
+            <h3 className="text-xs font-medium text-white/50 uppercase tracking-[0.1em] mb-5">Template Info</h3>
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs text-white/40 mb-2">Name *</label>
+                  <label className="block text-xs text-white/50 mb-2">Name *</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Cold Email - Agency Pitch"
-                    className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 mb-2">Type</label>
+                  <label className="block text-xs text-white/50 mb-2">Type</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30 transition-colors"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30 transition-colors"
                   >
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
@@ -226,38 +226,38 @@ export default function AdminTemplateEditorPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-white/40 mb-2">Description</label>
+                <label className="block text-xs text-white/50 mb-2">Description</label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="When to use this template"
-                  className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                  className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                 />
               </div>
               {/* Sequence settings */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs text-white/40 mb-2">Sequence Order</label>
+                  <label className="block text-xs text-white/50 mb-2">Sequence Order</label>
                   <input
                     type="number"
                     value={formData.sequence_order}
                     onChange={(e) => setFormData(prev => ({ ...prev, sequence_order: e.target.value }))}
                     placeholder="1, 2, 3..."
-                    className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                   />
-                  <p className="text-[10px] text-white/20 mt-1.5">Position in outreach sequence</p>
+                  <p className="text-[10px] text-white/30 mt-1.5">Position in outreach sequence</p>
                 </div>
                 <div>
-                  <label className="block text-xs text-white/40 mb-2">Delay (days)</label>
+                  <label className="block text-xs text-white/50 mb-2">Delay (days)</label>
                   <input
                     type="number"
                     value={formData.delay_days}
                     onChange={(e) => setFormData(prev => ({ ...prev, delay_days: e.target.value }))}
                     placeholder="3"
-                    className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                   />
-                  <p className="text-[10px] text-white/20 mt-1.5">Days after previous step</p>
+                  <p className="text-[10px] text-white/30 mt-1.5">Days after previous step</p>
                 </div>
               </div>
             </div>
@@ -266,10 +266,10 @@ export default function AdminTemplateEditorPage() {
           {/* Content */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xs font-medium text-white/30 uppercase tracking-[0.1em]">Content</h3>
+              <h3 className="text-xs font-medium text-white/50 uppercase tracking-[0.1em]">Content</h3>
               <button
                 onClick={() => setShowVariables(!showVariables)}
-                className="text-xs text-emerald-400/60 hover:text-emerald-400 transition-colors"
+                className="text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors"
               >
                 {showVariables ? 'Hide' : 'Show'} Variables
               </button>
@@ -278,27 +278,27 @@ export default function AdminTemplateEditorPage() {
             <div className="space-y-4">
               {formData.type === 'email' && (
                 <div>
-                  <label className="block text-xs text-white/40 mb-2">Subject *</label>
+                  <label className="block text-xs text-white/50 mb-2">Subject *</label>
                   <input
                     type="text"
                     value={formData.subject}
                     onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
                     placeholder="Quick question about {lead_business_name}"
-                    className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm font-mono text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                    className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm font-mono text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                   />
                 </div>
               )}
               <div>
-                <label className="block text-xs text-white/40 mb-2">Body *</label>
+                <label className="block text-xs text-white/50 mb-2">Body *</label>
                 <textarea
                   value={formData.body}
                   onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))}
                   placeholder="Write your message here. Use {variables} to personalize."
                   rows={formData.type === 'email' ? 14 : 6}
-                  className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 text-sm font-mono text-white/80 resize-y focus:outline-none focus:border-emerald-500/30 leading-relaxed placeholder:text-white/15 transition-colors"
+                  className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-3 text-sm font-mono text-white/90 resize-y focus:outline-none focus:border-emerald-500/30 leading-relaxed placeholder:text-white/25 transition-colors"
                 />
                 {formData.type === 'sms' && (
-                  <p className="text-[10px] text-white/20 mt-1.5 tabular-nums">
+                  <p className="text-[10px] text-white/30 mt-1.5 tabular-nums">
                     {formData.body.length} characters · {Math.ceil(formData.body.length / 160) || 1} segment{formData.body.length > 160 ? 's' : ''}
                   </p>
                 )}
@@ -311,8 +311,8 @@ export default function AdminTemplateEditorPage() {
         <div className="space-y-5">
           {showVariables && variables && (
             <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5">
-              <h3 className="text-xs font-medium text-white/30 uppercase tracking-[0.1em] mb-1.5">Available Variables</h3>
-              <p className="text-[10px] text-white/20 mb-5">Click to copy, paste into template</p>
+              <h3 className="text-xs font-medium text-white/50 uppercase tracking-[0.1em] mb-1.5">Available Variables</h3>
+              <p className="text-[10px] text-white/30 mb-5">Click to copy, paste into template</p>
               
               <div className="space-y-5">
                 {[
@@ -322,8 +322,8 @@ export default function AdminTemplateEditorPage() {
                 ].map((group) => (
                   <div key={group.label}>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`h-1.5 w-1.5 rounded-full ${group.dotColor} opacity-50`} />
-                      <p className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">{group.label}</p>
+                      <div className={`h-1.5 w-1.5 rounded-full ${group.dotColor} opacity-60`} />
+                      <p className="text-[10px] font-medium text-white/35 uppercase tracking-[0.1em]">{group.label}</p>
                     </div>
                     <div className="space-y-0.5">
                       {group.items.map((v) => (
@@ -334,12 +334,12 @@ export default function AdminTemplateEditorPage() {
                         >
                           <div className="min-w-0">
                             <p className={`text-xs font-mono truncate ${group.color}`}>{v.key}</p>
-                            <p className="text-[10px] text-white/20 truncate">{v.description}</p>
+                            <p className="text-[10px] text-white/30 truncate">{v.description}</p>
                           </div>
                           {copiedVar === v.key ? (
                             <Check className="h-3 w-3 shrink-0 text-emerald-400" />
                           ) : (
-                            <Copy className="h-3 w-3 shrink-0 text-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Copy className="h-3 w-3 shrink-0 text-white/15 opacity-0 group-hover:opacity-100 transition-opacity" />
                           )}
                         </button>
                       ))}
@@ -351,11 +351,11 @@ export default function AdminTemplateEditorPage() {
           )}
 
           {/* Tips */}
-          <div className="rounded-2xl bg-emerald-500/[0.03] border border-emerald-500/[0.06] p-4">
+          <div className="rounded-2xl bg-emerald-500/[0.04] border border-emerald-500/[0.08] p-4">
             <div className="flex items-start gap-2.5">
-              <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-400/50" />
-              <div className="text-[11px] text-emerald-400/40 leading-relaxed">
-                <p className="font-medium mb-1.5 text-emerald-400/60">Tips</p>
+              <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-emerald-400/60" />
+              <div className="text-[11px] text-emerald-400/50 leading-relaxed">
+                <p className="font-medium mb-1.5 text-emerald-400/70">Tips</p>
                 <ul className="space-y-1">
                   <li>Keep subject lines under 50 chars</li>
                   <li>Personalize with first name</li>

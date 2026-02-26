@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
       case 'suspended':
         return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
-        return 'bg-white/5 text-white/50 border-white/10';
+        return 'bg-white/5 text-white/60 border-white/10';
     }
   };
 
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-white/30 text-sm">{greeting}, Gibson</span>
+          <span className="text-white/40 text-sm">{greeting}, Gibson</span>
         </div>
         <h1 className="text-[26px] font-semibold text-white tracking-tight">Platform Overview</h1>
       </div>
@@ -140,16 +140,16 @@ export default function AdminDashboardPage() {
           <div className="relative border border-emerald-500/[0.1] rounded-2xl p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-emerald-400/60 uppercase tracking-[0.15em]">Monthly Recurring Revenue</p>
+                <p className="text-xs font-medium text-emerald-400/70 uppercase tracking-[0.15em]">Monthly Recurring Revenue</p>
                 <p className="mt-2 text-4xl lg:text-5xl font-semibold text-white tracking-tight">
                   {formatCurrency(stats?.platformMRR || 0)}
                 </p>
                 <div className="mt-3 flex items-center gap-4">
-                  <span className="text-sm text-white/40">
+                  <span className="text-sm text-white/50">
                     <span className="text-emerald-400 font-medium">{stats?.activeAgencies || 0}</span> paying
                   </span>
-                  <span className="text-white/10">·</span>
-                  <span className="text-sm text-white/40">
+                  <span className="text-white/15">·</span>
+                  <span className="text-sm text-white/50">
                     ARR {formatCurrency((stats?.platformMRR || 0) * 12)}
                   </span>
                 </div>
@@ -167,8 +167,8 @@ export default function AdminDashboardPage() {
           value={stats?.totalAgencies || 0}
           detail={`${stats?.activeAgencies || 0} active · ${stats?.trialAgencies || 0} trial`}
           icon={Building2}
-          accentClass="text-white/80"
-          iconBg="bg-white/[0.04] border-white/[0.06]"
+          accentClass="text-white/90"
+          iconBg="bg-white/[0.05] border-white/[0.08]"
         />
 
         {/* Calls */}
@@ -177,8 +177,8 @@ export default function AdminDashboardPage() {
           value={(stats?.callsThisMonth || 0).toLocaleString()}
           detail="Across all clients"
           icon={PhoneCall}
-          accentClass="text-white/80"
-          iconBg="bg-white/[0.04] border-white/[0.06]"
+          accentClass="text-white/90"
+          iconBg="bg-white/[0.05] border-white/[0.08]"
         />
       </div>
 
@@ -218,7 +218,7 @@ export default function AdminDashboardPage() {
       <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
         <div className="flex items-center justify-between px-5 lg:px-6 py-4 border-b border-white/[0.04]">
           <div className="flex items-center gap-2.5">
-            <Building2 className="h-4 w-4 text-white/25" />
+            <Building2 className="h-4 w-4 text-white/35" />
             <h2 className="text-sm font-semibold text-white/80">Recent Agencies</h2>
           </div>
           <Link 
@@ -235,11 +235,11 @@ export default function AdminDashboardPage() {
             <div className="relative inline-flex">
               <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
               <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-                <Building2 className="h-7 w-7 text-white/15" />
+                <Building2 className="h-7 w-7 text-white/20" />
               </div>
             </div>
-            <p className="mt-4 text-sm text-white/30">No agencies yet</p>
-            <p className="mt-1 text-xs text-white/20">They&apos;ll appear here as they sign up</p>
+            <p className="mt-4 text-sm text-white/40">No agencies yet</p>
+            <p className="mt-1 text-xs text-white/30">They&apos;ll appear here as they sign up</p>
           </div>
         ) : (
           <div className="divide-y divide-white/[0.03]">
@@ -251,22 +251,22 @@ export default function AdminDashboardPage() {
               >
                 <div className="flex items-center gap-3.5">
                   {/* Numbered index */}
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.05] text-[11px] font-semibold text-white/20">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-semibold text-white/30">
                     {i + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">{agency.name}</p>
-                    <p className="text-xs text-white/30 mt-0.5">{agency.email}</p>
+                    <p className="text-sm font-medium text-white/85 group-hover:text-white transition-colors">{agency.name}</p>
+                    <p className="text-xs text-white/40 mt-0.5">{agency.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${getStatusColor(agency.subscription_status)}`}>
                     {agency.subscription_status || 'pending'}
                   </span>
-                  <span className="text-[11px] text-white/20 hidden sm:block tabular-nums">
+                  <span className="text-[11px] text-white/30 hidden sm:block tabular-nums">
                     {formatDate(agency.created_at)}
                   </span>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-white/10 group-hover:text-emerald-400/50 transition-colors" />
+                  <ArrowUpRight className="h-3.5 w-3.5 text-white/15 group-hover:text-emerald-400/50 transition-colors" />
                 </div>
               </Link>
             ))}
@@ -292,12 +292,12 @@ function StatCard({
     <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-white/30 uppercase tracking-[0.1em]">{label}</p>
+          <p className="text-xs font-medium text-white/50 uppercase tracking-[0.1em]">{label}</p>
           <p className={`mt-2 text-3xl font-semibold tracking-tight ${accentClass}`}>{value}</p>
-          <p className="mt-1.5 text-xs text-white/25">{detail}</p>
+          <p className="mt-1.5 text-xs text-white/40">{detail}</p>
         </div>
         <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${iconBg}`}>
-          <Icon className="h-5 w-5 text-white/25" />
+          <Icon className="h-5 w-5 text-white/35" />
         </div>
       </div>
     </div>
@@ -315,22 +315,22 @@ function MiniStat({
   color: 'emerald' | 'cyan' | 'violet' | 'amber';
 }) {
   const colors = {
-    emerald: { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-500/[0.06]' },
-    cyan:    { dot: 'bg-cyan-400',    text: 'text-cyan-400',    bg: 'bg-cyan-500/[0.06]' },
-    violet:  { dot: 'bg-violet-400',  text: 'text-violet-400',  bg: 'bg-violet-500/[0.06]' },
-    amber:   { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-500/[0.06]' },
+    emerald: { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-500/[0.08]' },
+    cyan:    { dot: 'bg-cyan-400',    text: 'text-cyan-400',    bg: 'bg-cyan-500/[0.08]' },
+    violet:  { dot: 'bg-violet-400',  text: 'text-violet-400',  bg: 'bg-violet-500/[0.08]' },
+    amber:   { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-500/[0.08]' },
   };
 
   const c = colors[color];
 
   return (
-    <div className="rounded-xl bg-white/[0.015] border border-white/[0.04] p-4 flex items-center gap-3.5">
+    <div className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-4 flex items-center gap-3.5">
       <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${c.bg}`}>
         <Icon className={`h-4.5 w-4.5 ${c.text}`} style={{ width: 18, height: 18 }} />
       </div>
       <div>
-        <p className="text-xl font-semibold text-white/80 tabular-nums">{value}</p>
-        <p className="text-[11px] text-white/25 mt-0.5">{sub}</p>
+        <p className="text-xl font-semibold text-white/90 tabular-nums">{value}</p>
+        <p className="text-[11px] text-white/35 mt-0.5">{sub}</p>
       </div>
     </div>
   );

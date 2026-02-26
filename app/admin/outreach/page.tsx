@@ -118,19 +118,19 @@ export default function AdminOutreachPage() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-medium text-[13px] text-white/80">{template.name}</p>
+              <p className="font-medium text-[13px] text-white/85">{template.name}</p>
               {template.sequence_order && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/[0.08] text-emerald-400/80 font-medium">
                   Step {template.sequence_order}
                 </span>
               )}
               {template.delay_days && template.delay_days > 0 && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.03] text-white/30">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.04] text-white/40">
                   +{template.delay_days}d
                 </span>
               )}
             </div>
-            <p className="text-xs text-white/25 truncate mt-0.5">
+            <p className="text-xs text-white/35 truncate mt-0.5">
               {template.type === 'email' 
                 ? (template.subject || template.description || 'No subject')
                 : (template.body?.substring(0, 60) || 'No content') + '...'
@@ -141,11 +141,11 @@ export default function AdminOutreachPage() {
       </Link>
       
       <div className="flex items-center gap-2 ml-2">
-        <span className="text-[11px] text-white/20 tabular-nums">{template.use_count || 0} sent</span>
+        <span className="text-[11px] text-white/30 tabular-nums">{template.use_count || 0} sent</span>
         <div className="relative">
           <button
             onClick={() => setActiveDropdown(activeDropdown === template.id ? null : template.id)}
-            className="rounded-lg p-1.5 text-white/25 hover:text-white/50 hover:bg-white/[0.03] transition-colors"
+            className="rounded-lg p-1.5 text-white/30 hover:text-white/60 hover:bg-white/[0.03] transition-colors"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -188,7 +188,7 @@ export default function AdminOutreachPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <div>
           <h1 className="text-[22px] font-semibold text-white tracking-tight">Outreach Templates</h1>
-          <p className="mt-1 text-sm text-white/30">Email and SMS templates for your sales pipeline</p>
+          <p className="mt-1 text-sm text-white/40">Email and SMS templates for your sales pipeline</p>
         </div>
         <Link
           href="/admin/outreach/templates/new"
@@ -209,10 +209,10 @@ export default function AdminOutreachPage() {
               <Mail className="h-5 w-5 text-violet-400" />
             </div>
             <div>
-              <p className="font-medium text-[13px] text-white/80 group-hover:text-white transition-colors">Email Template</p>
-              <p className="text-xs text-white/25">Create new email</p>
+              <p className="font-medium text-[13px] text-white/85 group-hover:text-white transition-colors">Email Template</p>
+              <p className="text-xs text-white/35">Create new email</p>
             </div>
-            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/10 group-hover:text-white/30 transition-colors" />
+            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/15 group-hover:text-white/40 transition-colors" />
           </div>
         </Link>
         <Link
@@ -224,10 +224,10 @@ export default function AdminOutreachPage() {
               <MessageSquare className="h-5 w-5 text-cyan-400" />
             </div>
             <div>
-              <p className="font-medium text-[13px] text-white/80 group-hover:text-white transition-colors">SMS Template</p>
-              <p className="text-xs text-white/25">Create new SMS</p>
+              <p className="font-medium text-[13px] text-white/85 group-hover:text-white transition-colors">SMS Template</p>
+              <p className="text-xs text-white/35">Create new SMS</p>
             </div>
-            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/10 group-hover:text-white/30 transition-colors" />
+            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/15 group-hover:text-white/40 transition-colors" />
           </div>
         </Link>
       </div>
@@ -235,13 +235,13 @@ export default function AdminOutreachPage() {
       {/* Search & Filters */}
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25" />
           <input
             type="text"
             placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-emerald-500/30 transition-colors"
+            className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
           />
         </div>
         <div className="flex items-center gap-0.5 rounded-lg bg-white/[0.02] border border-white/[0.04] p-0.5">
@@ -255,8 +255,8 @@ export default function AdminOutreachPage() {
               onClick={() => setTypeFilter(filter.value)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 typeFilter === filter.value
-                  ? 'bg-white/[0.06] text-white/80 shadow-sm'
-                  : 'text-white/30 hover:text-white/50'
+                  ? 'bg-white/[0.06] text-white/85 shadow-sm'
+                  : 'text-white/40 hover:text-white/60'
               }`}
             >
               {filter.label}
@@ -271,13 +271,13 @@ export default function AdminOutreachPage() {
           <div className="relative inline-flex mb-4">
             <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
             <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-              <FileText className="h-7 w-7 text-white/15" />
+              <FileText className="h-7 w-7 text-white/20" />
             </div>
           </div>
-          <p className="text-sm text-white/40 mb-1">
+          <p className="text-sm text-white/50 mb-1">
             {searchQuery || typeFilter ? 'No templates match' : 'No templates yet'}
           </p>
-          <p className="text-xs text-white/20 mb-5">Create your first outreach template</p>
+          <p className="text-xs text-white/30 mb-5">Create your first outreach template</p>
           <Link
             href="/admin/outreach/templates/new"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-[#050505] hover:bg-emerald-400 transition-all"
@@ -290,9 +290,9 @@ export default function AdminOutreachPage() {
           {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Mail className="h-3.5 w-3.5 text-violet-400/50" />
-                <h3 className="text-xs font-medium text-white/30 uppercase tracking-[0.1em]">Email Templates</h3>
-                <span className="text-[10px] text-white/15">({emailTemplates.length})</span>
+                <Mail className="h-3.5 w-3.5 text-violet-400/60" />
+                <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">Email Templates</h3>
+                <span className="text-[10px] text-white/25">({emailTemplates.length})</span>
               </div>
               <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
                 {emailTemplates.map((t, idx) => renderTemplateRow(t, idx, emailTemplates.length))}
@@ -302,9 +302,9 @@ export default function AdminOutreachPage() {
           {smsTemplates.length > 0 && (!typeFilter || typeFilter === 'sms') && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="h-3.5 w-3.5 text-cyan-400/50" />
-                <h3 className="text-xs font-medium text-white/30 uppercase tracking-[0.1em]">SMS Templates</h3>
-                <span className="text-[10px] text-white/15">({smsTemplates.length})</span>
+                <MessageSquare className="h-3.5 w-3.5 text-cyan-400/60" />
+                <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">SMS Templates</h3>
+                <span className="text-[10px] text-white/25">({smsTemplates.length})</span>
               </div>
               <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
                 {smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates.length))}

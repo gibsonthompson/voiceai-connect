@@ -258,7 +258,7 @@ export default function AdminLeadsPage() {
     return labels[status] || status;
   };
 
-  const editInputClass = "w-full rounded-xl bg-white/[0.03] border border-white/[0.06] px-3 py-2 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-emerald-500/30 transition-colors";
+  const editInputClass = "w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors";
 
   return (
     <div className="p-5 lg:p-8 max-w-[1400px]">
@@ -266,12 +266,12 @@ export default function AdminLeadsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <div>
           <h1 className="text-[22px] font-semibold text-white tracking-tight">Sales Pipeline</h1>
-          <p className="mt-1 text-sm text-white/30">Prospective agencies to reach out to</p>
+          <p className="mt-1 text-sm text-white/40">Prospective agencies to reach out to</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowCSVImport(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/[0.06] hover:text-white transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/[0.06] hover:text-white transition-all"
           >
             <FileSpreadsheet className="h-4 w-4" />
             Import CSV
@@ -285,8 +285,8 @@ export default function AdminLeadsPage() {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Total Leads</p>
-                <p className="mt-1.5 text-xl font-semibold text-white/80">{stats.total}</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Total Leads</p>
+                <p className="mt-1.5 text-xl font-semibold text-white/90">{stats.total}</p>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/[0.08]">
                 <Target className="h-4 w-4 text-cyan-400" />
@@ -296,7 +296,7 @@ export default function AdminLeadsPage() {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Pipeline Value</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Pipeline Value</p>
                 <p className="mt-1.5 text-xl font-semibold text-emerald-400">{formatCurrency(stats.totalValue || 0)}</p>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/[0.08]">
@@ -307,8 +307,8 @@ export default function AdminLeadsPage() {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Active</p>
-                <p className="mt-1.5 text-xl font-semibold text-white/80">
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Active</p>
+                <p className="mt-1.5 text-xl font-semibold text-white/90">
                   {stats.total - (stats.byStatus?.won || 0) - (stats.byStatus?.lost || 0)}
                 </p>
               </div>
@@ -320,7 +320,7 @@ export default function AdminLeadsPage() {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Won</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Won</p>
                 <p className="mt-1.5 text-xl font-semibold text-emerald-400">{stats.byStatus?.won || 0}</p>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/[0.08]">
@@ -331,8 +331,8 @@ export default function AdminLeadsPage() {
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">This Week</p>
-                <p className="mt-1.5 text-xl font-semibold text-white/80">{stats.recentlyAdded || 0}</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">This Week</p>
+                <p className="mt-1.5 text-xl font-semibold text-white/90">{stats.recentlyAdded || 0}</p>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.08]">
                 <Plus className="h-4 w-4 text-amber-400" />
@@ -346,20 +346,20 @@ export default function AdminLeadsPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <form onSubmit={handleSearch} className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
             <input
               type="text"
               placeholder="Search leads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-emerald-500/30 transition-colors"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
             />
           </div>
         </form>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }}
-          className="appearance-none rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
+          className="appearance-none rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
         >
           <option value="">All Status</option>
           <option value="new">New</option>
@@ -382,11 +382,11 @@ export default function AdminLeadsPage() {
             <div className="relative inline-flex mb-4">
               <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
               <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-                <Target className="h-7 w-7 text-white/15" />
+                <Target className="h-7 w-7 text-white/20" />
               </div>
             </div>
-            <p className="text-sm text-white/40">No leads yet</p>
-            <p className="text-xs text-white/20 mt-1">Import a CSV to get started</p>
+            <p className="text-sm text-white/50">No leads yet</p>
+            <p className="text-xs text-white/30 mt-1">Import a CSV to get started</p>
             {(search || statusFilter) && (
               <button
                 onClick={() => { setSearch(''); setStatusFilter(''); setLoading(true); fetchLeads(); }}
@@ -401,13 +401,13 @@ export default function AdminLeadsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-6 py-3.5">Business</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Contact</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Industry</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                  <th className="text-right text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Value</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Added</th>
-                  <th className="text-right text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-6 py-3.5"></th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-6 py-3.5">Business</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Industry</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
+                  <th className="text-right text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Value</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Added</th>
+                  <th className="text-right text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-6 py-3.5"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -427,19 +427,19 @@ export default function AdminLeadsPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className="text-[13px] font-medium text-white/80 truncate">{lead.business_name || 'Unnamed'}</p>
+                              <p className="text-[13px] font-medium text-white/85 truncate">{lead.business_name || 'Unnamed'}</p>
                               <ChevronDown className={`h-3 w-3 text-white/20 transition-transform shrink-0 ${expandedLead === lead.id ? 'rotate-180' : ''}`} />
                             </div>
                             {lead.email && (
-                              <p className="text-[11px] text-white/25 truncate">{lead.email}</p>
+                              <p className="text-[11px] text-white/35 truncate">{lead.email}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-white/50">
+                      <td className="px-4 py-3.5 text-xs text-white/60">
                         {lead.contact_name || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-white/30 capitalize">
+                      <td className="px-4 py-3.5 text-xs text-white/40 capitalize">
                         {lead.industry || '—'}
                       </td>
                       <td className="px-4 py-3.5">
@@ -447,17 +447,17 @@ export default function AdminLeadsPage() {
                           {getStatusLabel(lead.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-right text-xs text-white/50 tabular-nums">
+                      <td className="px-4 py-3.5 text-right text-xs text-white/60 tabular-nums">
                         {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-white/30">
+                      <td className="px-4 py-3.5 text-xs text-white/40">
                         {formatDate(lead.created_at)}
                       </td>
                       <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleDelete(lead.id)}
                           disabled={deletingId === lead.id}
-                          className="p-1.5 hover:bg-red-500/[0.06] rounded-lg transition-colors text-white/20 hover:text-red-400/80 disabled:opacity-50"
+                          className="p-1.5 hover:bg-red-500/[0.06] rounded-lg transition-colors text-white/25 hover:text-red-400/80 disabled:opacity-50"
                           title="Delete lead"
                         >
                           {deletingId === lead.id ? (
@@ -479,7 +479,7 @@ export default function AdminLeadsPage() {
                               <div className="space-y-4">
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Business Name</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Business Name</label>
                                     <input
                                       type="text"
                                       value={editForm.business_name || ''}
@@ -488,7 +488,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Contact Name</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Contact Name</label>
                                     <input
                                       type="text"
                                       value={editForm.contact_name || ''}
@@ -497,7 +497,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Email</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Email</label>
                                     <input
                                       type="email"
                                       value={editForm.email || ''}
@@ -506,7 +506,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Phone</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Phone</label>
                                     <input
                                       type="text"
                                       value={editForm.phone || ''}
@@ -515,7 +515,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Website</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Website</label>
                                     <input
                                       type="text"
                                       value={editForm.website || ''}
@@ -524,7 +524,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Industry</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Industry</label>
                                     <input
                                       type="text"
                                       value={editForm.industry || ''}
@@ -533,7 +533,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Est. Value (cents)</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Est. Value (cents)</label>
                                     <input
                                       type="number"
                                       value={editForm.estimated_value || ''}
@@ -542,7 +542,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Follow-up Date</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Follow-up Date</label>
                                     <input
                                       type="date"
                                       value={editForm.next_follow_up || ''}
@@ -551,7 +551,7 @@ export default function AdminLeadsPage() {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Source</label>
+                                    <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Source</label>
                                     <select
                                       value={editForm.source || ''}
                                       onChange={(e) => setEditForm(prev => ({ ...prev, source: e.target.value }))}
@@ -569,7 +569,7 @@ export default function AdminLeadsPage() {
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] text-white/25 uppercase tracking-[0.1em] mb-1.5">Notes</label>
+                                  <label className="block text-[10px] text-white/40 uppercase tracking-[0.1em] mb-1.5">Notes</label>
                                   <textarea
                                     value={editForm.notes || ''}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
@@ -588,7 +588,7 @@ export default function AdminLeadsPage() {
                                   </button>
                                   <button
                                     onClick={() => setEditingLead(null)}
-                                    className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2 text-sm text-white/40 hover:text-white/60 transition-colors"
+                                    className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-2 text-sm text-white/50 hover:text-white/70 transition-colors"
                                   >
                                     Cancel
                                   </button>
@@ -600,25 +600,25 @@ export default function AdminLeadsPage() {
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-4">
                                   {/* Contact Info */}
                                   <div className="space-y-2">
-                                    <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Contact</h4>
+                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Contact</h4>
                                     {lead.email && (
                                       <button
                                         onClick={(e) => { e.stopPropagation(); copyToClipboard(lead.email, `email-${lead.id}`); }}
-                                        className="flex items-center gap-2 text-xs text-white/40 hover:text-white/60 transition-colors"
+                                        className="flex items-center gap-2 text-xs text-white/50 hover:text-white/70 transition-colors"
                                       >
                                         <Mail className="h-3.5 w-3.5" />
                                         <span className="truncate">{lead.email}</span>
-                                        {copiedId === `email-${lead.id}` ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 text-white/15" />}
+                                        {copiedId === `email-${lead.id}` ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 text-white/20" />}
                                       </button>
                                     )}
                                     {lead.phone && (
                                       <button
                                         onClick={(e) => { e.stopPropagation(); copyToClipboard(lead.phone, `phone-${lead.id}`); }}
-                                        className="flex items-center gap-2 text-xs text-white/40 hover:text-white/60 transition-colors"
+                                        className="flex items-center gap-2 text-xs text-white/50 hover:text-white/70 transition-colors"
                                       >
                                         <Phone className="h-3.5 w-3.5" />
                                         <span>{lead.phone}</span>
-                                        {copiedId === `phone-${lead.id}` ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 text-white/15" />}
+                                        {copiedId === `phone-${lead.id}` ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 text-white/20" />}
                                       </button>
                                     )}
                                     {lead.website && (
@@ -638,18 +638,18 @@ export default function AdminLeadsPage() {
 
                                   {/* Details */}
                                   <div className="space-y-2">
-                                    <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Details</h4>
-                                    <div className="text-xs text-white/40 space-y-1">
-                                      <p>Industry: <span className="text-white/60 capitalize">{lead.industry || '—'}</span></p>
-                                      <p>Source: <span className="text-white/60 capitalize">{(lead.source || '—').replace(/_/g, ' ')}</span></p>
+                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Details</h4>
+                                    <div className="text-xs text-white/50 space-y-1">
+                                      <p>Industry: <span className="text-white/70 capitalize">{lead.industry || '—'}</span></p>
+                                      <p>Source: <span className="text-white/70 capitalize">{(lead.source || '—').replace(/_/g, ' ')}</span></p>
                                       <p>Value: <span className="text-emerald-400/80">{lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}</span></p>
                                     </div>
                                   </div>
 
                                   {/* Notes */}
                                   <div className="space-y-2 lg:col-span-2">
-                                    <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Notes</h4>
-                                    <p className="text-xs text-white/40 whitespace-pre-wrap">
+                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Notes</h4>
+                                    <p className="text-xs text-white/50 whitespace-pre-wrap">
                                       {lead.notes || 'No notes yet'}
                                     </p>
                                   </div>
@@ -678,7 +678,7 @@ export default function AdminLeadsPage() {
                                     </button>
                                   )}
                                   {!lead.email && !lead.phone && (
-                                    <span className="text-[11px] text-white/20">Add email or phone to enable outreach</span>
+                                    <span className="text-[11px] text-white/30">Add email or phone to enable outreach</span>
                                   )}
                                 </div>
 
@@ -692,7 +692,7 @@ export default function AdminLeadsPage() {
                                         className={`rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors ${
                                           lead.status === s 
                                             ? getStatusColor(s) 
-                                            : 'border-white/[0.04] text-white/20 hover:text-white/40 hover:border-white/[0.1]'
+                                            : 'border-white/[0.04] text-white/30 hover:text-white/50 hover:border-white/[0.1]'
                                         }`}
                                       >
                                         {getStatusLabel(s)}
@@ -722,7 +722,7 @@ export default function AdminLeadsPage() {
 
       {/* Count */}
       {!loading && leads.length > 0 && (
-        <p className="mt-4 text-xs text-white/20">
+        <p className="mt-4 text-xs text-white/30">
           Showing {leads.length} lead{leads.length !== 1 ? 's' : ''}
         </p>
       )}

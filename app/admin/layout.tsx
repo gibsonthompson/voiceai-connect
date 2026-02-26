@@ -93,7 +93,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
             <div className="absolute inset-0 blur-xl bg-emerald-500/20 rounded-full" />
             <WaveformLogo size={48} />
           </div>
-          <Loader2 className="h-5 w-5 animate-spin text-white/30" />
+          <Loader2 className="h-5 w-5 animate-spin text-white/40" />
         </div>
       </div>
     );
@@ -172,12 +172,12 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
                   group flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-200
                   ${active 
                     ? 'bg-emerald-500/[0.08] text-emerald-400' 
-                    : 'text-white/40 hover:bg-white/[0.03] hover:text-white/70'
+                    : 'text-white/50 hover:bg-white/[0.03] hover:text-white/80'
                   }
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon className={`h-[18px] w-[18px] transition-colors ${active ? 'text-emerald-400' : 'text-white/25 group-hover:text-white/50'}`} />
+                  <item.icon className={`h-[18px] w-[18px] transition-colors ${active ? 'text-emerald-400' : 'text-white/35 group-hover:text-white/60'}`} />
                   {item.label}
                 </div>
                 {active && (
@@ -191,7 +191,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
         {/* Bottom Section */}
         <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
           {/* Admin Info */}
-          <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-3">
+          <div className="rounded-lg bg-white/[0.03] border border-white/[0.05] p-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
                 <span className="text-xs font-semibold text-emerald-400">
@@ -199,8 +199,8 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-white/70 truncate">{admin?.name || 'Admin'}</p>
-                <p className="text-[10px] text-white/30 truncate">{admin?.email}</p>
+                <p className="text-xs font-medium text-white/80 truncate">{admin?.name || 'Admin'}</p>
+                <p className="text-[10px] text-white/40 truncate">{admin?.email}</p>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           {/* Sign Out */}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-white/30 hover:bg-white/[0.03] hover:text-white/50 transition-colors w-full"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-white/40 hover:bg-white/[0.03] hover:text-white/60 transition-colors w-full"
           >
             <LogOut className="h-4 w-4" />
             Sign Out

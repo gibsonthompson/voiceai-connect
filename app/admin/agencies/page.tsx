@@ -251,45 +251,45 @@ export default function AdminAgenciesPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-[22px] font-semibold text-white tracking-tight">Agencies</h1>
-        <p className="mt-1 text-sm text-white/30">Manage all platform agencies</p>
+        <p className="mt-1 text-sm text-white/40">Manage all platform agencies</p>
       </div>
 
       {/* Summary Stats */}
       {summary && (
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-6 mb-6">
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Agencies</p>
-            <p className="mt-1.5 text-xl font-semibold text-white/80">{summary.total_agencies}</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Agencies</p>
+            <p className="mt-1.5 text-xl font-semibold text-white/90">{summary.total_agencies}</p>
             <div className="mt-1 flex items-center gap-2 text-[11px]">
               <span className="text-emerald-400">{summary.active} active</span>
-              <span className="text-white/10">·</span>
+              <span className="text-white/15">·</span>
               <span className="text-cyan-400">{summary.trialing} trial</span>
             </div>
           </div>
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Clients</p>
-            <p className="mt-1.5 text-xl font-semibold text-white/80">{summary.total_clients}</p>
-            <p className="mt-1 text-[11px] text-white/20">across all agencies</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Clients</p>
+            <p className="mt-1.5 text-xl font-semibold text-white/90">{summary.total_clients}</p>
+            <p className="mt-1 text-[11px] text-white/30">across all agencies</p>
           </div>
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Total Calls</p>
-            <p className="mt-1.5 text-xl font-semibold text-white/80">{summary.total_calls.toLocaleString()}</p>
-            <p className="mt-1 text-[11px] text-white/20">all time</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Total Calls</p>
+            <p className="mt-1.5 text-xl font-semibold text-white/90">{summary.total_calls.toLocaleString()}</p>
+            <p className="mt-1 text-[11px] text-white/30">all time</p>
           </div>
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Leads</p>
-            <p className="mt-1.5 text-xl font-semibold text-white/80">{summary.total_leads}</p>
-            <p className="mt-1 text-[11px] text-white/20">in CRM</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Leads</p>
+            <p className="mt-1.5 text-xl font-semibold text-white/90">{summary.total_leads}</p>
+            <p className="mt-1 text-[11px] text-white/30">in CRM</p>
           </div>
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Revenue</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Revenue</p>
             <p className="mt-1.5 text-xl font-semibold text-emerald-400">{formatCurrency(summary.total_revenue)}</p>
-            <p className="mt-1 text-[11px] text-white/20">collected</p>
+            <p className="mt-1 text-[11px] text-white/30">collected</p>
           </div>
           <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-            <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">Stripe</p>
-            <p className="mt-1.5 text-xl font-semibold text-white/80">{summary.stripe_connected}</p>
-            <p className="mt-1 text-[11px] text-white/20">connected</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Stripe</p>
+            <p className="mt-1.5 text-xl font-semibold text-white/90">{summary.stripe_connected}</p>
+            <p className="mt-1 text-[11px] text-white/30">connected</p>
           </div>
         </div>
       )}
@@ -298,22 +298,22 @@ export default function AdminAgenciesPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <form onSubmit={handleSearch} className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
             <input
               type="text"
               placeholder="Search agencies..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-emerald-500/30 transition-colors"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
             />
           </div>
         </form>
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }}
-            className="appearance-none rounded-xl bg-white/[0.03] border border-white/[0.06] pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
+            className="appearance-none rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -336,25 +336,25 @@ export default function AdminAgenciesPage() {
             <div className="relative inline-flex mb-4">
               <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
               <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-                <Building2 className="h-7 w-7 text-white/15" />
+                <Building2 className="h-7 w-7 text-white/20" />
               </div>
             </div>
-            <p className="text-sm text-white/40">No agencies found</p>
+            <p className="text-sm text-white/50">No agencies found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-6 py-3.5">Agency</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Plan</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                  <th className="text-center text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-3 py-3.5">Clients</th>
-                  <th className="text-center text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-3 py-3.5">Calls</th>
-                  <th className="text-center text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-3 py-3.5">Leads</th>
-                  <th className="text-right text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Revenue</th>
-                  <th className="text-left text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-4 py-3.5">Last Login</th>
-                  <th className="text-right text-[10px] font-medium text-white/25 uppercase tracking-[0.1em] px-6 py-3.5">Actions</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-6 py-3.5">Agency</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Plan</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
+                  <th className="text-center text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-3 py-3.5">Clients</th>
+                  <th className="text-center text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-3 py-3.5">Calls</th>
+                  <th className="text-center text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-3 py-3.5">Leads</th>
+                  <th className="text-right text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Revenue</th>
+                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Last Login</th>
+                  <th className="text-right text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-6 py-3.5">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -375,17 +375,17 @@ export default function AdminAgenciesPage() {
                                 style={{ backgroundColor: agency.primary_color }} 
                               />
                             ) : (
-                              <Building2 className="h-4 w-4 text-white/30" />
+                              <Building2 className="h-4 w-4 text-white/35" />
                             )}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className="text-[13px] font-medium text-white/80 truncate">{agency.name}</p>
+                              <p className="text-[13px] font-medium text-white/85 truncate">{agency.name}</p>
                               <ChevronDown 
                                 className={`h-3 w-3 text-white/20 transition-transform shrink-0 ${expandedRow === agency.id ? 'rotate-180' : ''}`} 
                               />
                             </div>
-                            <p className="text-[11px] text-white/25 truncate">{agency.email}</p>
+                            <p className="text-[11px] text-white/35 truncate">{agency.email}</p>
                           </div>
                         </div>
                       </td>
@@ -400,21 +400,21 @@ export default function AdminAgenciesPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3.5 text-center">
-                        <span className="text-xs text-white/50 tabular-nums">{agency.client_count}</span>
+                        <span className="text-xs text-white/60 tabular-nums">{agency.client_count}</span>
                       </td>
                       <td className="px-3 py-3.5 text-center">
-                        <span className="text-xs text-white/50 tabular-nums">{agency.call_count}</span>
+                        <span className="text-xs text-white/60 tabular-nums">{agency.call_count}</span>
                       </td>
                       <td className="px-3 py-3.5 text-center">
-                        <span className="text-xs text-white/50 tabular-nums">{agency.lead_count}</span>
+                        <span className="text-xs text-white/60 tabular-nums">{agency.lead_count}</span>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <span className={`text-xs tabular-nums ${agency.total_revenue > 0 ? 'text-emerald-400' : 'text-white/20'}`}>
+                        <span className={`text-xs tabular-nums ${agency.total_revenue > 0 ? 'text-emerald-400' : 'text-white/30'}`}>
                           {agency.total_revenue > 0 ? formatCurrency(agency.total_revenue) : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="text-xs text-white/30">
+                        <span className="text-xs text-white/40">
                           {agency.last_login_at ? timeAgo(agency.last_login_at) : 'Never'}
                         </span>
                       </td>
@@ -424,7 +424,7 @@ export default function AdminAgenciesPage() {
                             onClick={() => setActionMenu(actionMenu === agency.id ? null : agency.id)}
                             className="p-1.5 hover:bg-white/[0.04] rounded-lg transition-colors"
                           >
-                            <MoreVertical className="h-4 w-4 text-white/25" />
+                            <MoreVertical className="h-4 w-4 text-white/35" />
                           </button>
                           
                           {actionMenu === agency.id && (
@@ -501,28 +501,28 @@ export default function AdminAgenciesPage() {
                               
                               {/* Contact & Identity */}
                               <div className="space-y-3">
-                                <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Contact</h4>
+                                <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Contact</h4>
                                 <div className="space-y-2 text-[13px]">
                                   <div className="flex items-center gap-2">
-                                    <Mail className="h-3.5 w-3.5 text-white/20" />
-                                    <span className="text-white/50 truncate">{agency.email}</span>
+                                    <Mail className="h-3.5 w-3.5 text-white/25" />
+                                    <span className="text-white/60 truncate">{agency.email}</span>
                                   </div>
                                   {agency.phone && (
                                     <div className="flex items-center gap-2">
-                                      <Phone className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/50">{agency.phone}</span>
+                                      <Phone className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/60">{agency.phone}</span>
                                     </div>
                                   )}
                                   {agency.country && (
                                     <div className="flex items-center gap-2">
-                                      <Globe className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/50">{agency.country} {agency.currency ? `(${agency.currency.toUpperCase()})` : ''}</span>
+                                      <Globe className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/60">{agency.country} {agency.currency ? `(${agency.currency.toUpperCase()})` : ''}</span>
                                     </div>
                                   )}
                                   {agency.timezone && (
                                     <div className="flex items-center gap-2">
-                                      <Clock className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/50">{agency.timezone}</span>
+                                      <Clock className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/60">{agency.timezone}</span>
                                     </div>
                                   )}
                                 </div>
@@ -530,16 +530,16 @@ export default function AdminAgenciesPage() {
 
                               {/* Stripe & Billing */}
                               <div className="space-y-3">
-                                <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Billing</h4>
+                                <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Billing</h4>
                                 <div className="space-y-2 text-[13px]">
                                   <div className="flex items-center gap-2">
-                                    <CreditCard className="h-3.5 w-3.5 text-white/20" />
+                                    <CreditCard className="h-3.5 w-3.5 text-white/25" />
                                     <span className={agency.stripe_charges_enabled ? 'text-emerald-400/80' : 'text-white/30'}>
                                       {agency.stripe_charges_enabled ? 'Charges Enabled' : 'Charges Off'}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <DollarSign className="h-3.5 w-3.5 text-white/20" />
+                                    <DollarSign className="h-3.5 w-3.5 text-white/25" />
                                     <span className={agency.stripe_payouts_enabled ? 'text-emerald-400/80' : 'text-white/30'}>
                                       {agency.stripe_payouts_enabled ? 'Payouts Enabled' : 'Payouts Off'}
                                     </span>
@@ -547,7 +547,7 @@ export default function AdminAgenciesPage() {
                                   {agency.stripe_account_id && (
                                     <button
                                       onClick={() => copyToClipboard(agency.stripe_account_id!, `stripe-${agency.id}`)}
-                                      className="flex items-center gap-2 text-white/25 hover:text-white/40 transition-colors"
+                                      className="flex items-center gap-2 text-white/35 hover:text-white/50 transition-colors"
                                     >
                                       {copiedId === `stripe-${agency.id}` ? (
                                         <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -561,16 +561,16 @@ export default function AdminAgenciesPage() {
                                   )}
                                   {agency.current_period_end && (
                                     <div className="flex items-center gap-2">
-                                      <Calendar className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/30 text-[11px]">
+                                      <Calendar className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/40 text-[11px]">
                                         Period ends: {formatDate(agency.current_period_end)}
                                       </span>
                                     </div>
                                   )}
                                   {agency.trial_ends_at && (
                                     <div className="flex items-center gap-2">
-                                      <Calendar className="h-3.5 w-3.5 text-cyan-400/30" />
-                                      <span className="text-cyan-400/50 text-[11px]">
+                                      <Calendar className="h-3.5 w-3.5 text-cyan-400/40" />
+                                      <span className="text-cyan-400/60 text-[11px]">
                                         Trial ends: {formatDate(agency.trial_ends_at)}
                                       </span>
                                     </div>
@@ -580,17 +580,17 @@ export default function AdminAgenciesPage() {
 
                               {/* Platform Config */}
                               <div className="space-y-3">
-                                <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Platform</h4>
+                                <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Platform</h4>
                                 <div className="space-y-2 text-[13px]">
                                   {agency.slug && (
                                     <div className="flex items-center gap-2">
-                                      <Globe className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/30 text-[11px] font-mono">/{agency.slug}</span>
+                                      <Globe className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/40 text-[11px] font-mono">/{agency.slug}</span>
                                     </div>
                                   )}
                                   {agency.marketing_domain && (
                                     <div className="flex items-center gap-2">
-                                      <Globe className="h-3.5 w-3.5 text-white/20" />
+                                      <Globe className="h-3.5 w-3.5 text-white/25" />
                                       <a 
                                         href={`https://${agency.marketing_domain}`} 
                                         target="_blank" 
@@ -605,7 +605,7 @@ export default function AdminAgenciesPage() {
                                     </div>
                                   )}
                                   <div className="flex items-center gap-2">
-                                    <Zap className="h-3.5 w-3.5 text-white/20" />
+                                    <Zap className="h-3.5 w-3.5 text-white/25" />
                                     <span className={agency.onboarding_completed ? 'text-emerald-400/80' : 'text-amber-400/80'}>
                                       {agency.onboarding_completed 
                                         ? 'Onboarding Complete' 
@@ -614,8 +614,8 @@ export default function AdminAgenciesPage() {
                                   </div>
                                   {agency.demo_phone_number && (
                                     <div className="flex items-center gap-2">
-                                      <PhoneCall className="h-3.5 w-3.5 text-white/20" />
-                                      <span className="text-white/30 text-[11px]">Demo: {agency.demo_phone_number}</span>
+                                      <PhoneCall className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/40 text-[11px]">Demo: {agency.demo_phone_number}</span>
                                     </div>
                                   )}
                                   {agency.byot_enabled && (
@@ -628,40 +628,40 @@ export default function AdminAgenciesPage() {
 
                               {/* Usage & Activity */}
                               <div className="space-y-3">
-                                <h4 className="text-[10px] font-medium text-white/25 uppercase tracking-[0.1em]">Usage</h4>
+                                <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Usage</h4>
                                 <div className="space-y-1.5 text-[13px]">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Users</span>
-                                    <span className="text-white/50 tabular-nums">{agency.user_count}</span>
+                                    <span className="text-white/35">Users</span>
+                                    <span className="text-white/60 tabular-nums">{agency.user_count}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Clients</span>
-                                    <span className="text-white/50 tabular-nums">{agency.client_count}</span>
+                                    <span className="text-white/35">Clients</span>
+                                    <span className="text-white/60 tabular-nums">{agency.client_count}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Total Calls</span>
-                                    <span className="text-white/50 tabular-nums">{agency.call_count}</span>
+                                    <span className="text-white/35">Total Calls</span>
+                                    <span className="text-white/60 tabular-nums">{agency.call_count}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Leads</span>
-                                    <span className="text-white/50 tabular-nums">{agency.lead_count}</span>
+                                    <span className="text-white/35">Leads</span>
+                                    <span className="text-white/60 tabular-nums">{agency.lead_count}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Revenue</span>
+                                    <span className="text-white/35">Revenue</span>
                                     <span className="text-emerald-400/80 tabular-nums">{formatCurrency(agency.total_revenue)}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-white/25">Payments</span>
-                                    <span className="text-white/50 tabular-nums">{agency.payment_count}</span>
+                                    <span className="text-white/35">Payments</span>
+                                    <span className="text-white/60 tabular-nums">{agency.payment_count}</span>
                                   </div>
                                   {agency.referral_code && (
                                     <div className="flex items-center justify-between">
-                                      <span className="text-white/25">Referral</span>
-                                      <span className="text-white/30 text-[11px] font-mono">{agency.referral_code}</span>
+                                      <span className="text-white/35">Referral</span>
+                                      <span className="text-white/40 text-[11px] font-mono">{agency.referral_code}</span>
                                     </div>
                                   )}
                                 </div>
-                                <div className="pt-2 border-t border-white/[0.03] text-[11px] text-white/20">
+                                <div className="pt-2 border-t border-white/[0.03] text-[11px] text-white/30">
                                   Created: {formatDateTime(agency.created_at)}
                                   {agency.last_login_at && (
                                     <> · Last login: {timeAgo(agency.last_login_at)}</>
@@ -672,10 +672,10 @@ export default function AdminAgenciesPage() {
 
                             {/* Agency ID - copyable */}
                             <div className="mt-4 pt-3 border-t border-white/[0.03] flex items-center gap-3">
-                              <span className="text-[10px] text-white/20">ID:</span>
+                              <span className="text-[10px] text-white/30">ID:</span>
                               <button
                                 onClick={() => copyToClipboard(agency.id, `id-${agency.id}`)}
-                                className="flex items-center gap-1.5 text-[11px] font-mono text-white/25 hover:text-white/40 transition-colors"
+                                className="flex items-center gap-1.5 text-[11px] font-mono text-white/35 hover:text-white/50 transition-colors"
                               >
                                 {agency.id}
                                 {copiedId === `id-${agency.id}` ? (
@@ -699,7 +699,7 @@ export default function AdminAgenciesPage() {
 
       {/* Count */}
       {!loading && filteredAgencies.length > 0 && (
-        <p className="mt-4 text-xs text-white/20">
+        <p className="mt-4 text-xs text-white/30">
           Showing {filteredAgencies.length} agenc{filteredAgencies.length === 1 ? 'y' : 'ies'}
         </p>
       )}
