@@ -41,8 +41,17 @@ interface Agency {
   referral_code: string | null;
   referred_by: string | null;
   referral_earnings_cents: number | null;
+  referral_source: string | null;
   demo_phone_number: string | null;
   byot_enabled: boolean;
+  abandoned_cart_step: number | null;
+  abandoned_cart_last_sent_at: string | null;
+  price_starter: number | null;
+  price_pro: number | null;
+  price_growth: number | null;
+  limit_starter: number | null;
+  limit_pro: number | null;
+  limit_growth: number | null;
   client_count: number;
   call_count: number;
   lead_count: number;
@@ -238,6 +247,20 @@ export default function AdminAgenciesPage() {
       enterprise: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
     };
     return colors[plan] || colors.starter;
+  };
+
+  const getOnboardingLabel = (step: number | null) => {
+    const labels: Record<number, string> = {
+      0: 'Not Started',
+      1: 'Agency Name',
+      2: 'Logo Upload',
+      3: 'Brand Colors',
+      4: 'Pricing Setup',
+      5: 'Stripe Connect',
+      6: 'Password Setup',
+      7: 'Complete',
+    };
+    return labels[step ?? 0] || `Step ${step}`;
   };
 
   const filteredAgencies = agencies.filter(a => {
@@ -544,6 +567,12 @@ export default function AdminAgenciesPage() {
                                       {agency.stripe_payouts_enabled ? 'Payouts Enabled' : 'Payouts Off'}
                                     </span>
                                   </div>
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-3.5 w-3.5 text-white/25" />
+                                    <span className={agency.stripe_onboarding_complete ? 'text-emerald-400/80' : 'text-white/30'}>
+                                      {agency.stripe_onboarding_complete ? 'Connect Onboarded' : 'Connect Incomplete'}
+                                    </span>
+                                  </div>
                                   {agency.stripe_account_id && (
                                     <button
                                       onClick={() => copyToClipboard(agency.stripe_account_id!, `stripe-${agency.id}`)}
@@ -573,6 +602,34 @@ export default function AdminAgenciesPage() {
                                       <span className="text-cyan-400/60 text-[11px]">
                                         Trial ends: {formatDate(agency.trial_ends_at)}
                                       </span>
+                                    </div>
+                                  )}
+                                  {(agency.price_starter || agency.price_pro || agency.price_growth) && (
+                                    <div className="pt-2 mt-2 border-t border-white/[0.03]">
+                                      <p className="text-[10px] text-white/30 uppercase tracking-[0.1em] mb-1.5">Client Pricing</p>
+                                      <div className="space-y-1 text-[11px]">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-white/35">Starter</span>
+                                          <span className="text-white/60 tabular-nums">
+                                            {agency.price_starter ? formatCurrency(agency.price_starter) : '—'}/mo
+                                            <span className="text-white/25 ml-1">({agency.limit_starter ?? 0} calls)</span>
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-white/35">Pro</span>
+                                          <span className="text-white/60 tabular-nums">
+                                            {agency.price_pro ? formatCurrency(agency.price_pro) : '—'}/mo
+                                            <span className="text-white/25 ml-1">({agency.limit_pro ?? 0} calls)</span>
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-white/35">Growth</span>
+                                          <span className="text-white/60 tabular-nums">
+                                            {agency.price_growth ? formatCurrency(agency.price_growth) : '—'}/mo
+                                            <span className="text-white/25 ml-1">({agency.limit_growth === -1 ? '∞' : agency.limit_growth ?? 0} calls)</span>
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -609,9 +666,20 @@ export default function AdminAgenciesPage() {
                                     <span className={agency.onboarding_completed ? 'text-emerald-400/80' : 'text-amber-400/80'}>
                                       {agency.onboarding_completed 
                                         ? 'Onboarding Complete' 
-                                        : `Onboarding Step ${agency.onboarding_step || 0}`}
+                                        : `Stalled: ${getOnboardingLabel(agency.onboarding_step)} (${agency.onboarding_step || 0}/7)`}
                                     </span>
                                   </div>
+                                  {!agency.onboarding_completed && agency.abandoned_cart_step && agency.abandoned_cart_step > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      <Target className="h-3.5 w-3.5 text-amber-400/30" />
+                                      <span className="text-amber-400/60 text-[11px]">
+                                        Abandoned: {getOnboardingLabel(agency.abandoned_cart_step)}
+                                        {agency.abandoned_cart_last_sent_at && (
+                                          <> · Nudged {timeAgo(agency.abandoned_cart_last_sent_at)}</>
+                                        )}
+                                      </span>
+                                    </div>
+                                  )}
                                   {agency.demo_phone_number && (
                                     <div className="flex items-center gap-2">
                                       <PhoneCall className="h-3.5 w-3.5 text-white/25" />
@@ -622,6 +690,12 @@ export default function AdminAgenciesPage() {
                                     <span className="inline-flex items-center rounded-md bg-violet-500/[0.08] px-2 py-0.5 text-[10px] text-violet-400/80">
                                       BYOT Enabled
                                     </span>
+                                  )}
+                                  {agency.referral_source && (
+                                    <div className="flex items-center gap-2">
+                                      <TrendingUp className="h-3.5 w-3.5 text-white/25" />
+                                      <span className="text-white/50 text-[11px] capitalize">{agency.referral_source.replace(/_/g, ' ')}</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -658,6 +732,18 @@ export default function AdminAgenciesPage() {
                                     <div className="flex items-center justify-between">
                                       <span className="text-white/35">Referral</span>
                                       <span className="text-white/40 text-[11px] font-mono">{agency.referral_code}</span>
+                                    </div>
+                                  )}
+                                  {agency.referral_code && agency.referral_earnings_cents != null && agency.referral_earnings_cents > 0 && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-white/35">Ref. Earnings</span>
+                                      <span className="text-emerald-400/80 tabular-nums text-[11px]">{formatCurrency(agency.referral_earnings_cents)}</span>
+                                    </div>
+                                  )}
+                                  {agency.referred_by && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-white/35">Referred By</span>
+                                      <span className="text-white/40 text-[11px] font-mono truncate max-w-[120px]">{agency.referred_by}</span>
                                     </div>
                                   )}
                                 </div>
