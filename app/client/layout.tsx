@@ -141,7 +141,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               </div>
             )}
             <span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: nav.text }}>
-              {client?.business_name || 'Loading...'}
+              {branding.agencyName || 'Loading...'}
             </span>
           </div>
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: nav.text }}>
@@ -178,7 +178,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           <span className="font-medium truncate" style={{ color: nav.text }}>
-            {client?.business_name || 'Loading...'}
+            {branding.agencyName || 'Loading...'}
           </span>
         </div>
 
