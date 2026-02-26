@@ -54,6 +54,99 @@ const LEAD_FIELDS = [
   { key: 'company_size', label: 'Company Size', required: false },
 ];
 
+// ===== HEADERS TO COMPLETELY HIDE FROM DROPDOWNS =====
+// Noise from Apollo/LinkedIn/CRM exports that will never be useful for lead import
+const IGNORED_HEADERS_SET = new Set([
+  // Apollo internal / status fields
+  'primary email catch-all status',
+  'primary email catch all status',
+  'primary email last verified at',
+  'primary email status',
+  'email status',
+  'email confidence',
+  'email verified',
+  'email validation',
+  'email catch all',
+  'email deliverability',
+  'catch-all status',
+  'seniority',
+  'departments',
+  'sub departments',
+  'contact owner',
+  'account owner',
+  'last contacted',
+  'stage',
+  'lists',
+  'keywords',
+  'technologies',
+  'total funding',
+  'latest funding',
+  'latest funding amount',
+  'last raised at',
+  'subsidiary of',
+  'subsidiary of (organization id)',
+  'seo description',
+  'apollo contact id',
+  'apollo account id',
+  'contact id',
+  'account id',
+  'organization id',
+  'person id',
+  // Social URLs (not useful for leads)
+  'person linkedin url',
+  'company linkedin url',
+  'company linkedin',
+  'facebook url',
+  'twitter url',
+  'twitter handle',
+  'instagram url',
+  'youtube url',
+  'tiktok url',
+  'crunchbase url',
+  // Redundant location fields
+  'company address',
+  'company city',
+  'company state',
+  'company country',
+  'company zip',
+  'company postal code',
+  'company street',
+  'company continent',
+  'city',
+  'state',
+  'country',
+  'zip code',
+  'postal code',
+  'street',
+  'address',
+  'region',
+  'continent',
+  // Job/role fields
+  'title',
+  'job title',
+  'headline',
+  // Other noise
+  'alexa ranking',
+  'founded year',
+  'year founded',
+  'logo url',
+  'photo url',
+  'profile picture',
+  'created at',
+  'updated at',
+  'last activity',
+  'engagement',
+  'score',
+  'lead score',
+  'tags',
+  'label',
+  'labels',
+]);
+
+function isIgnoredHeader(header: string): boolean {
+  return IGNORED_HEADERS_SET.has(header.toLowerCase().trim());
+}
+
 // Smart auto-mapping: CSV header → lead field
 const AUTO_MAP: Record<string, string> = {
   // business_name — exact matches
@@ -131,7 +224,7 @@ const AUTO_MAP: Record<string, string> = {
   'person email': 'email',
   'personal email': 'email',
   'mail': 'email',
-  // phone
+  // phone — including Apollo-specific headers
   'phone': 'phone',
   'phone number': 'phone',
   'phone_number': 'phone',
@@ -144,6 +237,7 @@ const AUTO_MAP: Record<string, string> = {
   'cell phone': 'phone',
   'cellphone': 'phone',
   'work phone': 'phone',
+  'work direct phone': 'phone',
   'direct phone': 'phone',
   'direct dial': 'phone',
   'corporate phone': 'phone',
@@ -153,6 +247,8 @@ const AUTO_MAP: Record<string, string> = {
   'main phone': 'phone',
   'primary phone': 'phone',
   'contact phone': 'phone',
+  'home phone': 'phone',
+  'other phone': 'phone',
   'landline': 'phone',
   'fax': 'phone',
   'number': 'phone',
@@ -162,8 +258,6 @@ const AUTO_MAP: Record<string, string> = {
   'website': 'website',
   'website url': 'website',
   'website_url': 'website',
-  'url': 'website',
-  'domain': 'website',
   'company website': 'website',
   'web': 'website',
   'web address': 'website',
@@ -173,7 +267,7 @@ const AUTO_MAP: Record<string, string> = {
   'site url': 'website',
   'company url': 'website',
   'company domain': 'website',
-  'link': 'website',
+  'domain': 'website',
   'web url': 'website',
   'webpage': 'website',
   // industry
@@ -182,7 +276,6 @@ const AUTO_MAP: Record<string, string> = {
   'category': 'industry',
   'business type': 'industry',
   'business category': 'industry',
-  'type': 'industry',
   'vertical': 'industry',
   'niche': 'industry',
   'market': 'industry',
@@ -228,28 +321,28 @@ const AUTO_MAP: Record<string, string> = {
   'team size': 'company_size',
   'staff': 'company_size',
   'staff size': 'company_size',
+  // ===== Explicitly skip — prevent fuzzy from catching these =====
+  'url': '_skip',
+  'link': '_skip',
+  'type': '_skip',
 };
 
-// Fuzzy fallback: if exact match fails, check if header CONTAINS these keywords
+// Fuzzy fallback — more conservative, avoids broad patterns like 'url', 'mail', 'company'
 const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
   { pattern: 'phone', field: 'phone' },
-  { pattern: 'tel', field: 'phone' },
   { pattern: 'mobile', field: 'phone' },
   { pattern: 'cell', field: 'phone' },
-  { pattern: 'dial', field: 'phone' },
+  { pattern: 'direct dial', field: 'phone' },
   { pattern: 'email', field: 'email' },
   { pattern: 'e-mail', field: 'email' },
-  { pattern: 'mail', field: 'email' },
   { pattern: 'website', field: 'website' },
-  { pattern: 'domain', field: 'website' },
-  { pattern: 'url', field: 'website' },
   { pattern: 'homepage', field: 'website' },
   { pattern: 'industry', field: 'industry' },
   { pattern: 'sector', field: 'industry' },
   { pattern: 'vertical', field: 'industry' },
-  { pattern: 'company', field: 'business_name' },
-  { pattern: 'business', field: 'business_name' },
-  { pattern: 'organization', field: 'business_name' },
+  { pattern: 'company name', field: 'business_name' },
+  { pattern: 'business name', field: 'business_name' },
+  { pattern: 'organization name', field: 'business_name' },
   { pattern: 'first name', field: '_first_name' },
   { pattern: 'firstname', field: '_first_name' },
   { pattern: 'last name', field: '_last_name' },
@@ -257,14 +350,15 @@ const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
   { pattern: 'surname', field: '_last_name' },
   { pattern: 'employee', field: 'company_size' },
   { pattern: 'headcount', field: 'company_size' },
-  { pattern: 'revenue', field: 'estimated_value' },
-  { pattern: 'budget', field: 'estimated_value' },
-  { pattern: 'spend', field: 'estimated_value' },
+  { pattern: 'annual revenue', field: 'estimated_value' },
+  { pattern: 'ad spend', field: 'estimated_value' },
 ];
 
 function fuzzyMatch(header: string): string | null {
   const lower = header.toLowerCase().trim();
-  // Try exact match first
+  // Check ignore list first — return _skip so caller knows to skip it
+  if (isIgnoredHeader(lower)) return '_skip';
+  // Try exact match
   if (AUTO_MAP[lower]) return AUTO_MAP[lower];
   // Then fuzzy keyword match
   for (const { pattern, field } of FUZZY_KEYWORDS) {
@@ -427,22 +521,33 @@ export default function CSVImportModal({
       setCsvHeaders(headers);
       setCsvRows(rows);
 
+      // Auto-detect source from headers
+      const headerSet = new Set(headers.map(h => h.toLowerCase().trim()));
+      if (headerSet.has('apollo contact id') || headerSet.has('apollo account id') || headerSet.has('seniority')) {
+        setDefaultSource('apollo');
+      } else if (headerSet.has('person linkedin url') || headerSet.has('linkedin url')) {
+        setDefaultSource('linkedin');
+      }
+
       // Auto-map columns
       const mapping: Record<string, string> = {};
       let fnCol: string | null = null;
       let lnCol: string | null = null;
+      const usedFields = new Set<string>();
 
       headers.forEach(header => {
         const match = fuzzyMatch(header);
+        if (!match || match === '_skip') return;
+
         if (match === '_first_name') {
           fnCol = header;
         } else if (match === '_last_name') {
           lnCol = header;
-        } else if (match) {
-          // Only map if this field isn't already mapped AND this column isn't used
-          if (!mapping[match] && !Object.values(mapping).includes(header)) {
-            mapping[match] = header;
-          }
+        } else if (!usedFields.has(match)) {
+          // Only map the FIRST matching column per field
+          // (avoids Work Direct Phone + Home Phone + Mobile Phone all fighting for phone)
+          mapping[match] = header;
+          usedFields.add(match);
         }
       });
 
@@ -464,6 +569,25 @@ export default function CSVImportModal({
       ...prev,
       [leadField]: csvColumn || '',
     }));
+  };
+
+  // Get filtered headers for a dropdown: hide ignored + already-mapped-elsewhere columns
+  const getFilteredHeaders = (currentFieldKey: string) => {
+    const mappedColumns = new Set(
+      Object.entries(columnMapping)
+        .filter(([key, val]) => val && key !== currentFieldKey)
+        .map(([, val]) => val)
+    );
+
+    return csvHeaders.filter(header => {
+      // Always show the currently selected column for this field
+      if (columnMapping[currentFieldKey] === header) return true;
+      // Hide ignored headers
+      if (isIgnoredHeader(header)) return false;
+      // Hide columns already mapped to other fields
+      if (mappedColumns.has(header)) return false;
+      return true;
+    });
   };
 
   const getMappedPreview = (row: Record<string, string>) => {
@@ -681,32 +805,35 @@ export default function CSVImportModal({
 
               {/* Column mapping */}
               <div className="space-y-2">
-                {LEAD_FIELDS.map(field => (
-                  <div
-                    key={field.key}
-                    className="flex items-center gap-3 rounded-lg p-3"
-                    style={{ backgroundColor: theme.hover || 'rgba(255,255,255,0.02)', border: `1px solid ${theme.border}` }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: theme.text }}>
-                        {field.label}
-                        {field.required && <span style={{ color: theme.error || '#ef4444' }}> *</span>}
-                      </p>
-                    </div>
-                    <ArrowLeft className="h-4 w-4 shrink-0" style={{ color: theme.textMuted }} />
-                    <select
-                      value={columnMapping[field.key] || ''}
-                      onChange={(e) => handleMappingChange(field.key, e.target.value)}
-                      className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                      style={{ backgroundColor: theme.input || theme.hover, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}
+                {LEAD_FIELDS.map(field => {
+                  const filteredHeaders = getFilteredHeaders(field.key);
+                  return (
+                    <div
+                      key={field.key}
+                      className="flex items-center gap-3 rounded-lg p-3"
+                      style={{ backgroundColor: theme.hover || 'rgba(255,255,255,0.02)', border: `1px solid ${theme.border}` }}
                     >
-                      <option value="">— Skip —</option>
-                      {csvHeaders.map(header => (
-                        <option key={header} value={header}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium" style={{ color: theme.text }}>
+                          {field.label}
+                          {field.required && <span style={{ color: theme.error || '#ef4444' }}> *</span>}
+                        </p>
+                      </div>
+                      <ArrowLeft className="h-4 w-4 shrink-0" style={{ color: theme.textMuted }} />
+                      <select
+                        value={columnMapping[field.key] || ''}
+                        onChange={(e) => handleMappingChange(field.key, e.target.value)}
+                        className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ backgroundColor: theme.input || theme.hover, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}
+                      >
+                        <option value="">— Skip —</option>
+                        {filteredHeaders.map(header => (
+                          <option key={header} value={header}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* First + Last name notice */}
