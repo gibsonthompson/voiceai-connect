@@ -155,13 +155,13 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS
+// STEP DEFINITIONS — New order: Agency → Pricing → Logo → Colors → Payments → Password → Complete
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
-  { id: 2, name: 'Logo', icon: ImageIcon, description: 'Upload your brand' },
-  { id: 3, name: 'Colors', icon: Palette, description: 'Set your palette' },
-  { id: 4, name: 'Pricing', icon: DollarSign, description: 'Configure plans' },
+  { id: 2, name: 'Pricing', icon: DollarSign, description: 'Configure plans' },
+  { id: 3, name: 'Logo', icon: ImageIcon, description: 'Upload your brand' },
+  { id: 4, name: 'Colors', icon: Palette, description: 'Set your palette' },
   { id: 5, name: 'Payments', icon: CreditCard, description: 'Connect Stripe' },
   { id: 6, name: 'Password', icon: Lock, description: 'Secure account' },
   { id: 7, name: 'Complete', icon: CheckCircle2, description: 'All done!' },
@@ -401,7 +401,7 @@ function OnboardingContent() {
     let stepData = {};
     
     switch (currentStep) {
-      case 1:
+      case 1: // Agency details
         if (!agencyDetails.name.trim()) {
           setError('Please enter your agency name');
           return;
@@ -410,23 +410,17 @@ function OnboardingContent() {
           setError('Please enter your phone number');
           return;
         }
+        if (!agencyDetails.referralSource) {
+          setError('Please select how you heard about us');
+          return;
+        }
         stepData = { 
           name: agencyDetails.name.trim(),
           phone: agencyDetails.phone,
           referral_source: agencyDetails.referralSource,
         };
         break;
-      case 2:
-        stepData = { logo_url: logoPreview || logoUrl };
-        break;
-      case 3:
-        stepData = {
-          primary_color: colors.primary,
-          secondary_color: colors.secondary,
-          accent_color: colors.accent,
-        };
-        break;
-      case 4:
+      case 2: // Pricing
         stepData = {
           price_starter: pricing.starter * 100,
           price_pro: pricing.pro * 100,
@@ -436,7 +430,17 @@ function OnboardingContent() {
           limit_growth: pricing.limitGrowth,
         };
         break;
-      case 5:
+      case 3: // Logo
+        stepData = { logo_url: logoPreview || logoUrl };
+        break;
+      case 4: // Colors
+        stepData = {
+          primary_color: colors.primary,
+          secondary_color: colors.secondary,
+          accent_color: colors.accent,
+        };
+        break;
+      case 5: // Payments
         break;
     }
 
@@ -518,7 +522,7 @@ function OnboardingContent() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
+      case 1: // Agency
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -559,7 +563,9 @@ function OnboardingContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                  How did you hear about us? <span className="text-red-400">*</span>
+                </label>
                 <div className="relative">
                   <select
                     value={agencyDetails.referralSource}
@@ -574,7 +580,6 @@ function OnboardingContent() {
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30 pointer-events-none" />
                 </div>
-                <p className="mt-2 text-xs text-[#fafaf9]/40">This helps us improve our marketing (optional)</p>
               </div>
             </div>
 
@@ -593,7 +598,62 @@ function OnboardingContent() {
           </div>
         );
 
-      case 2:
+      case 2: // Pricing
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Pricing</h2>
+              <p className="mt-2 text-[#fafaf9]/50">What you charge clients — you keep 100%</p>
+            </div>
+
+            <div className="space-y-4 max-w-2xl mx-auto">
+              {[
+                { key: 'starter', label: 'Starter Plan', limitKey: 'limitStarter', recommended: false },
+                { key: 'pro', label: 'Pro Plan', limitKey: 'limitPro', recommended: true },
+                { key: 'growth', label: 'Growth Plan', limitKey: 'limitGrowth', recommended: false },
+              ].map(({ key, label, limitKey, recommended }) => (
+                <div key={key} className={`p-5 rounded-xl border transition-all ${recommended ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-medium">{label}</p>
+                    {recommended && <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Most Popular</span>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Monthly Price</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 text-sm">$</span>
+                        <input
+                          type="number"
+                          value={pricing[key as keyof typeof pricing]}
+                          onChange={(e) => setPricing({ ...pricing, [key]: parseInt(e.target.value) || 0 })}
+                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-8 pr-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Calls / Month</label>
+                      <input
+                        type="number"
+                        value={pricing[limitKey as keyof typeof pricing]}
+                        onChange={(e) => setPricing({ ...pricing, [limitKey]: parseInt(e.target.value) || 0 })}
+                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] max-w-2xl mx-auto">
+              <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-[#fafaf9]/60">
+                <span className="text-amber-400 font-medium">Tip:</span> Most agencies charge $99-149 for Pro plans. A missed call can cost a business $500+, so pricing at $149/mo is a no-brainer for them.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 3: // Logo
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -650,7 +710,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 3:
+      case 4: // Colors
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -722,62 +782,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 4:
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Pricing</h2>
-              <p className="mt-2 text-[#fafaf9]/50">What you charge clients — you keep 100%</p>
-            </div>
-
-            <div className="space-y-4 max-w-2xl mx-auto">
-              {[
-                { key: 'starter', label: 'Starter Plan', limitKey: 'limitStarter', recommended: false },
-                { key: 'pro', label: 'Pro Plan', limitKey: 'limitPro', recommended: true },
-                { key: 'growth', label: 'Growth Plan', limitKey: 'limitGrowth', recommended: false },
-              ].map(({ key, label, limitKey, recommended }) => (
-                <div key={key} className={`p-5 rounded-xl border transition-all ${recommended ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="font-medium">{label}</p>
-                    {recommended && <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Most Popular</span>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Monthly Price</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 text-sm">$</span>
-                        <input
-                          type="number"
-                          value={pricing[key as keyof typeof pricing]}
-                          onChange={(e) => setPricing({ ...pricing, [key]: parseInt(e.target.value) || 0 })}
-                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-8 pr-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-[#fafaf9]/40 mb-2">Calls / Month</label>
-                      <input
-                        type="number"
-                        value={pricing[limitKey as keyof typeof pricing]}
-                        onChange={(e) => setPricing({ ...pricing, [limitKey]: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] max-w-2xl mx-auto">
-              <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-[#fafaf9]/60">
-                <span className="text-amber-400 font-medium">Tip:</span> Most agencies charge $99-149 for Pro plans. A missed call can cost a business $500+, so pricing at $149/mo is a no-brainer for them.
-              </p>
-            </div>
-          </div>
-        );
-
-      case 5:
+      case 5: // Payments
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -823,7 +828,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 6:
+      case 6: // Password
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -850,7 +855,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 7:
+      case 7: // Complete
         return (
           <div className="space-y-8 text-center">
             <div className="relative">

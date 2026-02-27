@@ -253,9 +253,9 @@ export default function AdminAgenciesPage() {
     const labels: Record<number, string> = {
       0: 'Not Started',
       1: 'Agency Name',
-      2: 'Logo Upload',
-      3: 'Brand Colors',
-      4: 'Pricing Setup',
+      2: 'Pricing Setup',
+      3: 'Logo Upload',
+      4: 'Brand Colors',
       5: 'Stripe Connect',
       6: 'Password Setup',
       7: 'Complete',
