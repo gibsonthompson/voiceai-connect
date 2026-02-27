@@ -68,6 +68,7 @@ const IGNORED_HEADERS_SET = new Set([
   'email validation',
   'email catch all',
   'email deliverability',
+  'company name for emails',
   'catch-all status',
   'seniority',
   'departments',
@@ -327,19 +328,10 @@ const AUTO_MAP: Record<string, string> = {
   'type': '_skip',
 };
 
-// Fuzzy fallback — more conservative, avoids broad patterns like 'url', 'mail', 'company'
+// Fuzzy fallback — ORDER MATTERS: multi-word patterns first, then single-word
+// This prevents "company name for emails" from matching 'email' before 'company name'
 const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
-  { pattern: 'phone', field: 'phone' },
-  { pattern: 'mobile', field: 'phone' },
-  { pattern: 'cell', field: 'phone' },
-  { pattern: 'direct dial', field: 'phone' },
-  { pattern: 'email', field: 'email' },
-  { pattern: 'e-mail', field: 'email' },
-  { pattern: 'website', field: 'website' },
-  { pattern: 'homepage', field: 'website' },
-  { pattern: 'industry', field: 'industry' },
-  { pattern: 'sector', field: 'industry' },
-  { pattern: 'vertical', field: 'industry' },
+  // --- Multi-word patterns FIRST (most specific → least specific) ---
   { pattern: 'company name', field: 'business_name' },
   { pattern: 'business name', field: 'business_name' },
   { pattern: 'organization name', field: 'business_name' },
@@ -347,11 +339,23 @@ const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
   { pattern: 'firstname', field: '_first_name' },
   { pattern: 'last name', field: '_last_name' },
   { pattern: 'lastname', field: '_last_name' },
+  { pattern: 'direct dial', field: 'phone' },
+  { pattern: 'annual revenue', field: 'estimated_value' },
+  { pattern: 'ad spend', field: 'estimated_value' },
+  // --- Single-word patterns AFTER (broader catches) ---
+  { pattern: 'phone', field: 'phone' },
+  { pattern: 'mobile', field: 'phone' },
+  { pattern: 'cell', field: 'phone' },
+  { pattern: 'email', field: 'email' },
+  { pattern: 'e-mail', field: 'email' },
+  { pattern: 'website', field: 'website' },
+  { pattern: 'homepage', field: 'website' },
+  { pattern: 'industry', field: 'industry' },
+  { pattern: 'sector', field: 'industry' },
+  { pattern: 'vertical', field: 'industry' },
   { pattern: 'surname', field: '_last_name' },
   { pattern: 'employee', field: 'company_size' },
   { pattern: 'headcount', field: 'company_size' },
-  { pattern: 'annual revenue', field: 'estimated_value' },
-  { pattern: 'ad spend', field: 'estimated_value' },
 ];
 
 function fuzzyMatch(header: string): string | null {
