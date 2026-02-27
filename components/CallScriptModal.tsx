@@ -24,7 +24,7 @@ interface Lead {
   source?: string;
   status?: string;
   estimated_value?: number;
-  next_follow_up?: string;
+  next_follow_up?: string | null;
   notes?: string;
   created_at?: string;
 }

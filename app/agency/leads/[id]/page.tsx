@@ -1014,7 +1014,6 @@ export default function LeadDetailPage() {
             ...lead,
             email: formData.email,
             phone: formData.phone,
-            next_follow_up: lead.next_follow_up ?? undefined,
           }}
           type={composerType}
           onSent={handleOutreachSent}
