@@ -14,6 +14,7 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
 import ComposerModal from '../../../../components/ComposerModal';
+import CallScriptModal from '../../../../components/CallScriptModal';
 
 interface Lead {
   id: string;
@@ -35,9 +36,11 @@ interface Lead {
 interface OutreachStats {
   email_count: number;
   sms_count: number;
+  call_count?: number;
   total_count: number;
   last_email: { sent_at: string; subject: string } | null;
   last_sms: { sent_at: string } | null;
+  last_call?: { sent_at: string; subject?: string } | null;
   last_outreach: { type: string; sent_at: string } | null;
   next_email_number: number;
   next_sms_number: number;
@@ -131,6 +134,7 @@ export default function LeadDetailPage() {
   
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
+  const [callScriptOpen, setCallScriptOpen] = useState(false);
 
   // Sequence follow-up timing
   const [sequenceInfo, setSequenceInfo] = useState<SequenceInfo | null>(null);
@@ -435,6 +439,7 @@ export default function LeadDetailPage() {
 
   const canSendEmail = Boolean(formData.email && formData.email.includes('@'));
   const canSendSms = Boolean(formData.phone && formData.phone.length >= 10);
+  const canCall = Boolean(formData.phone && formData.phone.length >= 10);
 
   const inputStyle = {
     backgroundColor: theme.input,
@@ -547,7 +552,7 @@ export default function LeadDetailPage() {
           <h3 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Outreach Progress</h3>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-4">
           {/* Email Count */}
           <div 
             className="rounded-lg p-3"
@@ -582,6 +587,25 @@ export default function LeadDetailPage() {
             {outreach?.last_sms && (
               <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
                 Last: {timeAgo(outreach.last_sms.sent_at)}
+              </p>
+            )}
+          </div>
+
+          {/* Call Count */}
+          <div 
+            className="rounded-lg p-3"
+            style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <PhoneCall className="h-4 w-4" style={{ color: theme.isDark ? '#4ade80' : '#16a34a' }} />
+              <span className="text-xs" style={{ color: theme.textMuted }}>Calls</span>
+            </div>
+            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#4ade80' : '#16a34a' }}>
+              {outreach?.call_count || 0}
+            </p>
+            {outreach?.last_call && (
+              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
+                Last: {timeAgo(outreach.last_call.sent_at)}
               </p>
             )}
           </div>
@@ -659,20 +683,27 @@ export default function LeadDetailPage() {
             <Send className="h-3 w-3" />
           </button>
           
-          {lead?.phone && (
-            <a
-              href={demoMode ? '#' : `tel:${lead.phone}`}
-              onClick={demoMode ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+          {canCall && (
+            <button
+              onClick={() => setCallScriptOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
               style={{
-                backgroundColor: theme.successBg,
-                border: `1px solid ${theme.successBorder}`,
-                color: theme.success,
+                backgroundColor: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                color: theme.isDark ? '#4ade80' : '#16a34a',
               }}
             >
               <PhoneCall className="h-4 w-4" />
               Call
-            </a>
+              {(outreach?.call_count || 0) > 0 && (
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}
+                >
+                  #{(outreach?.call_count || 0) + 1}
+                </span>
+              )}
+            </button>
           )}
         </div>
 
@@ -985,6 +1016,21 @@ export default function LeadDetailPage() {
             phone: formData.phone,
           }}
           type={composerType}
+          onSent={handleOutreachSent}
+        />
+      )}
+
+      {/* Call Script Modal */}
+      {agency && lead && (
+        <CallScriptModal
+          isOpen={callScriptOpen}
+          onClose={() => setCallScriptOpen(false)}
+          agencyId={agency.id}
+          lead={{
+            ...lead,
+            email: formData.email,
+            phone: formData.phone,
+          }}
           onSent={handleOutreachSent}
         />
       )}

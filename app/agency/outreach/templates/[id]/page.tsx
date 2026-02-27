@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  ArrowLeft, Loader2, Mail, MessageSquare, Save, Info,
+  ArrowLeft, Loader2, Mail, MessageSquare, PhoneCall, Save, Info,
   Copy, Check
 } from 'lucide-react';
 import { useAgency } from '../../../context';
@@ -49,6 +49,9 @@ export default function TemplateEditorPage() {
     sequence_name: '',
     delay_days: '',
   });
+
+  const isCallScript = formData.type === 'call_script';
+  const isSms = formData.type === 'sms';
 
   const inputStyle = {
     backgroundColor: theme.input,
@@ -214,6 +217,40 @@ export default function TemplateEditorPage() {
     </button>
   );
 
+  const getTypeLabel = () => {
+    switch (formData.type) {
+      case 'email': return 'Email template';
+      case 'sms': return 'SMS template';
+      case 'call_script': return 'Call script';
+      default: return 'Template';
+    }
+  };
+
+  const getTypeIcon = () => {
+    switch (formData.type) {
+      case 'email': return <Mail className="h-4 w-4" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }} />;
+      case 'sms': return <MessageSquare className="h-4 w-4" style={{ color: theme.isDark ? '#22d3ee' : '#0891b2' }} />;
+      case 'call_script': return <PhoneCall className="h-4 w-4" style={{ color: theme.isDark ? '#4ade80' : '#16a34a' }} />;
+      default: return null;
+    }
+  };
+
+  const getBodyPlaceholder = () => {
+    if (isCallScript) {
+      return 'Write your cold call script here. Use {variables} for personalization.\n\nWrap stage directions in [BRACKETS] — e.g.:\n[PAUSE — let them respond]\n[IF YES] → Great! Let\'s schedule a time...\n[IF NOT INTERESTED] → I totally understand...';
+    }
+    if (isSms) {
+      return 'Write your message here. Use {variables} to personalize.';
+    }
+    return 'Write your message here. Use {variables} to personalize.';
+  };
+
+  const getBodyRows = () => {
+    if (isCallScript) return 18;
+    if (formData.type === 'email') return 10;
+    return 5;
+  };
+
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -240,8 +277,9 @@ export default function TemplateEditorPage() {
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
               {isNew ? 'Create Template' : 'Edit Template'}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {formData.type === 'email' ? 'Email template' : 'SMS template'}
+            <p className="mt-1 text-sm flex items-center gap-1.5" style={{ color: theme.textMuted }}>
+              {getTypeIcon()}
+              {getTypeLabel()}
             </p>
           </div>
           
@@ -294,7 +332,7 @@ export default function TemplateEditorPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Initial Outreach"
+                    placeholder={isCallScript ? 'e.g., Intro / Discovery Call' : 'e.g., Initial Outreach'}
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                     style={inputStyle}
                   />
@@ -309,6 +347,7 @@ export default function TemplateEditorPage() {
                   >
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
+                    <option value="call_script">Call Script</option>
                   </select>
                 </div>
               </div>
@@ -318,7 +357,7 @@ export default function TemplateEditorPage() {
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Brief description of when to use this"
+                  placeholder={isCallScript ? 'e.g., First cold call to a new lead — build rapport and qualify' : 'Brief description of when to use this'}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
                   style={inputStyle}
                 />
@@ -343,6 +382,7 @@ export default function TemplateEditorPage() {
             </div>
             
             <div className="space-y-3 sm:space-y-4">
+              {/* Subject — only for email */}
               {formData.type === 'email' && (
                 <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
@@ -361,20 +401,25 @@ export default function TemplateEditorPage() {
 
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
-                  Body <span style={{ color: theme.error }}>*</span>
+                  {isCallScript ? 'Script' : 'Body'} <span style={{ color: theme.error }}>*</span>
                 </label>
                 <textarea
                   id="template-body"
                   value={formData.body}
                   onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))}
-                  placeholder="Write your message here. Use {variables} to personalize."
-                  rows={formData.type === 'email' ? 10 : 5}
+                  placeholder={getBodyPlaceholder()}
+                  rows={getBodyRows()}
                   className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm font-mono resize-none focus:outline-none"
                   style={inputStyle}
                 />
-                {formData.type === 'sms' && (
+                {isSms && (
                   <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
                     {formData.body.length} characters (SMS limit: 160/segment)
+                  </p>
+                )}
+                {isCallScript && (
+                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
+                    Tip: Use [BRACKETS] for stage directions and → for response branches
                   </p>
                 )}
               </div>
@@ -451,7 +496,7 @@ export default function TemplateEditorPage() {
             </div>
           )}
 
-          {/* Tips */}
+          {/* Tips — context-aware */}
           <div 
             className="rounded-xl p-4"
             style={{ 
@@ -462,12 +507,33 @@ export default function TemplateEditorPage() {
             <div className="flex items-start gap-3">
               <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: theme.info }} />
               <div className="text-xs" style={{ color: theme.infoText }}>
-                <p className="font-medium mb-1">Tips:</p>
+                <p className="font-medium mb-1">
+                  {isCallScript ? 'Call Script Tips:' : isSms ? 'SMS Tips:' : 'Email Tips:'}
+                </p>
                 <ul className="space-y-1" style={{ color: theme.infoText, opacity: 0.8 }}>
-                  <li>Keep subject lines under 50 chars</li>
-                  <li>Personalize with first name</li>
-                  <li>One clear call-to-action</li>
-                  <li>Keep emails under 200 words</li>
+                  {isCallScript ? (
+                    <>
+                      <li>Start with rapport — ask how their day is going</li>
+                      <li>Use open-ended discovery questions</li>
+                      <li>Include [IF YES], [IF NO] response branches</li>
+                      <li>Always set a next step (demo, callback, email)</li>
+                      <li>Use &#123;agency_caller_name&#125; for your name</li>
+                    </>
+                  ) : isSms ? (
+                    <>
+                      <li>Keep under 160 characters per segment</li>
+                      <li>Lead with value, not your name</li>
+                      <li>One clear call-to-action</li>
+                      <li>Include opt-out language if required</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Keep subject lines under 50 chars</li>
+                      <li>Personalize with first name</li>
+                      <li>One clear call-to-action</li>
+                      <li>Keep emails under 200 words</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  FileText, Mail, MessageSquare, Plus, Search, Loader2,
+  FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
   MoreVertical, Copy, Trash2, Edit, Sparkles
 } from 'lucide-react';
 import { useAgency } from '../context';
@@ -13,7 +13,7 @@ interface Template {
   id: string;
   name: string;
   description: string;
-  type: 'email' | 'sms';
+  type: 'email' | 'sms' | 'call_script';
   subject: string;
   body: string;
   is_default: boolean;
@@ -124,6 +124,7 @@ export default function OutreachPage() {
 
   const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
   const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
+  const callScriptTemplates = filteredTemplates.filter(t => t.type === 'call_script');
 
   if (contextLoading || loading) {
     return (
@@ -132,6 +133,37 @@ export default function OutreachPage() {
       </div>
     );
   }
+
+  const getTemplateIcon = (type: string) => {
+    switch (type) {
+      case 'email': return <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />;
+      case 'sms': return <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />;
+      case 'call_script': return <PhoneCall className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />;
+      default: return <FileText className="h-4 w-4 sm:h-5 sm:w-5" />;
+    }
+  };
+
+  const getTemplateIconBg = (type: string) => {
+    switch (type) {
+      case 'email': return 'rgba(168,85,247,0.1)';
+      case 'sms': return 'rgba(6,182,212,0.1)';
+      case 'call_script': return 'rgba(34,197,94,0.1)';
+      default: return theme.hover;
+    }
+  };
+
+  const getTemplatePreview = (template: Template) => {
+    switch (template.type) {
+      case 'email':
+        return template.subject || template.description || 'No subject';
+      case 'sms':
+        return (template.body?.substring(0, 50) || 'No content') + '...';
+      case 'call_script':
+        return template.description || (template.body?.substring(0, 50) || 'No content') + '...';
+      default:
+        return template.description || 'No content';
+    }
+  };
 
   const renderTemplateRow = (template: Template, idx: number, total: number) => (
     <div
@@ -148,12 +180,9 @@ export default function OutreachPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           <div 
             className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
-            style={{ backgroundColor: template.type === 'email' ? 'rgba(168,85,247,0.1)' : 'rgba(6,182,212,0.1)' }}
+            style={{ backgroundColor: getTemplateIconBg(template.type) }}
           >
-            {template.type === 'email' 
-              ? <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
-              : <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />
-            }
+            {getTemplateIcon(template.type)}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -167,12 +196,17 @@ export default function OutreachPage() {
                   Default
                 </span>
               )}
+              {template.type === 'call_script' && template.sequence_order && (
+                <span 
+                  className="text-[9px] sm:text-xs px-1.5 py-0.5 rounded"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: theme.isDark ? '#4ade80' : '#16a34a' }}
+                >
+                  Step {template.sequence_order}
+                </span>
+              )}
             </div>
             <p className="text-[11px] sm:text-sm truncate" style={{ color: theme.textMuted }}>
-              {template.type === 'email' 
-                ? (template.subject || template.description || 'No subject')
-                : (template.body?.substring(0, 50) || 'No content') + '...'
-              }
+              {getTemplatePreview(template)}
             </p>
           </div>
         </div>
@@ -249,7 +283,7 @@ export default function OutreachPage() {
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              Manage email and SMS templates
+              Manage email, SMS, and call script templates
             </p>
           </div>
           
@@ -265,7 +299,7 @@ export default function OutreachPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 mb-6 sm:mb-8">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-6 sm:mb-8">
         <Link
           href="/agency/outreach/templates/new?type=email"
           className="rounded-xl p-4 transition-colors"
@@ -307,6 +341,27 @@ export default function OutreachPage() {
             </div>
           </div>
         </Link>
+
+        <Link
+          href="/agency/outreach/templates/new?type=call_script"
+          className="rounded-xl p-4 transition-colors"
+          style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.card}
+        >
+          <div className="flex items-center gap-3">
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
+              style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}
+            >
+              <PhoneCall className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Call Script</p>
+              <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Create cold call script</p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Search & Filters */}
@@ -328,6 +383,7 @@ export default function OutreachPage() {
             { value: null, label: 'All' },
             { value: 'email', label: 'Email' },
             { value: 'sms', label: 'SMS' },
+            { value: 'call_script', label: 'Call Scripts' },
           ].map((filter) => (
             <button
               key={filter.label}
@@ -403,6 +459,22 @@ export default function OutreachPage() {
                 style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
               >
                 {smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates.length))}
+              </div>
+            </div>
+          )}
+
+          {callScriptTemplates.length > 0 && (!typeFilter || typeFilter === 'call_script') && (
+            <div>
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <PhoneCall className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <h3 className="text-xs sm:text-sm font-medium" style={{ color: theme.text, opacity: 0.7 }}>Call Scripts</h3>
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>({callScriptTemplates.length})</span>
+              </div>
+              <div 
+                className="rounded-xl overflow-hidden"
+                style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+              >
+                {callScriptTemplates.map((t, idx) => renderTemplateRow(t, idx, callScriptTemplates.length))}
               </div>
             </div>
           )}
