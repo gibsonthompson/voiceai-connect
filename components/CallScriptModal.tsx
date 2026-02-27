@@ -4,10 +4,32 @@ import { useState, useEffect, useRef } from 'react';
 import {
   X, Loader2, Phone, PhoneCall, PhoneOff, ChevronDown, ChevronUp,
   Copy, Check, Lightbulb, Building2, User, Mail, Globe, Tag,
-  DollarSign, Calendar, FileText, Clock, ExternalLink, MessageSquare
+  DollarSign, Calendar, FileText, Clock, ExternalLink, MessageSquare,
+  Target, ThumbsUp, PhoneForwarded, ThumbsDown, Voicemail, Ban,
+  Smile, HelpCircle, Timer, Handshake, CalendarCheck, Headphones,
+  ArrowUp, Volume2
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { useTheme, type Theme } from '@/hooks/useTheme';
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function formatPhoneNumber(phone: string): string {
+  // Strip to digits only
+  const digits = phone.replace(/\D/g, '');
+  // Handle +1XXXXXXXXXX or 1XXXXXXXXXX (11 digits)
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  // Handle XXXXXXXXXX (10 digits)
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  // Fallback: return as-is
+  return phone;
+}
 
 // ============================================================================
 // TYPES
@@ -51,7 +73,7 @@ type CallOutcome =
 interface CallOutcomeOption {
   value: CallOutcome;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   color: string;
   colorBg: string;
   colorBorder: string;
@@ -74,7 +96,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'answered_booked',
     label: 'Booked Demo',
-    icon: '🎯',
+    icon: <Target className="h-4 w-4" />,
     color: '#34d399',
     colorBg: 'rgba(52,211,153,0.1)',
     colorBorder: 'rgba(52,211,153,0.3)',
@@ -83,7 +105,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'answered_interested',
     label: 'Interested',
-    icon: '👍',
+    icon: <ThumbsUp className="h-4 w-4" />,
     color: '#60a5fa',
     colorBg: 'rgba(96,165,250,0.1)',
     colorBorder: 'rgba(96,165,250,0.3)',
@@ -92,7 +114,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'answered_callback',
     label: 'Callback',
-    icon: '📞',
+    icon: <PhoneForwarded className="h-4 w-4" />,
     color: '#fbbf24',
     colorBg: 'rgba(251,191,36,0.1)',
     colorBorder: 'rgba(251,191,36,0.3)',
@@ -101,7 +123,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'answered_not_interested',
     label: 'Not Interested',
-    icon: '👎',
+    icon: <ThumbsDown className="h-4 w-4" />,
     color: '#f87171',
     colorBg: 'rgba(248,113,113,0.1)',
     colorBorder: 'rgba(248,113,113,0.3)',
@@ -110,7 +132,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'voicemail',
     label: 'Voicemail',
-    icon: '📨',
+    icon: <Voicemail className="h-4 w-4" />,
     color: '#a78bfa',
     colorBg: 'rgba(167,139,250,0.1)',
     colorBorder: 'rgba(167,139,250,0.3)',
@@ -119,7 +141,7 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
   {
     value: 'no_answer',
     label: 'No Answer',
-    icon: '🚫',
+    icon: <Ban className="h-4 w-4" />,
     color: '#94a3b8',
     colorBg: 'rgba(148,163,184,0.1)',
     colorBorder: 'rgba(148,163,184,0.3)',
@@ -131,14 +153,14 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
 // ============================================================================
 
 const COLD_CALL_TIPS = [
-  { emoji: '😊', tip: 'Smile before dialing — it changes your tone and energy.' },
-  { emoji: '❓', tip: 'Ask open-ended questions to keep the conversation going.' },
-  { emoji: '🪞', tip: 'Mirror their language and pace — match their energy.' },
-  { emoji: '⏸️', tip: 'Pause for 2 seconds after your pitch — let them process.' },
-  { emoji: '🤝', tip: 'Handle objections with empathy: "I totally understand…"' },
-  { emoji: '📅', tip: 'Always set a next step — never end a call without one.' },
-  { emoji: '⏰', tip: 'Best call times: 10-11:30am and 1:30-3pm local time.' },
-  { emoji: '🎧', tip: 'Stand up while calling — it gives your voice more energy.' },
+  { icon: <Smile className="h-3.5 w-3.5" />, tip: 'Smile before dialing — it changes your tone and energy.' },
+  { icon: <HelpCircle className="h-3.5 w-3.5" />, tip: 'Ask open-ended questions to keep the conversation going.' },
+  { icon: <Volume2 className="h-3.5 w-3.5" />, tip: 'Mirror their language and pace — match their energy.' },
+  { icon: <Timer className="h-3.5 w-3.5" />, tip: 'Pause for 2 seconds after your pitch — let them process.' },
+  { icon: <Handshake className="h-3.5 w-3.5" />, tip: 'Handle objections with empathy: "I totally understand…"' },
+  { icon: <CalendarCheck className="h-3.5 w-3.5" />, tip: 'Always set a next step — never end a call without one.' },
+  { icon: <Clock className="h-3.5 w-3.5" />, tip: 'Best call times: 10-11:30am and 1:30-3pm local time.' },
+  { icon: <ArrowUp className="h-3.5 w-3.5" />, tip: 'Stand up while calling — it gives your voice more energy.' },
 ];
 
 // ============================================================================
@@ -417,8 +439,6 @@ export default function CallScriptModal({
 
   // ── Log call ────────────────────────────────────────────────────
   const handleLogCall = async () => {
-    if (!selectedOutcome) return;
-
     setLogging(true);
 
     if (demoMode) {
@@ -432,7 +452,7 @@ export default function CallScriptModal({
     try {
       const token = getToken();
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const outcomeData = CALL_OUTCOMES.find(o => o.value === selectedOutcome);
+      const outcomeData = selectedOutcome ? CALL_OUTCOMES.find(o => o.value === selectedOutcome) : null;
 
       await fetch(`${getApiBase()}/outreach/log`, {
         method: 'POST',
@@ -445,13 +465,11 @@ export default function CallScriptModal({
           templateId: selectedScriptId || null,
           type: 'call',
           toPhone: lead.phone,
-          subject: `Call: ${outcomeData?.label || selectedOutcome}`,
-          body: callNotes || `Call outcome: ${outcomeData?.label}`,
+          subject: outcomeData ? `Call: ${outcomeData.label}` : 'Call logged',
+          body: callNotes || (outcomeData ? `Call outcome: ${outcomeData.label}` : 'Call logged'),
           userId: user.id,
-          // Extra fields for call tracking — backend can store or ignore
-          call_outcome: selectedOutcome,
+          call_outcome: selectedOutcome || null,
           call_notes: callNotes,
-          // Suggest status update
           ...(outcomeData?.updatesStatus ? { updateLeadStatus: outcomeData.updatesStatus } : {}),
         }),
       });
@@ -576,7 +594,7 @@ export default function CallScriptModal({
               <input
                 type="text"
                 readOnly
-                value={lead.phone}
+                value={formatPhoneNumber(lead.phone)}
                 className="flex-1 bg-transparent text-sm sm:text-base font-semibold focus:outline-none cursor-text select-all tracking-wide"
                 style={{ color: theme.text }}
                 onClick={(e) => (e.target as HTMLInputElement).select()}
@@ -644,7 +662,7 @@ export default function CallScriptModal({
                 >
                   {COLD_CALL_TIPS.map((tip, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <span className="text-xs shrink-0 mt-0.5">{tip.emoji}</span>
+                      <span className="shrink-0 mt-0.5" style={{ color: theme.textMuted }}>{tip.icon}</span>
                       <span className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>{tip.tip}</span>
                     </div>
                   ))}
@@ -769,7 +787,7 @@ export default function CallScriptModal({
                   <InfoRow icon={<User className="h-3.5 w-3.5" />} label="Contact" value={lead.contact_name} theme={theme} />
                 )}
                 {lead.phone && (
-                  <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={lead.phone} theme={theme} />
+                  <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={formatPhoneNumber(lead.phone)} theme={theme} />
                 )}
                 {lead.email && (
                   <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={lead.email} theme={theme} />
@@ -863,7 +881,7 @@ export default function CallScriptModal({
                         transform: isSelected ? 'scale(1.02)' : 'scale(1)',
                       }}
                     >
-                      <span className="text-sm">{outcome.icon}</span>
+                      <span style={{ color: isSelected ? outcome.color : theme.textMuted }}>{outcome.icon}</span>
                       <span>{outcome.label}</span>
                     </button>
                   );
@@ -904,7 +922,7 @@ export default function CallScriptModal({
             {/* Log Call — Primary */}
             <button
               onClick={handleLogCall}
-              disabled={!selectedOutcome || logging || loggedSuccess}
+              disabled={logging || loggedSuccess}
               className="flex-[1.5] sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 sm:px-6 py-3 sm:py-2.5 text-sm font-medium transition-all disabled:opacity-50"
               style={{
                 backgroundColor: loggedSuccess ? '#22c55e' : theme.primary,
@@ -924,7 +942,7 @@ export default function CallScriptModal({
           {/* Hint text */}
           {!selectedOutcome && !loggedSuccess && (
             <p className="text-center text-xs mt-2" style={{ color: theme.textSubtle }}>
-              Select a call outcome above to log this call
+              Optionally select an outcome above before logging
             </p>
           )}
         </div>
