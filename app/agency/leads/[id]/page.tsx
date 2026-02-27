@@ -1011,6 +1011,7 @@ export default function LeadDetailPage() {
           onClose={() => setComposerOpen(false)}
           agencyId={agency.id}
           lead={{
+            next_follow_up: lead.next_follow_up ?? undefined,
             ...lead,
             email: formData.email,
             phone: formData.phone,
