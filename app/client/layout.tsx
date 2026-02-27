@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
-  Phone, TrendingUp, PhoneCall, Bot, Settings, LogOut, Loader2,
+  Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
@@ -96,6 +96,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall },
+    { href: '/client/contacts', label: 'Contacts', icon: Users },
     { href: '/client/ai-agent', label: 'AI Agent', icon: Bot },
     { href: '/client/settings', label: 'Settings', icon: Settings },
   ];
