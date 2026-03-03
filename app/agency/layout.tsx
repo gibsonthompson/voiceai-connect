@@ -217,6 +217,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <link rel="manifest" href="/manifest.json" />
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
           <p className="text-sm text-neutral-500">Loading dashboard...</p>
@@ -234,6 +235,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: theme.bg }}
       >
+        <link rel="manifest" href="/manifest.json" />
         <div 
           className="max-w-lg w-full rounded-2xl p-8 text-center"
           style={{ 
@@ -319,6 +321,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: theme.bg }}
       >
+        <link rel="manifest" href="/manifest.json" />
         <div 
           className="max-w-md w-full rounded-2xl p-8 text-center"
           style={{ 
@@ -379,6 +382,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         '--color-accent': accentColor,
       } as React.CSSProperties}
     >
+      <link rel="manifest" href="/manifest.json" />
       {/* Grain overlay - dark mode only */}
       {theme.isDark && (
         <div 
