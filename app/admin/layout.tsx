@@ -38,9 +38,17 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const checkAuth = async () => {
@@ -85,6 +93,16 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
+  // Prevent body scroll when sidebar open on mobile
+  useEffect(() => {
+    if (sidebarOpen && isMobile) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen, isMobile]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -104,7 +122,10 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-[#050505]">
       <link rel="manifest" href="/manifest-admin.json" />
       {/* Mobile Header */}
-      <div className="sticky top-0 z-30 md:hidden bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06]">
+      <div 
+        className="sticky top-0 z-30 md:hidden bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06]"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <header className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2.5">
             <WaveformLogo size={22} />
@@ -135,6 +156,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
         `}
+        style={{ paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
       >
         {/* Mobile Close */}
         <div className="flex md:hidden items-center justify-between h-14 px-4 border-b border-white/[0.06]">
@@ -191,7 +213,10 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-3 space-y-2"
+          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}
+        >
           {/* Admin Info */}
           <div className="rounded-lg bg-white/[0.03] border border-white/[0.05] p-3">
             <div className="flex items-center gap-2.5">
