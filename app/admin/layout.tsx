@@ -88,6 +88,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+        <link rel="manifest" href="/manifest-admin.json" />
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="absolute inset-0 blur-xl bg-emerald-500/20 rounded-full" />
@@ -101,6 +102,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#050505]">
+      <link rel="manifest" href="/manifest-admin.json" />
       {/* Mobile Header */}
       <div className="sticky top-0 z-30 md:hidden bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06]">
         <header className="flex items-center justify-between h-14 px-4">

@@ -135,10 +135,10 @@ function QueueCard({
     >
       {/* Avatar */}
       <div
-        className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
+        className="flex h-11 w-11 items-center justify-center rounded-xl shrink-0"
         style={{ backgroundColor: `${accent}15` }}
       >
-        <span className="text-xs font-semibold" style={{ color: accent }}>
+        <span className="text-sm font-semibold" style={{ color: accent }}>
           {(lead.business_name || lead.contact_name || '?').charAt(0)}
         </span>
       </div>
@@ -146,7 +146,7 @@ function QueueCard({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-[13px] font-medium text-white/85 truncate">
+          <p className="text-sm font-medium text-white/85 truncate">
             {lead.business_name || lead.contact_name || 'Unnamed'}
           </p>
           <StatusBadge status={lead.status} small />
@@ -163,34 +163,47 @@ function QueueCard({
           )}
           {!lead.last_outreach_at && <span>· No outreach yet</span>}
         </div>
+        {lead.website && (
+          <a
+            href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-[11px] text-emerald-400/60 hover:text-emerald-400 mt-0.5 transition-colors"
+          >
+            <Globe className="h-3 w-3" />
+            <span className="truncate">{lead.website.replace(/^https?:\/\//, '')}</span>
+            <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        )}
       </div>
 
       {/* Quick actions */}
-      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         {lead.email && (
           <button
             onClick={(e) => { e.stopPropagation(); onEmail(); }}
-            className="p-1.5 rounded-lg hover:bg-violet-500/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-violet-500/10 transition-colors"
             title="Send email"
           >
-            <Mail className="h-3.5 w-3.5 text-violet-400/70" />
+            <Mail className="h-4 w-4 text-violet-400/70" />
           </button>
         )}
         {lead.phone && (
           <button
             onClick={(e) => { e.stopPropagation(); onSms(); }}
-            className="p-1.5 rounded-lg hover:bg-cyan-500/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-cyan-500/10 transition-colors"
             title="Send SMS"
           >
-            <MessageSquare className="h-3.5 w-3.5 text-cyan-400/70" />
+            <MessageSquare className="h-4 w-4 text-cyan-400/70" />
           </button>
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onSetFollowUp(); }}
-          className="p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors"
+          className="p-2 rounded-lg hover:bg-amber-500/10 transition-colors"
           title="Set follow-up"
         >
-          <Calendar className="h-3.5 w-3.5 text-amber-400/70" />
+          <Calendar className="h-4 w-4 text-amber-400/70" />
         </button>
       </div>
     </div>

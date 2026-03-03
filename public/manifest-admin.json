@@ -1,0 +1,14 @@
+{
+  "name": "VoiceAI Connect Admin",
+  "short_name": "VoiceAI Admin",
+  "description": "VoiceAI Connect Admin Panel",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "portrait",
+  "icons": [
+    
+  ]
+}
