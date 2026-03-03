@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
-  Copy, Check, ExternalLink
+  Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -58,6 +58,17 @@ export default function AgencyClientDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // ── AI Prompt State ──
+  const [promptLoading, setPromptLoading] = useState(true);
+  const [promptSaving, setPromptSaving] = useState(false);
+  const [promptResetting, setPromptResetting] = useState(false);
+  const [promptSaved, setPromptSaved] = useState(false);
+  const [promptError, setPromptError] = useState<string | null>(null);
+  const [systemPrompt, setSystemPrompt] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
+
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
   useEffect(() => {
     if (!agency || !clientId) return;
 
@@ -66,17 +77,26 @@ export default function AgencyClientDetailPage() {
       setClient(demoData.client as Client);
       setRecentCalls(demoData.calls as Call[]);
       setLoading(false);
+      setPromptLoading(false);
+      setSystemPrompt('You are the phone assistant for Demo Business...');
+      setOriginalPrompt('You are the phone assistant for Demo Business...');
       return;
     }
 
     fetchClientData();
   }, [agency, clientId, demoMode]);
 
+  // Fetch prompt once we have the client
+  useEffect(() => {
+    if (client?.vapi_assistant_id && agency && !demoMode) {
+      fetchPrompt();
+    }
+  }, [client?.id, client?.vapi_assistant_id]);
+
   const fetchClientData = async () => {
     if (!agency || !clientId) return;
     try {
       const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
       // Fetch client info
       const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, {
@@ -104,6 +124,107 @@ export default function AgencyClientDetailPage() {
       setLoading(false);
     }
   };
+
+  // ── Prompt Handlers ──
+
+  const fetchPrompt = async () => {
+    if (!agency || !clientId) return;
+    setPromptLoading(true);
+    setPromptError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/prompt`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to load prompt');
+      }
+
+      const data = await res.json();
+      setSystemPrompt(data.system_prompt || '');
+      setOriginalPrompt(data.system_prompt || '');
+    } catch (err) {
+      console.error('Failed to fetch prompt:', err);
+      setPromptError(err instanceof Error ? err.message : 'Failed to load prompt');
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
+  const handleSavePrompt = async () => {
+    if (!agency || !clientId) return;
+    setPromptSaving(true);
+    setPromptError(null);
+    setPromptSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/prompt`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ system_prompt: systemPrompt }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save prompt');
+      }
+
+      const data = await res.json();
+      setOriginalPrompt(data.system_prompt);
+      setSystemPrompt(data.system_prompt);
+      setPromptSaved(true);
+      setTimeout(() => setPromptSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save prompt:', err);
+      setPromptError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setPromptSaving(false);
+    }
+  };
+
+  const handleResetPrompt = async () => {
+    if (!agency || !clientId) return;
+    if (!confirm('Reset to the default industry prompt? Your custom changes will be lost.')) return;
+
+    setPromptResetting(true);
+    setPromptError(null);
+    setPromptSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/prompt/reset`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to reset prompt');
+      }
+
+      const data = await res.json();
+      setSystemPrompt(data.system_prompt);
+      setOriginalPrompt(data.system_prompt);
+      setPromptSaved(true);
+      setTimeout(() => setPromptSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to reset prompt:', err);
+      setPromptError(err instanceof Error ? err.message : 'Failed to reset');
+    } finally {
+      setPromptResetting(false);
+    }
+  };
+
+  const promptHasChanges = systemPrompt !== originalPrompt;
+
+  // ── Existing Helpers ──
 
   const copyPhoneNumber = () => {
     if (!client?.vapi_phone_number) return;
@@ -381,6 +502,122 @@ export default function AgencyClientDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ── AI Receptionist Prompt ── */}
+          {client.vapi_assistant_id && (
+            <div 
+              className="rounded-xl overflow-hidden"
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h2 className="font-semibold text-sm sm:text-base">AI Receptionist Prompt</h2>
+                  </div>
+                  {promptHasChanges && (
+                    <span 
+                      className="text-xs font-medium px-2 py-1 rounded-full"
+                      style={{ backgroundColor: theme.warningBg, color: theme.warningText }}
+                    >
+                      Unsaved changes
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+                  This is the system prompt that controls how this client's AI receptionist behaves on calls. Changes take effect immediately on the next call.
+                </p>
+
+                {/* Prompt Error */}
+                {promptError && (
+                  <div 
+                    className="mb-4 rounded-lg p-3 flex items-center gap-2"
+                    style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}
+                  >
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
+                    <p className="text-xs" style={{ color: theme.errorText }}>{promptError}</p>
+                  </div>
+                )}
+
+                {/* Prompt Saved */}
+                {promptSaved && (
+                  <div 
+                    className="mb-4 rounded-lg p-3 flex items-center gap-2"
+                    style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}
+                  >
+                    <Check className="h-4 w-4" style={{ color: theme.primary }} />
+                    <p className="text-xs" style={{ color: theme.primary }}>
+                      Prompt updated — changes are live on the next call.
+                    </p>
+                  </div>
+                )}
+
+                {/* Textarea */}
+                {promptLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      value={systemPrompt}
+                      onChange={(e) => setSystemPrompt(e.target.value)}
+                      rows={14}
+                      className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none"
+                      style={{
+                        backgroundColor: theme.input,
+                        border: `1px solid ${theme.inputBorder}`,
+                        color: theme.text,
+                        minHeight: '200px',
+                      }}
+                      placeholder="Enter system prompt..."
+                    />
+
+                    {/* Actions */}
+                    <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                      <button
+                        onClick={handleResetPrompt}
+                        disabled={promptResetting || promptSaving}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                        style={{
+                          backgroundColor: theme.input,
+                          border: `1px solid ${theme.inputBorder}`,
+                          color: theme.textMuted,
+                        }}
+                      >
+                        {promptResetting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-4 w-4" />
+                        )}
+                        Reset to Default
+                      </button>
+
+                      <button
+                        onClick={handleSavePrompt}
+                        disabled={promptSaving || promptResetting || !promptHasChanges}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                      >
+                        {promptSaving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save Prompt
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Recent Calls */}
           <div 
