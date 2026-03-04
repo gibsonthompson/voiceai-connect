@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Loader2, Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
   UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag, Car, Building2,
-  ChevronRight, Check, ExternalLink, BookOpen
+  ChevronRight, Check, ExternalLink, BookOpen, Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -155,6 +155,35 @@ export default function AITemplatesPage() {
             <ExternalLink className="h-3 w-3" />
           </Link>
         )}
+      </div>
+
+      {/* Existing Client Note */}
+      <div 
+        className="mb-6 sm:mb-8 rounded-xl p-4 flex items-start gap-3"
+        style={{
+          backgroundColor: theme.infoBg,
+          border: `1px solid ${theme.infoBorder}`,
+        }}
+      >
+        <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.info }} />
+        <div>
+          <p className="text-sm" style={{ color: theme.infoText }}>
+            <strong style={{ color: theme.text }}>Need to edit an existing client's prompt?</strong>{' '}
+            Templates here set the default for new signups. To modify a live client's AI receptionist, go to{' '}
+            {isInteractive ? (
+              <Link
+                href="/agency/clients"
+                className="font-medium underline underline-offset-2"
+                style={{ color: theme.primary }}
+              >
+                Clients
+              </Link>
+            ) : (
+              <span className="font-medium" style={{ color: theme.primary }}>Clients</span>
+            )}
+            {' '}and open their profile — you can edit their prompt directly from there.
+          </p>
+        </div>
       </div>
 
       {/* Industry Grid */}
