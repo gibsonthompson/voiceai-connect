@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  Brain, Zap
+  Brain, Zap, X, BookOpen
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -182,6 +182,17 @@ export default function AgencyClientDetailPage() {
   const [systemPrompt, setSystemPrompt] = useState('');
   const [originalPrompt, setOriginalPrompt] = useState('');
 
+  // ── Knowledge Base Modal State ──
+  const [kbModalOpen, setKbModalOpen] = useState(false);
+  const [kbContent, setKbContent] = useState('');
+  const [kbOriginalContent, setKbOriginalContent] = useState('');
+  const [kbLoading, setKbLoading] = useState(false);
+  const [kbSaving, setKbSaving] = useState(false);
+  const [kbResetting, setKbResetting] = useState(false);
+  const [kbEditing, setKbEditing] = useState(false);
+  const [kbSaved, setKbSaved] = useState(false);
+  const [kbError, setKbError] = useState<string | null>(null);
+
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
   useEffect(() => {
@@ -335,6 +346,115 @@ export default function AgencyClientDetailPage() {
   };
 
   const promptHasChanges = systemPrompt !== originalPrompt;
+
+  // ── Knowledge Base Handlers ──
+
+  const fetchKnowledgeBase = async () => {
+    if (!agency || !clientId) return;
+    setKbLoading(true);
+    setKbError(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/knowledge-base`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to load knowledge base');
+      }
+
+      const data = await res.json();
+      setKbContent(data.content || '');
+      setKbOriginalContent(data.content || '');
+    } catch (err) {
+      console.error('Failed to fetch KB:', err);
+      setKbError(err instanceof Error ? err.message : 'Failed to load knowledge base');
+    } finally {
+      setKbLoading(false);
+    }
+  };
+
+  const handleOpenKbModal = () => {
+    setKbModalOpen(true);
+    setKbEditing(false);
+    setKbSaved(false);
+    setKbError(null);
+    fetchKnowledgeBase();
+  };
+
+  const handleSaveKb = async () => {
+    if (!agency || !clientId) return;
+    setKbSaving(true);
+    setKbError(null);
+    setKbSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/knowledge-base`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: kbContent }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save');
+      }
+
+      const data = await res.json();
+      setKbOriginalContent(data.content);
+      setKbContent(data.content);
+      setKbEditing(false);
+      setKbSaved(true);
+      setTimeout(() => setKbSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save KB:', err);
+      setKbError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setKbSaving(false);
+    }
+  };
+
+  const handleResetKb = async () => {
+    if (!agency || !clientId) return;
+    if (!confirm('Reset to the default industry knowledge base? Your custom changes will be lost.')) return;
+
+    setKbResetting(true);
+    setKbError(null);
+    setKbSaved(false);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/knowledge-base/reset`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to reset');
+      }
+
+      const data = await res.json();
+      setKbContent(data.content);
+      setKbOriginalContent(data.content);
+      setKbEditing(false);
+      setKbSaved(true);
+      setTimeout(() => setKbSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to reset KB:', err);
+      setKbError(err instanceof Error ? err.message : 'Failed to reset');
+    } finally {
+      setKbResetting(false);
+    }
+  };
+
+  const kbHasChanges = kbContent !== kbOriginalContent;
 
   // ── Helpers ──
 
@@ -795,80 +915,59 @@ export default function AgencyClientDetailPage() {
         <div className="space-y-4 sm:space-y-6">
 
           {/* ════════════════════════════════════════════════════════════════
-              RECEPTIONIST INTELLIGENCE CARD — NEW
-              Shows pre-loaded industry knowledge stats + feature badges
+              KNOWLEDGE BASE CARD
+              Shows industry label, feature pills, and View/Edit button
               ════════════════════════════════════════════════════════════════ */}
-          {intelligence && client.vapi_assistant_id && (
+          {client.vapi_assistant_id && (
             <div 
               className="rounded-xl overflow-hidden"
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <div className="p-4 sm:p-6">
-                {/* Header */}
                 <div className="flex items-center gap-2 mb-1">
-                  <Brain className="h-4 w-4" style={{ color: theme.primary }} />
-                  <h2 className="font-semibold text-sm sm:text-base">Receptionist Intelligence</h2>
+                  <BookOpen className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h2 className="font-semibold text-sm sm:text-base">Knowledge Base</h2>
                 </div>
                 <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-                  Pre-loaded {intelligence.label} knowledge
+                  {intelligence
+                    ? `Pre-loaded ${intelligence.label} knowledge`
+                    : 'AI receptionist knowledge base'}
                 </p>
 
-                {/* Stat Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <div 
-                    className="rounded-lg p-2.5 text-center"
-                    style={{ backgroundColor: theme.hover }}
-                  >
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.services}</p>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Services</p>
-                  </div>
-                  <div 
-                    className="rounded-lg p-2.5 text-center"
-                    style={{ backgroundColor: theme.hover }}
-                  >
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.faqs}</p>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>FAQs</p>
-                  </div>
-                  {intelligence.terms > 0 && (
-                    <div 
-                      className="rounded-lg p-2.5 text-center"
-                      style={{ backgroundColor: theme.hover }}
-                    >
-                      <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.terms}</p>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Terms</p>
-                    </div>
-                  )}
-                  <div 
-                    className="rounded-lg p-2.5 text-center"
-                    style={{ backgroundColor: theme.hover }}
-                  >
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>3</p>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Urgency Levels</p>
-                  </div>
-                </div>
-
                 {/* Feature Pills */}
-                <div className="flex flex-wrap gap-1.5">
-                  {intelligence.features.map((feature) => (
-                    <span
-                      key={feature}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
-                      style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
-                    >
-                      <Zap className="h-3 w-3" />
-                      {feature}
-                    </span>
-                  ))}
-                  {client.business_website && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
-                      style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
-                    >
-                      <Globe className="h-3 w-3" />
-                      Website Integrated
-                    </span>
-                  )}
-                </div>
+                {intelligence && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {intelligence.features.map((feature) => (
+                      <span
+                        key={feature}
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                        style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
+                      >
+                        <Zap className="h-3 w-3" />
+                        {feature}
+                      </span>
+                    ))}
+                    {client.business_website && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                        style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
+                      >
+                        <Globe className="h-3 w-3" />
+                        Website Integrated
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* View / Edit Button */}
+                <button
+                  onClick={handleOpenKbModal}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  View / Edit Knowledge Base
+                </button>
               </div>
             </div>
           )}
@@ -988,6 +1087,188 @@ export default function AgencyClientDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          KNOWLEDGE BASE MODAL — Full-screen overlay
+          Opens read-only, toggle to edit mode, save/reset/close
+          ════════════════════════════════════════════════════════════════ */}
+      {kbModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !kbHasChanges) {
+              setKbModalOpen(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col"
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+          >
+            {/* Modal Header */}
+            <div 
+              className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+              style={{ borderBottom: `1px solid ${theme.border}` }}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" style={{ color: theme.primary }} />
+                  <h2 className="text-lg font-semibold">Knowledge Base</h2>
+                </div>
+                <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                  {client.business_name} — {intelligence?.label || 'Custom'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {!kbEditing && !kbLoading && (
+                  <button
+                    onClick={() => setKbEditing(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{ backgroundColor: theme.hover, color: theme.text }}
+                  >
+                    <Brain className="h-4 w-4" />
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (kbHasChanges) {
+                      if (confirm('You have unsaved changes. Close anyway?')) {
+                        setKbModalOpen(false);
+                        setKbEditing(false);
+                      }
+                    } else {
+                      setKbModalOpen(false);
+                      setKbEditing(false);
+                    }
+                  }}
+                  className="flex items-center justify-center h-9 w-9 rounded-lg transition-colors"
+                  style={{ backgroundColor: theme.hover }}
+                >
+                  <X className="h-5 w-5" style={{ color: theme.textMuted }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {kbError && (
+                <div 
+                  className="mb-4 rounded-lg p-3 flex items-center gap-2"
+                  style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}
+                >
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
+                  <p className="text-xs" style={{ color: theme.errorText }}>{kbError}</p>
+                </div>
+              )}
+
+              {kbSaved && (
+                <div 
+                  className="mb-4 rounded-lg p-3 flex items-center gap-2"
+                  style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}
+                >
+                  <Check className="h-4 w-4" style={{ color: theme.primary }} />
+                  <p className="text-xs" style={{ color: theme.primary }}>
+                    Knowledge base updated — changes are live on the next call.
+                  </p>
+                </div>
+              )}
+
+              {kbLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+                </div>
+              ) : kbEditing ? (
+                <textarea
+                  value={kbContent}
+                  onChange={(e) => setKbContent(e.target.value)}
+                  className="w-full h-full min-h-[50vh] rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none"
+                  style={{
+                    backgroundColor: theme.input,
+                    border: `1px solid ${theme.inputBorder}`,
+                    color: theme.text,
+                  }}
+                />
+              ) : (
+                <div 
+                  className="rounded-xl px-5 py-4 text-sm font-mono whitespace-pre-wrap leading-relaxed overflow-auto"
+                  style={{
+                    backgroundColor: theme.hover,
+                    color: theme.text,
+                    minHeight: '50vh',
+                  }}
+                >
+                  {kbContent || 'No knowledge base content found.'}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {kbEditing && !kbLoading && (
+              <div 
+                className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+                style={{ borderTop: `1px solid ${theme.border}` }}
+              >
+                <button
+                  onClick={handleResetKb}
+                  disabled={kbResetting || kbSaving}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{
+                    backgroundColor: theme.input,
+                    border: `1px solid ${theme.inputBorder}`,
+                    color: theme.textMuted,
+                  }}
+                >
+                  {kbResetting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
+                  Reset to Default
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setKbContent(kbOriginalContent);
+                      setKbEditing(false);
+                    }}
+                    disabled={kbSaving}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{
+                      backgroundColor: theme.input,
+                      border: `1px solid ${theme.inputBorder}`,
+                      color: theme.textMuted,
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleSaveKb}
+                    disabled={kbSaving || kbResetting || !kbHasChanges}
+                    className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                  >
+                    {kbSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
