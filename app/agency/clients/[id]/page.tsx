@@ -1095,7 +1095,7 @@ export default function AgencyClientDetailPage() {
       {kbModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget && !kbHasChanges) {
               setKbModalOpen(false);
@@ -1103,8 +1103,8 @@ export default function AgencyClientDetailPage() {
           }}
         >
           <div
-            className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col"
-            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+            className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+            style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}` }}
           >
             {/* Modal Header */}
             <div 
@@ -1194,7 +1194,8 @@ export default function AgencyClientDetailPage() {
                 <div 
                   className="rounded-xl px-5 py-4 text-sm font-mono whitespace-pre-wrap leading-relaxed overflow-auto"
                   style={{
-                    backgroundColor: theme.hover,
+                    backgroundColor: theme.input,
+                    border: `1px solid ${theme.inputBorder}`,
                     color: theme.text,
                     minHeight: '50vh',
                   }}
