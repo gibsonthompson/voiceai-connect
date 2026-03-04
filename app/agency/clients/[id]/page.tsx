@@ -6,11 +6,126 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
-  Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot
+  Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
+  Brain, Zap
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
 import { getDemoClientDetail } from '../../demoData';
+
+// ─── Industry Intelligence Stats (matches industry-knowledge-bases.js) ───
+const INDUSTRY_INTELLIGENCE: Record<string, {
+  label: string;
+  services: number;
+  faqs: number;
+  terms: number;
+  features: string[];
+}> = {
+  home_services: {
+    label: 'Home Services',
+    services: 47,
+    faqs: 10,
+    terms: 9,
+    features: ['Emergency Triage', 'Seasonal Awareness', 'Urgency Detection'],
+  },
+  medical: {
+    label: 'Medical & Dental',
+    services: 38,
+    faqs: 11,
+    terms: 8,
+    features: ['HIPAA Compliant', 'Emergency Triage', 'Insurance Terminology'],
+  },
+  professional_services: {
+    label: 'Professional Services',
+    services: 32,
+    faqs: 8,
+    terms: 7,
+    features: ['Engagement Flow', 'NDA Awareness', 'Retainer Handling'],
+  },
+  restaurants: {
+    label: 'Restaurants',
+    services: 12,
+    faqs: 12,
+    terms: 7,
+    features: ['Allergen Awareness', 'Reservation Logic', 'Peak Hour Handling'],
+  },
+  salon_spa: {
+    label: 'Salon & Spa',
+    services: 42,
+    faqs: 11,
+    terms: 6,
+    features: ['Duration Estimates', 'Upsell Suggestions', 'Cancellation Policy'],
+  },
+  retail: {
+    label: 'Retail',
+    services: 10,
+    faqs: 11,
+    terms: 5,
+    features: ['Inventory Checks', 'Return Policy', 'Order Status Handling'],
+  },
+  fitness: {
+    label: 'Fitness',
+    services: 28,
+    faqs: 12,
+    terms: 9,
+    features: ['Trial Offers', 'Class Schedules', 'Membership Freeze'],
+  },
+  legal: {
+    label: 'Legal Services',
+    services: 35,
+    faqs: 8,
+    terms: 10,
+    features: ['Privilege Compliant', 'No Legal Advice', 'Intake Flow'],
+  },
+  real_estate: {
+    label: 'Real Estate',
+    services: 24,
+    faqs: 10,
+    terms: 12,
+    features: ['Buyer/Seller Routing', 'Seasonal Market', 'Mortgage Referrals'],
+  },
+  financial: {
+    label: 'Financial Services',
+    services: 30,
+    faqs: 10,
+    terms: 10,
+    features: ['Compliance Safe', 'Tax Season Aware', 'No Financial Advice'],
+  },
+  automotive: {
+    label: 'Automotive',
+    services: 40,
+    faqs: 12,
+    terms: 10,
+    features: ['Safety Priority', 'Maintenance Schedules', 'OEM/Aftermarket'],
+  },
+};
+
+// Map client.industry values to knowledge base keys
+const INDUSTRY_KEY_MAP: Record<string, string> = {
+  'Home Services (plumbing, HVAC, contractors)': 'home_services',
+  'Medical/Dental': 'medical',
+  'Retail/E-commerce': 'retail',
+  'Professional Services (legal, accounting)': 'professional_services',
+  'Restaurants/Food Service': 'restaurants',
+  'Salon/Spa (hair, nails, skincare)': 'salon_spa',
+  'home_services': 'home_services',
+  'medical': 'medical',
+  'medical_dental': 'medical',
+  'retail': 'retail',
+  'professional_services': 'professional_services',
+  'restaurants': 'restaurants',
+  'restaurant': 'restaurants',
+  'salon_spa': 'salon_spa',
+  'beauty_wellness': 'salon_spa',
+  'fitness': 'fitness',
+  'legal': 'legal',
+  'real_estate': 'real_estate',
+  'financial_services': 'financial',
+  'financial': 'financial',
+  'automotive': 'automotive',
+  'general': 'professional_services',
+  'other': 'professional_services',
+};
 
 interface Client {
   id: string;
@@ -86,7 +201,6 @@ export default function AgencyClientDetailPage() {
     fetchClientData();
   }, [agency, clientId, demoMode]);
 
-  // Fetch prompt once we have the client
   useEffect(() => {
     if (client?.vapi_assistant_id && agency && !demoMode) {
       fetchPrompt();
@@ -98,7 +212,6 @@ export default function AgencyClientDetailPage() {
     try {
       const token = localStorage.getItem('auth_token');
 
-      // Fetch client info
       const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -109,7 +222,6 @@ export default function AgencyClientDetailPage() {
       const clientData = await clientRes.json();
       setClient(clientData.client);
 
-      // Fetch recent calls
       const callsRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/calls`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -224,7 +336,7 @@ export default function AgencyClientDetailPage() {
 
   const promptHasChanges = systemPrompt !== originalPrompt;
 
-  // ── Existing Helpers ──
+  // ── Helpers ──
 
   const copyPhoneNumber = () => {
     if (!client?.vapi_phone_number) return;
@@ -286,6 +398,10 @@ export default function AgencyClientDetailPage() {
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
   };
+
+  // ── Resolve industry intelligence for this client ──
+  const industryKey = client?.industry ? (INDUSTRY_KEY_MAP[client.industry] || 'professional_services') : null;
+  const intelligence = industryKey ? INDUSTRY_INTELLIGENCE[industryKey] : null;
 
   if (contextLoading || loading) {
     return (
@@ -526,10 +642,9 @@ export default function AgencyClientDetailPage() {
                 </div>
 
                 <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-                  This is the system prompt that controls how this client's AI receptionist behaves on calls. Changes take effect immediately on the next call.
+                  This is the system prompt that controls how this client&apos;s AI receptionist behaves on calls. Changes take effect immediately on the next call.
                 </p>
 
-                {/* Prompt Error */}
                 {promptError && (
                   <div 
                     className="mb-4 rounded-lg p-3 flex items-center gap-2"
@@ -540,7 +655,6 @@ export default function AgencyClientDetailPage() {
                   </div>
                 )}
 
-                {/* Prompt Saved */}
                 {promptSaved && (
                   <div 
                     className="mb-4 rounded-lg p-3 flex items-center gap-2"
@@ -553,7 +667,6 @@ export default function AgencyClientDetailPage() {
                   </div>
                 )}
 
-                {/* Textarea */}
                 {promptLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
@@ -574,7 +687,6 @@ export default function AgencyClientDetailPage() {
                       placeholder="Enter system prompt..."
                     />
 
-                    {/* Actions */}
                     <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                       <button
                         onClick={handleResetPrompt}
@@ -681,6 +793,85 @@ export default function AgencyClientDetailPage() {
 
         {/* Right Column - Sidebar */}
         <div className="space-y-4 sm:space-y-6">
+
+          {/* ════════════════════════════════════════════════════════════════
+              RECEPTIONIST INTELLIGENCE CARD — NEW
+              Shows pre-loaded industry knowledge stats + feature badges
+              ════════════════════════════════════════════════════════════════ */}
+          {intelligence && client.vapi_assistant_id && (
+            <div 
+              className="rounded-xl overflow-hidden"
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+            >
+              <div className="p-4 sm:p-6">
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-1">
+                  <Brain className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h2 className="font-semibold text-sm sm:text-base">Receptionist Intelligence</h2>
+                </div>
+                <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+                  Pre-loaded {intelligence.label} knowledge
+                </p>
+
+                {/* Stat Grid */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div 
+                    className="rounded-lg p-2.5 text-center"
+                    style={{ backgroundColor: theme.hover }}
+                  >
+                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.services}</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Services</p>
+                  </div>
+                  <div 
+                    className="rounded-lg p-2.5 text-center"
+                    style={{ backgroundColor: theme.hover }}
+                  >
+                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.faqs}</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>FAQs</p>
+                  </div>
+                  {intelligence.terms > 0 && (
+                    <div 
+                      className="rounded-lg p-2.5 text-center"
+                      style={{ backgroundColor: theme.hover }}
+                    >
+                      <p className="text-lg font-bold" style={{ color: theme.primary }}>{intelligence.terms}</p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Terms</p>
+                    </div>
+                  )}
+                  <div 
+                    className="rounded-lg p-2.5 text-center"
+                    style={{ backgroundColor: theme.hover }}
+                  >
+                    <p className="text-lg font-bold" style={{ color: theme.primary }}>3</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Urgency Levels</p>
+                  </div>
+                </div>
+
+                {/* Feature Pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {intelligence.features.map((feature) => (
+                    <span
+                      key={feature}
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                      style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
+                    >
+                      <Zap className="h-3 w-3" />
+                      {feature}
+                    </span>
+                  ))}
+                  {client.business_website && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                      style={{ backgroundColor: theme.primary + '12', color: theme.primary }}
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website Integrated
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Subscription Card */}
           <div 
