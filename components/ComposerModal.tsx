@@ -274,7 +274,8 @@ export default function ComposerModal({
   const fetchTemplates = async () => {
     if (demoMode) {
       setLoading(true);
-      const demoTemplates = getDemoTemplates(type) as Template[];
+      const demoType = type === 'linkedin' ? 'email' : type;
+      const demoTemplates = (type === 'linkedin' ? [] : getDemoTemplates(demoType)) as Template[];
       setTemplates(demoTemplates);
       setTimeout(() => autoSelectTemplate(demoTemplates, countsRef.current), 50);
       setLoading(false);
@@ -373,7 +374,7 @@ export default function ComposerModal({
     if (demoMode) {
       logDemoOutreach({
         leadId: lead.id,
-        type,
+        type: type as 'email' | 'sms',
         subject: type === 'email' ? subject : null,
         body,
       });
