@@ -6,7 +6,7 @@ import {
   FileSpreadsheet, BarChart3, Mail, Phone, Globe, Building2,
   ChevronDown, ChevronRight, X, Check, Copy, ExternalLink, 
   MessageSquare, Send, Clock, AlertTriangle, Flame, Snowflake,
-  Calendar, ArrowRight, Eye, Pencil, MoreHorizontal
+  Calendar, ArrowRight, Eye, Pencil, MoreHorizontal, Linkedin
 } from 'lucide-react';
 import CSVImportModal from '@/components/CSVImportModal';
 import ComposerModal from '@/components/ComposerModal';
@@ -18,6 +18,7 @@ interface Lead {
   email: string;
   phone: string;
   website: string;
+  linkedin_url: string | null;
   industry: string;
   source: string;
   status: string;
@@ -86,6 +87,17 @@ function daysUntil(date: string): number {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   return Math.round((d.getTime() - now.getTime()) / 86400000);
+}
+
+/** Format a LinkedIn URL for display — show just the slug */
+function formatLinkedinSlug(url: string): string {
+  try {
+    return url
+      .replace(/^https?:\/\/(www\.)?linkedin\.com\//, '')
+      .replace(/\/$/, '');
+  } catch {
+    return url;
+  }
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -163,23 +175,50 @@ function QueueCard({
           )}
           {!lead.last_outreach_at && <span>· No outreach yet</span>}
         </div>
-        {lead.website && (
-          <a
-            href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-[11px] text-emerald-400/60 hover:text-emerald-400 mt-0.5 transition-colors"
-          >
-            <Globe className="h-3 w-3" />
-            <span className="truncate">{lead.website.replace(/^https?:\/\//, '')}</span>
-            <ExternalLink className="h-2.5 w-2.5" />
-          </a>
-        )}
+        <div className="flex items-center gap-3 mt-0.5">
+          {lead.website && (
+            <a
+              href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[11px] text-emerald-400/60 hover:text-emerald-400 transition-colors"
+            >
+              <Globe className="h-3 w-3" />
+              <span className="truncate">{lead.website.replace(/^https?:\/\//, '')}</span>
+              <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+          {lead.linkedin_url && (
+            <a
+              href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[11px] text-blue-400/60 hover:text-blue-400 transition-colors"
+            >
+              <Linkedin className="h-3 w-3" />
+              <span className="truncate">{formatLinkedinSlug(lead.linkedin_url)}</span>
+              <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Quick actions */}
       <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {lead.linkedin_url && (
+          <a
+            href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="p-2 rounded-lg hover:bg-blue-500/10 transition-colors"
+            title="Open LinkedIn"
+          >
+            <Linkedin className="h-4 w-4 text-blue-400/70" />
+          </a>
+        )}
         {lead.email && (
           <button
             onClick={(e) => { e.stopPropagation(); onEmail(); }}
@@ -449,6 +488,17 @@ function ExpandedDetail({
               <ExternalLink className="h-3 w-3" />
             </a>
           )}
+          {lead.linkedin_url && (
+            <a
+              href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-xs text-blue-400/70 hover:text-blue-400 transition-colors"
+            >
+              <Linkedin className="h-3.5 w-3.5" />
+              <span className="truncate">{formatLinkedinSlug(lead.linkedin_url)}</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
         </div>
         <div className="space-y-2">
           <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em]">Details</h4>
@@ -466,6 +516,15 @@ function ExpandedDetail({
 
       <div className="flex items-center justify-between pt-3 border-t border-white/[0.03]">
         <div className="flex items-center gap-2">
+          {lead.linkedin_url && (
+            <a
+              href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium bg-blue-500/[0.08] border border-blue-500/[0.12] text-blue-400/80 hover:bg-blue-500/[0.12] transition-colors"
+            >
+              <Linkedin className="h-3 w-3" /> LinkedIn <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
           {lead.email && (
             <button onClick={onEmail} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium bg-violet-500/[0.08] border border-violet-500/[0.12] text-violet-400/80 hover:bg-violet-500/[0.12] transition-colors">
               <Mail className="h-3 w-3" /> Email <Send className="h-2.5 w-2.5" />
@@ -674,6 +733,7 @@ export default function AdminLeadsPage() {
       email: lead.email || '',
       phone: lead.phone || '',
       website: lead.website || '',
+      linkedin_url: lead.linkedin_url || '',
       industry: lead.industry || '',
       source: lead.source || '',
       notes: lead.notes || '',
@@ -691,6 +751,7 @@ export default function AdminLeadsPage() {
         ...editForm,
         estimated_value: editForm.estimated_value ? Math.round(Number(editForm.estimated_value)) : null,
         next_follow_up: editForm.next_follow_up || null,
+        linkedin_url: editForm.linkedin_url || null,
       };
       const response = await fetch(`${backendUrl}/api/admin/leads/${leadId}`, {
         method: 'PUT',
@@ -968,7 +1029,21 @@ export default function AdminLeadsPage() {
                             </span>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-white/85 truncate">{lead.business_name || 'Unnamed'}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-[13px] font-medium text-white/85 truncate">{lead.business_name || 'Unnamed'}</p>
+                              {lead.linkedin_url && (
+                                <a
+                                  href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="shrink-0 text-blue-400/40 hover:text-blue-400 transition-colors"
+                                  title="Open LinkedIn"
+                                >
+                                  <Linkedin className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                            </div>
                             {lead.industry && (
                               <p className="text-[11px] text-white/30 truncate capitalize">{lead.industry}</p>
                             )}
@@ -1018,6 +1093,17 @@ export default function AdminLeadsPage() {
                       {/* Actions */}
                       <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5">
+                          {lead.linkedin_url && (
+                            <a
+                              href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg hover:bg-blue-500/10 transition-colors"
+                              title="Open LinkedIn"
+                            >
+                              <Linkedin className="h-3.5 w-3.5 text-blue-400/50 hover:text-blue-400" />
+                            </a>
+                          )}
                           {lead.email && (
                             <button
                               onClick={() => openComposer(lead, 'email')}
@@ -1065,6 +1151,7 @@ export default function AdminLeadsPage() {
                                   { key: 'email', label: 'Email', type: 'email' },
                                   { key: 'phone', label: 'Phone', type: 'text' },
                                   { key: 'website', label: 'Website', type: 'text' },
+                                  { key: 'linkedin_url', label: 'LinkedIn URL', type: 'text' },
                                   { key: 'industry', label: 'Industry', type: 'text' },
                                   { key: 'estimated_value', label: 'Value (cents)', type: 'number' },
                                   { key: 'next_follow_up', label: 'Follow-up Date', type: 'date' },
@@ -1076,6 +1163,7 @@ export default function AdminLeadsPage() {
                                       value={(editForm as any)[f.key] || ''}
                                       onChange={(e) => setEditForm(prev => ({ ...prev, [f.key]: f.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value }))}
                                       className={editInputClass}
+                                      placeholder={f.key === 'linkedin_url' ? 'https://linkedin.com/in/...' : undefined}
                                     />
                                   </div>
                                 ))}

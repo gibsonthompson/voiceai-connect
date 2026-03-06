@@ -48,6 +48,7 @@ const LEAD_FIELDS = [
   { key: 'email', label: 'Email', required: false },
   { key: 'phone', label: 'Phone', required: false },
   { key: 'website', label: 'Website', required: false },
+  { key: 'linkedin_url', label: 'LinkedIn URL', required: false },
   { key: 'industry', label: 'Industry', required: false },
   { key: 'notes', label: 'Notes', required: false },
   { key: 'estimated_value', label: 'Estimated Value ($/mo)', required: false },
@@ -93,10 +94,7 @@ const IGNORED_HEADERS_SET = new Set([
   'account id',
   'organization id',
   'person id',
-  // Social URLs (not useful for leads)
-  'person linkedin url',
-  'company linkedin url',
-  'company linkedin',
+  // Social URLs OTHER than LinkedIn (not useful for leads)
   'facebook url',
   'twitter url',
   'twitter handle',
@@ -271,6 +269,21 @@ const AUTO_MAP: Record<string, string> = {
   'domain': 'website',
   'web url': 'website',
   'webpage': 'website',
+  // linkedin_url — Apollo + LinkedIn + CRM export headers
+  'person linkedin url': 'linkedin_url',
+  'company linkedin url': 'linkedin_url',
+  'company linkedin': 'linkedin_url',
+  'contact linkedin url': 'linkedin_url',
+  'linkedin url': 'linkedin_url',
+  'linkedin_url': 'linkedin_url',
+  'linkedin profile url': 'linkedin_url',
+  'linkedin profile': 'linkedin_url',
+  'linkedin': 'linkedin_url',
+  'linkedin link': 'linkedin_url',
+  'li url': 'linkedin_url',
+  'li profile': 'linkedin_url',
+  'linkedin page': 'linkedin_url',
+  'account linkedin url': 'linkedin_url',
   // industry
   'industry': 'industry',
   'sector': 'industry',
@@ -342,7 +355,10 @@ const FUZZY_KEYWORDS: { pattern: string; field: string }[] = [
   { pattern: 'direct dial', field: 'phone' },
   { pattern: 'annual revenue', field: 'estimated_value' },
   { pattern: 'ad spend', field: 'estimated_value' },
+  { pattern: 'linkedin url', field: 'linkedin_url' },
+  { pattern: 'linkedin profile', field: 'linkedin_url' },
   // --- Single-word patterns AFTER (broader catches) ---
+  { pattern: 'linkedin', field: 'linkedin_url' },
   { pattern: 'phone', field: 'phone' },
   { pattern: 'mobile', field: 'phone' },
   { pattern: 'cell', field: 'phone' },
@@ -771,6 +787,7 @@ export default function CSVImportModal({
                     <p>• Export from Apollo, LinkedIn, or any CRM as CSV</p>
                     <p>• First row should be column headers</p>
                     <p>• At minimum, include a business name or contact name column</p>
+                    <p>• LinkedIn URLs from Apollo exports are auto-detected</p>
                     <p>• Duplicate emails already in your CRM will be skipped</p>
                   </div>
                 </div>
@@ -891,6 +908,7 @@ export default function CSVImportModal({
                         {preview.phone && <span>📞 {preview.phone}</span>}
                         {preview.industry && <span>🏢 {preview.industry}</span>}
                         {preview.website && <span>🌐 {preview.website}</span>}
+                        {preview.linkedin_url && <span>💼 {preview.linkedin_url.replace(/^https?:\/\/(www\.)?linkedin\.com\//, '').replace(/\/$/, '')}</span>}
                       </div>
                     </div>
                   );
