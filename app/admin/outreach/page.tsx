@@ -167,7 +167,7 @@ export default function AdminOutreachPage() {
           {activeDropdown === template.id && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-              <div className="absolute right-0 mt-1 w-40 rounded-xl shadow-2xl z-20 bg-[#111] border border-white/[0.08] overflow-hidden">
+              <div className={`absolute right-0 w-40 rounded-xl shadow-2xl z-20 bg-[#111] border border-white/[0.08] overflow-hidden ${idx >= total - 2 ? 'bottom-full mb-1' : 'mt-1'}`}>
                 <Link
                   href={`/admin/outreach/templates/${template.id}`}
                   className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-white/70 hover:bg-white/[0.04] transition-colors"
@@ -324,7 +324,7 @@ export default function AdminOutreachPage() {
                 <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">Email Templates</h3>
                 <span className="text-[10px] text-white/25">({emailTemplates.length})</span>
               </div>
-              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-visible">
                 {emailTemplates.map((t, idx) => renderTemplateRow(t, idx, emailTemplates.length))}
               </div>
             </div>
@@ -336,7 +336,7 @@ export default function AdminOutreachPage() {
                 <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">SMS Templates</h3>
                 <span className="text-[10px] text-white/25">({smsTemplates.length})</span>
               </div>
-              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-visible">
                 {smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates.length))}
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function AdminOutreachPage() {
                 <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">LinkedIn Templates</h3>
                 <span className="text-[10px] text-white/25">({linkedinTemplates.length})</span>
               </div>
-              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-visible">
                 {linkedinTemplates.map((t, idx) => renderTemplateRow(t, idx, linkedinTemplates.length))}
               </div>
             </div>
