@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   FileText, Mail, MessageSquare, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, ArrowRight
+  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin
 } from 'lucide-react';
 
 interface Template {
   id: string;
   name: string;
   description: string;
-  type: 'email' | 'sms';
+  type: 'email' | 'sms' | 'linkedin';
   subject: string;
   body: string;
   is_default: boolean;
@@ -92,6 +92,7 @@ export default function AdminOutreachPage() {
 
   const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
   const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
+  const linkedinTemplates = filteredTemplates.filter(t => t.type === 'linkedin');
 
   if (loading) {
     return (
@@ -101,6 +102,24 @@ export default function AdminOutreachPage() {
     );
   }
 
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'email': return <Mail className="h-4 w-4 text-violet-400" />;
+      case 'sms': return <MessageSquare className="h-4 w-4 text-cyan-400" />;
+      case 'linkedin': return <Linkedin className="h-4 w-4 text-blue-400" />;
+      default: return <Mail className="h-4 w-4 text-violet-400" />;
+    }
+  };
+
+  const getTypeBg = (type: string) => {
+    switch (type) {
+      case 'email': return 'bg-violet-500/[0.08]';
+      case 'sms': return 'bg-cyan-500/[0.08]';
+      case 'linkedin': return 'bg-blue-500/[0.08]';
+      default: return 'bg-violet-500/[0.08]';
+    }
+  };
+
   const renderTemplateRow = (template: Template, idx: number, total: number) => (
     <div
       key={template.id}
@@ -108,13 +127,8 @@ export default function AdminOutreachPage() {
     >
       <Link href={`/admin/outreach/templates/${template.id}`} className="flex-1 min-w-0">
         <div className="flex items-center gap-3.5">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
-            template.type === 'email' ? 'bg-violet-500/[0.08]' : 'bg-cyan-500/[0.08]'
-          }`}>
-            {template.type === 'email' 
-              ? <Mail className="h-4 w-4 text-violet-400" />
-              : <MessageSquare className="h-4 w-4 text-cyan-400" />
-            }
+          <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${getTypeBg(template.type)}`}>
+            {getTypeIcon(template.type)}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -188,7 +202,7 @@ export default function AdminOutreachPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <div>
           <h1 className="text-[22px] font-semibold text-white tracking-tight">Outreach Templates</h1>
-          <p className="mt-1 text-sm text-white/40">Email and SMS templates for your sales pipeline</p>
+          <p className="mt-1 text-sm text-white/40">Email, SMS, and LinkedIn templates for your sales pipeline</p>
         </div>
         <Link
           href="/admin/outreach/templates/new"
@@ -199,7 +213,7 @@ export default function AdminOutreachPage() {
       </div>
 
       {/* Quick Create */}
-      <div className="grid gap-3 grid-cols-2 mb-6">
+      <div className="grid gap-3 grid-cols-3 mb-6">
         <Link
           href="/admin/outreach/templates/new?type=email"
           className="group rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 hover:bg-white/[0.03] hover:border-white/[0.1] transition-all"
@@ -230,6 +244,21 @@ export default function AdminOutreachPage() {
             <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/15 group-hover:text-white/40 transition-colors" />
           </div>
         </Link>
+        <Link
+          href="/admin/outreach/templates/new?type=linkedin"
+          className="group rounded-xl bg-white/[0.02] border border-white/[0.06] p-4 hover:bg-white/[0.03] hover:border-white/[0.1] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/[0.08]">
+              <Linkedin className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="font-medium text-[13px] text-white/85 group-hover:text-white transition-colors">LinkedIn Template</p>
+              <p className="text-xs text-white/35">Create new LinkedIn</p>
+            </div>
+            <ArrowRight className="h-3.5 w-3.5 ml-auto text-white/15 group-hover:text-white/40 transition-colors" />
+          </div>
+        </Link>
       </div>
 
       {/* Search & Filters */}
@@ -249,6 +278,7 @@ export default function AdminOutreachPage() {
             { value: null, label: 'All' },
             { value: 'email', label: 'Email' },
             { value: 'sms', label: 'SMS' },
+            { value: 'linkedin', label: 'LinkedIn' },
           ].map((filter) => (
             <button
               key={filter.label}
@@ -308,6 +338,18 @@ export default function AdminOutreachPage() {
               </div>
               <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
                 {smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates.length))}
+              </div>
+            </div>
+          )}
+          {linkedinTemplates.length > 0 && (!typeFilter || typeFilter === 'linkedin') && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Linkedin className="h-3.5 w-3.5 text-blue-400/60" />
+                <h3 className="text-xs font-medium text-white/40 uppercase tracking-[0.1em]">LinkedIn Templates</h3>
+                <span className="text-[10px] text-white/25">({linkedinTemplates.length})</span>
+              </div>
+              <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+                {linkedinTemplates.map((t, idx) => renderTemplateRow(t, idx, linkedinTemplates.length))}
               </div>
             </div>
           )}

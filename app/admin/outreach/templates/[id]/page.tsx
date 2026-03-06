@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Loader2, Mail, MessageSquare, Save, Info,
-  Copy, Check
+  Copy, Check, Linkedin
 } from 'lucide-react';
 
 interface TemplateVariable {
@@ -18,6 +18,33 @@ interface VariableGroup {
   lead: TemplateVariable[];
   sender: TemplateVariable[];
   dynamic: TemplateVariable[];
+}
+
+function getTypeIcon(type: string) {
+  switch (type) {
+    case 'email': return <Mail className="h-3 w-3 text-violet-400" />;
+    case 'sms': return <MessageSquare className="h-3 w-3 text-cyan-400" />;
+    case 'linkedin': return <Linkedin className="h-3 w-3 text-blue-400" />;
+    default: return <Mail className="h-3 w-3 text-violet-400" />;
+  }
+}
+
+function getTypeBg(type: string) {
+  switch (type) {
+    case 'email': return 'bg-violet-500/[0.1]';
+    case 'sms': return 'bg-cyan-500/[0.1]';
+    case 'linkedin': return 'bg-blue-500/[0.1]';
+    default: return 'bg-violet-500/[0.1]';
+  }
+}
+
+function getTypeLabel(type: string) {
+  switch (type) {
+    case 'email': return 'Email template';
+    case 'sms': return 'SMS template';
+    case 'linkedin': return 'LinkedIn template';
+    default: return 'Email template';
+  }
 }
 
 export default function AdminTemplateEditorPage() {
@@ -99,7 +126,7 @@ export default function AdminTemplateEditorPage() {
   const handleSave = async () => {
     if (!formData.name.trim()) { setError('Template name is required'); return; }
     if (!formData.body.trim()) { setError('Template body is required'); return; }
-    if (formData.type === 'email' && !formData.subject.trim()) { setError('Subject is required'); return; }
+    if (formData.type === 'email' && !formData.subject.trim()) { setError('Subject is required for email templates'); return; }
 
     setSaving(true);
     setError('');
@@ -165,17 +192,10 @@ export default function AdminTemplateEditorPage() {
               {isNew ? 'Create Template' : 'Edit Template'}
             </h1>
             <div className="flex items-center gap-2 mt-1.5">
-              <div className={`flex h-5 w-5 items-center justify-center rounded ${
-                formData.type === 'email' ? 'bg-violet-500/[0.1]' : 'bg-cyan-500/[0.1]'
-              }`}>
-                {formData.type === 'email' 
-                  ? <Mail className="h-3 w-3 text-violet-400" />
-                  : <MessageSquare className="h-3 w-3 text-cyan-400" />
-                }
+              <div className={`flex h-5 w-5 items-center justify-center rounded ${getTypeBg(formData.type)}`}>
+                {getTypeIcon(formData.type)}
               </div>
-              <span className="text-xs text-white/40">
-                {formData.type === 'email' ? 'Email template' : 'SMS template'}
-              </span>
+              <span className="text-xs text-white/40">{getTypeLabel(formData.type)}</span>
             </div>
           </div>
           <button
@@ -209,7 +229,7 @@ export default function AdminTemplateEditorPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Cold Email - Agency Pitch"
+                    placeholder={formData.type === 'linkedin' ? 'e.g., LinkedIn Connect - Agency Owner' : 'e.g., Cold Email - Agency Pitch'}
                     className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                   />
                 </div>
@@ -222,6 +242,7 @@ export default function AdminTemplateEditorPage() {
                   >
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
+                    <option value="linkedin">LinkedIn</option>
                   </select>
                 </div>
               </div>
@@ -231,7 +252,7 @@ export default function AdminTemplateEditorPage() {
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="When to use this template"
+                  placeholder={formData.type === 'linkedin' ? 'e.g., Connection request for agency owners' : 'When to use this template'}
                   className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
                 />
               </div>
@@ -289,17 +310,25 @@ export default function AdminTemplateEditorPage() {
                 </div>
               )}
               <div>
-                <label className="block text-xs text-white/50 mb-2">Body *</label>
+                <label className="block text-xs text-white/50 mb-2">
+                  {formData.type === 'linkedin' ? 'Message *' : 'Body *'}
+                </label>
                 <textarea
                   value={formData.body}
                   onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))}
-                  placeholder="Write your message here. Use {variables} to personalize."
-                  rows={formData.type === 'email' ? 14 : 6}
+                  placeholder={
+                    formData.type === 'linkedin' 
+                      ? 'Hi {lead_contact_first_name}, I noticed {lead_business_name}...' 
+                      : 'Write your message here. Use {variables} to personalize.'
+                  }
+                  rows={formData.type === 'email' ? 14 : formData.type === 'linkedin' ? 8 : 6}
                   className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-3 text-sm font-mono text-white/90 resize-y focus:outline-none focus:border-emerald-500/30 leading-relaxed placeholder:text-white/25 transition-colors"
                 />
-                {formData.type === 'sms' && (
+                {(formData.type === 'sms' || formData.type === 'linkedin') && (
                   <p className="text-[10px] text-white/30 mt-1.5 tabular-nums">
-                    {formData.body.length} characters · {Math.ceil(formData.body.length / 160) || 1} segment{formData.body.length > 160 ? 's' : ''}
+                    {formData.body.length} characters
+                    {formData.type === 'sms' && ` · ${Math.ceil(formData.body.length / 160) || 1} segment${formData.body.length > 160 ? 's' : ''}`}
+                    {formData.type === 'linkedin' && ` · Connection requests: ~300 char limit · Messages: ~8,000`}
                   </p>
                 )}
               </div>
@@ -357,10 +386,22 @@ export default function AdminTemplateEditorPage() {
               <div className="text-[11px] text-emerald-400/50 leading-relaxed">
                 <p className="font-medium mb-1.5 text-emerald-400/70">Tips</p>
                 <ul className="space-y-1">
-                  <li>Keep subject lines under 50 chars</li>
-                  <li>Personalize with first name</li>
-                  <li>One clear call-to-action</li>
-                  <li>Use sequence order for multi-step campaigns</li>
+                  {formData.type === 'linkedin' ? (
+                    <>
+                      <li>Connection notes: keep under 300 chars</li>
+                      <li>Reference something specific about them</li>
+                      <li>Don't pitch in the connection request</li>
+                      <li>First message after connect: provide value</li>
+                      <li>Use sequence order for multi-step campaigns</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Keep subject lines under 50 chars</li>
+                      <li>Personalize with first name</li>
+                      <li>One clear call-to-action</li>
+                      <li>Use sequence order for multi-step campaigns</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

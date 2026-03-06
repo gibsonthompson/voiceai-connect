@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   X, Loader2, Mail, MessageSquare, Copy, Check, 
-  ChevronDown, Info, Hash, Clipboard
+  ChevronDown, Info, Hash, Clipboard, ExternalLink, Linkedin
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
@@ -23,6 +23,7 @@ interface Lead {
   contact_name: string;
   email: string;
   phone: string;
+  linkedin_url?: string | null;
 }
 
 interface Template {
@@ -42,7 +43,7 @@ interface ComposerModalProps {
   onClose: () => void;
   agencyId: string;
   lead: Lead;
-  type: 'email' | 'sms';
+  type: 'email' | 'sms' | 'linkedin';
   onSent?: () => void;
   adminMode?: boolean;  // When true, uses admin API endpoints + admin_token
 }
@@ -65,13 +66,45 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function getOutreachLabel(type: 'email' | 'sms', number: number): string {
+function getOutreachLabel(type: 'email' | 'sms' | 'linkedin', number: number): string {
+  if (type === 'linkedin') {
+    if (number === 1) return 'Initial Connect';
+    if (number === 2) return 'First Message';
+    if (number === 3) return 'Follow-up';
+    return `Follow-up #${number - 2}`;
+  }
   if (number === 1) {
     return type === 'email' ? 'Initial Email' : 'Initial SMS';
   } else if (number === 2) {
     return type === 'email' ? 'Follow-up Email' : 'Follow-up SMS';
   } else {
     return type === 'email' ? `Follow-up Email #${number - 1}` : `Follow-up SMS #${number - 1}`;
+  }
+}
+
+// Type-specific accent colors
+function getTypeAccent(type: 'email' | 'sms' | 'linkedin') {
+  switch (type) {
+    case 'email': return { color: '#a855f7', bg: 'rgba(147, 51, 234, 0.1)', border: 'rgba(147, 51, 234, 0.2)' };
+    case 'sms': return { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', border: 'rgba(6, 182, 212, 0.2)' };
+    case 'linkedin': return { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.2)' };
+  }
+}
+
+function getTypeIcon(type: 'email' | 'sms' | 'linkedin') {
+  switch (type) {
+    case 'email': return Mail;
+    case 'sms': return MessageSquare;
+    case 'linkedin': return Linkedin;
+  }
+}
+
+/** Format a LinkedIn URL for display */
+function formatLinkedinSlug(url: string): string {
+  try {
+    return url.replace(/^https?:\/\/(www\.)?linkedin\.com\//, '').replace(/\/$/, '');
+  } catch {
+    return url;
   }
 }
 
@@ -97,10 +130,10 @@ export default function ComposerModal({
   const [loggedSuccess, setLoggedSuccess] = useState(false);
   
   // Outreach counts for sequence tracking
-  const [outreachCounts, setOutreachCounts] = useState({ email: 0, sms: 0 });
+  const [outreachCounts, setOutreachCounts] = useState({ email: 0, sms: 0, linkedin: 0 });
 
   // Refs to coordinate auto-select after both counts + templates load
-  const countsRef = useRef({ email: 0, sms: 0 });
+  const countsRef = useRef({ email: 0, sms: 0, linkedin: 0 });
   const autoSelectDone = useRef(false);
 
   // Theme - default to dark unless explicitly light
@@ -109,6 +142,10 @@ export default function ComposerModal({
   // Agency primary color
   const primaryColor = adminMode ? '#3b82f6' : (branding?.primaryColor || '#10b981');
   const primaryLight = isLightColor(primaryColor);
+
+  // Type accent
+  const accent = getTypeAccent(type);
+  const TypeIcon = getTypeIcon(type);
 
   // API helpers for admin vs agency mode
   const getToken = () => localStorage.getItem(adminMode ? 'admin_token' : 'auth_token');
@@ -130,8 +167,17 @@ export default function ComposerModal({
     hoverBg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
   };
 
+  // LinkedIn profile URL
+  const linkedinUrl = lead.linkedin_url 
+    ? (lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`)
+    : null;
+
   // Current sequence number
-  const currentNumber = type === 'email' ? outreachCounts.email + 1 : outreachCounts.sms + 1;
+  const currentNumber = type === 'email' 
+    ? outreachCounts.email + 1 
+    : type === 'sms' 
+      ? outreachCounts.sms + 1 
+      : outreachCounts.linkedin + 1;
   const sequenceLabel = getOutreachLabel(type, currentNumber);
 
   useEffect(() => {
@@ -143,7 +189,7 @@ export default function ComposerModal({
       setCopied('none');
       setLoggedSuccess(false);
       autoSelectDone.current = false;
-      countsRef.current = { email: 0, sms: 0 };
+      countsRef.current = { email: 0, sms: 0, linkedin: 0 };
 
       // Fetch both in parallel — auto-select is coordinated via refs
       fetchOutreachCounts();
@@ -152,13 +198,15 @@ export default function ComposerModal({
   }, [isOpen, agencyId, type, lead.id]);
 
   // ── Auto-Template Selection ──────────────────────────────────────
-  const autoSelectTemplate = (templateList: Template[], counts: { email: number; sms: number }) => {
+  const autoSelectTemplate = (templateList: Template[], counts: { email: number; sms: number; linkedin: number }) => {
     if (templateList.length === 0 || autoSelectDone.current) return;
     autoSelectDone.current = true;
 
     const targetSequenceOrder = type === 'email' 
       ? counts.email + 1 
-      : counts.sms + 1;
+      : type === 'sms'
+        ? counts.sms + 1
+        : counts.linkedin + 1;
 
     // 1. Exact sequence_order match
     const sequenceMatch = templateList.find(
@@ -194,7 +242,7 @@ export default function ComposerModal({
 
   const fetchOutreachCounts = async () => {
     if (demoMode) {
-      const counts = { email: 0, sms: 0 };
+      const counts = { email: 0, sms: 0, linkedin: 0 };
       countsRef.current = counts;
       setOutreachCounts(counts);
       return;
@@ -213,6 +261,7 @@ export default function ComposerModal({
         const counts = {
           email: data.outreach?.email_count || 0,
           sms: data.outreach?.sms_count || 0,
+          linkedin: data.outreach?.linkedin_count || 0,
         };
         countsRef.current = counts;
         setOutreachCounts(counts);
@@ -350,7 +399,7 @@ export default function ComposerModal({
           leadId: lead.id,
           templateId: selectedTemplate || null,
           type,
-          toAddress: type === 'email' ? lead.email : lead.phone,
+          toAddress: type === 'email' ? lead.email : (type === 'linkedin' ? lead.linkedin_url : lead.phone),
           toPhone: type === 'sms' ? lead.phone : null,
           subject: type === 'email' ? subject : null,
           body,
@@ -374,6 +423,18 @@ export default function ComposerModal({
     await handleLogAsSent();
   };
 
+  /** LinkedIn-specific: Copy message, open profile, and log */
+  const handleCopyOpenAndLog = async () => {
+    await navigator.clipboard.writeText(body);
+    setCopied('all');
+    // Open LinkedIn profile in new tab
+    if (linkedinUrl) {
+      window.open(linkedinUrl, '_blank', 'noopener,noreferrer');
+    }
+    // Log as sent
+    await handleLogAsSent();
+  };
+
   if (!isOpen) return null;
 
   const selectedTemplateData = templates.find(t => t.id === selectedTemplate);
@@ -387,7 +448,7 @@ export default function ComposerModal({
         onClick={onClose}
       />
       
-      {/* Modal - wider for email */}
+      {/* Modal */}
       <div 
         className={`relative w-full ${type === 'email' ? 'sm:max-w-4xl' : 'sm:max-w-2xl'} rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col`}
         style={{ 
@@ -409,30 +470,18 @@ export default function ComposerModal({
           style={{ borderBottom: `1px solid ${theme.borderLight}` }}
         >
           <div className="flex items-center gap-3 min-w-0">
-            {type === 'email' ? (
-              <div 
-                className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
-                style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)' }}
-              >
-                <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#a855f7' }} />
-              </div>
-            ) : (
-              <div 
-                className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
-                style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)' }}
-              >
-                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#06b6d4' }} />
-              </div>
-            )}
+            <div 
+              className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg shrink-0"
+              style={{ backgroundColor: accent.bg }}
+            >
+              <TypeIcon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: accent.color }} />
+            </div>
             <div className="min-w-0">
               <h2 className="font-semibold flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                Compose {type === 'email' ? 'Email' : 'SMS'}
+                {type === 'linkedin' ? 'LinkedIn Outreach' : `Compose ${type === 'email' ? 'Email' : 'SMS'}`}
                 <span 
                   className="text-[10px] sm:text-xs font-normal px-1.5 sm:px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0"
-                  style={{ 
-                    backgroundColor: type === 'email' ? 'rgba(147, 51, 234, 0.1)' : 'rgba(6, 182, 212, 0.1)',
-                    color: type === 'email' ? '#a855f7' : '#06b6d4',
-                  }}
+                  style={{ backgroundColor: accent.bg, color: accent.color }}
                 >
                   <Hash className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   {sequenceLabel}
@@ -460,8 +509,53 @@ export default function ComposerModal({
           </button>
         </div>
 
-        {/* Recipient email/phone - prominent & copyable */}
-        {((type === 'email' && lead.email) || (type === 'sms' && lead.phone)) && (
+        {/* LinkedIn Profile Link — prominent banner */}
+        {type === 'linkedin' && linkedinUrl && (
+          <div className="px-4 sm:px-6 pb-2">
+            <a
+              href={linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-lg px-4 py-3 transition-colors group"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(59,130,246,0.06)' : 'rgba(59,130,246,0.05)',
+                border: '1px solid rgba(59,130,246,0.15)',
+              }}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+                <Linkedin className="h-4 w-4 text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-blue-400 group-hover:text-blue-300 transition-colors truncate">
+                  {formatLinkedinSlug(lead.linkedin_url!)}
+                </p>
+                <p className="text-[11px]" style={{ color: theme.textMuted }}>Click to open profile in new tab</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-blue-400/50 group-hover:text-blue-400 transition-colors shrink-0" />
+            </a>
+          </div>
+        )}
+
+        {/* LinkedIn — no profile URL warning */}
+        {type === 'linkedin' && !linkedinUrl && (
+          <div className="px-4 sm:px-6 pb-2">
+            <div
+              className="flex items-center gap-2 rounded-lg px-4 py-3"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.05)',
+                border: '1px solid rgba(245,158,11,0.15)',
+              }}
+            >
+              <Info className="h-4 w-4 shrink-0" style={{ color: '#f59e0b' }} />
+              <p className="text-xs" style={{ color: '#f59e0b' }}>
+                No LinkedIn URL on file — add one via the lead edit form to enable direct linking.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Recipient email/phone - for email and sms only */}
+        {type !== 'linkedin' && ((type === 'email' && lead.email) || (type === 'sms' && lead.phone)) && (
           <div className="px-4 sm:px-6 pb-2">
             <div 
               className="flex items-center gap-2 rounded-lg px-3 py-2.5"
@@ -503,20 +597,17 @@ export default function ComposerModal({
           {/* Sequence Info Banner */}
           <div 
             className="flex items-center gap-3 rounded-lg p-3"
-            style={{ 
-              backgroundColor: type === 'email' 
-                ? (isDark ? 'rgba(147, 51, 234, 0.08)' : 'rgba(147, 51, 234, 0.05)')
-                : (isDark ? 'rgba(6, 182, 212, 0.08)' : 'rgba(6, 182, 212, 0.05)'),
-              border: `1px solid ${type === 'email' ? 'rgba(147, 51, 234, 0.2)' : 'rgba(6, 182, 212, 0.2)'}`,
-            }}
+            style={{ backgroundColor: accent.bg, border: `1px solid ${accent.border}` }}
           >
-            <Hash className="h-4 w-4" style={{ color: type === 'email' ? '#a855f7' : '#06b6d4' }} />
+            <Hash className="h-4 w-4" style={{ color: accent.color }} />
             <div>
-              <p className="text-sm font-medium" style={{ color: type === 'email' ? '#a855f7' : '#06b6d4' }}>
+              <p className="text-sm font-medium" style={{ color: accent.color }}>
                 This will be {sequenceLabel}
               </p>
               <p className="text-xs" style={{ color: theme.textMuted }}>
-                {type === 'email' ? 'Emails' : 'SMS'} sent to this lead: {type === 'email' ? outreachCounts.email : outreachCounts.sms}
+                {type === 'linkedin' ? 'LinkedIn messages' : type === 'email' ? 'Emails' : 'SMS'} sent to this lead: {
+                  type === 'email' ? outreachCounts.email : type === 'sms' ? outreachCounts.sms : outreachCounts.linkedin
+                }
               </p>
             </div>
           </div>
@@ -571,14 +662,11 @@ export default function ComposerModal({
                           className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ml-2"
                           style={{ 
                             backgroundColor: template.sequence_order === currentNumber 
-                              ? (type === 'email' ? 'rgba(147,51,234,0.15)' : 'rgba(6,182,212,0.15)')
-                              : theme.cardBg,
+                              ? accent.bg : theme.cardBg,
                             color: template.sequence_order === currentNumber 
-                              ? (type === 'email' ? '#a855f7' : '#06b6d4')
-                              : theme.textMuted2,
+                              ? accent.color : theme.textMuted2,
                             border: template.sequence_order === currentNumber 
-                              ? `1px solid ${type === 'email' ? 'rgba(147,51,234,0.3)' : 'rgba(6,182,212,0.3)'}`
-                              : `1px solid ${theme.border}`,
+                              ? `1px solid ${accent.border}` : `1px solid ${theme.border}`,
                           }}
                         >
                           Step {template.sequence_order}
@@ -588,6 +676,13 @@ export default function ComposerModal({
                   </button>
                 ))}
               </div>
+            )}
+
+            {/* No templates hint for LinkedIn */}
+            {!loading && templates.length === 0 && type === 'linkedin' && (
+              <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
+                No LinkedIn templates yet. Create one in Outreach → New Template → LinkedIn.
+              </p>
             )}
           </div>
 
@@ -645,11 +740,11 @@ export default function ComposerModal({
             </div>
           )}
 
-          {/* Body — with inline copy button, much bigger for email */}
+          {/* Body — with inline copy button */}
           <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-sm" style={{ color: theme.textMuted }}>
-                {type === 'email' ? 'Email Body' : 'Message'}
+                {type === 'email' ? 'Email Body' : type === 'linkedin' ? 'LinkedIn Message' : 'Message'}
               </label>
               {body && (
                 <button
@@ -663,15 +758,19 @@ export default function ComposerModal({
                   onMouseLeave={(e) => { if (copied !== 'body') e.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
                   {copied === 'body' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  {copied === 'body' ? 'Copied!' : 'Copy Body'}
+                  {copied === 'body' ? 'Copied!' : 'Copy Message'}
                 </button>
               )}
             </div>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder={type === 'email' ? 'Write your email...' : 'Write your message...'}
-              rows={type === 'email' ? 18 : 5}
+              placeholder={
+                type === 'email' ? 'Write your email...' 
+                : type === 'linkedin' ? 'Write your LinkedIn message...'
+                : 'Write your message...'
+              }
+              rows={type === 'email' ? 18 : type === 'linkedin' ? 8 : 5}
               className="w-full rounded-xl px-4 sm:px-5 py-3 sm:py-4 transition-colors focus:outline-none"
               style={{ 
                 backgroundColor: theme.cardBg,
@@ -679,7 +778,7 @@ export default function ComposerModal({
                 color: theme.text,
                 fontSize: type === 'email' ? '15px' : '14px',
                 lineHeight: type === 'email' ? '1.75' : '1.5',
-                minHeight: type === 'email' ? '380px' : '120px',
+                minHeight: type === 'email' ? '380px' : type === 'linkedin' ? '180px' : '120px',
                 resize: 'vertical',
               }}
               onFocus={(e) => {
@@ -691,6 +790,11 @@ export default function ComposerModal({
                 e.currentTarget.style.boxShadow = 'none';
               }}
             />
+            {type === 'linkedin' && (
+              <p className="text-[10px] mt-1.5 tabular-nums" style={{ color: theme.textMuted2 }}>
+                {body.length} characters · LinkedIn connection requests allow ~300 chars, messages up to ~8,000
+              </p>
+            )}
           </div>
 
           {/* Info Box */}
@@ -703,8 +807,11 @@ export default function ComposerModal({
           >
             <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: isDark ? '#93c5fd' : '#2563eb' }} />
             <p className="text-xs" style={{ color: isDark ? 'rgba(147, 197, 253, 0.8)' : '#1d4ed8' }}>
-              Copy the subject and body into your email client. Use the copy buttons above each field, 
-              or "Copy All & Log" below to copy everything at once and record it as sent.
+              {type === 'linkedin' ? (
+                <>Copy the message, then open their LinkedIn profile to paste it into a connection request or direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
+              ) : (
+                <>Copy the subject and body into your email client. Use the copy buttons above each field, or "Copy All &amp; Log" below to copy everything at once and record it as sent.</>
+              )}
             </p>
           </div>
         </div>
@@ -732,52 +839,99 @@ export default function ComposerModal({
               Cancel
             </button>
 
-            {/* Copy All */}
-            <button
-              onClick={handleCopyAll}
-              disabled={!body}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ 
-                backgroundColor: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                color: theme.textMuted,
-              }}
-            >
-              {copied === 'all' ? (
-                <>
-                  <Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} />
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Clipboard className="h-4 w-4 shrink-0" />
-                  <span>Copy All</span>
-                </>
-              )}
-            </button>
-            
-            {/* Copy All & Log - Primary */}
-            <button
-              onClick={handleCopyAndLog}
-              disabled={!body || loggedSuccess}
-              className="flex-[1.3] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ 
-                backgroundColor: primaryColor,
-                color: primaryLight ? '#050505' : '#ffffff',
-              }}
-            >
-              {loggedSuccess ? (
-                <>
-                  <Check className="h-4 w-4 shrink-0" />
-                  <span>Logged!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">Copy All & Log</span>
-                </>
-              )}
-            </button>
+            {type === 'linkedin' ? (
+              <>
+                {/* LinkedIn: Open Profile */}
+                {linkedinUrl && (
+                  <a
+                    href={linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors"
+                    style={{ 
+                      backgroundColor: theme.cardBg,
+                      border: `1px solid ${theme.border}`,
+                      color: theme.textMuted,
+                    }}
+                  >
+                    <Linkedin className="h-4 w-4 shrink-0" />
+                    <span>Open Profile</span>
+                  </a>
+                )}
+
+                {/* LinkedIn: Copy, Open & Log - Primary */}
+                <button
+                  onClick={handleCopyOpenAndLog}
+                  disabled={!body || loggedSuccess}
+                  className="flex-[1.3] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: '#3b82f6',
+                    color: '#ffffff',
+                  }}
+                >
+                  {loggedSuccess ? (
+                    <>
+                      <Check className="h-4 w-4 shrink-0" />
+                      <span>Logged!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">Copy, Open &amp; Log</span>
+                    </>
+                  )}
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Email/SMS: Copy All */}
+                <button
+                  onClick={handleCopyAll}
+                  disabled={!body}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: theme.cardBg,
+                    border: `1px solid ${theme.border}`,
+                    color: theme.textMuted,
+                  }}
+                >
+                  {copied === 'all' ? (
+                    <>
+                      <Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clipboard className="h-4 w-4 shrink-0" />
+                      <span>Copy All</span>
+                    </>
+                  )}
+                </button>
+                
+                {/* Email/SMS: Copy All & Log - Primary */}
+                <button
+                  onClick={handleCopyAndLog}
+                  disabled={!body || loggedSuccess}
+                  className="flex-[1.3] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: primaryColor,
+                    color: primaryLight ? '#050505' : '#ffffff',
+                  }}
+                >
+                  {loggedSuccess ? (
+                    <>
+                      <Check className="h-4 w-4 shrink-0" />
+                      <span>Logged!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 shrink-0" />
+                      <span className="whitespace-nowrap">Copy All &amp; Log</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
