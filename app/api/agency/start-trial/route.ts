@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         status: 'trial',
         plan_type: planType,
         trial_ends_at: trialEndsAt.toISOString(),
+        onboarding_completed: true,
         updated_at: new Date().toISOString(),
       })
       .eq('id', agencyId);
