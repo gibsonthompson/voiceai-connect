@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
@@ -41,10 +41,30 @@ function isSuspended(status: string | null | undefined): boolean {
   return status === 'suspended' || status === 'canceled' || status === 'cancelled';
 }
 
-// Helper to check if agency never completed Stripe checkout
-function needsSubscription(agency: any): boolean {
+// Helper to check if agency never picked a plan (still in signup flow)
+function needsPlanSelection(agency: any): boolean {
   if (!agency) return false;
-  return !agency.stripe_subscription_id && agency.subscription_status !== 'active';
+  // Pending = never selected a plan during signup
+  if (agency.subscription_status === 'pending' || agency.status === 'pending_payment') {
+    // But not if they're already trialing or active (edge case protection)
+    if (isTrialStatus(agency.subscription_status) || agency.subscription_status === 'active') {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+// Helper to check if agency's no-card trial has expired
+function isTrialExpiredNoCard(agency: any): boolean {
+  if (!agency) return false;
+  // If they have a Stripe subscription, Stripe handles expiry/charging
+  if (agency.stripe_subscription_id) return false;
+  // Must be in trial status
+  if (!isTrialStatus(agency.subscription_status)) return false;
+  // Must have a trial end date that's in the past
+  if (!agency.trial_ends_at) return false;
+  return new Date(agency.trial_ends_at) < new Date();
 }
 
 // Calculate trial days remaining
@@ -78,11 +98,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [subscribeLoading, setSubscribeLoading] = useState(false);
 
   // ============================================================================
   // THEME — useTheme() handles all colors including branding overrides.
-  // No more hardcoded color variables for layout. The theme auto-derives
-  // everything from agency.website_theme, primaryColor, and branding_overrides.
   // ============================================================================
   const theme = useTheme();
 
@@ -99,8 +118,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
   const agencyIsSuspended = isSuspended(agency?.status);
 
-  // Check if agency needs to complete Stripe checkout (never paid)
-  const agencyNeedsSubscription = needsSubscription(agency);
+  // Check if agency needs to pick a plan (never started trial)
+  const agencyNeedsPlan = needsPlanSelection(agency);
+  
+  // Check if agency's no-card trial has expired
+  const agencyTrialExpiredNoCard = isTrialExpiredNoCard(agency);
   
   // Determine if current route should be blocked
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
@@ -172,7 +194,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, shouldBlockAccess]);
 
-  // Sync body + html background with theme (prevents zoom gap showing wrong color)
+  // Sync body + html background with theme
   useEffect(() => {
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
@@ -202,7 +224,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return pathname?.startsWith(href);
   };
 
-  // Handle navigation - use window.location for proper middleware handling
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isLocked?: boolean, upgradeRequired?: string) => {
     e.preventDefault();
     setSidebarOpen(false);
@@ -227,9 +248,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // ============================================================================
-  // SUBSCRIPTION GATE - Agency never completed Stripe Checkout
+  // PLAN SELECTION GATE - Agency never picked a plan (pending state)
   // ============================================================================
-  if (agencyNeedsSubscription) {
+  if (agencyNeedsPlan) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4"
@@ -287,7 +308,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             className="mb-8 text-sm"
             style={{ color: theme.textMuted }}
           >
-            No charge until your trial ends. Cancel anytime.
+            No credit card required. Cancel anytime.
           </p>
 
           <a
@@ -301,6 +322,126 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             <Zap className="h-5 w-5" />
             Choose a Plan &amp; Start Free Trial
           </a>
+
+          <button
+            onClick={handleSignOut}
+            className="block w-full mt-5 text-sm transition-colors hover:opacity-70"
+            style={{ color: theme.textMuted }}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // TRIAL EXPIRED GATE — No-card trial ended, must subscribe
+  // ============================================================================
+  if (agencyTrialExpiredNoCard) {
+    const handleSubscribeNow = async () => {
+      setSubscribeLoading(true);
+      try {
+        const response = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            agencyId: agency?.id, 
+            planType: agency?.plan_type || 'starter',
+            skipTrial: true,
+          }),
+        });
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } catch (err) {
+        console.error('Failed to create checkout:', err);
+      }
+      setSubscribeLoading(false);
+    };
+
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: theme.bg }}
+      >
+        <link rel="manifest" href="/manifest.json" />
+        <div 
+          className="max-w-lg w-full rounded-2xl p-8 text-center"
+          style={{ 
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* Logo */}
+          <div className="mb-6">
+            {branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt={branding.name}
+                style={{ height: '48px', width: 'auto' }}
+                className="object-contain mx-auto"
+              />
+            ) : (
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+                style={{ backgroundColor: theme.primary15 }}
+              >
+                <WaveformIcon className="h-8 w-8" color={theme.primary} />
+              </div>
+            )}
+          </div>
+
+          {/* Icon */}
+          <div 
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.1)' }}
+          >
+            <Clock className="h-7 w-7" style={{ color: '#fbbf24' }} />
+          </div>
+
+          <h1 
+            className="text-2xl font-bold mb-3"
+            style={{ color: theme.text }}
+          >
+            Your Free Trial Has Ended
+          </h1>
+          <p 
+            className="mb-2 text-base"
+            style={{ color: theme.textMuted }}
+          >
+            Your 14-day trial of the <strong style={{ color: theme.text }}>{agency?.plan_type ? agency.plan_type.charAt(0).toUpperCase() + agency.plan_type.slice(1) : 'Starter'}</strong> plan has expired.
+          </p>
+          <p 
+            className="mb-8 text-sm"
+            style={{ color: theme.textMuted }}
+          >
+            Subscribe now to keep your agency, clients, and AI receptionists active.
+          </p>
+
+          <button
+            onClick={handleSubscribeNow}
+            disabled={subscribeLoading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ 
+              backgroundColor: theme.primary,
+              color: theme.primaryText,
+            }}
+          >
+            {subscribeLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Redirecting to checkout...
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-5 w-5" />
+                Subscribe Now
+              </>
+            )}
+          </button>
 
           <button
             onClick={handleSignOut}
@@ -670,7 +811,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 {trialDaysLeft} days remaining
               </p>
               <p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>
-                Your card will be charged automatically
+                {agency?.stripe_subscription_id 
+                  ? 'Your card will be charged automatically'
+                  : 'Subscribe before your trial ends to keep access'
+                }
               </p>
             </div>
           )}

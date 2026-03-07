@@ -59,10 +59,6 @@ const isLightColor = (hex: string): boolean => {
 
 /**
  * Format client plan price in the agency's local currency.
- * Agency prices are stored as cents in their local currency context:
- *   - A US agency with price_starter=4900 means $49
- *   - A UK agency with price_starter=4900 means £49
- * So we just need the correct symbol and position — no conversion needed.
  */
 function formatAgencyPrice(cents: number, agencyCountry: string = 'US'): string {
   const currency = getCurrencyForCountry(agencyCountry);
@@ -757,7 +753,7 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
 
 // ============================================================================
 // AGENCY PLAN SELECTION (for platform domain) - ALWAYS DARK THEME
-// Already uses geo-detection + formatLocalPrice — no changes needed
+// UPDATED: No credit card required — calls /api/agency/start-trial instead of Stripe
 // ============================================================================
 function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
   const router = useRouter();
@@ -779,7 +775,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     setError('');
 
     try {
-      const response = await fetch('/api/stripe/checkout', {
+      const response = await fetch('/api/agency/start-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agencyId, planType }),
@@ -788,12 +784,11 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.error || 'Failed to start trial');
       }
 
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      // Trial started — redirect to dashboard
+      window.location.href = '/agency/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setSelectedPlan(null);
@@ -914,7 +909,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
           <div className="text-center mb-10 sm:mb-12">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
               <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">14-day free trial included</span>
+              <span className="text-emerald-300/90">14-day free trial · No credit card required</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">
               Choose Your Plan
@@ -1031,7 +1026,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
               </span>
               <span className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-400" />
-                No setup fees
+                No credit card required
               </span>
               <span className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-400" />

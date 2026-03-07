@@ -320,7 +320,10 @@ export default function AgencyDashboardPage() {
                 {trialDaysLeft} days remaining in your trial
               </p>
               <p className="text-xs sm:text-sm" style={{ color: theme.infoText, opacity: 0.7 }}>
-                Your card will be charged automatically when the trial ends. No action needed.
+                {agency?.stripe_subscription_id 
+                  ? 'Your card will be charged automatically when the trial ends. No action needed.'
+                  : 'Subscribe before your trial ends to keep access to your agency dashboard.'
+                }
               </p>
             </div>
           </div>

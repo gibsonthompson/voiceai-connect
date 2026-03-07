@@ -25,7 +25,7 @@ const PLAN_NAMES: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agencyId, planType } = body;
+    const { agencyId, planType, skipTrial } = body;
 
     if (!agencyId || !planType) {
       return NextResponse.json(
@@ -67,9 +67,6 @@ export async function POST(request: NextRequest) {
     
     // For zero-decimal currencies (JPY, HUF, etc.), Stripe expects the amount as-is
     // For normal currencies, Stripe expects cents
-    // Our convertToLocalCurrency returns rounded whole numbers since decimals=0 in our config
-    // So for JPY: $99 * 152 = 15048 yen (pass 15048 to Stripe)
-    // For GBP: $99 * 0.79 = 78 pounds (pass 7800 to Stripe as pence)
     const ZERO_DECIMAL_CURRENCIES = [
       'jpy', 'krw', 'vnd', 'clp', 'pyg', 'ugx', 'gnf', 'rwf', 'xof', 'xaf',
       'bif', 'djf', 'kmf', 'mga', 'xpf'
@@ -97,7 +94,9 @@ export async function POST(request: NextRequest) {
         .eq('id', agencyId);
     }
 
-    // Create checkout session with price_data (dynamic currency)
+    // Create checkout session
+    // skipTrial=true when agency already used their free trial (no-card trial expired)
+    // skipTrial=false/undefined for brand new agencies going through card-required flow
     const baseUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'https://myvoiceaiconnect.com';
     
     const session = await getStripe().checkout.sessions.create({
@@ -119,21 +118,22 @@ export async function POST(request: NextRequest) {
         },
       ],
       subscription_data: {
-        trial_period_days: 14,
+        // Only include trial if this is NOT a post-trial subscription
+        ...(skipTrial ? {} : { trial_period_days: 14 }),
         metadata: {
           agency_id: agencyId,
           plan_type: planType,
         },
       },
-      success_url: `${baseUrl}/signup/success`,
-      cancel_url: `${baseUrl}/signup/plan?agency=${agencyId}`,
+      success_url: `${baseUrl}/agency/dashboard?subscribed=true`,
+      cancel_url: `${baseUrl}/agency/dashboard`,
       metadata: {
         agency_id: agencyId,
         plan_type: planType,
       },
     });
 
-    console.log(`✅ Agency checkout created: ${session.id} | ${currency.toUpperCase()} ${stripeAmount} (${PLAN_NAMES[planType]})`);
+    console.log(`✅ Agency checkout created: ${session.id} | ${currency.toUpperCase()} ${stripeAmount} (${PLAN_NAMES[planType]})${skipTrial ? ' [no trial - post-expiry]' : ''}`);
 
     return NextResponse.json({
       success: true,

@@ -8,13 +8,11 @@ import {
   Upload, 
   Palette, 
   DollarSign, 
-  CreditCard, 
   CheckCircle2, 
   Loader2, 
   ArrowRight, 
   ArrowLeft,
   Image as ImageIcon,
-  ExternalLink,
   Sparkles,
   Lock,
   Info,
@@ -155,16 +153,16 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS — New order: Agency → Pricing → Logo → Colors → Payments → Password → Complete
+// STEP DEFINITIONS — Stripe Connect removed
+// Agency → Pricing → Logo → Colors → Password → Complete
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
   { id: 2, name: 'Pricing', icon: DollarSign, description: 'Configure plans' },
   { id: 3, name: 'Logo', icon: ImageIcon, description: 'Upload your brand' },
   { id: 4, name: 'Colors', icon: Palette, description: 'Set your palette' },
-  { id: 5, name: 'Payments', icon: CreditCard, description: 'Connect Stripe' },
-  { id: 6, name: 'Password', icon: Lock, description: 'Secure account' },
-  { id: 7, name: 'Complete', icon: CheckCircle2, description: 'All done!' },
+  { id: 5, name: 'Password', icon: Lock, description: 'Secure account' },
+  { id: 6, name: 'Complete', icon: CheckCircle2, description: 'All done!' },
 ];
 
 // ============================================================================
@@ -307,7 +305,8 @@ function OnboardingContent() {
         if (!data.agency.name || data.agency.name.includes("'s Agency") || data.agency.name === 'My Agency') {
           setCurrentStep(1);
         } else {
-          setCurrentStep(data.agency.onboarding_step || 1);
+          // Cap at 6 (was 7 before Stripe Connect removal)
+          setCurrentStep(Math.min(data.agency.onboarding_step || 1, 6));
         }
         
         if (data.agency.name && !data.agency.name.includes("'s Agency")) {
@@ -440,14 +439,12 @@ function OnboardingContent() {
           accent_color: colors.accent,
         };
         break;
-      case 5: // Payments
-        break;
     }
 
     const result = await saveStep(currentStep, stepData);
     
     if (result?.success) {
-      if (currentStep < 7) {
+      if (currentStep < 6) {
         setCurrentStep(currentStep + 1);
       }
     }
@@ -457,38 +454,6 @@ function OnboardingContent() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
-  };
-
-  const handleStripeConnect = async () => {
-    if (!agencyId) return;
-    
-    setLoading(true);
-    setError('');
-    
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agency_id: agencyId }),
-      });
-
-      const data = await response.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error || 'Failed to start Stripe Connect');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-      setLoading(false);
-    }
-  };
-
-  const handleSkipConnect = async () => {
-    await saveStep(5, {});
-    setCurrentStep(6);
   };
 
   // FIXED: Pass agency ID to plan page
@@ -782,53 +747,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 5: // Payments
-        return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Connect Stripe</h2>
-              <p className="mt-2 text-[#fafaf9]/50">Receive payments directly from clients</p>
-            </div>
-
-            <div className="max-w-md mx-auto space-y-6">
-              <div className="p-6 rounded-xl border border-[#635BFF]/30 bg-[#635BFF]/[0.05]">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#635BFF]/20 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-6 h-6 text-[#635BFF]" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Stripe Connect</h3>
-                    <p className="mt-1 text-sm text-[#fafaf9]/50">Client payments go directly to your Stripe account. You keep 100% minus standard Stripe fees (2.9% + 30¢).</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleStripeConnect}
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#635BFF] px-6 py-4 text-base font-medium text-white hover:bg-[#5851ea] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    Connect with Stripe
-                    <ExternalLink className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-
-              <button onClick={handleSkipConnect} className="w-full text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/60 transition-colors py-2">
-                Skip for now — set up later in settings
-              </button>
-            </div>
-          </div>
-        );
-
-      case 6: // Password
+      case 5: // Password (was step 6)
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -841,7 +760,7 @@ function OnboardingContent() {
 
             <div className="max-w-md mx-auto space-y-6">
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <p className="text-sm text-[#fafaf9]/60">You're almost done! Click below to set your password and select your plan.</p>
+                <p className="text-sm text-[#fafaf9]/60">You&apos;re almost done! Click below to set your password and select your plan.</p>
               </div>
 
               <button
@@ -855,7 +774,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 7: // Complete
+      case 6: // Complete (was step 7)
         return (
           <div className="space-y-8 text-center">
             <div className="relative">
@@ -898,7 +817,7 @@ function OnboardingContent() {
         {renderStepContent()}
       </div>
 
-      {currentStep < 6 && (
+      {currentStep < 5 && (
         <div className="mt-10 sm:mt-12 flex justify-center gap-4">
           {currentStep > 1 && (
             <button
