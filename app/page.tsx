@@ -15,13 +15,28 @@ import { usePrice } from '@/hooks/usePrice';
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showBottomCta, setShowBottomCta] = useState(false);
   const { formatPrice: fmtPrice } = usePrice();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      // Show sticky CTA after scrolling past hero CTA buttons (~600px)
+      setShowBottomCta(window.scrollY > 600);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
@@ -103,46 +118,52 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile menu */}
-        <div className={`lg:hidden transition-all duration-300 ${
-          mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-        }`}>
-          <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
-            {[
-              { name: 'Platform', href: '/platform' },
-              { name: 'How It Works', href: '/how-it-works' },
-              { name: 'Pricing', href: '#pricing' },
-              { name: 'Blog', href: '/blog' },
-            ].map((item) => (
-              <Link 
-                key={item.name}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-[#fafaf9]/70 hover:text-[#fafaf9] hover:bg-white/[0.03] rounded-lg transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="pt-4 flex flex-col gap-3">
-              <Link 
-                href="/agency/login" 
-                className="px-4 py-3 text-center text-[#fafaf9]/70 hover:text-[#fafaf9] rounded-lg border border-white/10"
-              >
-                Sign In
-              </Link>
-              <Link 
-                href="/signup" 
-                className="px-4 py-3 text-center bg-white text-[#050505] font-medium rounded-full"
-              >
-                Start Free Trial
-              </Link>
+        {/* Mobile menu - full screen overlay */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 top-16 z-50 bg-[#050505]/98 backdrop-blur-xl animate-in fade-in duration-200">
+            <div className="flex flex-col h-full px-6 pt-8 pb-10">
+              <div className="space-y-1 flex-1">
+                {[
+                  { name: 'Platform', href: '/platform' },
+                  { name: 'How It Works', href: '/how-it-works' },
+                  { name: 'Pricing', href: '#pricing' },
+                  { name: 'Blog', href: '/blog' },
+                ].map((item) => (
+                  <Link 
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-2 py-4 text-lg text-[#fafaf9]/80 hover:text-[#fafaf9] border-b border-white/[0.04] transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <Link 
+                  href="/agency/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-2 py-4 text-lg text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+                >
+                  Sign In
+                </Link>
+              </div>
+              <div className="pt-6">
+                <Link 
+                  href="/signup" 
+                  className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-4 text-base active:scale-[0.98] transition-transform"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Start Free Trial
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <p className="mt-3 text-center text-xs text-[#fafaf9]/30">No credit card required</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-28 sm:pt-32 lg:pt-40 pb-16 sm:pb-24 lg:pb-32">
+      <section className="relative pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-24 lg:pb-32">
         {/* Background gradient mesh */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-emerald-500/[0.07] via-amber-500/[0.03] to-transparent rounded-full blur-3xl" />
@@ -151,7 +172,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6 sm:mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 sm:px-4 py-1.5 text-xs sm:text-sm mb-5 sm:mb-8">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
@@ -160,44 +181,44 @@ export default function LandingPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
+            <h1 className="text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
               <span className="block">Sell AI Receptionists</span>
               <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
                 To Local Businesses
               </span>
             </h1>
             
-            <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-4">
+            <p className="mt-5 sm:mt-8 text-base sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4">
               The white-label platform that lets you start an AI receptionist agency. 
               We handle the tech and fulfillment. You sell and keep 100% of what you charge.
             </p>
 
             {/* Value props row */}
-            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-sm text-[#fafaf9]/50">
+            <div className="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-x-5 sm:gap-x-8 gap-y-2 sm:gap-y-3 text-xs sm:text-sm text-[#fafaf9]/50">
               {[
                 'Run from your phone',
                 'Zero fulfillment work', 
                 'Keep 100% revenue'
               ].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-400" />
+                <span key={item} className="flex items-center gap-1.5 sm:gap-2">
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
                   {item}
                 </span>
               ))}
             </div>
 
             {/* CTA buttons - Mobile optimized */}
-            <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link 
                 href="/signup" 
-                className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-5 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
+                className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
               >
                 <span>Start Your 14-Day Free Trial</span>
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <button 
                 onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/[0.03] px-5 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/[0.03] px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
               >
                 <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
                   <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current ml-0.5" />
@@ -206,7 +227,7 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
+            <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-[#fafaf9]/40">
               No credit card required · Setup in under 5 minutes · Cancel anytime
             </p>
           </div>
@@ -230,7 +251,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works - Simplified */}
-      <section className="py-20 sm:py-24 lg:py-32">
+      <section className="py-16 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
@@ -298,7 +319,7 @@ export default function LandingPage() {
       </section>
 
       {/* Phone-Only Section */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
@@ -420,7 +441,7 @@ export default function LandingPage() {
       </section>
 
       {/* What Your Clients Get - Feature Showcase */}
-      <section id="features" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section id="features" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
@@ -549,7 +570,7 @@ export default function LandingPage() {
       </section>
 
       {/* White-Label Marketing Site Section */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
@@ -684,7 +705,7 @@ export default function LandingPage() {
       </section>
 
       {/* Built-in Leads CRM Section */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* CRM Mockup */}
@@ -808,7 +829,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
@@ -879,7 +900,7 @@ export default function LandingPage() {
       </section>
 
       {/* Launch Steps */}
-      <section id="how-it-works" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+      <section id="how-it-works" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
@@ -949,7 +970,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section id="pricing" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
@@ -1088,7 +1109,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonial */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center gap-1 mb-6 sm:mb-8">
             {[...Array(5)].map((_, i) => (
@@ -1110,7 +1131,7 @@ export default function LandingPage() {
       </section>
 
       {/* From the Blog */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-10 sm:mb-12">
             <div>
@@ -1192,7 +1213,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+      <section id="faq" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
@@ -1257,7 +1278,7 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="relative">
             {/* Glow */}
@@ -1293,7 +1314,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-12 sm:py-16">
+      <footer className="border-t border-white/[0.06] py-12 sm:py-16 pb-28 sm:pb-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Logo */}
@@ -1324,6 +1345,23 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky bottom CTA - mobile only */}
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
+        showBottomCta && !mobileMenuOpen
+          ? 'translate-y-0 opacity-100' 
+          : 'translate-y-full opacity-0'
+      }`}>
+        <div className="bg-[#050505]/95 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3 pb-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <Link 
+            href="/signup" 
+            className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-3.5 text-sm active:scale-[0.98] transition-transform"
+          >
+            Start Free Trial — No Card Required
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
