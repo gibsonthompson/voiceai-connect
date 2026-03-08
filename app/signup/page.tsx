@@ -1108,12 +1108,6 @@ function AgencySignupForm() {
             </div>
           </div>
 
-          {/* Social proof */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-[#fafaf9]/40">
-              Join <span className="text-[#fafaf9]/60 font-medium">847 agencies</span> already using VoiceAI Connect
-            </p>
-          </div>
         </div>
       </main>
     </div>

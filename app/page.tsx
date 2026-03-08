@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
-  Phone, ArrowRight, Check, Play, Star, Zap, Shield, Clock, Users, 
+  Phone, ArrowRight, Check, Play, Zap, Shield, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
   Building2, Sparkles, Menu, X, Target
@@ -1104,28 +1104,6 @@ export default function LandingPage() {
             <p className="text-center mt-8 text-sm text-[#fafaf9]/40">
               All plans include 14-day free trial. No credit card required. Cancel anytime.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonial */}
-      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex justify-center gap-1 mb-6 sm:mb-8">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-5 w-5 sm:h-6 sm:w-6 fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-          <blockquote className="text-xl sm:text-2xl lg:text-3xl font-medium leading-relaxed">
-            &ldquo;I didn&apos;t want to spend 6 months building my own AI platform from scratch. 
-            VoiceAI Connect let me launch SmartDesk AI in a weekend. Signed my first paying client 
-            within 11 days—that one client covered my entire monthly cost. Saved so much time 
-            and tech headaches.&rdquo;
-          </blockquote>
-          <div className="mt-6 sm:mt-8">
-            <p className="font-semibold text-lg">Jonathan Rowe</p>
-            <p className="text-sm text-[#fafaf9]/50 mt-1">Founder, SmartDesk AI</p>
-            <p className="text-sm text-emerald-400 mt-1">First client in 11 days • Profitable from month 1</p>
           </div>
         </div>
       </section>
