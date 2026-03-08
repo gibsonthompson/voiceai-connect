@@ -40,9 +40,6 @@ const PLAN_PRICING: Record<string, number> = {
   enterprise: 499,
 };
 
-// ============================================================================
-// PLAN FEATURE GATING CONSTANTS
-// ============================================================================
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
   starter: {
     email_summaries: false,
@@ -77,60 +74,26 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
 };
 
 const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
-  email_summaries: {
-    label: 'Email Summaries',
-    description: 'Detailed email with call summary, transcript, and caller details',
-  },
-  custom_greeting: {
-    label: 'Custom Greeting',
-    description: 'Client can write their own AI opening message',
-  },
-  custom_voice: {
-    label: 'Custom Voice',
-    description: 'Client can choose from multiple AI voice options',
-  },
-  knowledge_base: {
-    label: 'Knowledge Base',
-    description: 'Client can upload business FAQs for the AI to reference',
-  },
-  business_hours: {
-    label: 'Business Hours',
-    description: 'Client can configure hours and after-hours behavior',
-  },
-  google_calendar: {
-    label: 'Google Calendar',
-    description: 'AI receptionist can check availability and book appointments directly',
-  },
-  advanced_analytics: {
-    label: 'Advanced Analytics',
-    description: 'Detailed reporting beyond basic call counts',
-  },
-  priority_support: {
-    label: 'Priority Support',
-    description: 'Faster response times from your support team',
-  },
+  email_summaries: { label: 'Email Summaries', description: 'Detailed email with call summary, transcript, and caller details' },
+  custom_greeting: { label: 'Custom Greeting', description: 'Client can write their own AI opening message' },
+  custom_voice: { label: 'Custom Voice', description: 'Client can choose from multiple AI voice options' },
+  knowledge_base: { label: 'Knowledge Base', description: 'Client can upload business FAQs for the AI to reference' },
+  business_hours: { label: 'Business Hours', description: 'Client can configure hours and after-hours behavior' },
+  google_calendar: { label: 'Google Calendar', description: 'AI receptionist can check availability and book appointments directly' },
+  advanced_analytics: { label: 'Advanced Analytics', description: 'Detailed reporting beyond basic call counts' },
+  priority_support: { label: 'Priority Support', description: 'Faster response times from your support team' },
 };
 
 const FEATURE_ORDER = [
-  'email_summaries',
-  'custom_greeting',
-  'custom_voice',
-  'knowledge_base',
-  'business_hours',
-  'google_calendar',
-  'advanced_analytics',
-  'priority_support',
+  'email_summaries', 'custom_greeting', 'custom_voice', 'knowledge_base',
+  'business_hours', 'google_calendar', 'advanced_analytics', 'priority_support',
 ];
 
 // ============================================================================
-// COLOR EXTRACTION (mirrors onboarding logic)
+// COLOR EXTRACTION — proper algorithm with background detection + saturation scoring
 // ============================================================================
 function rgbToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
-function getColorLuminance(r: number, g: number, b: number): number {
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
 function adjustColorBrightness(hex: string, percent: number): string {
@@ -142,43 +105,110 @@ function adjustColorBrightness(hex: string, percent: number): string {
   return rgbToHex(R, G, B);
 }
 
+function detectLogoBackground(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D
+): { r: number; g: number; b: number } {
+  const w = canvas.width;
+  const h = canvas.height;
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
+  const edgePixels: ImageData[] = [];
+
+  for (let x = 0; x < w; x += step) {
+    edgePixels.push(ctx.getImageData(x, 0, 1, 1));
+    edgePixels.push(ctx.getImageData(x, h - 1, 1, 1));
+  }
+  for (let y = 0; y < h; y += step) {
+    edgePixels.push(ctx.getImageData(0, y, 1, 1));
+    edgePixels.push(ctx.getImageData(w - 1, y, 1, 1));
+  }
+
+  const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
+  if (transparentCount > edgePixels.length * 0.5) {
+    return { r: 0, g: 0, b: 0 };
+  }
+
+  let r = 0, g = 0, b = 0, count = 0;
+  edgePixels.forEach(p => {
+    if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; }
+  });
+
+  return count > 0
+    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) }
+    : { r: 255, g: 255, b: 255 };
+}
+
 async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
+
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
 
-      const maxSize = 100;
-      const scale = Math.min(maxSize / img.width, maxSize / img.height);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const size = 150;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
 
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> = new Map();
+      const bg = detectLogoBackground(canvas, ctx);
+      const pixels = ctx.getImageData(0, 0, size, size).data;
+
+      const colorData: Record<string, {
+        count: number; r: number; g: number; b: number;
+        saturation: number; lightness: number;
+      }> = {};
 
       for (let i = 0; i < pixels.length; i += 4) {
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
-        const lum = getColorLuminance(r, g, b);
-        if (lum > 0.9 || lum < 0.1) continue;
-        const qr = Math.round(r / 32) * 32, qg = Math.round(g / 32) * 32, qb = Math.round(b / 32) * 32;
-        const key = `${qr},${qg},${qb}`;
-        const ex = colorCounts.get(key);
-        ex ? ex.count++ : colorCounts.set(key, { count: 1, r: qr, g: qg, b: qb });
+
+        // Skip pixels too close to detected background
+        const bgDist = Math.sqrt(
+          Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
+        );
+        if (bgDist < 50) continue;
+
+        // Bucket by 25
+        const br = Math.round(r / 25) * 25;
+        const bg2 = Math.round(g / 25) * 25;
+        const bb = Math.round(b / 25) * 25;
+
+        const max = Math.max(br, bg2, bb) / 255;
+        const min = Math.min(br, bg2, bb) / 255;
+        const lightness = (max + min) / 2;
+        const saturation = max === min ? 0 : lightness > 0.5
+          ? (max - min) / (2 - max - min)
+          : (max - min) / (max + min);
+
+        // Skip near-black, near-white, and grays
+        if (lightness < 0.15 || lightness > 0.65) continue;
+        if (saturation < 0.25) continue;
+
+        const key = `${br},${bg2},${bb}`;
+        if (!colorData[key]) {
+          colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness };
+        }
+        colorData[key].count++;
       }
 
-      const sorted = Array.from(colorCounts.values()).sort((a, b) => b.count - a.count).slice(0, 5);
-      if (!sorted.length) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+      // Sort by saturation * log(count) — most vibrant AND common colors win
+      const colors = Object.values(colorData)
+        .filter(c => c.count >= 5)
+        .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
+        .slice(0, 6)
+        .map(c => rgbToHex(c.r, c.g, c.b));
 
-      const primaryHex = rgbToHex(sorted[0].r, sorted[0].g, sorted[0].b);
-      const secondaryHex = adjustColorBrightness(primaryHex, -20);
-      const accentHex = sorted.length > 1 ? rgbToHex(sorted[1].r, sorted[1].g, sorted[1].b) : adjustColorBrightness(primaryHex, 20);
-      resolve({ primary: primaryHex, secondary: secondaryHex, accent: accentHex });
+      if (!colors.length) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+
+      const primary = colors[0];
+      const secondary = colors[1] || adjustColorBrightness(primary, -25);
+      const accent = colors[2] || adjustColorBrightness(primary, 30);
+      resolve({ primary, secondary, accent });
     };
+
     img.onerror = () => resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
     img.src = imageUrl;
   });
@@ -187,42 +217,25 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
 // ============================================================================
 // FEATURE TOGGLE COMPONENT
 // ============================================================================
-function FeatureToggle({ 
-  featureKey, 
-  enabled, 
-  onToggle, 
-  theme 
-}: { 
-  featureKey: string; 
-  enabled: boolean; 
-  onToggle: () => void; 
-  theme: any;
+function FeatureToggle({ featureKey, enabled, onToggle, theme }: {
+  featureKey: string; enabled: boolean; onToggle: () => void; theme: any;
 }) {
   const info = FEATURE_LABELS[featureKey];
   if (!info) return null;
-
   return (
-    <div 
-      className="flex items-center justify-between py-2.5 px-1 group"
-    >
+    <div className="flex items-center justify-between py-2.5 px-1 group">
       <div className="flex-1 min-w-0 mr-3">
-        <p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>
-          {info.label}
-        </p>
+        <p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p>
       </div>
       <button
         type="button"
         onClick={onToggle}
         className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
-        style={{ 
-          backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
-        }}
+        style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}
       >
         <span
           className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
-          style={{ 
-            transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)',
-          }}
+          style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }}
         />
       </button>
     </div>
@@ -237,32 +250,23 @@ function AgencySettingsContent() {
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo', 'feedback'];
   
-  const [activeTab, setActiveTab] = useState<SettingsTab>(
-    validTabs.includes(initialTab) ? initialTab : 'profile'
-  );
+  const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
-
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-
-  // ── SURGICAL CHANGE: color extraction state ──────────────────────────────
   const [extractingColors, setExtractingColors] = useState(false);
   const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
   const [brandColors, setBrandColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
-  // ─────────────────────────────────────────────────────────────────────────
-  
   const [priceStarter, setPriceStarter] = useState('49');
   const [pricePro, setPricePro] = useState('99');
   const [priceGrowth, setPriceGrowth] = useState('149');
@@ -272,14 +276,8 @@ function AgencySettingsContent() {
   const [unlimitedStarter, setUnlimitedStarter] = useState(false);
   const [unlimitedPro, setUnlimitedPro] = useState(false);
   const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
-
-  // Plan features state
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean>>>(DEFAULT_PLAN_FEATURES);
-
-  // Marketing page currency override
   const [displayCurrency, setDisplayCurrency] = useState('');
-
-  // Feedback state
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [sendingFeedback, setSendingFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
@@ -288,15 +286,12 @@ function AgencySettingsContent() {
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
-
   const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
 
   useEffect(() => {
@@ -307,8 +302,6 @@ function AgencySettingsContent() {
       setPriceStarter(((agency.price_starter || 4900) / 100).toString());
       setPricePro(((agency.price_pro || 9900) / 100).toString());
       setPriceGrowth(((agency.price_growth || 14900) / 100).toString());
-      
-      // Detect unlimited (-1) from DB
       const ls = agency.limit_starter;
       const lp = agency.limit_pro;
       const lg = agency.limit_growth;
@@ -318,30 +311,22 @@ function AgencySettingsContent() {
       setLimitStarter(ls === -1 ? '50' : (ls || 50).toString());
       setLimitPro(lp === -1 ? '150' : (lp || 150).toString());
       setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString());
-      
       setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
       setDisplayCurrency((agency as any).display_currency || '');
-
-      // ── SURGICAL CHANGE: initialize brandColors from saved agency colors ──
       setBrandColors({
         primary: agency.primary_color || '#10b981',
         secondary: agency.secondary_color || '#059669',
         accent: agency.accent_color || '#34d399',
       });
-      // ─────────────────────────────────────────────────────────────────────
     }
   }, [agency?.branding_overrides]);
 
   useEffect(() => {
-    if (activeTab === 'payments' && agency?.id) {
-      fetchStripeStatus();
-    }
+    if (activeTab === 'payments' && agency?.id) fetchStripeStatus();
   }, [activeTab, agency?.id]);
 
   useEffect(() => {
-    if (activeTab === 'feedback' && agency?.id) {
-      fetchFeedbackHistory();
-    }
+    if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory();
   }, [activeTab, agency?.id]);
 
   const handleTabChange = (tab: SettingsTab) => {
@@ -359,15 +344,9 @@ function AgencySettingsContent() {
       const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (response.ok) {
-        const data = await response.json();
-        setStripeStatus(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch Stripe status:', err);
-    } finally {
-      setLoadingStripeStatus(false);
-    }
+      if (response.ok) setStripeStatus(await response.json());
+    } catch (err) { console.error('Failed to fetch Stripe status:', err); }
+    finally { setLoadingStripeStatus(false); }
   };
 
   const fetchFeedbackHistory = async () => {
@@ -382,46 +361,29 @@ function AgencySettingsContent() {
         const data = await response.json();
         setFeedbackHistory(data.feedback || []);
       }
-    } catch (err) {
-      console.error('Failed to fetch feedback:', err);
-    } finally {
-      setLoadingFeedback(false);
-    }
+    } catch (err) { console.error('Failed to fetch feedback:', err); }
+    finally { setLoadingFeedback(false); }
   };
 
   const handleSendFeedback = async () => {
     if (!agency || !feedbackMessage.trim()) return;
     setSendingFeedback(true);
     setFeedbackError(null);
-
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ message: feedbackMessage.trim() }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to send feedback');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); }
       const data = await response.json();
       setFeedbackSent(true);
       setFeedbackMessage('');
-      if (data.feedback) {
-        setFeedbackHistory(prev => [data.feedback, ...prev]);
-      }
+      if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]);
       setTimeout(() => setFeedbackSent(false), 3000);
-    } catch (err) {
-      setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback');
-    } finally {
-      setSendingFeedback(false);
-    }
+    } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); }
+    finally { setSendingFeedback(false); }
   };
 
   const settingsTabs = [
@@ -434,7 +396,6 @@ function AgencySettingsContent() {
     { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
   ];
 
-  // ── SURGICAL CHANGE: updated handleLogoUpload with color extraction ───────
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -443,45 +404,26 @@ function AgencySettingsContent() {
         const dataUrl = reader.result as string;
         setLogoPreview(dataUrl);
         setLogoUrl(dataUrl);
-
         setExtractingColors(true);
         try {
           const colors = await extractColorsFromImage(dataUrl);
           setExtractedColors(colors);
           setBrandColors(colors);
-        } catch (err) {
-          console.error('Color extraction failed:', err);
-        } finally {
-          setExtractingColors(false);
-        }
+        } catch (err) { console.error('Color extraction failed:', err); }
+        finally { setExtractingColors(false); }
       };
       reader.readAsDataURL(file);
     }
   };
-  // ─────────────────────────────────────────────────────────────────────────
 
   const toggleFeature = (plan: string, feature: string) => {
-    setPlanFeatures(prev => ({
-      ...prev,
-      [plan]: {
-        ...prev[plan],
-        [feature]: !prev[plan]?.[feature],
-      }
-    }));
+    setPlanFeatures(prev => ({ ...prev, [plan]: { ...prev[plan], [feature]: !prev[plan]?.[feature] } }));
   };
 
-  const resetPlanFeatures = () => {
-    setPlanFeatures(DEFAULT_PLAN_FEATURES);
-  };
+  const resetPlanFeatures = () => setPlanFeatures(DEFAULT_PLAN_FEATURES);
 
   const deriveCalendarEnabledPlans = (features: Record<string, Record<string, boolean>>): string[] => {
-    const plans: string[] = [];
-    for (const [plan, featureMap] of Object.entries(features)) {
-      if (featureMap.google_calendar) {
-        plans.push(plan);
-      }
-    }
-    return plans;
+    return Object.entries(features).filter(([, fm]) => fm.google_calendar).map(([plan]) => plan);
   };
 
   const handleSave = async () => {
@@ -489,26 +431,21 @@ function AgencySettingsContent() {
     setSaving(true);
     setError(null);
     setSaved(false);
-
     try {
       const token = localStorage.getItem('auth_token');
       const payload: any = {};
-      
       if (activeTab === 'profile') {
         payload.name = agencyName;
         payload.logo_url = logoUrl;
-        // ── SURGICAL CHANGE: include extracted colors in profile save ────────
         if (extractedColors) {
           payload.primary_color = brandColors.primary;
           payload.secondary_color = brandColors.secondary;
           payload.accent_color = brandColors.accent;
         }
-        // ─────────────────────────────────────────────────────────────────────
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
         payload.price_growth = Math.round(parseFloat(priceGrowth) * 100);
-        // Send -1 when unlimited is toggled on
         payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter);
         payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro);
         payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
@@ -516,33 +453,23 @@ function AgencySettingsContent() {
         payload.display_currency = displayCurrency || null;
         payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
       }
-
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save settings');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); }
       await refreshAgency();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); }
+    finally { setSaving(false); }
   };
 
   const handleStripeConnect = async () => {
     if (!agency) return;
     setConnectingStripe(true);
     setError(null);
-    
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, {
@@ -550,53 +477,34 @@ function AgencySettingsContent() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to start Stripe onboarding');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to start Stripe onboarding'); }
       const data = await response.json();
       window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect Stripe');
-      setConnectingStripe(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); }
   };
 
   const handleStripeDisconnect = async () => {
     if (!agency) return;
     if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return;
-    
     setDisconnectingStripe(true);
     setError(null);
-    
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to disconnect Stripe');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); }
       await refreshAgency();
       setStripeStatus(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe');
-    } finally {
-      setDisconnectingStripe(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); }
+    finally { setDisconnectingStripe(false); }
   };
 
   const handleManageSubscription = async () => {
     if (!agency) return;
     setPortalLoading(true);
     setError(null);
-
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/portal`, {
@@ -604,25 +512,16 @@ function AgencySettingsContent() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to open billing portal');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); }
       const data = await response.json();
       window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to open billing portal');
-      setPortalLoading(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); setPortalLoading(false); }
   };
 
   const handleCancelTrial = async () => {
     if (!agency) return;
     setCancelLoading(true);
     setError(null);
-
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/cancel`, {
@@ -630,21 +529,12 @@ function AgencySettingsContent() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ agency_id: agency.id }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to cancel subscription');
-      }
-
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to cancel subscription'); }
       localStorage.removeItem('auth_token');
       localStorage.removeItem('agency');
       localStorage.removeItem('user');
       window.location.href = '/agency/login?canceled=true';
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel');
-      setCancelLoading(false);
-      setShowCancelModal(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to cancel'); setCancelLoading(false); setShowCancelModal(false); }
   };
 
   if (contextLoading) {
@@ -656,37 +546,21 @@ function AgencySettingsContent() {
   }
 
   const getStripeStatusDisplay = () => {
-    if (!stripeStatus?.connected && !agency?.stripe_account_id) {
-      return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
-    }
-    if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) {
-      return { status: 'active', label: 'Active', color: '#34d399' };
-    }
-    if (stripeStatus?.connected || agency?.stripe_account_id) {
-      return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' };
-    }
+    if (!stripeStatus?.connected && !agency?.stripe_account_id) return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
+    if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) return { status: 'active', label: 'Active', color: '#34d399' };
+    if (stripeStatus?.connected || agency?.stripe_account_id) return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' };
     return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
   };
-
   const stripeDisplay = getStripeStatusDisplay();
 
   const getSubscriptionDisplay = () => {
     const status = agency?.subscription_status;
-    if (status === 'active') {
-      return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' };
-    }
-    if (isTrialStatus(status)) {
-      return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' };
-    }
-    if (status === 'past_due') {
-      return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' };
-    }
-    if (status === 'canceled' || status === 'cancelled') {
-      return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' };
-    }
+    if (status === 'active') return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' };
+    if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' };
+    if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' };
+    if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' };
     return { label: status || 'Unknown', color: theme.textMuted, bgColor: theme.input };
   };
-
   const subscriptionDisplay = getSubscriptionDisplay();
 
   const demoFeatures = [
@@ -699,29 +573,18 @@ function AgencySettingsContent() {
   ];
 
   const dynamicStyles = `
-    .agency-settings ::selection {
-      background-color: ${theme.primary}40;
-      color: inherit;
-    }
-    .agency-settings input:focus,
-    .agency-settings select:focus,
-    .agency-settings textarea:focus {
-      outline: none;
-      border-color: ${theme.primary} !important;
-      box-shadow: 0 0 0 3px ${theme.primary}20 !important;
+    .agency-settings ::selection { background-color: ${theme.primary}40; color: inherit; }
+    .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus {
+      outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important;
     }
   `;
 
-  const getFeatureCount = (plan: string) => {
-    const features = planFeatures[plan] || {};
-    return Object.values(features).filter(Boolean).length;
-  };
+  const getFeatureCount = (plan: string) => Object.values(planFeatures[plan] || {}).filter(Boolean).length;
 
   return (
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
       
-      {/* Cancel Trial Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !cancelLoading && setShowCancelModal(false)} />
@@ -753,14 +616,12 @@ function AgencySettingsContent() {
         </div>
       )}
 
-      {/* Header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-        {/* Settings Tabs */}
         <div className="lg:w-48 flex-shrink-0">
           <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
             {settingsTabs.map((tab) => (
@@ -780,7 +641,6 @@ function AgencySettingsContent() {
           </nav>
         </div>
 
-        {/* Settings Content */}
         <div className="flex-1 max-w-2xl">
           {error && (
             <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
@@ -788,7 +648,6 @@ function AgencySettingsContent() {
               <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
             </div>
           )}
-          
           {saved && (
             <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
               <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
@@ -798,7 +657,6 @@ function AgencySettingsContent() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
 
-            {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -824,7 +682,6 @@ function AgencySettingsContent() {
                     </div>
                   </div>
 
-                  {/* ── SURGICAL CHANGE: color extraction feedback UI ─────────── */}
                   {extractingColors && (
                     <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -839,23 +696,11 @@ function AgencySettingsContent() {
                         <span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        {[
-                          { label: 'Primary', key: 'primary' as const },
-                          { label: 'Secondary', key: 'secondary' as const },
-                          { label: 'Accent', key: 'accent' as const },
-                        ].map(({ label, key }) => (
+                        {([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (
                           <div key={key} className="flex items-center gap-2">
                             <div className="relative">
-                              <div
-                                className="w-8 h-8 rounded-lg border cursor-pointer"
-                                style={{ backgroundColor: brandColors[key], borderColor: theme.border }}
-                              />
-                              <input
-                                type="color"
-                                value={brandColors[key]}
-                                onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              />
+                              <div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} />
+                              <input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                             </div>
                             <div>
                               <p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p>
@@ -864,12 +709,9 @@ function AgencySettingsContent() {
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs mt-3" style={{ color: theme.textMuted }}>
-                        These update your Branding tab palette. Fine-tune there after saving.
-                      </p>
+                      <p className="text-xs mt-3" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p>
                     </div>
                   )}
-                  {/* ─────────────────────────────────────────────────────────── */}
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
@@ -879,27 +721,16 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* ================================================================ */}
-            {/* PRICING TAB — WITH UNLIMITED TOGGLE + PLAN FEATURES + CURRENCY   */}
-            {/* ================================================================ */}
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
-
-                {/* Info banner */}
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                  <div>
-                    <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
-                      Every client gets the core AI receptionist (24/7 call answering, dedicated phone number, call history, recordings, and transcripts) regardless of plan. The features below are extras you can include or exclude per plan.
-                    </p>
-                  </div>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Every client gets the core AI receptionist (24/7 call answering, dedicated phone number, call history, recordings, and transcripts) regardless of plan. The features below are extras you can include or exclude per plan.</p>
                 </div>
-
-                {/* Marketing Page Currency Override */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1">Marketing Page Currency</label>
                   <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Choose which currency symbol to display on your marketing site. Defaults to your account currency.</p>
@@ -927,33 +758,20 @@ function AgencySettingsContent() {
                     <option value="MYR">RM — Malaysian Ringgit (MYR)</option>
                   </select>
                 </div>
-
-                {/* Plan Cards */}
                 <div className="space-y-4">
                   {[
                     { key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false },
                     { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true },
                     { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false },
                   ].map((plan) => (
-                    <div 
-                      key={plan.key}
-                      className="rounded-xl p-3 sm:p-4"
-                      style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
-                    >
-                      {/* Plan Header */}
+                    <div key={plan.key} className="rounded-xl p-3 sm:p-4" style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium text-sm sm:text-base">{plan.label} Plan</h4>
-                          {plan.highlight && (
-                            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>
-                          )}
+                          {plan.highlight && <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>}
                         </div>
-                        <span className="text-xs" style={{ color: theme.textMuted }}>
-                          {getFeatureCount(plan.key)} features included
-                        </span>
+                        <span className="text-xs" style={{ color: theme.textMuted }}>{getFeatureCount(plan.key)} features included</span>
                       </div>
-
-                      {/* Price & Calls */}
                       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
@@ -962,39 +780,15 @@ function AgencySettingsContent() {
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
                           {plan.unlimited ? (
-                            <div 
-                              className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center"
-                              style={{ 
-                                backgroundColor: theme.primary15, 
-                                border: `1px solid ${theme.primary30}`, 
-                                color: theme.primary,
-                                height: '38px',
-                              }}
-                            >
-                              Unlimited
-                            </div>
+                            <div className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary, height: '38px' }}>Unlimited</div>
                           ) : (
-                            <input 
-                              type="number" 
-                              value={plan.limit} 
-                              onChange={(e) => plan.setLimit(e.target.value)} 
-                              min="1"
-                              className="w-full rounded-xl px-3 py-2 text-sm" 
-                              style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} 
-                            />
+                            <input type="number" value={plan.limit} onChange={(e) => plan.setLimit(e.target.value)} min="1" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                           )}
-                          <button
-                            type="button"
-                            onClick={() => plan.setUnlimited(!plan.unlimited)}
-                            className="mt-1.5 text-[10px] sm:text-xs transition-colors"
-                            style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}
-                          >
+                          <button type="button" onClick={() => plan.setUnlimited(!plan.unlimited)} className="mt-1.5 text-[10px] sm:text-xs transition-colors" style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}>
                             {plan.unlimited ? '✓ Unlimited — click to set a cap' : 'Set to unlimited'}
                           </button>
                         </div>
                       </div>
-
-                      {/* Feature Toggles */}
                       <div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
                         <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
                         <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
@@ -1006,15 +800,12 @@ function AgencySettingsContent() {
                     </div>
                   ))}
                 </div>
-
-                {/* Reset to defaults */}
                 <div className="flex items-center justify-between pt-2">
                   <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
                 </div>
               </div>
             )}
 
-            {/* Payments Tab */}
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -1033,7 +824,6 @@ function AgencySettingsContent() {
                     {stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />}
                     {stripeDisplay.status === 'restricted' && <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />}
                   </div>
-
                   {(stripeStatus?.connected || agency?.stripe_account_id) && (
                     <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
@@ -1067,7 +857,6 @@ function AgencySettingsContent() {
                       </div>
                     </div>
                   )}
-
                   {stripeDisplay.status === 'not_connected' && (
                     <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
@@ -1077,7 +866,6 @@ function AgencySettingsContent() {
                     </div>
                   )}
                 </div>
-
                 {(stripeStatus?.connected || agency?.stripe_account_id) && (
                   <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -1094,7 +882,6 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Billing Tab */}
             {activeTab === 'billing' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -1151,12 +938,10 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Twilio / BYOT Tab */}
             {activeTab === 'twilio' && (
               <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
             )}
 
-            {/* Demo Mode Tab */}
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-center justify-between">
@@ -1203,7 +988,6 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Feedback Tab */}
             {activeTab === 'feedback' && (
               <div className="space-y-4 sm:space-y-6">
                 <div>
@@ -1249,7 +1033,6 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save Button */}
             {(activeTab === 'profile' || activeTab === 'pricing') && (
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>

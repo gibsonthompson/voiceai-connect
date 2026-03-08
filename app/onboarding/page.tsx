@@ -44,10 +44,6 @@ function rgbToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
-function getColorLuminance(r: number, g: number, b: number): number {
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-}
-
 function adjustColorBrightness(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -57,11 +53,47 @@ function adjustColorBrightness(hex: string, percent: number): string {
   return rgbToHex(R, G, B);
 }
 
+function detectLogoBackground(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D
+): { r: number; g: number; b: number } {
+  const w = canvas.width;
+  const h = canvas.height;
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
+  const edgePixels: ImageData[] = [];
+
+  for (let x = 0; x < w; x += step) {
+    edgePixels.push(ctx.getImageData(x, 0, 1, 1));
+    edgePixels.push(ctx.getImageData(x, h - 1, 1, 1));
+  }
+  for (let y = 0; y < h; y += step) {
+    edgePixels.push(ctx.getImageData(0, y, 1, 1));
+    edgePixels.push(ctx.getImageData(w - 1, y, 1, 1));
+  }
+
+  const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
+  if (transparentCount > edgePixels.length * 0.5) {
+    // Transparent background — treat as black so nothing gets excluded
+    return { r: 0, g: 0, b: 0 };
+  }
+
+  let r = 0, g = 0, b = 0, count = 0;
+  edgePixels.forEach(p => {
+    if (p.data[3] >= 128) {
+      r += p.data[0]; g += p.data[1]; b += p.data[2]; count++;
+    }
+  });
+
+  return count > 0
+    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) }
+    : { r: 255, g: 255, b: 255 };
+}
+
 async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
-    
+
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -70,64 +102,68 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
         return;
       }
 
-      const maxSize = 100;
-      const scale = Math.min(maxSize / img.width, maxSize / img.height);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = imageData.data;
+      const size = 150;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
 
-      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> = new Map();
-      
+      const bg = detectLogoBackground(canvas, ctx);
+      const pixels = ctx.getImageData(0, 0, size, size).data;
+
+      const colorData: Record<string, {
+        count: number; r: number; g: number; b: number;
+        saturation: number; lightness: number;
+      }> = {};
+
       for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        const a = pixels[i + 3];
-
+        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
 
-        const luminance = getColorLuminance(r, g, b);
-        if (luminance > 0.9 || luminance < 0.1) continue;
+        // Skip pixels too close to the detected background
+        const bgDist = Math.sqrt(
+          Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
+        );
+        if (bgDist < 50) continue;
 
-        const qr = Math.round(r / 32) * 32;
-        const qg = Math.round(g / 32) * 32;
-        const qb = Math.round(b / 32) * 32;
-        const key = `${qr},${qg},${qb}`;
+        // Bucket by 25
+        const br = Math.round(r / 25) * 25;
+        const bg2 = Math.round(g / 25) * 25;
+        const bb = Math.round(b / 25) * 25;
 
-        const existing = colorCounts.get(key);
-        if (existing) {
-          existing.count++;
-        } else {
-          colorCounts.set(key, { count: 1, r: qr, g: qg, b: qb });
+        const max = Math.max(br, bg2, bb) / 255;
+        const min = Math.min(br, bg2, bb) / 255;
+        const lightness = (max + min) / 2;
+        const saturation = max === min ? 0 : lightness > 0.5
+          ? (max - min) / (2 - max - min)
+          : (max - min) / (max + min);
+
+        // Filter: skip near-black, near-white, and grays
+        if (lightness < 0.15 || lightness > 0.65) continue;
+        if (saturation < 0.25) continue;
+
+        const key = `${br},${bg2},${bb}`;
+        if (!colorData[key]) {
+          colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness };
         }
+        colorData[key].count++;
       }
 
-      const sortedColors = Array.from(colorCounts.values())
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+      // Sort by saturation * log(count) — most vibrant AND common colors win
+      const colors = Object.values(colorData)
+        .filter(c => c.count >= 5)
+        .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
+        .slice(0, 6)
+        .map(c => rgbToHex(c.r, c.g, c.b));
 
-      if (sortedColors.length === 0) {
+      if (!colors.length) {
         resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
         return;
       }
 
-      const primary = sortedColors[0];
-      const primaryHex = rgbToHex(primary.r, primary.g, primary.b);
-      const secondaryHex = adjustColorBrightness(primaryHex, -20);
-      let accentHex = adjustColorBrightness(primaryHex, 20);
-      if (sortedColors.length > 1) {
-        const accent = sortedColors[1];
-        accentHex = rgbToHex(accent.r, accent.g, accent.b);
-      }
-
-      resolve({
-        primary: primaryHex,
-        secondary: secondaryHex,
-        accent: accentHex,
-      });
+      const primary = colors[0];
+      const secondary = colors[1] || adjustColorBrightness(primary, -25);
+      const accent = colors[2] || adjustColorBrightness(primary, 30);
+      resolve({ primary, secondary, accent });
     };
 
     img.onerror = () => {
