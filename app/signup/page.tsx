@@ -985,7 +985,7 @@ function AgencySignupForm() {
                 <div className="w-full border-t border-white/[0.06]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#0a0a0a] px-3 text-[#fafaf9]/40">or</span>
+                <span className="bg-[#0a0a0a] px-3 text-[#fafaf9]/40">or sign up with email</span>
               </div>
             </div>
 
@@ -1063,7 +1063,7 @@ function AgencySignupForm() {
               <button
                 type="submit"
                 disabled={loading || googleLoading}
-                className="group w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                className="group w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-white/[0.05] px-6 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.10] hover:border-white/[0.25] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1072,6 +1072,7 @@ function AgencySignupForm() {
                   </>
                 ) : (
                   <>
+                    <Mail className="h-5 w-5 text-[#fafaf9]/60" />
                     Continue with Email
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </>
@@ -1080,7 +1081,7 @@ function AgencySignupForm() {
             </form>
 
             <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
-              By signing up, you agree to our{' '}
+              No credit card required · By signing up, you agree to our{' '}
               <a href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</a>
               {' '}and{' '}
               <a href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</a>

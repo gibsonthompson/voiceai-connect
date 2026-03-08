@@ -207,7 +207,7 @@ export default function LandingPage() {
             </div>
 
             <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-              Setup in under 5 minutes · Cancel anytime
+              No credit card required · Setup in under 5 minutes · Cancel anytime
             </p>
           </div>
 
@@ -1081,7 +1081,7 @@ export default function LandingPage() {
             </div>
             
             <p className="text-center mt-8 text-sm text-[#fafaf9]/40">
-              All plans include 14-day free trial. Cancel anytime.
+              All plans include 14-day free trial. No credit card required. Cancel anytime.
             </p>
           </div>
         </div>
@@ -1285,7 +1285,7 @@ export default function LandingPage() {
               </div>
               
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · Cancel anytime
+                No credit card required · 14-day free trial · Cancel anytime
               </p>
             </div>
           </div>
