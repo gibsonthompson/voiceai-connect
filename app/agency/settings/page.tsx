@@ -7,7 +7,7 @@ import {
   CreditCard, Building, Loader2, DollarSign,
   AlertTriangle, RefreshCw, Trash2,
   Receipt, XCircle, Eye, Phone, Users,
-  Globe, Info, MessageSquare, Send
+  Globe, Info, MessageSquare, Send, Sparkles
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -123,6 +123,68 @@ const FEATURE_ORDER = [
 ];
 
 // ============================================================================
+// COLOR EXTRACTION (mirrors onboarding logic)
+// ============================================================================
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function getColorLuminance(r: number, g: number, b: number): number {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function adjustColorBrightness(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return rgbToHex(R, G, B);
+}
+
+async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+
+      const maxSize = 100;
+      const scale = Math.min(maxSize / img.width, maxSize / img.height);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> = new Map();
+
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
+        if (a < 128) continue;
+        const lum = getColorLuminance(r, g, b);
+        if (lum > 0.9 || lum < 0.1) continue;
+        const qr = Math.round(r / 32) * 32, qg = Math.round(g / 32) * 32, qb = Math.round(b / 32) * 32;
+        const key = `${qr},${qg},${qb}`;
+        const ex = colorCounts.get(key);
+        ex ? ex.count++ : colorCounts.set(key, { count: 1, r: qr, g: qg, b: qb });
+      }
+
+      const sorted = Array.from(colorCounts.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+      if (!sorted.length) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+
+      const primaryHex = rgbToHex(sorted[0].r, sorted[0].g, sorted[0].b);
+      const secondaryHex = adjustColorBrightness(primaryHex, -20);
+      const accentHex = sorted.length > 1 ? rgbToHex(sorted[1].r, sorted[1].g, sorted[1].b) : adjustColorBrightness(primaryHex, 20);
+      resolve({ primary: primaryHex, secondary: secondaryHex, accent: accentHex });
+    };
+    img.onerror = () => resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+    img.src = imageUrl;
+  });
+}
+
+// ============================================================================
 // FEATURE TOGGLE COMPONENT
 // ============================================================================
 function FeatureToggle({ 
@@ -194,6 +256,12 @@ function AgencySettingsContent() {
   const [agencyName, setAgencyName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // ── SURGICAL CHANGE: color extraction state ──────────────────────────────
+  const [extractingColors, setExtractingColors] = useState(false);
+  const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
+  const [brandColors, setBrandColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+  // ─────────────────────────────────────────────────────────────────────────
   
   const [priceStarter, setPriceStarter] = useState('49');
   const [pricePro, setPricePro] = useState('99');
@@ -253,8 +321,16 @@ function AgencySettingsContent() {
       
       setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
       setDisplayCurrency((agency as any).display_currency || '');
+
+      // ── SURGICAL CHANGE: initialize brandColors from saved agency colors ──
+      setBrandColors({
+        primary: agency.primary_color || '#10b981',
+        secondary: agency.secondary_color || '#059669',
+        accent: agency.accent_color || '#34d399',
+      });
+      // ─────────────────────────────────────────────────────────────────────
     }
-  }, [agency]);
+  }, [agency?.branding_overrides]);
 
   useEffect(() => {
     if (activeTab === 'payments' && agency?.id) {
@@ -358,18 +434,31 @@ function AgencySettingsContent() {
     { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
   ];
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── SURGICAL CHANGE: updated handleLogoUpload with color extraction ───────
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const dataUrl = reader.result as string;
         setLogoPreview(dataUrl);
         setLogoUrl(dataUrl);
+
+        setExtractingColors(true);
+        try {
+          const colors = await extractColorsFromImage(dataUrl);
+          setExtractedColors(colors);
+          setBrandColors(colors);
+        } catch (err) {
+          console.error('Color extraction failed:', err);
+        } finally {
+          setExtractingColors(false);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
+  // ─────────────────────────────────────────────────────────────────────────
 
   const toggleFeature = (plan: string, feature: string) => {
     setPlanFeatures(prev => ({
@@ -408,6 +497,13 @@ function AgencySettingsContent() {
       if (activeTab === 'profile') {
         payload.name = agencyName;
         payload.logo_url = logoUrl;
+        // ── SURGICAL CHANGE: include extracted colors in profile save ────────
+        if (extractedColors) {
+          payload.primary_color = brandColors.primary;
+          payload.secondary_color = brandColors.secondary;
+          payload.accent_color = brandColors.accent;
+        }
+        // ─────────────────────────────────────────────────────────────────────
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
@@ -727,6 +823,53 @@ function AgencySettingsContent() {
                       <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p>
                     </div>
                   </div>
+
+                  {/* ── SURGICAL CHANGE: color extraction feedback UI ─────────── */}
+                  {extractingColors && (
+                    <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Extracting brand colors...</span>
+                    </div>
+                  )}
+
+                  {extractedColors && !extractingColors && (
+                    <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+                        <span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        {[
+                          { label: 'Primary', key: 'primary' as const },
+                          { label: 'Secondary', key: 'secondary' as const },
+                          { label: 'Accent', key: 'accent' as const },
+                        ].map(({ label, key }) => (
+                          <div key={key} className="flex items-center gap-2">
+                            <div className="relative">
+                              <div
+                                className="w-8 h-8 rounded-lg border cursor-pointer"
+                                style={{ backgroundColor: brandColors[key], borderColor: theme.border }}
+                              />
+                              <input
+                                type="color"
+                                value={brandColors[key]}
+                                onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p>
+                              <p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs mt-3" style={{ color: theme.textMuted }}>
+                        These update your Branding tab palette. Fine-tune there after saving.
+                      </p>
+                    </div>
+                  )}
+                  {/* ─────────────────────────────────────────────────────────── */}
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
