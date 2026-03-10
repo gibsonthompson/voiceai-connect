@@ -861,18 +861,20 @@ function ClientSettings() {
 const TOUR_CSS = `
 @keyframes tour-fade-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes tour-fade-in-center { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes tour-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tour-spotlight-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tour-spotlight-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.08); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0.25), 0 0 50px rgba(16,185,129,0.15); } }
 @keyframes tour-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes tour-pill-enter { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes tour-number-pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
-@keyframes tour-glow-ring { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
 @keyframes tour-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .tour-tooltip-enter { animation: tour-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .tour-tooltip-center { animation: tour-fade-in-center 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.tour-backdrop-enter { animation: tour-backdrop-in 0.3s ease-out forwards; }
+.tour-spotlight-enter { animation: tour-spotlight-in 0.4s ease-out forwards; animation-delay: 0.1s; opacity: 0; }
 .tour-spotlight-ring { animation: tour-spotlight-pulse 2s ease-in-out infinite; }
 .tour-pill-enter { animation: tour-pill-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .tour-number-pop { animation: tour-number-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.tour-glow { animation: tour-glow-ring 2s ease-in-out infinite; }
 .tour-float { animation: tour-float 3s ease-in-out infinite; }
 .tour-shimmer-bar { background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent); background-size: 200% 100%; animation: tour-shimmer 2s ease-in-out infinite; }
 `;
@@ -983,32 +985,31 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
   const pct = Math.round(((stepIndex + 1) / totalSteps) * 100);
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
+    <div key={enterKey} ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
       <style dangerouslySetInnerHTML={{ __html: TOUR_CSS }} />
-      <div className="absolute inset-0 transition-all duration-500" style={{
+      <div className="absolute inset-0 tour-backdrop-enter" style={{
         backgroundColor: 'rgba(0,0,0,0.6)', clipPath: getClipPath(),
         backdropFilter: isCentered ? 'blur(4px)' : undefined,
       }} />
-      {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />}
+      {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm tour-backdrop-enter" />}
 
-      {/* Spotlight ring — animated pulse */}
+      {/* Spotlight ring — fades in at position, then pulses */}
       {rect && !isCentered && (() => {
         const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
         const rx2 = Math.min(window.innerWidth, rect.right + pad);
         const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
         return (rx2 - rx > 0 && ry2 - ry > 0) ? (
-          <div className="absolute rounded-xl pointer-events-none transition-all duration-500 tour-spotlight-ring" style={{
+          <div className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
             left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
             border: '2px solid rgba(16,185,129,0.4)',
           }} />
         ) : null;
       })()}
 
-      {/* Tooltip — draggable, animated */}
+      {/* Tooltip — no CSS transitions, entrance via keyframe only */}
       <div
-        key={enterKey}
         ref={tooltipRef}
-        className={`${isDragging ? '' : 'transition-all duration-300'} ${isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}`}
+        className={isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}
         style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : isCentered ? 'default' : 'grab', userSelect: 'none', touchAction: 'none' }}
         onClick={e => e.stopPropagation()}
         onPointerDown={isCentered ? undefined : handlePointerDown}
