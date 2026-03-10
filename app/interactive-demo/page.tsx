@@ -16,7 +16,7 @@ import {
   BookOpen, HelpCircle, ChevronDown,
   PhoneForwarded, PhoneIncoming, Lock, Eye as EyeIcon, EyeOff,
   Building2, Link2, Tag, ArrowUpDown, MapPin, User, PhoneOff,
-  CheckCircle, X
+  CheckCircle, X, ArrowLeft
 } from 'lucide-react';
 
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -204,6 +204,72 @@ function AgencyClients() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Agency: Add Client (mirrors real clients/new page) ──────────────────────
+
+function AgencyAddClient({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl">
+      <button onClick={onBack} className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mb-4"><ArrowLeft className="h-4 w-4" />Back to Clients</button>
+      <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Add New Client</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Set up a new AI receptionist client in under 60 seconds</p></div>
+      <div data-tour="add-client-form" className="space-y-6">
+        {/* Business Info */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><Building className="h-4 w-4 text-emerald-400" />Business Information</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Business Name *</label><input type="text" defaultValue="Comfort Air HVAC" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none focus:border-emerald-500/50" /></div>
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Industry *</label><select defaultValue="HVAC" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none"><option>HVAC</option><option>Plumbing</option><option>Dental</option><option>Legal</option><option>Roofing</option><option>Auto Repair</option><option>Other</option></select></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">City</label><input type="text" defaultValue="Atlanta" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">State</label><input type="text" defaultValue="GA" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+            </div>
+          </div>
+        </div>
+        {/* Owner Info */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><User className="h-4 w-4 text-emerald-400" />Owner Information</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Owner Name *</label><input type="text" defaultValue="Maria Santos" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+              <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Phone Number *</label><input type="tel" defaultValue="(678) 555-2002" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+            </div>
+          </div>
+        </div>
+        {/* Plan Selection */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><CreditCard className="h-4 w-4 text-emerald-400" />Plan Selection</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {[{ name: 'Starter', price: '$49', calls: '50 calls/mo', sel: false }, { name: 'Pro', price: '$99', calls: '150 calls/mo', sel: true }, { name: 'Growth', price: '$149', calls: '500 calls/mo', sel: false }].map(p => (
+              <div key={p.name} className="rounded-xl p-3 sm:p-4 cursor-pointer transition-all text-center" style={{ border: p.sel ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.06)', backgroundColor: p.sel ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)' }}>
+                {p.sel && <span className="text-[10px] font-bold uppercase text-emerald-400 mb-1 block">Selected</span>}
+                <p className="text-sm font-semibold text-[#fafaf9]">{p.name}</p>
+                <p className="text-lg font-bold mt-1" style={{ color: p.sel ? '#10b981' : '#fafaf9' }}>{p.price}<span className="text-xs font-normal text-[#fafaf9]/40">/mo</span></p>
+                <p className="text-[10px] text-[#fafaf9]/40 mt-1">{p.calls}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Login Credentials */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><Lock className="h-4 w-4 text-emerald-400" />Login Credentials</h3>
+          <div className="space-y-4">
+            <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Email *</label><input type="email" defaultValue="maria@comfortair.com" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+            <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Temporary Password *</label><input type="text" defaultValue="Welcome2026!" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
+          </div>
+        </div>
+        {/* Info banner */}
+        <div className="rounded-xl p-3 flex items-start gap-3 bg-emerald-500/[0.06] border border-emerald-500/15">
+          <Sparkles className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-[#fafaf9]/50">When you click Create, the platform will automatically provision an AI phone number, configure the voice assistant, and send the client their login credentials via SMS.</p>
+        </div>
+        {/* Submit */}
+        <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-emerald-400 transition-colors"><Plus className="h-4 w-4" />Create Client & Provision AI</button>
       </div>
     </div>
   );
@@ -1004,6 +1070,9 @@ export default function DemoPage() {
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
       title: 'Each client equals recurring revenue',
       body: 'Every row here represents a business paying you monthly for their AI receptionist.\n\nYou decide the pricing \u2014 $49, $99, $149 or more depending on your market. When a client signs up, the platform automatically creates their phone number, AI assistant, and dashboard. No setup calls. No fulfillment work.' },
+    { target: 'add-client-form', view: 'agency' as const, tab: 'add-client', position: 'right' as const,
+      title: '60-second client onboarding',
+      body: 'This is all it takes to add a new client.\n\nEnter their business name, pick a plan, and hit Create. The platform provisions their AI phone number, configures the voice assistant for their industry, and sends them login credentials automatically. No technical setup on your end.' },
     { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
       title: 'Track the growth of your AI revenue',
       body: 'See exactly how your AI service is performing.\n\nMonthly recurring revenue, total earnings, active clients, and payouts update in real time. Payments are handled automatically through Stripe Connect, so revenue from your clients goes straight to your account.' },
@@ -1045,7 +1114,7 @@ export default function DemoPage() {
   const prevStep = () => { if (tourStep > 0) setTourStep(tourStep - 1); };
   const skipTour = () => setTourStep(-1);
 
-  const renderAgency = () => { switch (agencyTab) { case 'clients': return <AgencyClients />; case 'leads': return <AgencyLeads />; case 'outreach': return <AgencyOutreach />; case 'analytics': return <AgencyAnalytics />; case 'demo-phone': return <AgencyDemoPhone />; case 'marketing': return <AgencyMarketing />; case 'referrals': return <AgencyReferrals />; case 'branding': return <AgencyBranding />; case 'settings': return <AgencySettings />; default: return <AgencyOverview />; } };
+  const renderAgency = () => { switch (agencyTab) { case 'clients': return <AgencyClients />; case 'add-client': return <AgencyAddClient onBack={() => setAgencyTab('clients')} />; case 'leads': return <AgencyLeads />; case 'outreach': return <AgencyOutreach />; case 'analytics': return <AgencyAnalytics />; case 'demo-phone': return <AgencyDemoPhone />; case 'marketing': return <AgencyMarketing />; case 'referrals': return <AgencyReferrals />; case 'branding': return <AgencyBranding />; case 'settings': return <AgencySettings />; default: return <AgencyOverview />; } };
   const renderClient = () => { switch (clientTab) { case 'calls': return <ClientCalls />; case 'contacts': return <ClientContacts />; case 'ai-agent': return <ClientAIAgent />; case 'settings': return <ClientSettings />; default: return <ClientOverview />; } };
 
   return (
