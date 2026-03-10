@@ -126,7 +126,7 @@ function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
 function CTABox() {
   return (
     <div className="p-5 sm:p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
-      <h4 className="font-semibold text-base sm:text-lg">Launch your AI receptionist agency for $199/month.</h4>
+      <h4 className="font-semibold text-base sm:text-lg">Launch your AI receptionist agency.</h4>
       <p className="mt-2 text-sm text-[#fafaf9]/60">
         White-label platform. Your brand. 60-second client onboarding. 14-day free trial, no credit card required.
       </p>
