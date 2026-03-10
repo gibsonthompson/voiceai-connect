@@ -810,19 +810,28 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
 
   useEffect(() => {
     if (!step.target) { setRect(null); return; }
-    // Small delay so the tab content renders first
-    const timer = setTimeout(() => {
+    const measure = () => {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
       if (el) {
         const r = el.getBoundingClientRect();
         setRect(r);
-        // Scroll element into view if needed
+      } else {
+        setRect(null);
+      }
+    };
+    // Small delay so the tab content renders first
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Measure after scroll settles
+        setTimeout(measure, 300);
       } else {
         setRect(null);
       }
     }, 150);
-    return () => clearTimeout(timer);
+    window.addEventListener('resize', measure);
+    return () => { clearTimeout(timer); window.removeEventListener('resize', measure); };
   }, [step.target, stepIndex]);
 
   const actLabels: Record<number, string> = { 1: 'Your Revenue Machine', 2: 'Sell Without Lifting a Finger', 3: "What Your Client Gets" };
@@ -833,24 +842,28 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
   // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
     if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-    const maxW = 340;
+    const maxW = 360;
+    const tooltipH = 220; // approximate height
+    const gap = pad + 10;
     const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
+    const clampLeft = (x: number) => Math.max(16, Math.min(x, window.innerWidth - maxW - 16));
+    const clampTop = (y: number) => Math.max(16, Math.min(y, window.innerHeight - tooltipH - 16));
     switch (step.position) {
       case 'bottom':
-        style.top = rect.bottom + pad + 8;
-        style.left = Math.max(16, Math.min(rect.left + rect.width / 2 - maxW / 2, window.innerWidth - maxW - 16));
+        style.top = Math.min(rect.bottom + gap, window.innerHeight - tooltipH - 16);
+        style.left = clampLeft(rect.left + rect.width / 2 - maxW / 2);
         break;
       case 'top':
-        style.bottom = window.innerHeight - rect.top + pad + 8;
-        style.left = Math.max(16, Math.min(rect.left + rect.width / 2 - maxW / 2, window.innerWidth - maxW - 16));
+        style.bottom = Math.max(16, window.innerHeight - rect.top + gap);
+        style.left = clampLeft(rect.left + rect.width / 2 - maxW / 2);
         break;
       case 'right':
-        style.top = Math.max(16, rect.top + rect.height / 2 - 80);
-        style.left = rect.right + pad + 8;
+        style.top = clampTop(rect.top + rect.height / 2 - tooltipH / 2);
+        style.left = Math.min(rect.right + gap, window.innerWidth - maxW - 16);
         break;
       case 'left':
-        style.top = Math.max(16, rect.top + rect.height / 2 - 80);
-        style.right = window.innerWidth - rect.left + pad + 8;
+        style.top = clampTop(rect.top + rect.height / 2 - tooltipH / 2);
+        style.right = Math.max(16, window.innerWidth - rect.left + gap);
         break;
     }
     return style;
