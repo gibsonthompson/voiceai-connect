@@ -90,7 +90,7 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
       </p>
 
       <p>
-        <strong>Layer 1: The platform (builds the product).</strong> This is the technology company that writes the code, maintains the servers, handles security updates, and builds new features. They invest millions in engineering so that you don't have to. You pay them a flat monthly fee — typically $99–$499/month depending on the product.
+        <strong>Layer 1: The platform (builds the product).</strong> This is the technology company that writes the code, maintains the servers, handles security updates, and builds new features. They invest millions in engineering so that you don't have to. You pay them a flat monthly fee — $199/month for platforms like VoiceAI Connect.
       </p>
 
       <p>
@@ -129,16 +129,37 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
         headers={['Clients', 'Monthly Revenue*', 'Platform Cost', 'Net Profit', 'Profit Margin']}
         rows={[
           ['5', '$625', '$199', '$426', '68%'],
-          ['15', '$1,875', '$249', '$1,626', '87%'],
-          ['30', '$3,750', '$349', '$3,401', '91%'],
-          ['50', '$6,250', '$499', '$5,751', '92%'],
-          ['100', '$12,500', '$499', '$12,001', '96%'],
+          ['15', '$1,875', '$199', '$1,676', '89%'],
+          ['30', '$3,750', '$199', '$3,551', '95%'],
+          ['50', '$6,250', '$199', '$6,051', '97%'],
+          ['100', '$12,500', '$199', '$12,301', '98%'],
         ]}
       />
 
       <p className="text-sm text-[#fafaf9]/50">
-        *Assumes average client price of $125/month. Platform costs are illustrative and vary by provider and tier.
+        *Assumes average client price of $125/month. Platform cost based on VoiceAI Connect pricing.
       </p>
+
+      <div className="my-8 p-6 sm:p-8 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
+        <p className="font-semibold text-lg sm:text-xl text-[#fafaf9]">These are real numbers, not projections.</p>
+        <p className="mt-2 text-sm sm:text-base text-[#fafaf9]/60">
+          VoiceAI Connect agencies are running this exact model right now — $199/month platform fee, 60-second client onboarding, and margins that grow with every client they add. No coding. No fulfillment. No per-client platform fees.
+        </p>
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <a
+            href="/signup"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+          >
+            Start Your 14-Day Free Trial
+          </a>
+          <a
+            href="/interactive-demo"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.12] px-6 py-3 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.12] transition-colors"
+          >
+            See the Platform Live
+          </a>
+        </div>
+      </div>
 
       <h2 id="why-margins-are-high">Why Margins Are 60–80%</h2>
 
@@ -151,7 +172,7 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
       </p>
 
       <p>
-        <strong>No development or infrastructure costs.</strong> Building an AI receptionist platform from scratch would cost $500,000–$2,000,000 in engineering time, plus ongoing server costs, security audits, and maintenance. The white-label model lets you access that technology for $199–$499/month. The platform amortizes development cost across hundreds of resellers.
+        <strong>No development or infrastructure costs.</strong> Building an AI receptionist platform from scratch would cost $500,000–$2,000,000 in engineering time, plus ongoing server costs, security audits, and maintenance. The white-label model lets you access that technology for $199/month. The platform amortizes development cost across hundreds of resellers.
       </p>
 
       <p>
@@ -163,7 +184,7 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
       <ComparisonTable
         headers={['Model', 'Typical Margin', 'Recurring Revenue?', 'Scales Without You?', 'Startup Cost']}
         rows={[
-          ['White-label SaaS', '60–80%', 'Yes — monthly subscriptions', 'Yes — software runs itself', '$199–$499/mo'],
+          ['White-label SaaS', '60–80%', 'Yes — monthly subscriptions', 'Yes — software runs itself', '$199/mo'],
           ['Affiliate marketing', '5–30%', 'Rarely', 'Yes — but no control over product', '$0–$100'],
           ['Dropshipping', '10–30%', 'No — one-time purchases', 'Somewhat', '$500–$5,000'],
           ['Service agency (SMMA, SEO)', '15–40%', 'Sometimes', 'No — scales with headcount', '$1,000–$10,000'],
@@ -200,16 +221,16 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
       <ComparisonTable
         headers={['Responsibility', 'Platform Does This', 'You Do This']}
         rows={[
-          ['Build and maintain the software', '✅', ''],
-          ['Host servers and handle uptime', '✅', ''],
-          ['Develop new features', '✅', ''],
-          ['Handle security and compliance', '✅', ''],
-          ['Apply your branding (logo, colors, domain)', '✅ (provides tools)', '✅ (configures it)'],
-          ['Find and acquire customers', '', '✅'],
-          ['Set pricing', '', '✅'],
-          ['Onboard new customers', '', '✅'],
-          ['Provide front-line customer support', '', '✅'],
-          ['Handle billing and payments', '✅ (provides Stripe Connect)', '✅ (manages relationship)'],
+          ['Build and maintain the software', 'Yes', ''],
+          ['Host servers and handle uptime', 'Yes', ''],
+          ['Develop new features', 'Yes', ''],
+          ['Handle security and compliance', 'Yes', ''],
+          ['Apply your branding (logo, colors, domain)', 'Yes (provides tools)', 'Yes (configures it)'],
+          ['Find and acquire customers', '', 'Yes'],
+          ['Set pricing', '', 'Yes'],
+          ['Onboard new customers', '', 'Yes'],
+          ['Provide front-line customer support', '', 'Yes'],
+          ['Handle billing and payments', 'Yes (provides Stripe Connect)', 'Yes (manages relationship)'],
         ]}
       />
 
@@ -275,6 +296,37 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
           <p className="text-[#fafaf9]/70">
             Yes — and you will. Multiple resellers often sell the same underlying platform to different markets. Your differentiation comes from your brand, your target market, your sales process, and your customer service. A dental-focused agency and a home-services-focused agency selling the same white-label AI receptionist don't compete with each other because they serve different customers.
           </p>
+        </div>
+      </div>
+
+      <h2 id="get-started">Ready to Build Your White-Label AI Agency?</h2>
+
+      <p>
+        VoiceAI Connect is a white-label AI receptionist platform built specifically for this model. You get the full stack — AI voice technology, branded client dashboards, Stripe Connect payments, a leads CRM, and a marketing site — all under your brand, for $199/month flat.
+      </p>
+
+      <p>
+        Your clients see your logo, pay you directly, and never know the platform exists. You focus on sales and client relationships. The technology runs itself.
+      </p>
+
+      <div className="my-8 p-6 sm:p-8 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
+        <p className="font-semibold text-lg sm:text-xl text-[#fafaf9]">Launch your AI receptionist agency this week.</p>
+        <p className="mt-2 text-sm sm:text-base text-[#fafaf9]/60">
+          14-day free trial. No credit card required. Set up your brand, add your first client, and see the margins for yourself.
+        </p>
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <a
+            href="/signup"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+          >
+            Start Free Trial
+          </a>
+          <a
+            href="/#pricing"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.12] px-6 py-3 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.12] transition-colors"
+          >
+            See Pricing
+          </a>
         </div>
       </div>
 

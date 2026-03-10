@@ -126,16 +126,24 @@ function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
 function CTABox() {
   return (
     <div className="p-5 sm:p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
-      <h4 className="font-semibold text-base sm:text-lg">Ready to start your AI voice agency?</h4>
+      <h4 className="font-semibold text-base sm:text-lg">Launch your AI receptionist agency for $199/month.</h4>
       <p className="mt-2 text-sm text-[#fafaf9]/60">
-        VoiceAI Connect gives you everything you need to launch, brand, and scale your agency — with zero coding required.
+        White-label platform. Your brand. 60-second client onboarding. Stripe Connect payments direct to your bank. 14-day free trial, no credit card required.
       </p>
-      <Link
-        href="/signup"
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
-      >
-        Start Your 14-Day Free Trial
-      </Link>
+      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+        <Link
+          href="/signup"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+        >
+          Start Free Trial
+        </Link>
+        <Link
+          href="/interactive-demo"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.1] px-5 py-2.5 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.1] transition-colors"
+        >
+          See Live Demo
+        </Link>
+      </div>
     </div>
   );
 }
