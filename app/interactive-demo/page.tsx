@@ -1203,28 +1203,77 @@ export default function DemoPage() {
     <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       {/* Top Bar */}
-      <div className="relative z-40 flex items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
-        <div className="flex items-center gap-4"><Link href="/" className="flex items-center gap-2.5"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link><div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div></div>
-        <div className="absolute left-1/2 -translate-x-1/2 flex"><div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div></div>
-        <div className="flex items-center gap-3"><button onClick={restartTour} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/#pricing" className="hidden sm:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
+      <div className="relative z-40 flex items-center justify-between px-3 sm:px-5 h-12 sm:h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4"><Link href="/" className="flex items-center gap-2"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="hidden sm:inline text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link><div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div></div>
+        <div className="absolute left-1/2 -translate-x-1/2 flex"><div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-2.5 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}><span className="sm:hidden">Agency</span><span className="hidden sm:inline">Agency Dashboard</span></button><button onClick={() => setView('client')} className={`px-2.5 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}><span className="sm:hidden">Client</span><span className="hidden sm:inline">Client Dashboard</span></button></div></div>
+        <div className="flex items-center gap-2 sm:gap-3"><button onClick={restartTour} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/#pricing" className="hidden md:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10"><span className="hidden sm:inline">Start Free Trial</span><span className="sm:hidden">Trial</span><ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
       </div>
       {/* Dashboard */}
       <div className="flex-1 flex overflow-hidden">
         {view === 'agency' ? (<>
-          <div className="w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex flex-col">
+          <div className="hidden lg:flex w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex-col">
             <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5"><WaveformIcon className="h-5 w-5 text-[#fafaf9]" /></div><div className="min-w-0"><p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p><p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p></div></div>
             <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">{agencyNav.map(item => (<button key={item.id} onClick={() => setAgencyTab(item.id)} className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${agencyTab === item.id ? 'bg-emerald-500/10 text-emerald-400' : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'}`}><item.icon className="h-4 w-4 flex-shrink-0" /><span className="truncate">{item.label}</span></button>))}</nav>
             <div className="p-3 border-t border-white/[0.06]"><div data-tour="sidebar-mrr" className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div></div>
           </div>
-          <div className="flex-1 overflow-y-auto bg-[#0a0a0a]">{renderAgency()}</div>
+          <div className="flex-1 overflow-y-auto bg-[#0a0a0a] pb-16 lg:pb-0">{renderAgency()}</div>
         </>) : (<>
-          <div className="w-56 border-r flex-shrink-0 flex flex-col" style={{ backgroundColor: 'rgb(17,78,60)', borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="hidden lg:flex w-56 border-r flex-shrink-0 flex-col" style={{ backgroundColor: 'rgb(17,78,60)', borderColor: 'rgba(255,255,255,0.08)' }}>
             <div className="flex items-center gap-3 px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}><div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-4 w-4 text-white" /></div><div className="min-w-0"><p className="font-semibold text-sm text-white truncate">{CLIENT.name}</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>AI Receptionist Active</p></div></div>
             <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">{clientNav.map(item => (<button key={item.id} onClick={() => setClientTab(item.id)} className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all" style={{ backgroundColor: clientTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent', color: clientTab === item.id ? '#ffffff' : 'rgba(255,255,255,0.65)' }} onMouseEnter={e => { if (clientTab !== item.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)'; }} onMouseLeave={e => { if (clientTab !== item.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><item.icon className="h-4 w-4 flex-shrink-0" /><span className="truncate">{item.label}</span></button>))}</nav>
             <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}><div className="rounded-lg border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p><p className="text-sm font-semibold text-white">{CLIENT.agencyName}</p></div></div>
           </div>
-          <div className="flex-1 overflow-y-auto">{renderClient()}</div>
+          <div className="flex-1 overflow-y-auto pb-16 lg:pb-0">{renderClient()}</div>
         </>)}
+      </div>
+      {/* Mobile Bottom Tab Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {(view === 'agency' ? agencyNav.slice(0, 6) : clientNav).map(item => (
+            <button
+              key={item.id}
+              onClick={() => view === 'agency' ? setAgencyTab(item.id) : setClientTab(item.id)}
+              className="flex-1 min-w-[64px] flex flex-col items-center gap-0.5 py-2 px-1 transition-colors"
+              style={{
+                color: (view === 'agency' ? agencyTab : clientTab) === item.id ? '#10b981' : 'rgba(250,250,249,0.35)',
+              }}
+            >
+              <item.icon className="h-4 w-4" />
+              <span className="text-[9px] font-medium truncate max-w-full">{item.label}</span>
+            </button>
+          ))}
+          {view === 'agency' && (
+            <div className="relative min-w-[64px]">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('mobile-more-menu');
+                  if (el) el.classList.toggle('hidden');
+                }}
+                className="w-full flex flex-col items-center gap-0.5 py-2 px-1"
+                style={{ color: agencyNav.slice(6).some(n => n.id === agencyTab) ? '#10b981' : 'rgba(250,250,249,0.35)' }}
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="text-[9px] font-medium">More</span>
+              </button>
+              <div id="mobile-more-menu" className="hidden absolute bottom-full right-0 mb-2 w-44 rounded-xl border border-white/[0.08] bg-[#0a0a0a]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+                {agencyNav.slice(6).map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setAgencyTab(item.id);
+                      document.getElementById('mobile-more-menu')?.classList.add('hidden');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-xs font-medium transition-colors hover:bg-white/[0.04]"
+                    style={{ color: agencyTab === item.id ? '#10b981' : 'rgba(250,250,249,0.6)' }}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       {/* Tour Overlay */}
       {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onPause={pauseTour} />}
