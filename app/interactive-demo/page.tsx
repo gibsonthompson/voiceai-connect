@@ -1139,7 +1139,7 @@ export default function DemoPage() {
   const [clientTab, setClientTab] = useState('dashboard');
   const [tourStep, setTourStep] = useState(0);
   const [tourPaused, setTourPaused] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const agencyNav = [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, { id: 'clients', label: 'Clients', icon: Users }, { id: 'leads', label: 'Leads', icon: Target }, { id: 'outreach', label: 'Outreach', icon: Send }, { id: 'analytics', label: 'Analytics', icon: BarChart3 }, { id: 'demo-phone', label: 'Demo Phone', icon: Phone }, { id: 'marketing', label: 'Marketing', icon: Globe }, { id: 'referrals', label: 'Referrals', icon: Gift }, { id: 'branding', label: 'Branding', icon: Paintbrush }, { id: 'settings', label: 'Settings', icon: Settings }];
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
 
@@ -1186,7 +1186,7 @@ export default function DemoPage() {
   // Navigate view/tab when tour step changes
   useEffect(() => {
     if (!tourActive || !currentStep) return;
-    setMobileNavOpen(false);
+    setSidebarOpen(false);
     if (currentStep.view !== view) setView(currentStep.view);
     if (currentStep.view === 'agency' && currentStep.tab !== agencyTab) setAgencyTab(currentStep.tab);
     if (currentStep.view === 'client' && currentStep.tab !== clientTab) setClientTab(currentStep.tab);
@@ -1204,69 +1204,99 @@ export default function DemoPage() {
   return (
     <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      {/* Top Bar */}
-      <div className="relative z-40 flex items-center justify-between px-3 sm:px-5 h-11 sm:h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Link href="/" className="flex items-center gap-2"><div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div><span className="hidden sm:inline text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
-          <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-2.5 py-0.5 text-[10px]"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div>
-        </div>
-        <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => { setView('agency'); setMobileNavOpen(false); }} className={`px-2 sm:px-4 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60'}`}><span className="sm:hidden">Agency</span><span className="hidden sm:inline">Agency Dashboard</span></button><button onClick={() => { setView('client'); setMobileNavOpen(false); }} className={`px-2 sm:px-4 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60'}`}><span className="sm:hidden">Client</span><span className="hidden sm:inline">Client Dashboard</span></button></div>
-        <div className="flex items-center gap-1.5 sm:gap-3">
-          <button onClick={restartTour} className="hidden sm:inline px-2 py-1 text-[10px] sm:text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button>
-          <Link href="/#pricing" className="hidden md:inline px-2.5 py-1 rounded-full border border-white/[0.08] text-[10px] text-[#fafaf9]/50 hover:text-[#fafaf9] transition-all">Pricing</Link>
-          <Link href="/signup" className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] sm:text-xs font-medium text-[#050505]">Start Free Trial<ArrowRight className="h-2.5 w-2.5" /></Link>
-          <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-1.5 text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
-            {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      {/* Mobile Header — matches real agency/client layout exactly */}
+      <div className="sticky z-30 lg:hidden" style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', paddingTop: 'env(safe-area-inset-top)', top: 0 }}>
+        <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-3">
+            {view === 'agency' ? (
+              <><div className="flex items-center justify-center rounded-xl" style={{ height: 40, width: 40, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}><WaveformIcon className="h-6 w-6" color="#10b981" /></div><span className="font-semibold text-lg truncate max-w-[140px] text-[#fafaf9]">{AGENCY.name}</span></>
+            ) : (
+              <><div className="flex items-center justify-center rounded-xl" style={{ height: 40, width: 40, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-6 w-6 text-white" /></div><span className="font-semibold text-lg truncate max-w-[140px] text-white">{CLIENT.name}</span></>
+            )}
+          </div>
+          {/* Center toggle */}
+          <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
+            <button onClick={() => { setView('agency'); setSidebarOpen(false); }} className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Agency</button>
+            <button onClick={() => { setView('client'); setSidebarOpen(false); }} className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Client</button>
+          </div>
+          {/* Hamburger — exactly matches real layout: w-11 h-11, Menu h-7 w-7 */}
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>
+            <Menu className="h-7 w-7" />
           </button>
-        </div>
+        </header>
       </div>
 
-      {/* Mobile Nav Drawer — slides from left, triggered by hamburger on right */}
-      <div className={`lg:hidden fixed inset-0 z-30 transition-all duration-300 ${mobileNavOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
-        <div className={`absolute top-11 left-0 bottom-0 w-64 border-r border-white/[0.06] transition-transform duration-300 ease-out ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505' }}>
-          {/* Nav header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: view === 'client' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)' }}>
-            {view === 'agency' ? (
-              <><div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5"><WaveformIcon className="h-4 w-4 text-[#fafaf9]" /></div><div className="min-w-0"><p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p><p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p></div></>
-            ) : (
-              <><div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-3.5 w-3.5 text-white" /></div><div className="min-w-0"><p className="font-semibold text-sm text-white truncate">{CLIENT.name}</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>AI Receptionist</p></div></>
-            )}
-          </div>
-          {/* Nav items */}
-          <nav className="p-2 space-y-0.5 overflow-y-auto" style={{ maxHeight: 'calc(100% - 110px)' }}>
-            {(view === 'agency' ? agencyNav : clientNav).map(item => {
-              const isActive = view === 'agency' ? agencyTab === item.id : clientTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (view === 'agency') setAgencyTab(item.id); else setClientTab(item.id);
-                    setMobileNavOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all"
-                  style={view === 'agency'
-                    ? { backgroundColor: isActive ? 'rgba(16,185,129,0.1)' : 'transparent', color: isActive ? '#10b981' : 'rgba(250,250,249,0.6)' }
-                    : { backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'transparent', color: isActive ? '#ffffff' : 'rgba(255,255,255,0.65)' }
-                  }
-                >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                  {isActive && <ChevronRight className="ml-auto h-4 w-4" style={{ color: view === 'agency' ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.3)' }} />}
-                </button>
-              );
-            })}
-          </nav>
-          {/* Bottom card */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 border-t" style={{ borderColor: view === 'client' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-            {view === 'agency' ? (
-              <div data-tour="sidebar-mrr" className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div>
-            ) : (
-              <div className="rounded-lg border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p><p className="text-sm font-semibold text-white">{CLIENT.agencyName}</p></div>
-            )}
-          </div>
+      {/* Desktop Top Bar — only visible on lg+ */}
+      <div className="hidden lg:flex relative z-40 items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
+          <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div>
         </div>
+        <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div>
+        <div className="flex items-center gap-3"><button onClick={restartTour} className="px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/#pricing" className="px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
       </div>
+
+      {/* Mobile Sidebar Overlay — matches real layout */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Mobile Sidebar Drawer — matches real layout: w-72, slides from left */}
+      <aside
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', borderRight: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)', paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        {/* Drawer Header — "Menu" + X close, matches real layout */}
+        <div className="flex items-center justify-between h-16 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
+          <span className="font-semibold text-lg" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>Menu</span>
+          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>
+            <X className="h-7 w-7" />
+          </button>
+        </div>
+
+        {/* Nav Items — matches real layout: rounded-xl px-3 py-3 */}
+        <nav className="p-4 space-y-1">
+          {(view === 'agency' ? agencyNav : clientNav).map(item => {
+            const active = view === 'agency' ? agencyTab === item.id : clientTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (view === 'agency') setAgencyTab(item.id); else setClientTab(item.id);
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium transition-colors text-left"
+                style={view === 'agency'
+                  ? { backgroundColor: active ? 'rgba(16,185,129,0.1)' : 'transparent', color: active ? '#10b981' : 'rgba(250,250,249,0.6)' }
+                  : { backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent', color: active ? '#ffffff' : 'rgba(255,255,255,0.65)' }
+                }
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </div>
+                {active && <ChevronRight className="h-4 w-4" style={{ color: view === 'agency' ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.3)' }} />}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom card — matches real layout */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}>
+          {view === 'agency' ? (
+            <div data-tour="sidebar-mrr" className="rounded-xl p-3" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <p className="text-[10px]" style={{ color: 'rgba(16,185,129,0.6)' }}>Monthly Revenue</p>
+              <p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(16,185,129,0.5)' }}>{AGENCY.stats.clients} active clients</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p>
+              <p className="text-sm font-medium text-white">{CLIENT.agencyName}</p>
+            </div>
+          )}
+        </div>
+      </aside>
       {/* Dashboard */}
       <div className="flex-1 flex overflow-hidden">
         {view === 'agency' ? (<>
