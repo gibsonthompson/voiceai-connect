@@ -244,6 +244,44 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Blog Posts — AEO Content (March 2026)
+    {
+      url: `${baseUrl}/blog/missed-call-cost-small-business`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/ai-receptionist-vs-ivr-vs-answering-service`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/how-to-sell-ai-to-local-businesses`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/what-is-ai-receptionist-how-it-works`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/how-to-set-up-ai-receptionist`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/what-can-ai-receptionist-handle`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+
     // Blog Posts — Prompt Templates (February 2026)
     {
       url: `${baseUrl}/blog/ai-receptionist-prompt-templates`,
