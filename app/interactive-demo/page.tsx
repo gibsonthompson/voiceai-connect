@@ -861,7 +861,6 @@ function ClientSettings() {
 const TOUR_CSS = `
 @keyframes tour-fade-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes tour-fade-in-center { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-@keyframes tour-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tour-spotlight-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes tour-spotlight-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.08); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0.25), 0 0 50px rgba(16,185,129,0.15); } }
 @keyframes tour-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -870,7 +869,6 @@ const TOUR_CSS = `
 @keyframes tour-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 .tour-tooltip-enter { animation: tour-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .tour-tooltip-center { animation: tour-fade-in-center 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.tour-backdrop-enter { animation: tour-backdrop-in 0.3s ease-out forwards; }
 .tour-spotlight-enter { animation: tour-spotlight-in 0.4s ease-out forwards; animation-delay: 0.1s; opacity: 0; }
 .tour-spotlight-ring { animation: tour-spotlight-pulse 2s ease-in-out infinite; }
 .tour-pill-enter { animation: tour-pill-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -894,30 +892,43 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
   step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onPause: () => void;
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [ready, setReady] = useState(false);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [enterKey, setEnterKey] = useState(0);
   const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Reset drag + trigger entrance animation on step change
-  useEffect(() => { setDragOffset(null); setEnterKey(k => k + 1); }, [stepIndex]);
-
+  // Reset everything on step change
   useEffect(() => {
-    if (!step.target) { setRect(null); return; }
-    const measure = () => {
-      const el = document.querySelector(`[data-tour="${step.target}"]`);
-      if (el) setRect(el.getBoundingClientRect());
-      else setRect(null);
-    };
+    setDragOffset(null);
+    setReady(false);
+    setRect(null);
+
+    // Centered steps (no target) are ready immediately
+    if (!step.target) {
+      setReady(true);
+      return;
+    }
+
     const timer = setTimeout(() => {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        setTimeout(measure, 300);
-      } else { setRect(null); }
+        setTimeout(() => {
+          const r = el.getBoundingClientRect();
+          setRect(r);
+          setReady(true);
+        }, 300);
+      } else {
+        setReady(true);
+      }
     }, 150);
+
+    const measure = () => {
+      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      if (el) setRect(el.getBoundingClientRect());
+    };
     window.addEventListener('resize', measure);
     return () => { clearTimeout(timer); window.removeEventListener('resize', measure); };
   }, [step.target, stepIndex]);
@@ -985,37 +996,41 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
   const pct = Math.round(((stepIndex + 1) / totalSteps) * 100);
 
   return (
-    <div key={enterKey} ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
+    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
       <style dangerouslySetInnerHTML={{ __html: TOUR_CSS }} />
-      <div className="absolute inset-0 tour-backdrop-enter" style={{
-        backgroundColor: 'rgba(0,0,0,0.6)', clipPath: getClipPath(),
+      {/* Backdrop — always visible, dims immediately */}
+      <div className="absolute inset-0" style={{
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        clipPath: ready ? getClipPath() : 'none',
         backdropFilter: isCentered ? 'blur(4px)' : undefined,
+        transition: 'clip-path 0.01s',
       }} />
-      {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm tour-backdrop-enter" />}
+      {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />}
 
-      {/* Spotlight ring — fades in at position, then pulses */}
-      {rect && !isCentered && (() => {
-        const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
-        const rx2 = Math.min(window.innerWidth, rect.right + pad);
-        const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
-        return (rx2 - rx > 0 && ry2 - ry > 0) ? (
-          <div className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
-            left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
-            border: '2px solid rgba(16,185,129,0.4)',
-          }} />
-        ) : null;
-      })()}
+      {/* Spotlight ring + Tooltip — only render after measurement */}
+      {ready && (<>
+        {rect && !isCentered && (() => {
+          const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
+          const rx2 = Math.min(window.innerWidth, rect.right + pad);
+          const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
+          return (rx2 - rx > 0 && ry2 - ry > 0) ? (
+            <div key={stepIndex} className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
+              left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
+              border: '2px solid rgba(16,185,129,0.4)',
+            }} />
+          ) : null;
+        })()}
 
-      {/* Tooltip — no CSS transitions, entrance via keyframe only */}
-      <div
-        ref={tooltipRef}
-        className={isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}
-        style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : isCentered ? 'default' : 'grab', userSelect: 'none', touchAction: 'none' }}
-        onClick={e => e.stopPropagation()}
-        onPointerDown={isCentered ? undefined : handlePointerDown}
-        onPointerMove={isCentered ? undefined : handlePointerMove}
-        onPointerUp={isCentered ? undefined : handlePointerUp}
-      >
+        <div
+          key={stepIndex}
+          ref={tooltipRef}
+          className={isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}
+          style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : isCentered ? 'default' : 'grab', userSelect: 'none', touchAction: 'none' }}
+          onClick={e => e.stopPropagation()}
+          onPointerDown={isCentered ? undefined : handlePointerDown}
+          onPointerMove={isCentered ? undefined : handlePointerMove}
+          onPointerUp={isCentered ? undefined : handlePointerUp}
+        >
         <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.05)' }}>
 
           {/* Drag handle + step number */}
@@ -1080,6 +1095,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
           )}
         </div>
       </div>
+      </>)}
     </div>
   );
 }
