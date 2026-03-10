@@ -140,7 +140,7 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
         *Assumes average client price of $125/month. Platform cost based on VoiceAI Connect pricing.
       </p>
 
-      <div className="my-8 p-6 sm:p-8 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
+      <div className="my-8 p-5 sm:p-8 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
         <p className="font-semibold text-lg sm:text-xl text-[#fafaf9]">These are real numbers, not projections.</p>
         <p className="mt-2 text-sm sm:text-base text-[#fafaf9]/60">
           VoiceAI Connect agencies are running this exact model right now — $199/month platform fee, 60-second client onboarding, and margins that grow with every client they add. No coding. No fulfillment. No per-client platform fees.
@@ -148,13 +148,15 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <a
             href="/signup"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+            style={{ color: '#050505' }}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-medium hover:bg-emerald-400 transition-colors no-underline hover:no-underline"
           >
             Start Your 14-Day Free Trial
           </a>
           <a
             href="/interactive-demo"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.12] px-6 py-3 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.12] transition-colors"
+            style={{ color: '#fafaf9' }}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.12] px-6 py-3 text-sm font-medium hover:bg-white/[0.12] transition-colors no-underline hover:no-underline"
           >
             See the Platform Live
           </a>
@@ -296,37 +298,6 @@ export default function WhiteLabelSaaSBusinessModelExplained() {
           <p className="text-[#fafaf9]/70">
             Yes — and you will. Multiple resellers often sell the same underlying platform to different markets. Your differentiation comes from your brand, your target market, your sales process, and your customer service. A dental-focused agency and a home-services-focused agency selling the same white-label AI receptionist don't compete with each other because they serve different customers.
           </p>
-        </div>
-      </div>
-
-      <h2 id="get-started">Ready to Build Your White-Label AI Agency?</h2>
-
-      <p>
-        VoiceAI Connect is a white-label AI receptionist platform built specifically for this model. You get the full stack — AI voice technology, branded client dashboards, Stripe Connect payments, a leads CRM, and a marketing site — all under your brand, for $199/month flat.
-      </p>
-
-      <p>
-        Your clients see your logo, pay you directly, and never know the platform exists. You focus on sales and client relationships. The technology runs itself.
-      </p>
-
-      <div className="my-8 p-6 sm:p-8 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
-        <p className="font-semibold text-lg sm:text-xl text-[#fafaf9]">Launch your AI receptionist agency this week.</p>
-        <p className="mt-2 text-sm sm:text-base text-[#fafaf9]/60">
-          14-day free trial. No credit card required. Set up your brand, add your first client, and see the margins for yourself.
-        </p>
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <a
-            href="/signup"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
-          >
-            Start Free Trial
-          </a>
-          <a
-            href="/#pricing"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.08] border border-white/[0.12] px-6 py-3 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.12] transition-colors"
-          >
-            See Pricing
-          </a>
         </div>
       </div>
 

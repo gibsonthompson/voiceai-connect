@@ -128,18 +128,20 @@ function CTABox() {
     <div className="p-5 sm:p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
       <h4 className="font-semibold text-base sm:text-lg">Launch your AI receptionist agency for $199/month.</h4>
       <p className="mt-2 text-sm text-[#fafaf9]/60">
-        White-label platform. Your brand. 60-second client onboarding. Stripe Connect payments direct to your bank. 14-day free trial, no credit card required.
+        White-label platform. Your brand. 60-second client onboarding. 14-day free trial, no credit card required.
       </p>
-      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+      <div className="mt-4 space-y-2">
         <Link
           href="/signup"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
+          style={{ color: '#050505' }}
+          className="flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-medium hover:bg-emerald-400 transition-colors no-underline hover:no-underline"
         >
           Start Free Trial
         </Link>
         <Link
           href="/interactive-demo"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.1] px-5 py-2.5 text-sm font-medium text-[#fafaf9] hover:bg-white/[0.1] transition-colors"
+          style={{ color: '#fafaf9' }}
+          className="flex items-center justify-center rounded-full bg-white/[0.06] border border-white/[0.1] px-5 py-2.5 text-sm font-medium hover:bg-white/[0.1] transition-colors no-underline hover:no-underline"
         >
           See Live Demo
         </Link>

@@ -21,14 +21,12 @@ export default function LandingPage() {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
-      // Show sticky CTA after scrolling past hero CTA buttons (~600px)
       setShowBottomCta(window.scrollY > 600);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -60,7 +58,6 @@ export default function LandingPage() {
       }`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -73,7 +70,6 @@ export default function LandingPage() {
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
 
-            {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-1">
               {[
                 { name: 'Platform', href: '/platform' },
@@ -91,7 +87,6 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-3">
               <Link 
                 href="/agency/login" 
@@ -108,7 +103,6 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Mobile menu button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]"
@@ -118,7 +112,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile menu - full screen overlay */}
         {mobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 top-16 z-50 bg-[#050505]/98 backdrop-blur-xl animate-in fade-in duration-200">
             <div className="flex flex-col h-full px-6 pt-8 pb-10">
@@ -164,14 +157,12 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-24 lg:pb-32">
-        {/* Background gradient mesh */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-emerald-500/[0.07] via-amber-500/[0.03] to-transparent rounded-full blur-3xl" />
         </div>
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 sm:px-4 py-1.5 text-xs sm:text-sm mb-5 sm:mb-8">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -180,7 +171,6 @@ export default function LandingPage() {
               <span className="text-emerald-300/90">White-label AI receptionist platform</span>
             </div>
 
-            {/* Headline */}
             <h1 className="text-[2.25rem] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
               <span className="block">Sell AI Receptionists</span>
               <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
@@ -193,7 +183,6 @@ export default function LandingPage() {
               We handle the tech and fulfillment. You sell and keep 100% of what you charge.
             </p>
 
-            {/* Value props row */}
             <div className="mt-6 sm:mt-10 flex flex-wrap items-center justify-center gap-x-5 sm:gap-x-8 gap-y-2 sm:gap-y-3 text-xs sm:text-sm text-[#fafaf9]/50">
               {[
                 'Run from your phone',
@@ -207,7 +196,7 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* CTA buttons - Mobile optimized */}
+            {/* CTA buttons */}
             <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link 
                 href="/signup" 
@@ -216,15 +205,15 @@ export default function LandingPage() {
                 <span>Start Your 14-Day Free Trial</span>
                 <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
               </Link>
-              <button 
-                onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+              <Link 
+                href="/interactive-demo"
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full border border-white/10 bg-white/[0.03] px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20"
               >
                 <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
                   <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current ml-0.5" />
                 </span>
                 <span>Watch Demo</span>
-              </button>
+              </Link>
             </div>
 
             <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-[#fafaf9]/40">
@@ -234,13 +223,11 @@ export default function LandingPage() {
 
           {/* Interactive Dashboard Demo */}
           <div id="demo" className="mt-16 sm:mt-20 lg:mt-24 relative scroll-mt-24">
-            {/* Glow behind dashboard */}
             <div className="absolute -inset-x-20 -top-20 h-[400px] bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-transparent blur-2xl pointer-events-none" />
             
             <div className="relative">
               <DashboardSandbox />
               
-              {/* Floating badge */}
               <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a]/90 backdrop-blur-xl px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm shadow-xl">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="text-[#fafaf9]/70">Your clients see <span className="text-[#fafaf9]">your brand</span>, not ours</span>
@@ -267,7 +254,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Three column - what happens */}
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
@@ -304,7 +290,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Bottom callout */}
           <div className="mt-12 max-w-3xl mx-auto">
             <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] text-center">
               <p className="text-lg font-medium">
@@ -363,14 +348,9 @@ export default function LandingPage() {
             <div className="relative flex justify-center">
               <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
               <div className="relative w-72 sm:w-80">
-                {/* Phone frame */}
                 <div className="rounded-[3rem] border-4 border-white/10 bg-[#0a0a0a] p-3 shadow-2xl">
-                  {/* Notch */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0a0a0a] rounded-b-2xl z-10" />
-                  
-                  {/* Screen */}
                   <div className="rounded-[2.5rem] bg-[#080808] overflow-hidden">
-                    {/* Status bar */}
                     <div className="flex items-center justify-between px-6 py-2 text-xs">
                       <span>9:41</span>
                       <div className="flex items-center gap-1">
@@ -379,8 +359,6 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    {/* App content */}
                     <div className="px-5 pb-8">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-amber-500" />
@@ -389,15 +367,11 @@ export default function LandingPage() {
                           <p className="text-xs text-[#fafaf9]/40">Dashboard</p>
                         </div>
                       </div>
-                      
-                      {/* Revenue card */}
                       <div className="p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/20 mb-4">
                         <p className="text-xs text-emerald-400/70">This Month</p>
                         <p className="text-3xl font-semibold mt-1">$6,903</p>
                         <p className="text-xs text-emerald-400 mt-1">↑ 18% from last month</p>
                       </div>
-                      
-                      {/* Quick stats */}
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                           <p className="text-xs text-[#fafaf9]/40">Clients</p>
@@ -408,8 +382,6 @@ export default function LandingPage() {
                           <p className="text-lg font-semibold">127</p>
                         </div>
                       </div>
-                      
-                      {/* Recent activity */}
                       <div className="space-y-2">
                         <p className="text-xs text-[#fafaf9]/40">Recent</p>
                         {[
@@ -428,11 +400,9 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Badge */}
                 <div className="absolute -bottom-4 -right-4 px-4 py-2 rounded-xl bg-amber-500 text-[#050505] text-sm font-medium shadow-lg shadow-amber-500/30">
                   <Smartphone className="h-4 w-4 inline mr-1.5" />
-                  Phone-native ✓
+                  Phone-native
                 </div>
               </div>
             </div>
@@ -458,81 +428,20 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Main features grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
-              {
-                icon: Smartphone,
-                title: 'Mobile & Web App',
-                description: 'Your clients get a beautiful dashboard to view calls, transcripts, and analytics from any device.',
-                highlight: true,
-              },
-              {
-                icon: Mic,
-                title: 'Call Recordings',
-                description: 'Every call is recorded and stored. Clients can replay conversations anytime in their dashboard.',
-                highlight: true,
-              },
-              {
-                icon: MessageSquare,
-                title: 'SMS Summaries',
-                description: 'Instant text notifications after each call with caller info, reason, and urgency level.',
-                highlight: true,
-              },
-              {
-                icon: FileText,
-                title: 'Full Transcripts',
-                description: 'Complete word-for-word transcripts of every conversation, searchable and exportable.',
-                highlight: false,
-              },
-              {
-                icon: Sparkles,
-                title: 'AI Call Summaries',
-                description: 'Intelligent summaries that extract key details: name, contact, service needed, and urgency.',
-                highlight: false,
-              },
-              {
-                icon: Globe,
-                title: 'Knowledge Base',
-                description: 'AI learns from their website to answer questions about services, hours, and pricing.',
-                highlight: false,
-              },
-              {
-                icon: Phone,
-                title: 'Dedicated Phone Number',
-                description: 'Each client gets their own local or toll-free number that forwards to the AI.',
-                highlight: false,
-              },
-              {
-                icon: Clock,
-                title: '24/7 AI Coverage',
-                description: 'Never miss a call. The AI answers instantly, day or night, weekends and holidays.',
-                highlight: false,
-              },
-              {
-                icon: Calendar,
-                title: 'Appointment Booking',
-                description: 'AI can check availability and book appointments directly into their calendar.',
-                highlight: false,
-              },
-              {
-                icon: Bell,
-                title: 'Real-time Notifications',
-                description: 'Push notifications, email alerts, and SMS updates for every important call.',
-                highlight: false,
-              },
-              {
-                icon: BarChart3,
-                title: 'Analytics Dashboard',
-                description: 'Call volume trends, peak hours, common requests, and conversion insights.',
-                highlight: false,
-              },
-              {
-                icon: Headphones,
-                title: 'Natural Conversations',
-                description: 'State-of-the-art voice AI that sounds human and handles complex inquiries.',
-                highlight: false,
-              },
+              { icon: Smartphone, title: 'Mobile & Web App', description: 'Your clients get a beautiful dashboard to view calls, transcripts, and analytics from any device.', highlight: true },
+              { icon: Mic, title: 'Call Recordings', description: 'Every call is recorded and stored. Clients can replay conversations anytime in their dashboard.', highlight: true },
+              { icon: MessageSquare, title: 'SMS Summaries', description: 'Instant text notifications after each call with caller info, reason, and urgency level.', highlight: true },
+              { icon: FileText, title: 'Full Transcripts', description: 'Complete word-for-word transcripts of every conversation, searchable and exportable.', highlight: false },
+              { icon: Sparkles, title: 'AI Call Summaries', description: 'Intelligent summaries that extract key details: name, contact, service needed, and urgency.', highlight: false },
+              { icon: Globe, title: 'Knowledge Base', description: 'AI learns from their website to answer questions about services, hours, and pricing.', highlight: false },
+              { icon: Phone, title: 'Dedicated Phone Number', description: 'Each client gets their own local or toll-free number that forwards to the AI.', highlight: false },
+              { icon: Clock, title: '24/7 AI Coverage', description: 'Never miss a call. The AI answers instantly, day or night, weekends and holidays.', highlight: false },
+              { icon: Calendar, title: 'Appointment Booking', description: 'AI can check availability and book appointments directly into their calendar.', highlight: false },
+              { icon: Bell, title: 'Real-time Notifications', description: 'Push notifications, email alerts, and SMS updates for every important call.', highlight: false },
+              { icon: BarChart3, title: 'Analytics Dashboard', description: 'Call volume trends, peak hours, common requests, and conversion insights.', highlight: false },
+              { icon: Headphones, title: 'Natural Conversations', description: 'State-of-the-art voice AI that sounds human and handles complex inquiries.', highlight: false },
             ].map((feature) => (
               <div 
                 key={feature.title} 
@@ -543,13 +452,9 @@ export default function LandingPage() {
                 }`}
               >
                 <div className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl mb-4 transition-colors ${
-                  feature.highlight 
-                    ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
-                    : 'bg-white/[0.04] group-hover:bg-white/[0.08]'
+                  feature.highlight ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-white/[0.04] group-hover:bg-white/[0.08]'
                 }`}>
-                  <feature.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${
-                    feature.highlight ? 'text-emerald-400' : 'text-[#fafaf9]/60'
-                  }`} />
+                  <feature.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${feature.highlight ? 'text-emerald-400' : 'text-[#fafaf9]/60'}`} />
                 </div>
                 <h3 className="text-base sm:text-lg font-medium mb-2">{feature.title}</h3>
                 <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{feature.description}</p>
@@ -558,10 +463,7 @@ export default function LandingPage() {
           </div>
           
           <div className="mt-10 text-center">
-            <Link 
-              href="/platform"
-              className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
+            <Link href="/platform" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
               View all 40+ features
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -622,10 +524,7 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <Link 
-                href="/platform"
-                className="inline-flex items-center gap-2 mt-6 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-              >
+              <Link href="/platform" className="inline-flex items-center gap-2 mt-6 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
                 Learn more about the marketing site
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -635,7 +534,6 @@ export default function LandingPage() {
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 via-amber-500/5 to-transparent rounded-3xl blur-2xl" />
               <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
-                {/* Browser chrome */}
                 <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#080808]">
                   <div className="flex gap-1.5">
                     <div className="h-3 w-3 rounded-full bg-white/10" />
@@ -648,10 +546,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Site content */}
                 <div className="p-6 sm:p-8 space-y-6">
-                  {/* Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -663,14 +558,10 @@ export default function LandingPage() {
                       Get Started
                     </div>
                   </div>
-                  
-                  {/* Hero */}
                   <div className="pt-4">
                     <h3 className="text-xl sm:text-2xl font-semibold mb-2">Never Miss Another Call</h3>
                     <p className="text-sm text-[#fafaf9]/50">AI-powered receptionist for your business</p>
                   </div>
-                  
-                  {/* Demo CTA */}
                   <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-blue-500/20">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20">
@@ -683,8 +574,6 @@ export default function LandingPage() {
                       Call now—tell the AI about your business and watch it become your receptionist
                     </p>
                   </div>
-                  
-                  {/* Features preview */}
                   <div className="grid grid-cols-3 gap-3">
                     {['24/7 Coverage', 'Call Recording', 'SMS Alerts'].map((feature) => (
                       <div key={feature} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
@@ -694,10 +583,8 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              
-              {/* Badge */}
               <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 px-3 sm:px-4 py-2 rounded-xl bg-emerald-500 text-[#050505] text-xs sm:text-sm font-medium shadow-lg shadow-emerald-500/30">
-                100% your brand ✓
+                100% your brand
               </div>
             </div>
           </div>
@@ -712,7 +599,6 @@ export default function LandingPage() {
             <div className="relative order-2 lg:order-1">
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
               <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
-                {/* Browser chrome */}
                 <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#080808]">
                   <div className="flex gap-1.5">
                     <div className="h-3 w-3 rounded-full bg-white/10" />
@@ -725,8 +611,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Template Preview */}
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -735,7 +619,6 @@ export default function LandingPage() {
                     </div>
                     <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">Variables auto-fill</span>
                   </div>
-                  
                   <div className="space-y-3 text-sm">
                     <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                       <p className="text-[#fafaf9]/40 text-xs mb-1">Subject</p>
@@ -751,15 +634,12 @@ export default function LandingPage() {
                       </p>
                     </div>
                   </div>
-                  
                   <div className="flex gap-2 mt-4">
                     <button className="flex-1 py-2 rounded-lg bg-emerald-500 text-[#050505] text-xs font-medium">Copy & Log as Sent</button>
                     <button className="px-4 py-2 rounded-lg border border-white/10 text-xs text-[#fafaf9]/60">Edit</button>
                   </div>
                 </div>
               </div>
-              
-              {/* Floating badge */}
               <div className="absolute -bottom-3 -right-3 px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-medium shadow-lg shadow-blue-500/30">
                 <Target className="h-4 w-4 inline mr-1.5" />
                 Find clients faster
@@ -779,7 +659,6 @@ export default function LandingPage() {
                 Track prospects, send personalized outreach with pre-built templates, and follow up until they convert. 
                 Everything you need to grow your agency—included on all plans.
               </p>
-              
               <div className="mt-8 space-y-4">
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                   <div className="flex items-start gap-3">
@@ -792,7 +671,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                   <div className="flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
@@ -804,7 +682,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                   <div className="flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
@@ -817,11 +694,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              
-              <Link 
-                href="/features/leads-crm"
-                className="inline-flex items-center gap-2 mt-6 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-              >
+              <Link href="/features/leads-crm" className="inline-flex items-center gap-2 mt-6 text-sm text-blue-400 hover:text-blue-300 transition-colors">
                 Learn more about the leads CRM
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -829,6 +702,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* The Opportunity */}
       <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -849,7 +724,6 @@ export default function LandingPage() {
                 You sell them the solution. We power it invisibly. They pay you $99-299/month 
                 and never miss another opportunity.
               </p>
-              
               <div className="mt-8 grid grid-cols-2 gap-4">
                 {[
                   { value: '34%', label: 'of calls go unanswered' },
@@ -864,13 +738,11 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-            
             <div>
               <div className="relative">
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-transparent rounded-3xl blur-2xl" />
                 <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-8">
                   <p className="text-sm text-[#fafaf9]/40 uppercase tracking-wider mb-6">Revenue Calculator</p>
-                  
                   <div className="space-y-6">
                     <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-4">
                       <span className="text-[#fafaf9]/60">50 clients × $149/mo</span>
@@ -885,7 +757,6 @@ export default function LandingPage() {
                       <span className="text-3xl sm:text-4xl font-semibold text-emerald-400">$7,251</span>
                     </div>
                   </div>
-                  
                   <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
                     <p className="text-sm text-emerald-300/80">
                       <strong className="text-emerald-300">That&apos;s 97% profit margin.</strong> Same $199 platform fee 
@@ -917,46 +788,22 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {[
-              {
-                step: '01',
-                title: 'Sign Up',
-                description: 'Create your agency account in 2 minutes. Works on your phone.',
-                time: '2 min',
-              },
-              {
-                step: '02',
-                title: 'Brand It',
-                description: 'Upload logo, pick colors, set prices. All from your phone.',
-                time: '10 min',
-              },
-              {
-                step: '03',
-                title: 'Connect Stripe',
-                description: 'Link Stripe to receive payments directly. No revenue share.',
-                time: '5 min',
-              },
-              {
-                step: '04',
-                title: 'Start Selling',
-                description: 'Share your link. Platform handles everything else automatically.',
-                time: 'Automated',
-              },
+              { step: '01', title: 'Sign Up', description: 'Create your agency account in 2 minutes. Works on your phone.', time: '2 min' },
+              { step: '02', title: 'Brand It', description: 'Upload logo, pick colors, set prices. All from your phone.', time: '10 min' },
+              { step: '03', title: 'Connect Stripe', description: 'Link Stripe to receive payments directly. No revenue share.', time: '5 min' },
+              { step: '04', title: 'Start Selling', description: 'Share your link. Platform handles everything else automatically.', time: 'Automated' },
             ].map((item, i) => (
               <div key={item.step} className="relative group">
-                {/* Connector line */}
                 {i < 3 && (
                   <div className="hidden lg:block absolute top-8 left-[calc(100%+1rem)] w-[calc(100%-2rem)] h-px bg-gradient-to-r from-white/10 to-transparent" />
                 )}
-                
                 <div className="relative">
                   <div className="text-6xl sm:text-7xl font-bold text-white/[0.02] absolute -top-2 -left-2 select-none group-hover:text-emerald-500/[0.05] transition-colors">
                     {item.step}
                   </div>
                   <div className="relative pt-6 sm:pt-8">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">
-                        Step {item.step}
-                      </span>
+                      <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">Step {item.step}</span>
                       <span className="text-xs text-[#fafaf9]/30">{item.time}</span>
                     </div>
                     <h3 className="text-lg sm:text-xl font-semibold mb-2">{item.title}</h3>
@@ -990,88 +837,42 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-3 gap-6">
               {[
                 {
-                  name: 'Starter',
-                  price: 99,
-                  description: 'For new agencies testing the waters',
-                  features: [
-                    'Up to 15 clients',
-                    'Embeddable signup widget',
-                    'White-label client dashboard',
-                    'Phone-native management',
-                    'Stripe Connect payments',
-                    'Basic analytics',
-                    'Email support',
-                  ],
-                  limitations: [
-                    'No marketing site',
-                    'Subdomain only',
-                    'No API access',
-                  ],
-                  highlighted: false,
-                  cta: 'Start Free Trial',
+                  name: 'Starter', price: 99, description: 'For new agencies testing the waters',
+                  features: ['Up to 15 clients', 'Embeddable signup widget', 'White-label client dashboard', 'Phone-native management', 'Stripe Connect payments', 'Basic analytics', 'Email support'],
+                  limitations: ['No marketing site', 'Subdomain only', 'No API access'],
+                  highlighted: false, cta: 'Start Free Trial',
                 },
                 {
-                  name: 'Professional',
-                  price: 199,
-                  description: 'Most popular for serious agencies',
-                  features: [
-                    'Up to 100 clients',
-                    'Full marketing website',
-                    'Interactive AI demo line',
-                    'Sample call recordings',
-                    'Custom domain support',
-                    'Advanced analytics',
-                    'API access & webhooks',
-                    'Priority support',
-                  ],
+                  name: 'Professional', price: 199, description: 'Most popular for serious agencies',
+                  features: ['Up to 100 clients', 'Full marketing website', 'Interactive AI demo line', 'Sample call recordings', 'Custom domain support', 'Advanced analytics', 'API access & webhooks', 'Priority support'],
                   limitations: [],
-                  highlighted: true,
-                  cta: 'Start Free Trial',
+                  highlighted: true, cta: 'Start Free Trial',
                 },
                 {
-                  name: 'Scale',
-                  price: 499,
-                  description: 'For established agencies',
-                  features: [
-                    'Unlimited clients',
-                    'Unlimited calls & minutes',
-                    'Everything in Professional',
-                    'Dedicated success manager',
-                    'Phone support',
-                    'SLA guarantee',
-                    'Early feature access',
-                  ],
+                  name: 'Scale', price: 499, description: 'For established agencies',
+                  features: ['Unlimited clients', 'Unlimited calls & minutes', 'Everything in Professional', 'Dedicated success manager', 'Phone support', 'SLA guarantee', 'Early feature access'],
                   limitations: [],
-                  highlighted: false,
-                  cta: 'Start Free Trial',
+                  highlighted: false, cta: 'Start Free Trial',
                 },
               ].map((tier) => (
-                <div
-                  key={tier.name}
-                  className={`relative rounded-2xl border p-6 sm:p-8 transition-all ${
-                    tier.highlighted
-                      ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.08] to-transparent scale-[1.02] lg:scale-105'
-                      : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
-                  }`}
-                >
+                <div key={tier.name} className={`relative rounded-2xl border p-6 sm:p-8 transition-all ${
+                  tier.highlighted
+                    ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.08] to-transparent scale-[1.02] lg:scale-105'
+                    : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
+                }`}>
                   {tier.highlighted && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-[#050505] shadow-lg shadow-emerald-500/30">
-                        Most Popular
-                      </span>
+                      <span className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-[#050505] shadow-lg shadow-emerald-500/30">Most Popular</span>
                     </div>
                   )}
-                  
                   <div className="mb-6">
                     <p className="text-sm text-[#fafaf9]/50">{tier.description}</p>
                     <p className="text-2xl font-semibold mt-1">{tier.name}</p>
                   </div>
-                  
                   <div className="mb-6">
                     <span className="text-4xl sm:text-5xl font-semibold">{fmtPrice(tier.price)}</span>
                     <span className="text-[#fafaf9]/50">/month</span>
                   </div>
-                  
                   <ul className="space-y-3 mb-6">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3 text-sm">
@@ -1086,21 +887,16 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  
-                  <Link
-                    href={tier.name === 'Scale' ? '/signup?plan=enterprise' : '/signup'}
-                    className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
-                      tier.highlighted
-                        ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10'
-                        : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
-                    }`}
-                  >
+                  <Link href={tier.name === 'Scale' ? '/signup?plan=enterprise' : '/signup'} className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
+                    tier.highlighted
+                      ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10'
+                      : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
+                  }`}>
                     {tier.cta}
                   </Link>
                 </div>
               ))}
             </div>
-            
             <p className="text-center mt-8 text-sm text-[#fafaf9]/40">
               All plans include 14-day free trial. No credit card required. Cancel anytime.
             </p>
@@ -1113,17 +909,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-10 sm:mb-12">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                From the Blog
-              </h2>
-              <p className="mt-2 text-[#fafaf9]/50">
-                Guides and insights for building your AI receptionist agency.
-              </p>
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">From the Blog</h2>
+              <p className="mt-2 text-[#fafaf9]/50">Guides and insights for building your AI receptionist agency.</p>
             </div>
-            <Link 
-              href="/blog" 
-              className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
+            <Link href="/blog" className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
               View all posts
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -1131,45 +920,17 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              {
-                slug: 'how-much-do-ai-receptionist-agencies-make',
-                title: 'How Much Do AI Receptionist Agencies Make? Real Numbers',
-                excerpt: 'Realistic income breakdown: $3,000-$15,000/month within 12 months. See month-by-month progression and profit margins.',
-                category: 'Guide',
-                readTime: '12 min',
-              },
-              {
-                slug: 'ai-receptionist-agency-vs-smma',
-                title: 'AI Receptionist Agency vs SMMA: Which Model Wins?',
-                excerpt: '80-96% margins vs 20-40%. Compare time requirements, competition, and which business model suits you.',
-                category: 'Guide',
-                readTime: '14 min',
-              },
-              {
-                slug: 'how-to-start-ai-receptionist-agency',
-                title: 'How to Start an AI Receptionist Agency in 2026',
-                excerpt: 'Complete guide from finding your first clients to scaling to $50k/month recurring revenue.',
-                category: 'Guide',
-                readTime: '12 min',
-              },
+              { slug: 'how-much-do-ai-receptionist-agencies-make', title: 'How Much Do AI Receptionist Agencies Make? Real Numbers', excerpt: 'Realistic income breakdown: $3,000-$15,000/month within 12 months. See month-by-month progression and profit margins.', category: 'Guide', readTime: '12 min' },
+              { slug: 'ai-receptionist-agency-vs-smma', title: 'AI Receptionist Agency vs SMMA: Which Model Wins?', excerpt: '80-96% margins vs 20-40%. Compare time requirements, competition, and which business model suits you.', category: 'Guide', readTime: '14 min' },
+              { slug: 'how-to-start-ai-receptionist-agency', title: 'How to Start an AI Receptionist Agency in 2026', excerpt: 'Complete guide from finding your first clients to scaling to $50k/month recurring revenue.', category: 'Guide', readTime: '12 min' },
             ].map((post) => (
-              <Link 
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="group relative block rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
-              >
+              <Link key={post.slug} href={`/blog/${post.slug}`} className="group relative block rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]">
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                    {post.category}
-                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">{post.category}</span>
                   <span className="text-xs text-[#fafaf9]/40">{post.readTime}</span>
                 </div>
-                <h3 className="text-lg font-semibold group-hover:text-emerald-400 transition-colors line-clamp-2 mb-2">
-                  {post.title}
-                </h3>
-                <p className="text-sm text-[#fafaf9]/50 line-clamp-2">
-                  {post.excerpt}
-                </p>
+                <h3 className="text-lg font-semibold group-hover:text-emerald-400 transition-colors line-clamp-2 mb-2">{post.title}</h3>
+                <p className="text-sm text-[#fafaf9]/50 line-clamp-2">{post.excerpt}</p>
                 <div className="mt-4 flex items-center gap-1 text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
                   Read more
                   <ArrowRight className="h-4 w-4" />
@@ -1179,10 +940,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-8 text-center sm:hidden">
-            <Link 
-              href="/blog" 
-              className="inline-flex items-center gap-2 text-sm text-emerald-400"
-            >
+            <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-emerald-400">
               View all posts
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -1194,54 +952,22 @@ export default function LandingPage() {
       <section id="faq" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-              Frequently Asked Questions
-            </h2>
+            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Frequently Asked Questions</h2>
           </div>
 
           <div className="space-y-4">
             {[
-              {
-                q: 'What is the interactive AI demo line?',
-                a: 'Professional and Scale plans include a demo phone number on your marketing site. When prospects call, the AI asks about their business—name, type, hours, common questions—then transforms into their receptionist right on the call. They can test it by asking questions and experience exactly what their callers will hear. It\'s incredibly effective at converting prospects into clients.',
-              },
-              {
-                q: 'Can I really run this from my phone?',
-                a: 'Yes. Our dashboard is built phone-first. Sign up clients, track revenue, manage settings—all from your phone. Many of our most successful agencies have never used a laptop to manage their business.',
-              },
-              {
-                q: 'What do I actually have to do?',
-                a: 'Find clients and collect payments. That\'s it. When someone signs up through your link, the platform automatically configures their AI, provisions their phone number, and handles all the technical setup. When they have questions or issues, the platform handles support. Your job is sales.',
-              },
-              {
-                q: 'Do I need any technical skills?',
-                a: 'None. If you can use Instagram, you can run this business. Upload your logo, pick colors, set prices, share your link. That\'s the entire technical requirement. We handle everything else.',
-              },
-              {
-                q: 'What\'s the difference between Starter and Professional?',
-                a: 'Starter ($99/mo) gives you up to 15 clients and an embeddable widget. Professional ($199/mo) includes up to 100 clients, a complete marketing website with a demo phone number, custom domain support, API access, and advanced analytics. Most agencies upgrade to Professional within their trial.',
-              },
-              {
-                q: 'How do I get clients?',
-                a: 'We provide sales scripts, email templates, and training. Most successful partners use cold outreach to local businesses (plumbers, dentists, lawyers), Facebook/Instagram ads targeting business owners, or content about AI solutions. All outreach can be done from your phone.',
-              },
-              {
-                q: 'What do my clients actually see?',
-                a: 'Only your brand. Your logo, your colors, your domain. The client dashboard, emails, and phone experience all show your branding. VoiceAI Connect is completely invisible to them.',
-              },
-              {
-                q: 'How does payment work?',
-                a: 'You connect your own Stripe account. When clients subscribe, money goes directly to you. Set any price you want—$99, $149, $299. We charge you a flat monthly platform fee. No per-client costs, no revenue share.',
-              },
-              {
-                q: 'Can I really charge $99-299/month?',
-                a: 'Yes, and many charge more. A single missed call can cost a business $500+. For 24/7 AI coverage at $149/month? That\'s cheaper than one hour of a human receptionist. It sells itself.',
-              },
+              { q: 'What is the interactive AI demo line?', a: 'Professional and Scale plans include a demo phone number on your marketing site. When prospects call, the AI asks about their business—name, type, hours, common questions—then transforms into their receptionist right on the call. They can test it by asking questions and experience exactly what their callers will hear. It\'s incredibly effective at converting prospects into clients.' },
+              { q: 'Can I really run this from my phone?', a: 'Yes. Our dashboard is built phone-first. Sign up clients, track revenue, manage settings—all from your phone. Many of our most successful agencies have never used a laptop to manage their business.' },
+              { q: 'What do I actually have to do?', a: 'Find clients and collect payments. That\'s it. When someone signs up through your link, the platform automatically configures their AI, provisions their phone number, and handles all the technical setup. When they have questions or issues, the platform handles support. Your job is sales.' },
+              { q: 'Do I need any technical skills?', a: 'None. If you can use Instagram, you can run this business. Upload your logo, pick colors, set prices, share your link. That\'s the entire technical requirement. We handle everything else.' },
+              { q: 'What\'s the difference between Starter and Professional?', a: 'Starter ($99/mo) gives you up to 15 clients and an embeddable widget. Professional ($199/mo) includes up to 100 clients, a complete marketing website with a demo phone number, custom domain support, API access, and advanced analytics. Most agencies upgrade to Professional within their trial.' },
+              { q: 'How do I get clients?', a: 'We provide sales scripts, email templates, and training. Most successful partners use cold outreach to local businesses (plumbers, dentists, lawyers), Facebook/Instagram ads targeting business owners, or content about AI solutions. All outreach can be done from your phone.' },
+              { q: 'What do my clients actually see?', a: 'Only your brand. Your logo, your colors, your domain. The client dashboard, emails, and phone experience all show your branding. VoiceAI Connect is completely invisible to them.' },
+              { q: 'How does payment work?', a: 'You connect your own Stripe account. When clients subscribe, money goes directly to you. Set any price you want—$99, $149, $299. We charge you a flat monthly platform fee. No per-client costs, no revenue share.' },
+              { q: 'Can I really charge $99-299/month?', a: 'Yes, and many charge more. A single missed call can cost a business $500+. For 24/7 AI coverage at $149/month? That\'s cheaper than one hour of a human receptionist. It sells itself.' },
             ].map((item, i) => (
-              <details 
-                key={i} 
-                className="group rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
-              >
+              <details key={i} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
                 <summary className="flex items-center justify-between p-5 sm:p-6 cursor-pointer list-none">
                   <h3 className="text-base sm:text-lg font-medium pr-4">{item.q}</h3>
                   <ChevronRight className="h-5 w-5 text-[#fafaf9]/40 shrink-0 transition-transform group-open:rotate-90" />
@@ -1259,9 +985,7 @@ export default function LandingPage() {
       <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="relative">
-            {/* Glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-emerald-500/10 blur-3xl" />
-            
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
                 Ready to start your
@@ -1272,17 +996,12 @@ export default function LandingPage() {
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
                 Launch your AI receptionist agency in under 24 hours.
               </p>
-              
               <div className="mt-8 sm:mt-10">
-                <Link 
-                  href="/signup" 
-                  className="group inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
-                >
+                <Link href="/signup" className="group inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
                   Start Your Free Trial
                   <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
-              
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
                 No credit card required · 14-day free trial · Cancel anytime
               </p>
@@ -1295,15 +1014,12 @@ export default function LandingPage() {
       <footer className="border-t border-white/[0.06] py-12 sm:py-16 pb-28 sm:pb-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-white/5">
                 <WaveformIcon className="w-5 h-5" />
               </div>
               <span className="font-semibold">VoiceAI Connect</span>
             </Link>
-            
-            {/* Links */}
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
@@ -1315,26 +1031,17 @@ export default function LandingPage() {
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
               <a href="https://www.aitoolzdir.com" target="_blank" rel="noopener" className="hover:text-[#fafaf9] transition-colors">AI Toolz Dir</a>
             </div>
-            
-            {/* Copyright */}
-            <p className="text-sm text-[#fafaf9]/30">
-              © 2026 VoiceAI Connect. All rights reserved.
-            </p>
+            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
       {/* Sticky bottom CTA - mobile only */}
       <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
-        showBottomCta && !mobileMenuOpen
-          ? 'translate-y-0 opacity-100' 
-          : 'translate-y-full opacity-0'
+        showBottomCta && !mobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
       }`}>
         <div className="bg-[#050505]/95 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3 pb-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-          <Link 
-            href="/signup" 
-            className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-3.5 text-sm active:scale-[0.98] transition-transform"
-          >
+          <Link href="/signup" className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-3.5 text-sm active:scale-[0.98] transition-transform">
             Start Free Trial — No Card Required
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -1344,7 +1051,6 @@ export default function LandingPage() {
   );
 }
 
-// Waveform icon component matching the logo
 function WaveformIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
