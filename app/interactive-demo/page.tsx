@@ -1205,26 +1205,26 @@ export default function DemoPage() {
     <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       {/* Top Bar */}
-      <div className="relative z-40 flex items-center justify-between px-3 sm:px-5 h-12 sm:h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
+      <div className="relative z-40 flex items-center justify-between px-3 sm:px-5 h-11 sm:h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
         <div className="flex items-center gap-2 sm:gap-4">
-          <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-1.5 -ml-1 text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
+          <Link href="/" className="flex items-center gap-2"><div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div><span className="hidden sm:inline text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-2.5 py-0.5 text-[10px]"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div>
+        </div>
+        <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => { setView('agency'); setMobileNavOpen(false); }} className={`px-2 sm:px-4 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60'}`}><span className="sm:hidden">Agency</span><span className="hidden sm:inline">Agency Dashboard</span></button><button onClick={() => { setView('client'); setMobileNavOpen(false); }} className={`px-2 sm:px-4 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60'}`}><span className="sm:hidden">Client</span><span className="hidden sm:inline">Client Dashboard</span></button></div>
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <button onClick={restartTour} className="hidden sm:inline px-2 py-1 text-[10px] sm:text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button>
+          <Link href="/#pricing" className="hidden md:inline px-2.5 py-1 rounded-full border border-white/[0.08] text-[10px] text-[#fafaf9]/50 hover:text-[#fafaf9] transition-all">Pricing</Link>
+          <Link href="/signup" className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] sm:text-xs font-medium text-[#050505]">Start Free Trial<ArrowRight className="h-2.5 w-2.5" /></Link>
+          <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="lg:hidden p-1.5 text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
             {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <Link href="/" className="flex items-center gap-2"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="hidden sm:inline text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
-          <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div>
-        </div>
-        <div className="absolute left-1/2 -translate-x-1/2 flex"><div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => { setView('agency'); setMobileNavOpen(false); }} className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}><span className="sm:hidden">Agency</span><span className="hidden sm:inline">Agency Dashboard</span></button><button onClick={() => { setView('client'); setMobileNavOpen(false); }} className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}><span className="sm:hidden">Client</span><span className="hidden sm:inline">Client Dashboard</span></button></div></div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <button onClick={restartTour} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button>
-          <Link href="/#pricing" className="hidden md:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link>
-          <Link href="/signup" className="group inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-white px-2.5 sm:px-4 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all"><span className="hidden sm:inline">Start Free Trial</span><span className="sm:hidden">Trial</span><ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" /></Link>
         </div>
       </div>
 
-      {/* Mobile Nav Overlay */}
+      {/* Mobile Nav Drawer — slides from left, triggered by hamburger on right */}
       <div className={`lg:hidden fixed inset-0 z-30 transition-all duration-300 ${mobileNavOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
-        <div className={`absolute top-12 left-0 bottom-0 w-64 border-r border-white/[0.06] transition-transform duration-300 ease-out ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505' }}>
+        <div className={`absolute top-11 left-0 bottom-0 w-64 border-r border-white/[0.06] transition-transform duration-300 ease-out ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505' }}>
           {/* Nav header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: view === 'client' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)' }}>
             {view === 'agency' ? (
@@ -1244,7 +1244,7 @@ export default function DemoPage() {
                     if (view === 'agency') setAgencyTab(item.id); else setClientTab(item.id);
                     setMobileNavOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
+                  className="w-full flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all"
                   style={view === 'agency'
                     ? { backgroundColor: isActive ? 'rgba(16,185,129,0.1)' : 'transparent', color: isActive ? '#10b981' : 'rgba(250,250,249,0.6)' }
                     : { backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'transparent', color: isActive ? '#ffffff' : 'rgba(255,255,255,0.65)' }
@@ -1252,13 +1252,13 @@ export default function DemoPage() {
                 >
                   <item.icon className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{item.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ backgroundColor: view === 'agency' ? '#10b981' : '#ffffff' }} />}
+                  {isActive && <ChevronRight className="ml-auto h-4 w-4" style={{ color: view === 'agency' ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.3)' }} />}
                 </button>
               );
             })}
           </nav>
           {/* Bottom card */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 border-t" style={{ borderColor: view === 'client' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)' }}>
+          <div className="absolute bottom-0 left-0 right-0 p-3 border-t" style={{ borderColor: view === 'client' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
             {view === 'agency' ? (
               <div data-tour="sidebar-mrr" className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div>
             ) : (
