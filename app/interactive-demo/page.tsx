@@ -839,43 +839,82 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
   const isCentered = step.position === 'center' || !step.target;
   const pad = 8;
 
-  // Calculate tooltip position
+  // Calculate tooltip position — auto-detect best placement based on available space
   const getTooltipStyle = (): React.CSSProperties => {
     if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     const maxW = 360;
-    const tooltipH = 220; // approximate height
-    const gap = pad + 10;
+    const tooltipH = 220;
+    const gap = 16;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 16;
+
+    // Available space in each direction from the element
+    const spaceAbove = rect.top;
+    const spaceBelow = vh - rect.bottom;
+    const spaceRight = vw - rect.right;
+    const spaceLeft = rect.left;
+
+    // Pick best position: prefer the hint, but fall back if not enough room
+    let pos = step.position;
+    if (pos === 'bottom' && spaceBelow < tooltipH + gap && spaceAbove > spaceBelow) pos = 'top';
+    else if (pos === 'top' && spaceAbove < tooltipH + gap && spaceBelow > spaceAbove) pos = 'bottom';
+    else if (pos === 'right' && spaceRight < maxW + gap && spaceLeft > spaceRight) pos = 'left';
+    else if (pos === 'left' && spaceLeft < maxW + gap && spaceRight > spaceLeft) pos = 'right';
+
+    // If still not enough room vertically, just center vertically
+    const canFitAbove = spaceAbove >= tooltipH + gap;
+    const canFitBelow = spaceBelow >= tooltipH + gap;
+    if ((pos === 'top' && !canFitAbove) || (pos === 'bottom' && !canFitBelow)) {
+      // Place alongside the element instead
+      if (spaceRight >= maxW + gap) pos = 'right';
+      else if (spaceLeft >= maxW + gap) pos = 'left';
+      // else just clamp below
+      else pos = 'bottom';
+    }
+
     const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
-    const clampLeft = (x: number) => Math.max(16, Math.min(x, window.innerWidth - maxW - 16));
-    const clampTop = (y: number) => Math.max(16, Math.min(y, window.innerHeight - tooltipH - 16));
-    switch (step.position) {
+    const clampX = (x: number) => Math.max(margin, Math.min(x, vw - maxW - margin));
+    const clampY = (y: number) => Math.max(margin, Math.min(y, vh - tooltipH - margin));
+
+    // Use the visible portion of the element (clipped to viewport) for centering
+    const visTop = Math.max(rect.top, 0);
+    const visBottom = Math.min(rect.bottom, vh);
+    const visMidY = (visTop + visBottom) / 2;
+    const visMidX = Math.max(rect.left, 0) + Math.min(rect.width, vw) / 2;
+
+    switch (pos) {
       case 'bottom':
-        style.top = Math.min(rect.bottom + gap, window.innerHeight - tooltipH - 16);
-        style.left = clampLeft(rect.left + rect.width / 2 - maxW / 2);
+        style.top = clampY(Math.min(rect.bottom, vh - 56) + gap);
+        style.left = clampX(visMidX - maxW / 2);
         break;
       case 'top':
-        style.bottom = Math.max(16, window.innerHeight - rect.top + gap);
-        style.left = clampLeft(rect.left + rect.width / 2 - maxW / 2);
+        style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap);
+        style.left = clampX(visMidX - maxW / 2);
         break;
       case 'right':
-        style.top = clampTop(rect.top + rect.height / 2 - tooltipH / 2);
-        style.left = Math.min(rect.right + gap, window.innerWidth - maxW - 16);
+        style.top = clampY(visMidY - tooltipH / 2);
+        style.left = Math.min(rect.right + gap, vw - maxW - margin);
         break;
       case 'left':
-        style.top = clampTop(rect.top + rect.height / 2 - tooltipH / 2);
-        style.right = Math.max(16, window.innerWidth - rect.left + gap);
+        style.top = clampY(visMidY - tooltipH / 2);
+        style.right = Math.max(margin, vw - rect.left + gap);
         break;
     }
     return style;
   };
 
-  // Spotlight clip path
+  // Spotlight clip path — clamped to visible viewport
   const getClipPath = () => {
     if (!rect || isCentered) return 'none';
-    const x = rect.left - pad;
-    const y = rect.top - pad;
-    const w = rect.width + pad * 2;
-    const h = rect.height + pad * 2;
+    // Clamp to viewport so large off-screen elements don't break the cutout
+    const x = Math.max(0, rect.left - pad);
+    const y = Math.max(56, rect.top - pad); // 56 = top bar height
+    const x2 = Math.min(window.innerWidth, rect.right + pad);
+    const y2 = Math.min(window.innerHeight, rect.bottom + pad);
+    const w = x2 - x;
+    const h = y2 - y;
+    if (w <= 0 || h <= 0) return 'none';
     const r = 12;
     return `polygon(0% 0%, 0% 100%, ${x}px 100%, ${x}px ${y + r}px, ${x + r}px ${y}px, ${x + w - r}px ${y}px, ${x + w}px ${y + r}px, ${x + w}px ${y + h - r}px, ${x + w - r}px ${y + h}px, ${x + r}px ${y + h}px, ${x}px ${y + h - r}px, ${x}px 100%, 100% 100%, 100% 0%)`;
   };
@@ -890,14 +929,19 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
       }} />
       {isCentered && <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />}
 
-      {/* Spotlight ring */}
-      {rect && !isCentered && (
-        <div className="absolute rounded-xl pointer-events-none transition-all duration-300 ring-2 ring-emerald-400/40" style={{
-          left: rect.left - pad, top: rect.top - pad,
-          width: rect.width + pad * 2, height: rect.height + pad * 2,
-          boxShadow: '0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.1)',
-        }} />
-      )}
+      {/* Spotlight ring — clamped to viewport */}
+      {rect && !isCentered && (() => {
+        const rx = Math.max(0, rect.left - pad);
+        const ry = Math.max(56, rect.top - pad);
+        const rx2 = Math.min(window.innerWidth, rect.right + pad);
+        const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
+        return (rx2 - rx > 0 && ry2 - ry > 0) ? (
+          <div className="absolute rounded-xl pointer-events-none transition-all duration-300 ring-2 ring-emerald-400/40" style={{
+            left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
+            boxShadow: '0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.1)',
+          }} />
+        ) : null;
+      })()}
 
       {/* Tooltip Card */}
       <div className="transition-all duration-300" style={getTooltipStyle()} onClick={e => e.stopPropagation()}>
