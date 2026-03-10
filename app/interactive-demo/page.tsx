@@ -856,6 +856,27 @@ function ClientSettings() {
   );
 }
 
+// ─── Tour Animations ─────────────────────────────────────────────────────────
+
+const TOUR_CSS = `
+@keyframes tour-fade-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes tour-fade-in-center { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes tour-spotlight-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.08); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0.25), 0 0 50px rgba(16,185,129,0.15); } }
+@keyframes tour-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes tour-pill-enter { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes tour-number-pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes tour-glow-ring { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+@keyframes tour-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.tour-tooltip-enter { animation: tour-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.tour-tooltip-center { animation: tour-fade-in-center 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.tour-spotlight-ring { animation: tour-spotlight-pulse 2s ease-in-out infinite; }
+.tour-pill-enter { animation: tour-pill-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.tour-number-pop { animation: tour-number-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.tour-glow { animation: tour-glow-ring 2s ease-in-out infinite; }
+.tour-float { animation: tour-float 3s ease-in-out infinite; }
+.tour-shimmer-bar { background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent); background-size: 200% 100%; animation: tour-shimmer 2s ease-in-out infinite; }
+`;
+
 // ─── Tour Overlay ────────────────────────────────────────────────────────────
 
 interface TourStep {
@@ -867,18 +888,19 @@ interface TourStep {
   body: string;
 }
 
-function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
-  step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onSkip: () => void;
+function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
+  step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onPause: () => void;
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [enterKey, setEnterKey] = useState(0);
   const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Reset drag when step changes
-  useEffect(() => { setDragOffset(null); }, [stepIndex]);
+  // Reset drag + trigger entrance animation on step change
+  useEffect(() => { setDragOffset(null); setEnterKey(k => k + 1); }, [stepIndex]);
 
   useEffect(() => {
     if (!step.target) { setRect(null); return; }
@@ -898,7 +920,6 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
     return () => { clearTimeout(timer); window.removeEventListener('resize', measure); };
   }, [step.target, stepIndex]);
 
-  // Drag handlers
   const handlePointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button, a')) return;
     dragStart.current = { mx: e.clientX, my: e.clientY, ox: dragOffset?.x || 0, oy: dragOffset?.y || 0 };
@@ -940,18 +961,10 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
     const visMidX = Math.max(rect.left, 0) + Math.min(rect.width, vw) / 2;
 
     switch (pos) {
-      case 'bottom':
-        style.top = clampY(Math.min(rect.bottom, vh - 56) + gap) + dy;
-        style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'top':
-        style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap) + dy;
-        style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'right':
-        style.top = clampY(visMidY - tooltipH / 2) + dy;
-        style.left = Math.min(rect.right + gap, vw - maxW - margin) + dx; break;
-      case 'left':
-        style.top = clampY(visMidY - tooltipH / 2) + dy;
-        style.left = clampX(rect.left - maxW - gap) + dx; break;
+      case 'bottom': style.top = clampY(Math.min(rect.bottom, vh - 56) + gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
+      case 'top': style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
+      case 'right': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = Math.min(rect.right + gap, vw - maxW - margin) + dx; break;
+      case 'left': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = clampX(rect.left - maxW - gap) + dx; break;
     }
     return style;
   };
@@ -967,87 +980,135 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
     return `polygon(0% 0%, 0% 100%, ${x}px 100%, ${x}px ${y + r}px, ${x + r}px ${y}px, ${x + w - r}px ${y}px, ${x + w}px ${y + r}px, ${x + w}px ${y + h - r}px, ${x + w - r}px ${y + h}px, ${x + r}px ${y + h}px, ${x}px ${y + h - r}px, ${x}px 100%, 100% 100%, 100% 0%)`;
   };
 
+  const pct = Math.round(((stepIndex + 1) / totalSteps) * 100);
+
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onSkip(); }}>
-      <div className="absolute inset-0 transition-all duration-300" style={{
+    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
+      <style dangerouslySetInnerHTML={{ __html: TOUR_CSS }} />
+      <div className="absolute inset-0 transition-all duration-500" style={{
         backgroundColor: 'rgba(0,0,0,0.6)', clipPath: getClipPath(),
-        backdropFilter: isCentered ? 'blur(2px)' : undefined,
+        backdropFilter: isCentered ? 'blur(4px)' : undefined,
       }} />
       {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />}
 
-      {/* Spotlight ring */}
+      {/* Spotlight ring — animated pulse */}
       {rect && !isCentered && (() => {
         const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
         const rx2 = Math.min(window.innerWidth, rect.right + pad);
         const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
         return (rx2 - rx > 0 && ry2 - ry > 0) ? (
-          <div className="absolute rounded-xl pointer-events-none transition-all duration-300 ring-2 ring-emerald-400/40" style={{
+          <div className="absolute rounded-xl pointer-events-none transition-all duration-500 tour-spotlight-ring" style={{
             left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
-            boxShadow: '0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.1)',
+            border: '2px solid rgba(16,185,129,0.4)',
           }} />
         ) : null;
       })()}
 
-      {/* Tooltip — draggable */}
+      {/* Tooltip — draggable, animated */}
       <div
+        key={enterKey}
         ref={tooltipRef}
-        className={isDragging ? '' : 'transition-all duration-300'}
-        style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none', touchAction: 'none' }}
+        className={`${isDragging ? '' : 'transition-all duration-300'} ${isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}`}
+        style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : isCentered ? 'default' : 'grab', userSelect: 'none', touchAction: 'none' }}
         onClick={e => e.stopPropagation()}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
+        onPointerDown={isCentered ? undefined : handlePointerDown}
+        onPointerMove={isCentered ? undefined : handlePointerMove}
+        onPointerUp={isCentered ? undefined : handlePointerUp}
       >
-        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a] shadow-2xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
-          {/* Drag handle */}
-          {!isCentered && <div className="flex justify-center mb-2 cursor-grab"><div className="w-8 h-1 rounded-full bg-white/[0.15]" /></div>}
+        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.05)' }}>
 
+          {/* Drag handle + step number */}
+          {!isCentered && (
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div key={stepIndex} className="tour-number-pop flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-[#050505]">{stepIndex + 1}</div>
+                <div className="h-1 rounded-full overflow-hidden w-16 bg-white/[0.08]">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-[10px] text-[#fafaf9]/25">{pct}%</span>
+              </div>
+              <div className="w-8 h-1 rounded-full bg-white/[0.12] cursor-grab" />
+            </div>
+          )}
+
+          {/* Final CTA — animated icon */}
           {isCentered && (
-            <div className="flex justify-center mb-4">
-              <div className="h-14 w-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
-                <Zap className="h-7 w-7 text-emerald-400" />
+            <div className="flex justify-center mb-5">
+              <div className="tour-float h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center border border-emerald-500/20">
+                <Zap className="h-8 w-8 text-emerald-400" />
               </div>
             </div>
           )}
 
           <h3 className={`font-semibold text-[#fafaf9] mb-2 ${isCentered ? 'text-xl sm:text-2xl text-center' : 'text-base'}`}>{step.title}</h3>
+
+          {/* Shimmer divider */}
+          {!isCentered && <div className="h-px w-full rounded-full tour-shimmer-bar mb-3" />}
+
           <p className={`text-sm leading-relaxed text-[#fafaf9]/60 whitespace-pre-line ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
 
           {!isCentered ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-1">
                 {Array.from({ length: totalSteps }).map((_, i) => (
-                  <div key={i} className="h-1 rounded-full transition-all" style={{
-                    width: i === stepIndex ? 16 : 6,
-                    backgroundColor: i <= stepIndex ? '#10b981' : 'rgba(255,255,255,0.1)',
-                    opacity: i <= stepIndex ? 1 : 0.5,
+                  <div key={i} className="rounded-full transition-all duration-300" style={{
+                    width: i === stepIndex ? 18 : 6, height: 6,
+                    backgroundColor: i === stepIndex ? '#10b981' : i < stepIndex ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)',
                   }} />
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={onSkip} className="px-3 py-1.5 text-xs text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors">Skip</button>
-                {stepIndex > 0 && <button onClick={onPrev} className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.08] text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Back</button>}
-                <button onClick={onNext} className="px-4 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-colors">
+                <button onClick={onPause} className="px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Pause</button>
+                {stepIndex > 0 && <button onClick={onPrev} className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.06] text-[#fafaf9]/50 hover:text-[#fafaf9] hover:border-white/[0.12] transition-all">Back</button>}
+                <button onClick={onNext} className="group px-4 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all flex items-center gap-1.5">
                   {stepIndex === totalSteps - 2 ? 'Finish' : 'Next'}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4" /></Link>
+                <Link href="/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10 w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></Link>
                 <Link href="/#pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-6 py-3 text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
               </div>
-              <button onClick={onSkip} className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mt-1">
+              <button onClick={onPause} className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mt-1">
                 or explore the dashboard →
               </button>
             </div>
           )}
-
-          {!isCentered && (
-            <div className="mt-3 text-center"><span className="text-[10px] text-[#fafaf9]/25">{stepIndex + 1} of {totalSteps}</span></div>
-          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Resume Tour Pill ────────────────────────────────────────────────────────
+
+function TourResumePill({ step, total, onResume, onRestart }: { step: number; total: number; onResume: () => void; onRestart: () => void }) {
+  const pct = Math.round(((step + 1) / total) * 100);
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 tour-pill-enter">
+      <div className="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.08)' }}>
+        {/* Progress ring */}
+        <div className="relative flex items-center justify-center w-9 h-9">
+          <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+            <circle cx="18" cy="18" r="15" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray={`${pct * 0.94} 100`} strokeLinecap="round" className="transition-all duration-500" />
+          </svg>
+          <span className="absolute text-[9px] font-bold text-emerald-400">{step + 1}</span>
+        </div>
+        <div className="pr-1">
+          <p className="text-xs font-medium text-[#fafaf9]">Tour paused</p>
+          <p className="text-[10px] text-[#fafaf9]/30">Step {step + 1} of {total}</p>
+        </div>
+        <button onClick={onResume} className="group flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-[#050505] hover:bg-emerald-400 transition-all">
+          Resume
+          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </button>
+        <button onClick={onRestart} className="px-2 py-2 text-[#fafaf9]/25 hover:text-[#fafaf9]/50 transition-colors" title="Restart tour">
+          <RotateCcw className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -1060,6 +1121,7 @@ export default function DemoPage() {
   const [agencyTab, setAgencyTab] = useState('dashboard');
   const [clientTab, setClientTab] = useState('dashboard');
   const [tourStep, setTourStep] = useState(0);
+  const [tourPaused, setTourPaused] = useState(false);
   const agencyNav = [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, { id: 'clients', label: 'Clients', icon: Users }, { id: 'leads', label: 'Leads', icon: Target }, { id: 'outreach', label: 'Outreach', icon: Send }, { id: 'analytics', label: 'Analytics', icon: BarChart3 }, { id: 'demo-phone', label: 'Demo Phone', icon: Phone }, { id: 'marketing', label: 'Marketing', icon: Globe }, { id: 'referrals', label: 'Referrals', icon: Gift }, { id: 'branding', label: 'Branding', icon: Paintbrush }, { id: 'settings', label: 'Settings', icon: Settings }];
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
 
@@ -1099,20 +1161,23 @@ export default function DemoPage() {
       body: 'Create your agency account, set your pricing, and share your signup link.\n\nYour clients receive their own AI receptionist and dashboard instantly \u2014 and you start building recurring monthly revenue.' },
   ];
 
-  const tourActive = tourStep >= 0 && tourStep < TOUR_STEPS.length;
+  const tourActive = !tourPaused && tourStep >= 0 && tourStep < TOUR_STEPS.length;
+  const tourHasProgress = tourPaused && tourStep >= 0 && tourStep < TOUR_STEPS.length;
   const currentStep = tourActive ? TOUR_STEPS[tourStep] : null;
 
   // Navigate view/tab when tour step changes
   useEffect(() => {
-    if (!currentStep) return;
+    if (!tourActive || !currentStep) return;
     if (currentStep.view !== view) setView(currentStep.view);
     if (currentStep.view === 'agency' && currentStep.tab !== agencyTab) setAgencyTab(currentStep.tab);
     if (currentStep.view === 'client' && currentStep.tab !== clientTab) setClientTab(currentStep.tab);
-  }, [tourStep]);
+  }, [tourStep, tourPaused]);
 
-  const nextStep = () => { if (tourStep < TOUR_STEPS.length - 1) setTourStep(tourStep + 1); else setTourStep(-1); };
+  const nextStep = () => { if (tourStep < TOUR_STEPS.length - 1) setTourStep(tourStep + 1); else { setTourStep(-1); setTourPaused(false); } };
   const prevStep = () => { if (tourStep > 0) setTourStep(tourStep - 1); };
-  const skipTour = () => setTourStep(-1);
+  const pauseTour = () => setTourPaused(true);
+  const resumeTour = () => setTourPaused(false);
+  const restartTour = () => { setTourStep(0); setTourPaused(false); };
 
   const renderAgency = () => { switch (agencyTab) { case 'clients': return <AgencyClients />; case 'add-client': return <AgencyAddClient onBack={() => setAgencyTab('clients')} />; case 'leads': return <AgencyLeads />; case 'outreach': return <AgencyOutreach />; case 'analytics': return <AgencyAnalytics />; case 'demo-phone': return <AgencyDemoPhone />; case 'marketing': return <AgencyMarketing />; case 'referrals': return <AgencyReferrals />; case 'branding': return <AgencyBranding />; case 'settings': return <AgencySettings />; default: return <AgencyOverview />; } };
   const renderClient = () => { switch (clientTab) { case 'calls': return <ClientCalls />; case 'contacts': return <ClientContacts />; case 'ai-agent': return <ClientAIAgent />; case 'settings': return <ClientSettings />; default: return <ClientOverview />; } };
@@ -1124,7 +1189,7 @@ export default function DemoPage() {
       <div className="relative z-40 flex items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
         <div className="flex items-center gap-4"><Link href="/" className="flex items-center gap-2.5"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link><div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div></div>
         <div className="absolute left-1/2 -translate-x-1/2 flex"><div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div></div>
-        <div className="flex items-center gap-3"><button onClick={() => setTourStep(0)} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/#pricing" className="hidden sm:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
+        <div className="flex items-center gap-3"><button onClick={restartTour} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/#pricing" className="hidden sm:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
       </div>
       {/* Dashboard */}
       <div className="flex-1 flex overflow-hidden">
@@ -1145,7 +1210,9 @@ export default function DemoPage() {
         </>)}
       </div>
       {/* Tour Overlay */}
-      {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onSkip={skipTour} />}
+      {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onPause={pauseTour} />}
+      {/* Resume Pill */}
+      {tourHasProgress && <TourResumePill step={tourStep} total={TOUR_STEPS.length} onResume={resumeTour} onRestart={restartTour} />}
     </div>
   );
 }
