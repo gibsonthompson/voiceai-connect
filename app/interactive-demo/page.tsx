@@ -797,7 +797,6 @@ interface TourStep {
   view: 'agency' | 'client';
   tab: string;
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
-  act: number;
   title: string;
   body: string;
 }
@@ -806,114 +805,97 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
   step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onSkip: () => void;
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  // Reset drag when step changes
+  useEffect(() => { setDragOffset(null); }, [stepIndex]);
 
   useEffect(() => {
     if (!step.target) { setRect(null); return; }
     const measure = () => {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
-      if (el) {
-        const r = el.getBoundingClientRect();
-        setRect(r);
-      } else {
-        setRect(null);
-      }
+      if (el) setRect(el.getBoundingClientRect());
+      else setRect(null);
     };
-    // Small delay so the tab content renders first
     const timer = setTimeout(() => {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        // Measure after scroll settles
         setTimeout(measure, 300);
-      } else {
-        setRect(null);
-      }
+      } else { setRect(null); }
     }, 150);
     window.addEventListener('resize', measure);
     return () => { clearTimeout(timer); window.removeEventListener('resize', measure); };
   }, [step.target, stepIndex]);
 
-  const actLabels: Record<number, string> = { 1: 'Your Revenue Machine', 2: 'Sell Without Lifting a Finger', 3: "What Your Client Gets" };
-  const isLast = stepIndex === totalSteps - 1;
+  // Drag handlers
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, a')) return;
+    dragStart.current = { mx: e.clientX, my: e.clientY, ox: dragOffset?.x || 0, oy: dragOffset?.y || 0 };
+    setIsDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || !dragStart.current) return;
+    setDragOffset({ x: dragStart.current.ox + e.clientX - dragStart.current.mx, y: dragStart.current.oy + e.clientY - dragStart.current.my });
+  };
+  const handlePointerUp = () => { setIsDragging(false); dragStart.current = null; };
+
   const isCentered = step.position === 'center' || !step.target;
   const pad = 8;
+  const dx = dragOffset?.x || 0;
+  const dy = dragOffset?.y || 0;
 
-  // Calculate tooltip position — auto-detect best placement based on available space
   const getTooltipStyle = (): React.CSSProperties => {
-    if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-    const maxW = 360;
-    const tooltipH = 220;
-    const gap = 16;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const margin = 16;
+    if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))` };
+    const maxW = 360; const tooltipH = 220; const gap = 16;
+    const vw = window.innerWidth; const vh = window.innerHeight; const margin = 16;
+    const spaceAbove = rect.top; const spaceBelow = vh - rect.bottom;
+    const spaceRight = vw - rect.right; const spaceLeft = rect.left;
 
-    // Available space in each direction from the element
-    const spaceAbove = rect.top;
-    const spaceBelow = vh - rect.bottom;
-    const spaceRight = vw - rect.right;
-    const spaceLeft = rect.left;
-
-    // Pick best position: prefer the hint, but fall back if not enough room
     let pos = step.position;
     if (pos === 'bottom' && spaceBelow < tooltipH + gap && spaceAbove > spaceBelow) pos = 'top';
     else if (pos === 'top' && spaceAbove < tooltipH + gap && spaceBelow > spaceAbove) pos = 'bottom';
     else if (pos === 'right' && spaceRight < maxW + gap && spaceLeft > spaceRight) pos = 'left';
     else if (pos === 'left' && spaceLeft < maxW + gap && spaceRight > spaceLeft) pos = 'right';
-
-    // If still not enough room vertically, just center vertically
-    const canFitAbove = spaceAbove >= tooltipH + gap;
-    const canFitBelow = spaceBelow >= tooltipH + gap;
-    if ((pos === 'top' && !canFitAbove) || (pos === 'bottom' && !canFitBelow)) {
-      // Place alongside the element instead
-      if (spaceRight >= maxW + gap) pos = 'right';
-      else if (spaceLeft >= maxW + gap) pos = 'left';
-      // else just clamp below
-      else pos = 'bottom';
+    if ((pos === 'top' && spaceAbove < tooltipH + gap) || (pos === 'bottom' && spaceBelow < tooltipH + gap)) {
+      pos = spaceRight >= maxW + gap ? 'right' : spaceLeft >= maxW + gap ? 'left' : 'bottom';
     }
 
     const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
     const clampX = (x: number) => Math.max(margin, Math.min(x, vw - maxW - margin));
     const clampY = (y: number) => Math.max(margin, Math.min(y, vh - tooltipH - margin));
-
-    // Use the visible portion of the element (clipped to viewport) for centering
-    const visTop = Math.max(rect.top, 0);
-    const visBottom = Math.min(rect.bottom, vh);
+    const visTop = Math.max(rect.top, 0); const visBottom = Math.min(rect.bottom, vh);
     const visMidY = (visTop + visBottom) / 2;
     const visMidX = Math.max(rect.left, 0) + Math.min(rect.width, vw) / 2;
 
     switch (pos) {
       case 'bottom':
-        style.top = clampY(Math.min(rect.bottom, vh - 56) + gap);
-        style.left = clampX(visMidX - maxW / 2);
-        break;
+        style.top = clampY(Math.min(rect.bottom, vh - 56) + gap) + dy;
+        style.left = clampX(visMidX - maxW / 2) + dx; break;
       case 'top':
-        style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap);
-        style.left = clampX(visMidX - maxW / 2);
-        break;
+        style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap) + dy;
+        style.left = clampX(visMidX - maxW / 2) + dx; break;
       case 'right':
-        style.top = clampY(visMidY - tooltipH / 2);
-        style.left = Math.min(rect.right + gap, vw - maxW - margin);
-        break;
+        style.top = clampY(visMidY - tooltipH / 2) + dy;
+        style.left = Math.min(rect.right + gap, vw - maxW - margin) + dx; break;
       case 'left':
-        style.top = clampY(visMidY - tooltipH / 2);
-        style.right = Math.max(margin, vw - rect.left + gap);
-        break;
+        style.top = clampY(visMidY - tooltipH / 2) + dy;
+        style.left = clampX(rect.left - maxW - gap) + dx; break;
     }
     return style;
   };
 
-  // Spotlight clip path — clamped to visible viewport
   const getClipPath = () => {
     if (!rect || isCentered) return 'none';
-    // Clamp to viewport so large off-screen elements don't break the cutout
-    const x = Math.max(0, rect.left - pad);
-    const y = Math.max(56, rect.top - pad); // 56 = top bar height
+    const x = Math.max(0, rect.left - pad); const y = Math.max(56, rect.top - pad);
     const x2 = Math.min(window.innerWidth, rect.right + pad);
     const y2 = Math.min(window.innerHeight, rect.bottom + pad);
-    const w = x2 - x;
-    const h = y2 - y;
+    const w = x2 - x; const h = y2 - y;
     if (w <= 0 || h <= 0) return 'none';
     const r = 12;
     return `polygon(0% 0%, 0% 100%, ${x}px 100%, ${x}px ${y + r}px, ${x + r}px ${y}px, ${x + w - r}px ${y}px, ${x + w}px ${y + r}px, ${x + w}px ${y + h - r}px, ${x + w - r}px ${y + h}px, ${x + r}px ${y + h}px, ${x}px ${y + h - r}px, ${x}px 100%, 100% 100%, 100% 0%)`;
@@ -921,18 +903,15 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
 
   return (
     <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onSkip(); }}>
-      {/* Backdrop with cutout */}
       <div className="absolute inset-0 transition-all duration-300" style={{
-        backgroundColor: 'rgba(0,0,0,0.65)',
-        clipPath: getClipPath(),
+        backgroundColor: 'rgba(0,0,0,0.6)', clipPath: getClipPath(),
         backdropFilter: isCentered ? 'blur(2px)' : undefined,
       }} />
-      {isCentered && <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />}
+      {isCentered && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />}
 
-      {/* Spotlight ring — clamped to viewport */}
+      {/* Spotlight ring */}
       {rect && !isCentered && (() => {
-        const rx = Math.max(0, rect.left - pad);
-        const ry = Math.max(56, rect.top - pad);
+        const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
         const rx2 = Math.min(window.innerWidth, rect.right + pad);
         const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
         return (rx2 - rx > 0 && ry2 - ry > 0) ? (
@@ -943,18 +922,20 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
         ) : null;
       })()}
 
-      {/* Tooltip Card */}
-      <div className="transition-all duration-300" style={getTooltipStyle()} onClick={e => e.stopPropagation()}>
+      {/* Tooltip — draggable */}
+      <div
+        ref={tooltipRef}
+        className={isDragging ? '' : 'transition-all duration-300'}
+        style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none', touchAction: 'none' }}
+        onClick={e => e.stopPropagation()}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a] shadow-2xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
-          {/* Act label */}
-          {step.act > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/70">Act {step.act}</span>
-              <span className="text-[10px] text-[#fafaf9]/30">— {actLabels[step.act]}</span>
-            </div>
-          )}
+          {/* Drag handle */}
+          {!isCentered && <div className="flex justify-center mb-2 cursor-grab"><div className="w-8 h-1 rounded-full bg-white/[0.15]" /></div>}
 
-          {/* Final CTA icon */}
           {isCentered && (
             <div className="flex justify-center mb-4">
               <div className="h-14 w-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
@@ -966,14 +947,13 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
           <h3 className={`font-semibold text-[#fafaf9] mb-2 ${isCentered ? 'text-xl sm:text-2xl text-center' : 'text-base'}`}>{step.title}</h3>
           <p className={`text-sm leading-relaxed text-[#fafaf9]/60 ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
 
-          {/* Progress + Nav */}
           {!isCentered ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 {Array.from({ length: totalSteps }).map((_, i) => (
                   <div key={i} className="h-1 rounded-full transition-all" style={{
                     width: i === stepIndex ? 16 : 6,
-                    backgroundColor: i === stepIndex ? '#10b981' : i < stepIndex ? '#10b981' : 'rgba(255,255,255,0.1)',
+                    backgroundColor: i <= stepIndex ? '#10b981' : 'rgba(255,255,255,0.1)',
                     opacity: i <= stepIndex ? 1 : 0.5,
                   }} />
                 ))}
@@ -987,13 +967,17 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4" /></Link>
-              <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-6 py-3 text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4" /></Link>
+                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-6 py-3 text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
+              </div>
+              <button onClick={onSkip} className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mt-1">
+                or explore the dashboard →
+              </button>
             </div>
           )}
 
-          {/* Step counter */}
           {!isCentered && (
             <div className="mt-3 text-center"><span className="text-[10px] text-[#fafaf9]/25">{stepIndex + 1} of {totalSteps}</span></div>
           )}
@@ -1014,34 +998,34 @@ export default function DemoPage() {
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
 
   const TOUR_STEPS = [
-    { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const, act: 1,
+    { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const,
       title: 'Your Recurring Revenue',
       body: 'This is your MRR dashboard. 47 clients paying you monthly — zero fulfillment on your end. You set the pricing, you keep the margin.' },
-    { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const, act: 1,
+    { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
       title: 'Every Row is a Subscription',
       body: 'Each client is a monthly subscription you control. Set your own pricing — $49, $99, $149/mo. They get an AI receptionist, you get predictable revenue.' },
-    { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const, act: 1,
+    { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
       title: 'Track Every Dollar',
       body: 'Real-time MRR, total earnings, pending payouts, client counts. This is your P&L for the entire voice AI arm of your agency.' },
-    { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const, act: 1,
+    { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const,
       title: 'Your Closer — Live AI Demo',
       body: 'Give a prospect this number. They call it, hear the AI live, and close themselves. 60 seconds from skeptic to believer.' },
-    { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const, act: 2,
+    { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const,
       title: 'Clients Come to You',
       body: 'Every agency gets a fully branded marketing site with pricing, signup, and a live demo. Your clients find you and onboard themselves — zero manual work.' },
-    { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const, act: 2,
+    { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const,
       title: 'Built-In Sales Pipeline',
       body: 'Track every prospect from first touch to closed deal. Follow-up queue, overdue alerts, outreach templates. Nothing falls through the cracks.' },
-    { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const, act: 3,
+    { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
       title: "Now — What Your Client Sees",
       body: "Let's switch to the client view. This is the dashboard your client logs into — your agency name, your branding, your pricing." },
-    { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const, act: 3,
+    { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
       title: 'Their AI Receptionist',
       body: 'Your client gets a dedicated AI phone number, live call stats, and priority alerts. They see the value every time they log in — that keeps them paying.' },
-    { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const, act: 3,
+    { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const,
       title: 'They Customize, You Retain',
       body: "Clients choose their AI's voice, set their greeting, add FAQs and services. The more they invest in setup, the stickier the subscription. That's your moat." },
-    { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const, act: 0,
+    { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const,
       title: 'Ready to Launch?',
       body: 'Your first client can be live in 60 seconds. No A2P registration, no per-client setup, no fulfillment overhead. Just recurring revenue.' },
   ];
