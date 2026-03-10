@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Phone, ArrowRight, Check, Users, DollarSign, PhoneCall,
   Settings, Copy, TrendingUp, ChevronRight, Zap, LayoutDashboard,
@@ -184,7 +184,7 @@ function AgencyClients() {
           <select value={sf} onChange={e => setSf(e.target.value)} className="rounded-xl px-4 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/70 focus:outline-none"><option value="">All Status</option><option value="active">Active</option><option value="trial">Trial</option></select>
         </div>
       </div>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+      <div data-tour="clients-table" className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium uppercase tracking-wide text-[#fafaf9]/40 border-b border-white/[0.06]"><div className="col-span-4">Business</div><div className="col-span-2">Plan</div><div className="col-span-2">Calls</div><div className="col-span-2">Status</div><div className="col-span-2 text-right">Added</div></div>
         {filtered.map((c, i) => (
           <div key={c.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.03] cursor-pointer transition-colors" style={{ borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
@@ -254,7 +254,7 @@ function AgencyLeads() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-5 mb-6">
+      <div data-tour="leads-pipeline" className="grid gap-3 grid-cols-2 lg:grid-cols-5 mb-6">
         {([
           { label: 'Active', value: ls.active, icon: Target, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
           { label: 'Qualified', value: ls.qualified, icon: TrendingUp, color: '#a78bfa', bg: 'rgba(168,85,247,0.1)' },
@@ -359,7 +359,7 @@ function AgencyAnalytics() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Analytics & Revenue</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Track your earnings and client metrics.</p></div>
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
+      <div data-tour="analytics-stats" className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
         {([
           { label: 'Monthly Recurring', value: fmtCents(AGENCY.analyticsStats.mrr), icon: TrendingUp, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
           { label: 'Total Earned', value: fmtCents(AGENCY.analyticsStats.totalEarned), icon: DollarSign, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
@@ -447,7 +447,7 @@ function AgencyDemoPhone() {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Demo Phone</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Your dedicated demo line for showcasing AI receptionist capabilities</p></div>
 
       {/* Active Demo Card */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 mb-6">
+      <div data-tour="demo-phone" className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10"><Phone className="h-5 w-5 text-emerald-400" /></div>
@@ -518,7 +518,7 @@ function AgencyMarketing() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Marketing Website</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Your public website where clients learn about your service</p></div>
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+      <div data-tour="marketing-site" className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Globe className="h-5 w-5 text-emerald-400" /></div><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />Live</span></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Your Website</h3><p className="text-xs mb-3 text-[#fafaf9]/40 truncate">https://demo.myvoiceaiconnect.com</p><div className="flex gap-2"><button className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-emerald-500 text-[#050505]"><Eye className="h-4 w-4" />View</button><button onClick={() => { setCopied('url'); setTimeout(() => setCopied(null), 2000); }} className="flex items-center justify-center rounded-lg px-3 py-2 bg-white/[0.04] border border-white/[0.08]">{copied === 'url' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-[#fafaf9]/40" />}</button></div></div>
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Palette className="h-5 w-5 text-emerald-400" /></div></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Current Theme</h3><div className="flex items-center gap-2 mb-3"><div className="flex gap-0.5"><div className="h-6 w-6 rounded" style={{ backgroundColor: '#10b981' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#059669' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#34d399' }} /></div><span className="text-xs text-[#fafaf9]/40 flex items-center gap-1"><Moon className="h-3 w-3" />dark</span></div><button className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><Palette className="h-4 w-4" />Customize</button></div>
       </div>
@@ -618,7 +618,7 @@ function ClientOverview() {
     <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: '#f9fafb' }}>
       <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Welcome back! 👋</h1><p className="mt-1 text-sm text-gray-500">Here&apos;s your AI receptionist activity.</p></div>
       {/* Phone Number Card */}
-      <div className="mb-6 sm:mb-8 rounded-xl border border-emerald-200 bg-white p-4 sm:p-6 shadow-sm">
+      <div data-tour="client-phone" className="mb-6 sm:mb-8 rounded-xl border border-emerald-200 bg-white p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-emerald-50 flex-shrink-0"><Phone className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600" /></div>
@@ -741,7 +741,7 @@ function ClientAIAgent() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24" style={{ backgroundColor: '#f9fafb' }}>
       <div className="mb-4 sm:mb-6 text-center"><div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-emerald-50"><Bot className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600" /></div><h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 text-gray-900">Your AI Receptionist</h2><p className="text-xs sm:text-sm text-gray-500">Customize how your AI answers calls</p></div>
-      <div className="max-w-3xl mx-auto">
+      <div data-tour="client-ai" className="max-w-3xl mx-auto">
         <section className="mb-4 sm:mb-6"><button className="w-full rounded-xl p-3 sm:p-4 flex items-center justify-center gap-2 sm:gap-3 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition-colors"><Phone className="w-4 h-4 sm:w-5 sm:h-5" /><span className="font-semibold text-sm sm:text-base">Test Your AI Receptionist</span></button><p className="text-center text-[10px] sm:text-xs mt-1.5 text-gray-400">Call your AI number to hear your settings in action</p></section>
         {/* Voice */}
         <section className="mb-4 sm:mb-6"><div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"><SectionHead icon={Mic} title="Voice Selection" sub="Choose your AI's voice" live /><div className="p-3 sm:p-4"><div className="flex gap-1.5 mb-3">{['All (8)', 'Female', 'Male'].map((f, i) => (<button key={f} className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-medium" style={i === 0 ? { backgroundColor: pc, color: '#fff' } : { backgroundColor: '#f3f4f6', color: '#6b7280' }}>{f}</button>))}</div><div className="grid grid-cols-2 gap-2 sm:gap-3">{[{ name: 'Sarah', accent: 'American', style: 'Warm & Professional', sel: true, cur: true }, { name: 'Emily', accent: 'British', style: 'Elegant & Clear', sel: false, cur: false }, { name: 'Jessica', accent: 'American', style: 'Friendly & Bright', sel: false, cur: false }, { name: 'James', accent: 'American', style: 'Confident & Deep', sel: false, cur: false }, { name: 'Oliver', accent: 'British', style: 'Polished & Calm', sel: false, cur: false }, { name: 'Sophia', accent: 'Australian', style: 'Energetic & Warm', sel: false, cur: false }].map(v => (<div key={v.name} className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer" style={{ borderColor: v.sel ? pc : '#e5e7eb', backgroundColor: v.sel ? `${pc}08` : '#fff' }}>{v.cur && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-white text-[8px] font-bold rounded-full bg-emerald-500">CURRENT</span>}<div className="flex items-start gap-1.5 sm:gap-2"><button className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 text-gray-500"><Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" /></button><div className="flex-1 min-w-0"><div className="flex items-center gap-1"><span className="font-semibold text-xs sm:text-sm text-gray-900 truncate">{v.name}</span>{v.sel && <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" />}</div><p className="text-[9px] sm:text-[10px] text-gray-400 truncate">{v.accent} · {v.style}</p></div></div></div>))}</div></div></div></section>
@@ -790,14 +790,219 @@ function ClientSettings() {
   );
 }
 
+// ─── Tour Overlay ────────────────────────────────────────────────────────────
+
+interface TourStep {
+  target: string | null;
+  view: 'agency' | 'client';
+  tab: string;
+  position: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  act: number;
+  title: string;
+  body: string;
+}
+
+function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
+  step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onSkip: () => void;
+}) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!step.target) { setRect(null); return; }
+    // Small delay so the tab content renders first
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setRect(r);
+        // Scroll element into view if needed
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        setRect(null);
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [step.target, stepIndex]);
+
+  const actLabels: Record<number, string> = { 1: 'Your Revenue Machine', 2: 'Sell Without Lifting a Finger', 3: "What Your Client Gets" };
+  const isLast = stepIndex === totalSteps - 1;
+  const isCentered = step.position === 'center' || !step.target;
+  const pad = 8;
+
+  // Calculate tooltip position
+  const getTooltipStyle = (): React.CSSProperties => {
+    if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    const maxW = 340;
+    const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
+    switch (step.position) {
+      case 'bottom':
+        style.top = rect.bottom + pad + 8;
+        style.left = Math.max(16, Math.min(rect.left + rect.width / 2 - maxW / 2, window.innerWidth - maxW - 16));
+        break;
+      case 'top':
+        style.bottom = window.innerHeight - rect.top + pad + 8;
+        style.left = Math.max(16, Math.min(rect.left + rect.width / 2 - maxW / 2, window.innerWidth - maxW - 16));
+        break;
+      case 'right':
+        style.top = Math.max(16, rect.top + rect.height / 2 - 80);
+        style.left = rect.right + pad + 8;
+        break;
+      case 'left':
+        style.top = Math.max(16, rect.top + rect.height / 2 - 80);
+        style.right = window.innerWidth - rect.left + pad + 8;
+        break;
+    }
+    return style;
+  };
+
+  // Spotlight clip path
+  const getClipPath = () => {
+    if (!rect || isCentered) return 'none';
+    const x = rect.left - pad;
+    const y = rect.top - pad;
+    const w = rect.width + pad * 2;
+    const h = rect.height + pad * 2;
+    const r = 12;
+    return `polygon(0% 0%, 0% 100%, ${x}px 100%, ${x}px ${y + r}px, ${x + r}px ${y}px, ${x + w - r}px ${y}px, ${x + w}px ${y + r}px, ${x + w}px ${y + h - r}px, ${x + w - r}px ${y + h}px, ${x + r}px ${y + h}px, ${x}px ${y + h - r}px, ${x}px 100%, 100% 100%, 100% 0%)`;
+  };
+
+  return (
+    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onSkip(); }}>
+      {/* Backdrop with cutout */}
+      <div className="absolute inset-0 transition-all duration-300" style={{
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        clipPath: getClipPath(),
+        backdropFilter: isCentered ? 'blur(2px)' : undefined,
+      }} />
+      {isCentered && <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />}
+
+      {/* Spotlight ring */}
+      {rect && !isCentered && (
+        <div className="absolute rounded-xl pointer-events-none transition-all duration-300 ring-2 ring-emerald-400/40" style={{
+          left: rect.left - pad, top: rect.top - pad,
+          width: rect.width + pad * 2, height: rect.height + pad * 2,
+          boxShadow: '0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.1)',
+        }} />
+      )}
+
+      {/* Tooltip Card */}
+      <div className="transition-all duration-300" style={getTooltipStyle()} onClick={e => e.stopPropagation()}>
+        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a] shadow-2xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+          {/* Act label */}
+          {step.act > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/70">Act {step.act}</span>
+              <span className="text-[10px] text-[#fafaf9]/30">— {actLabels[step.act]}</span>
+            </div>
+          )}
+
+          {/* Final CTA icon */}
+          {isCentered && (
+            <div className="flex justify-center mb-4">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+                <Zap className="h-7 w-7 text-emerald-400" />
+              </div>
+            </div>
+          )}
+
+          <h3 className={`font-semibold text-[#fafaf9] mb-2 ${isCentered ? 'text-xl sm:text-2xl text-center' : 'text-base'}`}>{step.title}</h3>
+          <p className={`text-sm leading-relaxed text-[#fafaf9]/60 ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
+
+          {/* Progress + Nav */}
+          {!isCentered ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalSteps }).map((_, i) => (
+                  <div key={i} className="h-1 rounded-full transition-all" style={{
+                    width: i === stepIndex ? 16 : 6,
+                    backgroundColor: i === stepIndex ? '#10b981' : i < stepIndex ? '#10b981' : 'rgba(255,255,255,0.1)',
+                    opacity: i <= stepIndex ? 1 : 0.5,
+                  }} />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={onSkip} className="px-3 py-1.5 text-xs text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors">Skip</button>
+                {stepIndex > 0 && <button onClick={onPrev} className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.08] text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Back</button>}
+                <button onClick={onNext} className="px-4 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-colors">
+                  {stepIndex === totalSteps - 2 ? 'Finish' : 'Next'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-6 py-3 text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
+            </div>
+          )}
+
+          {/* Step counter */}
+          {!isCentered && (
+            <div className="mt-3 text-center"><span className="text-[10px] text-[#fafaf9]/25">{stepIndex + 1} of {totalSteps}</span></div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Demo Page ───────────────────────────────────────────────────────────
 
 export default function DemoPage() {
   const [view, setView] = useState<'agency' | 'client'>('agency');
   const [agencyTab, setAgencyTab] = useState('dashboard');
   const [clientTab, setClientTab] = useState('dashboard');
+  const [tourStep, setTourStep] = useState(0);
   const agencyNav = [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, { id: 'clients', label: 'Clients', icon: Users }, { id: 'leads', label: 'Leads', icon: Target }, { id: 'outreach', label: 'Outreach', icon: Send }, { id: 'analytics', label: 'Analytics', icon: BarChart3 }, { id: 'demo-phone', label: 'Demo Phone', icon: Phone }, { id: 'marketing', label: 'Marketing', icon: Globe }, { id: 'referrals', label: 'Referrals', icon: Gift }, { id: 'branding', label: 'Branding', icon: Paintbrush }, { id: 'settings', label: 'Settings', icon: Settings }];
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
+
+  const TOUR_STEPS = [
+    { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const, act: 1,
+      title: 'Your Recurring Revenue',
+      body: 'This is your MRR dashboard. 47 clients paying you monthly — zero fulfillment on your end. You set the pricing, you keep the margin.' },
+    { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const, act: 1,
+      title: 'Every Row is a Subscription',
+      body: 'Each client is a monthly subscription you control. Set your own pricing — $49, $99, $149/mo. They get an AI receptionist, you get predictable revenue.' },
+    { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const, act: 1,
+      title: 'Track Every Dollar',
+      body: 'Real-time MRR, total earnings, pending payouts, client counts. This is your P&L for the entire voice AI arm of your agency.' },
+    { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const, act: 1,
+      title: 'Your Closer — Live AI Demo',
+      body: 'Give a prospect this number. They call it, hear the AI live, and close themselves. 60 seconds from skeptic to believer.' },
+    { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const, act: 2,
+      title: 'Clients Come to You',
+      body: 'Every agency gets a fully branded marketing site with pricing, signup, and a live demo. Your clients find you and onboard themselves — zero manual work.' },
+    { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const, act: 2,
+      title: 'Built-In Sales Pipeline',
+      body: 'Track every prospect from first touch to closed deal. Follow-up queue, overdue alerts, outreach templates. Nothing falls through the cracks.' },
+    { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const, act: 3,
+      title: "Now — What Your Client Sees",
+      body: "Let's switch to the client view. This is the dashboard your client logs into — your agency name, your branding, your pricing." },
+    { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const, act: 3,
+      title: 'Their AI Receptionist',
+      body: 'Your client gets a dedicated AI phone number, live call stats, and priority alerts. They see the value every time they log in — that keeps them paying.' },
+    { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const, act: 3,
+      title: 'They Customize, You Retain',
+      body: "Clients choose their AI's voice, set their greeting, add FAQs and services. The more they invest in setup, the stickier the subscription. That's your moat." },
+    { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const, act: 0,
+      title: 'Ready to Launch?',
+      body: 'Your first client can be live in 60 seconds. No A2P registration, no per-client setup, no fulfillment overhead. Just recurring revenue.' },
+  ];
+
+  const tourActive = tourStep >= 0 && tourStep < TOUR_STEPS.length;
+  const currentStep = tourActive ? TOUR_STEPS[tourStep] : null;
+
+  // Navigate view/tab when tour step changes
+  useEffect(() => {
+    if (!currentStep) return;
+    if (currentStep.view !== view) setView(currentStep.view);
+    if (currentStep.view === 'agency' && currentStep.tab !== agencyTab) setAgencyTab(currentStep.tab);
+    if (currentStep.view === 'client' && currentStep.tab !== clientTab) setClientTab(currentStep.tab);
+  }, [tourStep]);
+
+  const nextStep = () => { if (tourStep < TOUR_STEPS.length - 1) setTourStep(tourStep + 1); else setTourStep(-1); };
+  const prevStep = () => { if (tourStep > 0) setTourStep(tourStep - 1); };
+  const skipTour = () => setTourStep(-1);
 
   const renderAgency = () => { switch (agencyTab) { case 'clients': return <AgencyClients />; case 'leads': return <AgencyLeads />; case 'outreach': return <AgencyOutreach />; case 'analytics': return <AgencyAnalytics />; case 'demo-phone': return <AgencyDemoPhone />; case 'marketing': return <AgencyMarketing />; case 'referrals': return <AgencyReferrals />; case 'branding': return <AgencyBranding />; case 'settings': return <AgencySettings />; default: return <AgencyOverview />; } };
   const renderClient = () => { switch (clientTab) { case 'calls': return <ClientCalls />; case 'contacts': return <ClientContacts />; case 'ai-agent': return <ClientAIAgent />; case 'settings': return <ClientSettings />; default: return <ClientOverview />; } };
@@ -808,8 +1013,8 @@ export default function DemoPage() {
       {/* Top Bar */}
       <div className="relative z-40 flex items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
         <div className="flex items-center gap-4"><Link href="/" className="flex items-center gap-2.5"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link><div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div></div>
-        <div className="absolute left-1/2 -translate-x-1/2 flex"><div className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div></div>
-        <div className="flex items-center gap-3"><Link href="/agency/login" className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">Sign In</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
+        <div className="absolute left-1/2 -translate-x-1/2 flex"><div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div></div>
+        <div className="flex items-center gap-3"><button onClick={() => setTourStep(0)} className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Restart Tour</button><Link href="/pricing" className="hidden sm:inline px-3 py-1.5 rounded-full border border-white/[0.1] text-xs text-[#fafaf9]/70 hover:text-[#fafaf9] hover:border-white/20 transition-all">Pricing</Link><Link href="/signup" className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10">Start Free Trial<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" /></Link></div>
       </div>
       {/* Dashboard */}
       <div className="flex-1 flex overflow-hidden">
@@ -817,7 +1022,7 @@ export default function DemoPage() {
           <div className="w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex flex-col">
             <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5"><WaveformIcon className="h-5 w-5 text-[#fafaf9]" /></div><div className="min-w-0"><p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p><p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p></div></div>
             <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">{agencyNav.map(item => (<button key={item.id} onClick={() => setAgencyTab(item.id)} className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${agencyTab === item.id ? 'bg-emerald-500/10 text-emerald-400' : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'}`}><item.icon className="h-4 w-4 flex-shrink-0" /><span className="truncate">{item.label}</span></button>))}</nav>
-            <div className="p-3 border-t border-white/[0.06]"><div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div></div>
+            <div className="p-3 border-t border-white/[0.06]"><div data-tour="sidebar-mrr" className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div></div>
           </div>
           <div className="flex-1 overflow-y-auto bg-[#0a0a0a]">{renderAgency()}</div>
         </>) : (<>
@@ -829,6 +1034,8 @@ export default function DemoPage() {
           <div className="flex-1 overflow-y-auto">{renderClient()}</div>
         </>)}
       </div>
+      {/* Tour Overlay */}
+      {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onSkip={skipTour} />}
     </div>
   );
 }
