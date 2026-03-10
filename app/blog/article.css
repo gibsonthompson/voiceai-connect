@@ -46,6 +46,14 @@
   scroll-margin-top: 6rem;
 }
 
+/* H4 - FAQ headings and sub-sub sections */
+.article-content h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fafaf9;
+  scroll-margin-top: 6rem;
+}
+
 /* Unordered lists */
 .article-content > ul {
   margin: 1.5rem 0 2rem 0;
@@ -167,4 +175,80 @@
 .article-content > div.quote-box,
 .article-content > .p-5.rounded-xl {
   margin: 2rem 0;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE — max-width: 640px
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Lead paragraph */
+  .article-content > p.lead,
+  .article-content > .lead {
+    font-size: 1.063rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Regular paragraphs */
+  .article-content > p {
+    font-size: 1rem;
+    line-height: 1.75;
+    margin-bottom: 1.25rem;
+  }
+
+  /* H2 */
+  .article-content > h2 {
+    font-size: 1.375rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-top: 1.5rem;
+  }
+
+  .article-content > h2:first-of-type {
+    margin-top: 1.5rem;
+  }
+
+  /* H3 */
+  .article-content > h3 {
+    font-size: 1.188rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* H4 */
+  .article-content h4 {
+    font-size: 1.063rem;
+  }
+
+  /* Lists — tighter on mobile */
+  .article-content > ul > li,
+  .article-content > ol > li {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+
+  .article-content > ol > li {
+    padding-left: 2rem;
+  }
+
+  /* Blockquotes */
+  .article-content > blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1rem 1rem 1.25rem;
+    font-size: 0.938rem;
+  }
+
+  /* Code blocks */
+  .article-content > pre {
+    margin: 1.5rem -1rem;
+    padding: 1rem;
+    border-radius: 0;
+    font-size: 0.85rem;
+  }
+
+  /* HR */
+  .article-content > hr {
+    margin: 2rem 0;
+  }
 }

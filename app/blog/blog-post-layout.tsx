@@ -98,8 +98,8 @@ function ShareButton({ title, url }: { title: string; url: string }) {
 // ============================================================================
 function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
   return (
-    <nav className="p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
-      <h4 className="text-sm font-semibold text-[#fafaf9]/70 uppercase tracking-wider mb-4">
+    <nav className="p-4 sm:p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
+      <h4 className="text-sm font-semibold text-[#fafaf9]/70 uppercase tracking-wider mb-3 sm:mb-4">
         On This Page
       </h4>
       <ul className="space-y-2">
@@ -125,8 +125,8 @@ function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
 // ============================================================================
 function CTABox() {
   return (
-    <div className="p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
-      <h4 className="font-semibold text-lg">Ready to start your AI voice agency?</h4>
+    <div className="p-5 sm:p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05]">
+      <h4 className="font-semibold text-base sm:text-lg">Ready to start your AI voice agency?</h4>
       <p className="mt-2 text-sm text-[#fafaf9]/60">
         VoiceAI Connect gives you everything you need to launch, brand, and scale your agency — with zero coding required.
       </p>
@@ -185,22 +185,22 @@ export default function BlogPostLayout({
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                  <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
+                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                  <WaveformIcon className="w-4 h-4 sm:w-6 sm:h-6 text-[#fafaf9]" />
                 </div>
               </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
+              <span className="text-sm sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link 
                 href="/blog" 
-                className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
+                className="text-xs sm:text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
               >
-                ← Back to Blog
+                ← Blog
               </Link>
               <Link 
                 href="/signup"
@@ -214,30 +214,30 @@ export default function BlogPostLayout({
       </header>
 
       {/* Article */}
-      <article className="relative pt-28 sm:pt-32 pb-16">
+      <article className="relative pt-24 sm:pt-32 pb-12 sm:pb-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <header className="max-w-3xl mx-auto text-center mb-12">
+          <header className="max-w-3xl mx-auto text-center mb-8 sm:mb-12">
             {/* Category */}
-            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium mb-6 ${categoryColor}`}>
+            <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium mb-4 sm:mb-6 ${categoryColor}`}>
               <Tag className="h-3 w-3" />
               {categoryName}
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-semibold tracking-tight leading-tight">
               {meta.title}
             </h1>
 
             {/* Description */}
-            <p className="mt-4 text-lg text-[#fafaf9]/60 max-w-2xl mx-auto">
+            <p className="mt-3 sm:mt-4 text-base sm:text-lg text-[#fafaf9]/60 max-w-2xl mx-auto">
               {meta.description}
             </p>
 
             {/* Meta */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm text-[#fafaf9]/50">
+            <div className="mt-5 sm:mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-[#fafaf9]/50">
               <span className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {new Date(meta.publishedAt).toLocaleDateString('en-US', { 
                   month: 'long', 
                   day: 'numeric',
@@ -253,16 +253,16 @@ export default function BlogPostLayout({
                   })})
                 </span>
               )}
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {meta.readTime}
               </span>
             </div>
 
             {/* Author */}
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-medium">
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-3">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-medium text-sm">
                 {meta.author.name.charAt(0)}
               </div>
               <div className="text-left">
@@ -275,9 +275,9 @@ export default function BlogPostLayout({
           </header>
 
           {/* Content Grid */}
-          <div className="grid lg:grid-cols-[1fr_280px] gap-10 max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-[1fr_280px] gap-8 lg:gap-10 max-w-6xl mx-auto">
             {/* Main Content */}
-            <div className="max-w-3xl">
+            <div className="max-w-3xl min-w-0">
               {/* Article Content - styled via article.css */}
               <div className="article-content">
                 {children}
@@ -285,12 +285,12 @@ export default function BlogPostLayout({
 
               {/* Tags */}
               {meta.tags && meta.tags.length > 0 && (
-                <div className="mt-12 pt-8 border-t border-white/[0.08]">
+                <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/[0.08]">
                   <div className="flex flex-wrap gap-2">
                     {meta.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-sm text-[#fafaf9]/60"
+                        className="px-2.5 sm:px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs sm:text-sm text-[#fafaf9]/60"
                       >
                         {tag}
                       </span>
@@ -300,13 +300,13 @@ export default function BlogPostLayout({
               )}
 
               {/* Share */}
-              <div className="mt-8 flex items-center justify-between">
+              <div className="mt-6 sm:mt-8 flex items-center justify-between">
                 <p className="text-sm text-[#fafaf9]/50">Share this article</p>
                 <ShareButton title={meta.title} url={typeof window !== 'undefined' ? window.location.href : ''} />
               </div>
 
               {/* CTA */}
-              <div className="mt-12">
+              <div className="mt-8 sm:mt-12">
                 <CTABox />
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function BlogPostLayout({
       </article>
 
       {/* Footer */}
-      <footer className="relative border-t border-white/[0.06] py-12 px-4 sm:px-6">
+      <footer className="relative border-t border-white/[0.06] py-8 sm:py-12 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
@@ -371,11 +371,11 @@ export function Callout({
   };
 
   return (
-    <div className={`my-8 p-6 rounded-xl border ${styles[type]}`}>
+    <div className={`my-6 sm:my-8 p-4 sm:p-6 rounded-xl border ${styles[type]}`}>
       {title && (
-        <p className={`font-semibold text-lg mb-3 ${iconColors[type]}`}>{title}</p>
+        <p className={`font-semibold text-base sm:text-lg mb-2 sm:mb-3 ${iconColors[type]}`}>{title}</p>
       )}
-      <div className="text-[#fafaf9]/70 text-base leading-relaxed [&>p]:m-0">{children}</div>
+      <div className="text-[#fafaf9]/70 text-sm sm:text-base leading-relaxed [&>p]:m-0">{children}</div>
     </div>
   );
 }
@@ -388,29 +388,59 @@ export function ComparisonTable({
   rows: (string | React.ReactNode)[][] 
 }) {
   return (
-    <div className="my-8 overflow-x-auto rounded-xl border border-white/[0.08]">
-      <table className="w-full text-base">
-        <thead>
-          <tr>
-            {headers.map((header, i) => (
-              <th key={i} className="text-left font-semibold px-5 py-4 bg-white/[0.04] border-b border-white/[0.08] text-[#fafaf9]">
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} className="border-b border-white/[0.04] last:border-0">
-              {row.map((cell, j) => (
-                <td key={j} className="px-5 py-4 text-[#fafaf9]/70">
-                  {cell}
-                </td>
+    <div className="my-6 sm:my-8">
+      {/* Desktop: standard table (hidden on mobile) */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.08]">
+        <table className="w-full text-sm md:text-base">
+          <thead>
+            <tr>
+              {headers.map((header, i) => (
+                <th key={i} className="text-left font-semibold px-4 py-3 bg-white/[0.04] border-b border-white/[0.08] text-[#fafaf9] whitespace-nowrap">
+                  {header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className="border-b border-white/[0.04] last:border-0">
+                {row.map((cell, j) => (
+                  <td key={j} className="px-4 py-3 text-[#fafaf9]/70">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: stacked cards (hidden on desktop) */}
+      <div className="sm:hidden space-y-3">
+        {rows.map((row, i) => (
+          <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2.5">
+            {row.map((cell, j) => {
+              if (!cell && cell !== 0) return null;
+              const header = headers[j];
+              // First column gets prominent styling
+              if (j === 0) {
+                return (
+                  <div key={j}>
+                    {header && <p className="text-[10px] uppercase tracking-wider text-[#fafaf9]/30 mb-0.5">{header}</p>}
+                    <p className="text-sm font-semibold text-[#fafaf9]">{cell}</p>
+                  </div>
+                );
+              }
+              return (
+                <div key={j} className="flex justify-between items-start gap-3">
+                  {header && <span className="text-xs text-[#fafaf9]/40 shrink-0">{header}</span>}
+                  <span className="text-sm text-[#fafaf9]/70 text-right">{cell}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -421,15 +451,15 @@ export function StepList({
   steps: { title: string; description: string }[] 
 }) {
   return (
-    <div className="my-8 space-y-4">
+    <div className="my-6 sm:my-8 space-y-3 sm:space-y-4">
       {steps.map((step, i) => (
-        <div key={i} className="flex gap-4 p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-lg">
+        <div key={i} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-base sm:text-lg">
             {i + 1}
           </div>
-          <div>
-            <p className="font-semibold text-lg text-[#fafaf9]">{step.title}</p>
-            <p className="mt-2 text-base text-[#fafaf9]/60 leading-relaxed">{step.description}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-base sm:text-lg text-[#fafaf9]">{step.title}</p>
+            <p className="mt-1.5 sm:mt-2 text-sm sm:text-base text-[#fafaf9]/60 leading-relaxed">{step.description}</p>
           </div>
         </div>
       ))}
