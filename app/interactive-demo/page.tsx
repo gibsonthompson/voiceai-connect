@@ -852,7 +852,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
 
   const getTooltipStyle = (): React.CSSProperties => {
     if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))` };
-    const maxW = 360; const tooltipH = 220; const gap = 16;
+    const maxW = 380; const tooltipH = 320; const gap = 16;
     const vw = window.innerWidth; const vh = window.innerHeight; const margin = 16;
     const spaceAbove = rect.top; const spaceBelow = vh - rect.bottom;
     const spaceRight = vw - rect.right; const spaceLeft = rect.left;
@@ -945,7 +945,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onSkip }: {
           )}
 
           <h3 className={`font-semibold text-[#fafaf9] mb-2 ${isCentered ? 'text-xl sm:text-2xl text-center' : 'text-base'}`}>{step.title}</h3>
-          <p className={`text-sm leading-relaxed text-[#fafaf9]/60 ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
+          <p className={`text-sm leading-relaxed text-[#fafaf9]/60 whitespace-pre-line ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
 
           {!isCentered ? (
             <div className="flex items-center justify-between">
@@ -999,35 +999,35 @@ export default function DemoPage() {
 
   const TOUR_STEPS = [
     { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const,
-      title: 'Your Recurring Revenue',
-      body: 'This is your MRR dashboard. 47 clients paying you monthly — zero fulfillment on your end. You set the pricing, you keep the margin.' },
+      title: 'What this can become for your agency',
+      body: 'Imagine 47 local businesses paying your agency $99 per month for an AI receptionist.\n\nThat\u2019s $4,653 in monthly recurring revenue from a service that runs automatically. This dashboard shows every client subscription and the total revenue your AI service is producing \u2014 all in one place.' },
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
-      title: 'Every Row is a Subscription',
-      body: 'Each client is a monthly subscription you control. Set your own pricing — $49, $99, $149/mo. They get an AI receptionist, you get predictable revenue.' },
+      title: 'Each client equals recurring revenue',
+      body: 'Every row here represents a business paying you monthly for their AI receptionist.\n\nYou decide the pricing \u2014 $49, $99, $149 or more depending on your market. When a client signs up, the platform automatically creates their phone number, AI assistant, and dashboard. No setup calls. No fulfillment work.' },
     { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
-      title: 'Track Every Dollar',
-      body: 'Real-time MRR, total earnings, pending payouts, client counts. This is your P&L for the entire voice AI arm of your agency.' },
+      title: 'Track the growth of your AI revenue',
+      body: 'See exactly how your AI service is performing.\n\nMonthly recurring revenue, total earnings, active clients, and payouts update in real time. Payments are handled automatically through Stripe Connect, so revenue from your clients goes straight to your account.' },
     { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const,
-      title: 'Your Closer — Live AI Demo',
-      body: 'Give a prospect this number. They call it, hear the AI live, and close themselves. 60 seconds from skeptic to believer.' },
+      title: 'The easiest way to sell the service',
+      body: 'Instead of explaining the AI, let prospects experience it.\n\nGive them this demo phone number. When they call, they hear the AI answer live \u2014 scheduling, answering questions, and capturing leads. Most prospects understand the value within seconds.' },
     { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const,
-      title: 'Clients Come to You',
-      body: 'Every agency gets a fully branded marketing site with pricing, signup, and a live demo. Your clients find you and onboard themselves — zero manual work.' },
+      title: 'Your automated sales funnel',
+      body: 'Every agency receives a fully branded marketing site.\n\nIt includes your pricing plans, a live AI demo, and a signup flow for new clients. Prospects can discover the product, try the AI, and subscribe \u2014 without you manually onboarding them.' },
     { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const,
-      title: 'Built-In Sales Pipeline',
-      body: 'Track every prospect from first touch to closed deal. Follow-up queue, overdue alerts, outreach templates. Nothing falls through the cracks.' },
+      title: 'Convert interest into paying clients',
+      body: 'All prospects flow into your built-in pipeline.\n\nTrack leads, follow up automatically, and move them from first contact to active client. No extra CRM software required.' },
     { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: "Now — What Your Client Sees",
-      body: "Let's switch to the client view. This is the dashboard your client logs into — your agency name, your branding, your pricing." },
+      title: 'What your client sees',
+      body: 'This is the dashboard your client logs into.\n\nEverything is fully white-labeled with your agency\u2019s name and branding. To them, the AI receptionist platform belongs to your business \u2014 strengthening your relationship with every client.' },
     { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: 'Their AI Receptionist',
-      body: 'Your client gets a dedicated AI phone number, live call stats, and priority alerts. They see the value every time they log in — that keeps them paying.' },
+      title: 'The value they see every day',
+      body: 'Each client receives their own AI phone number.\n\nHere they can see exactly how many calls the AI answered, how many leads were captured, and how many opportunities were saved from missed calls. That visibility is what keeps the subscription valuable month after month.' },
     { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const,
-      title: 'They Customize, You Retain',
-      body: "Clients choose their AI's voice, set their greeting, add FAQs and services. The more they invest in setup, the stickier the subscription. That's your moat." },
+      title: 'They customize it for their business',
+      body: 'Clients personalize their AI assistant by choosing a voice, writing greetings, and adding services or FAQs.\n\nThe more the AI handles their calls and customer questions, the more essential it becomes to their business.' },
     { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const,
-      title: 'Ready to Launch?',
-      body: 'Your first client can be live in 60 seconds. No A2P registration, no per-client setup, no fulfillment overhead. Just recurring revenue.' },
+      title: 'Launch your AI service',
+      body: 'Create your agency account, set your pricing, and share your signup link.\n\nYour clients receive their own AI receptionist and dashboard instantly \u2014 and you start building recurring monthly revenue.' },
   ];
 
   const tourActive = tourStep >= 0 && tourStep < TOUR_STEPS.length;
