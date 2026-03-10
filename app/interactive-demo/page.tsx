@@ -141,7 +141,7 @@ function AgencyOverview() {
           <span className="text-xs text-emerald-400 cursor-pointer">View all →</span>
         </div>
         <div className="p-3 space-y-2">
-          {AGENCY.clients.slice(0, 4).map((c) => (
+          {AGENCY.clients.slice(0, 5).map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-lg border border-white/[0.04] bg-white/[0.01] p-3 hover:bg-white/[0.04] cursor-pointer transition-colors">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
@@ -149,7 +149,7 @@ function AgencyOverview() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-[#fafaf9]">{c.name}</p>
-                  <p className="text-xs text-[#fafaf9]/40 capitalize">{c.plan}</p>
+                  <p className="text-xs text-[#fafaf9]/40 capitalize">{c.plan} · {c.mrr}/mo</p>
                 </div>
               </div>
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -329,10 +329,10 @@ function AgencyAnalytics() {
           </div>
         ))}
       </div>
-      {/* Fake bar chart */}
+      {/* Bar chart */}
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
         <p className="text-xs text-[#fafaf9]/40 mb-4">Monthly Revenue</p>
-        <div className="flex items-end gap-2 h-28">
+        <div className="flex items-end gap-2 h-32">
           {[45, 52, 48, 61, 58, 70, 65, 80, 74, 88, 92, 100].map((h, i) => (
             <div key={i} className="flex-1 rounded-t-sm transition-all" style={{ height: `${h}%`, backgroundColor: i === 11 ? '#10b981' : 'rgba(16,185,129,0.25)' }} />
           ))}
@@ -516,7 +516,7 @@ function ClientOverview() {
           <span className="text-xs text-emerald-600 cursor-pointer">View all →</span>
         </div>
         <div className="p-3 space-y-2">
-          {CLIENT.calls.slice(0, 3).map((c) => (
+          {CLIENT.calls.slice(0, 4).map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3 hover:bg-gray-50 cursor-pointer transition-colors">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50">
@@ -683,9 +683,9 @@ function ClientSettings() {
   );
 }
 
-// ─── Dashboard Sandbox (Full) ─────────────────────────────────────────────────
+// ─── Demo Page ────────────────────────────────────────────────────────────────
 
-export function FullDashboardSandbox() {
+export default function DemoPage() {
   const [view, setView] = useState<'agency' | 'client'>('agency');
   const [agencyTab, setAgencyTab] = useState('dashboard');
   const [clientTab, setClientTab] = useState('dashboard');
@@ -733,146 +733,7 @@ export function FullDashboardSandbox() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      {/* Toggle */}
-      <div className="flex justify-center mb-6">
-        <div className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
-          <button
-            onClick={() => setView('agency')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-              view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
-            }`}
-          >
-            Agency Dashboard
-          </button>
-          <button
-            onClick={() => setView('client')}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-              view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
-            }`}
-          >
-            Client Dashboard
-          </button>
-        </div>
-      </div>
-
-      {/* Browser Frame */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
-        {/* Browser Chrome */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.02] border-b border-white/[0.06]">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-          </div>
-          <div className="flex-1 mx-4">
-            <div className="max-w-sm mx-auto bg-white/[0.04] rounded-lg px-4 py-1.5 text-xs text-center text-[#fafaf9]/40 font-mono">
-              {view === 'agency'
-                ? 'app.myvoiceaiconnect.com/agency/dashboard'
-                : 'app.aivoice.pro/dashboard'}
-            </div>
-          </div>
-          <div className="w-20" />
-        </div>
-
-        {/* Dashboard Layout */}
-        <div className="flex h-[540px]">
-          {view === 'agency' ? (
-            <>
-              {/* Agency Sidebar */}
-              <div className="w-52 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex flex-col">
-                <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-                    <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
-                  </div>
-                  <span className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</span>
-                </div>
-                <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
-                  {agencyNav.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setAgencyTab(item.id)}
-                      className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                        agencyTab === item.id
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'
-                      }`}
-                    >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  ))}
-                </nav>
-                <div className="p-3 border-t border-white/[0.06]">
-                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-2.5">
-                    <p className="text-[10px] text-emerald-400/70">Current Plan</p>
-                    <p className="text-xs font-semibold text-emerald-300">{AGENCY.plan}</p>
-                  </div>
-                </div>
-              </div>
-              {/* Agency Content */}
-              <div className="flex-1 overflow-y-auto bg-[#050505] text-[#fafaf9]">
-                {renderAgency()}
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Client Sidebar */}
-              <div className="w-52 border-r flex-shrink-0 flex flex-col" style={{ backgroundColor: 'rgb(17,78,60)', borderColor: 'rgba(255,255,255,0.08)' }}>
-                <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
-                    <Phone className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="font-medium text-sm text-white truncate">{CLIENT.name}</span>
-                </div>
-                <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
-                  {clientNav.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setClientTab(item.id)}
-                      className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
-                      style={{
-                        backgroundColor: clientTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent',
-                        color: clientTab === item.id ? '#ffffff' : 'rgba(255,255,255,0.65)',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (clientTab !== item.id)
-                          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (clientTab !== item.id)
-                          (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  ))}
-                </nav>
-                <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <div className="rounded-lg border p-2.5" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                    <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p>
-                    <p className="text-xs font-semibold text-white">{CLIENT.agencyName}</p>
-                  </div>
-                </div>
-              </div>
-              {/* Client Content */}
-              <div className="flex-1 overflow-y-auto">
-                {renderClient()}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Demo Page ────────────────────────────────────────────────────────────────
-
-export default function DemoPage() {
-  return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
       {/* Grain overlay */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -881,155 +742,157 @@ export default function DemoPage() {
         }}
       />
 
-      {/* Ambient glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-500/[0.04] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/[0.02] rounded-full blur-[128px]" />
+      {/* ── Top Bar ── */}
+      <div className="relative z-40 flex items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
+        {/* Left: Logo + badge */}
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5">
+              <WaveformIcon className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span>
+          </Link>
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            </span>
+            <span className="text-emerald-300/90">Interactive Demo</span>
+          </div>
+        </div>
+
+        {/* Center: View toggle */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex">
+          <div className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5">
+            <button
+              onClick={() => setView('agency')}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
+              }`}
+            >
+              Agency Dashboard
+            </button>
+            <button
+              onClick={() => setView('client')}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
+              }`}
+            >
+              Client Dashboard
+            </button>
+          </div>
+        </div>
+
+        {/* Right: CTAs */}
+        <div className="flex items-center gap-3">
+          <Link href="/agency/login" className="hidden sm:inline px-3 py-1.5 text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
+            Sign In
+          </Link>
+          <Link
+            href="/signup"
+            className="group inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10"
+          >
+            Start Free Trial
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-40 bg-[#050505]/90 backdrop-blur-2xl border-b border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-white/5">
-                <WaveformIcon className="w-5 h-5" />
-              </div>
-              <span className="text-base font-semibold tracking-tight">VoiceAI Connect</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/agency/login" className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10"
-              >
-                Start Free Trial
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="relative pt-32 pb-12">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent rounded-full blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            <span className="text-emerald-300/90">Interactive Platform Demo</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] mb-6">
-            See exactly what
-            <span className="block mt-1 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-              you're selling.
-            </span>
-          </h1>
-
-          <p className="text-lg text-[#fafaf9]/60 max-w-2xl mx-auto mb-10">
-            Explore both dashboards below — what you see as the agency owner,
-            and what your clients see under your brand.
-          </p>
-
-          {/* Demo phone CTA */}
-          <div className="inline-flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] px-6 py-4 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 flex-shrink-0">
-              <Phone className="h-6 w-6 text-emerald-400" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm text-[#fafaf9]/50">Want to hear the AI in action?</p>
-              <p className="text-xl font-bold tracking-wide font-mono text-[#fafaf9]">(404) 555-DEMO</p>
-            </div>
-            <div className="h-8 w-px bg-white/10" />
-            <p className="text-sm text-[#fafaf9]/50 max-w-[180px] text-left">
-              Call and the AI will become your receptionist live on the call.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
-            <Link
-              href="/signup"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10"
-            >
-              Start Free Trial
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <p className="text-sm text-[#fafaf9]/30">No credit card required</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Dashboard Sandbox */}
-      <section className="pb-20 relative">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/* Glow behind frame */}
-          <div className="absolute -inset-x-20 top-0 h-[400px] bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent blur-2xl pointer-events-none" />
-          <div className="relative">
-            <FullDashboardSandbox />
-          </div>
-        </div>
-      </section>
-
-      {/* Below the fold — context + supporting copy */}
-      <section className="py-20 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            {[
-              {
-                icon: Users,
-                color: '#10b981',
-                title: 'Agency Dashboard',
-                body: 'Manage all your clients, track revenue, work your leads pipeline, and send outreach — all from one place. Your brand, your pricing.',
-              },
-              {
-                icon: Phone,
-                color: '#f59e0b',
-                title: 'Demo Phone Line',
-                body: 'Call your demo number, tell the AI about a business, and it becomes their receptionist on the spot. The most effective sales tool you\'ll ever use.',
-              },
-              {
-                icon: Bot,
-                color: '#3b82f6',
-                title: 'Client Dashboard',
-                body: 'Your clients get a branded, polished dashboard to review calls, transcripts, and AI settings. They see your brand — not ours.',
-              },
-            ].map((card) => (
-              <div key={card.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl mb-4" style={{ backgroundColor: `${card.color}15` }}>
-                  <card.icon className="h-6 w-6" style={{ color: card.color }} />
+      {/* ── Dashboard fills remaining viewport ── */}
+      <div className="flex-1 flex overflow-hidden">
+        {view === 'agency' ? (
+          <>
+            {/* Agency Sidebar */}
+            <div className="w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex flex-col">
+              <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{card.title}</h3>
-                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{card.body}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p>
+                  <p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Final CTA */}
-          <div className="text-center">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4">
-              Ready to start your agency?
-            </h2>
-            <p className="text-[#fafaf9]/50 mb-8 max-w-xl mx-auto">
-              14-day free trial, no credit card required. You'll be set up in under 24 hours.
-            </p>
-            <Link
-              href="/signup"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10"
-            >
-              Start Free Trial — Free for 14 Days
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
-        </div>
-      </section>
+              <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
+                {agencyNav.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setAgencyTab(item.id)}
+                    className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                      agencyTab === item.id
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+              <div className="p-3 border-t border-white/[0.06]">
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3">
+                  <p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p>
+                  <p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p>
+                  <p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p>
+                </div>
+              </div>
+            </div>
+            {/* Agency Content */}
+            <div className="flex-1 overflow-y-auto bg-[#0a0a0a]">
+              {renderAgency()}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Client Sidebar */}
+            <div className="w-56 border-r flex-shrink-0 flex flex-col" style={{ backgroundColor: 'rgb(17,78,60)', borderColor: 'rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center gap-3 px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                  <Phone className="h-4 w-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-white truncate">{CLIENT.name}</p>
+                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>AI Receptionist Active</p>
+                </div>
+              </div>
+              <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">
+                {clientNav.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setClientTab(item.id)}
+                    className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: clientTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                      color: clientTab === item.id ? '#ffffff' : 'rgba(255,255,255,0.65)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (clientTab !== item.id)
+                        (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (clientTab !== item.id)
+                        (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+              <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                <div className="rounded-lg border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p>
+                  <p className="text-sm font-semibold text-white">{CLIENT.agencyName}</p>
+                </div>
+              </div>
+            </div>
+            {/* Client Content */}
+            <div className="flex-1 overflow-y-auto">
+              {renderClient()}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
