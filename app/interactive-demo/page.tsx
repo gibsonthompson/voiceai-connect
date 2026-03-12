@@ -919,11 +919,11 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
           const r = el.getBoundingClientRect();
           setRect(r);
           setReady(true);
-        }, 300);
+        }, 400);
       } else {
         setReady(true);
       }
-    }, 150);
+    }, 250);
 
     const measure = () => {
       const el = document.querySelector(`[data-tour="${step.target}"]`);
@@ -952,8 +952,9 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
 
   const getTooltipStyle = (): React.CSSProperties => {
     if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))` };
-    const maxW = 380; const tooltipH = 320; const gap = 16;
-    const vw = window.innerWidth; const vh = window.innerHeight; const margin = 16;
+    const maxW = Math.min(360, window.innerWidth - 32); const tooltipH = 280; const gap = 12;
+    const vw = window.innerWidth; const vh = window.innerHeight; const margin = 12;
+    const headerH = vw < 1024 ? 56 : 0;
     const spaceAbove = rect.top; const spaceBelow = vh - rect.bottom;
     const spaceRight = vw - rect.right; const spaceLeft = rect.left;
 
@@ -968,7 +969,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
 
     const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
     const clampX = (x: number) => Math.max(margin, Math.min(x, vw - maxW - margin));
-    const clampY = (y: number) => Math.max(margin, Math.min(y, vh - tooltipH - margin));
+    const clampY = (y: number) => Math.max(headerH + margin, Math.min(y, vh - tooltipH - margin));
     const visTop = Math.max(rect.top, 0); const visBottom = Math.min(rect.bottom, vh);
     const visMidY = (visTop + visBottom) / 2;
     const visMidX = Math.max(rect.left, 0) + Math.min(rect.width, vw) / 2;
@@ -1031,17 +1032,17 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
           onPointerMove={isCentered ? undefined : handlePointerMove}
           onPointerUp={isCentered ? undefined : handlePointerUp}
         >
-        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-6 sm:p-8 w-[90vw] max-w-md' : 'p-4 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.05)' }}>
+        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-5 sm:p-8 w-[90vw] max-w-md' : 'p-3 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.05)' }}>
 
           {/* Drag handle + step number */}
           {!isCentered && (
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <div className="flex items-center gap-2">
-                <div key={stepIndex} className="tour-number-pop flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-[#050505]">{stepIndex + 1}</div>
-                <div className="h-1 rounded-full overflow-hidden w-16 bg-white/[0.08]">
+                <div key={stepIndex} className="tour-number-pop flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-emerald-500 text-[9px] sm:text-[10px] font-bold text-[#050505]">{stepIndex + 1}</div>
+                <div className="h-1 rounded-full overflow-hidden w-12 sm:w-16 bg-white/[0.08]">
                   <div className="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-[10px] text-[#fafaf9]/25">{pct}%</span>
+                <span className="text-[9px] sm:text-[10px] text-[#fafaf9]/25">{pct}%</span>
               </div>
               <div className="w-8 h-1 rounded-full bg-white/[0.12] cursor-grab" />
             </div>
@@ -1049,44 +1050,44 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
 
           {/* Final CTA — animated icon */}
           {isCentered && (
-            <div className="flex justify-center mb-5">
-              <div className="tour-float h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center border border-emerald-500/20">
-                <Zap className="h-8 w-8 text-emerald-400" />
+            <div className="flex justify-center mb-4 sm:mb-5">
+              <div className="tour-float h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center border border-emerald-500/20">
+                <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400" />
               </div>
             </div>
           )}
 
-          <h3 className={`font-semibold text-[#fafaf9] mb-2 ${isCentered ? 'text-xl sm:text-2xl text-center' : 'text-base'}`}>{step.title}</h3>
+          <h3 className={`font-semibold text-[#fafaf9] mb-1.5 sm:mb-2 ${isCentered ? 'text-lg sm:text-2xl text-center' : 'text-sm sm:text-base'}`}>{step.title}</h3>
 
           {/* Shimmer divider */}
-          {!isCentered && <div className="h-px w-full rounded-full tour-shimmer-bar mb-3" />}
+          {!isCentered && <div className="h-px w-full rounded-full tour-shimmer-bar mb-2 sm:mb-3" />}
 
-          <p className={`text-sm leading-relaxed text-[#fafaf9]/60 whitespace-pre-line ${isCentered ? 'text-center mb-6' : 'mb-4'}`}>{step.body}</p>
+          <p className={`text-xs sm:text-sm leading-relaxed text-[#fafaf9]/60 whitespace-pre-line ${isCentered ? 'text-center mb-5 sm:mb-6' : 'mb-3 sm:mb-4'}`}>{step.body}</p>
 
           {!isCentered ? (
             <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 {Array.from({ length: totalSteps }).map((_, i) => (
                   <div key={i} className="rounded-full transition-all duration-300" style={{
-                    width: i === stepIndex ? 18 : 6, height: 6,
+                    width: i === stepIndex ? 14 : 4, height: 4,
                     backgroundColor: i === stepIndex ? '#10b981' : i < stepIndex ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)',
                   }} />
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={onPause} className="px-3 py-1.5 text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Pause</button>
-                {stepIndex > 0 && <button onClick={onPrev} className="px-3 py-1.5 text-xs rounded-lg border border-white/[0.06] text-[#fafaf9]/50 hover:text-[#fafaf9] hover:border-white/[0.12] transition-all">Back</button>}
-                <button onClick={onNext} className="group px-4 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button onClick={onPause} className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-[#fafaf9]/30 hover:text-[#fafaf9]/60 transition-colors">Pause</button>
+                {stepIndex > 0 && <button onClick={onPrev} className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs rounded-lg border border-white/[0.06] text-[#fafaf9]/50 hover:text-[#fafaf9] hover:border-white/[0.12] transition-all">Back</button>}
+                <button onClick={onNext} className="group px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-medium rounded-lg bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all flex items-center gap-1">
                   {stepIndex === totalSteps - 2 ? 'Finish' : 'Next'}
-                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-                <Link href="/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10 w-full sm:w-auto">Start Free Trial<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></Link>
-                <Link href="/#pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-6 py-3 text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 w-full">
+                <Link href="/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-[#050505] hover:bg-[#fafaf9] transition-all hover:shadow-lg hover:shadow-white/10 w-full sm:w-auto">Start Free Trial<ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:translate-x-0.5" /></Link>
+                <Link href="/#pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
               </div>
               <button onClick={onPause} className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mt-1">
                 or explore the dashboard →
@@ -1213,10 +1214,10 @@ export default function DemoPage() {
           ) : (
             <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-5 w-5 text-white" /></div>
           )}
-          {/* Center toggle — plenty of room now */}
-          <div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
-            <button onClick={() => { setView('agency'); setSidebarOpen(false); }} className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Agency</button>
-            <button onClick={() => { setView('client'); setSidebarOpen(false); }} className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Client</button>
+          {/* Center toggle — thin buttons, spread apart */}
+          <div data-tour="view-toggle" className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-1 py-0.5">
+            <button onClick={() => { setView('agency'); setSidebarOpen(false); }} className={`px-3 rounded-full text-[10px] font-medium transition-all leading-5 ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/40'}`}>Agency</button>
+            <button onClick={() => { setView('client'); setSidebarOpen(false); }} className={`px-3 rounded-full text-[10px] font-medium transition-all leading-5 ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/40'}`}>Client</button>
           </div>
           {/* Hamburger */}
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1.5 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : 'rgba(250,250,249,0.7)' }}>
