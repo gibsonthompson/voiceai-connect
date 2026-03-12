@@ -1204,24 +1204,23 @@ export default function DemoPage() {
   return (
     <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      {/* Mobile Header — matches real agency/client layout exactly */}
+      {/* Mobile Header — clean: logo icon + toggle + hamburger */}
       <div className="sticky z-30 lg:hidden" style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', paddingTop: 'env(safe-area-inset-top)', top: 0 }}>
-        <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-3">
-            {view === 'agency' ? (
-              <><div className="flex items-center justify-center rounded-xl" style={{ height: 40, width: 40, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}><WaveformIcon className="h-6 w-6" color="#10b981" /></div><span className="font-semibold text-lg truncate max-w-[140px] text-[#fafaf9]">{AGENCY.name}</span></>
-            ) : (
-              <><div className="flex items-center justify-center rounded-xl" style={{ height: 40, width: 40, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-6 w-6 text-white" /></div><span className="font-semibold text-lg truncate max-w-[140px] text-white">{CLIENT.name}</span></>
-            )}
+        <header className="flex items-center justify-between h-14 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Logo icon only — no name on mobile */}
+          {view === 'agency' ? (
+            <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}><WaveformIcon className="h-5 w-5" color="#10b981" /></div>
+          ) : (
+            <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-5 w-5 text-white" /></div>
+          )}
+          {/* Center toggle — plenty of room now */}
+          <div data-tour="view-toggle" className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
+            <button onClick={() => { setView('agency'); setSidebarOpen(false); }} className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Agency</button>
+            <button onClick={() => { setView('client'); setSidebarOpen(false); }} className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Client</button>
           </div>
-          {/* Center toggle */}
-          <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
-            <button onClick={() => { setView('agency'); setSidebarOpen(false); }} className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Agency</button>
-            <button onClick={() => { setView('client'); setSidebarOpen(false); }} className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/50'}`}>Client</button>
-          </div>
-          {/* Hamburger — exactly matches real layout: w-11 h-11, Menu h-7 w-7 */}
-          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>
-            <Menu className="h-7 w-7" />
+          {/* Hamburger */}
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1.5 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : 'rgba(250,250,249,0.7)' }}>
+            <Menu className="h-6 w-6" />
           </button>
         </header>
       </div>
@@ -1247,10 +1246,10 @@ export default function DemoPage() {
         style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', borderRight: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)', paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Drawer Header — "Menu" + X close, matches real layout */}
-        <div className="flex items-center justify-between h-16 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
-          <span className="font-semibold text-lg" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>Menu</span>
-          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>
-            <X className="h-7 w-7" />
+        <div className="flex items-center justify-between h-14 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
+          <span className="font-semibold text-base" style={{ color: view === 'client' ? '#ffffff' : '#fafaf9' }}>Menu</span>
+          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-10 h-10 -mr-1.5 rounded-xl" style={{ color: view === 'client' ? '#ffffff' : 'rgba(250,250,249,0.7)' }}>
+            <X className="h-6 w-6" />
           </button>
         </div>
 
