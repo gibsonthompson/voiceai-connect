@@ -1095,7 +1095,7 @@ function AgencySignupForm() {
               {[
                 { icon: Zap, text: 'Full platform access' },
                 { icon: Shield, text: 'White-label branding' },
-                { icon: Clock, text: 'Up to 5 test clients' },
+                { icon: Clock, text: 'No setup or tech required' },
                 { icon: Sparkles, text: 'Cancel anytime' },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-3 text-sm text-[#fafaf9]/70">
