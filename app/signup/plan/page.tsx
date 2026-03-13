@@ -753,7 +753,8 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
 
 // ============================================================================
 // AGENCY PLAN SELECTION (for platform domain) - ALWAYS DARK THEME
-// UPDATED: No credit card required — calls /api/agency/start-trial instead of Stripe
+// No credit card required — calls /api/agency/start-trial
+// FIX: Redirect to /signup/success for proper confirmation instead of /agency/dashboard
 // ============================================================================
 function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
   const router = useRouter();
@@ -787,8 +788,8 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
         throw new Error(data.error || 'Failed to start trial');
       }
 
-      // Trial started — redirect to dashboard
-      window.location.href = '/agency/dashboard';
+      // Trial started — redirect to success page for proper confirmation
+      window.location.href = '/signup/success';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setSelectedPlan(null);
