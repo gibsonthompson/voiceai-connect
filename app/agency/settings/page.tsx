@@ -108,7 +108,7 @@ function adjustColorBrightness(hex: string, percent: number): string {
 function detectLogoBackground(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D
-): { r: number; g: number; b: number } {
+): { r: number; g: number; b: number; isTransparent: boolean } {
   const w = canvas.width;
   const h = canvas.height;
   const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
@@ -125,7 +125,7 @@ function detectLogoBackground(
 
   const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
   if (transparentCount > edgePixels.length * 0.5) {
-    return { r: 0, g: 0, b: 0 };
+    return { r: 0, g: 0, b: 0, isTransparent: true };
   }
 
   let r = 0, g = 0, b = 0, count = 0;
@@ -134,11 +134,19 @@ function detectLogoBackground(
   });
 
   return count > 0
-    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) }
-    : { r: 255, g: 255, b: 255 };
+    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false }
+    : { r: 255, g: 255, b: 255, isTransparent: false };
 }
 
-async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
+/**
+ * Extract brand colors from logo AND detect background for theme selection.
+ */
+async function extractColorsFromImage(imageUrl: string): Promise<{
+  primary: string; secondary: string; accent: string;
+  logoBgColor: string; suggestedTheme: 'light' | 'dark';
+}> {
+  const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const };
+
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
@@ -146,7 +154,7 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+      if (!ctx) { resolve(fallback); return; }
 
       const size = 150;
       canvas.width = size;
@@ -154,6 +162,14 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
       ctx.drawImage(img, 0, 0, size, size);
 
       const bg = detectLogoBackground(canvas, ctx);
+      const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
+
+      let suggestedTheme: 'light' | 'dark' = 'dark';
+      if (!bg.isTransparent) {
+        const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255;
+        suggestedTheme = luminance > 0.5 ? 'light' : 'dark';
+      }
+
       const pixels = ctx.getImageData(0, 0, size, size).data;
 
       const colorData: Record<string, {
@@ -165,13 +181,11 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
 
-        // Skip pixels too close to detected background
         const bgDist = Math.sqrt(
           Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
         );
         if (bgDist < 50) continue;
 
-        // Bucket by 25
         const br = Math.round(r / 25) * 25;
         const bg2 = Math.round(g / 25) * 25;
         const bb = Math.round(b / 25) * 25;
@@ -183,7 +197,6 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
           ? (max - min) / (2 - max - min)
           : (max - min) / (max + min);
 
-        // Skip near-black, near-white, and grays
         if (lightness < 0.15 || lightness > 0.65) continue;
         if (saturation < 0.25) continue;
 
@@ -194,22 +207,21 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
         colorData[key].count++;
       }
 
-      // Sort by saturation * log(count) — most vibrant AND common colors win
       const colors = Object.values(colorData)
         .filter(c => c.count >= 5)
         .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
         .slice(0, 6)
         .map(c => rgbToHex(c.r, c.g, c.b));
 
-      if (!colors.length) { resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' }); return; }
+      if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; }
 
       const primary = colors[0];
       const secondary = colors[1] || adjustColorBrightness(primary, -25);
       const accent = colors[2] || adjustColorBrightness(primary, 30);
-      resolve({ primary, secondary, accent });
+      resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme });
     };
 
-    img.onerror = () => resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+    img.onerror = () => resolve(fallback);
     img.src = imageUrl;
   });
 }
@@ -284,6 +296,10 @@ function AgencySettingsContent() {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  // Theme detection from logo upload
+  const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null);
+  const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -406,9 +422,13 @@ function AgencySettingsContent() {
         setLogoUrl(dataUrl);
         setExtractingColors(true);
         try {
-          const colors = await extractColorsFromImage(dataUrl);
-          setExtractedColors(colors);
-          setBrandColors(colors);
+          const result = await extractColorsFromImage(dataUrl);
+          setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
+          setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
+          // Store detected theme and background color from logo
+          setDetectedWebsiteTheme(result.suggestedTheme);
+          setDetectedLogoBgColor(result.logoBgColor);
+          console.log(`🎨 Logo analyzed: theme=${result.suggestedTheme}, bg=${result.logoBgColor}`);
         } catch (err) { console.error('Color extraction failed:', err); }
         finally { setExtractingColors(false); }
       };
@@ -442,6 +462,13 @@ function AgencySettingsContent() {
           payload.secondary_color = brandColors.secondary;
           payload.accent_color = brandColors.accent;
         }
+        // Include auto-detected theme and logo background color when a new logo was uploaded
+        if (detectedWebsiteTheme) {
+          payload.website_theme = detectedWebsiteTheme;
+        }
+        if (detectedLogoBgColor) {
+          payload.logo_background_color = detectedLogoBgColor;
+        }
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
@@ -461,6 +488,9 @@ function AgencySettingsContent() {
       if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); }
       await refreshAgency();
       setSaved(true);
+      // Reset detection state after successful save
+      setDetectedWebsiteTheme(null);
+      setDetectedLogoBgColor(null);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); }
     finally { setSaving(false); }
@@ -709,7 +739,16 @@ function AgencySettingsContent() {
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs mt-3" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p>
+                      {/* Show detected theme */}
+                      {detectedWebsiteTheme && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} />
+                          <p className="text-xs" style={{ color: theme.textMuted }}>
+                            Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span> (from logo background)
+                          </p>
+                        </div>
+                      )}
+                      <p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p>
                     </div>
                   )}
                 </div>

@@ -56,7 +56,7 @@ function adjustColorBrightness(hex: string, percent: number): string {
 function detectLogoBackground(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D
-): { r: number; g: number; b: number } {
+): { r: number; g: number; b: number; isTransparent: boolean } {
   const w = canvas.width;
   const h = canvas.height;
   const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
@@ -73,8 +73,8 @@ function detectLogoBackground(
 
   const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
   if (transparentCount > edgePixels.length * 0.5) {
-    // Transparent background — treat as black so nothing gets excluded
-    return { r: 0, g: 0, b: 0 };
+    // Transparent background — return black so nothing gets excluded from color extraction
+    return { r: 0, g: 0, b: 0, isTransparent: true };
   }
 
   let r = 0, g = 0, b = 0, count = 0;
@@ -85,11 +85,20 @@ function detectLogoBackground(
   });
 
   return count > 0
-    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) }
-    : { r: 255, g: 255, b: 255 };
+    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false }
+    : { r: 255, g: 255, b: 255, isTransparent: false };
 }
 
-async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string }> {
+/**
+ * Extract brand colors from logo AND detect background for theme selection.
+ * Returns colors + logoBgColor hex + suggested light/dark theme.
+ */
+async function extractColorsFromImage(imageUrl: string): Promise<{
+  primary: string; secondary: string; accent: string;
+  logoBgColor: string; suggestedTheme: 'light' | 'dark';
+}> {
+  const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const };
+
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
@@ -98,7 +107,7 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+        resolve(fallback);
         return;
       }
 
@@ -107,7 +116,19 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
       canvas.height = size;
       ctx.drawImage(img, 0, 0, size, size);
 
+      // Detect logo background — used for color exclusion AND theme detection
       const bg = detectLogoBackground(canvas, ctx);
+      const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
+
+      // Determine theme from background luminance
+      // Transparent logos default to dark theme
+      let suggestedTheme: 'light' | 'dark' = 'dark';
+      if (!bg.isTransparent) {
+        const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255;
+        suggestedTheme = luminance > 0.5 ? 'light' : 'dark';
+      }
+
+      // Extract vibrant colors (excluding background)
       const pixels = ctx.getImageData(0, 0, size, size).data;
 
       const colorData: Record<string, {
@@ -156,18 +177,18 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
         .map(c => rgbToHex(c.r, c.g, c.b));
 
       if (!colors.length) {
-        resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+        resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme });
         return;
       }
 
       const primary = colors[0];
       const secondary = colors[1] || adjustColorBrightness(primary, -25);
       const accent = colors[2] || adjustColorBrightness(primary, 30);
-      resolve({ primary, secondary, accent });
+      resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme });
     };
 
     img.onerror = () => {
-      resolve({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+      resolve(fallback);
     };
 
     img.src = imageUrl;
@@ -189,7 +210,7 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS — Stripe Connect removed
+// STEP DEFINITIONS
 // Agency → Pricing → Logo → Colors → Password → Complete
 // ============================================================================
 const steps = [
@@ -290,6 +311,10 @@ function OnboardingContent() {
     secondary: '#059669',
     accent: '#34d399',
   });
+
+  // Theme detection from logo background
+  const [detectedTheme, setDetectedTheme] = useState<'light' | 'dark'>('dark');
+  const [logoBgColor, setLogoBgColor] = useState<string | null>(null);
   
   const [pricing, setPricing] = useState({
     starter: 49,
@@ -341,7 +366,6 @@ function OnboardingContent() {
         if (!data.agency.name || data.agency.name.includes("'s Agency") || data.agency.name === 'My Agency') {
           setCurrentStep(1);
         } else {
-          // Cap at 6 (was 7 before Stripe Connect removal)
           setCurrentStep(Math.min(data.agency.onboarding_step || 1, 6));
         }
         
@@ -359,6 +383,13 @@ function OnboardingContent() {
             secondary: data.agency.secondary_color || '#059669',
             accent: data.agency.accent_color || '#34d399',
           });
+        }
+        // Restore theme detection from existing data
+        if (data.agency.website_theme) {
+          setDetectedTheme(data.agency.website_theme === 'light' ? 'light' : 'dark');
+        }
+        if (data.agency.logo_background_color) {
+          setLogoBgColor(data.agency.logo_background_color);
         }
         if (data.agency.price_starter) {
           setPricing({
@@ -387,8 +418,12 @@ function OnboardingContent() {
         
         setExtractingColors(true);
         try {
-          const extractedColors = await extractColorsFromImage(dataUrl);
-          setColors(extractedColors);
+          const result = await extractColorsFromImage(dataUrl);
+          setColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
+          // Store detected theme and background color
+          setDetectedTheme(result.suggestedTheme);
+          setLogoBgColor(result.logoBgColor);
+          console.log(`🎨 Logo analyzed: theme=${result.suggestedTheme}, bg=${result.logoBgColor}`);
         } catch (err) {
           console.error('Color extraction failed:', err);
         } finally {
@@ -466,13 +501,18 @@ function OnboardingContent() {
         };
         break;
       case 3: // Logo
-        stepData = { logo_url: logoPreview || logoUrl };
+        stepData = { 
+          logo_url: logoPreview || logoUrl,
+          logo_background_color: logoBgColor || null,
+        };
         break;
-      case 4: // Colors
+      case 4: // Colors + theme
         stepData = {
           primary_color: colors.primary,
           secondary_color: colors.secondary,
           accent_color: colors.accent,
+          website_theme: detectedTheme,
+          logo_background_color: logoBgColor || null,
         };
         break;
     }
@@ -705,6 +745,10 @@ function OnboardingContent() {
                       <div key={i} className="w-10 h-10 rounded-xl border border-white/10 shadow-lg" style={{ backgroundColor: color }} title={['Primary', 'Secondary', 'Accent'][i]} />
                     ))}
                   </div>
+                  {/* Show detected theme */}
+                  <p className="text-xs text-center mt-3 text-[#fafaf9]/40">
+                    Detected theme: <span className="text-emerald-400 font-medium">{detectedTheme === 'light' ? 'Light' : 'Dark'}</span>
+                  </p>
                 </div>
               )}
             </div>
@@ -725,8 +769,10 @@ function OnboardingContent() {
                   onClick={async () => {
                     setExtractingColors(true);
                     try {
-                      const extractedColors = await extractColorsFromImage(logoPreview || logoUrl);
-                      setColors(extractedColors);
+                      const result = await extractColorsFromImage(logoPreview || logoUrl);
+                      setColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
+                      setDetectedTheme(result.suggestedTheme);
+                      setLogoBgColor(result.logoBgColor);
                     } catch (err) {
                       console.error('Color extraction failed:', err);
                     } finally {
@@ -772,6 +818,18 @@ function OnboardingContent() {
               ))}
             </div>
 
+            {/* Theme indicator */}
+            <div className="max-w-md mx-auto p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Dashboard Theme</p>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg border ${detectedTheme === 'light' ? 'bg-white border-gray-200' : 'bg-[#050505] border-white/10'}`} />
+                <div>
+                  <p className="text-sm font-medium text-[#fafaf9]">{detectedTheme === 'light' ? 'Light Mode' : 'Dark Mode'}</p>
+                  <p className="text-xs text-[#fafaf9]/40">Auto-detected from your logo background</p>
+                </div>
+              </div>
+            </div>
+
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] max-w-md mx-auto">
               <p className="text-xs text-[#fafaf9]/40 mb-4 uppercase tracking-wider">Preview</p>
               <div className="flex flex-wrap gap-3">
@@ -783,7 +841,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 5: // Password (was step 6)
+      case 5: // Password
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -810,7 +868,7 @@ function OnboardingContent() {
           </div>
         );
 
-      case 6: // Complete (was step 7)
+      case 6: // Complete
         return (
           <div className="space-y-8 text-center">
             <div className="relative">
