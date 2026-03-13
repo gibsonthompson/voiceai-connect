@@ -391,10 +391,38 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     setLoading(true);
     setError('');
 
-    // Basic phone validation (7-15 digits for international support)
+    // Manual validation (noValidate suppresses browser tooltips)
+    if (!formData.businessName.trim()) {
+      setError('Please enter your business name');
+      setLoading(false);
+      return;
+    }
+    if (!formData.ownerName.trim()) {
+      setError('Please enter your name');
+      setLoading(false);
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Phone validation (7-15 digits for international support)
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (phoneDigits.length < 7 || phoneDigits.length > 15) {
       setError('Please enter a valid phone number');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.city.trim()) {
+      setError('Please enter your city');
+      setLoading(false);
+      return;
+    }
+    if (!formData.state.trim()) {
+      setError('Please select your state or region');
       setLoading(false);
       return;
     }
@@ -580,7 +608,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
               <ThemedFormInput
                 label="Business Name"
                 name="businessName"
@@ -853,6 +881,28 @@ function AgencySignupForm() {
     setLoading(true);
     setError('');
 
+    // Manual validation (noValidate suppresses browser tooltips)
+    if (!formData.firstName.trim()) {
+      setError('Please enter your first name');
+      setLoading(false);
+      return;
+    }
+    if (!formData.lastName.trim()) {
+      setError('Please enter your last name');
+      setLoading(false);
+      return;
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+    if (!formData.country) {
+      setError('Please select your country');
+      setLoading(false);
+      return;
+    }
+
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/agency/signup`, {
@@ -989,7 +1039,7 @@ function AgencySignupForm() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <ThemedFormInput
                   label="First Name"
