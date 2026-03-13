@@ -941,7 +941,13 @@ function AgencySettingsContent() {
                         <Receipt className="h-4 w-4" style={{ color: theme.infoText }} />
                         <p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p>
                       </div>
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Your card will be charged automatically on {agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.</p>
+                      {/* FIX: Distinguish card-on-file trials from no-card trials */}
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                        {agency?.stripe_subscription_id
+                          ? `Your card will be charged automatically on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.`
+                          : `Subscribe before ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'} to keep access.`
+                        }
+                      </p>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -977,8 +983,20 @@ function AgencySettingsContent() {
               </div>
             )}
 
+            {/* EDIT 2: Added international number requirement note above BYOTSettings */}
             {activeTab === 'twilio' && (
-              <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
+              <div className="space-y-4 sm:space-y-6">
+                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                  <Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p>
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
+                      Phone numbers for the US and Canada are provisioned automatically. If you or your clients need numbers outside the US/Canada (UK, Australia, Europe, etc.), you&apos;ll need to connect your own Twilio account below. Twilio supports phone numbers in 100+ countries.
+                    </p>
+                  </div>
+                </div>
+                <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
+              </div>
             )}
 
             {activeTab === 'demo' && (
