@@ -605,7 +605,7 @@ function OnboardingContent() {
 
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
-                  How did you hear about us? <span className="text-red-400">*</span>
+                  How did you hear about us?
                 </label>
                 <div className="relative">
                   <select

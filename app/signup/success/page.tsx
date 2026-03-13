@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Phone, Loader2, CheckCircle2, ArrowRight, Copy, Check, 
   Sparkles, MessageSquare, LayoutDashboard, PhoneForwarded,
-  PartyPopper, Rocket
+  PartyPopper, Rocket, CreditCard, Globe, Users
 } from 'lucide-react';
 
 // ============================================================================
@@ -347,32 +347,61 @@ function ClientSuccessPage({ agency }: { agency: Agency | null }) {
 // ============================================================================
 function AgencySuccessPage() {
   const [showConfetti, setShowConfetti] = useState(true);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Try to get agency info from localStorage for the signup link
+  const getAgencySlug = (): string | null => {
+    try {
+      const stored = localStorage.getItem('agency');
+      if (stored) {
+        const data = JSON.parse(stored);
+        return data.slug || null;
+      }
+    } catch {}
+    return null;
+  };
+
+  const agencySlug = getAgencySlug();
+  const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+  const signupLink = agencySlug ? `https://${agencySlug}.${platformDomain}/get-started` : null;
+
+  const handleCopyLink = () => {
+    if (signupLink) {
+      navigator.clipboard.writeText(signupLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
   const nextSteps = [
     {
-      icon: Sparkles,
-      title: 'Set up your branding',
-      description: 'Upload logo and customize colors',
-    },
-    {
-      icon: Phone,
-      title: 'Configure pricing',
-      description: 'Set what you charge clients',
-    },
-    {
       icon: LayoutDashboard,
-      title: 'Connect Stripe',
-      description: 'Start receiving payments directly',
+      title: 'Explore your dashboard',
+      description: 'See your clients, analytics, and settings all in one place',
+      href: '/agency/dashboard',
     },
     {
-      icon: Rocket,
-      title: 'Share your link',
-      description: 'Start acquiring clients',
+      icon: CreditCard,
+      title: 'Connect Stripe',
+      description: 'Start receiving client payments directly to your account',
+      href: '/agency/settings?tab=payments',
+    },
+    {
+      icon: Users,
+      title: 'Add your first client',
+      description: 'Onboard a client or share your signup link',
+      href: '/agency/clients',
+    },
+    {
+      icon: Globe,
+      title: 'Set up your marketing site',
+      description: 'Customize your landing page and connect a domain',
+      href: '/agency/marketing',
     },
   ];
 
@@ -389,7 +418,6 @@ function AgencySuccessPage() {
       {/* Ambient glow effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.1] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-amber-500/[0.05] rounded-full blur-[128px]" />
       </div>
 
       {/* Confetti */}
@@ -431,24 +459,50 @@ function AgencySuccessPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
               <Rocket className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Account Created</span>
+              <span className="text-emerald-300/90">Your trial is active</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">
               Welcome to VoiceAI Connect!
             </h1>
             <p className="text-[#fafaf9]/50 mb-6 sm:mb-8">
-              Your agency account is ready. Let&apos;s get you set up for success.
+              Your 14-day free trial has started. Here&apos;s how to get the most out of it.
             </p>
+
+            {/* Signup Link (if available) */}
+            {signupLink && (
+              <div className="mb-6 sm:mb-8">
+                <p className="text-sm text-[#fafaf9]/50 mb-3">Your Client Signup Link</p>
+                <div className="flex items-center gap-2 rounded-xl px-4 py-3 border border-emerald-500/20 bg-emerald-500/[0.05]">
+                  <Globe className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-sm text-emerald-300 truncate flex-1 text-left font-mono">{signupLink}</span>
+                  <button 
+                    onClick={handleCopyLink}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                    title="Copy link"
+                  >
+                    {copiedLink ? (
+                      <Check className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-[#fafaf9]/40 hover:text-[#fafaf9]/70" />
+                    )}
+                  </button>
+                </div>
+                {copiedLink && (
+                  <p className="text-xs text-emerald-400 mt-1.5">Copied!</p>
+                )}
+              </div>
+            )}
 
             {/* Next Steps */}
             <div className="text-left mb-6 sm:mb-8">
-              <h3 className="font-medium mb-4 text-center sm:text-left">Getting Started</h3>
+              <h3 className="font-medium mb-4 text-center sm:text-left">Get started in 4 steps</h3>
               <div className="space-y-3">
                 {nextSteps.map((step, i) => (
-                  <div 
-                    key={i} 
-                    className="flex items-start gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]"
+                  <a 
+                    key={i}
+                    href={step.href}
+                    className="flex items-start gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all group"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
                       <step.icon className="h-5 w-5 text-emerald-400" />
@@ -462,7 +516,8 @@ function AgencySuccessPage() {
                       </div>
                       <p className="text-sm text-[#fafaf9]/50">{step.description}</p>
                     </div>
-                  </div>
+                    <ArrowRight className="h-4 w-4 text-[#fafaf9]/20 group-hover:text-[#fafaf9]/40 mt-3 transition-colors flex-shrink-0" />
+                  </a>
                 ))}
               </div>
             </div>
@@ -478,19 +533,13 @@ function AgencySuccessPage() {
           </div>
 
           {/* Support note */}
-          <div className="mt-6 text-center space-y-2">
+          <div className="mt-6 text-center">
             <p className="text-sm text-[#fafaf9]/40">
-              Need help getting started?
+              Questions? Reach out anytime from{' '}
+              <a href="/agency/settings?tab=feedback" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
+                Settings → Feedback
+              </a>
             </p>
-            <div className="flex items-center justify-center gap-4 text-sm">
-              <Link href="/docs" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
-                View Guide
-              </Link>
-              <span className="text-[#fafaf9]/20">•</span>
-              <Link href="/support" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">
-                Contact Support
-              </Link>
-            </div>
           </div>
         </div>
       </main>

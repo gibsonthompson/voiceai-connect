@@ -337,26 +337,32 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // ============================================================================
   // TRIAL EXPIRED GATE — No-card trial ended, must subscribe
+  // FIX: Uses /api/agency/portal which handles both cases:
+  //   - Has stripe_customer_id → opens Stripe billing portal
+  //   - No stripe_customer_id (no-card trial) → creates customer + checkout (no trial)
   // ============================================================================
   if (agencyTrialExpiredNoCard) {
     const handleSubscribeNow = async () => {
       setSubscribeLoading(true);
       try {
-        const response = await fetch('/api/stripe/checkout', {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${backendUrl}/api/agency/portal`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            agencyId: agency?.id, 
-            planType: agency?.plan_type || 'starter',
-            skipTrial: true,
-          }),
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ agency_id: agency?.id }),
         });
         const data = await response.json();
         if (data.url) {
           window.location.href = data.url;
+        } else {
+          console.error('No URL returned from portal/checkout:', data);
         }
       } catch (err) {
-        console.error('Failed to create checkout:', err);
+        console.error('Failed to create billing session:', err);
       }
       setSubscribeLoading(false);
     };

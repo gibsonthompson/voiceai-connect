@@ -516,7 +516,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
+    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
       {/* Premium grain overlay - dark only */}
       {isDark && (
         <div 
@@ -941,7 +941,7 @@ function AgencySignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.9 }}>
       {/* Premium grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
