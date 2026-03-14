@@ -9,7 +9,7 @@ import {
   Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
   UtensilsCrossed, Dumbbell, ShoppingBag, Car, X, Copy, Info,
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
-  BookOpen, RotateCcw
+  BookOpen, Plus, Trash2, Globe, HelpCircle, FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -261,13 +261,15 @@ export default function AILabPage() {
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [copiedCompliance, setCopiedCompliance] = useState(false);
 
-  const [kbContent, setKbContent] = useState('');
-  const [kbOriginal, setKbOriginal] = useState('');
   const [kbLoading, setKbLoading] = useState(false);
   const [kbSaving, setKbSaving] = useState(false);
   const [kbExpanded, setKbExpanded] = useState(false);
-  const [kbIndustry, setKbIndustry] = useState('');
-  const [kbSource, setKbSource] = useState('');
+  const [kbWebsite, setKbWebsite] = useState('');
+  const [kbServices, setKbServices] = useState<{id:string;name:string;price:string;description:string}[]>([{id:'1',name:'',price:'',description:''}]);
+  const [kbFaqs, setKbFaqs] = useState<{id:string;question:string;answer:string}[]>([{id:'1',question:'',answer:''}]);
+  const [kbAdditionalInfo, setKbAdditionalInfo] = useState('');
+  const [kbHours, setKbHours] = useState('');
+  const [kbLastUpdated, setKbLastUpdated] = useState<string | null>(null);
 
   const vapiRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -344,7 +346,7 @@ export default function AILabPage() {
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
     setConfigSaved(false); setConfigError(''); setPromptExpanded(false);
-    setKbContent(''); setKbOriginal(''); setKbExpanded(false); setKbIndustry(''); setKbSource('');
+    setKbExpanded(false); setKbWebsite(''); setKbServices([{id:'1',name:'',price:'',description:''}]); setKbFaqs([{id:'1',question:'',answer:''}]); setKbAdditionalInfo(''); setKbHours(''); setKbLastUpdated(null);
     setNotifPhone(client.owner_phone || ''); setOrigPhone(client.owner_phone || '');
     setPhoneSwapped(false); setPhoneEditing(false);
     setEditCallMode((client.call_mode as 'primary' | 'secondary') || 'primary');
@@ -411,51 +413,102 @@ export default function AILabPage() {
 
   const copyCompliance = () => { navigator.clipboard.writeText(COMPLIANCE_GREETING); setCopiedCompliance(true); setTimeout(() => setCopiedCompliance(false), 2000); };
 
-  // ---- Knowledge Base ----
+  // ---- Knowledge Base (structured — same data as client dashboard) ----
   const fetchKB = async (clientId: string) => {
-    setKbLoading(true); setKbContent(''); setKbOriginal(''); setKbIndustry(''); setKbSource('');
+    setKbLoading(true);
     try {
-      const r = await fetch(`${api}/api/agency/${agency!.id}/ai-playground/clients/${clientId}/knowledge-base`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const r = await fetch(`${api}/api/client/${clientId}/knowledge-base`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (r.ok) {
         const d = await r.json();
-        setKbContent(d.content || ''); setKbOriginal(d.content || ''); setKbIndustry(d.industry || ''); setKbSource(d.source || '');
-        addEvent('kb-loaded', `KB loaded (${d.source})`, 'info');
+        if (d.success) {
+          setKbWebsite(d.websiteUrl || '');
+          setKbLastUpdated(d.updated_at || null);
+          const data = d.data || {};
+          if (data.services) parseKbServices(data.services);
+          if (data.faqs) parseKbFaqs(data.faqs);
+          setKbHours(data.businessHours || '');
+          setKbAdditionalInfo(data.additionalInfo || '');
+          addEvent('kb-loaded', 'Knowledge base loaded', 'info');
+        }
       }
     } catch { addEvent('kb-error', 'Failed to load KB', 'error'); }
     finally { setKbLoading(false); }
   };
 
+  const parseKbServices = (text: string) => {
+    const lines = text.split('\n').filter((l: string) => l.trim());
+    const parsed: {id:string;name:string;price:string;description:string}[] = [];
+    lines.forEach((line: string, i: number) => {
+      const clean = line.trim().replace(/^-\s*/, '');
+      if (!clean) return;
+      const parts = clean.split(/\s+-\s+/);
+      let name = '', price = '', desc: string[] = [];
+      parts.forEach((p: string, j: number) => {
+        const t = p.trim();
+        if (j === 0) name = t;
+        else if (t.startsWith('$')) price = t;
+        else if (t) desc.push(t);
+      });
+      if (name) parsed.push({ id: `${i + 1}`, name, price, description: desc.join(' - ') });
+    });
+    setKbServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
+  };
+
+  const parseKbFaqs = (text: string) => {
+    const parsed: {id:string;question:string;answer:string}[] = [];
+    const lines = text.split('\n');
+    let q = '', a = '';
+    lines.forEach((line: string) => {
+      if (line.trim().startsWith('Q:')) {
+        if (q && a) parsed.push({ id: `${parsed.length + 1}`, question: q, answer: a });
+        q = line.replace(/^Q:\s*/i, '').trim(); a = '';
+      } else if (line.trim().startsWith('A:')) {
+        a = line.replace(/^A:\s*/i, '').trim();
+      }
+    });
+    if (q && a) parsed.push({ id: `${parsed.length + 1}`, question: q, answer: a });
+    setKbFaqs(parsed.length > 0 ? parsed : [{ id: '1', question: '', answer: '' }]);
+  };
+
+  const formatKbServices = (): string => {
+    return kbServices.filter(s => s.name.trim()).map(s => {
+      const p = [`- ${s.name}`]; if (s.price) p.push(s.price); if (s.description) p.push(s.description); return p.join(' - ');
+    }).join('\n');
+  };
+
+  const formatKbFaqs = (): string => {
+    return kbFaqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+  };
+
   const saveKB = async () => {
-    if (!agency || !selectedClient || kbContent.trim().length < 50) return;
+    if (!agency || !selectedClient) return;
     setKbSaving(true);
     try {
-      const r = await fetch(`${api}/api/agency/${agency.id}/ai-playground/clients/${selectedClient.id}/knowledge-base`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ content: kbContent }),
+      const r = await fetch(`${api}/api/knowledge-base/update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          websiteUrl: kbWebsite,
+          businessHours: kbHours,
+          services: formatKbServices(),
+          faqs: formatKbFaqs(),
+          additionalInfo: kbAdditionalInfo,
+        }),
       });
-      if (r.ok) { setKbOriginal(kbContent); addEvent('kb-saved', 'Knowledge base updated in VAPI', 'success'); }
-      else { const d = await r.json(); addEvent('kb-error', d.error || 'KB save failed', 'error'); }
+      if (r.ok) {
+        setKbLastUpdated(new Date().toISOString());
+        addEvent('kb-saved', 'Knowledge base updated', 'success');
+      } else { const d = await r.json(); addEvent('kb-error', d.error || 'KB save failed', 'error'); }
     } catch { addEvent('kb-error', 'KB save network error', 'error'); }
     finally { setKbSaving(false); }
   };
 
-  const resetKB = async () => {
-    if (!agency || !selectedClient) return;
-    setKbSaving(true);
-    try {
-      const r = await fetch(`${api}/api/agency/${agency.id}/ai-playground/clients/${selectedClient.id}/knowledge-base/reset`, {
-        method: 'POST', headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setKbContent(d.content || ''); setKbOriginal(d.content || ''); setKbIndustry(d.industry || '');
-        addEvent('kb-reset', `KB reset to ${d.industry} default`, 'success');
-      }
-    } catch { addEvent('kb-error', 'KB reset failed', 'error'); }
-    finally { setKbSaving(false); }
-  };
-
-  const hasKbChanges = kbContent !== kbOriginal;
+  const addKbService = () => setKbServices(prev => [...prev, { id: Date.now().toString(), name: '', price: '', description: '' }]);
+  const removeKbService = (id: string) => { if (kbServices.length > 1) setKbServices(prev => prev.filter(s => s.id !== id)); };
+  const updateKbService = (id: string, field: string, value: string) => setKbServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  const addKbFaq = () => setKbFaqs(prev => [...prev, { id: Date.now().toString(), question: '', answer: '' }]);
+  const removeKbFaq = (id: string) => { if (kbFaqs.length > 1) setKbFaqs(prev => prev.filter(f => f.id !== id)); };
+  const updateKbFaq = (id: string, field: string, value: string) => setKbFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
 
   const filtered = clientSearch.trim() ? clients.filter(c => c.business_name.toLowerCase().includes(clientSearch.toLowerCase()) || c.industry.toLowerCase().includes(clientSearch.toLowerCase())) : clients;
   const selectedVoice = allVoices.find(v => v.id === editVoice);
@@ -763,30 +816,20 @@ export default function AILabPage() {
             {/* Knowledge Base */}
             {selectedClient?.vapi_assistant_id && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" style={{ color: theme.primary }} />
                     <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Knowledge Base</span>
-                    {kbIndustry && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
-                        {kbIndustry.replace(/_/g, ' ')}
-                      </span>
-                    )}
-                    {kbSource && (
+                    {kbLastUpdated && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
-                        {kbSource}
+                        Updated {new Date(kbLastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={resetKB} disabled={kbSaving} className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded transition hover:opacity-80 disabled:opacity-40"
-                      style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
-                      <RotateCcw className="h-3 w-3" /> Reset to Default
-                    </button>
-                    <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-[10px] font-medium transition" style={{ color: theme.primary }}>
-                      {kbExpanded ? <><Minimize2 className="h-3 w-3" /> Collapse</> : <><Maximize2 className="h-3 w-3" /> Expand</>}
-                    </button>
-                  </div>
+                  <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-xs font-medium transition" style={{ color: theme.primary }}>
+                    {kbExpanded ? 'Hide' : 'Edit'}
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
+                  </button>
                 </div>
 
                 {kbLoading ? (
@@ -794,38 +837,91 @@ export default function AILabPage() {
                     <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} />
                     <span className="ml-2 text-xs" style={{ color: theme.textMuted }}>Loading knowledge base...</span>
                   </div>
+                ) : !kbExpanded ? (
+                  <p className="text-xs" style={{ color: theme.textMuted }}>
+                    {kbServices.filter(s => s.name.trim()).length} services · {kbFaqs.filter(f => f.question.trim()).length} FAQs · {kbAdditionalInfo ? 'Has additional info' : 'No additional info'}
+                  </p>
                 ) : (
-                  <>
-                    <textarea
-                      value={kbContent}
-                      onChange={e => setKbContent(e.target.value)}
-                      rows={kbExpanded ? 30 : 8}
-                      className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed transition-all"
-                      style={{ ...inputStyle, resize: 'vertical', minHeight: kbExpanded ? '400px' : '150px', maxHeight: kbExpanded ? 'none' : '250px' }}
-                      placeholder="Knowledge base content — services, FAQs, hours, policies..."
-                    />
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{kbContent.length.toLocaleString()} chars</span>
-                      <div className="flex items-center gap-2">
-                        {hasKbChanges && kbContent.trim().length < 50 && (
-                          <span className="text-[10px]" style={{ color: '#f59e0b' }}>Min 50 chars</span>
-                        )}
-                        {hasKbChanges && (
-                          <button onClick={saveKB} disabled={kbSaving || kbContent.trim().length < 50}
-                            className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium disabled:opacity-40"
-                            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                            {kbSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save KB
-                          </button>
-                        )}
+                  <div className="space-y-5 mt-3">
+                    {/* Website */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
+                        <Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Website
+                      </label>
+                      <input type="url" value={kbWebsite} onChange={e => setKbWebsite(e.target.value)} placeholder="https://yourbusiness.com"
+                        className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
+                    </div>
+
+                    {/* Services */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
+                        <Briefcase className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Services & Pricing
+                      </label>
+                      <div className="space-y-2">
+                        {kbServices.map(service => (
+                          <div key={service.id} className="p-2.5 rounded-lg space-y-1.5" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
+                            <div className="flex gap-2">
+                              <input type="text" value={service.name} onChange={e => updateKbService(service.id, 'name', e.target.value)} placeholder="Service name"
+                                className="flex-1 rounded-lg px-2.5 py-1.5 text-xs min-w-0" style={inputStyle} />
+                              <input type="text" value={service.price} onChange={e => updateKbService(service.id, 'price', e.target.value)} placeholder="$100"
+                                className="w-20 rounded-lg px-2.5 py-1.5 text-xs" style={inputStyle} />
+                              <button onClick={() => removeKbService(service.id)} disabled={kbServices.length === 1} className="p-1.5 transition disabled:opacity-20" style={{ color: theme.textMuted }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <textarea value={service.description} onChange={e => updateKbService(service.id, 'description', e.target.value)} placeholder="Brief description..."
+                              rows={1} className="w-full rounded-lg px-2.5 py-1.5 text-xs resize-none" style={inputStyle} />
+                          </div>
+                        ))}
                       </div>
+                      <button onClick={addKbService} className="mt-2 flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg transition hover:opacity-80"
+                        style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>
+                        <Plus className="w-3 h-3" /> Add Service
+                      </button>
                     </div>
-                    <div className="flex items-start gap-2 mt-3 p-2.5 rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(99,102,241,0.05)' : '#f0f0ff', border: `1px solid ${theme.isDark ? 'rgba(99,102,241,0.1)' : '#e0e0ff'}` }}>
-                      <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                      <p className="text-[10px] leading-relaxed" style={{ color: theme.textMuted }}>
-                        This is the document your AI searches when callers ask about services, hours, pricing, or policies. It&apos;s uploaded to VAPI as a query tool — separate from the system prompt. Each industry starts with a pre-written template you can customize.
-                      </p>
+
+                    {/* FAQs */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
+                        <HelpCircle className="w-3.5 h-3.5" style={{ color: theme.primary }} /> FAQs
+                      </label>
+                      <div className="space-y-2">
+                        {kbFaqs.map(faq => (
+                          <div key={faq.id} className="p-2.5 rounded-lg space-y-1.5" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
+                            <div className="flex gap-2">
+                              <input type="text" value={faq.question} onChange={e => updateKbFaq(faq.id, 'question', e.target.value)} placeholder="Question..."
+                                className="flex-1 rounded-lg px-2.5 py-1.5 text-xs min-w-0" style={inputStyle} />
+                              <button onClick={() => removeKbFaq(faq.id)} disabled={kbFaqs.length === 1} className="p-1.5 transition disabled:opacity-20" style={{ color: theme.textMuted }}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <textarea value={faq.answer} onChange={e => updateKbFaq(faq.id, 'answer', e.target.value)} placeholder="Answer..."
+                              rows={2} className="w-full rounded-lg px-2.5 py-1.5 text-xs resize-none" style={inputStyle} />
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={addKbFaq} className="mt-2 flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg transition hover:opacity-80"
+                        style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>
+                        <Plus className="w-3 h-3" /> Add FAQ
+                      </button>
                     </div>
-                  </>
+
+                    {/* Additional Info */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
+                        <FileText className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Additional Info
+                      </label>
+                      <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods, etc."
+                        rows={3} className="w-full rounded-lg px-3 py-2 text-xs resize-none" style={inputStyle} />
+                    </div>
+
+                    {/* Save */}
+                    <button onClick={saveKB} disabled={kbSaving}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition disabled:opacity-50"
+                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                      {kbSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Updating...</> : <><Sparkles className="h-3.5 w-3.5" /> Update Knowledge Base</>}
+                    </button>
+                  </div>
                 )}
               </div>
             )}
