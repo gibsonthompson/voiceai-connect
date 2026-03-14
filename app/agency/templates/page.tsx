@@ -24,14 +24,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const MODEL_OPTIONS = [
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast, cost-effective — best for most use cases', tag: 'Recommended' },
-  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Most capable, higher latency and cost', tag: null },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest mini — improved instruction following', tag: 'New' },
-  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Latest flagship — best quality overall', tag: 'New' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', desc: 'Legacy — fastest but less capable', tag: null },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost — best for real-time voice conversations', tag: 'Default' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest model, better instruction following — same speed tier as 4o Mini', tag: 'Latest' },
+  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower — use for complex industries like legal or medical', tag: 'Premium' },
 ];
 
-const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes. How can I help you today?';
+const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes.';
 
 // ============================================================================
 // TYPES
@@ -514,7 +512,7 @@ export default function AILabPage() {
 
         {/* SELECTED CLIENT */}
         {selectedClient && (
-          <div className="max-w-5xl">
+          <div>
             {/* Client + Agency Info */}
             <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-start justify-between gap-3">
@@ -646,7 +644,13 @@ export default function AILabPage() {
                   {/* System Prompt — expandable */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
+                      <div className="flex items-center gap-3">
+                        <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
+                        <a href="https://myvoiceaiconnect.com/blog/ai-receptionist-prompt-guide" target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[10px] font-medium transition hover:opacity-80" style={{ color: theme.primary }}>
+                          <ArrowUpRight className="h-2.5 w-2.5" /> Prompting Guide
+                        </a>
+                      </div>
                       <div className="flex items-center gap-3">
                         <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span>
                         <button onClick={() => setPromptExpanded(!promptExpanded)} className="flex items-center gap-1 text-[10px] font-medium transition" style={{ color: theme.primary }}>
