@@ -7,7 +7,8 @@ import {
   ChevronDown, ChevronUp, Check, Building, Search, CircleDot,
   Radio, AlertTriangle, Undo2, Pencil, Sparkles, Cpu, Building2,
   Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
-  UtensilsCrossed, Dumbbell, ShoppingBag, Car, X, Copy, Info
+  UtensilsCrossed, Dumbbell, ShoppingBag, Car, X, Copy, Info,
+  Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -23,11 +24,11 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const MODEL_OPTIONS = [
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast, cost-effective — best for most use cases' },
-  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Most capable, higher latency and cost' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest mini — improved instruction following' },
-  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Latest flagship — best quality overall' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', desc: 'Legacy — fastest but less capable' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast, cost-effective — best for most use cases', tag: 'Recommended' },
+  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Most capable, higher latency and cost', tag: null },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest mini — improved instruction following', tag: 'New' },
+  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Latest flagship — best quality overall', tag: 'New' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', desc: 'Legacy — fastest but less capable', tag: null },
 ];
 
 const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes. How can I help you today?';
@@ -49,7 +50,8 @@ interface AssistantConfig {
 }
 
 interface VoiceOption {
-  id: string; name: string; description: string; gender: string; recommended?: boolean;
+  id: string; name: string; description: string; gender: string;
+  accent: string; style: string; previewUrl: string; recommended?: boolean;
 }
 
 interface TranscriptEntry {
@@ -84,18 +86,13 @@ function fmtDuration(s: number): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
-function SectionHeader({ icon: Icon, label, theme, children }: {
-  icon: React.ElementType; label: string; theme: any; children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4" style={{ color: theme.primary }} />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>{label}</span>
-      </div>
-      {children}
-    </div>
-  );
+function hexToRgba(hex: string, alpha: number): string {
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch { return `rgba(0,0,0,${alpha})`; }
 }
 
 // ============================================================================
@@ -107,14 +104,13 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
   callState: CallState; callDuration: number; isMuted: boolean;
   transcript: TranscriptEntry[]; eventLog: EventLogEntry[]; theme: any;
   onEnd: () => void; onToggleMute: () => void; onClose: () => void;
-  clientName: string; transcriptEndRef: React.RefObject<HTMLDivElement>;
-  eventLogEndRef: React.RefObject<HTMLDivElement>;
+  clientName: string; transcriptEndRef: React.RefObject<HTMLDivElement | null>;
+  eventLogEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
       <div className="w-full max-w-5xl rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, maxHeight: '90vh' }}>
-
-        {/* Modal Header */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: theme.border }}>
           <div className="flex items-center gap-3">
             {callState === 'connected' ? (
@@ -133,15 +129,13 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
           <div className="flex items-center gap-4">
             <span className="text-xl font-mono font-bold tabular-nums" style={{ color: theme.text }}>{fmtDuration(callDuration)}</span>
             {callState === 'ended' && (
-              <button onClick={onClose} className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
-                <X className="h-4 w-4" />
-              </button>
+              <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ color: theme.textMuted, backgroundColor: theme.hover }}><X className="h-4 w-4" /></button>
             )}
           </div>
         </div>
 
-        {/* Modal Body — Transcript + Events side by side */}
-        <div className="flex-1 flex min-h-0">
+        {/* Body */}
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           {/* Transcript */}
           <div className="flex-1 flex flex-col border-r" style={{ borderColor: theme.border }}>
             <div className="px-4 py-2 border-b" style={{ borderColor: theme.border }}>
@@ -149,13 +143,13 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {transcript.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                <div className="flex flex-col items-center justify-center h-full py-8">
                   <Bot className="h-8 w-8 mb-2" style={{ color: theme.textMuted, opacity: 0.15 }} />
                   <p className="text-xs" style={{ color: theme.textMuted }}>Waiting for speech...</p>
                 </div>
               )}
               {transcript.map(e => (
-                <div key={e.id} className={`flex gap-2 ${e.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={e.id} className={`flex gap-2.5 ${e.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {e.role !== 'user' && <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><Bot className="h-3.5 w-3.5" style={{ color: theme.primary }} /></div>}
                   <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
                     style={{ backgroundColor: e.role === 'user' ? theme.primary : theme.hover, color: e.role === 'user' ? theme.primaryText : theme.text, opacity: e.isFinal ? 1 : 0.5, borderBottomRightRadius: e.role === 'user' ? '4px' : undefined, borderBottomLeftRadius: e.role !== 'user' ? '4px' : undefined }}>
@@ -167,9 +161,8 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
               <div ref={transcriptEndRef} />
             </div>
           </div>
-
-          {/* Event Log */}
-          <div className="w-72 flex-shrink-0 flex flex-col hidden md:flex">
+          {/* Events */}
+          <div className="w-72 flex-shrink-0 flex-col hidden md:flex">
             <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: theme.border }}>
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Events</span>
               <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{eventLog.length}</span>
@@ -192,31 +185,25 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
           </div>
         </div>
 
-        {/* Modal Footer — Controls */}
+        {/* Footer */}
         <div className="flex items-center justify-center gap-4 px-5 py-5 border-t" style={{ borderColor: theme.border }}>
-          {callState === 'connected' && (
-            <>
-              <button onClick={onToggleMute} className="flex items-center justify-center w-14 h-14 rounded-full transition-all"
-                style={{ backgroundColor: isMuted ? (theme.isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2') : theme.hover, border: `2px solid ${isMuted ? 'rgba(239,68,68,0.4)' : theme.border}`, color: isMuted ? '#ef4444' : theme.text }}>
-                {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-              </button>
-              <button onClick={onEnd} className="flex items-center justify-center w-16 h-16 rounded-full transition-all hover:scale-105 active:scale-95"
-                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}>
-                <PhoneOff className="h-7 w-7" />
-              </button>
-            </>
-          )}
+          {callState === 'connected' && (<>
+            <button onClick={onToggleMute} className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
+              style={{ backgroundColor: isMuted ? (theme.isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2') : theme.hover, border: `2px solid ${isMuted ? 'rgba(239,68,68,0.4)' : theme.border}`, color: isMuted ? '#ef4444' : theme.text }}>
+              {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            </button>
+            <button onClick={onEnd} className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}>
+              <PhoneOff className="h-7 w-7" />
+            </button>
+          </>)}
           {callState === 'connecting' && (
             <button onClick={onEnd} className="flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium"
-              style={{ color: '#ef4444', backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', border: '1px solid rgba(239,68,68,0.2)' }}>
-              <X className="h-4 w-4" /> Cancel
-            </button>
+              style={{ color: '#ef4444', backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2' }}><X className="h-4 w-4" /> Cancel</button>
           )}
           {callState === 'ended' && (
             <button onClick={onClose} className="flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              Close
-            </button>
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Close</button>
           )}
         </div>
       </div>
@@ -250,9 +237,14 @@ export default function AILabPage() {
   const [editModel, setEditModel] = useState('');
   const [editTemp, setEditTemp] = useState(0.7);
   const [editCallMode, setEditCallMode] = useState<'primary' | 'secondary'>('primary');
+  const [editTransferPhone, setEditTransferPhone] = useState('');
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [callState, setCallState] = useState<CallState>('idle');
   const [callDuration, setCallDuration] = useState(0);
@@ -282,14 +274,13 @@ export default function AILabPage() {
     setEventLog(prev => [...prev, { id: uid(), type, timestamp: Date.now(), message, level }]);
   }, []);
 
-  // VAPI init
+  // ---- VAPI init ----
   useEffect(() => {
     if (!vapiKey) return;
     let m = true;
     import('@vapi-ai/web').then(({ default: Vapi }) => {
       if (!m) return;
-      const v = new Vapi(vapiKey);
-      vapiRef.current = v;
+      const v = new Vapi(vapiKey); vapiRef.current = v;
       v.on('call-start', () => { if (m) { setCallState('connected'); addEvent('call-start', 'Call connected', 'success'); } });
       v.on('call-end', () => { if (m) { setCallState('ended'); stopTimer(); addEvent('call-end', 'Call ended', 'info'); } });
       v.on('speech-start', () => { if (m) addEvent('speech-start', 'Assistant speaking', 'info'); });
@@ -298,49 +289,56 @@ export default function AILabPage() {
         if (!m) return;
         if (msg.type === 'transcript') {
           const entry: TranscriptEntry = { id: uid(), role: msg.role || 'assistant', text: msg.transcript || '', isFinal: msg.transcriptType === 'final', timestamp: Date.now() };
-          setTranscript(prev => {
-            const li = [...prev].reverse().findIndex(t => t.role === entry.role && !t.isFinal);
-            if (li !== -1) { const i = prev.length - 1 - li; const u = [...prev]; u[i] = entry; return u; }
-            return [...prev, entry];
-          });
+          setTranscript(prev => { const li = [...prev].reverse().findIndex(t => t.role === entry.role && !t.isFinal); if (li !== -1) { const i = prev.length - 1 - li; const u = [...prev]; u[i] = entry; return u; } return [...prev, entry]; });
         }
         if (msg.type === 'function-call') addEvent('tool-call', `Tool: ${msg.functionCall?.name || 'unknown'}`, 'info');
         if (msg.type === 'hang') addEvent('hang', 'Assistant ended call', 'warn');
       });
       v.on('error', (err: any) => { if (m) { addEvent('error', err?.message || 'Unknown error', 'error'); setCallState('idle'); setShowCallModal(false); stopTimer(); } });
     }).catch(() => {});
-    return () => { m = false; vapiRef.current?.stop(); stopTimer(); };
+    return () => { m = false; vapiRef.current?.stop(); stopTimer(); if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } };
   }, [vapiKey, addEvent]);
 
   useEffect(() => { transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [transcript]);
   useEffect(() => { eventLogEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [eventLog]);
-
   const startTimer = () => { setCallDuration(0); timerRef.current = setInterval(() => setCallDuration(p => p + 1), 1000); };
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
 
-  // Fetch voices
+  // ---- Fetch voices ----
   useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); setVoicesLoaded(true); }).catch(() => {}); }, [api]);
 
-  // Fetch clients
+  // ---- Fetch clients ----
   useEffect(() => {
-    if (!agency) return;
-    setClientsLoading(true);
+    if (!agency) return; setClientsLoading(true);
     fetch(`${api}/api/agency/${agency.id}/ai-playground/clients`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.json()).then(d => setClients(d.clients || [])).catch(() => {}).finally(() => setClientsLoading(false));
   }, [agency, api]);
 
-  // Fetch templates
+  // ---- Fetch templates ----
   useEffect(() => {
     if (!agency || effectivePlan !== 'enterprise') return;
     fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {});
   }, [agency, effectivePlan, api]);
 
-  // Select client
+  // ---- Voice preview ----
+  const playPreview = (voice: VoiceOption) => {
+    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; }
+    if (audioRef.current) audioRef.current.pause();
+    const a = new Audio(voice.previewUrl); audioRef.current = a;
+    a.onended = () => setPlayingVoiceId(null);
+    a.onerror = () => setPlayingVoiceId(null);
+    a.play(); setPlayingVoiceId(voice.id);
+  };
+
+  const filteredVoices = voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter);
+
+  // ---- Select client ----
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
-    setConfigSaved(false); setConfigError(''); setNotifPhone(client.owner_phone || '');
-    setOrigPhone(client.owner_phone || ''); setPhoneSwapped(false); setPhoneEditing(false);
+    setConfigSaved(false); setConfigError(''); setPromptExpanded(false);
+    setNotifPhone(client.owner_phone || ''); setOrigPhone(client.owner_phone || '');
+    setPhoneSwapped(false); setPhoneEditing(false);
     setEditCallMode((client.call_mode as 'primary' | 'secondary') || 'primary');
     if (!client.vapi_assistant_id) { addEvent('warn', 'No AI assistant configured', 'warn'); return; }
     setConfigLoading(true);
@@ -349,17 +347,18 @@ export default function AILabPage() {
       if (r.ok) {
         const d = await r.json();
         setEditCallMode((d.client?.call_mode as 'primary' | 'secondary') || 'primary');
+        setEditTransferPhone(d.client?.owner_phone || '');
         if (d.assistant) {
           const c: AssistantConfig = { id: d.assistant.id, model: d.assistant.model || 'gpt-4o-mini', voice: d.assistant.voice || '', voiceProvider: d.assistant.voiceProvider || '11labs', firstMessage: d.assistant.firstMessage || '', systemPrompt: d.assistant.systemPrompt || '', temperature: d.assistant.temperature ?? 0.7, tools: d.assistant.tools || [], toolIds: d.assistant.toolIds || [] };
           setConfig(c); setEditPrompt(c.systemPrompt); setEditGreeting(c.firstMessage); setEditVoice(c.voice); setEditModel(c.model); setEditTemp(c.temperature);
-          addEvent('loaded', `AI config loaded`, 'success');
+          addEvent('loaded', 'AI config loaded', 'success');
         }
       }
     } catch { addEvent('error', 'Failed to load AI config', 'error'); }
     finally { setConfigLoading(false); }
   };
 
-  // Save config
+  // ---- Save ----
   const saveConfig = async () => {
     if (!agency || !selectedClient) return;
     setConfigSaving(true); setConfigSaved(false); setConfigError('');
@@ -367,18 +366,19 @@ export default function AILabPage() {
       const body: Record<string, any> = {};
       if (config) { body.system_prompt = editPrompt; body.first_message = editGreeting; body.voice_id = editVoice; body.model = editModel; body.temperature = editTemp; }
       body.call_mode = editCallMode;
+      if (editTransferPhone.trim()) body.transfer_phone = editTransferPhone.trim();
       const r = await fetch(`${api}/api/agency/${agency.id}/clients/${selectedClient.id}/prompt`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) });
       if (r.ok) {
-        setConfigSaved(true); addEvent('saved', 'AI config saved', 'success'); setTimeout(() => setConfigSaved(false), 3000);
+        setConfigSaved(true); addEvent('saved', 'Config saved to VAPI', 'success'); setTimeout(() => setConfigSaved(false), 3000);
         if (config) setConfig({ ...config, systemPrompt: editPrompt, firstMessage: editGreeting, voice: editVoice, model: editModel, temperature: editTemp });
       } else { const d = await r.json(); setConfigError(d.error || 'Save failed'); addEvent('error', d.error || 'Save failed', 'error'); }
     } catch { setConfigError('Network error'); }
     finally { setConfigSaving(false); }
   };
 
-  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editCallMode !== ((selectedClient?.call_mode as any) || 'primary')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
+  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editCallMode !== ((selectedClient?.call_mode as any) || 'primary') || editTransferPhone !== (selectedClient?.owner_phone || '')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
 
-  // Call controls
+  // ---- Call ----
   const startCall = async () => {
     if (!vapiRef.current || !selectedClient?.vapi_assistant_id) return;
     setCallState('connecting'); setTranscript([]); setEventLog([]); setCallDuration(0); setShowCallModal(true);
@@ -390,10 +390,9 @@ export default function AILabPage() {
   const toggleMute = () => { if (!vapiRef.current) return; vapiRef.current.setMuted(!isMuted); setIsMuted(!isMuted); };
   const closeModal = () => { setShowCallModal(false); setCallState('idle'); };
 
-  // SMS
+  // ---- SMS ----
   const swapPhone = async () => {
-    if (!agency || !selectedClient || !notifPhone.trim()) return;
-    setPhoneSwapping(true);
+    if (!agency || !selectedClient || !notifPhone.trim()) return; setPhoneSwapping(true);
     try { const r = await fetch(`${api}/api/agency/${agency.id}/ai-playground/clients/${selectedClient.id}/notification-phone`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ phone: notifPhone }) }); if (r.ok) { setPhoneSwapped(notifPhone !== origPhone); setPhoneEditing(false); } } catch {} finally { setPhoneSwapping(false); }
   };
   const revertPhone = async () => {
@@ -402,26 +401,20 @@ export default function AILabPage() {
   };
 
   const copyCompliance = () => { navigator.clipboard.writeText(COMPLIANCE_GREETING); setCopiedCompliance(true); setTimeout(() => setCopiedCompliance(false), 2000); };
-
   const filtered = clientSearch.trim() ? clients.filter(c => c.business_name.toLowerCase().includes(clientSearch.toLowerCase()) || c.industry.toLowerCase().includes(clientSearch.toLowerCase())) : clients;
-
   const selectedVoice = allVoices.find(v => v.id === editVoice);
-  const selectedModel = MODEL_OPTIONS.find(m => m.id === editModel);
+  const selectedModelObj = MODEL_OPTIONS.find(m => m.id === editModel);
 
   if (ctxLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
 
   return (
     <>
-      {/* Theme-aware text selection */}
       <style>{`::selection { background-color: ${theme.primary}30; color: ${theme.text}; }`}</style>
 
-      {/* Call Modal */}
       {showCallModal && selectedClient && (
-        <CallModal callState={callState} callDuration={callDuration} isMuted={isMuted}
-          transcript={transcript} eventLog={eventLog} theme={theme}
-          onEnd={endCall} onToggleMute={toggleMute} onClose={closeModal}
-          clientName={selectedClient.business_name}
-          transcriptEndRef={transcriptEndRef as any} eventLogEndRef={eventLogEndRef as any} />
+        <CallModal callState={callState} callDuration={callDuration} isMuted={isMuted} transcript={transcript} eventLog={eventLog} theme={theme}
+          onEnd={endCall} onToggleMute={toggleMute} onClose={closeModal} clientName={selectedClient.business_name}
+          transcriptEndRef={transcriptEndRef} eventLogEndRef={eventLogEndRef} />
       )}
 
       <div className="p-4 sm:p-6 lg:p-8">
@@ -438,9 +431,7 @@ export default function AILabPage() {
           </div>
           {selectedClient && (
             <button onClick={() => { setSelectedClient(null); setConfig(null); }}
-              className="text-sm px-3 py-1.5 rounded-lg" style={{ color: theme.textMuted, backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              Change Client
-            </button>
+              className="text-sm px-3 py-1.5 rounded-lg" style={{ color: theme.textMuted, backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>Change Client</button>
           )}
         </div>
 
@@ -449,28 +440,24 @@ export default function AILabPage() {
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div>
               <p className="font-medium text-sm" style={{ color: theme.text }}>Live calling requires VAPI Public Key</p>
-              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Add <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>NEXT_PUBLIC_VAPI_PUBLIC_KEY</code> to Vercel env.</p>
+              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Add <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>NEXT_PUBLIC_VAPI_PUBLIC_KEY</code> to Vercel.</p>
             </div>
           </div>
         )}
 
-        {/* ================================================================ */}
-        {/* CLIENT SELECTOR                                                  */}
-        {/* ================================================================ */}
+        {/* CLIENT SELECTOR */}
         {!selectedClient && (
           <div>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
-              <input type="text" value={clientSearch} onChange={e => setClientSearch(e.target.value)}
-                placeholder="Search clients..." className="w-full rounded-xl pl-10 pr-4 py-3 text-sm" style={inputStyle} />
+              <input type="text" value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Search clients..." className="w-full rounded-xl pl-10 pr-4 py-3 text-sm" style={inputStyle} />
             </div>
             {clientsLoading ? <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div> : filtered.length === 0 ? (
               <div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>{clients.length === 0 ? 'No clients yet.' : 'No match.'}</p></div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map(c => (
-                  <button key={c.id} onClick={() => selectClient(c)} className="text-left rounded-xl p-4 transition-all"
-                    style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                  <button key={c.id} onClick={() => selectClient(c)} className="text-left rounded-xl p-4 transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Building className="h-5 w-5" style={{ color: theme.primary }} /></div>
@@ -484,35 +471,35 @@ export default function AILabPage() {
               </div>
             )}
 
-            {/* Templates */}
             {effectivePlan === 'enterprise' && industries.length > 0 && (
               <div className="mt-10">
-                <SectionHeader icon={Cpu} label="Industry Templates" theme={theme}><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Enterprise</span></SectionHeader>
+                <div className="flex items-center gap-2 mb-4"><Cpu className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Industry Templates</span><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Enterprise</span></div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (
-                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={e => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={e => (e.currentTarget.style.backgroundColor = theme.card)}>
-                      <div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={ind.hasCustomTemplate ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>{ind.hasCustomTemplate ? 'Custom' : 'Default'}</span></div>
+                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={e => (e.currentTarget.style.backgroundColor = theme.card)}>
+                      <div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div></div>
                       <p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p>
-                    </Link>
-                  ); })}
+                    </Link>); })}
                 </div>
               </div>
             )}
 
-            {/* Voice Library */}
             {voicesLoaded && allVoices.length > 0 && (
               <div className="mt-10">
-                <SectionHeader icon={Volume2} label="Voice Library" theme={theme} />
+                <div className="flex items-center gap-2 mb-4"><Volume2 className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Voice Library</span></div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {allVoices.map(v => (
                     <div key={v.id} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-                        <Volume2 className="h-5 w-5" style={{ color: theme.primary }} />
-                      </div>
+                      <button onClick={() => playPreview(v)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
+                        style={{ backgroundColor: playingVoiceId === v.id ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: playingVoiceId === v.id ? theme.primaryText : theme.textMuted }}>
+                        {playingVoiceId === v.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+                      </button>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm" style={{ color: theme.text }}>{v.name}</span>
-                          <span className="text-[10px] capitalize px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{v.gender}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{v.accent}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{v.style}</span>
                           {v.recommended && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>★ REC</span>}
                         </div>
                         <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{v.description}</p>
@@ -525,11 +512,9 @@ export default function AILabPage() {
           </div>
         )}
 
-        {/* ================================================================ */}
-        {/* SELECTED CLIENT                                                  */}
-        {/* ================================================================ */}
+        {/* SELECTED CLIENT */}
         {selectedClient && (
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             {/* Client + Agency Info */}
             <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-start justify-between gap-3">
@@ -556,115 +541,174 @@ export default function AILabPage() {
 
             {/* AI Configuration */}
             {configLoading ? (
-              <div className="rounded-xl p-10 flex items-center justify-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+              <div className="rounded-xl p-10 flex items-center justify-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading from VAPI...</span>
               </div>
             ) : config ? (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <SectionHeader icon={Pencil} label="AI Configuration" theme={theme}>
+                {/* Section header + save */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2"><Pencil className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Configuration</span></div>
                   <div className="flex items-center gap-2">
                     {configSaved && <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Saved!</span>}
                     {configError && <span className="text-xs" style={{ color: '#ef4444' }}>{configError}</span>}
-                    <button onClick={saveConfig} disabled={configSaving || !hasChanges}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+                    <button onClick={saveConfig} disabled={configSaving || !hasChanges} className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium disabled:opacity-40"
                       style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                      {configSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />} Save Changes
+                      {configSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save Changes
                     </button>
                   </div>
-                </SectionHeader>
+                </div>
 
-                <div className="space-y-5">
-                  {/* Row: Call Mode, Voice, Model, Temp */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="space-y-6">
+                  {/* Row: Call Mode + Model + Temperature */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Call Mode</label>
+                      <label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Call Mode</label>
                       <select value={editCallMode} onChange={e => setEditCallMode(e.target.value as any)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}>
                         <option value="primary">Primary — AI answers all</option>
                         <option value="secondary">Secondary — Overflow only</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice</label>
-                      <select value={editVoice} onChange={e => setEditVoice(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}>
-                        {allVoices.length > 0 ? (<><optgroup label="Female">{allVoices.filter(v => v.gender === 'female').map(v => <option key={v.id} value={v.id}>{v.name} — {v.description.split(' - ')[0]}{v.recommended ? ' ★' : ''}</option>)}</optgroup><optgroup label="Male">{allVoices.filter(v => v.gender === 'male').map(v => <option key={v.id} value={v.id}>{v.name} — {v.description.split(' - ')[0]}{v.recommended ? ' ★' : ''}</option>)}</optgroup></>) : <option value={editVoice}>{editVoice}</option>}
-                      </select>
-                      {selectedVoice && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>{selectedVoice.description}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
+                      <label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Model</label>
                       <select value={editModel} onChange={e => setEditModel(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}>
-                        {MODEL_OPTIONS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        {MODEL_OPTIONS.map(m => <option key={m.id} value={m.id}>{m.name}{m.tag ? ` (${m.tag})` : ''}</option>)}
                         {!MODEL_OPTIONS.find(m => m.id === editModel) && <option value={editModel}>{editModel}</option>}
                       </select>
-                      {selectedModel && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>{selectedModel.desc}</p>}
+                      {selectedModelObj && <p className="text-[10px] mt-1.5" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Temperature: {editTemp}</label>
+                      <label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Temperature: {editTemp}</label>
                       <input type="range" min="0" max="1" step="0.1" value={editTemp} onChange={e => setEditTemp(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} />
-                      <div className="flex justify-between text-[9px] mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
+                      <div className="flex justify-between text-[9px] mt-1" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
                     </div>
                   </div>
 
-                  {/* Greeting + compliance */}
+                  {/* Voice Selector — card grid */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Voice</label>
+                      <div className="flex gap-1">
+                        {(['all', 'female', 'male'] as const).map(f => (
+                          <button key={f} onClick={() => setVoiceFilter(f)} className="px-2.5 py-1 rounded-md text-[10px] font-medium transition"
+                            style={{ backgroundColor: voiceFilter === f ? theme.primary : theme.hover, color: voiceFilter === f ? theme.primaryText : theme.textMuted }}>
+                            {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {filteredVoices.map(v => {
+                        const isSelected = editVoice === v.id;
+                        const isPlaying = playingVoiceId === v.id;
+                        return (
+                          <div key={v.id} onClick={() => setEditVoice(v.id)}
+                            className="relative rounded-xl p-3 cursor-pointer transition-all border-2"
+                            style={{ borderColor: isSelected ? theme.primary : theme.border, backgroundColor: isSelected ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : theme.card }}>
+                            {v.recommended && <span className="absolute -top-1.5 -right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <button onClick={e => { e.stopPropagation(); playPreview(v); }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition"
+                                style={{ backgroundColor: isPlaying ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: isPlaying ? theme.primaryText : theme.textMuted }}>
+                                {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3 ml-0.5" />}
+                              </button>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-xs truncate" style={{ color: theme.text }}>{v.name}</span>
+                                  {isSelected && <Check className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} />}
+                                </div>
+                                <p className="text-[9px]" style={{ color: theme.textMuted }}>{v.accent} · {v.style}</p>
+                              </div>
+                            </div>
+                            <p className="text-[10px] leading-relaxed" style={{ color: theme.textMuted }}>{v.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Greeting */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
                       <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label>
-                      <button onClick={copyCompliance} className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded transition-colors"
-                        style={{ color: theme.primary, backgroundColor: theme.primary + '10' }}>
+                      <button onClick={copyCompliance} className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded transition"
+                        style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>
                         {copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}
                       </button>
                     </div>
                     <input type="text" value={editGreeting} onChange={e => setEditGreeting(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
                     <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.05)' : '#fffbeb', border: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.1)' : '#fef3c7'}` }}>
                       <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
-                      <p className="text-[10px] leading-relaxed" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>
-                        For compliance, include: <em>&quot;{COMPLIANCE_GREETING}&quot;</em>
-                      </p>
+                      <p className="text-[10px] leading-relaxed" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>For compliance, include: <em>&quot;{COMPLIANCE_GREETING}&quot;</em></p>
                     </div>
                   </div>
 
-                  {/* System Prompt — resizable */}
+                  {/* System Prompt — expandable */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-2">
                       <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
-                      <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span>
+                        <button onClick={() => setPromptExpanded(!promptExpanded)} className="flex items-center gap-1 text-[10px] font-medium transition" style={{ color: theme.primary }}>
+                          {promptExpanded ? <><Minimize2 className="h-3 w-3" /> Collapse</> : <><Maximize2 className="h-3 w-3" /> Expand</>}
+                        </button>
+                      </div>
                     </div>
-                    <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)} rows={12}
-                      className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed"
-                      style={{ ...inputStyle, resize: 'both', minHeight: '200px', maxHeight: '80vh', minWidth: '100%' }} />
+                    <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)}
+                      rows={promptExpanded ? 30 : 6}
+                      className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed transition-all"
+                      style={{ ...inputStyle, resize: 'vertical', minHeight: promptExpanded ? '400px' : '120px', maxHeight: promptExpanded ? 'none' : '200px' }} />
                   </div>
 
-                  {config.tools.length > 0 && (
+                  {/* Transfer Call Tool */}
+                  {config.tools.includes('transferCall') && (
+                    <div className="rounded-lg p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <PhoneForwarded className="h-4 w-4" style={{ color: theme.primary }} />
+                        <span className="text-[11px] font-medium" style={{ color: theme.text }}>Call Transfer</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Active</span>
+                      </div>
+                      <p className="text-[10px] mb-2" style={{ color: theme.textMuted }}>
+                        When callers request a real person or have urgent issues, the AI will transfer to this number.
+                      </p>
+                      <div className="flex gap-2">
+                        <input type="tel" value={editTransferPhone} onChange={e => setEditTransferPhone(e.target.value)}
+                          placeholder="(555) 123-4567" className="flex-1 rounded-lg px-3 py-2 text-sm font-mono" style={inputStyle} />
+                      </div>
+                      <p className="text-[9px] mt-1.5" style={{ color: theme.textMuted }}>Currently set to the client owner&apos;s phone. Changes save with the main &quot;Save Changes&quot; button.</p>
+                    </div>
+                  )}
+
+                  {/* Other tools */}
+                  {config.tools.filter(t => t !== 'transferCall').length > 0 && (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Active Tools:</span>
-                      {config.tools.map(t => <span key={t} className="text-[10px] font-mono px-2 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.text }}>{t}</span>)}
+                      <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Other Tools:</span>
+                      {config.tools.filter(t => t !== 'transferCall').map(t => <span key={t} className="text-[10px] font-mono px-2 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.text }}>{t}</span>)}
                     </div>
                   )}
                 </div>
               </div>
             ) : selectedClient.vapi_assistant_id ? (
               <div className="rounded-xl p-6 text-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <AlertCircle className="h-6 w-6 mx-auto mb-2" style={{ color: '#f59e0b' }} />
-                <p className="text-sm" style={{ color: theme.textMuted }}>Could not load AI config from VAPI.</p>
+                <AlertCircle className="h-6 w-6 mx-auto mb-2" style={{ color: '#f59e0b' }} /><p className="text-sm" style={{ color: theme.textMuted }}>Could not load AI config from VAPI.</p>
               </div>
             ) : (
               <div className="rounded-xl p-6 text-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <Bot className="h-6 w-6 mx-auto mb-2" style={{ color: theme.textMuted }} />
-                <p className="text-sm" style={{ color: theme.textMuted }}>No AI assistant configured.</p>
+                <Bot className="h-6 w-6 mx-auto mb-2" style={{ color: theme.textMuted }} /><p className="text-sm" style={{ color: theme.textMuted }}>No AI assistant configured.</p>
               </div>
             )}
 
-            {/* Test Call Button */}
+            {/* Test Call */}
             <div className="rounded-xl p-6 text-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <button onClick={startCall} disabled={!selectedClient?.vapi_assistant_id || !vapiKey}
                 className="inline-flex items-center justify-center gap-3 rounded-2xl px-10 py-4 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
                 style={{ backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 0 40px ${theme.primary}20` }}>
                 <PhoneCall className="h-5 w-5" /> Start Test Call
               </button>
-              <p className="text-xs mt-3" style={{ color: theme.textMuted }}>Opens a live call to this client&apos;s AI assistant from your browser</p>
+              <p className="text-xs mt-3" style={{ color: theme.textMuted }}>Opens a live browser call to this client&apos;s AI assistant</p>
             </div>
 
-            {/* SMS Phone Swap */}
+            {/* SMS Swap */}
             <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS Notifications Go To</span></div>
