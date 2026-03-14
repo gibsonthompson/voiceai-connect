@@ -9,7 +9,7 @@ export default function ClientDashboardPage() {
   const { client, branding, loading } = useClient();
   const [recentCalls, setRecentCalls] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    callsThisMonth: 0,
+    callsToday: 0,
     highUrgency: 0,
     callLimit: 50,
     trialDaysLeft: null as number | null,
@@ -34,11 +34,20 @@ export default function ClientDashboardPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setRecentCalls(data.calls || []);
+        const calls = data.calls || [];
+        setRecentCalls(calls);
+
+        // Count today's calls
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const callsToday = calls.filter((c: any) => {
+          const callDate = new Date(c.created_at);
+          return callDate >= today;
+        }).length;
+
         setStats({
-          callsThisMonth: data.stats?.callsThisMonth || client.calls_this_month || 0,
+          callsToday,
           highUrgency: data.stats?.highUrgency || 0,
-          // Use ?? so -1 (unlimited) passes through instead of being replaced by 50
           callLimit: client.monthly_call_limit ?? 50,
           trialDaysLeft: client.trial_ends_at
             ? Math.max(0, Math.ceil((new Date(client.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))

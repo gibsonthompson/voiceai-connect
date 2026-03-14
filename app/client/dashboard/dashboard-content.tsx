@@ -20,7 +20,7 @@ interface Branding {
 }
 
 interface Stats {
-  callsThisMonth: number;
+  callsToday: number;
   highUrgency: number;
   callLimit: number;
   trialDaysLeft: number | null;
@@ -78,7 +78,6 @@ export function ClientDashboardClient({
   const isProvisioningPending = !isProvisioned && client.subscription_status !== 'cancelled';
   const formattedPhone = formatPhoneNumber(client.vapi_phone_number);
 
-  // Unlimited plan detection
   const isUnlimited = stats.callLimit === -1;
 
   return (
@@ -212,13 +211,13 @@ export function ClientDashboardClient({
         )}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-2 md:grid-cols-3 mb-6 sm:mb-8">
+      {/* Stats Grid — 2 cards only */}
+      <div className="grid gap-3 sm:gap-6 grid-cols-2 mb-6 sm:mb-8">
         {[
           {
-            label: 'Calls This Month',
-            value: stats.callsThisMonth,
-            subtext: isUnlimited ? 'Unlimited plan' : `of ${stats.callLimit} included`,
+            label: 'Calls Today',
+            value: stats.callsToday,
+            subtext: isUnlimited ? 'Unlimited plan' : `${stats.callLimit} /mo limit`,
             icon: PhoneCall,
             color: theme.primary,
           },
@@ -228,13 +227,6 @@ export function ClientDashboardClient({
             subtext: 'Urgent calls',
             icon: AlertCircle,
             color: '#f59e0b',
-          },
-          {
-            label: 'Status',
-            value: isProvisioned ? 'Active' : 'Setting Up',
-            subtext: isProvisioned ? 'Receiving calls' : 'Almost ready',
-            icon: isProvisioned ? Zap : Loader2,
-            color: isProvisioned ? theme.success : theme.primary,
           },
         ].map((stat) => (
           <div
@@ -252,10 +244,7 @@ export function ClientDashboardClient({
                 className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ backgroundColor: hexToRgba(stat.color, theme.isDark ? 0.2 : 0.1) }}
               >
-                <stat.icon 
-                  className={`h-4 w-4 sm:h-6 sm:w-6 ${stat.icon === Loader2 ? 'animate-spin' : ''}`} 
-                  style={{ color: stat.color }} 
-                />
+                <stat.icon className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: stat.color }} />
               </div>
             </div>
           </div>
