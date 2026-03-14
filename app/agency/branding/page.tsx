@@ -6,6 +6,7 @@ import { useTheme, buildTheme, BrandingOverrides, isValidHex } from '../../../ho
 import {
   Save, RotateCcw, Loader2, Check, AlertCircle, Paintbrush, Eye,
   PanelLeft, LayoutDashboard, Type, Square, MousePointer, Shuffle, Sparkles,
+  Sun, Moon,
 } from 'lucide-react';
 
 // ============================================================================
@@ -43,7 +44,6 @@ const GROUPS = [
 // COLOR UTILITIES
 // ============================================================================
 
-/** Darken a hex color by a factor (0-1, where 0.2 = 20% darker) */
 function darken(hex: string, factor: number): string {
   const c = hex.replace('#', '');
   const r = Math.max(0, Math.round(parseInt(c.substring(0, 2), 16) * (1 - factor)));
@@ -52,7 +52,6 @@ function darken(hex: string, factor: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-/** Lighten a hex color by a factor (0-1, where 0.2 = 20% lighter) */
 function lighten(hex: string, factor: number): string {
   const c = hex.replace('#', '');
   const r = Math.min(255, Math.round(parseInt(c.substring(0, 2), 16) + (255 - parseInt(c.substring(0, 2), 16)) * factor));
@@ -61,7 +60,6 @@ function lighten(hex: string, factor: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-/** Mix two hex colors (0 = all color1, 1 = all color2) */
 function mixColors(hex1: string, hex2: string, weight: number): string {
   const c1 = hex1.replace('#', '');
   const c2 = hex2.replace('#', '');
@@ -71,7 +69,6 @@ function mixColors(hex1: string, hex2: string, weight: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-/** Check luminance */
 function isLight(hex: string): boolean {
   const c = hex.replace('#', '');
   const r = parseInt(c.substring(0, 2), 16);
@@ -81,7 +78,7 @@ function isLight(hex: string): boolean {
 }
 
 // ============================================================================
-// PALETTE SHUFFLER — uses agency's own brand colors
+// PALETTE SHUFFLER
 // ============================================================================
 
 interface PaletteRecipe {
@@ -89,11 +86,6 @@ interface PaletteRecipe {
   build: (primary: string, secondary: string, accent: string, isDark: boolean) => BrandingOverrides;
 }
 
-/**
- * Each recipe arranges the agency's existing primary, secondary, and accent
- * colors into different dashboard slots. The colors always come from the
- * agency's brand — we just move them around and derive tints/shades.
- */
 const PALETTE_RECIPES: PaletteRecipe[] = [
   {
     name: 'Brand Sidebar',
@@ -284,7 +276,6 @@ function ColorInput({
         border: `1px solid ${isOverridden ? theme.primary30 : theme.border}`,
       }}
     >
-      {/* Color swatch + native picker */}
       <div className="relative flex-shrink-0">
         <div
           className="w-9 h-9 rounded-lg border cursor-pointer"
@@ -302,7 +293,6 @@ function ColorInput({
         />
       </div>
 
-      {/* Label + description */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium" style={{ color: theme.text }}>
@@ -322,7 +312,6 @@ function ColorInput({
         </p>
       </div>
 
-      {/* Hex input */}
       <input
         type="text"
         value={inputValue || ''}
@@ -337,7 +326,6 @@ function ColorInput({
         maxLength={7}
       />
 
-      {/* Clear button */}
       {isOverridden && (
         <button
           onClick={handleClear}
@@ -369,7 +357,6 @@ function LivePreview({
       style={{ borderColor: previewTheme.border }}
     >
       <div className="flex" style={{ height: '280px' }}>
-        {/* Mini sidebar */}
         <div
           className="w-[140px] flex-shrink-0 flex flex-col p-3 gap-1.5"
           style={{
@@ -423,7 +410,6 @@ function LivePreview({
           </div>
         </div>
 
-        {/* Main content area */}
         <div className="flex-1 p-4" style={{ backgroundColor: previewTheme.bg }}>
           <div
             className="h-3 w-24 rounded-full mb-4"
@@ -502,14 +488,13 @@ export default function BrandingPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
-  // Local overrides state (working copy)
   const [overrides, setOverrides] = useState<BrandingOverrides>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastShuffleIndex, setLastShuffleIndex] = useState(-1);
+  const [switchingTheme, setSwitchingTheme] = useState(false);
 
-  // Initialize from agency data
   useEffect(() => {
     if (agency?.branding_overrides) {
       setOverrides({ ...agency.branding_overrides });
@@ -523,12 +508,10 @@ export default function BrandingPage() {
   const secondaryColor = branding.secondaryColor || '#059669';
   const accentColor = branding.accentColor || '#34d399';
 
-  // Live preview theme from current working overrides
   const previewTheme = useMemo(() => {
     return buildTheme(mode as 'dark' | 'light', primaryColor, overrides);
   }, [mode, primaryColor, overrides]);
 
-  // Default theme (no overrides) for placeholder display
   const defaultTheme = useMemo(() => {
     return buildTheme(mode as 'dark' | 'light', primaryColor);
   }, [mode, primaryColor]);
@@ -559,13 +542,8 @@ export default function BrandingPage() {
 
   const activeCount = COLOR_FIELDS.filter(f => isValidHex(overrides[f.key])).length;
 
-  // ============================================================================
-  // PALETTE SHUFFLER
-  // ============================================================================
   const handleShuffle = () => {
     const isDark = mode === 'dark';
-
-    // Pick a different recipe than last time
     let idx = Math.floor(Math.random() * PALETTE_RECIPES.length);
     if (PALETTE_RECIPES.length > 1) {
       while (idx === lastShuffleIndex) {
@@ -573,7 +551,6 @@ export default function BrandingPage() {
       }
     }
     setLastShuffleIndex(idx);
-
     const recipe = PALETTE_RECIPES[idx];
     const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark);
     setOverrides(result);
@@ -581,7 +558,29 @@ export default function BrandingPage() {
     setError(null);
   };
 
-  // Handlers
+  const handleThemeSwitch = async (newMode: 'light' | 'dark') => {
+    if (mode === newMode || !agency) return;
+    setSwitchingTheme(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ website_theme: newMode }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update theme');
+      }
+      await refreshAgency();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update theme mode');
+    } finally {
+      setSwitchingTheme(false);
+    }
+  };
+
   const handleChange = (key: keyof BrandingOverrides, value: string) => {
     setOverrides(prev => ({ ...prev, [key]: value }));
     setSaved(false);
@@ -672,7 +671,6 @@ export default function BrandingPage() {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           {activeCount > 0 && (
             <button
@@ -725,6 +723,65 @@ export default function BrandingPage() {
         </div>
       )}
 
+      {/* ================================================================ */}
+      {/* ADDED: Theme Mode Toggle                                        */}
+      {/* ================================================================ */}
+      <div
+        className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+        style={{
+          backgroundColor: theme.card,
+          border: `1px solid ${theme.border}`,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: theme.primary15 }}
+          >
+            {mode === 'dark' ? (
+              <Moon className="h-4 w-4" style={{ color: theme.primary }} />
+            ) : (
+              <Sun className="h-4 w-4" style={{ color: theme.primary }} />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.text }}>
+              Dashboard Theme
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+              Applies to both your agency dashboard and all client dashboards
+            </p>
+          </div>
+        </div>
+        <div
+          className="flex items-center gap-1 rounded-xl p-1"
+          style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+        >
+          {(['light', 'dark'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => handleThemeSwitch(m)}
+              disabled={switchingTheme}
+              className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-70"
+              style={{
+                backgroundColor: mode === m ? theme.primary : 'transparent',
+                color: mode === m ? theme.primaryText : theme.textMuted,
+              }}
+            >
+              {m === 'light' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+              {m.charAt(0).toUpperCase() + m.slice(1)}
+              {switchingTheme && mode !== m && (
+                <Loader2 className="h-3 w-3 animate-spin ml-1" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Shuffle Banner */}
       <div
         className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
@@ -766,7 +823,6 @@ export default function BrandingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Color controls - 3 cols */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Status bar */}
           <div
             className="rounded-xl px-4 py-3 flex items-center justify-between"
             style={{
@@ -793,7 +849,6 @@ export default function BrandingPage() {
             </span>
           </div>
 
-          {/* Color groups */}
           {GROUPS.map((group) => {
             const fields = COLOR_FIELDS.filter(f => f.group === group.key);
             const GroupIcon = group.icon;
@@ -855,7 +910,6 @@ export default function BrandingPage() {
 
             <LivePreview previewTheme={previewTheme} primaryColor={primaryColor} />
 
-            {/* Brand colors reference */}
             <div
               className="rounded-xl p-3"
               style={{
@@ -886,7 +940,6 @@ export default function BrandingPage() {
               </div>
             </div>
 
-            {/* Info note */}
             <div
               className="rounded-xl p-3"
               style={{
