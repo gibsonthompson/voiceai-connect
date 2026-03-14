@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  Loader2, Phone, PhoneOff, PhoneCall, Mic, MicOff, Volume2,
+  Loader2, Phone, PhoneOff, PhoneCall, Mic, MicOff,
   Bot, User, AlertCircle, Terminal, Code2, FlaskConical, Save,
-  ChevronDown, ChevronUp, Check, Building, Search, CircleDot,
-  Radio, AlertTriangle, Undo2, Pencil, Sparkles, Cpu, Building2,
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, Building, Search, CircleDot,
+  Radio, AlertTriangle, Undo2, Pencil, Sparkles, Building2, Package,
   Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
   UtensilsCrossed, Dumbbell, ShoppingBag, Car, X, Copy, Info,
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
@@ -240,7 +240,6 @@ export default function AILabPage() {
   const [promptExpanded, setPromptExpanded] = useState(false);
 
   const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -274,6 +273,7 @@ export default function AILabPage() {
   const vapiRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const clientScrollRef = useRef<HTMLDivElement>(null);
   const eventLogEndRef = useRef<HTMLDivElement>(null);
 
   const getToken = () => localStorage.getItem('auth_token') || '';
@@ -314,7 +314,7 @@ export default function AILabPage() {
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
 
   // ---- Fetch voices ----
-  useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); setVoicesLoaded(true); }).catch(() => {}); }, [api]);
+  useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); }).catch(() => {}); }, [api]);
 
   // ---- Fetch clients ----
   useEffect(() => {
@@ -539,10 +539,6 @@ export default function AILabPage() {
               <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p>
             </div>
           </div>
-          {selectedClient && (
-            <button onClick={() => { setSelectedClient(null); setConfig(null); }}
-              className="text-sm px-3 py-1.5 rounded-lg" style={{ color: theme.textMuted, backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>Change Client</button>
-          )}
         </div>
 
         {!vapiKey && (
@@ -555,69 +551,106 @@ export default function AILabPage() {
           </div>
         )}
 
-        {/* CLIENT SELECTOR */}
-        {!selectedClient && (
-          <div>
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
-              <input type="text" value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Search clients..." className="w-full rounded-xl pl-10 pr-4 py-3 text-sm" style={inputStyle} />
-            </div>
-            {clientsLoading ? <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div> : filtered.length === 0 ? (
-              <div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>{clients.length === 0 ? 'No clients yet.' : 'No match.'}</p></div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map(c => (
-                  <button key={c.id} onClick={() => selectClient(c)} className="text-left rounded-xl p-4 transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Building className="h-5 w-5" style={{ color: theme.primary }} /></div>
-                      {c.vapi_assistant_id ? <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}><CircleDot className="h-2.5 w-2.5" /> Active</span> : <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>No AI</span>}
-                    </div>
-                    <p className="font-medium text-sm truncate" style={{ color: theme.text }}>{c.business_name}</p>
-                    <p className="text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>{c.industry} · {c.business_city}, {c.business_state}</p>
-                    {c.vapi_phone_number && <p className="text-xs font-mono mt-2" style={{ color: theme.textMuted }}>{fmtPhone(c.vapi_phone_number)}</p>}
-                  </button>
-                ))}
+        {/* CLIENT TABS — always visible, scrollable */}
+        {!clientsLoading && clients.length > 0 && (
+          <div className="mb-6">
+            {/* Search + scroll controls */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                <input type="text" value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Search clients..."
+                  className="w-full rounded-lg pl-8 pr-3 py-1.5 text-xs" style={inputStyle} />
               </div>
-            )}
+              <div className="flex gap-1">
+                <button onClick={() => { if (clientScrollRef.current) clientScrollRef.current.scrollBy({ left: -200, behavior: 'smooth' }); }}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => { if (clientScrollRef.current) clientScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' }); }}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
 
+            {/* Scrollable tab row */}
+            <div ref={clientScrollRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
+              {filtered.map(c => {
+                const isActive = selectedClient?.id === c.id;
+                return (
+                  <button key={c.id} onClick={() => selectClient(c)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all flex-shrink-0"
+                    style={{
+                      backgroundColor: isActive ? theme.primary : theme.card,
+                      color: isActive ? theme.primaryText : theme.text,
+                      border: `1px solid ${isActive ? theme.primary : theme.border}`,
+                    }}>
+                    <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : theme.primary15 }}>
+                      <Building className="h-3 w-3" style={{ color: isActive ? theme.primaryText : theme.primary }} />
+                    </div>
+                    {c.business_name}
+                    {c.vapi_assistant_id && <CircleDot className="h-2 w-2 flex-shrink-0" style={{ color: isActive ? theme.primaryText : '#22c55e' }} />}
+                  </button>
+                );
+              })}
+            </div>
+            {filtered.length === 0 && clientSearch.trim() && (
+              <p className="text-xs mt-2" style={{ color: theme.textMuted }}>No clients match &quot;{clientSearch}&quot;</p>
+            )}
+          </div>
+        )}
+
+        {clientsLoading && (
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>
+        )}
+
+        {!clientsLoading && clients.length === 0 && !selectedClient && (
+          <div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No clients yet.</p></div>
+        )}
+
+        {/* INDUSTRY TEMPLATES — show when no client selected */}
+        {!selectedClient && !clientsLoading && (
+          <div>
             {effectivePlan === 'enterprise' && industries.length > 0 && (
-              <div className="mt-10">
-                <div className="flex items-center gap-2 mb-4"><Cpu className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Industry Templates</span><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Enterprise</span></div>
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="h-4 w-4" style={{ color: theme.primary }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Packaged Receptionists</span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Enterprise</span>
+                </div>
+                <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+                  Configure the default AI receptionist for each industry. When a new client signs up, they inherit your voice, greeting, prompt, model, and knowledge base.
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (
-                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={e => (e.currentTarget.style.backgroundColor = theme.card)}>
-                      <div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div></div>
-                      <p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p>
+                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}>
+                          <Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} />
+                        </div>
+                        {ind.hasCustomTemplate ? (
+                          <span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+                            <Check className="h-2.5 w-2.5" /> Custom
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Default</span>
+                        )}
+                      </div>
+                      <p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p>
+                      <p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>
+                        Configure package <ArrowUpRight className="h-2.5 w-2.5" />
+                      </p>
                     </Link>); })}
                 </div>
               </div>
             )}
 
-            {voicesLoaded && allVoices.length > 0 && (
-              <div className="mt-10">
-                <div className="flex items-center gap-2 mb-4"><Volume2 className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Voice Library</span></div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {allVoices.map(v => (
-                    <div key={v.id} className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                      <button onClick={() => playPreview(v)} className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
-                        style={{ backgroundColor: playingVoiceId === v.id ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: playingVoiceId === v.id ? theme.primaryText : theme.textMuted }}>
-                        {playingVoiceId === v.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm" style={{ color: theme.text }}>{v.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{v.accent}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{v.style}</span>
-                          {v.recommended && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>★ REC</span>}
-                        </div>
-                        <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{v.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {!clientsLoading && clients.length > 0 && (
+              <p className="text-xs text-center" style={{ color: theme.textMuted }}>Select a client above to configure their AI receptionist</p>
             )}
           </div>
         )}
