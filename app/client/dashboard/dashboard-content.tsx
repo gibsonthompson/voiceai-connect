@@ -21,6 +21,7 @@ interface Branding {
 
 interface Stats {
   callsToday: number;
+  callsThisMonth: number;
   highUrgency: number;
   callLimit: number;
   trialDaysLeft: number | null;
@@ -44,11 +45,43 @@ function formatPhoneNumber(phone: string): string {
   if (!phone) return '';
   const digits = phone.replace(/\D/g, '');
   if (digits.length === 11 && digits.startsWith('1')) {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
   } else if (digits.length === 10) {
-    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
   }
+  // International: return with + if it looks like E.164
+  if (phone.startsWith('+')) return phone;
   return phone;
+}
+
+/**
+ * Format a date as a relative label:
+ * - Same day → "Today, 2:15 PM"
+ * - Yesterday → "Yesterday, 2:15 PM"
+ * - Within last 6 days → "Tuesday, 2:15 PM"
+ * - Older → "Mar 8, 2:15 PM"
+ */
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  // Strip time to compare days
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const callDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((today.getTime() - callDay.getTime()) / (1000 * 60 * 60 * 24));
+
+  const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  if (diffDays === 0) return `Today, ${timeStr}`;
+  if (diffDays === 1) return `Yesterday, ${timeStr}`;
+  if (diffDays < 7) {
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+    return `${dayName}, ${timeStr}`;
+  }
+
+  // Older than a week
+  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${monthDay}, ${timeStr}`;
 }
 
 export function ClientDashboardClient({
@@ -211,14 +244,21 @@ export function ClientDashboardClient({
         )}
       </div>
 
-      {/* Stats Grid — 2 cards only */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-2 mb-6 sm:mb-8">
+      {/* Stats Grid — 3 cards */}
+      <div className="grid gap-3 sm:gap-6 grid-cols-3 mb-6 sm:mb-8">
         {[
           {
             label: 'Calls Today',
             value: stats.callsToday,
-            subtext: isUnlimited ? 'Unlimited plan' : `${stats.callLimit} /mo limit`,
+            subtext: 'Today',
             icon: PhoneCall,
+            color: theme.primary,
+          },
+          {
+            label: 'This Month',
+            value: stats.callsThisMonth,
+            subtext: isUnlimited ? 'Unlimited' : `of ${stats.callLimit}`,
+            icon: Phone,
             color: theme.primary,
           },
           {
@@ -297,6 +337,8 @@ export function ClientDashboardClient({
                     ? { backgroundColor: theme.warningBg, color: theme.warning }
                     : { backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.textMuted };
 
+                const relativeDate = formatRelativeDate(call.created_at);
+
                 return (
                   <a
                     key={call.id}
@@ -322,15 +364,15 @@ export function ClientDashboardClient({
                               {call.urgency_level || 'normal'}
                             </span>
                           </div>
-                          <p className="text-xs truncate" style={{ color: theme.textMuted }}>
-                            {call.customer_phone || call.caller_phone}
+                          <p className="text-xs" style={{ color: theme.textMuted }}>
+                            {formatPhoneNumber(call.customer_phone || call.caller_phone)}
                           </p>
                           <div className="flex items-center justify-between mt-1">
                             <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>
                               {call.service_requested || 'General inquiry'}
                             </p>
                             <p className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>
-                              {new Date(call.created_at).toLocaleDateString()}
+                              {relativeDate}
                             </p>
                           </div>
                         </div>
@@ -351,7 +393,7 @@ export function ClientDashboardClient({
                             {call.customer_name || 'Unknown Caller'}
                           </p>
                           <p className="text-sm" style={{ color: theme.textMuted }}>
-                            {call.customer_phone || call.caller_phone} • {call.service_requested || 'General inquiry'}
+                            {formatPhoneNumber(call.customer_phone || call.caller_phone)} · {call.service_requested || 'General inquiry'}
                           </p>
                         </div>
                       </div>
@@ -360,7 +402,7 @@ export function ClientDashboardClient({
                           {call.urgency_level || 'normal'}
                         </span>
                         <p className="mt-1 text-xs" style={{ color: theme.textMuted4 }}>
-                          {new Date(call.created_at).toLocaleDateString()}
+                          {relativeDate}
                         </p>
                       </div>
                     </div>
