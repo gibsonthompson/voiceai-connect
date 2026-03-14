@@ -235,13 +235,31 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
+  // ==========================================================================
+  // CHANGED: Loading screen reads theme from localStorage to avoid flash
+  // ==========================================================================
   if (loading) {
+    let loadingBg = '#f5f5f5';
+    let loadingText = '#a3a3a3';
+    let loadingTextMuted = '#737373';
+    try {
+      const stored = localStorage.getItem('agency');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.website_theme === 'dark' || !parsed.website_theme || parsed.website_theme === 'auto') {
+          loadingBg = '#050505';
+          loadingText = '#525252';
+          loadingTextMuted = '#404040';
+        }
+      }
+    } catch {}
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: loadingBg }}>
         <link rel="manifest" href="/manifest.json" />
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
-          <p className="text-sm text-neutral-500">Loading dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: loadingText }} />
+          <p className="text-sm" style={{ color: loadingTextMuted }}>Loading dashboard...</p>
         </div>
       </div>
     );
@@ -337,9 +355,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // ============================================================================
   // TRIAL EXPIRED GATE — No-card trial ended, must subscribe
-  // FIX: Uses /api/agency/portal which handles both cases:
-  //   - Has stripe_customer_id → opens Stripe billing portal
-  //   - No stripe_customer_id (no-card trial) → creates customer + checkout (no trial)
   // ============================================================================
   if (agencyTrialExpiredNoCard) {
     const handleSubscribeNow = async () => {
