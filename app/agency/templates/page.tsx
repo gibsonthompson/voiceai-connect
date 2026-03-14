@@ -340,7 +340,8 @@ export default function AILabPage() {
     a.play(); setPlayingVoiceId(voice.id);
   };
 
-  const filteredVoices = voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter);
+  const filteredVoices = (voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter))
+    .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
 
   // ---- Select client ----
   const selectClient = async (client: ClientItem) => {
