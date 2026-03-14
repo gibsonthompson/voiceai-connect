@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { 
   Phone, PhoneCall, Clock, Copy, 
-  ChevronRight, AlertCircle, CheckCircle,
-  Loader2, PhoneOff, Zap
+  ChevronRight, CheckCircle,
+  Loader2, PhoneOff
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
@@ -245,7 +245,7 @@ export function ClientDashboardClient({
       </div>
 
       {/* Stats Grid — 3 cards */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-3 mb-6 sm:mb-8">
+      <div className="grid gap-3 sm:gap-6 grid-cols-2 mb-6 sm:mb-8">
         {[
           {
             label: 'Calls Today',
@@ -260,13 +260,6 @@ export function ClientDashboardClient({
             subtext: isUnlimited ? 'Unlimited' : `of ${stats.callLimit}`,
             icon: Phone,
             color: theme.primary,
-          },
-          {
-            label: 'High Priority',
-            value: stats.highUrgency,
-            subtext: 'Urgent calls',
-            icon: AlertCircle,
-            color: '#f59e0b',
           },
         ].map((stat) => (
           <div
@@ -367,14 +360,9 @@ export function ClientDashboardClient({
                           <p className="text-xs" style={{ color: theme.textMuted }}>
                             {formatPhoneNumber(call.customer_phone || call.caller_phone)}
                           </p>
-                          <div className="flex items-center justify-between mt-1">
-                            <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>
-                              {call.service_requested || 'General inquiry'}
-                            </p>
-                            <p className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>
-                              {relativeDate}
-                            </p>
-                          </div>
+                          <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>
+                            {relativeDate}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -393,7 +381,7 @@ export function ClientDashboardClient({
                             {call.customer_name || 'Unknown Caller'}
                           </p>
                           <p className="text-sm" style={{ color: theme.textMuted }}>
-                            {formatPhoneNumber(call.customer_phone || call.caller_phone)} · {call.service_requested || 'General inquiry'}
+                            {formatPhoneNumber(call.customer_phone || call.caller_phone)} · {relativeDate}
                           </p>
                         </div>
                       </div>
@@ -401,9 +389,6 @@ export function ClientDashboardClient({
                         <span className="rounded-full px-3 py-1 text-xs font-medium" style={urgencyStyle}>
                           {call.urgency_level || 'normal'}
                         </span>
-                        <p className="mt-1 text-xs" style={{ color: theme.textMuted4 }}>
-                          {relativeDate}
-                        </p>
                       </div>
                     </div>
                   </a>
