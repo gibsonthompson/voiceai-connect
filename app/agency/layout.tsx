@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
   Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock,
+  Check, Crown, Shield,
   type LucideIcon
 } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
+import { PLAN_PRICES, PLAN_NAMES } from '../../lib/plan-limits';
 
 // Waveform icon component with color prop
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -92,6 +94,59 @@ interface NavItem {
   upgradeRequired?: string;
 }
 
+// ============================================================================
+// AGENCY PLAN TIERS (for trial-expired plan selection gate)
+// ============================================================================
+const AGENCY_PLAN_TIERS = [
+  {
+    id: 'starter' as const,
+    name: PLAN_NAMES.starter,
+    price: PLAN_PRICES.starter,
+    icon: Zap,
+    description: 'For new agencies',
+    clients: '25',
+    features: [
+      'Up to 25 clients',
+      'White-label branding',
+      'Agency dashboard',
+      'Email support',
+    ],
+  },
+  {
+    id: 'professional' as const,
+    name: PLAN_NAMES.professional,
+    price: PLAN_PRICES.professional,
+    icon: Shield,
+    popular: true,
+    description: 'Most popular',
+    clients: '100',
+    features: [
+      'Up to 100 clients',
+      'Full marketing website',
+      'Demo phone number',
+      'Custom domain',
+      'Priority support',
+      'API access',
+    ],
+  },
+  {
+    id: 'enterprise' as const,
+    name: PLAN_NAMES.enterprise,
+    price: PLAN_PRICES.enterprise,
+    icon: Crown,
+    description: 'For established agencies',
+    clients: 'Unlimited',
+    features: [
+      'Unlimited clients',
+      'Everything in Professional',
+      'Dedicated success manager',
+      'Phone support',
+      'SLA guarantee',
+      'Custom AI templates',
+    ],
+  },
+];
+
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, demoMode, toggleDemoMode, effectivePlan } = useAgency();
@@ -99,6 +154,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   // ============================================================================
   // THEME — useTheme() handles all colors including branding overrides.
@@ -354,32 +410,42 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // ============================================================================
-  // TRIAL EXPIRED GATE — No-card trial ended, must subscribe
+  // TRIAL EXPIRED GATE — No-card trial ended, must pick a plan and subscribe
+  // CHANGED: Now shows 3-tier plan selection instead of generic "Subscribe Now"
+  // Calls /api/agency/checkout with { agency_id, plan, skipTrial: true }
   // ============================================================================
   if (agencyTrialExpiredNoCard) {
-    const handleSubscribeNow = async () => {
+    const handleSelectPlan = async (planId: string) => {
+      setSelectedPlan(planId);
       setSubscribeLoading(true);
       try {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`${backendUrl}/api/agency/portal`, {
+        const response = await fetch(`${backendUrl}/api/agency/checkout`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ agency_id: agency?.id }),
+          body: JSON.stringify({ 
+            agency_id: agency?.id,
+            plan: planId,
+            skipTrial: true,
+          }),
         });
         const data = await response.json();
         if (data.url) {
           window.location.href = data.url;
         } else {
-          console.error('No URL returned from portal/checkout:', data);
+          console.error('No URL returned from checkout:', data);
+          setSubscribeLoading(false);
+          setSelectedPlan(null);
         }
       } catch (err) {
-        console.error('Failed to create billing session:', err);
+        console.error('Failed to create checkout session:', err);
+        setSubscribeLoading(false);
+        setSelectedPlan(null);
       }
-      setSubscribeLoading(false);
     };
 
     return (
@@ -388,89 +454,170 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         style={{ backgroundColor: theme.bg }}
       >
         <link rel="manifest" href="/manifest.json" />
-        <div 
-          className="max-w-lg w-full rounded-2xl p-8 text-center"
-          style={{ 
-            backgroundColor: theme.card,
-            border: `1px solid ${theme.border}`,
-            boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
-          }}
-        >
-          {/* Logo */}
-          <div className="mb-6">
-            {branding.logoUrl ? (
-              <img 
-                src={branding.logoUrl} 
-                alt={branding.name}
-                style={{ height: '48px', width: 'auto' }}
-                className="object-contain mx-auto"
-              />
-            ) : (
-              <div 
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-                style={{ backgroundColor: theme.primary15 }}
-              >
-                <WaveformIcon className="h-8 w-8" color={theme.primary} />
-              </div>
-            )}
+        <div className="max-w-4xl w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            {/* Logo */}
+            <div className="mb-6">
+              {branding.logoUrl ? (
+                <img 
+                  src={branding.logoUrl} 
+                  alt={branding.name}
+                  style={{ height: '48px', width: 'auto' }}
+                  className="object-contain mx-auto"
+                />
+              ) : (
+                <div 
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+                  style={{ backgroundColor: theme.primary15 }}
+                >
+                  <WaveformIcon className="h-8 w-8" color={theme.primary} />
+                </div>
+              )}
+            </div>
+
+            {/* Clock icon */}
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+              style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.1)' }}
+            >
+              <Clock className="h-7 w-7" style={{ color: '#fbbf24' }} />
+            </div>
+
+            <h1 
+              className="text-2xl font-bold mb-3"
+              style={{ color: theme.text }}
+            >
+              Your Free Trial Has Ended
+            </h1>
+            <p 
+              className="mb-2 text-base max-w-lg mx-auto"
+              style={{ color: theme.textMuted }}
+            >
+              Choose a plan to keep your agency, clients, and AI receptionists active.
+            </p>
           </div>
 
-          {/* Icon */}
-          <div 
-            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
-            style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.1)' }}
-          >
-            <Clock className="h-7 w-7" style={{ color: '#fbbf24' }} />
+          {/* Plan Cards */}
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {AGENCY_PLAN_TIERS.map((plan) => {
+              const isSelected = selectedPlan === plan.id;
+              const isLoading = subscribeLoading && isSelected;
+
+              return (
+                <div
+                  key={plan.id}
+                  className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-200"
+                  style={{
+                    backgroundColor: theme.card,
+                    borderColor: plan.popular 
+                      ? (theme.isDark ? `${theme.primary}50` : theme.primary) 
+                      : theme.border,
+                    boxShadow: plan.popular 
+                      ? (theme.isDark ? `0 0 40px ${theme.primary}10` : '0 8px 30px rgba(0,0,0,0.08)')
+                      : 'none',
+                    transform: plan.popular ? 'scale(1.02)' : undefined,
+                  }}
+                >
+                  {/* Popular badge */}
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span 
+                        className="px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{ 
+                          backgroundColor: theme.primary, 
+                          color: theme.primaryText,
+                          boxShadow: `0 0 16px ${theme.primary}40`,
+                        }}
+                      >
+                        Recommended
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Plan header */}
+                  <div className="text-center mb-5">
+                    <div 
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3"
+                      style={{ 
+                        backgroundColor: plan.popular ? `${theme.primary}20` : (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+                      }}
+                    >
+                      <plan.icon 
+                        className="h-5 w-5" 
+                        style={{ color: plan.popular ? theme.primary : theme.text }} 
+                      />
+                    </div>
+                    <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
+                    <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
+                    <div className="mt-2">
+                      <span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span>
+                      <span className="text-sm" style={{ color: theme.textMuted }}>/mo</span>
+                    </div>
+                    <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+                      {plan.clients} clients
+                    </p>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-2.5 mb-5">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-sm">
+                        <div 
+                          className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5"
+                          style={{ backgroundColor: `${theme.primary}15` }}
+                        >
+                          <Check className="h-3 w-3" style={{ color: theme.primary }} />
+                        </div>
+                        <span style={{ color: theme.textMuted }}>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    disabled={subscribeLoading}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={plan.popular ? {
+                      backgroundColor: theme.primary,
+                      color: theme.primaryText,
+                    } : {
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      color: theme.text,
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Redirecting...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4" />
+                        Subscribe — ${plan.price}/mo
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
-          <h1 
-            className="text-2xl font-bold mb-3"
-            style={{ color: theme.text }}
-          >
-            Your Free Trial Has Ended
-          </h1>
-          <p 
-            className="mb-2 text-base"
-            style={{ color: theme.textMuted }}
-          >
-            Your 14-day trial of the <strong style={{ color: theme.text }}>{agency?.plan_type ? agency.plan_type.charAt(0).toUpperCase() + agency.plan_type.slice(1) : 'Starter'}</strong> plan has expired.
-          </p>
-          <p 
-            className="mb-8 text-sm"
-            style={{ color: theme.textMuted }}
-          >
-            Subscribe now to keep your agency, clients, and AI receptionists active.
-          </p>
-
-          <button
-            onClick={handleSubscribeNow}
-            disabled={subscribeLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ 
-              backgroundColor: theme.primary,
-              color: theme.primaryText,
-            }}
-          >
-            {subscribeLoading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Redirecting to checkout...
-              </>
-            ) : (
-              <>
-                <CreditCard className="h-5 w-5" />
-                Subscribe Now
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleSignOut}
-            className="block w-full mt-5 text-sm transition-colors hover:opacity-70"
-            style={{ color: theme.textMuted }}
-          >
-            Sign out
-          </button>
+          {/* Footer */}
+          <div className="text-center">
+            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
+              All plans include a 14-day money-back guarantee. Cancel anytime.
+            </p>
+            <button
+              onClick={handleSignOut}
+              className="text-sm transition-colors hover:opacity-70"
+              style={{ color: theme.textMuted }}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     );

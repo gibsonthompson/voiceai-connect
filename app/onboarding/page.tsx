@@ -73,7 +73,6 @@ function detectLogoBackground(
 
   const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
   if (transparentCount > edgePixels.length * 0.5) {
-    // Transparent background — return black so nothing gets excluded from color extraction
     return { r: 0, g: 0, b: 0, isTransparent: true };
   }
 
@@ -89,10 +88,6 @@ function detectLogoBackground(
     : { r: 255, g: 255, b: 255, isTransparent: false };
 }
 
-/**
- * Extract brand colors from logo AND detect background for theme selection.
- * Returns colors + logoBgColor hex + suggested light/dark theme.
- */
 async function extractColorsFromImage(imageUrl: string): Promise<{
   primary: string; secondary: string; accent: string;
   logoBgColor: string; suggestedTheme: 'light' | 'dark';
@@ -106,29 +101,22 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(fallback);
-        return;
-      }
+      if (!ctx) { resolve(fallback); return; }
 
       const size = 150;
       canvas.width = size;
       canvas.height = size;
       ctx.drawImage(img, 0, 0, size, size);
 
-      // Detect logo background — used for color exclusion AND theme detection
       const bg = detectLogoBackground(canvas, ctx);
       const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
 
-      // Determine theme from background luminance
-      // Transparent logos default to dark theme
       let suggestedTheme: 'light' | 'dark' = 'dark';
       if (!bg.isTransparent) {
         const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255;
         suggestedTheme = luminance > 0.5 ? 'light' : 'dark';
       }
 
-      // Extract vibrant colors (excluding background)
       const pixels = ctx.getImageData(0, 0, size, size).data;
 
       const colorData: Record<string, {
@@ -140,13 +128,11 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
 
-        // Skip pixels too close to the detected background
         const bgDist = Math.sqrt(
           Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
         );
         if (bgDist < 50) continue;
 
-        // Bucket by 25
         const br = Math.round(r / 25) * 25;
         const bg2 = Math.round(g / 25) * 25;
         const bb = Math.round(b / 25) * 25;
@@ -158,7 +144,6 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
           ? (max - min) / (2 - max - min)
           : (max - min) / (max + min);
 
-        // Filter: skip near-black, near-white, and grays
         if (lightness < 0.15 || lightness > 0.65) continue;
         if (saturation < 0.25) continue;
 
@@ -169,17 +154,13 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
         colorData[key].count++;
       }
 
-      // Sort by saturation * log(count) — most vibrant AND common colors win
       const colors = Object.values(colorData)
         .filter(c => c.count >= 5)
         .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
         .slice(0, 6)
         .map(c => rgbToHex(c.r, c.g, c.b));
 
-      if (!colors.length) {
-        resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme });
-        return;
-      }
+      if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; }
 
       const primary = colors[0];
       const secondary = colors[1] || adjustColorBrightness(primary, -25);
@@ -187,10 +168,7 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
       resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme });
     };
 
-    img.onerror = () => {
-      resolve(fallback);
-    };
-
+    img.onerror = () => { resolve(fallback); };
     img.src = imageUrl;
   });
 }
@@ -211,7 +189,7 @@ function WaveformIcon({ className }: { className?: string }) {
 
 // ============================================================================
 // STEP DEFINITIONS
-// Agency → Pricing → Logo → Colors → Password → Complete
+// PHASE 2D: Steps 5+6 descriptions updated (no plan selection references)
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
@@ -312,7 +290,6 @@ function OnboardingContent() {
     accent: '#34d399',
   });
 
-  // Theme detection from logo background
   const [detectedTheme, setDetectedTheme] = useState<'light' | 'dark'>('dark');
   const [logoBgColor, setLogoBgColor] = useState<string | null>(null);
   
@@ -384,7 +361,6 @@ function OnboardingContent() {
             accent: data.agency.accent_color || '#34d399',
           });
         }
-        // Restore theme detection from existing data
         if (data.agency.website_theme) {
           setDetectedTheme(data.agency.website_theme === 'light' ? 'light' : 'dark');
         }
@@ -420,7 +396,6 @@ function OnboardingContent() {
         try {
           const result = await extractColorsFromImage(dataUrl);
           setColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
-          // Store detected theme and background color
           setDetectedTheme(result.suggestedTheme);
           setLogoBgColor(result.logoBgColor);
           console.log(`🎨 Logo analyzed: theme=${result.suggestedTheme}, bg=${result.logoBgColor}`);
@@ -471,26 +446,17 @@ function OnboardingContent() {
     let stepData = {};
     
     switch (currentStep) {
-      case 1: // Agency details
-        if (!agencyDetails.name.trim()) {
-          setError('Please enter your agency name');
-          return;
-        }
-        if (!agencyDetails.phone.trim()) {
-          setError('Please enter your phone number');
-          return;
-        }
-        if (!agencyDetails.referralSource) {
-          setError('Please select how you heard about us');
-          return;
-        }
+      case 1:
+        if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
+        if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
+        if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
         stepData = { 
           name: agencyDetails.name.trim(),
           phone: agencyDetails.phone,
           referral_source: agencyDetails.referralSource,
         };
         break;
-      case 2: // Pricing
+      case 2:
         stepData = {
           price_starter: pricing.starter * 100,
           price_pro: pricing.pro * 100,
@@ -500,13 +466,13 @@ function OnboardingContent() {
           limit_growth: pricing.limitGrowth,
         };
         break;
-      case 3: // Logo
+      case 3:
         stepData = { 
           logo_url: logoPreview || logoUrl,
           logo_background_color: logoBgColor || null,
         };
         break;
-      case 4: // Colors + theme
+      case 4:
         stepData = {
           primary_color: colors.primary,
           secondary_color: colors.secondary,
@@ -532,30 +498,60 @@ function OnboardingContent() {
     }
   };
 
-  // FIXED: Pass agency ID to plan page
-  const handleSetPassword = () => {
+  // ============================================================================
+  // PHASE 2D: Helper to start trial with default plan
+  // Called before redirecting to set-password or dashboard
+  // Non-blocking — if it fails, we still proceed (trial can be started later)
+  // ============================================================================
+  const startDefaultTrial = async () => {
+    if (!agencyId) return;
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      await fetch(`${backendUrl}/api/agency/start-trial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyId, planType: 'starter' }),
+      });
+      console.log('✅ Trial started with default plan (starter)');
+    } catch (err) {
+      console.error('⚠️ Failed to start trial (non-blocking):', err);
+    }
+  };
+
+  // ============================================================================
+  // PHASE 2D: Set password → start trial → go to dashboard
+  // CHANGED: returnTo is /agency/dashboard instead of /signup/plan
+  // CHANGED: Starts trial with 'starter' plan before redirect
+  // ============================================================================
+  const handleSetPassword = async () => {
     const token = localStorage.getItem('agency_password_token');
-    const agencyIdForPlan = agencyId;
     
-    if (token && agencyIdForPlan) {
+    // Start trial with default plan before redirecting
+    await startDefaultTrial();
+    
+    if (token && agencyId) {
       localStorage.removeItem('agency_password_token');
       
-      const returnTo = encodeURIComponent(`/signup/plan?agency=${agencyIdForPlan}`);
+      const returnTo = encodeURIComponent('/agency/dashboard');
       router.push(`/auth/set-password?token=${token}&returnTo=${returnTo}`);
-    } else if (agencyIdForPlan) {
+    } else if (agencyId) {
       localStorage.removeItem('onboarding_agency_id');
-      router.push(`/signup/plan?agency=${agencyIdForPlan}`);
+      router.push('/agency/dashboard');
     } else {
       router.push('/signup');
     }
   };
 
-  // FIXED: Go to plan page with agency ID
-  const handleComplete = () => {
+  // ============================================================================
+  // PHASE 2D: Complete → start trial → go to dashboard
+  // CHANGED: Goes to /agency/dashboard instead of /signup/plan
+  // ============================================================================
+  const handleComplete = async () => {
     if (agencyId) {
+      await startDefaultTrial();
       localStorage.removeItem('onboarding_agency_id');
       localStorage.removeItem('agency_password_token');
-      router.push(`/signup/plan?agency=${agencyId}`);
+      router.push('/agency/dashboard');
     } else {
       router.push('/signup');
     }
@@ -745,7 +741,6 @@ function OnboardingContent() {
                       <div key={i} className="w-10 h-10 rounded-xl border border-white/10 shadow-lg" style={{ backgroundColor: color }} title={['Primary', 'Secondary', 'Accent'][i]} />
                     ))}
                   </div>
-                  {/* Show detected theme */}
                   <p className="text-xs text-center mt-3 text-[#fafaf9]/40">
                     Detected theme: <span className="text-emerald-400 font-medium">{detectedTheme === 'light' ? 'Light' : 'Dark'}</span>
                   </p>
@@ -818,7 +813,6 @@ function OnboardingContent() {
               ))}
             </div>
 
-            {/* Theme indicator */}
             <div className="max-w-md mx-auto p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Dashboard Theme</p>
               <div className="flex items-center gap-3">
@@ -841,7 +835,10 @@ function OnboardingContent() {
           </div>
         );
 
-      case 5: // Password
+      // ======================================================================
+      // PHASE 2D: Step 5 — Password (updated copy, no plan selection mention)
+      // ======================================================================
+      case 5:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -854,21 +851,24 @@ function OnboardingContent() {
 
             <div className="max-w-md mx-auto space-y-6">
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <p className="text-sm text-[#fafaf9]/60">You&apos;re almost done! Click below to set your password and select your plan.</p>
+                <p className="text-sm text-[#fafaf9]/60">You&apos;re almost done! Set your password and your 14-day free trial will begin automatically.</p>
               </div>
 
               <button
                 onClick={handleSetPassword}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
               >
-                Set Password & Continue
+                Set Password &amp; Start Trial
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           </div>
         );
 
-      case 6: // Complete
+      // ======================================================================
+      // PHASE 2D: Step 6 — Complete (goes to dashboard, not plan selection)
+      // ======================================================================
+      case 6:
         return (
           <div className="space-y-8 text-center">
             <div className="relative">
@@ -881,15 +881,15 @@ function OnboardingContent() {
             </div>
 
             <div>
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Almost There!</h2>
-              <p className="mt-2 text-[#fafaf9]/50">Select your plan to complete setup</p>
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">You&apos;re All Set!</h2>
+              <p className="mt-2 text-[#fafaf9]/50">Your agency is ready. Start adding clients.</p>
             </div>
 
             <button
               onClick={handleComplete}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
             >
-              Choose Your Plan
+              Go to Dashboard
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
