@@ -210,7 +210,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     },
     { 
       href: '/agency/templates', 
-      label: 'AI Templates', 
+      label: 'AI Lab', 
       icon: Cpu,
       locked: !isEnterprise,
       upgradeRequired: 'Enterprise',
@@ -685,7 +685,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       style={{
         backgroundColor: theme.bg,
         color: theme.text,
-        zoom: 0.9,
+        zoom: 0.8,
         '--color-primary': primaryColor,
         '--color-secondary': secondaryColor,
         '--color-accent': accentColor,
