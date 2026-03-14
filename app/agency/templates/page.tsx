@@ -540,7 +540,7 @@ export default function AILabPage() {
             {/* AI Configuration */}
             {configLoading ? (
               <div className="rounded-xl p-10 flex items-center justify-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading from VAPI...</span>
+                <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading AI configuration...</span>
               </div>
             ) : config ? (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
