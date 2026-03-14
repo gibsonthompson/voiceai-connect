@@ -6,7 +6,7 @@ import {
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, AlertTriangle
 } from 'lucide-react';
-import { ClientProvider, useClient, isTrialStatus, isTrialActive } from '@/lib/client-context';
+import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
 function setFavicon(url: string) {
@@ -37,6 +37,19 @@ const ALWAYS_ACCESSIBLE_ROUTES = [
 // ============================================================================
 // SUBSCRIPTION STATUS HELPERS
 // ============================================================================
+
+/** Check if subscription is in a trial state (handles both 'trial' and 'trialing') */
+function isTrialStatus(status: string | null | undefined): boolean {
+  return status === 'trial' || status === 'trialing';
+}
+
+/** Check if client's trial is currently active (not expired) */
+function isTrialActive(client: any): boolean {
+  if (!client) return false;
+  if (!isTrialStatus(client.subscription_status)) return false;
+  if (!client.trial_ends_at) return false;
+  return new Date(client.trial_ends_at) > new Date();
+}
 
 /** Check if payment has failed (requires action) */
 function isPaymentFailed(status: string | null | undefined): boolean {
