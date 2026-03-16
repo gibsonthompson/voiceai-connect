@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock, Headphones,
   Check, Crown, Shield,
   type LucideIcon
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
 import { PLAN_PRICES, PLAN_NAMES } from '../../lib/plan-limits';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 // Waveform icon component with color prop
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
@@ -792,6 +793,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       } as React.CSSProperties}
     >
       <link rel="manifest" href="/manifest.json" />
+      <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={primaryColor} />
       {/* Grain overlay - dark mode only */}
       {theme.isDark && (
         <div 
