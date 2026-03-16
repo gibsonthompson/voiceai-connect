@@ -36,6 +36,7 @@ interface Client {
     support_email: string | null;
     support_phone: string | null;
     website_theme: 'light' | 'dark' | 'auto' | null;
+    client_header_mode?: 'agency_name' | 'business_name' | null;
     plan_features?: Record<string, Record<string, boolean>>;
     branding_overrides?: {
       nav_bg?: string;
@@ -60,6 +61,7 @@ interface Branding {
   supportEmail: string | null;
   supportPhone: string | null;
   websiteTheme: 'light' | 'dark' | 'auto';
+  clientHeaderMode: 'agency_name' | 'business_name';
 }
 
 // ============================================================================
@@ -195,6 +197,7 @@ const defaultBranding: Branding = {
   supportEmail: null,
   supportPhone: null,
   websiteTheme: 'dark',
+  clientHeaderMode: 'agency_name',
 };
 
 const ClientContext = createContext<ClientContextType>({
@@ -269,6 +272,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         supportEmail: agency?.support_email || null,
         supportPhone: agency?.support_phone || null,
         websiteTheme: agency?.website_theme || 'dark',
+        clientHeaderMode: agency?.client_header_mode || 'agency_name',
       });
 
       setLoading(false);

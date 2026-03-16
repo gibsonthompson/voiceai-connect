@@ -86,8 +86,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
 
-  // Client's own branding takes priority — fall back to agency
-  const displayName = branding.businessName || branding.agencyName || 'Loading...';
+  // Agency controls what name shows in client header
+  // 'agency_name' (default) = show agency name, 'business_name' = show client's business name
+  const displayName = branding.clientHeaderMode === 'business_name'
+    ? (branding.businessName || branding.agencyName || 'Loading...')
+    : (branding.agencyName || 'Loading...');
   const displayLogo = branding.logoUrl;
 
   useEffect(() => {

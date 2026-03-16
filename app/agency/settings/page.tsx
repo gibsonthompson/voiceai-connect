@@ -90,7 +90,7 @@ const FEATURE_ORDER = [
 ];
 
 // ============================================================================
-// COLOR EXTRACTION — proper algorithm with background detection + saturation scoring
+// COLOR EXTRACTION
 // ============================================================================
 function rgbToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
@@ -105,122 +105,58 @@ function adjustColorBrightness(hex: string, percent: number): string {
   return rgbToHex(R, G, B);
 }
 
-function detectLogoBackground(
-  canvas: HTMLCanvasElement,
-  ctx: CanvasRenderingContext2D
-): { r: number; g: number; b: number; isTransparent: boolean } {
+function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): { r: number; g: number; b: number; isTransparent: boolean } {
   const w = canvas.width;
   const h = canvas.height;
   const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
   const edgePixels: ImageData[] = [];
-
-  for (let x = 0; x < w; x += step) {
-    edgePixels.push(ctx.getImageData(x, 0, 1, 1));
-    edgePixels.push(ctx.getImageData(x, h - 1, 1, 1));
-  }
-  for (let y = 0; y < h; y += step) {
-    edgePixels.push(ctx.getImageData(0, y, 1, 1));
-    edgePixels.push(ctx.getImageData(w - 1, y, 1, 1));
-  }
-
+  for (let x = 0; x < w; x += step) { edgePixels.push(ctx.getImageData(x, 0, 1, 1)); edgePixels.push(ctx.getImageData(x, h - 1, 1, 1)); }
+  for (let y = 0; y < h; y += step) { edgePixels.push(ctx.getImageData(0, y, 1, 1)); edgePixels.push(ctx.getImageData(w - 1, y, 1, 1)); }
   const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
-  if (transparentCount > edgePixels.length * 0.5) {
-    return { r: 0, g: 0, b: 0, isTransparent: true };
-  }
-
+  if (transparentCount > edgePixels.length * 0.5) return { r: 0, g: 0, b: 0, isTransparent: true };
   let r = 0, g = 0, b = 0, count = 0;
-  edgePixels.forEach(p => {
-    if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; }
-  });
-
-  return count > 0
-    ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false }
-    : { r: 255, g: 255, b: 255, isTransparent: false };
+  edgePixels.forEach(p => { if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; } });
+  return count > 0 ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false } : { r: 255, g: 255, b: 255, isTransparent: false };
 }
 
-/**
- * Extract brand colors from logo AND detect background for theme selection.
- */
-async function extractColorsFromImage(imageUrl: string): Promise<{
-  primary: string; secondary: string; accent: string;
-  logoBgColor: string; suggestedTheme: 'light' | 'dark';
-}> {
+async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> {
   const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const };
-
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
-
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve(fallback); return; }
-
       const size = 150;
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = size; canvas.height = size;
       ctx.drawImage(img, 0, 0, size, size);
-
       const bg = detectLogoBackground(canvas, ctx);
       const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
-
       let suggestedTheme: 'light' | 'dark' = 'dark';
-      if (!bg.isTransparent) {
-        const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255;
-        suggestedTheme = luminance > 0.5 ? 'light' : 'dark';
-      }
-
+      if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; }
       const pixels = ctx.getImageData(0, 0, size, size).data;
-
-      const colorData: Record<string, {
-        count: number; r: number; g: number; b: number;
-        saturation: number; lightness: number;
-      }> = {};
-
+      const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {};
       for (let i = 0; i < pixels.length; i += 4) {
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
-
-        const bgDist = Math.sqrt(
-          Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
-        );
+        const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2));
         if (bgDist < 50) continue;
-
-        const br = Math.round(r / 25) * 25;
-        const bg2 = Math.round(g / 25) * 25;
-        const bb = Math.round(b / 25) * 25;
-
-        const max = Math.max(br, bg2, bb) / 255;
-        const min = Math.min(br, bg2, bb) / 255;
+        const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25;
+        const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255;
         const lightness = (max + min) / 2;
-        const saturation = max === min ? 0 : lightness > 0.5
-          ? (max - min) / (2 - max - min)
-          : (max - min) / (max + min);
-
+        const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
         if (lightness < 0.15 || lightness > 0.65) continue;
         if (saturation < 0.25) continue;
-
         const key = `${br},${bg2},${bb}`;
-        if (!colorData[key]) {
-          colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness };
-        }
+        if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness };
         colorData[key].count++;
       }
-
-      const colors = Object.values(colorData)
-        .filter(c => c.count >= 5)
-        .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
-        .slice(0, 6)
-        .map(c => rgbToHex(c.r, c.g, c.b));
-
+      const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b));
       if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; }
-
-      const primary = colors[0];
-      const secondary = colors[1] || adjustColorBrightness(primary, -25);
-      const accent = colors[2] || adjustColorBrightness(primary, 30);
+      const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30);
       resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme });
     };
-
     img.onerror = () => resolve(fallback);
     img.src = imageUrl;
   });
@@ -229,9 +165,7 @@ async function extractColorsFromImage(imageUrl: string): Promise<{
 // ============================================================================
 // FEATURE TOGGLE COMPONENT
 // ============================================================================
-function FeatureToggle({ featureKey, enabled, onToggle, theme }: {
-  featureKey: string; enabled: boolean; onToggle: () => void; theme: any;
-}) {
+function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) {
   const info = FEATURE_LABELS[featureKey];
   if (!info) return null;
   return (
@@ -239,16 +173,8 @@ function FeatureToggle({ featureKey, enabled, onToggle, theme }: {
       <div className="flex-1 min-w-0 mr-3">
         <p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p>
       </div>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
-        style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}
-      >
-        <span
-          className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
-          style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }}
-        />
+      <button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
       </button>
     </div>
   );
@@ -297,6 +223,9 @@ function AgencySettingsContent() {
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 
+  // EDIT 1: Client header mode state
+  const [clientHeaderMode, setClientHeaderMode] = useState<'agency_name' | 'business_name'>('agency_name');
+
   // Theme detection from logo upload
   const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null);
   const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
@@ -334,6 +263,8 @@ function AgencySettingsContent() {
         secondary: agency.secondary_color || '#059669',
         accent: agency.accent_color || '#34d399',
       });
+      // EDIT 2: Load client header mode from agency
+      setClientHeaderMode((agency as any).client_header_mode || 'agency_name');
     }
   }, [agency?.branding_overrides]);
 
@@ -357,9 +288,7 @@ function AgencySettingsContent() {
     setLoadingStripeStatus(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) setStripeStatus(await response.json());
     } catch (err) { console.error('Failed to fetch Stripe status:', err); }
     finally { setLoadingStripeStatus(false); }
@@ -370,13 +299,8 @@ function AgencySettingsContent() {
     setLoadingFeedback(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFeedbackHistory(data.feedback || []);
-      }
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (response.ok) { const data = await response.json(); setFeedbackHistory(data.feedback || []); }
     } catch (err) { console.error('Failed to fetch feedback:', err); }
     finally { setLoadingFeedback(false); }
   };
@@ -425,7 +349,6 @@ function AgencySettingsContent() {
           const result = await extractColorsFromImage(dataUrl);
           setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
           setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
-          // Store detected theme and background color from logo
           setDetectedWebsiteTheme(result.suggestedTheme);
           setDetectedLogoBgColor(result.logoBgColor);
           console.log(`🎨 Logo analyzed: theme=${result.suggestedTheme}, bg=${result.logoBgColor}`);
@@ -462,13 +385,14 @@ function AgencySettingsContent() {
           payload.secondary_color = brandColors.secondary;
           payload.accent_color = brandColors.accent;
         }
-        // Include auto-detected theme and logo background color when a new logo was uploaded
         if (detectedWebsiteTheme) {
           payload.website_theme = detectedWebsiteTheme;
         }
         if (detectedLogoBgColor) {
           payload.logo_background_color = detectedLogoBgColor;
         }
+        // EDIT 3: Include client header mode in save payload
+        payload.client_header_mode = clientHeaderMode;
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = Math.round(parseFloat(pricePro) * 100);
@@ -488,7 +412,6 @@ function AgencySettingsContent() {
       if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); }
       await refreshAgency();
       setSaved(true);
-      // Reset detection state after successful save
       setDetectedWebsiteTheme(null);
       setDetectedLogoBgColor(null);
       setTimeout(() => setSaved(false), 3000);
@@ -568,11 +491,7 @@ function AgencySettingsContent() {
   };
 
   if (contextLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
-      </div>
-    );
+    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
   }
 
   const getStripeStatusDisplay = () => {
@@ -655,17 +574,12 @@ function AgencySettingsContent() {
         <div className="lg:w-48 flex-shrink-0">
           <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
             {settingsTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
+              <button key={tab.id} onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`}
-                style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}
-              >
+                style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}>
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
-                {tab.id === 'demo' && demoMode && (
-                  <div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />
-                )}
+                {tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}
               </button>
             ))}
           </nav>
@@ -714,8 +628,7 @@ function AgencySettingsContent() {
 
                   {extractingColors && (
                     <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Extracting brand colors...</span>
+                      <Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span>
                     </div>
                   )}
 
@@ -739,7 +652,6 @@ function AgencySettingsContent() {
                           </div>
                         ))}
                       </div>
-                      {/* Show detected theme */}
                       {detectedWebsiteTheme && (
                         <div className="mt-3 flex items-center gap-2">
                           <div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} />
@@ -756,6 +668,32 @@ function AgencySettingsContent() {
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
                   <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div>
                   <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/signup</p>
+                </div>
+
+                {/* EDIT 4: Client Dashboard Header Mode Toggle */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label>
+                  <p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p>
+                  <div className="flex gap-2">
+                    {([
+                      { value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' },
+                      { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" },
+                    ]).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setClientHeaderMode(option.value)}
+                        className="flex-1 rounded-xl p-3 text-left transition-all"
+                        style={{
+                          backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input,
+                          border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}`,
+                        }}
+                      >
+                        <p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p>
+                        <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -941,7 +879,6 @@ function AgencySettingsContent() {
                         <Receipt className="h-4 w-4" style={{ color: theme.infoText }} />
                         <p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p>
                       </div>
-                      {/* FIX: Distinguish card-on-file trials from no-card trials */}
                       <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
                         {agency?.stripe_subscription_id
                           ? `Your card will be charged automatically on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.`
@@ -983,7 +920,6 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* EDIT 2: Added international number requirement note above BYOTSettings */}
             {activeTab === 'twilio' && (
               <div className="space-y-4 sm:space-y-6">
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
@@ -1027,10 +963,7 @@ function AgencySettingsContent() {
                     {demoFeatures.map((f) => (
                       <div key={f.label} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} />
-                        <div>
-                          <span className="text-sm font-medium">{f.label}</span>
-                          <span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span>
-                        </div>
+                        <div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div>
                       </div>
                     ))}
                   </div>
@@ -1105,11 +1038,7 @@ function AgencySettingsContent() {
 }
 
 function SettingsLoading() {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-    </div>
-  );
+  return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>);
 }
 
 export default function AgencySettingsPage() {
