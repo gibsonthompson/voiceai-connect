@@ -68,15 +68,17 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Nav colors derived from actual sidebar bg, not page isDark mode
+  // (sidebar can be dark via branding_overrides even when page is light)
   const nav = {
     bg: theme.navBg,
     text: theme.navText,
-    textMuted: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151',
-    border: theme.border,
-    activeItemBg: theme.isDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15`,
-    activeItemColor: theme.isDark ? '#ffffff' : theme.primary,
-    hoverBg: theme.hover,
-    poweredByBg: theme.isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
+    textMuted: theme.navTextMuted,
+    border: theme.navBorder,
+    activeItemBg: theme.navActiveItemBg,
+    activeItemColor: theme.navActiveColor,
+    hoverBg: theme.navHover,
+    poweredByBg: theme.isNavDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
   };
 
   const clientTrialExpired = isTrialExpired(client);
@@ -324,8 +326,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             {displayLogo ? (
               <img src={displayLogo} alt={displayName} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />
             ) : (
-              <div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
-                <Phone className="h-6 w-6" style={{ color: theme.isDark ? '#ffffff' : theme.primary }} />
+              <div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
+                <Phone className="h-6 w-6" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
               </div>
             )}
             <span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: nav.text }}>{displayName}</span>
@@ -359,8 +361,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           {displayLogo ? (
             <img src={displayLogo} alt={displayName} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />
           ) : (
-            <div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
-              <Phone className="h-4 w-4" style={{ color: theme.isDark ? '#ffffff' : theme.primary }} />
+            <div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
+              <Phone className="h-4 w-4" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
             </div>
           )}
           <span className="font-medium truncate" style={{ color: nav.text }}>{displayName}</span>
@@ -384,16 +386,16 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         {/* Bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
           {clientOnTrial && trialDaysLeft !== null && (
-            <div className="rounded-xl p-3" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}` }}>
-              <p className="text-xs" style={{ color: theme.isDark ? 'rgba(251,191,36,0.6)' : '#92400e' }}>Trial Period</p>
-              <p className="text-sm font-medium" style={{ color: theme.isDark ? '#fbbf24' : '#78350f' }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
+            <div className="rounded-xl p-3" style={{ backgroundColor: theme.isNavDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isNavDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}` }}>
+              <p className="text-xs" style={{ color: theme.isNavDark ? 'rgba(251,191,36,0.6)' : '#92400e' }}>Trial Period</p>
+              <p className="text-sm font-medium" style={{ color: theme.isNavDark ? '#fbbf24' : '#78350f' }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
             </div>
           )}
 
           {clientPaymentFailed && (
-            <a href="/client/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.isDark ? 'rgba(239,68,68,0.08)' : '#fef2f2', border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
-              <p className="text-xs" style={{ color: theme.isDark ? 'rgba(252,165,165,0.6)' : '#b91c1c' }}>Payment Issue</p>
-              <p className="text-sm font-medium" style={{ color: theme.isDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
+            <a href="/client/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.isNavDark ? 'rgba(239,68,68,0.08)' : '#fef2f2', border: `1px solid ${theme.isNavDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
+              <p className="text-xs" style={{ color: theme.isNavDark ? 'rgba(252,165,165,0.6)' : '#b91c1c' }}>Payment Issue</p>
+              <p className="text-sm font-medium" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
             </a>
           )}
 
