@@ -151,6 +151,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('client');
     localStorage.removeItem('user');
+    localStorage.removeItem('voiceai_ui_theme');
     window.location.href = '/client/login';
   };
 
@@ -172,15 +173,24 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = href;
   };
 
+  // Save resolved theme to localStorage so skeleton can read it on next load
+  useEffect(() => {
+    if (!loading && theme) {
+      try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {}
+    }
+  }, [loading, theme.isDark]);
+
   if (loading) {
-    // Skeleton loading screen — matches actual layout shape
-    // Default to dark (most common); can't know agency theme until API responds
-    const sk = {
-      bg: '#0a0a0a', card: '#111111', sidebar: '#0a0a0a',
-      border: 'rgba(255,255,255,0.06)',
-      pulse: 'rgba(255,255,255,0.06)',
-      pulse2: 'rgba(255,255,255,0.03)',
-    };
+    // Read saved theme from previous session — avoids hardcoding dark/light
+    let isDark = true;
+    try {
+      const saved = localStorage.getItem('voiceai_ui_theme');
+      if (saved === 'light') isDark = false;
+    } catch {}
+
+    const sk = isDark
+      ? { bg: '#0a0a0a', card: '#111111', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
+      : { bg: '#f9fafb', card: '#ffffff', sidebar: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
 
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: sk.bg }}>

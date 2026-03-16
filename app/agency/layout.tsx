@@ -261,10 +261,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     };
   }, [theme.bg]);
 
+  // Save resolved theme to localStorage so skeleton can read it on next load
+  useEffect(() => {
+    if (!loading) {
+      try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {}
+    }
+  }, [loading, theme.isDark]);
+
   const handleSignOut = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('agency');
     localStorage.removeItem('user');
+    localStorage.removeItem('voiceai_ui_theme');
     window.location.href = '/agency/login';
   };
 
@@ -293,21 +301,28 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ==========================================================================
-  // Skeleton loading screen — reads theme from localStorage to avoid flash
+  // Skeleton loading screen — reads saved theme from localStorage
   // ==========================================================================
   if (loading) {
     let isDark = true;
     try {
-      const stored = localStorage.getItem('agency');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        isDark = parsed.website_theme === 'dark' || !parsed.website_theme || parsed.website_theme === 'auto';
+      // First check the saved UI theme (set by this layout after real theme loads)
+      const saved = localStorage.getItem('voiceai_ui_theme');
+      if (saved === 'light') isDark = false;
+      else if (saved === 'dark') isDark = true;
+      else {
+        // Fallback: parse agency object from localStorage
+        const stored = localStorage.getItem('agency');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          isDark = parsed.website_theme !== 'light';
+        }
       }
     } catch {}
 
     const sk = isDark
-      ? { bg: '#050505', sidebar: '#050505', card: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
-      : { bg: '#f5f5f5', sidebar: '#ffffff', card: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
+      ? { bg: '#050505', sidebar: '#050505', card: 'rgba(255,255,255,0.02)', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
+      : { bg: '#f9fafb', sidebar: '#ffffff', card: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
 
     return (
       <div className="min-h-screen flex" style={{ backgroundColor: sk.bg, zoom: 0.8 }}>
