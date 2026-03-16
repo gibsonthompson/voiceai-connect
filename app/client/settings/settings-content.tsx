@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
   Check, Copy, Mail, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
-  PhoneForwarded, PhoneIncoming
+  PhoneForwarded, PhoneIncoming, Headphones
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
@@ -108,12 +108,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Calendar integration state
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
 
-  // Call mode state
   const [callMode, setCallMode] = useState<'primary' | 'fallback'>(
     (client.call_mode as 'primary' | 'fallback') || 'primary'
   );
@@ -123,8 +121,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [callModeMessage, setCallModeMessage] = useState('');
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+  const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
-  // Fetch call mode on mount
   useEffect(() => {
     const fetchCallMode = async () => {
       try {
@@ -143,7 +141,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     fetchCallMode();
   }, [client.id, backendUrl]);
 
-  // Fetch calendar status on mount
   useEffect(() => {
     const fetchCalendarStatus = async () => {
       try {
@@ -170,7 +167,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     fetchCalendarStatus();
   }, [client.id, backendUrl]);
 
-  // Check URL params for calendar connection result
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'calendar_connected') {
@@ -222,7 +218,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   };
 
   const handleCallModeChange = async (newMode: 'primary' | 'fallback') => {
-    // Check if owner phone exists for fallback mode
     const currentOwnerPhone = client.owner_phone || ownerPhone;
     if (newMode === 'fallback' && !currentOwnerPhone) {
       setCallModeMessage('Please add your phone number in Contact Information first.');
@@ -375,14 +370,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {/* Status Message */}
       {message && (
         <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto" style={getMessageStyle(message)}>
           {message}
         </div>
       )}
 
-      {/* Page Title */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
         <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your account and preferences</p>
@@ -469,7 +462,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   Choose how incoming calls are handled
                 </p>
 
-                {/* Primary Mode Option */}
                 <button
                   onClick={() => handleCallModeChange('primary')}
                   disabled={savingCallMode || callMode === 'primary'}
@@ -481,13 +473,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ borderColor: callMode === 'primary' ? theme.primary : theme.border }}
-                    >
-                      {callMode === 'primary' && (
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />
-                      )}
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ borderColor: callMode === 'primary' ? theme.primary : theme.border }}>
+                      {callMode === 'primary' && (<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -503,7 +490,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   </div>
                 </button>
 
-                {/* Fallback Mode Option */}
                 <button
                   onClick={() => handleCallModeChange('fallback')}
                   disabled={savingCallMode || callMode === 'fallback'}
@@ -515,13 +501,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ borderColor: callMode === 'fallback' ? theme.primary : theme.border }}
-                    >
-                      {callMode === 'fallback' && (
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />
-                      )}
+                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ borderColor: callMode === 'fallback' ? theme.primary : theme.border }}>
+                      {callMode === 'fallback' && (<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -537,7 +518,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   </div>
                 </button>
 
-                {/* Fallback mode info */}
                 {callMode === 'fallback' && (
                   <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>
@@ -546,7 +526,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   </div>
                 )}
 
-                {/* No owner phone warning */}
                 {callMode === 'primary' && !client.owner_phone && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
@@ -750,7 +729,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             Integrations
           </h2>
 
-          {/* Google Calendar */}
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="flex items-center gap-2 sm:gap-3 mb-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 border rounded-lg flex items-center justify-center flex-shrink-0" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
@@ -857,12 +835,48 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Support */}
         <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
+            <Headphones className="w-4 h-4" style={{ color: theme.primary }} />
+            Support
+          </h2>
+
+          {/* AI Support Line */}
+          {supportPhone && (
+            <div className="rounded-xl border p-3 sm:p-4 shadow-sm mb-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
+                    <Headphones className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.primary }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>AI Support Line</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Available 24/7 — get help with your AI receptionist</p>
+                  </div>
+                </div>
+                <a
+                  href={`tel:${supportPhone}`}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90 flex-shrink-0"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                >
+                  <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  Call
+                </a>
+              </div>
+              <div className="mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <a href={`tel:${supportPhone}`} className="font-semibold text-sm sm:text-lg" style={{ color: theme.primary }}>
+                  {formatPhoneNumber(supportPhone)}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Agency Contact */}
           <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
             <div className="flex items-start gap-2 sm:gap-3">
               <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
               <div className="min-w-0">
-                <h4 className="font-semibold text-xs sm:text-sm mb-1" style={{ color: theme.text }}>Need Help?</h4>
-                <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} for support:</p>
+                <h4 className="font-semibold text-xs sm:text-sm mb-1" style={{ color: theme.text }}>Need More Help?</h4>
+                <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} directly:</p>
                 {branding.supportPhone && (
                   <a href={`tel:${branding.supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 font-semibold text-sm sm:text-lg hover:opacity-80 transition" style={{ color: theme.primary }}>
                     <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
