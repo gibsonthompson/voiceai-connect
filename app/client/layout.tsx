@@ -173,9 +173,92 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   if (loading) {
+    // Skeleton loading screen — matches actual layout shape
+    // Default to dark (most common); can't know agency theme until API responds
+    const sk = {
+      bg: '#0a0a0a', card: '#111111', sidebar: '#0a0a0a',
+      border: 'rgba(255,255,255,0.06)',
+      pulse: 'rgba(255,255,255,0.06)',
+      pulse2: 'rgba(255,255,255,0.03)',
+    };
+
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted }} />
+      <div className="min-h-screen flex" style={{ backgroundColor: sk.bg }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+          .sk-p { animation: skPulse 1.8s ease-in-out infinite; }
+          .sk-p2 { animation: skPulse 1.8s ease-in-out 0.3s infinite; }
+          .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
+        `}} />
+        {/* Sidebar skeleton — hidden on mobile */}
+        <div className="hidden md:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
+          {/* Logo area */}
+          <div className="h-16 flex items-center gap-3 px-6" style={{ borderBottom: `1px solid ${sk.border}` }}>
+            <div className="w-8 h-8 rounded-lg sk-p" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-4 w-24 rounded-md sk-p" style={{ backgroundColor: sk.pulse }} />
+          </div>
+          {/* Nav items */}
+          <div className="p-4 space-y-2">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 2 ? 'sk-p' : 'sk-p2'}`}>
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
+                <div className="h-3.5 rounded-md" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2, width: `${60 + i * 12}px` }} />
+              </div>
+            ))}
+          </div>
+          {/* Bottom */}
+          <div className="mt-auto p-4 space-y-2">
+            <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
+              <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-3.5 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
+            </div>
+            <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
+              <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-3.5 w-20 rounded" style={{ backgroundColor: sk.pulse }} />
+            </div>
+          </div>
+        </div>
+        {/* Content skeleton */}
+        <div className="flex-1 p-6 md:p-8">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="h-6 w-40 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-3.5 w-56 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
+          </div>
+          {/* Phone number card */}
+          <div className="rounded-xl p-5 mb-5 sk-p" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+            <div className="h-3 w-28 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
+            <div className="h-7 w-44 rounded-lg" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-3 w-48 rounded mt-2" style={{ backgroundColor: sk.pulse2 }} />
+          </div>
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            {[1,2].map(i => (
+              <div key={i} className={`rounded-xl p-5 ${i === 2 ? 'sk-p2' : 'sk-p'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+                <div className="h-3 w-20 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="h-8 w-12 rounded-lg mb-1" style={{ backgroundColor: sk.pulse }} />
+                <div className="h-2.5 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              </div>
+            ))}
+          </div>
+          {/* Recent calls */}
+          <div className="rounded-xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+            <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${sk.border}` }}>
+              <div className="h-4 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
+              <div className="h-3 w-14 rounded" style={{ backgroundColor: sk.pulse2 }} />
+            </div>
+            {[1,2,3].map(i => (
+              <div key={i} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                <div className="w-8 h-8 rounded-full" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="flex-1">
+                  <div className="h-3.5 w-32 rounded mb-1.5" style={{ backgroundColor: sk.pulse }} />
+                  <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                </div>
+                <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

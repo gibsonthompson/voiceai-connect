@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock, Headphones,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock,
   Check, Crown, Shield,
   type LucideIcon
 } from 'lucide-react';
@@ -210,14 +210,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     },
     { 
       href: '/agency/templates', 
-      label: 'AI Lab', 
+      label: 'AI Templates', 
       icon: Cpu,
       locked: !isEnterprise,
       upgradeRequired: 'Enterprise',
     },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift },
-    { href: '/agency/support', label: 'Support', icon: Headphones },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
@@ -278,9 +277,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     if (href === '/agency/templates') {
       return pathname?.startsWith('/agency/templates');
     }
-    if (href === '/agency/support') {
-      return pathname?.startsWith('/agency/support');
-    }
     return pathname?.startsWith(href);
   };
 
@@ -296,30 +292,130 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ==========================================================================
-  // CHANGED: Loading screen reads theme from localStorage to avoid flash
+  // Skeleton loading screen — reads theme from localStorage to avoid flash
   // ==========================================================================
   if (loading) {
-    let loadingBg = '#f5f5f5';
-    let loadingText = '#a3a3a3';
-    let loadingTextMuted = '#737373';
+    let isDark = true;
     try {
       const stored = localStorage.getItem('agency');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.website_theme === 'dark' || !parsed.website_theme || parsed.website_theme === 'auto') {
-          loadingBg = '#050505';
-          loadingText = '#525252';
-          loadingTextMuted = '#404040';
-        }
+        isDark = parsed.website_theme === 'dark' || !parsed.website_theme || parsed.website_theme === 'auto';
       }
     } catch {}
 
+    const sk = isDark
+      ? { bg: '#050505', sidebar: '#050505', card: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
+      : { bg: '#f5f5f5', sidebar: '#ffffff', card: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
+
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: loadingBg }}>
+      <div className="min-h-screen flex" style={{ backgroundColor: sk.bg, zoom: 0.8 }}>
         <link rel="manifest" href="/manifest.json" />
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin" style={{ color: loadingText }} />
-          <p className="text-sm" style={{ color: loadingTextMuted }}>Loading dashboard...</p>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+          .sk-p { animation: skPulse 1.8s ease-in-out infinite; }
+          .sk-p2 { animation: skPulse 1.8s ease-in-out 0.3s infinite; }
+          .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
+        `}} />
+        {/* Sidebar skeleton */}
+        <div className="hidden md:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
+          {/* Logo */}
+          <div className="h-16 flex items-center gap-3 px-6" style={{ borderBottom: `1px solid ${sk.border}` }}>
+            <div className="w-8 h-8 rounded-lg sk-p" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-4 w-24 rounded-md sk-p" style={{ backgroundColor: sk.pulse }} />
+          </div>
+          {/* Nav items — 12 to match agency nav */}
+          <div className="p-4 space-y-1.5">
+            {[1,2,3,4,5,6,7,8,9,10,11,12].map(i => (
+              <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${i <= 3 ? 'sk-p' : i <= 8 ? 'sk-p2' : 'sk-p3'}`}>
+                <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
+                <div className="h-3 rounded-md" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2, width: `${50 + (i % 5) * 14}px` }} />
+              </div>
+            ))}
+          </div>
+          {/* Bottom badges */}
+          <div className="mt-auto p-4 space-y-2">
+            <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
+              <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-3.5 w-28 rounded" style={{ backgroundColor: sk.pulse }} />
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2.5 sk-p3">
+              <div className="w-5 h-5 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="flex-1 p-6 md:p-8">
+          {/* Page header */}
+          <div className="mb-8">
+            <div className="h-7 w-52 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-3.5 w-72 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
+          </div>
+
+          {/* Stat cards row — 4 cards like agency dashboard */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[1,2,3,4].map(i => (
+              <div key={i} className={`rounded-xl p-5 ${i <= 2 ? 'sk-p' : 'sk-p2'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                  <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: sk.pulse2 }} />
+                </div>
+                <div className="h-8 w-16 rounded-lg mb-1" style={{ backgroundColor: sk.pulse }} />
+                <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Two-column section: client list + activity */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Client list table — takes 2 cols */}
+            <div className="lg:col-span-2 rounded-xl sk-p2" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+              <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                <div className="h-4 w-28 rounded" style={{ backgroundColor: sk.pulse }} />
+                <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              </div>
+              {/* Table header */}
+              <div className="flex items-center gap-4 px-5 py-3" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                <div className="h-2.5 w-32 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="h-2.5 w-16 rounded ml-auto" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="h-2.5 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
+              </div>
+              {/* Table rows */}
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="flex items-center gap-4 px-5 py-3.5" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-8 h-8 rounded-full" style={{ backgroundColor: sk.pulse2 }} />
+                    <div>
+                      <div className="h-3.5 rounded mb-1" style={{ backgroundColor: sk.pulse, width: `${80 + i * 15}px` }} />
+                      <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                    </div>
+                  </div>
+                  <div className="h-5 w-14 rounded-full" style={{ backgroundColor: sk.pulse2 }} />
+                  <div className="h-3 w-10 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                  <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                </div>
+              ))}
+            </div>
+
+            {/* Activity feed — takes 1 col */}
+            <div className="rounded-xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+              <div className="p-5" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                <div className="h-4 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
+              </div>
+              {[1,2,3,4].map(i => (
+                <div key={i} className="flex items-start gap-3 px-5 py-3.5" style={{ borderBottom: `1px solid ${sk.border}` }}>
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: sk.pulse2 }} />
+                  <div className="flex-1">
+                    <div className="h-3 rounded mb-1.5" style={{ backgroundColor: sk.pulse, width: `${70 + i * 10}%` }} />
+                    <div className="h-2.5 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -343,6 +439,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
+          {/* Logo */}
           <div className="mb-6">
             {branding.logoUrl ? (
               <img 
@@ -360,33 +457,62 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               </div>
             )}
           </div>
+
+          {/* Icon */}
           <div 
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
             style={{ backgroundColor: `${theme.primary}12` }}
           >
             <Zap className="h-7 w-7" style={{ color: theme.primary }} />
           </div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Finish Setting Up Your Agency</h1>
-          <p className="mb-2 text-base" style={{ color: theme.textMuted }}>
+
+          <h1 
+            className="text-2xl font-bold mb-3"
+            style={{ color: theme.text }}
+          >
+            Finish Setting Up Your Agency
+          </h1>
+          <p 
+            className="mb-2 text-base"
+            style={{ color: theme.textMuted }}
+          >
             You&apos;re almost there! Select a plan to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your agency dashboard.
           </p>
-          <p className="mb-8 text-sm" style={{ color: theme.textMuted }}>No credit card required. Cancel anytime.</p>
+          <p 
+            className="mb-8 text-sm"
+            style={{ color: theme.textMuted }}
+          >
+            No credit card required. Cancel anytime.
+          </p>
+
           <a
             href={`/signup/plan?agency=${agency?.id}`}
             className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            style={{ 
+              backgroundColor: theme.primary,
+              color: theme.primaryText,
+            }}
           >
             <Zap className="h-5 w-5" />
             Choose a Plan &amp; Start Free Trial
           </a>
-          <button onClick={handleSignOut} className="block w-full mt-5 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+
+          <button
+            onClick={handleSignOut}
+            className="block w-full mt-5 text-sm transition-colors hover:opacity-70"
+            style={{ color: theme.textMuted }}
+          >
+            Sign out
+          </button>
         </div>
       </div>
     );
   }
 
   // ============================================================================
-  // TRIAL EXPIRED GATE
+  // TRIAL EXPIRED GATE — No-card trial ended, must pick a plan and subscribe
+  // CHANGED: Now shows 3-tier plan selection instead of generic "Subscribe Now"
+  // Calls /api/agency/checkout with { agency_id, plan, skipTrial: true }
   // ============================================================================
   if (agencyTrialExpiredNoCard) {
     const handleSelectPlan = async (planId: string) => {
@@ -397,8 +523,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         const token = localStorage.getItem('auth_token');
         const response = await fetch(`${backendUrl}/api/agency/checkout`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ agency_id: agency?.id, plan: planId, skipTrial: true }),
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ 
+            agency_id: agency?.id,
+            plan: planId,
+            skipTrial: true,
+          }),
         });
         const data = await response.json();
         if (data.url) {
@@ -416,46 +549,104 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: theme.bg }}
+      >
         <link rel="manifest" href="/manifest.json" />
         <div className="max-w-4xl w-full">
+          {/* Header */}
           <div className="text-center mb-8">
+            {/* Logo */}
             <div className="mb-6">
               {branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.name} style={{ height: '48px', width: 'auto' }} className="object-contain mx-auto" />
+                <img 
+                  src={branding.logoUrl} 
+                  alt={branding.name}
+                  style={{ height: '48px', width: 'auto' }}
+                  className="object-contain mx-auto"
+                />
               ) : (
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ backgroundColor: theme.primary15 }}>
+                <div 
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+                  style={{ backgroundColor: theme.primary15 }}
+                >
                   <WaveformIcon className="h-8 w-8" color={theme.primary} />
                 </div>
               )}
             </div>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.1)' }}>
+
+            {/* Clock icon */}
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+              style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.1)' : 'rgba(251,191,36,0.1)' }}
+            >
               <Clock className="h-7 w-7" style={{ color: '#fbbf24' }} />
             </div>
-            <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Your Free Trial Has Ended</h1>
-            <p className="mb-2 text-base max-w-lg mx-auto" style={{ color: theme.textMuted }}>Choose a plan to keep your agency, clients, and AI receptionists active.</p>
+
+            <h1 
+              className="text-2xl font-bold mb-3"
+              style={{ color: theme.text }}
+            >
+              Your Free Trial Has Ended
+            </h1>
+            <p 
+              className="mb-2 text-base max-w-lg mx-auto"
+              style={{ color: theme.textMuted }}
+            >
+              Choose a plan to keep your agency, clients, and AI receptionists active.
+            </p>
           </div>
 
+          {/* Plan Cards */}
           <div className="grid md:grid-cols-3 gap-4 mb-8">
             {AGENCY_PLAN_TIERS.map((plan) => {
               const isSelected = selectedPlan === plan.id;
               const isLoading = subscribeLoading && isSelected;
+
               return (
-                <div key={plan.id} className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-200"
+                <div
+                  key={plan.id}
+                  className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-200"
                   style={{
                     backgroundColor: theme.card,
-                    borderColor: plan.popular ? (theme.isDark ? `${theme.primary}50` : theme.primary) : theme.border,
-                    boxShadow: plan.popular ? (theme.isDark ? `0 0 40px ${theme.primary}10` : '0 8px 30px rgba(0,0,0,0.08)') : 'none',
+                    borderColor: plan.popular 
+                      ? (theme.isDark ? `${theme.primary}50` : theme.primary) 
+                      : theme.border,
+                    boxShadow: plan.popular 
+                      ? (theme.isDark ? `0 0 40px ${theme.primary}10` : '0 8px 30px rgba(0,0,0,0.08)')
+                      : 'none',
                     transform: plan.popular ? 'scale(1.02)' : undefined,
-                  }}>
+                  }}
+                >
+                  {/* Popular badge */}
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 0 16px ${theme.primary}40` }}>Recommended</span>
+                      <span 
+                        className="px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{ 
+                          backgroundColor: theme.primary, 
+                          color: theme.primaryText,
+                          boxShadow: `0 0 16px ${theme.primary}40`,
+                        }}
+                      >
+                        Recommended
+                      </span>
                     </div>
                   )}
+
+                  {/* Plan header */}
                   <div className="text-center mb-5">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3" style={{ backgroundColor: plan.popular ? `${theme.primary}20` : (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') }}>
-                      <plan.icon className="h-5 w-5" style={{ color: plan.popular ? theme.primary : theme.text }} />
+                    <div 
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3"
+                      style={{ 
+                        backgroundColor: plan.popular ? `${theme.primary}20` : (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+                      }}
+                    >
+                      <plan.icon 
+                        className="h-5 w-5" 
+                        style={{ color: plan.popular ? theme.primary : theme.text }} 
+                      />
                     </div>
                     <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
                     <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
@@ -463,31 +654,69 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                       <span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span>
                       <span className="text-sm" style={{ color: theme.textMuted }}>/mo</span>
                     </div>
-                    <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>{plan.clients} clients</p>
+                    <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+                      {plan.clients} clients
+                    </p>
                   </div>
+
+                  {/* Features */}
                   <ul className="space-y-2.5 mb-5">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2.5 text-sm">
-                        <div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}>
+                        <div 
+                          className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5"
+                          style={{ backgroundColor: `${theme.primary}15` }}
+                        >
                           <Check className="h-3 w-3" style={{ color: theme.primary }} />
                         </div>
                         <span style={{ color: theme.textMuted }}>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading}
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    disabled={subscribeLoading}
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>
-                    {isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : (<><CreditCard className="h-4 w-4" />Subscribe — ${plan.price}/mo</>)}
+                    style={plan.popular ? {
+                      backgroundColor: theme.primary,
+                      color: theme.primaryText,
+                    } : {
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      color: theme.text,
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Redirecting...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4" />
+                        Subscribe — ${plan.price}/mo
+                      </>
+                    )}
                   </button>
                 </div>
               );
             })}
           </div>
 
+          {/* Footer */}
           <div className="text-center">
-            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>All plans include a 14-day money-back guarantee. Cancel anytime.</p>
-            <button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
+              All plans include a 14-day money-back guarantee. Cancel anytime.
+            </p>
+            <button
+              onClick={handleSignOut}
+              className="text-sm transition-colors hover:opacity-70"
+              style={{ color: theme.textMuted }}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </div>
@@ -497,22 +726,54 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // Show blocking screen while redirecting
   if (shouldBlockAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: theme.bg }}
+      >
         <link rel="manifest" href="/manifest.json" />
-        <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}` }}>
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}>
+        <div 
+          className="max-w-md w-full rounded-2xl p-8 text-center"
+          style={{ 
+            backgroundColor: theme.card,
+            border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}`,
+          }}
+        >
+          <div 
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: theme.errorBg }}
+          >
             <CreditCard className="h-8 w-8 text-red-500" />
           </div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Payment Required</h1>
-          <p className="mb-6" style={{ color: theme.textMuted }}>
+          <h1 
+            className="text-2xl font-bold mb-3"
+            style={{ color: theme.text }}
+          >
+            Payment Required
+          </h1>
+          <p 
+            className="mb-6"
+            style={{ color: theme.textMuted }}
+          >
             {agencyIsSuspended 
               ? 'Your agency has been suspended. Please update your payment method to restore access.'
-              : 'Your payment has failed. Please update your payment method to continue using your agency.'}
+              : 'Your payment has failed. Please update your payment method to continue using your agency.'
+            }
           </p>
-          <a href="/agency/settings" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors" style={{ backgroundColor: '#ef4444' }}>
-            <CreditCard className="h-5 w-5" />Update Payment Method
+          <a
+            href="/agency/settings"
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors"
+            style={{ backgroundColor: '#ef4444' }}
+          >
+            <CreditCard className="h-5 w-5" />
+            Update Payment Method
           </a>
-          <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors" style={{ color: theme.textMuted }}>Sign out</button>
+          <button
+            onClick={handleSignOut}
+            className="block w-full mt-4 text-sm transition-colors"
+            style={{ color: theme.textMuted }}
+          >
+            Sign out
+          </button>
         </div>
       </div>
     );
@@ -531,41 +792,99 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       } as React.CSSProperties}
     >
       <link rel="manifest" href="/manifest.json" />
+      {/* Grain overlay - dark mode only */}
       {theme.isDark && (
-        <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        <div 
+          className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
       )}
 
       {/* Payment Failed Banner */}
       {hasPaymentIssue && isAccessibleRoute && (
-        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}>
+        <div 
+          className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3"
+          style={{
+            top: 0,
+            backgroundColor: theme.errorBg,
+            borderBottom: `1px solid ${theme.errorBorder}`,
+          }}
+        >
           <div className="flex items-center gap-3">
             <CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} />
             <div>
-              <p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p>
-              <p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p>
+              <p className="font-medium text-sm" style={{ color: theme.errorText }}>
+                Payment failed
+              </p>
+              <p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>
+                Please update your payment method to continue using your agency.
+              </p>
             </div>
           </div>
           {!pathname?.startsWith('/agency/settings') && (
-            <a href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</a>
+            <a 
+              href="/agency/settings"
+              className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
+              style={{ 
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+              }}
+            >
+              Update Payment
+            </a>
           )}
         </div>
       )}
 
       {/* Mobile Header */}
-      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}>
-        <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+      <div 
+        className="sticky z-30 md:hidden"
+        style={{ 
+          backgroundColor: theme.sidebarBg, 
+          paddingTop: 'env(safe-area-inset-top)',
+          top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0,
+        }}
+      >
+        <header 
+          className="flex items-center justify-between h-16 px-4"
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
+        >
           <div className="flex items-center gap-3">
             {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />
+              <img 
+                src={branding.logoUrl} 
+                alt={branding.name}
+                style={{ height: '40px', width: 'auto' }}
+                className="object-contain flex-shrink-0"
+              />
             ) : (
-              <div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}>
+              <div 
+                className="flex items-center justify-center rounded-xl" 
+                style={{ 
+                  height: '40px', 
+                  width: '40px', 
+                  backgroundColor: theme.primary15,
+                  border: `1px solid ${theme.sidebarBorder}`,
+                }}
+              >
                 <WaveformIcon className="h-6 w-6" color={theme.primary} />
               </div>
             )}
-            <span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{agency?.name || 'Agency'}</span>
+            <span 
+              className="font-semibold text-lg truncate max-w-[180px]"
+              style={{ color: theme.sidebarText }}
+            >
+              {agency?.name || 'Agency'}
+            </span>
           </div>
-          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}>
+
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            style={{ color: theme.sidebarText }}
+          >
             <Menu className="h-7 w-7" />
           </button>
         </header>
@@ -573,32 +892,72 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && isMobile && (
-        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`}
-        style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 md:w-64
+          transform transition-transform duration-300 ease-out
+          ${isMobile 
+            ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : 'translate-x-0'
+          }
+        `}
+        style={{ 
+          backgroundColor: theme.sidebarBg, 
+          borderRight: `1px solid ${theme.sidebarBorder}`,
+          paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0,
+          top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0,
+        }}
       >
         {/* Mobile Header in Sidebar */}
-        <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+        <div 
+          className="flex md:hidden items-center justify-between h-16 px-4"
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
+        >
           <span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span>
-          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors"
+            style={{ color: theme.sidebarText }}
+          >
             <X className="h-7 w-7" />
           </button>
         </div>
 
         {/* Desktop Logo & Agency Name */}
-        <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+        <div 
+          className="hidden md:flex h-16 items-center gap-3 px-6"
+          style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
+        >
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />
+            <img 
+              src={branding.logoUrl} 
+              alt={branding.name}
+              style={{ height: '32px', width: 'auto' }}
+              className="object-contain flex-shrink-0"
+            />
           ) : (
-            <div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}>
+            <div 
+              className="flex items-center justify-center rounded-lg" 
+              style={{ 
+                height: '32px', 
+                width: '32px', 
+                backgroundColor: theme.primary15,
+                border: `1px solid ${theme.sidebarBorder}`,
+              }}
+            >
               <WaveformIcon className="h-5 w-5" color={theme.primary} />
             </div>
           )}
-          <span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{agency?.name || 'Agency'}</span>
+          <span className="font-semibold truncate" style={{ color: theme.sidebarText }}>
+            {agency?.name || 'Agency'}
+          </span>
         </div>
 
         {/* Navigation */}
@@ -607,23 +966,48 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             const active = isActive(item.href);
             const isLocked = item.locked === true;
             const IconComponent = item.icon;
+            
             return (
-              <a key={item.href} href={item.href}
+              <a
+                key={item.href}
+                href={item.href}
                 onClick={(e) => handleNavClick(e, item.href, isLocked, item.upgradeRequired)}
                 className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all"
-                style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }}
-                onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }}
-                onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }}
+                style={
+                  isLocked 
+                    ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' }
+                    : active 
+                      ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor }
+                      : { color: theme.sidebarText }
+                }
+                onMouseEnter={(e) => {
+                  if (!isLocked && !active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLocked && !active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                  }
+                }}
                 title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}
               >
                 <div className="flex items-center gap-3">
                   <IconComponent className="h-5 w-5" />
                   <span>{item.label}</span>
-                  {isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}
+                  {isLocked && (
+                    <Lock className="h-3.5 w-3.5 ml-1" />
+                  )}
                 </div>
                 {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
                 {isLocked && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>
+                  <span 
+                    className="text-[10px] px-1.5 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: theme.sidebarHover,
+                      color: theme.sidebarTextMuted,
+                    }}
+                  >
                     {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
                   </span>
                 )}
@@ -633,56 +1017,123 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-4 space-y-3"
+          style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}
+        >
           {/* Demo Mode Toggle */}
-          <button onClick={toggleDemoMode}
+          <button
+            onClick={toggleDemoMode}
             className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
-            style={demoMode ? { backgroundColor: theme.sidebarActiveItemBg, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.sidebarHover, border: `1px solid ${theme.sidebarBorder}` }}
-            onMouseEnter={(e) => { if (!demoMode) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }}
-            onMouseLeave={(e) => { if (!demoMode) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }}
+            style={demoMode ? {
+              backgroundColor: theme.sidebarActiveItemBg,
+              border: `1px solid ${theme.primary30}`,
+            } : {
+              backgroundColor: theme.sidebarHover,
+              border: `1px solid ${theme.sidebarBorder}`,
+            }}
+            onMouseEnter={(e) => {
+              if (!demoMode) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!demoMode) {
+                (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+              }
+            }}
           >
             <div className="flex items-center gap-3">
               <Eye className="h-4 w-4" style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }} />
               <span style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }}>Demo Mode</span>
             </div>
-            <div className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-              <span className="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition duration-200" style={{ transform: demoMode ? 'translate(16px, 3px)' : 'translate(3px, 3px)' }} />
+            {/* Mini toggle switch */}
+            <div
+              className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200"
+              style={{ 
+                backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+              }}
+            >
+              <span
+                className="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition duration-200"
+                style={{ 
+                  transform: demoMode ? 'translate(16px, 3px)' : 'translate(3px, 3px)',
+                }}
+              />
             </div>
           </button>
 
           {/* Trial Badge */}
           {isOnTrial && trialDaysLeft !== null && (
-            <div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-              <p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p>
-              <p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p>
+            <div 
+              className="rounded-xl p-3"
+              style={{
+                backgroundColor: theme.infoBg,
+                border: `1px solid ${theme.infoBorder}`,
+              }}
+            >
+              <p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>
+                Trial Period
+              </p>
+              <p className="text-sm font-medium" style={{ color: theme.infoText }}>
+                {trialDaysLeft} days remaining
+              </p>
               <p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>
-                {agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}
+                {agency?.stripe_subscription_id 
+                  ? 'Your card will be charged automatically'
+                  : 'Subscribe before your trial ends to keep access'
+                }
               </p>
             </div>
           )}
 
           {/* Payment Issue Badge */}
           {hasPaymentIssue && (
-            <a href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+            <a
+              href="/agency/settings"
+              className="block rounded-xl p-3 transition-opacity hover:opacity-90"
+              style={{
+                backgroundColor: theme.errorBg,
+                border: `1px solid ${theme.errorBorder}`,
+              }}
+            >
               <p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p>
-              <p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p>
+              <p className="text-sm font-medium" style={{ color: theme.errorText }}>
+                Update payment method
+              </p>
             </a>
           )}
 
-          {/* Plan Badge */}
+          {/* Plan Badge - Show for active subscriptions */}
           {agency?.subscription_status === 'active' && (
-            <div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}>
+            <div 
+              className="rounded-xl p-3"
+              style={{
+                backgroundColor: theme.primary10,
+                border: `1px solid ${theme.primary30}`,
+              }}
+            >
               <p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p>
-              <p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || agency?.plan_type || 'Starter'}</p>
+              <p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>
+                {planName || agency?.plan_type || 'Starter'}
+              </p>
             </div>
           )}
           
           {/* Sign Out */}
-          <button onClick={handleSignOut}
+          <button
+            onClick={handleSignOut}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4"
-            style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+            style={{ 
+              color: theme.sidebarTextMuted,
+              borderTop: `1px solid ${theme.sidebarBorder}`,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+            }}
           >
             <LogOut className="h-5 w-5" />
             Sign Out
