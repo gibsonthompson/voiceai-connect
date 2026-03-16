@@ -20,6 +20,11 @@ interface Client {
   calls_this_month: number;
   google_calendar_connected: boolean;
   created_at: string;
+  // Client-level branding (overrides agency branding when set)
+  logo_url: string | null;
+  primary_color: string | null;
+  secondary_color: string | null;
+  accent_color: string | null;
   agency: {
     id: string;
     name: string;
@@ -50,6 +55,7 @@ interface Branding {
   secondaryColor: string;
   accentColor: string;
   agencyName: string;
+  businessName: string;
   logoUrl: string | null;
   supportEmail: string | null;
   supportPhone: string | null;
@@ -73,10 +79,10 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
   starter: {
     sms_notifications: true,
     email_summaries: true,
-    custom_greeting: false,
+    custom_greeting: true,
     custom_voice: false,
-    knowledge_base: false,
-    business_hours: false,
+    knowledge_base: true,
+    business_hours: true,
     advanced_analytics: false,
     priority_support: false,
   },
@@ -137,6 +143,36 @@ const CLIENT_FEATURE_LABELS: Record<ClientFeatureKey, { title: string; descripti
   },
 };
 
+// ============================================================================
+// TRIAL STATUS HELPERS
+// ============================================================================
+
+/** Check if subscription is in a trial state (handles both 'trial' and 'trialing') */
+function isTrialStatus(status: string | null | undefined): boolean {
+  return status === 'trial' || status === 'trialing';
+}
+
+/** Check if client's trial is currently active (not expired) */
+function isTrialActive(client: Client | null): boolean {
+  if (!client) return false;
+  if (!isTrialStatus(client.subscription_status)) return false;
+  if (!client.trial_ends_at) return false;
+  return new Date(client.trial_ends_at) > new Date();
+}
+
+/** Get the effective plan for feature gating.
+ *  During active trial → 'growth' (full access, same pattern as agency effectivePlan = 'enterprise')
+ *  Otherwise → client's actual plan_type */
+function getEffectivePlan(client: Client | null): string {
+  if (!client) return 'starter';
+  if (isTrialActive(client)) return 'growth';
+  return client.plan_type || 'starter';
+}
+
+// ============================================================================
+// CONTEXT
+// ============================================================================
+
 interface ClientContextType {
   client: Client | null;
   branding: Branding;
@@ -145,6 +181,8 @@ interface ClientContextType {
   isFeatureEnabled: (feature: ClientFeatureKey) => boolean;
   getFeatureLabel: (feature: ClientFeatureKey) => { title: string; description: string };
   planType: string;
+  /** Effective plan for feature gating — 'growth' during active trial, otherwise actual plan */
+  effectivePlan: string;
 }
 
 const defaultBranding: Branding = {
@@ -152,6 +190,7 @@ const defaultBranding: Branding = {
   secondaryColor: '#1e40af',
   accentColor: '#60a5fa',
   agencyName: 'VoiceAI',
+  businessName: '',
   logoUrl: null,
   supportEmail: null,
   supportPhone: null,
@@ -166,6 +205,7 @@ const ClientContext = createContext<ClientContextType>({
   isFeatureEnabled: () => true,
   getFeatureLabel: (f) => CLIENT_FEATURE_LABELS[f] || { title: f, description: '' },
   planType: 'pro',
+  effectivePlan: 'growth',
 });
 
 export function useClient() {
@@ -218,12 +258,14 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setClient(fetchedClient);
       
       const agency = fetchedClient.agency;
+      // Client-level branding takes priority over agency branding
       setBranding({
-        primaryColor: agency?.primary_color || '#3b82f6',
-        secondaryColor: agency?.secondary_color || '#1e40af',
-        accentColor: agency?.accent_color || '#60a5fa',
+        primaryColor: fetchedClient.primary_color || agency?.primary_color || '#3b82f6',
+        secondaryColor: fetchedClient.secondary_color || agency?.secondary_color || '#1e40af',
+        accentColor: fetchedClient.accent_color || agency?.accent_color || '#60a5fa',
         agencyName: agency?.name || 'VoiceAI',
-        logoUrl: agency?.logo_url || null,
+        businessName: fetchedClient.business_name || '',
+        logoUrl: fetchedClient.logo_url || agency?.logo_url || null,
         supportEmail: agency?.support_email || null,
         supportPhone: agency?.support_phone || null,
         websiteTheme: agency?.website_theme || 'dark',
@@ -240,13 +282,19 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     fetchClientData();
   }, []);
 
+  // ============================================================================
+  // EFFECTIVE PLAN — 'growth' during active trial, otherwise actual plan
+  // ============================================================================
+  const effectivePlan = getEffectivePlan(client);
+
   const isFeatureEnabled = useCallback((feature: ClientFeatureKey): boolean => {
     if (!client) return true;
     
-    const planType = client.plan_type || 'starter';
+    // Use effectivePlan instead of raw plan_type for feature gating
+    const plan = getEffectivePlan(client);
     const agencyFeatures = client.agency?.plan_features;
     
-    const features = agencyFeatures?.[planType] || DEFAULT_PLAN_FEATURES[planType];
+    const features = agencyFeatures?.[plan] || DEFAULT_PLAN_FEATURES[plan];
     
     if (!features) return true;
     
@@ -268,6 +316,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       isFeatureEnabled,
       getFeatureLabel,
       planType,
+      effectivePlan,
     }}>
       <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />
       {children}
@@ -276,4 +325,4 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 }
 
 export type { ClientFeatureKey, Client, Branding };
-export { CLIENT_FEATURE_LABELS, DEFAULT_PLAN_FEATURES };
+export { CLIENT_FEATURE_LABELS, DEFAULT_PLAN_FEATURES, isTrialStatus, isTrialActive };

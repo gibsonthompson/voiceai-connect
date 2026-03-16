@@ -24,6 +24,7 @@ export function useClientTheme() {
 
   return useMemo(() => {
     const isDark = branding.websiteTheme === 'dark';
+    // branding.primaryColor already prefers client-level over agency-level (set in client-context)
     const primary = branding.primaryColor || '#3b82f6';
     const overrides = client?.agency?.branding_overrides;
 
