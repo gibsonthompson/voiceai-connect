@@ -281,7 +281,8 @@ function ThemedSelect({
 const INDUSTRY_OPTIONS = [
   { value: 'general', label: 'General Business' },
   { value: 'home_services', label: 'Home Services' },
-  { value: 'medical', label: 'Medical / Dental' },
+  { value: 'medical', label: 'Medical' },
+  { value: 'dental', label: 'Dental & Orthodontics' },
   { value: 'legal', label: 'Legal Services' },
   { value: 'real_estate', label: 'Real Estate' },
   { value: 'financial', label: 'Financial Services' },
