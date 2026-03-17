@@ -70,7 +70,8 @@ const DEFAULT_PHONE_CONFIG = { code: '', placeholder: 'Phone number', minDigits:
 
 const INDUSTRIES = [
   { value: 'home_services', label: 'Home Services' },
-  { value: 'medical_dental', label: 'Medical & Dental' },
+  { value: 'medical', label: 'Medical' },
+  { value: 'dental', label: 'Dental & Orthodontics' },
   { value: 'legal', label: 'Legal' },
   { value: 'real_estate', label: 'Real Estate' },
   { value: 'retail', label: 'Retail' },
