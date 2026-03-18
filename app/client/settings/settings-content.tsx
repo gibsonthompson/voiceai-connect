@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
-  Check, Copy, Mail, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
+  Phone, Loader2, User, CreditCard, Link2, 
+  Check, Copy, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
   PhoneForwarded, PhoneIncoming, Headphones
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -874,28 +874,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
           )}
 
-          {/* Agency Contact */}
-          <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
-            <div className="flex items-start gap-2 sm:gap-3">
-              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-              <div className="min-w-0">
-                <h4 className="font-semibold text-xs sm:text-sm mb-1" style={{ color: theme.text }}>Need More Help?</h4>
-                <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Contact {branding.agencyName} directly:</p>
-                {branding.supportPhone && (
-                  <a href={`tel:${branding.supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 font-semibold text-sm sm:text-lg hover:opacity-80 transition" style={{ color: theme.primary }}>
-                    <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    {formatPhoneNumber(branding.supportPhone)}
-                  </a>
-                )}
-                {branding.supportEmail && (
-                  <a href={`mailto:${branding.supportEmail}`} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm hover:opacity-80 transition mt-1 truncate" style={{ color: theme.primary }}>
-                    <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="truncate">{branding.supportEmail}</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
+
         </section>
       </div>
     </div>

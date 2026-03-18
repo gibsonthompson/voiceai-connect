@@ -211,7 +211,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     },
     { 
       href: '/agency/templates', 
-      label: 'AI Templates', 
+      label: 'AI Lab', 
       icon: Cpu,
       locked: !isEnterprise,
       upgradeRequired: 'Enterprise',
@@ -809,6 +809,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     >
       <link rel="manifest" href="/manifest.json" />
       <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={primaryColor} />
+      {/* Dynamic ::selection color — matches agency branding */}
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
       {/* Grain overlay - dark mode only */}
       {theme.isDark && (
         <div 

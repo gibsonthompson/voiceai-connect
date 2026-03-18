@@ -288,6 +288,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
+      {/* Dynamic ::selection color — matches agency branding */}
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
+
       {/* Payment Failed Banner */}
       {clientPaymentFailed && (
         <div className="sticky top-0 z-40 px-4 py-3 flex items-center justify-between gap-3"
