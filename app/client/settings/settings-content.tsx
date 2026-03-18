@@ -8,6 +8,7 @@ import {
   PhoneForwarded, PhoneIncoming, Headphones, ChevronDown
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import ToolConfigSection from '@/components/client/ToolConfigSection';
 
 interface Client {
   id: string;
@@ -578,6 +579,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             )}
           </div>
         </section>
+
+        {/* AI Tools */}
+        <ToolConfigSection clientId={client.id} theme={theme} />
 
         {/* Contact Information */}
         <section className="mb-4 sm:mb-6">

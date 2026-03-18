@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  PhoneCall, Search, Filter, Loader2
+  PhoneCall, Search, Filter, Loader2, PhoneForwarded, ShieldX
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -86,6 +86,28 @@ export default function ClientCallsPage() {
     );
   });
 
+  // Badge helpers
+  const getCallStatusBadge = (call: any) => {
+    if (call.call_status === 'spam' || call.is_spam) {
+      return { label: 'Spam', icon: ShieldX, bg: theme.errorBg, color: theme.error };
+    }
+    if (call.call_status === 'transferred' || call.transfer_status === 'transferred') {
+      return { label: 'Transferred', icon: PhoneForwarded, bg: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.primary };
+    }
+    if (call.transfer_status === 'transfer_failed') {
+      return { label: 'Transfer Failed', icon: PhoneForwarded, bg: theme.warningBg, color: theme.warning };
+    }
+    return null;
+  };
+
+  const getUrgencyStyle = (call: any) => {
+    const level = call.urgency_level;
+    if (level === 'spam') return { backgroundColor: theme.errorBg, color: theme.error };
+    if (level === 'high' || level === 'emergency') return { backgroundColor: theme.errorBg, color: theme.error };
+    if (level === 'medium') return { backgroundColor: theme.warningBg, color: theme.warning };
+    return { backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.textMuted };
+  };
+
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
@@ -163,13 +185,8 @@ export default function ClientCallsPage() {
       ) : (
         <div className="space-y-2 sm:space-y-3">
           {filteredCalls.map((call) => {
-            const urgencyStyle = 
-              call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                ? { backgroundColor: theme.errorBg, color: theme.error }
-                : call.urgency_level === 'medium'
-                ? { backgroundColor: theme.warningBg, color: theme.warning }
-                : { backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.textMuted };
-
+            const urgencyStyle = getUrgencyStyle(call);
+            const statusBadge = getCallStatusBadge(call);
             const relativeDate = formatRelativeDate(call.created_at);
 
             return (
@@ -184,18 +201,33 @@ export default function ClientCallsPage() {
                   <div className="flex items-start gap-3">
                     <div 
                       className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0"
-                      style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) }}
+                      style={{ backgroundColor: statusBadge?.label === 'Spam' ? theme.errorBg : statusBadge?.label === 'Transferred' ? hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) : hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) }}
                     >
-                      <PhoneCall className="h-4 w-4" style={{ color: theme.primary }} />
+                      {statusBadge?.label === 'Spam' ? (
+                        <ShieldX className="h-4 w-4" style={{ color: theme.error }} />
+                      ) : statusBadge?.label === 'Transferred' ? (
+                        <PhoneForwarded className="h-4 w-4" style={{ color: theme.primary }} />
+                      ) : (
+                        <PhoneCall className="h-4 w-4" style={{ color: theme.primary }} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <p className="font-medium text-sm truncate" style={{ color: theme.text }}>
                           {call.customer_name || 'Unknown Caller'}
                         </p>
-                        <span className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0" style={urgencyStyle}>
-                          {call.urgency_level || 'normal'}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {statusBadge && (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: statusBadge.bg, color: statusBadge.color }}>
+                              {statusBadge.label}
+                            </span>
+                          )}
+                          {!statusBadge && (
+                            <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={urgencyStyle}>
+                              {call.urgency_level || 'normal'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xs" style={{ color: theme.textMuted }}>
                         {formatPhoneNumber(call.customer_phone || call.caller_phone)}
@@ -212,9 +244,15 @@ export default function ClientCallsPage() {
                   <div className="flex items-center gap-4">
                     <div 
                       className="flex h-10 w-10 items-center justify-center rounded-full"
-                      style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) }}
+                      style={{ backgroundColor: statusBadge?.label === 'Spam' ? theme.errorBg : statusBadge?.label === 'Transferred' ? hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) : hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1) }}
                     >
-                      <PhoneCall className="h-5 w-5" style={{ color: theme.primary }} />
+                      {statusBadge?.label === 'Spam' ? (
+                        <ShieldX className="h-5 w-5" style={{ color: theme.error }} />
+                      ) : statusBadge?.label === 'Transferred' ? (
+                        <PhoneForwarded className="h-5 w-5" style={{ color: theme.primary }} />
+                      ) : (
+                        <PhoneCall className="h-5 w-5" style={{ color: theme.primary }} />
+                      )}
                     </div>
                     <div>
                       <p className="font-medium" style={{ color: theme.text }}>
@@ -225,7 +263,12 @@ export default function ClientCallsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-2 text-right">
+                    {statusBadge && (
+                      <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: statusBadge.bg, color: statusBadge.color }}>
+                        {statusBadge.label}
+                      </span>
+                    )}
                     <span className="rounded-full px-3 py-1 text-xs font-medium" style={urgencyStyle}>
                       {call.urgency_level || 'normal'}
                     </span>

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   Phone, Settings, ArrowLeft, Clock,
-  User, MapPin, AlertCircle, MessageSquare, Loader2
+  User, MapPin, AlertCircle, MessageSquare, Loader2,
+  PhoneForwarded, ShieldX
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useClient } from '@/lib/client-context';
@@ -25,6 +26,10 @@ interface Call {
   recording_url: string | null;
   duration_seconds: number | null;
   call_status: string | null;
+  transfer_status: string | null;
+  ended_reason: string | null;
+  is_spam: boolean | null;
+  spam_reason: string | null;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -83,7 +88,30 @@ export default function CallDetailPage() {
     if (urgency === 'medium') {
       return { backgroundColor: theme.warningBg, color: theme.warning, borderColor: theme.warningBorder };
     }
+    if (urgency === 'spam') {
+      return { backgroundColor: theme.errorBg, color: theme.error, borderColor: theme.errorBorder };
+    }
     return { backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.textMuted, borderColor: theme.border };
+  };
+
+  const getCallStatusLabel = (call: Call) => {
+    if (call.is_spam || call.call_status === 'spam') return 'Spam Blocked';
+    if (call.call_status === 'transferred' || call.transfer_status === 'transferred') return 'Transferred';
+    if (call.transfer_status === 'transfer_failed') return 'Transfer Failed';
+    return 'Completed';
+  };
+
+  const getCallStatusStyle = (call: Call) => {
+    if (call.is_spam || call.call_status === 'spam') {
+      return { backgroundColor: theme.errorBg, color: theme.error };
+    }
+    if (call.call_status === 'transferred' || call.transfer_status === 'transferred') {
+      return { backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.2 : 0.1), color: theme.primary };
+    }
+    if (call.transfer_status === 'transfer_failed') {
+      return { backgroundColor: theme.warningBg, color: theme.warning };
+    }
+    return { backgroundColor: theme.successBg, color: theme.success };
   };
 
   if (loading || !client) {
@@ -115,6 +143,11 @@ export default function CallDetailPage() {
   }
 
   const urgencyStyle = getUrgencyStyle(call.urgency_level);
+  const statusLabel = getCallStatusLabel(call);
+  const statusStyle = getCallStatusStyle(call);
+  const isSpam = call.is_spam || call.call_status === 'spam';
+  const wasTransferred = call.call_status === 'transferred' || call.transfer_status === 'transferred';
+  const transferFailed = call.transfer_status === 'transfer_failed';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
@@ -133,7 +166,7 @@ export default function CallDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold truncate" style={{ color: theme.text }}>
-              Call with {call.customer_name || 'Unknown Caller'}
+              {isSpam ? 'Spam Call' : `Call with ${call.customer_name || 'Unknown Caller'}`}
             </h1>
             <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm" style={{ color: theme.textMuted }}>
               {new Date(call.created_at).toLocaleDateString('en-US', {
@@ -143,14 +176,52 @@ export default function CallDetailPage() {
             </p>
           </div>
           
-          <span
-            className="self-start rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border whitespace-nowrap"
-            style={urgencyStyle}
-          >
-            {call.urgency_level ? `${call.urgency_level.charAt(0).toUpperCase()}${call.urgency_level.slice(1)}` : 'Normal'} Priority
-          </span>
+          <div className="flex items-center gap-2 self-start">
+            {/* Call status badge (transferred / spam / completed) */}
+            <span
+              className="rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-1.5"
+              style={statusStyle}
+            >
+              {isSpam && <ShieldX className="h-3.5 w-3.5" />}
+              {(wasTransferred || transferFailed) && <PhoneForwarded className="h-3.5 w-3.5" />}
+              {statusLabel}
+            </span>
+
+            {/* Urgency badge — hide for spam since it always says "spam" */}
+            {!isSpam && (
+              <span
+                className="rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium border whitespace-nowrap"
+                style={urgencyStyle}
+              >
+                {call.urgency_level ? `${call.urgency_level.charAt(0).toUpperCase()}${call.urgency_level.slice(1)}` : 'Normal'} Priority
+              </span>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Spam banner */}
+      {isSpam && (
+        <div 
+          className="rounded-xl border p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-3"
+          style={{ borderColor: theme.errorBorder, backgroundColor: theme.errorBg }}
+        >
+          <ShieldX className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.error }} />
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.error }}>
+              This call was detected as spam and automatically blocked
+            </p>
+            {call.spam_reason && (
+              <p className="text-xs mt-1" style={{ color: theme.error }}>
+                Type: {call.spam_reason}
+              </p>
+            )}
+            <p className="text-xs mt-1" style={{ color: theme.errorText }}>
+              This call was not counted against your monthly limit.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content */}
@@ -186,6 +257,7 @@ export default function CallDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-4 sm:space-y-6">
+          {/* Contact Details */}
           <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Contact Details</h2>
             <div className="space-y-3 sm:space-y-4">
@@ -240,9 +312,27 @@ export default function CallDetailPage() {
             </div>
           </div>
 
+          {/* Call Details */}
           <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Call Details</h2>
             <div className="space-y-3 sm:space-y-4">
+              {/* Call Status */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
+                  {isSpam ? (
+                    <ShieldX className="h-4 w-4" style={{ color: theme.error }} />
+                  ) : (wasTransferred || transferFailed) ? (
+                    <PhoneForwarded className="h-4 w-4" style={{ color: theme.primary }} />
+                  ) : (
+                    <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Status</p>
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: statusStyle.color }}>{statusLabel}</p>
+                </div>
+              </div>
+
               {call.service_requested && (
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
@@ -254,7 +344,7 @@ export default function CallDetailPage() {
                   </div>
                 </div>
               )}
-              {call.urgency_level && (
+              {call.urgency_level && !isSpam && (
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.bg }}>
                     <AlertCircle className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -279,8 +369,9 @@ export default function CallDetailPage() {
             </div>
           </div>
 
+          {/* Actions */}
           <div className="space-y-2 sm:space-y-3">
-            {(call.customer_phone || call.caller_phone) && (
+            {!isSpam && (call.customer_phone || call.caller_phone) && (
               <a 
                 href={`tel:${call.customer_phone || call.caller_phone}`}
                 className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors hover:opacity-90"
@@ -290,12 +381,14 @@ export default function CallDetailPage() {
                 Call Back
               </a>
             )}
-            <button 
-              className="flex items-center justify-center gap-2 w-full rounded-full border px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors"
-              style={{ borderColor: theme.border, color: theme.textMuted, backgroundColor: 'transparent' }}
-            >
-              Mark as Resolved
-            </button>
+            {!isSpam && (
+              <button 
+                className="flex items-center justify-center gap-2 w-full rounded-full border px-4 py-2.5 sm:py-3 text-sm font-medium transition-colors"
+                style={{ borderColor: theme.border, color: theme.textMuted, backgroundColor: 'transparent' }}
+              >
+                Mark as Resolved
+              </button>
+            )}
           </div>
         </div>
       </div>
