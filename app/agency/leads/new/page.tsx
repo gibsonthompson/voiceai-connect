@@ -30,6 +30,8 @@ const SOURCE_OPTIONS = [
   { value: 'referral', label: 'Referral' },
   { value: 'in_person', label: 'In Person' },
   { value: 'event', label: 'Event / Trade Show' },
+  { value: 'lead_finder', label: 'Lead Finder' },
+  { value: 'csv_import', label: 'CSV Import' },
   { value: 'other', label: 'Other' },
 ];
 

@@ -917,6 +917,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         isOpen={showPwaModal}
         onClose={() => setShowPwaModal(false)}
         manualTrigger
+        appName={branding.agencyName || client.business_name || 'Your App'}
       />
     </div>
   );

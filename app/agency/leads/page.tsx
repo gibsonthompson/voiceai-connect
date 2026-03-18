@@ -288,6 +288,15 @@ export default function AgencyLeadsPage() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Link
+              href="/agency/leads/finder"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              <Search className="h-4 w-4" />
+              Find Leads
+            </Link>
+
             <button
               onClick={() => setShowCSVImport(true)}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
@@ -306,7 +315,11 @@ export default function AgencyLeadsPage() {
             <Link
               href="/agency/leads/new"
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+              style={{
+                backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+                border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151',
+              }}
             >
               <Plus className="h-4 w-4" />
               Add Lead
@@ -687,14 +700,22 @@ export default function AgencyLeadsPage() {
                 Clear Filters
               </button>
             ) : (
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3 flex-wrap">
                 <Link
-                  href="/agency/leads/new"
+                  href="/agency/leads/finder"
                   className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
                   style={{ backgroundColor: theme.primary, color: theme.primaryText }}
                 >
+                  <Search className="h-4 w-4" />
+                  Find Leads
+                </Link>
+                <Link
+                  href="/agency/leads/new"
+                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                  style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
+                >
                   <Plus className="h-4 w-4" />
-                  Add First Lead
+                  Add Lead
                 </Link>
                 <button
                   onClick={() => setShowCSVImport(true)}

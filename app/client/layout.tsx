@@ -422,7 +422,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* PWA Install Prompt — auto-triggers after 3rd visit */}
       {client && (
-        <AddToHomeScreenModal clientId={client.id} theme={theme} />
+        <AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.agencyName || client.business_name || 'Your App'} />
       )}
     </div>
   );

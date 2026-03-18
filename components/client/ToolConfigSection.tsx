@@ -180,7 +180,7 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
             return (
               <div key={tool.key}>
                 <div
-                  className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-lg transition"
+                  className="flex items-center justify-between gap-3 p-3 sm:p-3 rounded-lg transition"
                   style={{
                     backgroundColor: tool.enabled && !isDisabled ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : 'transparent',
                     opacity: isDisabled ? 0.4 : 1,
@@ -203,20 +203,22 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
                   <button
                     onClick={() => !isDisabled && updateConfig(tool.key, !tool.enabled)}
                     disabled={saving || isDisabled}
-                    className="relative w-10 h-5.5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
+                    className="relative rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
                     style={{
                       backgroundColor: tool.enabled && !isDisabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'),
-                      minWidth: '2.5rem',
-                      height: '1.375rem',
+                      minWidth: '2.75rem',
+                      width: '2.75rem',
+                      height: '1.625rem',
                     }}
                   >
                     <span
-                      className="absolute top-0.5 rounded-full transition-transform shadow-sm"
+                      className="absolute rounded-full transition-all duration-200 shadow-sm"
                       style={{
-                        width: '1.125rem',
-                        height: '1.125rem',
+                        width: '1.375rem',
+                        height: '1.375rem',
+                        top: '0.125rem',
                         backgroundColor: '#fff',
-                        left: tool.enabled && !isDisabled ? 'calc(100% - 1.25rem)' : '0.125rem',
+                        left: tool.enabled && !isDisabled ? 'calc(100% - 1.5rem)' : '0.125rem',
                       }}
                     />
                   </button>
