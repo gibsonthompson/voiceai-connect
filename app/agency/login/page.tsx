@@ -147,7 +147,7 @@ export default function AgencyLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.88 }}>
       {/* Grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -156,28 +156,31 @@ export default function AgencyLoginPage() {
         }}
       />
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+      {/* Header — with safe-area padding for PWA standalone mode */}
+      <header
+        className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-14 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="relative h-9 w-9 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                <WaveformIcon className="h-5 w-5 text-[#fafaf9]" />
+              <div className="relative h-8 w-8 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                <WaveformIcon className="h-4.5 w-4.5 text-[#fafaf9]" />
               </div>
-              <span className="text-base font-semibold tracking-tight">VoiceAI Connect</span>
+              <span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
             <Link 
               href="/signup" 
-              className="text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+              className="text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
             >
-              Don&apos;t have an account? <span className="text-emerald-400">Sign up</span>
+              No account? <span className="text-emerald-400">Sign up</span>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32">
+      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28">
         {/* Ambient glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-emerald-500/[0.03] rounded-full blur-[100px]" />
@@ -185,10 +188,10 @@ export default function AgencyLoginPage() {
 
         <div className="relative w-full max-w-md">
           {/* Card */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 backdrop-blur-sm">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-semibold tracking-tight">Welcome Back</h1>
-              <p className="mt-2 text-[#fafaf9]/50">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8 backdrop-blur-sm">
+            <div className="text-center mb-6">
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Welcome Back</h1>
+              <p className="mt-1.5 text-sm text-[#fafaf9]/50">
                 Sign in to your agency dashboard
               </p>
             </div>
@@ -197,33 +200,33 @@ export default function AgencyLoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={googleLoading || loading}
-              className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-6 py-3.5 text-base font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-6"
+              className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-5 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-5"
             >
               {googleLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
+                <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
               ) : (
-                <GoogleIcon className="h-5 w-5" />
+                <GoogleIcon className="h-4 w-4" />
               )}
               Continue with Google
             </button>
 
             {/* Divider */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/[0.06]" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
+              <div className="relative flex justify-center text-[10px] uppercase">
                 <span className="bg-[#050505] px-3 text-[#fafaf9]/40">or</span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                <label className="block text-xs font-medium text-[#fafaf9]/70 mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
                     name="email"
                     type="email"
@@ -231,17 +234,17 @@ export default function AgencyLoginPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-11 pr-4 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-10 pr-4 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
+                <label className="block text-xs font-medium text-[#fafaf9]/70 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
                   <input
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -249,14 +252,14 @@ export default function AgencyLoginPage() {
                     value={formData.password}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-11 pr-12 py-3 text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-10 pr-11 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 hover:text-[#fafaf9]/70"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -265,20 +268,20 @@ export default function AgencyLoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input 
                     type="checkbox" 
-                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 focus:ring-offset-transparent"
+                    className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 focus:ring-offset-transparent"
                   />
-                  <span className="text-sm text-[#fafaf9]/50 group-hover:text-[#fafaf9]/70 transition-colors">Remember me</span>
+                  <span className="text-xs text-[#fafaf9]/50 group-hover:text-[#fafaf9]/70 transition-colors">Remember me</span>
                 </label>
                 <Link 
                   href="/auth/forgot-password" 
-                  className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                  className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
               </div>
 
               {error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
                   {error}
                 </div>
               )}
@@ -286,7 +289,7 @@ export default function AgencyLoginPage() {
               <button
                 type="submit"
                 disabled={loading || googleLoading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3.5 text-base font-medium text-[#050505] transition-all duration-200 hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-medium text-[#050505] transition-all duration-200 hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? (
                   <>
@@ -303,25 +306,25 @@ export default function AgencyLoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="relative my-8">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/[0.06]" />
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs">
                 <span className="bg-[#050505] px-4 text-[#fafaf9]/40">New to VoiceAI Connect?</span>
               </div>
             </div>
 
             <Link
               href="/signup"
-              className="block w-full text-center rounded-full border border-white/[0.08] bg-white/[0.05] px-6 py-3.5 text-base font-medium text-[#fafaf9] transition-all duration-200 hover:bg-white/[0.1] hover:border-white/[0.12]"
+              className="block w-full text-center rounded-full border border-white/[0.08] bg-white/[0.05] px-5 py-3 text-sm font-medium text-[#fafaf9] transition-all duration-200 hover:bg-white/[0.1] hover:border-white/[0.12]"
             >
               Create an Agency Account
             </Link>
           </div>
 
           {/* Footer text */}
-          <p className="mt-8 text-center text-sm text-[#fafaf9]/30">
+          <p className="mt-6 text-center text-[10px] text-[#fafaf9]/30">
             By signing in, you agree to our{' '}
             <Link href="/terms" className="text-[#fafaf9]/50 hover:text-emerald-400 transition-colors">
               Terms of Service
