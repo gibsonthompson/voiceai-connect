@@ -12,19 +12,6 @@ import Link from 'next/link';
 // Main marketing site URL - used for logo/home links
 const MARKETING_URL = 'https://myvoiceaiconnect.com';
 
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
 
 export const metadata = {
   alternates: {
@@ -50,9 +37,7 @@ export default function PrivacyPolicy() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <a href={MARKETING_URL} className="flex items-center gap-2.5 group">
-              <div className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center">
-                <WaveformIcon className="w-5 h-5 text-[#fafaf9]" />
-              </div>
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
               <span className="text-base font-semibold">VoiceAI Connect</span>
             </a>
             <a href={MARKETING_URL} className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
@@ -523,9 +508,7 @@ export default function PrivacyPolicy() {
         <div className="mx-auto max-w-3xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <a href={MARKETING_URL} className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
-                <WaveformIcon className="w-4 h-4 text-[#fafaf9]" />
-              </div>
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 rounded-xl" />
               <span className="text-sm font-medium">VoiceAI Connect</span>
             </a>
             <div className="flex items-center gap-6 text-sm text-[#fafaf9]/40">
