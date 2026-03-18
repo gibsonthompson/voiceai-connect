@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Loader2, Shield, PhoneForwarded, UserCheck, Clock, Moon, MessageSquare,
+  Loader2, Shield, PhoneForwarded, UserCheck, Moon, MessageSquare,
   ChevronDown, Check
 } from 'lucide-react';
 
@@ -19,8 +19,6 @@ interface ToolConfig {
   transferCall: boolean;
   businessHoursRouting: boolean;
   afterHoursMessage: string;
-  speechTimeout: boolean;
-  speechTimeoutSeconds: number;
   transferFallbackToMessage: boolean;
 }
 
@@ -35,8 +33,6 @@ const DEFAULT_CONFIG: ToolConfig = {
   transferCall: true,
   businessHoursRouting: false,
   afterHoursMessage: "We're currently closed, but I'd be happy to take a message and have someone call you back during business hours.",
-  speechTimeout: true,
-  speechTimeoutSeconds: 12,
   transferFallbackToMessage: true,
 };
 
@@ -45,7 +41,7 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [showTransferTip, setShowTransferTip] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -91,7 +87,6 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
       }
     } catch (e) {
       console.error('Failed to update tool config:', e);
-      // Revert on error
       setConfig(config);
     } finally {
       setSaving(false);
@@ -163,13 +158,6 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
       description: 'Different behavior when your business is closed — message-taking only, no transfers',
       enabled: config.businessHoursRouting,
     },
-    {
-      key: 'speechTimeout' as const,
-      icon: Clock,
-      label: 'Silence Detection',
-      description: `Ask "Are you still there?" after ${config.speechTimeoutSeconds}s of silence`,
-      enabled: config.speechTimeout,
-    },
   ];
 
   return (
@@ -190,48 +178,82 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
             const isDisabled = tool.dependsOn && !config[tool.dependsOn];
 
             return (
-              <div
-                key={tool.key}
-                className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-lg transition"
-                style={{
-                  backgroundColor: tool.enabled && !isDisabled ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : 'transparent',
-                  opacity: isDisabled ? 0.4 : 1,
-                }}
-              >
-                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: tool.enabled && !isDisabled ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : theme.bg }}
-                  >
-                    <Icon className="w-4 h-4" style={{ color: tool.enabled && !isDisabled ? theme.primary : theme.textMuted4 }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{tool.label}</p>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{tool.description}</p>
-                  </div>
-                </div>
-
-                {/* Toggle switch */}
-                <button
-                  onClick={() => !isDisabled && updateConfig(tool.key, !tool.enabled)}
-                  disabled={saving || isDisabled}
-                  className="relative w-10 h-5.5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
+              <div key={tool.key}>
+                <div
+                  className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-lg transition"
                   style={{
-                    backgroundColor: tool.enabled && !isDisabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'),
-                    minWidth: '2.5rem',
-                    height: '1.375rem',
+                    backgroundColor: tool.enabled && !isDisabled ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : 'transparent',
+                    opacity: isDisabled ? 0.4 : 1,
                   }}
                 >
-                  <span
-                    className="absolute top-0.5 rounded-full transition-transform shadow-sm"
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: tool.enabled && !isDisabled ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : theme.bg }}
+                    >
+                      <Icon className="w-4 h-4" style={{ color: tool.enabled && !isDisabled ? theme.primary : theme.textMuted4 }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{tool.label}</p>
+                      <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{tool.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Toggle switch */}
+                  <button
+                    onClick={() => !isDisabled && updateConfig(tool.key, !tool.enabled)}
+                    disabled={saving || isDisabled}
+                    className="relative w-10 h-5.5 sm:w-11 sm:h-6 rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
                     style={{
-                      width: '1.125rem',
-                      height: '1.125rem',
-                      backgroundColor: '#fff',
-                      left: tool.enabled && !isDisabled ? 'calc(100% - 1.25rem)' : '0.125rem',
+                      backgroundColor: tool.enabled && !isDisabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'),
+                      minWidth: '2.5rem',
+                      height: '1.375rem',
                     }}
-                  />
-                </button>
+                  >
+                    <span
+                      className="absolute top-0.5 rounded-full transition-transform shadow-sm"
+                      style={{
+                        width: '1.125rem',
+                        height: '1.125rem',
+                        backgroundColor: '#fff',
+                        left: tool.enabled && !isDisabled ? 'calc(100% - 1.25rem)' : '0.125rem',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Transfer troubleshooting tip — under Call Transfer */}
+                {tool.key === 'transferCall' && config.transferCall && (
+                  <div className="ml-10 sm:ml-11 mt-1 mb-1">
+                    <button
+                      onClick={() => setShowTransferTip(!showTransferTip)}
+                      className="flex items-center gap-1.5 text-[10px] sm:text-xs transition hover:opacity-80"
+                      style={{ color: theme.textMuted4 }}
+                    >
+                      <ChevronDown
+                        className="w-3 h-3 transition-transform"
+                        style={{ transform: showTransferTip ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      />
+                      Calls not transferring?
+                    </button>
+                    {showTransferTip && (
+                      <div
+                        className="mt-1.5 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs space-y-1.5"
+                        style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                      >
+                        <p style={{ color: theme.textMuted }}>
+                          Make sure your phone allows calls from unknown numbers. Transferred calls come from your AI number, which your phone may silently block.
+                        </p>
+                        <p style={{ color: theme.textMuted4 }}>
+                          <span className="font-medium" style={{ color: theme.textMuted }}>iPhone:</span> Settings → Phone → Silence Unknown Callers → Off
+                        </p>
+                        <p style={{ color: theme.textMuted4 }}>
+                          <span className="font-medium" style={{ color: theme.textMuted }}>Android:</span> Phone → Settings → Caller ID &amp; spam → turn off spam filtering
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -260,36 +282,6 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
               <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>
                 Your AI will say this when someone calls outside business hours. Make sure your business hours are set in settings.
               </p>
-            </div>
-          </div>
-        )}
-
-        {/* Speech timeout slider — shown when speechTimeout is on */}
-        {config.speechTimeout && (
-          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-            <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-              <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>
-                Silence timeout: {config.speechTimeoutSeconds}s
-              </label>
-              <input
-                type="range"
-                min={5}
-                max={30}
-                step={1}
-                value={config.speechTimeoutSeconds}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  setConfig({ ...config, speechTimeoutSeconds: val });
-                }}
-                onMouseUp={() => updateConfig('speechTimeoutSeconds', config.speechTimeoutSeconds)}
-                onTouchEnd={() => updateConfig('speechTimeoutSeconds', config.speechTimeoutSeconds)}
-                className="w-full"
-                style={{ accentColor: theme.primary }}
-              />
-              <div className="flex justify-between text-[9px]" style={{ color: theme.textMuted4 }}>
-                <span>5s (responsive)</span>
-                <span>30s (patient)</span>
-              </div>
             </div>
           </div>
         )}
