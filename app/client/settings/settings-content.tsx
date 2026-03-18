@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Phone, Loader2, User, CreditCard, Link2, HelpCircle, 
   Check, Copy, Mail, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones
+  PhoneForwarded, PhoneIncoming, Headphones, ChevronDown
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
@@ -119,6 +119,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [callModeLoading, setCallModeLoading] = useState(true);
   const [savingCallMode, setSavingCallMode] = useState(false);
   const [callModeMessage, setCallModeMessage] = useState('');
+
+  const [showTransferTip, setShowTransferTip] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
@@ -541,6 +543,37 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                     <span className="text-xs" style={{ color: theme.textMuted }}>Updating your AI assistant...</span>
                   </div>
                 )}
+
+                {/* Transfer troubleshooting tip */}
+                <div>
+                  <button
+                    onClick={() => setShowTransferTip(!showTransferTip)}
+                    className="flex items-center gap-1.5 text-[10px] sm:text-xs transition hover:opacity-80"
+                    style={{ color: theme.textMuted4 }}
+                  >
+                    <ChevronDown
+                      className="w-3 h-3 transition-transform"
+                      style={{ transform: showTransferTip ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
+                    Calls not transferring?
+                  </button>
+                  {showTransferTip && (
+                    <div
+                      className="mt-2 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs space-y-1.5"
+                      style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                    >
+                      <p style={{ color: theme.textMuted }}>
+                        Make sure your phone allows calls from unknown numbers. Transferred calls come from your AI number, which your phone may silently block.
+                      </p>
+                      <p style={{ color: theme.textMuted4 }}>
+                        <span className="font-medium" style={{ color: theme.textMuted }}>iPhone:</span> Settings → Phone → Silence Unknown Callers → Off
+                      </p>
+                      <p style={{ color: theme.textMuted4 }}>
+                        <span className="font-medium" style={{ color: theme.textMuted }}>Android:</span> Phone → Settings → Caller ID &amp; spam → turn off spam filtering
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
