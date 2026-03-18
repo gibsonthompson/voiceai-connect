@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 
 function setFavicon(url: string) {
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
@@ -418,6 +419,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {children}
       </main>
+
+      {/* PWA Install Prompt — auto-triggers after 3rd visit */}
+      {client && (
+        <AddToHomeScreenModal clientId={client.id} theme={theme} />
+      )}
     </div>
   );
 }

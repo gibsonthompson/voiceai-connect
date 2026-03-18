@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { 
   Phone, Loader2, User, CreditCard, Link2, 
   Check, Copy, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
+import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 
 interface Client {
   id: string;
@@ -100,6 +101,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [message, setMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [showPwaModal, setShowPwaModal] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -437,6 +439,36 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 {isCopied ? 'Copied!' : 'Copy'}
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* Add to Home Screen */}
+        <section className="mb-4 sm:mb-6">
+          <div
+            className="rounded-xl border p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3"
+            style={{ borderColor: theme.border, backgroundColor: theme.card }}
+          >
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}
+              >
+                <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.primary }} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Add to Home Screen</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>
+                  Get instant access — works like a native app
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPwaModal(true)}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90 flex-shrink-0"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              Install
+            </button>
           </div>
         </section>
 
@@ -877,6 +909,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         </section>
       </div>
+
+      {/* PWA Install Modal — manual trigger from settings */}
+      <AddToHomeScreenModal
+        clientId={client.id}
+        theme={theme}
+        isOpen={showPwaModal}
+        onClose={() => setShowPwaModal(false)}
+        manualTrigger
+      />
     </div>
   );
 }
