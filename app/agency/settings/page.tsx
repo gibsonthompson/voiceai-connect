@@ -50,6 +50,12 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     google_calendar: false,
     advanced_analytics: false,
     priority_support: false,
+    // AI Tools
+    caller_recognition: false,
+    spam_detection: true,
+    call_transfer: false,
+    transfer_fallback: false,
+    after_hours_mode: false,
   },
   pro: {
     email_summaries: true,
@@ -60,6 +66,12 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     google_calendar: true,
     advanced_analytics: true,
     priority_support: false,
+    // AI Tools
+    caller_recognition: true,
+    spam_detection: true,
+    call_transfer: true,
+    transfer_fallback: true,
+    after_hours_mode: true,
   },
   growth: {
     email_summaries: true,
@@ -70,6 +82,12 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
     google_calendar: true,
     advanced_analytics: true,
     priority_support: true,
+    // AI Tools
+    caller_recognition: true,
+    spam_detection: true,
+    call_transfer: true,
+    transfer_fallback: true,
+    after_hours_mode: true,
   },
 };
 
@@ -82,11 +100,19 @@ const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
   google_calendar: { label: 'Google Calendar', description: 'AI receptionist can check availability and book appointments directly' },
   advanced_analytics: { label: 'Advanced Analytics', description: 'Detailed reporting beyond basic call counts' },
   priority_support: { label: 'Priority Support', description: 'Faster response times from your support team' },
+  // AI Tools
+  caller_recognition: { label: 'Caller Recognition', description: 'AI greets returning callers by name with context from previous calls' },
+  spam_detection: { label: 'Spam Detection', description: 'AI detects and blocks robocalls and telemarketers automatically' },
+  call_transfer: { label: 'Call Transfer', description: 'AI can transfer calls to the business owner for urgent requests' },
+  transfer_fallback: { label: 'Transfer Fallback', description: 'If transfer fails, AI takes a message instead of dropping the call' },
+  after_hours_mode: { label: 'After-Hours Mode', description: 'AI switches to message-taking mode outside business hours' },
 };
 
 const FEATURE_ORDER = [
   'email_summaries', 'custom_greeting', 'custom_voice', 'knowledge_base',
   'business_hours', 'google_calendar', 'advanced_analytics', 'priority_support',
+  // AI Tools
+  'caller_recognition', 'spam_detection', 'call_transfer', 'transfer_fallback', 'after_hours_mode',
 ];
 
 // ============================================================================
@@ -222,11 +248,7 @@ function AgencySettingsContent() {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
-
-  // EDIT 1: Client header mode state
   const [clientHeaderMode, setClientHeaderMode] = useState<'agency_name' | 'business_name'>('agency_name');
-
-  // Theme detection from logo upload
   const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null);
   const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
 
@@ -263,7 +285,6 @@ function AgencySettingsContent() {
         secondary: agency.secondary_color || '#059669',
         accent: agency.accent_color || '#34d399',
       });
-      // EDIT 2: Load client header mode from agency
       setClientHeaderMode((agency as any).client_header_mode || 'agency_name');
     }
   }, [agency?.branding_overrides]);
@@ -385,13 +406,8 @@ function AgencySettingsContent() {
           payload.secondary_color = brandColors.secondary;
           payload.accent_color = brandColors.accent;
         }
-        if (detectedWebsiteTheme) {
-          payload.website_theme = detectedWebsiteTheme;
-        }
-        if (detectedLogoBgColor) {
-          payload.logo_background_color = detectedLogoBgColor;
-        }
-        // EDIT 3: Include client header mode in save payload
+        if (detectedWebsiteTheme) payload.website_theme = detectedWebsiteTheme;
+        if (detectedLogoBgColor) payload.logo_background_color = detectedLogoBgColor;
         payload.client_header_mode = clientHeaderMode;
       } else if (activeTab === 'pricing') {
         payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
@@ -669,8 +685,6 @@ function AgencySettingsContent() {
                   <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div>
                   <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/signup</p>
                 </div>
-
-                {/* EDIT 4: Client Dashboard Header Mode Toggle */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label>
                   <p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p>
@@ -679,16 +693,7 @@ function AgencySettingsContent() {
                       { value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' },
                       { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" },
                     ]).map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setClientHeaderMode(option.value)}
-                        className="flex-1 rounded-xl p-3 text-left transition-all"
-                        style={{
-                          backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input,
-                          border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}`,
-                        }}
-                      >
+                      <button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}>
                         <p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p>
                         <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p>
                       </button>
@@ -770,7 +775,14 @@ function AgencySettingsContent() {
                         <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
                         <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
                           {FEATURE_ORDER.map((featureKey) => (
-                            <FeatureToggle key={featureKey} featureKey={featureKey} enabled={planFeatures[plan.key]?.[featureKey] ?? false} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} />
+                            <div key={featureKey}>
+                              {featureKey === 'caller_recognition' && (
+                                <div className="pt-2 pb-1 mt-1" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                                  <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>AI Tools</p>
+                                </div>
+                              )}
+                              <FeatureToggle featureKey={featureKey} enabled={planFeatures[plan.key]?.[featureKey] ?? false} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} />
+                            </div>
                           ))}
                         </div>
                       </div>
