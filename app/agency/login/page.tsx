@@ -4,21 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
-// Waveform Icon to match branding
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
-
 // Google icon
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -164,16 +149,15 @@ export default function AgencyLoginPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="relative h-8 w-8 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                <WaveformIcon className="h-4.5 w-4.5 text-[#fafaf9]" />
-              </div>
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 rounded-xl" />
               <span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
             <Link 
               href="/signup" 
-              className="text-xs text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+              className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:opacity-90"
+              style={{ backgroundColor: '#10b981', color: '#050505' }}
             >
-              No account? <span className="text-emerald-400">Sign up</span>
+              Sign Up
             </Link>
           </div>
         </div>
@@ -304,23 +288,6 @@ export default function AgencyLoginPage() {
                 )}
               </button>
             </form>
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/[0.06]" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-[#050505] px-4 text-[#fafaf9]/40">New to VoiceAI Connect?</span>
-              </div>
-            </div>
-
-            <Link
-              href="/signup"
-              className="block w-full text-center rounded-full border border-white/[0.08] bg-white/[0.05] px-5 py-3 text-sm font-medium text-[#fafaf9] transition-all duration-200 hover:bg-white/[0.1] hover:border-white/[0.12]"
-            >
-              Create an Agency Account
-            </Link>
           </div>
 
           {/* Footer text */}
