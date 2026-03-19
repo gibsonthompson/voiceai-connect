@@ -430,7 +430,7 @@ export default function LeadFinderPage() {
         try {
           const update = JSON.parse(event.data);
           setProgress(update.progress);
-          if (update.status === "complete") {
+          if (update.status === "complete" && update.leads) {
             setLeads(update.leads || []);
             setStats(update.stats);
             setLoading(false);
