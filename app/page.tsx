@@ -5,7 +5,7 @@ import {
   Phone, ArrowRight, Check, Play, Zap, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Sparkles, Menu, X, Target, Star, Quote
+  Sparkles, Menu, X, Target
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import DashboardSandbox from '@/components/dashboard-sandbox';
@@ -486,87 +486,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          SECTION 5: SOCIAL PROOF
-          ═══════════════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-14">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              Agencies are already growing with VoiceAI Connect
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              From solo operators to established marketing agencies—here&apos;s what they&apos;re saying.
-            </p>
-          </div>
-
-          {/* 
-            ╔══════════════════════════════════════════════════════════════╗
-            ║  TODO: PLACEHOLDER TESTIMONIALS — Replace with real quotes  ║
-            ║  Gibson has real feedback and logos to swap in here.        ║
-            ║  Swap name, role, quote, client count with real data.      ║
-            ║  Consider adding agency logo/avatar images.                ║
-            ╚══════════════════════════════════════════════════════════════╝
-          */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                quote: 'I signed up on a Tuesday and had 3 paying clients by Friday. The interactive demo line closes deals I never could over email.',
-                name: 'Marcus T.',
-                role: 'Lead Gen Agency Owner',
-                clients: '23 clients',
-              },
-              {
-                quote: 'I was spending 6 hours a week on fulfillment with my old setup. Now I spend zero. The platform handles everything and my clients are happier.',
-                name: 'Sarah K.',
-                role: 'Home Service Marketing Agency',
-                clients: '41 clients',
-              },
-              {
-                quote: 'Went from $0 to $4,800/mo recurring in 90 days. The white-label site makes me look way more established than I am.',
-                name: 'James R.',
-                role: 'Solo Agency Operator',
-                clients: '31 clients',
-              },
-            ].map((testimonial) => (
-              <div key={testimonial.name} className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 sm:p-7">
-                <Quote className="h-8 w-8 text-emerald-500/20 mb-4" />
-                <p className="text-sm sm:text-base text-[#fafaf9]/70 leading-relaxed mb-6">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    {/* TODO: Add real avatar/logo image here */}
-                    <p className="font-medium text-sm">{testimonial.name}</p>
-                    <p className="text-xs text-[#fafaf9]/40">{testimonial.role}</p>
-                  </div>
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                    {testimonial.clients}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 
-            TODO: PLACEHOLDER STATS — Replace with real numbers.
-            Consider: agencies launched, total clients served, calls answered, etc.
-            Add agency logo strip here once logos are collected.
-          */}
-          <div className="mt-10 sm:mt-14 grid grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {[
-              { value: '150+', label: 'Agencies launched' },
-              { value: '4,200+', label: 'Businesses served' },
-              { value: '1.2M+', label: 'Calls answered by AI' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <p className="text-xl sm:text-2xl font-semibold text-emerald-400">{stat.value}</p>
-                <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Social proof section removed — will add back with real quotes/logos later */}
 
       {/* ═══════════════════════════════════════════════
           SECTION 6: FEATURES (What Your Clients Get)
@@ -622,31 +542,23 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Agency tools callout — replaces standalone CRM section */}
-          <div className="mt-10 sm:mt-14 max-w-4xl mx-auto">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
-                  <Target className="h-6 w-6 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-semibold">Plus: Built-in tools to grow your agency</h3>
-                  <p className="text-sm text-[#fafaf9]/50 mt-1">Included on all plans—everything you need to find and close clients.</p>
-                </div>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {[
-                  { title: 'Leads CRM', description: 'Track prospects, log outreach, and manage your sales pipeline.', icon: Target },
-                  { title: '13+ Email Templates', description: 'Pre-written cold outreach, follow-ups, and SMS intros ready to send.', icon: Mail },
-                  { title: 'Smart Variables', description: 'Auto-fill lead name, business, and industry into every template.', icon: Zap },
-                ].map((tool) => (
-                  <div key={tool.title} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <tool.icon className="h-5 w-5 text-blue-400 mb-3" />
-                    <h4 className="font-medium text-sm mb-1">{tool.title}</h4>
-                    <p className="text-xs text-[#fafaf9]/50 leading-relaxed">{tool.description}</p>
+          {/* Agency sales tools — included on all plans */}
+          <div className="mt-8 sm:mt-12 pt-8 sm:pt-10 border-t border-white/[0.06]">
+            <p className="text-xs uppercase tracking-widest text-[#fafaf9]/30 mb-5">Also included on all plans</p>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              {[
+                { icon: Target, title: 'Leads CRM', description: 'Track prospects and manage your pipeline.' },
+                { icon: Mail, title: '13+ Email Templates', description: 'Cold outreach, follow-ups, and SMS intros.' },
+                { icon: Zap, title: 'Smart Variables', description: 'Auto-fill lead name, business, and industry.' },
+              ].map((tool) => (
+                <div key={tool.title} className="flex items-start gap-3 flex-1">
+                  <tool.icon className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{tool.title}</p>
+                    <p className="text-xs text-[#fafaf9]/40 mt-0.5">{tool.description}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
           
@@ -863,14 +775,14 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════
           FOOTER
           ═══════════════════════════════════════════════ */}
-      <footer className="border-t border-white/[0.06] py-12 sm:py-16 pb-28 sm:pb-16">
+      <footer className="border-t border-white/[0.06] py-10 sm:py-12 pb-28 sm:pb-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <Link href="/" className="flex items-center gap-2.5">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
-              <span className="font-semibold">VoiceAI Connect</span>
+          <div className="flex flex-col items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
+              <span className="text-sm font-semibold">VoiceAI Connect</span>
             </Link>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
@@ -881,7 +793,7 @@ export default function LandingPage() {
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
               <a href="https://www.aitoolzdir.com" target="_blank" rel="noopener" className="hover:text-[#fafaf9] transition-colors">AI Toolz Dir</a>
             </div>
-            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect. All rights reserved.</p>
+            <p className="text-xs text-[#fafaf9]/25">© 2026 VoiceAI Connect. All rights reserved.</p>
           </div>
         </div>
       </footer>

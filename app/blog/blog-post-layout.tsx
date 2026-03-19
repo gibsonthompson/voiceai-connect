@@ -5,24 +5,7 @@ import { Calendar, Clock, Tag, Twitter, Linkedin, Link as LinkIcon, Check, Arrow
 import { useState } from 'react';
 import './article.css';
 
-// ============================================================================
-// WAVEFORM ICON (matches homepage exactly)
-// ============================================================================
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
-
-// ============================================================================
+// ============================================================================ ============================================================================
 // TYPES
 // ============================================================================
 interface BlogPostMeta {
@@ -198,11 +181,7 @@ export default function BlogPostLayout({
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
-                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
-                  </div>
-                </div>
+                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
               </div>
               <span className="text-sm sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
@@ -337,18 +316,16 @@ export default function BlogPostLayout({
         </div>
       </article>
 
-      {/* Footer — matches homepage */}
-      <footer className="relative border-t border-white/[0.06] py-8 sm:py-12 px-4 sm:px-6">
+      {/* Footer */}
+      <footer className="relative border-t border-white/[0.06] py-8 sm:py-10 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
-                <WaveformIcon className="w-4 h-4 text-[#fafaf9]" />
-              </div>
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
               <span className="text-sm font-medium">VoiceAI Connect</span>
             </Link>
 
-            <p className="text-sm text-[#fafaf9]/30">
+            <p className="text-xs text-[#fafaf9]/25">
               © 2026 VoiceAI Connect. All rights reserved.
             </p>
           </div>

@@ -4,24 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, Search, ChevronRight, Menu, X } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 
-// ============================================================================
-// WAVEFORM ICON (matches homepage exactly)
-// ============================================================================
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
-
-// ============================================================================
+// ============================================================================ ============================================================================
 // NAV LINKS (shared between desktop + mobile)
 // ============================================================================
 const navLinks = [
@@ -224,11 +207,7 @@ export default function BlogPage() {
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
-                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                </div>
+                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
               </div>
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
@@ -453,16 +432,14 @@ export default function BlogPage() {
       </main>
 
       {/* ─── Footer (matches homepage) ─── */}
-      <footer className="border-t border-white/[0.06] py-12 sm:py-16 mt-8">
+      <footer className="border-t border-white/[0.06] py-10 sm:py-12 mt-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
-                <WaveformIcon className="w-5 h-5" />
-              </div>
-              <span className="font-semibold">VoiceAI Connect</span>
+          <div className="flex flex-col items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
+              <span className="text-sm font-semibold">VoiceAI Connect</span>
             </Link>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#fafaf9]/40">
               <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
@@ -471,7 +448,7 @@ export default function BlogPage() {
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
             </div>
-            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect. All rights reserved.</p>
+            <p className="text-xs text-[#fafaf9]/25">© 2026 VoiceAI Connect. All rights reserved.</p>
           </div>
         </div>
       </footer>
