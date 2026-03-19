@@ -553,8 +553,7 @@ export default function LeadFinderPage() {
   const inputStyle = { background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text };
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto" style={{ color: theme.text }}>
-
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto" style={{ color: theme.text, zoom: 1.1 }}>
       {/* Header */}
       <div className="mb-6">
         <Link href="/agency/leads" className="inline-flex items-center gap-1.5 text-xs font-medium mb-4 no-underline transition-colors" style={{ color: theme.textMuted }}>

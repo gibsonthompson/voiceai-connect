@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, Clock, Tag, Twitter, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
+import { Calendar, Clock, Tag, Twitter, Linkedin, Link as LinkIcon, Check, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import './article.css';
 
 // ============================================================================
-// WAVEFORM ICON
+// WAVEFORM ICON (matches homepage exactly)
 // ============================================================================
 function WaveformIcon({ className }: { className?: string }) {
   return (
@@ -191,15 +191,17 @@ export default function BlogPostLayout({
         <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-emerald-500/[0.04] rounded-full blur-[128px]" />
       </div>
 
-      {/* Header */}
+      {/* Header — matches homepage logo pattern exactly */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                  <WaveformIcon className="w-4 h-4 sm:w-6 sm:h-6 text-[#fafaf9]" />
+                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
+                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
+                  </div>
                 </div>
               </div>
               <span className="text-sm sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
@@ -335,16 +337,16 @@ export default function BlogPostLayout({
         </div>
       </article>
 
-      {/* Footer */}
+      {/* Footer — matches homepage */}
       <footer className="relative border-t border-white/[0.06] py-8 sm:py-12 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
                 <WaveformIcon className="w-4 h-4 text-[#fafaf9]" />
               </div>
               <span className="text-sm font-medium">VoiceAI Connect</span>
-            </div>
+            </Link>
 
             <p className="text-sm text-[#fafaf9]/30">
               © 2026 VoiceAI Connect. All rights reserved.
@@ -399,7 +401,7 @@ export function ComparisonTable({
 }) {
   return (
     <div className="my-6 sm:my-8">
-      {/* Desktop: standard table (hidden on mobile) */}
+      {/* Desktop: standard table */}
       <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.08]">
         <table className="w-full text-sm md:text-base">
           <thead>
@@ -425,14 +427,13 @@ export function ComparisonTable({
         </table>
       </div>
 
-      {/* Mobile: stacked cards (hidden on desktop) */}
+      {/* Mobile: stacked cards */}
       <div className="sm:hidden space-y-3">
         {rows.map((row, i) => (
           <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2.5">
             {row.map((cell, j) => {
               if (!cell && cell !== 0) return null;
               const header = headers[j];
-              // First column gets prominent styling
               if (j === 0) {
                 return (
                   <div key={j}>
