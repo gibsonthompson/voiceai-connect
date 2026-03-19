@@ -190,7 +190,7 @@ export default function ReferralProgramPage() {
             </div>
 
             <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-              Free to join · No minimum referrals · Payouts every month
+              Included on all plans · No minimum referrals · Withdraw anytime
             </p>
           </div>
 
@@ -373,7 +373,7 @@ export default function ReferralProgramPage() {
             {[
               { step: '01', title: 'Get Your Referral Link', description: 'Sign up for VoiceAI Connect (or log in if you\'re already a customer). Your unique referral link is generated instantly—share it anywhere.', icon: Gift },
               { step: '02', title: 'Share With Your Audience', description: 'Mention VoiceAI Connect in videos, emails, blog posts, tweets, DMs—wherever your audience is. When someone clicks your link and signs up, they\'re tracked to you automatically.', icon: Megaphone },
-              { step: '03', title: 'Earn 40% Every Month', description: 'For every referral that becomes a paying subscriber, you earn 40% of their monthly payment. Commissions are paid out monthly via PayPal, Wise, or bank transfer.', icon: Repeat },
+              { step: '03', title: 'Earn 40% Every Month', description: 'For every referral that becomes a paying subscriber, you earn 40% of their monthly payment. Commissions accumulate in your dashboard and you can withdraw anytime to your Stripe account.', icon: Repeat },
             ].map((item) => (
               <div key={item.step} className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 overflow-hidden">
                 <div className="text-6xl font-bold text-white/[0.03] absolute -top-2 -left-1 select-none">{item.step}</div>
@@ -413,7 +413,7 @@ export default function ReferralProgramPage() {
                   { icon: Repeat, title: 'Lifetime Recurring Commissions', description: 'No 12-month cap. Earn 40% for as long as your referral stays subscribed.' },
                   { icon: Clock, title: '90-Day Cookie Window', description: 'If someone clicks your link and signs up within 90 days, you get credit. No rush.' },
                   { icon: BarChart3, title: 'Real-Time Tracking Dashboard', description: 'See every click, signup, and commission in real-time. Full transparency.' },
-                  { icon: Shield, title: 'Monthly Payouts, No Minimum', description: 'Get paid every month via PayPal, Wise, or bank transfer. No minimum threshold.' },
+                  { icon: Shield, title: 'Withdraw Anytime', description: 'Cash out your commissions whenever you want. No minimum. Funds go straight to your Stripe account.' },
                 ].map((feature) => (
                   <div key={feature.title} className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
@@ -450,8 +450,8 @@ export default function ReferralProgramPage() {
                       { label: 'Commission', typical: '20%', voiceai: '40%' },
                       { label: 'Duration', typical: '12 months', voiceai: 'Lifetime' },
                       { label: 'Cookie', typical: '30 days', voiceai: '90 days' },
-                      { label: 'Payout', typical: 'Net 60', voiceai: 'Monthly' },
-                      { label: 'Min. Payout', typical: '$100+', voiceai: '$0' },
+                      { label: 'Payout', typical: 'Net 60', voiceai: 'On-demand' },
+                      { label: 'Min. Payout', typical: '$100+', voiceai: 'None' },
                       { label: 'Earnings Cap', typical: 'Often yes', voiceai: 'None' },
                     ].map((row) => (
                       <div key={row.label} className="grid grid-cols-3 gap-4 py-3 border-b border-white/[0.04]">
@@ -645,9 +645,9 @@ export default function ReferralProgramPage() {
           <div className="space-y-4">
             {[
               { q: 'How much can I earn with the VoiceAI Connect referral program?', a: 'You earn 40% of every subscription payment your referrals make—for the lifetime of their subscription. On a single Professional plan referral ($199/month), that\'s $79.60/month or $955/year. With 70 Professional referrals, you\'d earn $5,572/month—$66,864/year in passive recurring income. There\'s no cap on how many people you can refer or how much you can earn.' },
-              { q: 'Do I need to be a VoiceAI Connect customer to join?', a: 'No. Anyone can join the referral program—you don\'t need to be an active subscriber. That said, many of our most successful partners are also customers. Using the platform yourself makes your content more authentic and gives you firsthand experience to share.' },
+              { q: 'Do I need to be a VoiceAI Connect customer to join?', a: 'Yes—the referral program is available to all active VoiceAI Connect subscribers. Even the Starter plan at $99/month includes full referral program access with your unique link, real-time dashboard, and 40% lifetime commissions. This means you can run your agency and earn referral income from the same subscription.' },
               { q: 'How does tracking work?', a: 'When you join, you get a unique referral link. Anyone who clicks that link has a 90-day cookie window to sign up. Once they subscribe to a paid plan, the referral is attributed to you. You can track everything—clicks, signups, conversions, and earnings—in your real-time dashboard.' },
-              { q: 'When and how do I get paid?', a: 'Commissions are calculated at the end of each month and paid out within the first two weeks of the following month. You can receive payments via PayPal, Wise, or direct bank transfer. There\'s no minimum payout threshold.' },
+              { q: 'When and how do I get paid?', a: 'Commissions are calculated automatically every time a referred agency pays their subscription. Your earnings accumulate in your referral dashboard and you can withdraw anytime—no minimum, no waiting for a monthly cycle. Funds transfer directly to your connected Stripe account.' },
               { q: 'Is the 40% commission really recurring forever?', a: 'Yes. Unlike most SaaS affiliate programs that cap commissions at 12 months, we pay 40% for the entire lifetime of the referred customer\'s subscription. As long as they\'re paying, you\'re earning.' },
               { q: 'What if my referral upgrades their plan?', a: 'Your commission automatically adjusts. If someone signs up for Starter ($99/month) and later upgrades to Professional ($199/month), your monthly commission increases from $39.60 to $79.60.' },
               { q: 'Can I promote VoiceAI Connect in YouTube videos?', a: 'Absolutely. Many of our top partners are YouTubers who create content about AI businesses, agency models, and making money online. We encourage video content—it converts extremely well. You can show the dashboard, walk through the platform, and share your honest experience.' },
@@ -681,7 +681,7 @@ export default function ReferralProgramPage() {
                 </span>
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Join the VoiceAI Connect agency referral program today. Free to join, no minimums, lifetime commissions.
+                Join the VoiceAI Connect agency referral program today. Included on all plans, no minimums, lifetime commissions.
               </p>
               <div className="mt-8 sm:mt-10">
                 <Link href="/signup" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 rounded-full bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
@@ -690,7 +690,7 @@ export default function ReferralProgramPage() {
                 </Link>
               </div>
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                Free to join · 40% recurring forever · No cap on earnings
+                Included on all plans · 40% recurring forever · No cap on earnings
               </p>
             </div>
           </div>
@@ -705,16 +705,16 @@ export default function ReferralProgramPage() {
             "@context": "https://schema.org",
             "@type": "WebPage",
             "name": "VoiceAI Connect Agency Referral Program — Earn 40% Recurring Commission",
-            "description": "Join the VoiceAI Connect agency referral program and earn 40% lifetime recurring commissions for every agency you refer. Free to join, no minimums, 90-day cookie, monthly payouts.",
+            "description": "Join the VoiceAI Connect agency referral program and earn 40% lifetime recurring commissions for every agency you refer. Included on all plans starting at $99/mo, no minimums, 90-day cookie, on-demand Stripe payouts.",
             "url": "https://myvoiceaiconnect.com/referral-program",
             "mainEntity": {
               "@type": "FAQPage",
               "mainEntity": [
                 { "@type": "Question", "name": "How much can I earn with the VoiceAI Connect referral program?", "acceptedAnswer": { "@type": "Answer", "text": "You earn 40% of every subscription payment your referrals make for the lifetime of their subscription. On a single Professional plan referral ($199/month), that's $79.60/month or $955/year. With 70 Professional referrals, you'd earn $5,572/month or $66,864/year in passive recurring income. There's no cap on earnings." } },
-                { "@type": "Question", "name": "Do I need to be a VoiceAI Connect customer to join the referral program?", "acceptedAnswer": { "@type": "Answer", "text": "No. Anyone can join the referral program. You don't need to be an active subscriber, though many successful partners are also customers since it makes content more authentic." } },
+                { "@type": "Question", "name": "Do I need to be a VoiceAI Connect customer to join the referral program?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The referral program is available to all active VoiceAI Connect subscribers. Even the Starter plan at $99/month includes full referral program access with your unique link, real-time dashboard, and 40% lifetime commissions." } },
                 { "@type": "Question", "name": "Is the 40% commission really recurring forever?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Unlike most SaaS affiliate programs that cap commissions at 12 months, VoiceAI Connect pays 40% for the entire lifetime of the referred customer's subscription." } },
                 { "@type": "Question", "name": "What makes this different from other agency referral programs?", "acceptedAnswer": { "@type": "Answer", "text": "Three things: 40% recurring commission with no cap or expiry (most programs offer 20% for 12 months), 90-day cookie window (most offer 30 days), and the product itself is easy to sell with agencies getting 97% margins and zero fulfillment work." } },
-                { "@type": "Question", "name": "When and how do I get paid?", "acceptedAnswer": { "@type": "Answer", "text": "Commissions are calculated monthly and paid within the first two weeks of the following month via PayPal, Wise, or direct bank transfer. There is no minimum payout threshold." } }
+                { "@type": "Question", "name": "When and how do I get paid?", "acceptedAnswer": { "@type": "Answer", "text": "Commissions accumulate automatically in your dashboard each time a referred agency pays. You can withdraw anytime with no minimum. Funds transfer directly to your connected Stripe account." } }
               ]
             },
             "publisher": { "@type": "Organization", "name": "VoiceAI Connect", "url": "https://myvoiceaiconnect.com" }
