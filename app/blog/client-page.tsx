@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 // ============================================================================
 const navLinks = [
   { name: 'Platform', href: '/platform' },
-  { name: 'How It Works', href: '/#how-it-works' },
+  { name: 'How It Works', href: '/how-it-works' },
   { name: 'Pricing', href: '/#pricing' },
   { name: 'Blog', href: '/blog' },
   { name: 'Referral Program', href: '/referral-program' },
@@ -47,7 +47,6 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-02-13',
     readTime: '14 min',
-    featured: true,
   },
   {
     slug: 'start-ai-business-from-anywhere',
@@ -82,6 +81,7 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-01-28',
     readTime: '14 min',
+    featured: true,
   },
   // Industry Posts
   {

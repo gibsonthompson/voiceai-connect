@@ -37,8 +37,8 @@ export default function LandingPage() {
 
   const navLinks = [
     { name: 'Platform', href: '/platform' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Pricing', href: '#pricing' },
+    { name: 'How It Works', href: '/how-it-works' },
+    { name: 'Pricing', href: '/#pricing' },
     { name: 'Blog', href: '/blog' },
     { name: 'Referral Program', href: '/referral-program' },
   ];
