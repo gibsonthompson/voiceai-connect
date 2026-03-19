@@ -14,21 +14,6 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-// Waveform icon component matching the logo
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
-
 export default function PlatformPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -38,6 +23,23 @@ export default function PlatformPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  const navLinks = [
+    { name: 'Platform', href: '/platform' },
+    { name: 'How It Works', href: '/how-it-works' },
+    { name: 'Pricing', href: '/#pricing' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'Referral Program', href: '/referral-program' },
+  ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
@@ -64,28 +66,18 @@ export default function PlatformPage() {
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
-                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                </div>
+                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
               </div>
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-1">
-              {[
-                { name: 'Platform', href: '/platform' },
-                { name: 'How It Works', href: '/how-it-works' },
-                { name: 'Pricing', href: '/#pricing' },
-                { name: 'Blog', href: '/blog' },
-                { name: 'Referral Program', href: '/referral-program' },
-              ].map((item) => (
+              {navLinks.map((item) => (
                 <Link 
                   key={item.name}
                   href={item.href} 
                   className={`px-4 py-2 text-sm transition-colors rounded-lg hover:bg-white/[0.03] ${
-                    item.href === '/platform' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
+                    item.name === 'Platform' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
                   }`}
                 >
                   {item.name}
@@ -103,36 +95,55 @@ export default function PlatformPage() {
               </Link>
             </div>
 
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]"
+              aria-label="Toggle menu"
+            >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
-        <div className={`lg:hidden transition-all duration-300 ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-          <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
-            {[
-              { name: 'Platform', href: '/platform' },
-              { name: 'How It Works', href: '/how-it-works' },
-              { name: 'Pricing', href: '/#pricing' },
-              { name: 'Blog', href: '/blog' },
-              { name: 'Referral Program', href: '/referral-program' },
-            ].map((item) => (
-              <Link 
-                key={item.name}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-[#fafaf9]/70 hover:text-[#fafaf9] hover:bg-white/[0.03] rounded-lg transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="pt-4 flex flex-col gap-3">
-              <Link href="/agency/login" className="px-4 py-3 text-center text-[#fafaf9]/70 hover:text-[#fafaf9] rounded-lg border border-white/10">Sign In</Link>
-              <Link href="/signup" className="px-4 py-3 text-center bg-white text-[#050505] font-medium rounded-full">Start Free Trial</Link>
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 top-16 z-50 bg-[#050505]/98 backdrop-blur-xl animate-in fade-in duration-200">
+            <div className="flex flex-col h-full px-6 pt-8 pb-10">
+              <div className="space-y-1 flex-1">
+                {navLinks.map((item) => (
+                  <Link 
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-2 py-4 text-lg border-b border-white/[0.04] transition-colors ${
+                      item.name === 'Platform' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/80 hover:text-[#fafaf9]'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <Link 
+                  href="/agency/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-2 py-4 text-lg text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+                >
+                  Sign In
+                </Link>
+              </div>
+              <div className="pt-6">
+                <Link 
+                  href="/signup" 
+                  className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-4 text-base active:scale-[0.98] transition-transform"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Start Free Trial
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <p className="mt-3 text-center text-xs text-[#fafaf9]/30">No credit card required</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -288,7 +299,7 @@ export default function PlatformPage() {
                 </div>
                 <div className="absolute -bottom-4 -right-4 px-4 py-2 rounded-xl bg-emerald-500 text-[#050505] text-sm font-medium shadow-lg shadow-emerald-500/30">
                   <Smartphone className="h-4 w-4 inline mr-1.5" />
-                  Phone-first ✓
+                  Phone-first
                 </div>
               </div>
             </div>
@@ -689,7 +700,7 @@ export default function PlatformPage() {
                 </span>
               </h2>
               <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Join 800+ agencies building recurring revenue with VoiceAI Connect.
+                Launch your AI receptionist agency in under 24 hours.
               </p>
               
               <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -704,7 +715,7 @@ export default function PlatformPage() {
               </div>
               
               <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · Cancel anytime
+                14-day free trial · No credit card required · Cancel anytime
               </p>
             </div>
           </div>
@@ -712,18 +723,15 @@ export default function PlatformPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-12 sm:py-16">
+      <footer className="border-t border-white/[0.06] py-10 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-white/5">
-                <WaveformIcon className="w-5 h-5" />
-              </div>
-              <span className="font-semibold">VoiceAI Connect</span>
+          <div className="flex flex-col items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
+              <span className="text-sm font-semibold">VoiceAI Connect</span>
             </Link>
-            
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
-              <Link href="/platform" className="text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Platform</Link>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#fafaf9]/40">
+              <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
               <Link href="/#pricing" className="hover:text-[#fafaf9] transition-colors">Pricing</Link>
               <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
               <Link href="/referral-program" className="hover:text-[#fafaf9] transition-colors">Referral Program</Link>
@@ -731,8 +739,7 @@ export default function PlatformPage() {
               <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
               <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
             </div>
-            
-            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect. All rights reserved.</p>
+            <p className="text-xs text-[#fafaf9]/25">© 2026 VoiceAI Connect. All rights reserved.</p>
           </div>
         </div>
       </footer>

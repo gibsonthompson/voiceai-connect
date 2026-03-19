@@ -40,6 +40,7 @@ export default function LandingPage() {
     { name: 'How It Works', href: '#how-it-works' },
     { name: 'Pricing', href: '#pricing' },
     { name: 'Blog', href: '/blog' },
+    { name: 'Referral Program', href: '/referral-program' },
   ];
 
   return (
