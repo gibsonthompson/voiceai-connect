@@ -5,7 +5,7 @@ import {
   Phone, ArrowRight, Check, Play, Zap, Clock, Users, 
   DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
   Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Sparkles, Menu, X, Target
+  Sparkles, Menu, X, Target, Video, Download
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import DashboardSandbox from '@/components/dashboard-sandbox';
@@ -487,7 +487,57 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social proof section removed — will add back with real quotes/logos later */}
+      {/* ═══════════════════════════════════════════════
+          SECTION 5: MARKETING MATERIALS & SALES SUPPORT
+          ═══════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+              <Download className="h-4 w-4 text-amber-400" />
+              <span className="text-amber-300/90">We Help You Sell</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
+              Marketing materials included.
+              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">Start selling on day one.</span>
+            </h2>
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
+              You don&apos;t have to figure out how to sell this. We provide the scripts, 
+              content, demos, and templates—so you can start closing clients immediately.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
+            {[
+              { icon: Phone, title: 'Interactive AI Demo', description: 'A live demo phone number prospects can call. The AI role-plays as their receptionist on the spot.' },
+              { icon: FileText, title: 'Sales Scripts', description: 'Proven cold call and in-person scripts written specifically for selling AI receptionists to local businesses.' },
+              { icon: Mail, title: 'Email & SMS Templates', description: '13+ ready-to-send outreach sequences, follow-ups, and intro messages with smart variable auto-fill.' },
+              { icon: Video, title: 'Marketing Videos', description: 'Professional explainer videos and social media reels you can use as your own content.' },
+              { icon: Mic, title: 'Sample Call Recordings', description: 'Real AI call recordings across industries to showcase quality to prospects before they commit.' },
+              { icon: Globe, title: 'Branded Marketing Site', description: 'A complete website with your logo, colors, and domain—ready for prospects to sign up through.' },
+            ].map((item) => (
+              <div key={item.title} className="p-5 sm:p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 mb-4">
+                  <item.icon className="h-5 w-5 text-amber-400" />
+                </div>
+                <h3 className="font-medium text-base mb-2">{item.title}</h3>
+                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 max-w-3xl mx-auto">
+            <div className="p-5 sm:p-6 rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] text-center">
+              <p className="text-base sm:text-lg font-medium">
+                <span className="text-amber-400">Everything you need to close your first client</span>—included on all plans.
+              </p>
+              <p className="mt-2 text-sm text-[#fafaf9]/50">
+                No creating content from scratch. No figuring out what to say. Just use what we give you and start selling.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ═══════════════════════════════════════════════
           SECTION 6: FEATURES (What Your Clients Get)
