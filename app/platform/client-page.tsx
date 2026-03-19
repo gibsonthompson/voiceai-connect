@@ -160,19 +160,19 @@ export default function PlatformPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
-              <span className="block">The Only Platform</span>
+              <span className="block">Everything You Need.</span>
               <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                You Can Run From Your Phone
+                Nothing You Have to Build.
               </span>
             </h1>
             
             <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-4">
-              40+ features. Zero fulfillment work. A complete AI receptionist business 
-              you manage entirely from your phone. We handle the tech—you just sell.
+              40+ features. Zero fulfillment work. A complete white-label AI receptionist 
+              platform where we handle the tech and you keep 100% of what you charge.
             </p>
 
             <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-sm text-[#fafaf9]/50">
-              {['Phone-first dashboard', 'Zero client setup work', 'Launch in 24 hours'].map((item) => (
+              {['Zero client setup work', 'Launch in 24 hours', 'No technical skills needed'].map((item) => (
                 <span key={item} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400" />
                   {item}
@@ -216,30 +216,67 @@ export default function PlatformPage() {
       {/* Zero Fulfillment Section */}
       <section className="py-20 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+              <Zap className="h-4 w-4 text-emerald-400" />
+              <span className="text-emerald-300/90">Zero Fulfillment</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
+              You sell.
+              <span className="block text-[#fafaf9]/40">We handle everything else.</span>
+            </h2>
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
+              Most white-label platforms still make you do the work. VoiceAI Connect 
+              handles client setup, technical support, and ongoing maintenance automatically.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              { trigger: 'Client signs up', result: 'Platform auto-configures their AI, provisions phone number, imports business info—all in 60 seconds.', icon: UserPlus },
+              { trigger: 'Client has an issue', result: 'Platform handles support directly. You stay informed, not involved.', icon: Shield },
+              { trigger: 'Client wants changes', result: 'They self-serve in their dashboard. No work for you.', icon: Settings },
+            ].map((item) => (
+              <div key={item.trigger} className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 mb-4">
+                  <item.icon className="h-5 w-5 text-emerald-400" />
+                </div>
+                <p className="text-base font-medium text-emerald-400 mb-2">{item.trigger}</p>
+                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{item.result}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Phone-First Platform */}
+      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-                <Zap className="h-4 w-4 text-emerald-400" />
-                <span className="text-emerald-300/90">Zero Fulfillment</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+                <Smartphone className="h-4 w-4 text-amber-400" />
+                <span className="text-amber-300/90">Phone-First Platform</span>
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
-                You sell.
-                <span className="block text-[#fafaf9]/40">We handle everything else.</span>
+                Manage everything
+                <span className="block text-[#fafaf9]/40">from your phone.</span>
               </h2>
               <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                Most white-label platforms still make you do the work. VoiceAI Connect 
-                handles client setup, technical support, and ongoing maintenance automatically.
+                VoiceAI Connect is built phone-first. Check on clients, track revenue, 
+                and manage your entire agency from anywhere. No laptop required.
               </p>
               
-              <div className="mt-8 space-y-4">
+              <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3">
                 {[
-                  { trigger: 'Client signs up', result: 'Platform auto-configures their AI, provisions phone number, imports business info—all in 60 seconds.' },
-                  { trigger: 'Client has an issue', result: 'Platform handles support directly. You stay informed, not involved.' },
-                  { trigger: 'Client wants changes', result: 'They self-serve in their dashboard. No work for you.' },
-                ].map((item) => (
-                  <div key={item.trigger} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <p className="text-sm font-medium text-emerald-400 mb-1">{item.trigger}</p>
-                    <p className="text-sm text-[#fafaf9]/60">{item.result}</p>
+                  'Complete dashboard access',
+                  'Real-time push notifications',
+                  'Client onboarding flow',
+                  'Revenue & analytics tracking',
+                ].map((feature) => (
+                  <div key={feature} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <Check className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span className="text-sm text-[#fafaf9]/70">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -247,7 +284,7 @@ export default function PlatformPage() {
             
             {/* Phone mockup */}
             <div className="relative flex justify-center">
-              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 via-amber-500/5 to-transparent rounded-3xl blur-2xl" />
+              <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
               <div className="relative w-72 sm:w-80">
                 <div className="rounded-[3rem] border-4 border-white/10 bg-[#0a0a0a] p-3 shadow-2xl">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0a0a0a] rounded-b-2xl z-10" />
@@ -268,38 +305,42 @@ export default function PlatformPage() {
                           <p className="text-xs text-[#fafaf9]/40">Dashboard</p>
                         </div>
                       </div>
-                      
-                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-xs text-emerald-400 font-medium">New client signup</span>
-                        </div>
-                        <p className="text-sm font-medium">Smith Plumbing</p>
-                        <p className="text-xs text-[#fafaf9]/50 mt-1">Auto-configured • AI live • $149/mo</p>
+                      <div className="p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/20 mb-4">
+                        <p className="text-xs text-emerald-400/70">This Month</p>
+                        <p className="text-3xl font-semibold mt-1">$6,903</p>
+                        <p className="text-xs text-emerald-400 mt-1">↑ 18% from last month</p>
                       </div>
-                      
-                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
-                        <p className="text-xs text-[#fafaf9]/40 mb-1">This Month</p>
-                        <p className="text-2xl font-semibold">$6,903</p>
-                        <p className="text-xs text-emerald-400 mt-1">↑ 18% • 47 clients</p>
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                          <p className="text-xs text-[#fafaf9]/40">Clients</p>
+                          <p className="text-lg font-semibold">47</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                          <p className="text-xs text-[#fafaf9]/40">Calls Today</p>
+                          <p className="text-lg font-semibold">127</p>
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="p-3 rounded-xl bg-white/[0.03] text-center">
-                          <Users className="h-4 w-4 mx-auto mb-1 text-[#fafaf9]/60" />
-                          <span className="text-xs text-[#fafaf9]/60">Clients</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/[0.03] text-center">
-                          <BarChart3 className="h-4 w-4 mx-auto mb-1 text-[#fafaf9]/60" />
-                          <span className="text-xs text-[#fafaf9]/60">Analytics</span>
-                        </div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-[#fafaf9]/40">Recent</p>
+                        {[
+                          { name: 'Smith Plumbing', action: 'signed up', time: '2m ago' },
+                          { name: 'Ace HVAC', action: 'payment received', time: '1h ago' },
+                        ].map((item) => (
+                          <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
+                            <div>
+                              <p className="text-sm font-medium">{item.name}</p>
+                              <p className="text-xs text-[#fafaf9]/40">{item.action}</p>
+                            </div>
+                            <span className="text-xs text-[#fafaf9]/30">{item.time}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="absolute -bottom-4 -right-4 px-4 py-2 rounded-xl bg-emerald-500 text-[#050505] text-sm font-medium shadow-lg shadow-emerald-500/30">
+                <div className="absolute -bottom-4 -right-4 px-4 py-2 rounded-xl bg-amber-500 text-[#050505] text-sm font-medium shadow-lg shadow-amber-500/30">
                   <Smartphone className="h-4 w-4 inline mr-1.5" />
-                  Phone-first
+                  Phone-native
                 </div>
               </div>
             </div>
