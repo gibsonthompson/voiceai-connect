@@ -348,6 +348,45 @@ export default function PlatformPage() {
         </div>
       </section>
 
+      {/* AI Voice Features */}
+      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
+              <Bot className="h-4 w-4 text-emerald-400" />
+              <span className="text-emerald-300/90">AI Voice Technology</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
+              State-of-the-art voice AI
+              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">that sounds genuinely human</span>
+            </h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { icon: Zap, title: '500ms Answer Time', description: 'AI picks up before the second ring.', stat: '< 0.5 sec', href: '/features/instant-answer' },
+              { icon: Volume2, title: 'Natural Voice', description: 'Premium ElevenLabs voices.', stat: '16+ voices', href: '/features/voice-options' },
+              { icon: BrainCircuit, title: 'Context Awareness', description: 'Handles complex conversations.', stat: 'GPT-4 powered', href: '/features/ai-intelligence' },
+              { icon: Globe, title: 'Multi-Industry', description: 'Pre-trained for 12+ industries.', stat: '12+ industries', href: '/features/industries' },
+            ].map((feature) => (
+              <Link key={feature.title} href={feature.href} className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.04]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] group-hover:bg-emerald-500/10 transition-colors">
+                    <feature.icon className="h-5 w-5 text-[#fafaf9]/60 group-hover:text-emerald-400 transition-colors" />
+                  </div>
+                  <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">{feature.stat}</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-medium mb-2 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
+                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{feature.description}</p>
+                <div className="mt-3 flex items-center gap-1 text-xs text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Learn more <ArrowRight className="h-3 w-3" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* White-Label Marketing Site + AI Demo */}
       <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -462,45 +501,6 @@ export default function PlatformPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI Voice Features */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Bot className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">AI Voice Technology</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              State-of-the-art voice AI
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">that sounds genuinely human</span>
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[
-              { icon: Zap, title: '500ms Answer Time', description: 'AI picks up before the second ring.', stat: '< 0.5 sec', href: '/features/instant-answer' },
-              { icon: Volume2, title: 'Natural Voice', description: 'Premium ElevenLabs voices.', stat: '16+ voices', href: '/features/voice-options' },
-              { icon: BrainCircuit, title: 'Context Awareness', description: 'Handles complex conversations.', stat: 'GPT-4 powered', href: '/features/ai-intelligence' },
-              { icon: Globe, title: 'Multi-Industry', description: 'Pre-trained for 12+ industries.', stat: '12+ industries', href: '/features/industries' },
-            ].map((feature) => (
-              <Link key={feature.title} href={feature.href} className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.04]">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] group-hover:bg-emerald-500/10 transition-colors">
-                    <feature.icon className="h-5 w-5 text-[#fafaf9]/60 group-hover:text-emerald-400 transition-colors" />
-                  </div>
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">{feature.stat}</span>
-                </div>
-                <h3 className="text-base sm:text-lg font-medium mb-2 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
-                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{feature.description}</p>
-                <div className="mt-3 flex items-center gap-1 text-xs text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Learn more <ArrowRight className="h-3 w-3" />
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       </section>
