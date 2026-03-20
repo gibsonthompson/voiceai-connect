@@ -71,6 +71,7 @@ interface User {
   agency_id: string;
   first_name?: string;
   last_name?: string;
+  permissions?: Record<string, boolean> | null;
 }
 
 interface Branding {
@@ -94,6 +95,8 @@ interface AgencyContextType {
   // Demo mode
   demoMode: boolean;
   toggleDemoMode: () => void;
+  // Team permissions
+  hasPermission: (key: string) => boolean;
 }
 
 const defaultBranding: Branding = {
@@ -116,6 +119,7 @@ const AgencyContext = createContext<AgencyContextType>({
   refreshAgency: async () => {},
   demoMode: false,
   toggleDemoMode: () => {},
+  hasPermission: () => true,
 });
 
 export function useAgency() {
@@ -258,6 +262,14 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   // After trial ends and they're on an active subscription, use their actual plan.
   const effectivePlan = isTrialActive ? 'enterprise' : (agency?.plan_type || 'starter');
 
+  // Team permission check — owners/super_admin get everything, staff checks permissions object
+  const hasPermission = (key: string): boolean => {
+    if (!user) return false;
+    if (user.role === 'agency_owner' || user.role === 'super_admin') return true;
+    if (!user.permissions) return true;
+    return user.permissions[key] !== false;
+  };
+
   return (
     <AgencyContext.Provider value={{ 
       agency, 
@@ -271,6 +283,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       refreshAgency: fetchAgencyData,
       demoMode,
       toggleDemoMode,
+      hasPermission,
     }}>
       {children}
     </AgencyContext.Provider>

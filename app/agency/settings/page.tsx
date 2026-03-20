@@ -12,8 +12,9 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import BYOTSettings from '@/components/BYOTSettings';
+import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'demo' | 'feedback';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'team' | 'demo' | 'feedback';
 
 interface StripeStatus {
   connected: boolean;
@@ -212,7 +213,7 @@ function AgencySettingsContent() {
   const searchParams = useSearchParams();
   
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'demo', 'feedback'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'team', 'demo', 'feedback'];
   
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false);
@@ -353,6 +354,7 @@ function AgencySettingsContent() {
     { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
     { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
     { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe },
+    { id: 'team' as SettingsTab, label: 'Team', icon: Users },
     { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
     { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
   ];
@@ -945,6 +947,10 @@ function AgencySettingsContent() {
                 </div>
                 <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
               </div>
+            )}
+
+            {activeTab === 'team' && agency?.id && (
+              <AgencyTeamTab agencyId={agency.id} theme={theme} />
             )}
 
             {activeTab === 'demo' && (
