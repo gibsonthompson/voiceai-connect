@@ -25,10 +25,6 @@
 }
 
 @layer base {
-  * {
-    @apply border-white/10;
-  }
-  
   /* CRITICAL: This sets the status bar / safe area color on iOS */
   html {
     scroll-behavior: smooth;
@@ -68,9 +64,10 @@
     background: rgba(255, 255, 255, 0.2);
   }
 
-  /* Focus styles */
+  /* Focus styles — neutral gray, works on both light and dark dashboards */
   :focus-visible {
-    @apply outline-none ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-[#050505];
+    outline: 2px solid rgba(128, 128, 128, 0.3);
+    outline-offset: 2px;
   }
 }
 
@@ -276,11 +273,6 @@ details[open] summary {
   /* Reduce motion on mobile for performance */
   .animate-float {
     animation: none;
-  }
-  
-  /* Optimize touch targets */
-  button, a {
-    min-height: 44px;
   }
   
   /* Prevent horizontal overflow */

@@ -290,6 +290,7 @@ export default function AgencyLeadsPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link
               href="/agency/leads/finder"
+              prefetch={false}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}
             >
@@ -314,6 +315,7 @@ export default function AgencyLeadsPage() {
 
             <Link
               href="/agency/leads/new"
+              prefetch={false}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
               style={{
                 backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
@@ -703,6 +705,7 @@ export default function AgencyLeadsPage() {
               <div className="flex items-center justify-center gap-3 flex-wrap">
                 <Link
                   href="/agency/leads/finder"
+                  prefetch={false}
                   className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
                   style={{ backgroundColor: theme.primary, color: theme.primaryText }}
                 >
@@ -711,6 +714,7 @@ export default function AgencyLeadsPage() {
                 </Link>
                 <Link
                   href="/agency/leads/new"
+                  prefetch={false}
                   className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
                   style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
                 >
@@ -757,6 +761,7 @@ export default function AgencyLeadsPage() {
                   <Link
                     key={lead.id}
                     href={`/agency/leads/${lead.id}`}
+                    prefetch={false}
                     className="block px-4 sm:px-6 py-3 sm:py-4 transition-colors"
                     style={{ 
                       borderBottom: idx < filteredLeads.length - 1 ? `1px solid ${theme.borderSubtle}` : 'none',
