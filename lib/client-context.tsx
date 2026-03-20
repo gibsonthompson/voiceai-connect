@@ -51,6 +51,16 @@ interface Client {
   } | null;
 }
 
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  client_id: string;
+  first_name?: string;
+  last_name?: string;
+  permissions?: Record<string, boolean> | null;
+}
+
 interface Branding {
   primaryColor: string;
   secondaryColor: string;
@@ -177,6 +187,7 @@ function getEffectivePlan(client: Client | null): string {
 
 interface ClientContextType {
   client: Client | null;
+  user: User | null;
   branding: Branding;
   loading: boolean;
   refreshClient: () => Promise<void>;
@@ -185,6 +196,8 @@ interface ClientContextType {
   planType: string;
   /** Effective plan for feature gating — 'growth' during active trial, otherwise actual plan */
   effectivePlan: string;
+  /** Team permission check — owners get everything, staff checks permissions object */
+  hasPermission: (key: string) => boolean;
 }
 
 const defaultBranding: Branding = {
@@ -202,6 +215,7 @@ const defaultBranding: Branding = {
 
 const ClientContext = createContext<ClientContextType>({
   client: null,
+  user: null,
   branding: defaultBranding,
   loading: true,
   refreshClient: async () => {},
@@ -209,6 +223,7 @@ const ClientContext = createContext<ClientContextType>({
   getFeatureLabel: (f) => CLIENT_FEATURE_LABELS[f] || { title: f, description: '' },
   planType: 'pro',
   effectivePlan: 'growth',
+  hasPermission: () => true,
 });
 
 export function useClient() {
@@ -222,6 +237,7 @@ export function useClient() {
 export function ClientProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [branding, setBranding] = useState<Branding>(defaultBranding);
   const [loading, setLoading] = useState(true);
 
@@ -260,6 +276,12 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
       setClient(fetchedClient);
       
+      // Get user from localStorage (includes permissions for client_staff)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+
       const agency = fetchedClient.agency;
       // Client-level branding takes priority over agency branding
       setBranding({
@@ -311,9 +333,24 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
   const planType = client?.plan_type || 'pro';
 
+  // ============================================================================
+  // TEAM PERMISSION CHECK
+  // Client owners ('client' role) get all permissions.
+  // Client staff ('client_staff' role) checks the permissions object from login.
+  // ============================================================================
+  const hasPermission = useCallback((key: string): boolean => {
+    if (!user) return false;
+    // Owner gets everything
+    if (user.role === 'client' || user.role === 'super_admin') return true;
+    // Staff: check permissions object
+    if (!user.permissions) return true;
+    return user.permissions[key] !== false;
+  }, [user]);
+
   return (
     <ClientContext.Provider value={{ 
       client, 
+      user,
       branding, 
       loading, 
       refreshClient: fetchClientData,
@@ -321,6 +358,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       getFeatureLabel,
       planType,
       effectivePlan,
+      hasPermission,
     }}>
       <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />
       {children}
@@ -328,5 +366,5 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export type { ClientFeatureKey, Client, Branding };
+export type { ClientFeatureKey, Client, Branding, User };
 export { CLIENT_FEATURE_LABELS, DEFAULT_PLAN_FEATURES, isTrialStatus, isTrialActive };

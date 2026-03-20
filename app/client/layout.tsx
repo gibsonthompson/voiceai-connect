@@ -62,15 +62,22 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
   return Math.max(0, diffDays);
 }
 
+// Nav item type with optional permission key
+interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+  permissionKey?: string;
+}
+
 function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { client, branding, loading } = useClient();
+  const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Nav colors derived from actual sidebar bg, not page isDark mode
-  // (sidebar can be dark via branding_overrides even when page is light)
   const nav = {
     bg: theme.navBg,
     text: theme.navText,
@@ -89,8 +96,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
 
-  // Agency controls what name shows in client header
-  // 'agency_name' (default) = show agency name, 'business_name' = show client's business name
   const displayName = branding.clientHeaderMode === 'business_name'
     ? (branding.businessName || branding.agencyName || 'Loading...')
     : (branding.agencyName || 'Loading...');
@@ -158,13 +163,20 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/client/login';
   };
 
-  const navItems = [
-    { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp },
-    { href: '/client/calls', label: 'Calls', icon: PhoneCall },
-    { href: '/client/contacts', label: 'Contacts', icon: Users },
-    { href: '/client/ai-agent', label: 'AI Agent', icon: Bot },
-    { href: '/client/settings', label: 'Settings', icon: Settings },
+  // Nav items with permission keys for team-based filtering
+  const navItems: NavItem[] = [
+    { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
+    { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
+    { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
+    { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
+    { href: '/client/settings', label: 'Settings', icon: Settings },  // always visible
   ];
+
+  // Filter nav items by team member permissions
+  const filteredNavItems = navItems.filter(item => {
+    if (!item.permissionKey) return true;
+    return hasPermission(item.permissionKey);
+  });
 
   const isActive = (href: string) => {
     if (href === '/client/dashboard') return pathname === '/client/dashboard' || pathname === '/client';
@@ -184,7 +196,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   }, [loading, theme.isDark]);
 
   if (loading) {
-    // Read saved theme from previous session — avoids hardcoding dark/light
     let isDark = true;
     try {
       const saved = localStorage.getItem('voiceai_ui_theme');
@@ -203,14 +214,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           .sk-p2 { animation: skPulse 1.8s ease-in-out 0.3s infinite; }
           .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
         `}} />
-        {/* Sidebar skeleton — hidden on mobile */}
         <div className="hidden md:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
-          {/* Logo area */}
           <div className="h-16 flex items-center gap-3 px-6" style={{ borderBottom: `1px solid ${sk.border}` }}>
             <div className="w-8 h-8 rounded-lg sk-p" style={{ backgroundColor: sk.pulse }} />
             <div className="h-4 w-24 rounded-md sk-p" style={{ backgroundColor: sk.pulse }} />
           </div>
-          {/* Nav items */}
           <div className="p-4 space-y-2">
             {[1,2,3,4,5].map(i => (
               <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 2 ? 'sk-p' : 'sk-p2'}`}>
@@ -219,7 +227,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               </div>
             ))}
           </div>
-          {/* Bottom */}
           <div className="mt-auto p-4 space-y-2">
             <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
               <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
@@ -231,20 +238,16 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
-        {/* Content skeleton */}
         <div className="flex-1 p-6 md:p-8">
-          {/* Header */}
           <div className="mb-6">
             <div className="h-6 w-40 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
             <div className="h-3.5 w-56 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
           </div>
-          {/* Phone number card */}
           <div className="rounded-xl p-5 mb-5 sk-p" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
             <div className="h-3 w-28 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
             <div className="h-7 w-44 rounded-lg" style={{ backgroundColor: sk.pulse }} />
             <div className="h-3 w-48 rounded mt-2" style={{ backgroundColor: sk.pulse2 }} />
           </div>
-          {/* Stats grid */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             {[1,2].map(i => (
               <div key={i} className={`rounded-xl p-5 ${i === 2 ? 'sk-p2' : 'sk-p'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
@@ -254,7 +257,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               </div>
             ))}
           </div>
-          {/* Recent calls */}
           <div className="rounded-xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
             <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${sk.border}` }}>
               <div className="h-4 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
@@ -289,7 +291,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {/* Dynamic ::selection color — matches agency branding */}
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
 
       {/* Payment Failed Banner */}
@@ -321,7 +322,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Mobile Header — shows client business name + logo */}
+      {/* Mobile Header */}
       <div className="sticky z-30 md:hidden"
         style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: (clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3)) ? '52px' : 0 }}>
         <header className="flex items-center justify-between h-16 px-4"
@@ -360,7 +361,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {/* Desktop Logo — shows client's business name + logo */}
+        {/* Desktop Logo */}
         <div className="hidden md:flex h-16 items-center gap-3 border-b px-6" style={{ borderColor: nav.border }}>
           {displayLogo ? (
             <img src={displayLogo} alt={displayName} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />
@@ -372,9 +373,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           <span className="font-medium truncate" style={{ color: nav.text }}>{displayName}</span>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation — uses filteredNavItems */}
         <nav className="p-4 space-y-1">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const active = isActive(item.href);
             return (
               <button key={item.href} onClick={() => handleNavClick(item.href)}
@@ -403,7 +404,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             </a>
           )}
 
-          {/* Powered by — always shows AGENCY name, not client name */}
+          {/* Powered by */}
           <div className="rounded-xl border p-3" style={{ borderColor: nav.border, backgroundColor: nav.poweredByBg }}>
             <p className="text-xs" style={{ color: nav.textMuted }}>Powered by</p>
             <p className="text-sm font-medium" style={{ color: nav.text }}>{branding.agencyName}</p>
@@ -420,7 +421,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* PWA Install Prompt — auto-triggers after 3rd visit */}
+      {/* PWA Install Prompt */}
       {client && (
         <AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.agencyName || client.business_name || 'Your App'} />
       )}
