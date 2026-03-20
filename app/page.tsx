@@ -382,7 +382,7 @@ export default function LandingPage() {
                 <span className="block text-[#fafaf9]/40">that closes deals for you.</span>
               </h2>
               <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                Professional and Scale plans include a complete white-label marketing website—your logo, 
+                Professional and Enterprise plans include a complete white-label marketing website—your logo, 
                 your colors, your domain. But the real magic is the interactive AI demo.
               </p>
               
@@ -646,19 +646,19 @@ export default function LandingPage() {
               {[
                 {
                   name: 'Starter', price: 99, description: 'For new agencies testing the waters',
-                  features: ['Up to 15 clients', 'Embeddable signup widget', 'White-label client dashboard', 'Leads CRM & email templates', 'Stripe Connect payments', 'Basic analytics', 'Email support'],
+                  features: ['Up to 25 clients', 'Owner only (no team members)', 'Embeddable signup widget', 'White-label client dashboard', 'Leads CRM & email templates', 'Stripe Connect payments', 'Basic analytics', 'Email support'],
                   limitations: ['No marketing site', 'Subdomain only', 'No API access'],
                   highlighted: false, cta: 'Start Free Trial',
                 },
                 {
                   name: 'Professional', price: 199, description: 'Most popular for serious agencies',
-                  features: ['Up to 100 clients', 'Full marketing website', 'Interactive AI demo line', 'Sample call recordings', 'Custom domain support', 'Advanced analytics', 'API access & webhooks', 'Priority support'],
+                  features: ['Up to 100 clients', '3 agency + 2 client team members', 'Full marketing website', 'Interactive AI demo line', 'Sample call recordings', 'Custom domain support', 'Advanced analytics', 'API access & webhooks', 'Priority support'],
                   limitations: [],
                   highlighted: true, cta: 'Start Free Trial',
                 },
                 {
-                  name: 'Scale', price: 499, description: 'For established agencies',
-                  features: ['Unlimited clients', 'Unlimited calls & minutes', 'Everything in Professional', 'Dedicated success manager', 'Phone support', 'SLA guarantee', 'Early feature access'],
+                  name: 'Enterprise', price: 499, description: 'For established agencies',
+                  features: ['Unlimited clients', '10 agency + 5 client team members', 'Unlimited calls & minutes', 'Everything in Professional', 'Dedicated success manager', 'Phone support', 'SLA guarantee', 'Early feature access'],
                   limitations: [],
                   highlighted: false, cta: 'Start Free Trial',
                 },
@@ -695,7 +695,7 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={tier.name === 'Scale' ? '/signup?plan=enterprise' : '/signup'} className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
+                  <Link href={tier.name === 'Enterprise' ? '/signup?plan=enterprise' : '/signup'} className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
                     tier.highlighted
                       ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10'
                       : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
@@ -723,10 +723,10 @@ export default function LandingPage() {
 
           <div className="space-y-4">
             {[
-              { q: 'What is the interactive AI demo line?', a: 'Professional and Scale plans include a demo phone number on your marketing site. When prospects call, the AI asks about their business—name, type, hours, common questions—then transforms into their receptionist right on the call. They can test it by asking questions and experience exactly what their callers will hear. It\'s incredibly effective at converting prospects into clients.' },
+              { q: 'What is the interactive AI demo line?', a: 'Professional and Enterprise plans include a demo phone number on your marketing site. When prospects call, the AI asks about their business—name, type, hours, common questions—then transforms into their receptionist right on the call. They can test it by asking questions and experience exactly what their callers will hear. It\'s incredibly effective at converting prospects into clients.' },
               { q: 'What do I actually have to do?', a: 'Find clients and collect payments. That\'s it. When someone signs up through your link, the platform automatically configures their AI, provisions their phone number, and handles all the technical setup. When they have questions or issues, the platform handles support. Your job is sales.' },
               { q: 'Do I need any technical skills?', a: 'None. If you can use Instagram, you can run this business. Upload your logo, pick colors, set prices, share your link. That\'s the entire technical requirement. We handle everything else.' },
-              { q: 'What\'s the difference between Starter and Professional?', a: 'Starter ($99/mo) gives you up to 15 clients and an embeddable widget. Professional ($199/mo) includes up to 100 clients, a complete marketing website with a demo phone number, custom domain support, API access, and advanced analytics. Most agencies upgrade to Professional within their trial.' },
+              { q: 'What\'s the difference between the plans?', a: 'Starter ($99/mo) gives you up to 25 clients and an embeddable widget—owner only, no team members. Professional ($199/mo) includes up to 100 clients, 3 agency team members, 2 client team members per client, a complete marketing website with a demo phone number, custom domain support, API access, and advanced analytics. Enterprise ($499/mo) adds unlimited clients, 10 agency + 5 client team members, a dedicated success manager, and SLA guarantee. Most agencies upgrade to Professional within their trial.' },
               { q: 'How do I get clients?', a: 'We provide sales scripts, email templates, and training. Most successful partners use cold outreach to local businesses (plumbers, dentists, lawyers), Facebook/Instagram ads targeting business owners, or content about AI solutions. The built-in leads CRM helps you track and follow up with every prospect.' },
               { q: 'What do my clients actually see?', a: 'Only your brand. Your logo, your colors, your domain. The client dashboard, emails, and phone experience all show your branding. VoiceAI Connect is completely invisible to them.' },
               { q: 'How does payment work?', a: 'You connect your own Stripe account. When clients subscribe, money goes directly to you. Set any price you want—$99, $149, $299. We charge you a flat monthly platform fee. No per-client costs, no revenue share.' },

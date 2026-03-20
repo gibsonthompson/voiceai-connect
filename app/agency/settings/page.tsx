@@ -794,6 +794,34 @@ function AgencySettingsContent() {
                 <div className="flex items-center justify-between pt-2">
                   <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
                 </div>
+
+                {/* Team member allocation display */}
+                <div className="rounded-xl p-4 mt-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                  <div className="flex items-start gap-3">
+                    <Users className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Team Members</p>
+                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
+                        Your plan includes <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_agency ?? 0} agency team members</strong> and <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_client ?? 0} team members per client</strong>. 
+                        {((agency as any)?.max_team_members_agency ?? 0) === 0 && ' Upgrade to Professional or Enterprise to unlock team access.'}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ((agency as any)?.max_team_members_agency ?? 0) > 0 ? theme.primary : theme.textMuted }} />
+                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>
+                            Agency: {(agency as any)?.max_team_members_agency ?? 0}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ((agency as any)?.max_team_members_client ?? 0) > 0 ? theme.primary : theme.textMuted }} />
+                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>
+                            Per client: {(agency as any)?.max_team_members_client ?? 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
