@@ -357,7 +357,11 @@ function AgencySettingsContent() {
     { id: 'team' as SettingsTab, label: 'Team', icon: Users },
     { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
     { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
-  ];
+  ].filter(tab => {
+    // Hide Team tab from staff users — only owners manage team
+    if (tab.id === 'team' && user?.role === 'agency_staff') return false;
+    return true;
+  });
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

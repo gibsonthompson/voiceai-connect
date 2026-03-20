@@ -127,6 +127,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
+  // Read user role to hide team section from staff
+  const [userRole, setUserRole] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUserRole(parsed.role || null);
+      }
+    } catch {}
+  }, []);
+  const isOwner = userRole === 'client' || userRole === null; // null = loading, show by default
+
   useEffect(() => {
     const fetchCallMode = async () => {
       try {
@@ -482,13 +495,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {/* ================================================================ */}
-        {/* TEAM MEMBERS — NEW SECTION                                       */}
+        {/* TEAM MEMBERS — Only visible to account owner (not client_staff)   */}
         {/* ================================================================ */}
+        {isOwner && (
         <section className="mb-4 sm:mb-6">
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <ClientTeamSection clientId={client.id} theme={theme} />
           </div>
         </section>
+        )}
 
         {/* Subscription & Billing */}
         <section className="mb-4 sm:mb-6">
