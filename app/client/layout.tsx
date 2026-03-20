@@ -290,7 +290,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen" style={{ backgroundColor: theme.bg, zoom: 0.9 }}>
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
 
       {/* Payment Failed Banner */}
