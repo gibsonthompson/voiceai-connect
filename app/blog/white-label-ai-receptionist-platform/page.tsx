@@ -34,6 +34,7 @@ const tableOfContents = [
   { id: 'revenue-potential', title: 'Revenue Potential and Profit Margins', level: 2 },
   { id: 'who-should-use', title: 'Who Should Use a White Label Platform?', level: 2 },
   { id: 'getting-started', title: 'How to Get Started', level: 2 },
+  { id: 'compare-platforms', title: 'Compare White-Label Platforms', level: 2 },
   { id: 'faq', title: 'Frequently Asked Questions', level: 2 },
 ];
 
@@ -295,7 +296,7 @@ export default function WhiteLabelAIReceptionistPlatform() {
           ['VoiceAI Connect', '$199/month', 'Phone-only operation, zero fulfillment', '★★★★★'],
           ['My AI Front Desk', '$45/month base', 'Budget-conscious, testing the market', '★★★★☆'],
           ['Synthflow', 'Usage-based', 'Technical users, custom workflows', '★★★★☆'],
-          ['Autocalls', 'Varies', 'Call center focus, outbound calls', '★★★☆☆'],
+          ['Autocalls', '$419/month (WL plan)', 'Omnichannel agencies, outbound calling', '★★★★☆'],
           ['Callin.io', '$300+/month', 'Healthcare vertical focus', '★★★★☆'],
         ]}
       />
@@ -447,6 +448,22 @@ export default function WhiteLabelAIReceptionistPlatform() {
           From there, it's about consistent outreach and compound growth through referrals.
         </p>
       </Callout>
+
+      <h2 id="compare-platforms">Compare White-Label Platforms</h2>
+
+      <p>
+        Choosing the right white-label platform is the most important decision you'll make.
+        We've published detailed comparisons to help you evaluate your options:
+      </p>
+
+      <ul>
+        <li><a href="/blog/how-to-choose-white-label-ai-receptionist-platform">How to Choose a White-Label AI Receptionist Platform</a> — 9 evaluation criteria ranked by impact on profitability</li>
+        <li><a href="/blog/white-label-ai-voice-agent-platform-agencies">White-Label AI Voice Agent Platform Guide</a> — Wrapper vs. native architecture explained</li>
+        <li><a href="/blog/voiceai-connect-vs-autocalls">VoiceAI Connect vs Autocalls</a> — Inbound focus vs. omnichannel</li>
+        <li><a href="/blog/voiceai-connect-vs-trillet">VoiceAI Connect vs Trillet</a> — Simplicity vs. advanced features</li>
+        <li><a href="/blog/voiceai-connect-vs-echowin">VoiceAI Connect vs echowin</a> — Voice-first vs. voice + chatbot</li>
+        <li><a href="/blog/voiceai-connect-vs-insighto">VoiceAI Connect vs Insighto</a> — Voice-first vs. chat-first architecture</li>
+      </ul>
 
       <h2 id="faq">Frequently Asked Questions</h2>
 

@@ -21,6 +21,7 @@ const navLinks = [
 const categories = [
   { id: 'all', name: 'All Posts' },
   { id: 'guides', name: 'Guides' },
+  { id: 'comparison', name: 'Comparisons' },
   { id: 'industry', name: 'Industry' },
   { id: 'product', name: 'Product Updates' },
 ];
@@ -39,6 +40,66 @@ interface BlogPost {
 }
 
 const blogPosts: BlogPost[] = [
+  // White-Label Guides (March 2026)
+  {
+    slug: 'how-to-choose-white-label-ai-receptionist-platform',
+    title: 'How to Choose a White-Label AI Receptionist Platform in 2026',
+    excerpt: 'The 9 evaluation criteria that separate platforms you can build a business on from ones that will cost you clients. Architecture, pricing transparency, branding depth, and the questions most buyers skip.',
+    category: 'guides',
+    publishedAt: '2026-03-21',
+    readTime: '18 min',
+    featured: true,
+  },
+  {
+    slug: 'white-label-ai-voice-agent-platform-agencies',
+    title: 'White-Label AI Voice Agent Platform for Agencies: Complete Guide (2026)',
+    excerpt: 'The market exploded from 4 platforms to 15+ in 12 months. Navigate wrapper vs. native architectures, hidden BYOK costs, and honest assessments of the 6 major platforms.',
+    category: 'guides',
+    publishedAt: '2026-03-21',
+    readTime: '16 min',
+    featured: true,
+  },
+  // Competitor Comparisons (March 2026)
+  {
+    slug: 'voiceai-connect-vs-autocalls',
+    title: 'VoiceAI Connect vs Autocalls: Which White-Label AI Receptionist Fits Your Agency?',
+    excerpt: 'Both are native platforms with Stripe Connect billing. The difference: VoiceAI Connect focuses on inbound local business reception. Autocalls adds omnichannel and outbound capabilities.',
+    category: 'comparison',
+    publishedAt: '2026-03-21',
+    readTime: '14 min',
+  },
+  {
+    slug: 'voiceai-connect-vs-echowin',
+    title: 'VoiceAI Connect vs echowin: White-Label AI Receptionist Comparison',
+    excerpt: 'echowin offers voice + chatbot with partner success resources. VoiceAI Connect focuses on voice-first AI reception for local businesses. Compare pricing, branding, and compliance.',
+    category: 'comparison',
+    publishedAt: '2026-03-21',
+    readTime: '12 min',
+  },
+  {
+    slug: 'voiceai-connect-vs-voxtell',
+    title: 'VoiceAI Connect vs Voxtell: White-Label AI Receptionist Comparison',
+    excerpt: 'Voxtell leads with 7,000+ MCP integrations and multi-channel AI. VoiceAI Connect leads with industry-specific AI depth. Which matters more for your agency model?',
+    category: 'comparison',
+    publishedAt: '2026-03-21',
+    readTime: '11 min',
+  },
+  {
+    slug: 'voiceai-connect-vs-callin-io',
+    title: 'VoiceAI Connect vs Callin.io: White-Label AI Receptionist Comparison',
+    excerpt: 'Callin.io offers enterprise platform licensing with industry-vertical solutions. VoiceAI Connect offers self-service agency resale. Different models for different agency profiles.',
+    category: 'comparison',
+    publishedAt: '2026-03-21',
+    readTime: '10 min',
+  },
+  {
+    slug: 'voiceai-connect-vs-insighto',
+    title: 'VoiceAI Connect vs Insighto: White-Label AI Agent Comparison',
+    excerpt: 'Insighto is chat-first with voice add-on. VoiceAI Connect is voice-first for inbound reception. That architectural origin shapes everything about caller experience quality.',
+    category: 'comparison',
+    publishedAt: '2026-03-21',
+    readTime: '11 min',
+  },
   // International Market Posts
   {
     slug: 'start-ai-receptionist-agency-from-india',
@@ -64,7 +125,6 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-01-28',
     readTime: '12 min',
-    featured: true,
   },
   {
     slug: 'how-much-do-ai-receptionist-agencies-make',
@@ -81,7 +141,31 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-01-28',
     readTime: '14 min',
-    featured: true,
+  },
+  // Existing Comparisons
+  {
+    slug: 'voiceai-connect-vs-trillet',
+    title: 'VoiceAI Connect vs Trillet: Which White-Label AI Platform Is Better?',
+    excerpt: 'VoiceAI Connect focuses on simplicity and speed-to-revenue. Trillet offers outbound calling and multi-agent orchestration. Full comparison for agency owners.',
+    category: 'comparison',
+    publishedAt: '2026-02-10',
+    readTime: '10 min',
+  },
+  {
+    slug: 'voiceai-connect-vs-goodcall',
+    title: 'VoiceAI Connect vs Goodcall: Agency Platform vs D2C — Which Is Right?',
+    excerpt: 'Goodcall sells directly to businesses. VoiceAI Connect lets you build an agency. Why that distinction matters for your revenue.',
+    category: 'comparison',
+    publishedAt: '2026-02-10',
+    readTime: '9 min',
+  },
+  {
+    slug: 'best-ai-receptionist-platforms-compared-2026',
+    title: 'Best AI Receptionist Platforms Compared (2026)',
+    excerpt: 'Comprehensive comparison of every major AI receptionist platform. White-label and D2C solutions with real pricing and honest recommendations.',
+    category: 'comparison',
+    publishedAt: '2026-02-10',
+    readTime: '14 min',
   },
   // Industry Posts
   {
@@ -173,12 +257,14 @@ export default function BlogPage() {
 
   const categoryColor = (cat: string) => ({
     guides: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    comparison: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
     industry: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
     product: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
   }[cat] || 'bg-white/10 border-white/20 text-white/70');
 
   const categoryName = (cat: string) => ({
     guides: 'Guide',
+    comparison: 'Comparison',
     industry: 'Industry',
     product: 'Product Update',
   }[cat] || cat);

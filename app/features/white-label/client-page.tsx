@@ -96,6 +96,29 @@ export default function WhiteLabelFeaturePage() {
         </div>
       </section>
 
+      {/* NEW: How VoiceAI Connect compares */}
+      <section className="py-16 border-t border-white/[0.06]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-xl font-semibold mb-3">How VoiceAI Connect compares</h2>
+          <p className="text-[#fafaf9]/50 mb-8 max-w-2xl">Evaluating white-label platforms? See how VoiceAI Connect stacks up against the competition on branding depth, pricing, and agency tools.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { title: 'How to Choose a White-Label Platform', desc: '9 evaluation criteria that actually matter', href: '/blog/how-to-choose-white-label-ai-receptionist-platform' },
+              { title: 'White-Label AI Voice Agent Guide', desc: 'Wrapper vs. native platforms compared', href: '/blog/white-label-ai-voice-agent-platform-agencies' },
+              { title: 'VoiceAI Connect vs Autocalls', desc: 'Inbound focus vs. omnichannel', href: '/blog/voiceai-connect-vs-autocalls' },
+              { title: 'VoiceAI Connect vs Synthflow', desc: 'Flat-rate vs. per-minute pricing', href: '/voiceai-connect-vs-synthflow' },
+              { title: 'VoiceAI Connect vs Trillet', desc: 'Simplicity vs. advanced features', href: '/blog/voiceai-connect-vs-trillet' },
+              { title: 'All Comparisons →', desc: 'See every platform matchup', href: '/blog' },
+            ].map((item) => (
+              <Link key={item.title} href={item.href} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-amber-500/30 transition-colors group">
+                <h3 className="font-medium group-hover:text-amber-400 transition-colors">{item.title}</h3>
+                <p className="text-sm text-[#fafaf9]/50 mt-1">{item.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-xl font-semibold mb-8">Related features</h2>

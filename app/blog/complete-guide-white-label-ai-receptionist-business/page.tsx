@@ -46,6 +46,7 @@ const tableOfContents = [
   { id: 'common-misconceptions', title: 'Common Misconceptions', level: 2 },
   { id: 'how-it-compares', title: 'How It Compares to Other Agency Models', level: 2 },
   { id: 'getting-started', title: 'Getting Started', level: 2 },
+  { id: 'compare-platforms', title: 'Evaluating White-Label Platforms', level: 2 },
   { id: 'faq', title: 'FAQ', level: 2 },
 ];
 
@@ -414,8 +415,25 @@ export default function CompleteGuideWhiteLabelAIReceptionist() {
         <a href="/signup" className="text-emerald-400 hover:underline">
           Try VoiceAI Connect free for 14 days
         </a>{' '}
-        — your fully branded agency is ready in minutes.
+        — your fully branded agency is ready in minutes. Not sure which platform to choose?
+        Read our{' '}
+        <a href="/blog/how-to-choose-white-label-ai-receptionist-platform" className="text-emerald-400 hover:underline">
+          platform evaluation guide
+        </a>.
       </Callout>
+
+      <h2 id="compare-platforms">Evaluating White-Label Platforms</h2>
+
+      <p>
+        If you've decided the white-label AI receptionist model is right for you, the next 
+        step is choosing a platform. We've written detailed comparisons to help:
+      </p>
+
+      <ul>
+        <li><a href="/blog/how-to-choose-white-label-ai-receptionist-platform">How to Choose a White-Label AI Receptionist Platform (2026)</a> — The 9 criteria that matter most</li>
+        <li><a href="/blog/white-label-ai-voice-agent-platform-agencies">White-Label AI Voice Agent Platform Guide</a> — Honest assessment of the 6 major platforms</li>
+        <li><a href="/blog/best-ai-receptionist-platforms-compared-2026">Best AI Receptionist Platforms Compared</a> — White-label and D2C options side by side</li>
+      </ul>
 
       <h2 id="faq">Frequently Asked Questions</h2>
 

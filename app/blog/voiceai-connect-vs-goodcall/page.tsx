@@ -40,6 +40,7 @@ const tableOfContents = [
   { id: 'why-agencies-need-white-label', title: 'Why Agencies Need a White-Label Platform', level: 2 },
   { id: 'pricing-economics', title: 'The Economics for Agencies', level: 2 },
   { id: 'who-should-choose', title: 'Who Should Choose Which?', level: 2 },
+  { id: 'more-comparisons', title: 'More Platform Comparisons', level: 2 },
   { id: 'faq', title: 'FAQ', level: 2 },
 ];
 
@@ -222,6 +223,21 @@ export default function VoiceAIConnectVsGoodcall() {
           Start your 14-day free trial of VoiceAI Connect
         </a>
       </Callout>
+
+      <h2 id="more-comparisons">More Platform Comparisons</h2>
+
+      <p>
+        Looking at white-label platforms beyond Goodcall? Compare VoiceAI Connect to 
+        agency-focused competitors:
+      </p>
+
+      <ul>
+        <li><a href="/blog/voiceai-connect-vs-autocalls">VoiceAI Connect vs Autocalls</a> — Two native white-label platforms compared</li>
+        <li><a href="/blog/voiceai-connect-vs-trillet">VoiceAI Connect vs Trillet</a> — Simplicity vs. outbound calling features</li>
+        <li><a href="/blog/voiceai-connect-vs-insighto">VoiceAI Connect vs Insighto</a> — Voice-first vs. chat-first architecture</li>
+        <li><a href="/blog/voiceai-connect-vs-callin-io">VoiceAI Connect vs Callin.io</a> — Self-service agency vs. enterprise licensing</li>
+        <li><a href="/blog/how-to-choose-white-label-ai-receptionist-platform">How to Choose a Platform</a> — The complete evaluation framework</li>
+      </ul>
 
       <h2 id="faq">Frequently Asked Questions</h2>
 

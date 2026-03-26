@@ -42,6 +42,7 @@ const tableOfContents = [
   { id: 'integrations', title: 'Integrations', level: 2 },
   { id: 'support', title: 'Support & Resources', level: 2 },
   { id: 'who-should-choose', title: 'Who Should Choose Which?', level: 2 },
+  { id: 'more-comparisons', title: 'More Platform Comparisons', level: 2 },
   { id: 'faq', title: 'FAQ', level: 2 },
 ];
 
@@ -275,6 +276,21 @@ export default function VoiceAIConnectVsTrillet() {
         </a>{' '}
         and see the platform in action.
       </Callout>
+
+      <h2 id="more-comparisons">More Platform Comparisons</h2>
+
+      <p>
+        Evaluating multiple platforms? See how VoiceAI Connect compares to other white-label 
+        AI receptionist providers:
+      </p>
+
+      <ul>
+        <li><a href="/blog/voiceai-connect-vs-autocalls">VoiceAI Connect vs Autocalls</a> — Omnichannel capabilities and $0.09/min all-inclusive pricing</li>
+        <li><a href="/blog/voiceai-connect-vs-echowin">VoiceAI Connect vs echowin</a> — Voice + chatbot with partner success resources</li>
+        <li><a href="/blog/voiceai-connect-vs-voxtell">VoiceAI Connect vs Voxtell</a> — 7,000+ MCP integrations vs. industry AI depth</li>
+        <li><a href="/blog/voiceai-connect-vs-goodcall">VoiceAI Connect vs Goodcall</a> — White-label agency vs. D2C platform</li>
+        <li><a href="/blog/how-to-choose-white-label-ai-receptionist-platform">How to Choose a Platform</a> — Full evaluation framework with 9 weighted criteria</li>
+      </ul>
 
       <h2 id="faq">Frequently Asked Questions</h2>
 

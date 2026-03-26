@@ -230,10 +230,11 @@ export default function sitemap() {
       priority: 0.7,
     },
     {
+      // CHANGED: priority 0.7 → 0.5 to de-emphasize vs future /white-label pillar
       url: `${baseUrl}/features/white-label`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.5,
     },
 
     // Blog Index
@@ -242,6 +243,52 @@ export default function sitemap() {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
+    },
+
+    // Blog Posts — White-Label Buyer's Guide + Voice Agent Terminology (March 2026)
+    {
+      url: `${baseUrl}/blog/how-to-choose-white-label-ai-receptionist-platform`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/white-label-ai-voice-agent-platform-agencies`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+
+    // Blog Posts — Competitor Comparisons: New Entrants (March 2026)
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-autocalls`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-echowin`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-voxtell`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-callin-io`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/voiceai-connect-vs-insighto`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
     },
 
     // Blog Posts — AEO Content (March 2026)
