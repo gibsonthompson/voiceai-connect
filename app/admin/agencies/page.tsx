@@ -249,6 +249,11 @@ export default function AdminAgenciesPage() {
     return colors[plan] || colors.starter;
   };
 
+  // =========================================================================
+  // FIX #1: Onboarding step labels now match the current 6-step flow
+  // Old: 7 steps with Stripe Connect at step 5
+  // New: 6 steps — Agency → Pricing → Logo → Colors → Password → Complete
+  // =========================================================================
   const getOnboardingLabel = (step: number | null) => {
     const labels: Record<number, string> = {
       0: 'Not Started',
@@ -256,11 +261,24 @@ export default function AdminAgenciesPage() {
       2: 'Pricing Setup',
       3: 'Logo Upload',
       4: 'Brand Colors',
-      5: 'Stripe Connect',
-      6: 'Password Setup',
-      7: 'Complete',
+      5: 'Password Setup',
+      6: 'Complete',
     };
     return labels[step ?? 0] || `Step ${step}`;
+  };
+
+  // =========================================================================
+  // FIX #2: Abandoned cart step label (SMS drip 1-5, NOT onboarding step)
+  // =========================================================================
+  const getAbandonedCartLabel = (step: number | null) => {
+    const labels: Record<number, string> = {
+      1: 'Casual reminder (30 min)',
+      2: 'Value prop (1 hr)',
+      3: 'Social proof (24 hr)',
+      4: 'Personal check-in (72 hr)',
+      5: 'Final nudge (1 week)',
+    };
+    return labels[step ?? 0] || `SMS ${step}`;
   };
 
   const filteredAgencies = agencies.filter(a => {
@@ -661,21 +679,23 @@ export default function AdminAgenciesPage() {
                                       )}
                                     </div>
                                   )}
+                                  {/* FIX #1: Now shows /6 instead of /7, correct step labels */}
                                   <div className="flex items-center gap-2">
                                     <Zap className="h-3.5 w-3.5 text-white/25" />
                                     <span className={agency.onboarding_completed ? 'text-emerald-400/80' : 'text-amber-400/80'}>
                                       {agency.onboarding_completed 
                                         ? 'Onboarding Complete' 
-                                        : `Stalled: ${getOnboardingLabel(agency.onboarding_step)} (${agency.onboarding_step || 0}/7)`}
+                                        : `Stalled: ${getOnboardingLabel(agency.onboarding_step)} (${agency.onboarding_step || 0}/6)`}
                                     </span>
                                   </div>
+                                  {/* FIX #2: Abandoned cart now shows SMS drip step, not onboarding label */}
                                   {!agency.onboarding_completed && agency.abandoned_cart_step && agency.abandoned_cart_step > 0 && (
                                     <div className="flex items-center gap-2">
                                       <Target className="h-3.5 w-3.5 text-amber-400/30" />
                                       <span className="text-amber-400/60 text-[11px]">
-                                        Abandoned: {getOnboardingLabel(agency.abandoned_cart_step)}
+                                        Recovery SMS: {agency.abandoned_cart_step}/5 sent
                                         {agency.abandoned_cart_last_sent_at && (
-                                          <> · Nudged {timeAgo(agency.abandoned_cart_last_sent_at)}</>
+                                          <> · {timeAgo(agency.abandoned_cart_last_sent_at)}</>
                                         )}
                                       </span>
                                     </div>
