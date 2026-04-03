@@ -189,7 +189,6 @@ function WaveformIcon({ className }: { className?: string }) {
 
 // ============================================================================
 // STEP DEFINITIONS
-// PHASE 2D: Steps 5+6 descriptions updated (no plan selection references)
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
@@ -302,13 +301,25 @@ function OnboardingContent() {
     limitGrowth: 500,
   });
 
+  // ==========================================================================
+  // UPDATED: Accept ?agency= URL param as fallback for localStorage.
+  // This allows abandoned checkout recovery links (set-password → onboarding)
+  // to work on any device, not just the one where they originally signed up.
+  // ==========================================================================
   useEffect(() => {
     const fetchAgency = async () => {
       if (!sessionId) {
         const storedAgencyId = localStorage.getItem('onboarding_agency_id');
-        if (storedAgencyId) {
-          setAgencyId(storedAgencyId);
-          await loadAgencyData(storedAgencyId);
+        const urlAgencyId = searchParams.get('agency');
+        const resolvedAgencyId = storedAgencyId || urlAgencyId;
+
+        if (resolvedAgencyId) {
+          setAgencyId(resolvedAgencyId);
+          // Persist URL param to localStorage so future page loads work without the param
+          if (!storedAgencyId && urlAgencyId) {
+            localStorage.setItem('onboarding_agency_id', resolvedAgencyId);
+          }
+          await loadAgencyData(resolvedAgencyId);
         } else {
           router.push('/signup');
         }
@@ -498,11 +509,6 @@ function OnboardingContent() {
     }
   };
 
-  // ============================================================================
-  // PHASE 2D: Helper to start trial with default plan
-  // Called before redirecting to set-password or dashboard
-  // Non-blocking — if it fails, we still proceed (trial can be started later)
-  // ============================================================================
   const startDefaultTrial = async () => {
     if (!agencyId) return;
     try {
@@ -518,11 +524,6 @@ function OnboardingContent() {
     }
   };
 
-  // ============================================================================
-  // PHASE 2D: Set password → start trial → go to dashboard
-  // CHANGED: returnTo is /agency/dashboard instead of /signup/plan
-  // CHANGED: Starts trial with 'starter' plan before redirect
-  // ============================================================================
   const handleSetPassword = async () => {
     const token = localStorage.getItem('agency_password_token');
     
@@ -542,10 +543,6 @@ function OnboardingContent() {
     }
   };
 
-  // ============================================================================
-  // PHASE 2D: Complete → start trial → go to dashboard
-  // CHANGED: Goes to /agency/dashboard instead of /signup/plan
-  // ============================================================================
   const handleComplete = async () => {
     if (agencyId) {
       await startDefaultTrial();
@@ -559,67 +556,42 @@ function OnboardingContent() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1: // Agency
+      case 1:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Name Your Agency</h2>
               <p className="mt-2 text-[#fafaf9]/50">This is how clients will see your brand</p>
             </div>
-
             <div className="max-w-md mx-auto space-y-5">
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Agency Name</label>
                 <div className="relative">
                   <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
-                  <input
-                    type="text"
-                    value={agencyDetails.name}
-                    onChange={(e) => setAgencyDetails({ ...agencyDetails, name: e.target.value })}
-                    placeholder="SmartCall Solutions"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
-                  />
+                  <input type="text" value={agencyDetails.name} onChange={(e) => setAgencyDetails({ ...agencyDetails, name: e.target.value })} placeholder="SmartCall Solutions" className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all" />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">This appears on your signup pages, client dashboard, and emails</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
-                  <input
-                    type="tel"
-                    value={agencyDetails.phone}
-                    onChange={(e) => setAgencyDetails({ ...agencyDetails, phone: e.target.value })}
-                    placeholder="(555) 123-4567"
-                    required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
-                  />
+                  <input type="tel" value={agencyDetails.phone} onChange={(e) => setAgencyDetails({ ...agencyDetails, phone: e.target.value })} placeholder="(555) 123-4567" required className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all" />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">For support, account updates, and important notifications</p>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">
-                  How did you hear about us?
-                </label>
+                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
                 <div className="relative">
-                  <select
-                    value={agencyDetails.referralSource}
-                    onChange={(e) => setAgencyDetails({ ...agencyDetails, referralSource: e.target.value })}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
-                  >
+                  <select value={agencyDetails.referralSource} onChange={(e) => setAgencyDetails({ ...agencyDetails, referralSource: e.target.value })} className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer">
                     {REFERRAL_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value} className="bg-[#1a1a1a] text-[#fafaf9]">
-                        {option.label}
-                      </option>
+                      <option key={option.value} value={option.value} className="bg-[#1a1a1a] text-[#fafaf9]">{option.label}</option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30 pointer-events-none" />
                 </div>
               </div>
             </div>
-
             <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Preview</p>
               <div className="flex items-center gap-3">
@@ -635,14 +607,13 @@ function OnboardingContent() {
           </div>
         );
 
-      case 2: // Pricing
+      case 2:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Pricing</h2>
               <p className="mt-2 text-[#fafaf9]/50">What you charge clients — you keep 100%</p>
             </div>
-
             <div className="space-y-4 max-w-2xl mx-auto">
               {[
                 { key: 'starter', label: 'Starter Plan', limitKey: 'limitStarter', recommended: false },
@@ -659,28 +630,17 @@ function OnboardingContent() {
                       <label className="block text-xs text-[#fafaf9]/40 mb-2">Monthly Price</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 text-sm">$</span>
-                        <input
-                          type="number"
-                          value={pricing[key as keyof typeof pricing]}
-                          onChange={(e) => setPricing({ ...pricing, [key]: parseInt(e.target.value) || 0 })}
-                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-8 pr-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
-                        />
+                        <input type="number" value={pricing[key as keyof typeof pricing]} onChange={(e) => setPricing({ ...pricing, [key]: parseInt(e.target.value) || 0 })} className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-8 pr-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-xs text-[#fafaf9]/40 mb-2">Calls / Month</label>
-                      <input
-                        type="number"
-                        value={pricing[limitKey as keyof typeof pricing]}
-                        onChange={(e) => setPricing({ ...pricing, [limitKey]: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
-                      />
+                      <input type="number" value={pricing[limitKey as keyof typeof pricing]} onChange={(e) => setPricing({ ...pricing, [limitKey]: parseInt(e.target.value) || 0 })} className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-lg font-semibold focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10" />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-
             <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] max-w-2xl mx-auto">
               <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-[#fafaf9]/60">
@@ -690,14 +650,13 @@ function OnboardingContent() {
           </div>
         );
 
-      case 3: // Logo
+      case 3:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Upload Your Logo</h2>
               <p className="mt-2 text-[#fafaf9]/50">This appears on your client portal, emails, and marketing site</p>
             </div>
-
             <div className="flex flex-col items-center gap-6">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-amber-500/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -712,7 +671,6 @@ function OnboardingContent() {
                   )}
                 </div>
               </div>
-
               <label className="cursor-pointer group">
                 <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.08] px-6 py-3 text-sm font-medium hover:bg-white/[0.1] hover:border-white/[0.15] transition-all group-hover:scale-[1.02]">
@@ -720,16 +678,13 @@ function OnboardingContent() {
                   {logoPreview || logoUrl ? 'Change Logo' : 'Upload Logo'}
                 </span>
               </label>
-
               <p className="text-sm text-[#fafaf9]/30">PNG, JPG or SVG • Recommended: 400×400px</p>
-
               {extractingColors && (
                 <div className="flex items-center gap-2 text-sm text-emerald-400 animate-pulse">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Extracting brand colors...
                 </div>
               )}
-              
               {(logoPreview || logoUrl) && !extractingColors && (
                 <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] w-full max-w-xs">
                   <div className="flex items-center gap-2 text-sm text-emerald-400 mb-3">
@@ -750,39 +705,21 @@ function OnboardingContent() {
           </div>
         );
 
-      case 4: // Colors
+      case 4:
         return (
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Brand Colors</h2>
               <p className="mt-2 text-[#fafaf9]/50">Customize how your portal looks to clients</p>
             </div>
-
             {(logoPreview || logoUrl) && (
               <div className="flex justify-center">
-                <button
-                  onClick={async () => {
-                    setExtractingColors(true);
-                    try {
-                      const result = await extractColorsFromImage(logoPreview || logoUrl);
-                      setColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
-                      setDetectedTheme(result.suggestedTheme);
-                      setLogoBgColor(result.logoBgColor);
-                    } catch (err) {
-                      console.error('Color extraction failed:', err);
-                    } finally {
-                      setExtractingColors(false);
-                    }
-                  }}
-                  disabled={extractingColors}
-                  className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50"
-                >
+                <button onClick={async () => { setExtractingColors(true); try { const result = await extractColorsFromImage(logoPreview || logoUrl); setColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setDetectedTheme(result.suggestedTheme); setLogoBgColor(result.logoBgColor); } catch (err) { console.error('Color extraction failed:', err); } finally { setExtractingColors(false); } }} disabled={extractingColors} className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50">
                   {extractingColors ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   Re-extract from logo
                 </button>
               </div>
             )}
-
             <div className="space-y-4 max-w-md mx-auto">
               {[
                 { key: 'primary', label: 'Primary Color', desc: 'Buttons & main accents' },
@@ -791,28 +728,16 @@ function OnboardingContent() {
               ].map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                   <div className="relative">
-                    <input
-                      type="color"
-                      value={colors[key as keyof typeof colors]}
-                      onChange={(e) => setColors({ ...colors, [key]: e.target.value })}
-                      className="w-12 h-12 rounded-xl border-2 border-white/10 cursor-pointer bg-transparent appearance-none"
-                      style={{ backgroundColor: colors[key as keyof typeof colors] }}
-                    />
+                    <input type="color" value={colors[key as keyof typeof colors]} onChange={(e) => setColors({ ...colors, [key]: e.target.value })} className="w-12 h-12 rounded-xl border-2 border-white/10 cursor-pointer bg-transparent appearance-none" style={{ backgroundColor: colors[key as keyof typeof colors] }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{label}</p>
                     <p className="text-xs text-[#fafaf9]/40">{desc}</p>
                   </div>
-                  <input
-                    type="text"
-                    value={colors[key as keyof typeof colors]}
-                    onChange={(e) => setColors({ ...colors, [key]: e.target.value })}
-                    className="w-24 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-mono text-center"
-                  />
+                  <input type="text" value={colors[key as keyof typeof colors]} onChange={(e) => setColors({ ...colors, [key]: e.target.value })} className="w-24 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-mono text-center" />
                 </div>
               ))}
             </div>
-
             <div className="max-w-md mx-auto p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Dashboard Theme</p>
               <div className="flex items-center gap-3">
@@ -823,7 +748,6 @@ function OnboardingContent() {
                 </div>
               </div>
             </div>
-
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] max-w-md mx-auto">
               <p className="text-xs text-[#fafaf9]/40 mb-4 uppercase tracking-wider">Preview</p>
               <div className="flex flex-wrap gap-3">
@@ -835,9 +759,6 @@ function OnboardingContent() {
           </div>
         );
 
-      // ======================================================================
-      // PHASE 2D: Step 5 — Password (updated copy, no plan selection mention)
-      // ======================================================================
       case 5:
         return (
           <div className="space-y-8">
@@ -848,16 +769,11 @@ function OnboardingContent() {
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Secure Your Account</h2>
               <p className="mt-2 text-[#fafaf9]/50">Create a password to access your dashboard</p>
             </div>
-
             <div className="max-w-md mx-auto space-y-6">
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <p className="text-sm text-[#fafaf9]/60">You&apos;re almost done! Set your password and your 14-day free trial will begin automatically.</p>
               </div>
-
-              <button
-                onClick={handleSetPassword}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
-              >
+              <button onClick={handleSetPassword} className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
                 Set Password &amp; Start Trial
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -865,9 +781,6 @@ function OnboardingContent() {
           </div>
         );
 
-      // ======================================================================
-      // PHASE 2D: Step 6 — Complete (goes to dashboard, not plan selection)
-      // ======================================================================
       case 6:
         return (
           <div className="space-y-8 text-center">
@@ -879,16 +792,11 @@ function OnboardingContent() {
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-emerald-500 animate-ping opacity-20" />
               </div>
             </div>
-
             <div>
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">You&apos;re All Set!</h2>
               <p className="mt-2 text-[#fafaf9]/50">Your agency is ready. Start adding clients.</p>
             </div>
-
-            <button
-              onClick={handleComplete}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]"
-            >
+            <button onClick={handleComplete} className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
               Go to Dashboard
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -914,22 +822,14 @@ function OnboardingContent() {
       {currentStep < 5 && (
         <div className="mt-10 sm:mt-12 flex justify-center gap-4">
           {currentStep > 1 && (
-            <button
-              onClick={handleBack}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.08] px-6 py-3.5 text-sm font-medium hover:bg-white/[0.1] transition-all disabled:opacity-50"
-            >
+            <button onClick={handleBack} disabled={loading} className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] border border-white/[0.08] px-6 py-3.5 text-sm font-medium hover:bg-white/[0.1] transition-all disabled:opacity-50">
               <ArrowLeft className="w-4 h-4" />
               Back
             </button>
           )}
           
           {currentStep < 5 && (
-            <button
-              onClick={handleNext}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-            >
+            <button onClick={handleNext} disabled={loading} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100">
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />

@@ -29,22 +29,18 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
   );
 }
 
-// Helper to check if subscription is in trial state (handles both 'trial' and 'trialing')
 function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
 
-// Helper to check if payment has failed (these statuses require action)
 function isPaymentFailed(status: string | null | undefined): boolean {
   return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'cancelled';
 }
 
-// Helper to check if agency is suspended and should be blocked
 function isSuspended(status: string | null | undefined): boolean {
   return status === 'suspended' || status === 'canceled' || status === 'cancelled';
 }
 
-// Helper to check if agency never picked a plan (still in signup flow)
 function needsPlanSelection(agency: any): boolean {
   if (!agency) return false;
   if (agency.subscription_status === 'pending' || agency.status === 'pending_payment') {
@@ -56,7 +52,6 @@ function needsPlanSelection(agency: any): boolean {
   return false;
 }
 
-// Helper to check if agency's no-card trial has expired
 function isTrialExpiredNoCard(agency: any): boolean {
   if (!agency) return false;
   if (agency.stripe_subscription_id) return false;
@@ -65,7 +60,6 @@ function isTrialExpiredNoCard(agency: any): boolean {
   return new Date(agency.trial_ends_at) < new Date();
 }
 
-// Calculate trial days remaining
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null {
   if (!trialEndsAt) return null;
   const endDate = new Date(trialEndsAt);
@@ -75,13 +69,11 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
   return Math.max(0, diffDays);
 }
 
-// Routes that are always accessible (even when payment failed)
 const ALWAYS_ACCESSIBLE_ROUTES = [
   '/agency/settings',
   '/agency/login',
 ];
 
-// Nav item type with optional locked state and permission key
 interface NavItem {
   href: string;
   label: string;
@@ -91,9 +83,6 @@ interface NavItem {
   permissionKey?: string;
 }
 
-// ============================================================================
-// AGENCY PLAN TIERS (for trial-expired plan selection gate)
-// ============================================================================
 const AGENCY_PLAN_TIERS = [
   {
     id: 'starter' as const,
@@ -153,38 +142,26 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
-  // ============================================================================
-  // THEME — useTheme() handles all colors including branding overrides.
-  // ============================================================================
   const theme = useTheme();
 
-  // Agency colors still needed for CSS custom properties
   const primaryColor = branding.primaryColor || '#10b981';
   const secondaryColor = branding.secondaryColor || '#059669';
   const accentColor = branding.accentColor || '#34d399';
 
-  // Calculate trial status
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   
-  // Check for payment/subscription issues
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
   const agencyIsSuspended = isSuspended(agency?.status);
 
-  // Check if agency needs to pick a plan (never started trial)
   const agencyNeedsPlan = needsPlanSelection(agency);
-  
-  // Check if agency's no-card trial has expired
   const agencyTrialExpiredNoCard = isTrialExpiredNoCard(agency);
   
-  // Determine if current route should be blocked
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
   const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
 
-  // Use effectivePlan for feature gating (enterprise during trial)
   const isEnterprise = effectivePlan === 'enterprise';
 
-  // Build nav items with feature gating + permission keys
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
@@ -218,13 +195,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
-  // Filter nav items by team member permissions
   const filteredNavItems = navItems.filter(item => {
     if (!item.permissionKey) return true;
     return hasPermission(item.permissionKey);
   });
 
-  // Detect mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -232,12 +207,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
 
-  // Prevent body scroll when sidebar open on mobile
   useEffect(() => {
     if (sidebarOpen && isMobile) {
       document.body.style.overflow = 'hidden';
@@ -247,14 +220,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
 
-  // Redirect to billing if blocked
   useEffect(() => {
     if (!loading && shouldBlockAccess) {
       window.location.href = '/agency/settings';
     }
   }, [loading, shouldBlockAccess]);
 
-  // Sync body + html background with theme
   useEffect(() => {
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
@@ -264,7 +235,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     };
   }, [theme.bg]);
 
-  // Save resolved theme to localStorage so skeleton can read it on next load
   useEffect(() => {
     if (!loading) {
       try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {}
@@ -304,7 +274,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ==========================================================================
-  // Skeleton loading screen — reads saved theme from localStorage
+  // Skeleton loading screen
   // ==========================================================================
   if (loading) {
     let isDark = true;
@@ -423,7 +393,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // ============================================================================
-  // PLAN SELECTION GATE
+  // PLAN SELECTION GATE — UPDATED: Links to /onboarding instead of /signup/plan
   // ============================================================================
   if (agencyNeedsPlan) {
     return (
@@ -444,11 +414,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           </div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Finish Setting Up Your Agency</h1>
           <p className="mb-2 text-base" style={{ color: theme.textMuted }}>
-            You&apos;re almost there! Select a plan to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your agency dashboard.
+            You&apos;re almost there! Complete your setup to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your agency dashboard.
           </p>
           <p className="mb-8 text-sm" style={{ color: theme.textMuted }}>No credit card required. Cancel anytime.</p>
-          <a href={`/signup/plan?agency=${agency?.id}`} className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            <Zap className="h-5 w-5" />Choose a Plan &amp; Start Free Trial
+          <a href={`/onboarding?agency=${agency?.id}`} className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            <Zap className="h-5 w-5" />Continue Setup &amp; Start Free Trial
           </a>
           <button onClick={handleSignOut} className="block w-full mt-5 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
         </div>
@@ -669,7 +639,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           <span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{agency?.name || 'Agency'}</span>
         </div>
 
-        {/* Navigation — uses filteredNavItems */}
+        {/* Navigation */}
         <nav className="p-4 space-y-1">
           {filteredNavItems.map((item) => {
             const active = isActive(item.href);
