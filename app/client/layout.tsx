@@ -62,7 +62,6 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
   return Math.max(0, diffDays);
 }
 
-// Nav item type with optional permission key
 interface NavItem {
   href: string;
   label: string;
@@ -76,8 +75,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
-  // Nav colors derived from actual sidebar bg, not page isDark mode
   const nav = {
     bg: theme.navBg,
     text: theme.navText,
@@ -96,16 +95,21 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
 
+  // Display name: always show business name in header, agency name only as fallback
   const displayName = branding.clientHeaderMode === 'business_name'
     ? (branding.businessName || branding.agencyName || 'Loading...')
     : (branding.agencyName || 'Loading...');
   const displayLogo = branding.logoUrl;
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const checkDevice = () => {
+      const w = window.innerWidth;
+      setIsMobile(w < 768);
+      setIsTablet(w >= 768 && w < 1024);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
@@ -163,16 +167,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/client/login';
   };
 
-  // Nav items with permission keys for team-based filtering
   const navItems: NavItem[] = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
     { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
     { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
-    { href: '/client/settings', label: 'Settings', icon: Settings },  // always visible
+    { href: '/client/settings', label: 'Settings', icon: Settings },
   ];
 
-  // Filter nav items by team member permissions
   const filteredNavItems = navItems.filter(item => {
     if (!item.permissionKey) return true;
     return hasPermission(item.permissionKey);
@@ -188,13 +190,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = href;
   };
 
-  // Save resolved theme to localStorage so skeleton can read it on next load
   useEffect(() => {
     if (!loading && theme) {
       try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {}
     }
   }, [loading, theme.isDark]);
 
+  // ============================================================================
+  // LOADING SKELETON
+  // ============================================================================
   if (loading) {
     let isDark = true;
     try {
@@ -215,7 +219,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
         `}} />
         <div className="hidden md:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
-          <div className="h-16 flex items-center gap-3 px-6" style={{ borderBottom: `1px solid ${sk.border}` }}>
+          <div className="h-16 flex items-center gap-3 px-5" style={{ borderBottom: `1px solid ${sk.border}` }}>
             <div className="w-8 h-8 rounded-lg sk-p" style={{ backgroundColor: sk.pulse }} />
             <div className="h-4 w-24 rounded-md sk-p" style={{ backgroundColor: sk.pulse }} />
           </div>
@@ -232,39 +236,35 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
               <div className="h-3.5 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
             </div>
-            <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
-              <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
-              <div className="h-3.5 w-20 rounded" style={{ backgroundColor: sk.pulse }} />
-            </div>
           </div>
         </div>
         <div className="flex-1 p-6 md:p-8">
           <div className="mb-6">
-            <div className="h-6 w-40 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
-            <div className="h-3.5 w-56 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
+            <div className="h-7 w-48 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
+            <div className="h-4 w-64 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
           </div>
-          <div className="rounded-xl p-5 mb-5 sk-p" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
-            <div className="h-3 w-28 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
-            <div className="h-7 w-44 rounded-lg" style={{ backgroundColor: sk.pulse }} />
-            <div className="h-3 w-48 rounded mt-2" style={{ backgroundColor: sk.pulse2 }} />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
+            <div className="lg:col-span-3 rounded-2xl p-5 sk-p" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+              <div className="h-3 w-28 rounded mb-4" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-8 w-52 rounded-lg" style={{ backgroundColor: sk.pulse }} />
+            </div>
+            <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-1 gap-4">
+              {[1,2].map(i => (
+                <div key={i} className={`rounded-2xl p-5 ${i === 2 ? 'sk-p2' : 'sk-p'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+                  <div className="h-3 w-16 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
+                  <div className="h-8 w-12 rounded-lg" style={{ backgroundColor: sk.pulse }} />
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            {[1,2].map(i => (
-              <div key={i} className={`rounded-xl p-5 ${i === 2 ? 'sk-p2' : 'sk-p'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
-                <div className="h-3 w-20 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
-                <div className="h-8 w-12 rounded-lg mb-1" style={{ backgroundColor: sk.pulse }} />
-                <div className="h-2.5 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
-              </div>
-            ))}
-          </div>
-          <div className="rounded-xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
+          <div className="rounded-2xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
             <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${sk.border}` }}>
               <div className="h-4 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
               <div className="h-3 w-14 rounded" style={{ backgroundColor: sk.pulse2 }} />
             </div>
             {[1,2,3].map(i => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: `1px solid ${sk.border}` }}>
-                <div className="w-8 h-8 rounded-full" style={{ backgroundColor: sk.pulse2 }} />
+                <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: sk.pulse2 }} />
                 <div className="flex-1">
                   <div className="h-3.5 w-32 rounded mb-1.5" style={{ backgroundColor: sk.pulse }} />
                   <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
@@ -289,8 +289,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // Banner height for offset calculations
+  const hasBanner = clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed);
+  const bannerOffset = hasBanner ? '52px' : '0px';
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg, zoom: 0.9 }}>
+    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
 
       {/* Payment Failed Banner */}
@@ -301,7 +305,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             <CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ef4444' }} />
             <div>
               <p className="font-medium text-sm" style={{ color: theme.isDark ? '#fca5a5' : '#dc2626' }}>Payment failed</p>
-              <p className="text-xs" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Your AI receptionist may stop answering calls. Please update your payment method.</p>
+              <p className="text-xs hidden sm:block" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Your AI receptionist may stop answering calls. Please update your payment method.</p>
             </div>
           </div>
           <a href="/client/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Fix Payment</a>
@@ -315,115 +319,132 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Clock className="h-5 w-5 flex-shrink-0" style={{ color: '#f59e0b' }} />
             <p className="text-sm" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>
-              Your free trial ends in <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</strong>. Subscribe to keep your AI receptionist active.
+              Trial ends in <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</strong>
             </p>
           </div>
           <a href="/client/upgrade-required" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#f59e0b', color: '#1c1917' }}>View Plans</a>
         </div>
       )}
 
-      {/* Mobile Header */}
-      <div className="sticky z-30 md:hidden"
-        style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: (clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3)) ? '52px' : 0 }}>
-        <header className="flex items-center justify-between h-16 px-4"
-          style={{ boxShadow: theme.isDark ? '0 4px 6px -1px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)', borderBottom: `1px solid ${nav.border}` }}>
-          <div className="flex items-center gap-3">
+      {/* Mobile / Tablet Header */}
+      <div className="sticky z-30 lg:hidden"
+        style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: hasBanner ? '52px' : 0 }}>
+        <header className="flex items-center justify-between h-14 sm:h-16 px-4"
+          style={{ borderBottom: `1px solid ${nav.border}` }}>
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
             {displayLogo ? (
-              <img src={displayLogo} alt={displayName} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />
+              <img
+                src={displayLogo}
+                alt={displayName}
+                className="object-contain flex-shrink-0"
+                style={{ height: '28px', maxWidth: '36px', width: 'auto' }}
+              />
             ) : (
-              <div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
-                <Phone className="h-6 w-6" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
+              <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
+                <Phone className="h-4 w-4" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
               </div>
             )}
-            <span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: nav.text }}>{displayName}</span>
+            <span className="font-semibold text-sm sm:text-base truncate" style={{ color: nav.text }}>{displayName}</span>
           </div>
-          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: nav.text }}>
-            <Menu className="h-7 w-7" />
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl transition-colors flex-shrink-0" style={{ color: nav.text }}>
+            <Menu className="h-6 w-6" />
           </button>
         </header>
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && isMobile && (
-        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />
+      {sidebarOpen && !(!isMobile && !isTablet) && (
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 transform transition-transform duration-300 ease-out ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}
-        style={{ backgroundColor: nav.bg, borderRight: `1px solid ${nav.border}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? ((clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3)) ? '52px' : 0) : 0 }}>
-        
-        {/* Mobile Header in Sidebar */}
-        <div className="flex md:hidden items-center justify-between h-16 px-4 border-b" style={{ borderColor: nav.border }}>
-          <span className="font-semibold text-lg" style={{ color: nav.text }}>Menu</span>
-          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: nav.text }}>
-            <X className="h-7 w-7" />
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${
+          (isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'
+        }`}
+        style={{
+          backgroundColor: nav.bg,
+          borderRight: `1px solid ${nav.border}`,
+          paddingTop: (isMobile || isTablet) ? 'env(safe-area-inset-top)' : 0,
+          top: (!isMobile && !isTablet) ? (hasBanner ? '52px' : '0') : '0',
+        }}>
+
+        {/* Mobile/Tablet close header */}
+        <div className="flex lg:hidden items-center justify-between h-14 px-4 border-b" style={{ borderColor: nav.border }}>
+          <span className="font-semibold text-base" style={{ color: nav.text }}>Menu</span>
+          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl transition-colors" style={{ color: nav.text }}>
+            <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Desktop Logo */}
-        <div className="hidden md:flex h-16 items-center gap-3 border-b px-6" style={{ borderColor: nav.border }}>
+        {/* Desktop Logo Header */}
+        <div className="hidden lg:flex h-16 items-center gap-2.5 border-b px-5" style={{ borderColor: nav.border }}>
           {displayLogo ? (
-            <img src={displayLogo} alt={displayName} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />
+            <img
+              src={displayLogo}
+              alt={displayName}
+              className="object-contain flex-shrink-0"
+              style={{ height: '28px', maxWidth: '36px', width: 'auto' }}
+            />
           ) : (
-            <div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
+            <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
               <Phone className="h-4 w-4" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
             </div>
           )}
-          <span className="font-medium truncate" style={{ color: nav.text }}>{displayName}</span>
+          <span className="font-medium text-sm truncate" style={{ color: nav.text }}>{displayName}</span>
         </div>
 
-        {/* Navigation — uses filteredNavItems */}
-        <nav className="p-4 space-y-1">
+        {/* Navigation */}
+        <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => {
             const active = isActive(item.href);
             return (
               <button key={item.href} onClick={() => handleNavClick(item.href)}
-                className="w-full flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors text-left"
+                className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors text-left"
                 style={{ backgroundColor: active ? nav.activeItemBg : 'transparent', color: active ? nav.activeItemColor : nav.textMuted }}>
                 <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
-                {active && <ChevronRight className="h-4 w-4 md:hidden" style={{ color: nav.textMuted }} />}
+                {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
               </button>
             );
           })}
         </nav>
 
         {/* Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
+        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-3" style={{ paddingBottom: (isMobile || isTablet) ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
           {clientOnTrial && trialDaysLeft !== null && (
             <div className="rounded-xl p-3" style={{ backgroundColor: theme.isNavDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isNavDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}` }}>
-              <p className="text-xs" style={{ color: theme.isNavDark ? 'rgba(251,191,36,0.6)' : '#92400e' }}>Trial Period</p>
-              <p className="text-sm font-medium" style={{ color: theme.isNavDark ? '#fbbf24' : '#78350f' }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
+              <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: theme.isNavDark ? 'rgba(251,191,36,0.6)' : '#92400e' }}>Trial Period</p>
+              <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fbbf24' : '#78350f' }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
             </div>
           )}
 
           {clientPaymentFailed && (
             <a href="/client/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.isNavDark ? 'rgba(239,68,68,0.08)' : '#fef2f2', border: `1px solid ${theme.isNavDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
-              <p className="text-xs" style={{ color: theme.isNavDark ? 'rgba(252,165,165,0.6)' : '#b91c1c' }}>Payment Issue</p>
-              <p className="text-sm font-medium" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
+              <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: theme.isNavDark ? 'rgba(252,165,165,0.6)' : '#b91c1c' }}>Payment Issue</p>
+              <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
             </a>
           )}
 
           {/* Powered by */}
           <div className="rounded-xl border p-3" style={{ borderColor: nav.border, backgroundColor: nav.poweredByBg }}>
-            <p className="text-xs" style={{ color: nav.textMuted }}>Powered by</p>
-            <p className="text-sm font-medium" style={{ color: nav.text }}>{branding.agencyName}</p>
+            <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: nav.textMuted }}>Powered by</p>
+            <p className="text-sm font-semibold" style={{ color: nav.text }}>{branding.agencyName}</p>
           </div>
 
-          <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}>
+          <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}>
             <LogOut className="h-5 w-5" /> Sign Out
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {children}
       </main>
 
       {/* PWA Install Prompt */}
       {client && (
-        <AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.agencyName || client.business_name || 'Your App'} />
+        <AddToHomeScreenModal clientId={client.id} theme={theme} appName={displayName || client.business_name || 'Your App'} />
       )}
     </div>
   );
