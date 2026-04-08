@@ -245,6 +245,44 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Blog Posts — White-Label Content Push (April 2026)
+    {
+      url: `${baseUrl}/blog/white-label-ai-receptionist-pricing-breakdown`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/best-white-label-ai-receptionist-platforms-ranked`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/how-to-resell-ai-receptionist-services`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/white-label-ai-receptionist-lead-gen-agencies`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/set-up-white-label-ai-receptionist-business-24-hours`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/blog/white-label-ai-receptionist-compliance-guide`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+
     // Blog Posts — White-Label Buyer's Guide + Voice Agent Terminology (March 2026)
     {
       url: `${baseUrl}/blog/how-to-choose-white-label-ai-receptionist-platform`,
@@ -562,6 +600,14 @@ export default function sitemap() {
     },
     {
       url: `${baseUrl}/blog/mistakes-new-ai-agency-owners-make`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+
+    // Blog Posts — White-Label SaaS Model (March 2026)
+    {
+      url: `${baseUrl}/blog/white-label-saas-business-model-explained`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.6,

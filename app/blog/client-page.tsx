@@ -40,6 +40,57 @@ interface BlogPost {
 }
 
 const blogPosts: BlogPost[] = [
+  // White-Label Content Push (April 2026)
+  {
+    slug: 'white-label-ai-receptionist-pricing-breakdown',
+    title: 'White-Label AI Receptionist Pricing: What Agencies Actually Pay (2026)',
+    excerpt: 'Platform fees range from $29-$1,400/month plus $0.05-$0.15/minute for voice. Full pricing breakdown of every major white-label AI receptionist platform with margin calculations.',
+    category: 'guides',
+    publishedAt: '2026-04-09',
+    readTime: '14 min',
+    featured: true,
+  },
+  {
+    slug: 'best-white-label-ai-receptionist-platforms-ranked',
+    title: 'Best White-Label AI Receptionist Platforms Ranked (2026)',
+    excerpt: '8 white-label AI receptionist platforms compared on pricing, branding depth, voice quality, and agency economics. Honest rankings with transparency about our own platform.',
+    category: 'comparison',
+    publishedAt: '2026-04-10',
+    readTime: '16 min',
+    featured: true,
+  },
+  {
+    slug: 'how-to-resell-ai-receptionist-services',
+    title: 'How to Resell AI Receptionist Services: Complete Agency Guide (2026)',
+    excerpt: 'Step-by-step guide to reselling AI receptionist services under your own brand. Choose a white-label platform, set pricing at $99-$299/mo, and build recurring revenue with 80%+ margins.',
+    category: 'guides',
+    publishedAt: '2026-04-11',
+    readTime: '15 min',
+  },
+  {
+    slug: 'white-label-ai-receptionist-lead-gen-agencies',
+    title: 'White-Label AI Receptionist for Lead Gen Agencies: The Perfect Add-On',
+    excerpt: 'Lead gen agencies spend thousands driving calls that go unanswered. A white-label AI receptionist captures every lead, books appointments, and adds $149/client in recurring revenue.',
+    category: 'guides',
+    publishedAt: '2026-04-12',
+    readTime: '12 min',
+  },
+  {
+    slug: 'set-up-white-label-ai-receptionist-business-24-hours',
+    title: 'Set Up a White-Label AI Receptionist Business in 24 Hours (Step-by-Step)',
+    excerpt: 'Hour-by-hour guide to launching a white-label AI receptionist business. Platform signup, branding, pricing, demo setup, and first outreach — all in one day.',
+    category: 'guides',
+    publishedAt: '2026-04-13',
+    readTime: '11 min',
+  },
+  {
+    slug: 'white-label-ai-receptionist-compliance-guide',
+    title: 'White-Label AI Receptionist Compliance Guide: HIPAA, SOC 2, TCPA, A2P 10DLC',
+    excerpt: 'Which compliance certifications matter for AI receptionist agencies? HIPAA for healthcare, SOC 2 for enterprise, TCPA for calling, A2P 10DLC for SMS. Platform comparison included.',
+    category: 'guides',
+    publishedAt: '2026-04-14',
+    readTime: '13 min',
+  },
   // White-Label Guides (March 2026)
   {
     slug: 'how-to-choose-white-label-ai-receptionist-platform',
@@ -48,7 +99,6 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-03-21',
     readTime: '18 min',
-    featured: true,
   },
   {
     slug: 'white-label-ai-voice-agent-platform-agencies',
@@ -57,7 +107,6 @@ const blogPosts: BlogPost[] = [
     category: 'guides',
     publishedAt: '2026-03-21',
     readTime: '16 min',
-    featured: true,
   },
   // Competitor Comparisons (March 2026)
   {
