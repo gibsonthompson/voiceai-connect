@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard, AlertTriangle
+  Menu, X, ChevronRight, Clock, CreditCard
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -24,42 +24,49 @@ function setFavicon(url: string) {
   document.head.appendChild(appleLink);
 }
 
+function setManifestLink(clientId: string | null) {
+  const existing = document.querySelectorAll('link[rel="manifest"]');
+  existing.forEach(el => el.remove());
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = clientId ? `/api/client-manifest?clientId=${clientId}` : '/api/client-manifest';
+  document.head.appendChild(link);
+}
+
 const AUTH_PAGES = ['/client/login', '/client/signup', '/client/set-password', '/client/upgrade'];
 const ALWAYS_ACCESSIBLE_ROUTES = ['/client/settings', '/client/upgrade-required', '/client/upgrade'];
 
 function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
-
 function isTrialActive(client: any): boolean {
   if (!client) return false;
   if (!isTrialStatus(client.subscription_status)) return false;
   if (!client.trial_ends_at) return false;
   return new Date(client.trial_ends_at) > new Date();
 }
-
 function isPaymentFailed(status: string | null | undefined): boolean {
   return status === 'past_due' || status === 'unpaid';
 }
-
 function isCanceled(status: string | null | undefined): boolean {
   return status === 'canceled' || status === 'cancelled';
 }
-
 function isTrialExpired(client: any): boolean {
   if (!client) return false;
   if (!isTrialStatus(client.subscription_status)) return false;
   if (!client.trial_ends_at) return false;
   return new Date(client.trial_ends_at) < new Date();
 }
-
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null {
   if (!trialEndsAt) return null;
   const endDate = new Date(trialEndsAt);
   const now = new Date();
-  const diffTime = endDate.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
+}
+function getInitial(name: string | null | undefined): string {
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
 }
 
 interface NavItem {
@@ -95,12 +102,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
 
-  // Display name: always show business name in header, agency name only as fallback
+  // displayName: used for meta tags and PWA modal — NOT rendered in sidebar header
   const displayName = branding.clientHeaderMode === 'business_name'
-    ? (branding.businessName || branding.agencyName || 'Loading...')
-    : (branding.agencyName || 'Loading...');
+    ? (branding.businessName || branding.agencyName || 'Dashboard')
+    : (branding.agencyName || 'Dashboard');
   const displayLogo = branding.logoUrl;
 
+  // ============================================================================
+  // DEVICE DETECTION
+  // ============================================================================
   useEffect(() => {
     const checkDevice = () => {
       const w = window.innerWidth;
@@ -115,14 +125,22 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
 
   useEffect(() => {
-    if (sidebarOpen && isMobile) { document.body.style.overflow = 'hidden'; }
+    if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; }
     else { document.body.style.overflow = ''; }
     return () => { document.body.style.overflow = ''; };
-  }, [sidebarOpen, isMobile]);
+  }, [sidebarOpen, isMobile, isTablet]);
 
+  // ============================================================================
+  // FAVICON + MANIFEST + META
+  // ============================================================================
   useEffect(() => {
     if (displayLogo) setFavicon(displayLogo);
   }, [displayLogo]);
+
+  // Dynamic PWA manifest with clientId so PWA install shows client's business name
+  useEffect(() => {
+    if (client?.id) setManifestLink(client.id);
+  }, [client?.id]);
 
   useEffect(() => {
     document.documentElement.style.background = nav.bg;
@@ -147,6 +165,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [displayName]);
 
+  // ============================================================================
+  // REDIRECTS
+  // ============================================================================
   useEffect(() => {
     if (!loading && clientTrialExpired && !isAccessibleRoute) {
       window.location.href = '/client/upgrade-required?expired=true';
@@ -167,6 +188,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/client/login';
   };
 
+  // ============================================================================
+  // NAV ITEMS
+  // ============================================================================
   const navItems: NavItem[] = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
@@ -190,6 +214,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = href;
   };
 
+  // Save theme to localStorage for skeleton
   useEffect(() => {
     if (!loading && theme) {
       try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {}
@@ -197,14 +222,60 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   }, [loading, theme.isDark]);
 
   // ============================================================================
+  // LOGO BADGE — Reusable logo display with initial fallback
+  // ============================================================================
+  const LogoBadge = ({ size }: { size: 'sm' | 'md' | 'lg' }) => {
+    const dims = size === 'lg'
+      ? { box: 56, img: 40, font: 20, radius: '16px' }
+      : size === 'md'
+      ? { box: 44, img: 32, font: 16, radius: '12px' }
+      : { box: 36, img: 26, font: 14, radius: '10px' };
+
+    if (displayLogo) {
+      return (
+        <div
+          className="flex items-center justify-center overflow-hidden flex-shrink-0"
+          style={{
+            height: `${dims.box}px`,
+            width: `${dims.box}px`,
+            borderRadius: dims.radius,
+            backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
+          }}
+        >
+          <img
+            src={displayLogo}
+            alt=""
+            className="object-contain"
+            style={{ height: `${dims.img}px`, width: `${dims.img}px` }}
+          />
+        </div>
+      );
+    }
+
+    const initial = getInitial(branding.businessName || branding.agencyName);
+    return (
+      <div
+        className="flex items-center justify-center flex-shrink-0 font-bold"
+        style={{
+          height: `${dims.box}px`,
+          width: `${dims.box}px`,
+          borderRadius: dims.radius,
+          backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.08)' : `${theme.primary}12`,
+          color: theme.isNavDark ? '#ffffff' : theme.primary,
+          fontSize: `${dims.font}px`,
+        }}
+      >
+        {initial}
+      </div>
+    );
+  };
+
+  // ============================================================================
   // LOADING SKELETON
   // ============================================================================
   if (loading) {
     let isDark = true;
-    try {
-      const saved = localStorage.getItem('voiceai_ui_theme');
-      if (saved === 'light') isDark = false;
-    } catch {}
+    try { const saved = localStorage.getItem('voiceai_ui_theme'); if (saved === 'light') isDark = false; } catch {}
 
     const sk = isDark
       ? { bg: '#0a0a0a', card: '#111111', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
@@ -218,12 +289,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           .sk-p2 { animation: skPulse 1.8s ease-in-out 0.3s infinite; }
           .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
         `}} />
-        <div className="hidden md:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
-          <div className="h-16 flex items-center gap-3 px-5" style={{ borderBottom: `1px solid ${sk.border}` }}>
-            <div className="w-8 h-8 rounded-lg sk-p" style={{ backgroundColor: sk.pulse }} />
-            <div className="h-4 w-24 rounded-md sk-p" style={{ backgroundColor: sk.pulse }} />
+        <div className="hidden lg:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
+          <div className="h-20 flex items-center justify-center" style={{ borderBottom: `1px solid ${sk.border}` }}>
+            <div className="w-14 h-14 rounded-2xl sk-p" style={{ backgroundColor: sk.pulse }} />
           </div>
-          <div className="p-4 space-y-2">
+          <div className="p-3 space-y-1">
             {[1,2,3,4,5].map(i => (
               <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 2 ? 'sk-p' : 'sk-p2'}`}>
                 <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
@@ -231,14 +301,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               </div>
             ))}
           </div>
-          <div className="mt-auto p-4 space-y-2">
-            <div className="rounded-xl p-3 sk-p3" style={{ border: `1px solid ${sk.border}` }}>
-              <div className="h-2.5 w-16 rounded mb-1.5" style={{ backgroundColor: sk.pulse2 }} />
-              <div className="h-3.5 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
-            </div>
-          </div>
         </div>
-        <div className="flex-1 p-6 md:p-8">
+        <div className="flex-1 p-6 lg:p-8">
           <div className="mb-6">
             <div className="h-7 w-48 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
             <div className="h-4 w-64 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
@@ -269,7 +333,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
                   <div className="h-3.5 w-32 rounded mb-1.5" style={{ backgroundColor: sk.pulse }} />
                   <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
                 </div>
-                <div className="h-3 w-16 rounded" style={{ backgroundColor: sk.pulse2 }} />
               </div>
             ))}
           </div>
@@ -278,6 +341,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ============================================================================
+  // REDIRECT STATES
+  // ============================================================================
   if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}>
@@ -289,10 +355,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Banner height for offset calculations
   const hasBanner = clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed);
-  const bannerOffset = hasBanner ? '52px' : '0px';
 
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
@@ -305,10 +372,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             <CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ef4444' }} />
             <div>
               <p className="font-medium text-sm" style={{ color: theme.isDark ? '#fca5a5' : '#dc2626' }}>Payment failed</p>
-              <p className="text-xs hidden sm:block" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Your AI receptionist may stop answering calls. Please update your payment method.</p>
+              <p className="text-xs hidden sm:block" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Please update your payment method.</p>
             </div>
           </div>
-          <a href="/client/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Fix Payment</a>
+          <a href="/client/settings" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Fix Payment</a>
         </div>
       )}
 
@@ -322,42 +389,32 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               Trial ends in <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</strong>
             </p>
           </div>
-          <a href="/client/upgrade-required" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#f59e0b', color: '#1c1917' }}>View Plans</a>
+          <a href="/client/upgrade-required" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#f59e0b', color: '#1c1917' }}>View Plans</a>
         </div>
       )}
 
-      {/* Mobile / Tablet Header */}
+      {/* ================================================================
+          MOBILE / TABLET HEADER — Logo only, centered
+          ================================================================ */}
       <div className="sticky z-30 lg:hidden"
         style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: hasBanner ? '52px' : 0 }}>
         <header className="flex items-center justify-between h-14 sm:h-16 px-4"
           style={{ borderBottom: `1px solid ${nav.border}` }}>
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
-            {displayLogo ? (
-              <img
-                src={displayLogo}
-                alt={displayName}
-                className="object-contain flex-shrink-0"
-                style={{ height: '28px', maxWidth: '36px', width: 'auto' }}
-              />
-            ) : (
-              <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
-                <Phone className="h-4 w-4" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
-              </div>
-            )}
-            <span className="font-semibold text-sm sm:text-base truncate" style={{ color: nav.text }}>{displayName}</span>
-          </div>
-          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl transition-colors flex-shrink-0" style={{ color: nav.text }}>
+          <LogoBadge size="md" />
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl" style={{ color: nav.text }}>
             <Menu className="h-6 w-6" />
           </button>
         </header>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && !(!isMobile && !isTablet) && (
+      {/* Mobile/Tablet Sidebar Overlay */}
+      {sidebarOpen && (isMobile || isTablet) && (
         <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* ================================================================
+          SIDEBAR
+          ================================================================ */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${
           (isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'
@@ -369,29 +426,17 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           top: (!isMobile && !isTablet) ? (hasBanner ? '52px' : '0') : '0',
         }}>
 
-        {/* Mobile/Tablet close header */}
+        {/* Mobile/Tablet drawer close */}
         <div className="flex lg:hidden items-center justify-between h-14 px-4 border-b" style={{ borderColor: nav.border }}>
           <span className="font-semibold text-base" style={{ color: nav.text }}>Menu</span>
-          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl transition-colors" style={{ color: nav.text }}>
+          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl" style={{ color: nav.text }}>
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Desktop Logo Header */}
-        <div className="hidden lg:flex h-16 items-center gap-2.5 border-b px-5" style={{ borderColor: nav.border }}>
-          {displayLogo ? (
-            <img
-              src={displayLogo}
-              alt={displayName}
-              className="object-contain flex-shrink-0"
-              style={{ height: '28px', maxWidth: '36px', width: 'auto' }}
-            />
-          ) : (
-            <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '32px', width: '32px', backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.1)' : `${theme.primary}15` }}>
-              <Phone className="h-4 w-4" style={{ color: theme.isNavDark ? '#ffffff' : theme.primary }} />
-            </div>
-          )}
-          <span className="font-medium text-sm truncate" style={{ color: nav.text }}>{displayName}</span>
+        {/* Desktop: Logo only, centered, large */}
+        <div className="hidden lg:flex h-20 items-center justify-center border-b" style={{ borderColor: nav.border }}>
+          <LogoBadge size="lg" />
         </div>
 
         {/* Navigation */}
@@ -409,7 +454,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom section */}
         <div className="absolute bottom-0 left-0 right-0 p-3 space-y-3" style={{ paddingBottom: (isMobile || isTablet) ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
           {clientOnTrial && trialDaysLeft !== null && (
             <div className="rounded-xl p-3" style={{ backgroundColor: theme.isNavDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isNavDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}` }}>
@@ -425,7 +470,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             </a>
           )}
 
-          {/* Powered by */}
+          {/* Powered by agency */}
           <div className="rounded-xl border p-3" style={{ borderColor: nav.border, backgroundColor: nav.poweredByBg }}>
             <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: nav.textMuted }}>Powered by</p>
             <p className="text-sm font-semibold" style={{ color: nav.text }}>{branding.agencyName}</p>
@@ -444,7 +489,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* PWA Install Prompt */}
       {client && (
-        <AddToHomeScreenModal clientId={client.id} theme={theme} appName={displayName || client.business_name || 'Your App'} />
+        <AddToHomeScreenModal
+          clientId={client.id}
+          theme={theme}
+          appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'}
+        />
       )}
     </div>
   );
@@ -459,7 +508,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <ClientProvider>
       <head>
-        <link rel="manifest" href="/api/client-manifest" />
+        {/* Manifest is set dynamically via useEffect after client loads */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>

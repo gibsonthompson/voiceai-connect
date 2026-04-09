@@ -11,6 +11,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
+import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 
 interface Client {
   id: string;
@@ -127,7 +128,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
-  // Read user role to hide team section from staff
   const [userRole, setUserRole] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -138,7 +138,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       }
     } catch {}
   }, []);
-  const isOwner = userRole === 'client' || userRole === null; // null = loading, show by default
+  const isOwner = userRole === 'client' || userRole === null;
 
   useEffect(() => {
     const fetchCallMode = async () => {
@@ -292,6 +292,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       </div>
 
       <div className="max-w-3xl">
+
+        {/* ================================================================
+            BRANDING SECTION — Logo upload + color extraction
+            ================================================================ */}
+        <ClientBrandingSection clientId={client.id} theme={theme} />
+
         {/* Business Overview */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
@@ -494,9 +500,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </div>
         </section>
 
-        {/* ================================================================ */}
-        {/* TEAM MEMBERS — Only visible to account owner (not client_staff)   */}
-        {/* ================================================================ */}
+        {/* Team Members */}
         {isOwner && (
         <section className="mb-4 sm:mb-6">
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>

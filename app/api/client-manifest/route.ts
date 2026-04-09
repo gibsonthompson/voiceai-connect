@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const fullOrigin = `${protocol}://${hostname}`;
     
-    // Default manifest
     let name = 'Dashboard';
     let shortName = 'Dashboard';
     let themeColor = '#3b82f6';
@@ -22,51 +21,61 @@ export async function GET(request: NextRequest) {
     let iconUrl = '/icon.png';
     
     const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-    
-    // Check if this is an agency subdomain
     const subdomainMatch = hostname.match(new RegExp(`^([^.]+)\\.${platformDomain.replace('.', '\\.')}$`));
     
     let agency = null;
     
     if (subdomainMatch) {
-      // It's a subdomain like bobjweb.myvoiceaiconnect.com
       const slug = subdomainMatch[1];
-      
       const { data } = await supabase
         .from('agencies')
         .select('id, name, slug, logo_url, primary_color')
         .eq('slug', slug)
         .single();
-      
       agency = data;
     } else {
-      // Check if it's a custom domain
       const cleanHostname = hostname.replace('www.', '').split(':')[0];
-      
       const { data } = await supabase
         .from('agencies')
         .select('id, name, slug, logo_url, primary_color')
         .eq('marketing_domain', cleanHostname)
         .eq('domain_verified', true)
         .single();
-      
       agency = data;
     }
     
     if (agency) {
-      name = `${agency.name}`;
+      name = agency.name;
       shortName = agency.name.split(' ')[0] || 'Dashboard';
       themeColor = agency.primary_color || themeColor;
+      if (agency.logo_url) iconUrl = agency.logo_url;
+    }
+
+    // ========================================================================
+    // CLIENT OVERRIDE: If ?clientId= is provided, use client's business name,
+    // logo, and color for the PWA install so it shows their brand, not the agency's.
+    // ========================================================================
+    const clientId = request.nextUrl.searchParams.get('clientId');
+    
+    if (clientId) {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('business_name, logo_url, primary_color')
+        .eq('id', clientId)
+        .single();
       
-      // Use agency logo if available
-      if (agency.logo_url) {
-        iconUrl = agency.logo_url;
+      if (client) {
+        if (client.business_name) {
+          name = client.business_name;
+          shortName = client.business_name.split(' ')[0] || shortName;
+        }
+        if (client.logo_url) iconUrl = client.logo_url;
+        if (client.primary_color) themeColor = client.primary_color;
       }
     }
     
-    // CRITICAL: start_url must be the FULL URL to keep user on this domain
     const manifest = {
-      name: name,
+      name,
       short_name: shortName,
       description: 'Manage your AI receptionist',
       start_url: `${fullOrigin}/client/dashboard`,
@@ -100,7 +109,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Client manifest error:', error);
     
-    // Return default manifest on error
     return NextResponse.json({
       name: 'Dashboard',
       short_name: 'Dashboard',
@@ -109,13 +117,9 @@ export async function GET(request: NextRequest) {
       display: 'standalone',
       background_color: '#f9fafb',
       theme_color: '#3b82f6',
-      icons: [
-        { src: '/icon.png', sizes: '192x192', type: 'image/png' }
-      ]
+      icons: [{ src: '/icon.png', sizes: '192x192', type: 'image/png' }]
     }, {
-      headers: {
-        'Content-Type': 'application/manifest+json',
-      },
+      headers: { 'Content-Type': 'application/manifest+json' },
     });
   }
 }

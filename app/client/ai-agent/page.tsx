@@ -10,46 +10,11 @@ import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import UpgradePrompt from '@/components/client/UpgradePrompt';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-interface VoiceOption {
-  id: string;
-  name: string;
-  gender: 'male' | 'female';
-  accent: string;
-  style: string;
-  description: string;
-  previewUrl: string;
-  recommended?: boolean;
-}
+interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
+interface BusinessHours { monday: { open: string; close: string; closed: boolean }; tuesday: { open: string; close: string; closed: boolean }; wednesday: { open: string; close: string; closed: boolean }; thursday: { open: string; close: string; closed: boolean }; friday: { open: string; close: string; closed: boolean }; saturday: { open: string; close: string; closed: boolean }; sunday: { open: string; close: string; closed: boolean }; }
+interface Service { id: string; name: string; price: string; description: string; }
+interface FAQ { id: string; question: string; answer: string; }
 
-interface BusinessHours {
-  monday: { open: string; close: string; closed: boolean };
-  tuesday: { open: string; close: string; closed: boolean };
-  wednesday: { open: string; close: string; closed: boolean };
-  thursday: { open: string; close: string; closed: boolean };
-  friday: { open: string; close: string; closed: boolean };
-  saturday: { open: string; close: string; closed: boolean };
-  sunday: { open: string; close: string; closed: boolean };
-}
-
-interface Service {
-  id: string;
-  name: string;
-  price: string;
-  description: string;
-}
-
-interface FAQ {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -58,40 +23,30 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 const TIME_OPTIONS = [
-  '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM',
-  '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM',
-  '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-  '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
-  '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM'
+  '6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+  '12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM',
+  '6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM','9:00 PM','9:30 PM','10:00 PM','10:30 PM','11:00 PM'
 ];
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return 'Never';
-  return new Date(dateString).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
-  });
-};
+const formatDate = (d: string | null) => { if (!d) return 'Never'; return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }); };
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
+const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}`;
+
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
   const theme = useClientTheme();
   const [message, setMessage] = useState('');
-
   const primaryColor = theme.primary;
   
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
   const [voicesLoading, setVoicesLoading] = useState(true);
   const [voicesError, setVoicesError] = useState<string | null>(null);
-  const [currentVoiceId, setCurrentVoiceId] = useState<string>('');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('');
+  const [currentVoiceId, setCurrentVoiceId] = useState('');
+  const [selectedVoiceId, setSelectedVoiceId] = useState('');
   const [savingVoice, setSavingVoice] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
-  const [accentFilter, setAccentFilter] = useState<string>('all');
+  const [accentFilter, setAccentFilter] = useState('all');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [greetingMessage, setGreetingMessage] = useState('');
@@ -102,12 +57,9 @@ export default function ClientAIAgentPage() {
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
   const [businessHours, setBusinessHours] = useState<BusinessHours>({
-    monday: { open: '9:00 AM', close: '5:00 PM', closed: false },
-    tuesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
-    wednesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
-    thursday: { open: '9:00 AM', close: '5:00 PM', closed: false },
-    friday: { open: '9:00 AM', close: '5:00 PM', closed: false },
-    saturday: { open: '10:00 AM', close: '2:00 PM', closed: false },
+    monday: { open: '9:00 AM', close: '5:00 PM', closed: false }, tuesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+    wednesday: { open: '9:00 AM', close: '5:00 PM', closed: false }, thursday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+    friday: { open: '9:00 AM', close: '5:00 PM', closed: false }, saturday: { open: '10:00 AM', close: '2:00 PM', closed: false },
     sunday: { open: '9:00 AM', close: '5:00 PM', closed: true },
   });
 
@@ -120,386 +72,65 @@ export default function ClientAIAgentPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
   const [additionalInfo, setAdditionalInfo] = useState('');
 
-  useEffect(() => {
-    if (client) {
-      fetchVoices();
-      fetchCurrentVoice();
-      fetchGreeting();
-      fetchKnowledgeBase();
-    }
-  }, [client]);
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
+  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchKnowledgeBase(); } }, [client]);
+  useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }; }, []);
 
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
-  const fetchVoices = async () => {
-    setVoicesLoading(true);
-    setVoicesError(null);
-    try {
-      const backendUrl = getBackendUrl();
-      const response = await fetch(`${backendUrl}/api/voices`);
-      if (!response.ok) throw new Error('Failed to load voices');
-      const data = await response.json();
-      if (data.success && data.grouped) {
-        setVoices(data.grouped);
-      } else {
-        throw new Error('Invalid voices response');
-      }
-    } catch (error) {
-      setVoicesError(error instanceof Error ? error.message : 'Failed to load voices');
-    } finally {
-      setVoicesLoading(false);
-    }
-  };
-
-  const fetchCurrentVoice = async () => {
-    if (!client) return;
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setCurrentVoiceId(data.voice_id);
-          setSelectedVoiceId(data.voice_id);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching voice:', error);
-    }
-  };
-
-  const fetchGreeting = async () => {
-    if (!client) return;
-    setGreetingLoading(true);
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setGreetingMessage(data.greeting_message);
-          setOriginalGreeting(data.greeting_message);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching greeting:', error);
-    } finally {
-      setGreetingLoading(false);
-    }
-  };
-
+  const fetchVoices = async () => { setVoicesLoading(true); setVoicesError(null); try { const r = await fetch(`${getBackendUrl()}/api/voices`); if (!r.ok) throw new Error('Failed'); const d = await r.json(); if (d.success && d.grouped) setVoices(d.grouped); else throw new Error('Invalid'); } catch (e: any) { setVoicesError(e.message); } finally { setVoicesLoading(false); } };
+  const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { 'Authorization': `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); } } } catch {} };
+  const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { 'Authorization': `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
+  
   const fetchKnowledgeBase = async () => {
-    if (!client) return;
-    setKbLoading(true);
+    if (!client) return; setKbLoading(true);
     try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/knowledge-base`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setWebsite(data.websiteUrl || '');
-          if (data.data.services) parseServices(data.data.services);
-          if (data.data.faqs) parseFAQs(data.data.faqs);
-          if (data.data.businessHours) parseBusinessHours(data.data.businessHours);
-          setAdditionalInfo(data.data.additionalInfo || '');
-          setKbLastUpdated(data.updated_at || null);
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/knowledge-base`, { headers: { 'Authorization': `Bearer ${getAuthToken()}` } });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.success && d.data) {
+          setWebsite(d.websiteUrl || '');
+          if (d.data.services) parseServices(d.data.services);
+          if (d.data.faqs) parseFAQs(d.data.faqs);
+          if (d.data.businessHours) parseBusinessHours(d.data.businessHours);
+          setAdditionalInfo(d.data.additionalInfo || '');
+          setKbLastUpdated(d.updated_at || null);
         }
       }
-    } catch (error) {
-      console.error('Error fetching knowledge base:', error);
-    } finally {
-      setKbLoading(false);
-    }
+    } catch {} finally { setKbLoading(false); }
   };
 
-  const parseServices = (servicesText: string) => {
-    const lines = servicesText.split('\n').filter(l => l.trim());
-    const parsed: Service[] = [];
-    lines.forEach((line, index) => {
-      const cleanLine = line.trim().replace(/^-\s*/, '');
-      if (!cleanLine) return;
-      const parts = cleanLine.split(/\s+-\s+/);
-      let name = '', price = '', descParts: string[] = [];
-      parts.forEach((part, i) => {
-        const trimmed = part.trim();
-        if (i === 0) name = trimmed;
-        else if (trimmed.startsWith('$')) price = trimmed;
-        else if (trimmed) descParts.push(trimmed);
-      });
-      if (name) parsed.push({ id: `${index + 1}`, name, price, description: descParts.join(' - ') });
-    });
-    setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]);
-  };
+  const parseServices = (t: string) => { const lines = t.split('\n').filter(l => l.trim()); const parsed: Service[] = []; lines.forEach((line, i) => { const clean = line.trim().replace(/^-\s*/, ''); if (!clean) return; const parts = clean.split(/\s+-\s+/); let name = '', price = '', desc: string[] = []; parts.forEach((p, j) => { const tr = p.trim(); if (j === 0) name = tr; else if (tr.startsWith('$')) price = tr; else if (tr) desc.push(tr); }); if (name) parsed.push({ id: `${i + 1}`, name, price, description: desc.join(' - ') }); }); setServices(parsed.length > 0 ? parsed : [{ id: '1', name: '', price: '', description: '' }]); };
+  const parseFAQs = (t: string) => { const parsed: FAQ[] = []; const lines = t.split('\n'); let q = '', a = ''; lines.forEach(l => { if (l.trim().startsWith('Q:')) { if (q && a) parsed.push({ id: `${parsed.length + 1}`, question: q, answer: a }); q = l.replace(/^Q:\s*/i, '').trim(); a = ''; } else if (l.trim().startsWith('A:')) { a = l.replace(/^A:\s*/i, '').trim(); } }); if (q && a) parsed.push({ id: `${parsed.length + 1}`, question: q, answer: a }); setFaqs(parsed.length > 0 ? parsed : [{ id: '1', question: '', answer: '' }]); };
+  const parseBusinessHours = (t: string) => { const lines = t.split('\n'); const nh = { ...businessHours }; lines.forEach(l => { const lo = l.toLowerCase(); Object.keys(nh).forEach(day => { if (lo.includes(day)) { if (lo.includes('closed')) { nh[day as keyof BusinessHours].closed = true; } else { const m = l.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i); if (m) { nh[day as keyof BusinessHours].open = m[1]; nh[day as keyof BusinessHours].close = m[2]; nh[day as keyof BusinessHours].closed = false; } } } }); }); setBusinessHours(nh); };
 
-  const parseFAQs = (faqsText: string) => {
-    const parsed: FAQ[] = [];
-    const lines = faqsText.split('\n');
-    let currentQ = '', currentA = '';
-    lines.forEach(line => {
-      if (line.trim().startsWith('Q:')) {
-        if (currentQ && currentA) parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
-        currentQ = line.replace(/^Q:\s*/i, '').trim();
-        currentA = '';
-      } else if (line.trim().startsWith('A:')) {
-        currentA = line.replace(/^A:\s*/i, '').trim();
-      }
-    });
-    if (currentQ && currentA) parsed.push({ id: `${parsed.length + 1}`, question: currentQ, answer: currentA });
-    setFaqs(parsed.length > 0 ? parsed : [{ id: '1', question: '', answer: '' }]);
-  };
+  const formatServices = (): string => services.filter(s => s.name.trim()).map(s => { const p = [`- ${s.name}`]; if (s.price) p.push(s.price); if (s.description) p.push(s.description); return p.join(' - '); }).join('\n');
+  const formatFAQs = (): string => faqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+  const formatBusinessHoursForSave = (): string => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => { const day = businessHours[d as keyof BusinessHours]; return day.closed ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Closed` : `${d.charAt(0).toUpperCase() + d.slice(1)}: ${day.open} - ${day.close}`; }).join('\n');
 
-  const parseBusinessHours = (hoursText: string) => {
-    const lines = hoursText.split('\n');
-    const newHours = { ...businessHours };
-    lines.forEach(line => {
-      const lower = line.toLowerCase();
-      Object.keys(newHours).forEach(day => {
-        if (lower.includes(day)) {
-          if (lower.includes('closed')) {
-            newHours[day as keyof BusinessHours].closed = true;
-          } else {
-            const timeMatch = line.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
-            if (timeMatch) {
-              newHours[day as keyof BusinessHours].open = timeMatch[1];
-              newHours[day as keyof BusinessHours].close = timeMatch[2];
-              newHours[day as keyof BusinessHours].closed = false;
-            }
-          }
-        }
-      });
-    });
-    setBusinessHours(newHours);
-  };
+  const handlePlayPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const audio = new Audio(voice.previewUrl); audioRef.current = audio; audio.onended = () => setPlayingVoiceId(null); audio.onerror = () => { setPlayingVoiceId(null); showMessage('Failed to play', true); }; audio.play(); setPlayingVoiceId(voice.id); };
 
-  const formatServices = (): string => {
-    return services.filter(s => s.name.trim()).map(s => {
-      const parts = [`- ${s.name}`];
-      if (s.price) parts.push(s.price);
-      if (s.description) parts.push(s.description);
-      return parts.join(' - ');
-    }).join('\n');
-  };
+  const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); showMessage('Voice updated!'); } else { showMessage('Failed', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
+  const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); showMessage('Greeting updated!'); } else { showMessage(d.error || 'Failed', true); } } catch { showMessage('Error', true); } finally { setSavingGreeting(false); } };
+  const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
+  const handleSaveBusinessHours = async () => { if (!client) return; setSavingHours(true); try { const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, businessHours: formatBusinessHoursForSave() }) }); const d = await r.json(); if (d.success) { showMessage('Hours updated!'); await fetchKnowledgeBase(); } else showMessage(d.error || 'Failed', true); } catch { showMessage('Error', true); } finally { setSavingHours(false); } };
+  const handleSaveKnowledgeBase = async () => { if (!client) return; setSavingKB(true); try { const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, websiteUrl: website, businessHours: formatBusinessHoursForSave(), services: formatServices(), faqs: formatFAQs(), additionalInfo }) }); const d = await r.json(); if (d.success) { setKbLastUpdated(new Date().toISOString()); showMessage('Knowledge base updated!'); await fetchKnowledgeBase(); } else showMessage(d.error || 'Failed', true); } catch { showMessage('Error', true); } finally { setSavingKB(false); } };
+  const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
 
-  const formatFAQs = (): string => {
-    return faqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
-  };
+  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 3000); };
 
-  const formatBusinessHoursForSave = (): string => {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    return days.map(d => {
-      const dayData = businessHours[d as keyof BusinessHours];
-      const dayName = d.charAt(0).toUpperCase() + d.slice(1);
-      return dayData.closed ? `${dayName}: Closed` : `${dayName}: ${dayData.open} - ${dayData.close}`;
-    }).join('\n');
-  };
-
-  const handlePlayPreview = (voice: VoiceOption) => {
-    if (playingVoiceId === voice.id && audioRef.current) {
-      audioRef.current.pause();
-      setPlayingVoiceId(null);
-      return;
-    }
-    if (audioRef.current) audioRef.current.pause();
-    const audio = new Audio(voice.previewUrl);
-    audioRef.current = audio;
-    audio.onended = () => setPlayingVoiceId(null);
-    audio.onerror = () => { setPlayingVoiceId(null); showMessage('Failed to play preview', true); };
-    audio.play();
-    setPlayingVoiceId(voice.id);
-  };
-
-  const handleSaveVoice = async () => {
-    if (selectedVoiceId === currentVoiceId || !client) return;
-    setSavingVoice(true);
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ voice_id: selectedVoiceId }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setCurrentVoiceId(selectedVoiceId);
-        showMessage('Voice updated!');
-      } else {
-        showMessage('Failed to update voice', true);
-        setSelectedVoiceId(currentVoiceId);
-      }
-    } catch (error) {
-      showMessage('Error updating voice', true);
-      setSelectedVoiceId(currentVoiceId);
-    } finally {
-      setSavingVoice(false);
-    }
-  };
-
-  const handleSaveGreeting = async () => {
-    if (greetingMessage === originalGreeting || !client) return;
-    setSavingGreeting(true);
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ greeting_message: greetingMessage }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setOriginalGreeting(greetingMessage);
-        showMessage('Greeting updated!');
-      } else {
-        showMessage(data.error || 'Failed to update greeting', true);
-      }
-    } catch (error) {
-      showMessage('Error updating greeting', true);
-    } finally {
-      setSavingGreeting(false);
-    }
-  };
-
-  const handleResetGreeting = () => {
-    if (!client?.business_name) return;
-    setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`);
-  };
-
-  const handleSaveBusinessHours = async () => {
-    if (!client) return;
-    setSavingHours(true);
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ clientId: client.id, businessHours: formatBusinessHoursForSave() }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        showMessage('Business hours updated!');
-        await fetchKnowledgeBase();
-      } else {
-        showMessage(data.error || 'Failed to update hours', true);
-      }
-    } catch (error) {
-      showMessage('Error updating hours', true);
-    } finally {
-      setSavingHours(false);
-    }
-  };
-
-  const handleSaveKnowledgeBase = async () => {
-    if (!client) return;
-    setSavingKB(true);
-    try {
-      const backendUrl = getBackendUrl();
-      const token = getAuthToken();
-      const response = await fetch(`${backendUrl}/api/knowledge-base/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          clientId: client.id,
-          websiteUrl: website,
-          businessHours: formatBusinessHoursForSave(),
-          services: formatServices(),
-          faqs: formatFAQs(),
-          additionalInfo,
-        }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setKbLastUpdated(new Date().toISOString());
-        showMessage('Knowledge base updated!');
-        await fetchKnowledgeBase();
-      } else {
-        showMessage(data.error || 'Failed to update', true);
-      }
-    } catch (error) {
-      showMessage('Error updating knowledge base', true);
-    } finally {
-      setSavingKB(false);
-    }
-  };
-
-  const handleTestCall = () => {
-    if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`;
-  };
-
-  const showMessage = (text: string, isError = false) => {
-    setMessage(isError ? `❌ ${text}` : `✅ ${text}`);
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const addService = () => setServices(prev => [...prev, { id: Date.now().toString(), name: '', price: '', description: '' }]);
-  const removeService = (id: string) => { if (services.length > 1) setServices(prev => prev.filter(s => s.id !== id)); };
-  const updateService = (id: string, field: keyof Service, value: string) => setServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
-
-  const addFAQ = () => setFaqs(prev => [...prev, { id: Date.now().toString(), question: '', answer: '' }]);
-  const removeFAQ = (id: string) => { if (faqs.length > 1) setFaqs(prev => prev.filter(f => f.id !== id)); };
-  const updateFAQ = (id: string, field: keyof FAQ, value: string) => setFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
-
-  const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => {
-    setBusinessHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
-  };
+  const addService = () => setServices(p => [...p, { id: Date.now().toString(), name: '', price: '', description: '' }]);
+  const removeService = (id: string) => { if (services.length > 1) setServices(p => p.filter(s => s.id !== id)); };
+  const updateService = (id: string, f: keyof Service, v: string) => setServices(p => p.map(s => s.id === id ? { ...s, [f]: v } : s));
+  const addFAQ = () => setFaqs(p => [...p, { id: Date.now().toString(), question: '', answer: '' }]);
+  const removeFAQ = (id: string) => { if (faqs.length > 1) setFaqs(p => p.filter(f => f.id !== id)); };
+  const updateFAQ = (id: string, f: keyof FAQ, v: string) => setFaqs(p => p.map(fq => fq.id === id ? { ...fq, [f]: v } : fq));
+  const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => { setBusinessHours(p => ({ ...p, [day]: { ...p[day], [field]: value } })); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
-
-  const getAvailableAccents = (): string[] => {
-    const accents = [...new Set(getAllVoices().map(v => v.accent))];
-    return accents.sort();
-  };
-
-  const getFilteredVoices = () => {
-    let filtered: VoiceOption[];
-    if (voiceFilter === 'female') filtered = voices.female || [];
-    else if (voiceFilter === 'male') filtered = voices.male || [];
-    else filtered = getAllVoices();
-    if (accentFilter !== 'all') filtered = filtered.filter(v => v.accent === accentFilter);
-    return filtered;
-  };
-
-  const getHoursSummary = () => {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const weekdays = days.slice(0, 5);
-    const allWeekdaysSame = weekdays.every(d => {
-      const day = businessHours[d as keyof BusinessHours];
-      const mon = businessHours.monday;
-      return day.closed === mon.closed && day.open === mon.open && day.close === mon.close;
-    });
-    if (allWeekdaysSame && !businessHours.monday.closed) {
-      return [
-        `M-F: ${businessHours.monday.open.replace(' ', '')}-${businessHours.monday.close.replace(' ', '')}`,
-        businessHours.saturday.closed ? 'Sat: Closed' : `Sat: ${businessHours.saturday.open.replace(' ', '')}-${businessHours.saturday.close.replace(' ', '')}`,
-        businessHours.sunday.closed ? 'Sun: Closed' : `Sun: ${businessHours.sunday.open.replace(' ', '')}-${businessHours.sunday.close.replace(' ', '')}`
-      ];
-    }
-    return days.map(d => {
-      const day = businessHours[d as keyof BusinessHours];
-      const name = d.charAt(0).toUpperCase() + d.slice(1, 3);
-      return day.closed ? `${name}: Closed` : `${name}: ${day.open.replace(' ', '')}-${day.close.replace(' ', '')}`;
-    });
-  };
+  const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
+  const getFilteredVoices = () => { let f: VoiceOption[]; if (voiceFilter === 'female') f = voices.female || []; else if (voiceFilter === 'male') f = voices.male || []; else f = getAllVoices(); if (accentFilter !== 'all') f = f.filter(v => v.accent === accentFilter); return f; };
+  const getHoursSummary = () => { const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']; const wd = days.slice(0,5); const same = wd.every(d => { const day = businessHours[d as keyof BusinessHours]; const m = businessHours.monday; return day.closed === m.closed && day.open === m.open && day.close === m.close; }); if (same && !businessHours.monday.closed) return [`M-F: ${businessHours.monday.open.replace(' ','')}-${businessHours.monday.close.replace(' ','')}`, businessHours.saturday.closed ? 'Sat: Closed' : `Sat: ${businessHours.saturday.open.replace(' ','')}-${businessHours.saturday.close.replace(' ','')}`, businessHours.sunday.closed ? 'Sun: Closed' : `Sun: ${businessHours.sunday.open.replace(' ','')}-${businessHours.sunday.close.replace(' ','')}`]; return days.map(d => { const day = businessHours[d as keyof BusinessHours]; const n = d.charAt(0).toUpperCase() + d.slice(1,3); return day.closed ? `${n}: Closed` : `${n}: ${day.open.replace(' ','')}-${day.close.replace(' ','')}`; }); };
 
   const hasVoiceChanges = selectedVoiceId !== currentVoiceId;
   const hasGreetingChanges = greetingMessage !== originalGreeting;
@@ -507,438 +138,268 @@ export default function ClientAIAgentPage() {
   const filteredVoices = getFilteredVoices();
   const availableAccents = getAvailableAccents();
 
-  if (loading || !client) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} />
-      </div>
-    );
-  }
+  const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
+  const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
 
-  // Helper for section headers with feature gating
-  const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
-    <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+  if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
+
+  const SectionCard = ({ icon: Icon, title, subtitle, live, children, className = '' }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode; className?: string }) => (
+    <section className={`mb-4 sm:mb-5 ${className}`}>
+      <div className="rounded-2xl overflow-hidden" style={glass}>
+        <div className="p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
+              <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
+                {live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>Live</span>}
+              </div>
+              <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{subtitle}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm" style={{ color: theme.text }}>{title}</h3>
-          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{subtitle}</p>
-        </div>
+        <div className="p-4 sm:p-5">{children}</div>
       </div>
-    </div>
+    </section>
   );
 
-  const SectionHeaderLive = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
-    <div className="p-3 sm:p-4 border-b" style={{ borderColor: theme.border }}>
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <h3 className="font-semibold text-sm" style={{ color: theme.text }}>{title}</h3>
-            <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1), color: primaryColor }}>Live</span>
-          </div>
-          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{subtitle}</p>
-        </div>
-      </div>
-    </div>
+  const SaveButton = ({ onClick, disabled, loading: btnLoading, label }: { onClick: () => void; disabled: boolean; loading: boolean; label: string }) => (
+    <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+      {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
+    </button>
   );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {/* Status Message */}
+      <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
+
       {message && (
-        <div 
-          className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto"
-          style={message.includes('✅') 
-            ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
-            : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }
-          }
-        >
+        <div className="mb-4 p-3 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto"
+          style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
           {message}
         </div>
       )}
 
       {/* Hero */}
-      <div className="mb-4 sm:mb-6 text-center">
-        <div 
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3"
-          style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.1) }}
-        >
+      <div className="mb-5 sm:mb-7 text-center fu fu1">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
           <Bot className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: primaryColor }} />
         </div>
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1" style={{ color: theme.text }}>
-          Your AI Receptionist
-        </h2>
-        <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-          Customize how your AI answers calls
-        </p>
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Your AI Receptionist</h2>
+        <p className="text-xs sm:text-[13px] mt-0.5" style={{ color: theme.textMuted }}>Customize how your AI answers calls</p>
       </div>
 
-      {/* Content Container */}
       <div className="max-w-3xl mx-auto">
-        {/* Test Your AI Button */}
-        <section className="mb-4 sm:mb-6">
-          <button
-            onClick={handleTestCall}
-            disabled={!client?.vapi_phone_number}
-            className="w-full rounded-xl p-3 sm:p-4 flex items-center justify-center gap-2 sm:gap-3 transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            style={{ backgroundColor: primaryColor, color: theme.primaryText }}
-          >
+
+        {/* Test Call */}
+        <section className="mb-4 sm:mb-5 fu fu1">
+          <button onClick={handleTestCall} disabled={!client?.vapi_phone_number}
+            className="w-full rounded-2xl p-3.5 sm:p-4 flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+            style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
             <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="font-semibold text-sm sm:text-base">Test Your AI Receptionist</span>
           </button>
-          <p className="text-center text-[10px] sm:text-xs mt-1.5 sm:mt-2" style={{ color: theme.textMuted4 }}>
-            Call your AI number to hear your settings in action
-          </p>
+          <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Call your AI number to hear your settings in action</p>
         </section>
 
         {/* Voice Selection */}
-        <section className="mb-4 sm:mb-6">
+        <div className="fu fu2">
           {!isFeatureEnabled('custom_voice') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-              <SectionHeader icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" />
-              <div className="p-4">
-                <UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} />
-              </div>
-            </div>
+            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice"><UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <SectionHeaderLive icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" />
-            <div className="p-3 sm:p-4">
-              {voicesLoading && (
-                <div className="flex items-center justify-center py-6 sm:py-8">
-                  <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" style={{ color: primaryColor }} />
-                  <span className="ml-2 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Loading voices...</span>
-                </div>
-              )}
-
+            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" live>
+              {voicesLoading && <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /><span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading voices...</span></div>}
               {voicesError && !voicesLoading && (
-                <div className="rounded-lg p-3 sm:p-4 text-center" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2" style={{ color: theme.error }} />
-                  <p className="text-xs sm:text-sm font-medium mb-2" style={{ color: theme.error }}>{voicesError}</p>
-                  <button onClick={fetchVoices} className="text-xs sm:text-sm underline hover:no-underline" style={{ color: theme.error }}>Try again</button>
+                <div className="rounded-xl p-4 text-center" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                  <AlertCircle className="w-5 h-5 mx-auto mb-2" style={{ color: theme.error }} />
+                  <p className="text-sm font-medium mb-2" style={{ color: theme.error }}>{voicesError}</p>
+                  <button onClick={fetchVoices} className="text-sm underline" style={{ color: theme.error }}>Try again</button>
                 </div>
               )}
-
-              {!voicesLoading && !voicesError && totalVoices > 0 && (
-                <>
-                  {/* Gender Filter */}
-                  <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                    {(['all', 'female', 'male'] as const).map((filter) => (
-                      <button
-                        key={filter}
-                        onClick={() => setVoiceFilter(filter)}
-                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition"
-                        style={{
-                          backgroundColor: voiceFilter === filter ? primaryColor : theme.bg,
-                          color: voiceFilter === filter ? theme.primaryText : theme.textMuted,
-                        }}
-                      >
-                        {filter === 'all' ? `All (${totalVoices})` : filter.charAt(0).toUpperCase() + filter.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Accent Filter */}
-                  {availableAccents.length > 1 && (
-                    <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                      <button
-                        onClick={() => setAccentFilter('all')}
-                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
-                        style={{
-                          backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, theme.isDark ? 0.25 : 0.15) : theme.bg,
-                          color: accentFilter === 'all' ? primaryColor : theme.textMuted,
-                          border: accentFilter === 'all' ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : '1px solid transparent',
-                        }}
-                      >
-                        🌍 All Accents
-                      </button>
-                      {availableAccents.map((accent) => {
-                        const flag = accent === 'British' ? '🇬🇧' : accent === 'American' ? '🇺🇸' : accent === 'Australian' ? '🇦🇺' : '🌍';
-                        return (
-                          <button
-                            key={accent}
-                            onClick={() => setAccentFilter(accent)}
-                            className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition flex items-center gap-1"
-                            style={{
-                              backgroundColor: accentFilter === accent ? hexToRgba(primaryColor, theme.isDark ? 0.25 : 0.15) : theme.bg,
-                              color: accentFilter === accent ? primaryColor : theme.textMuted,
-                              border: accentFilter === accent ? `1px solid ${hexToRgba(primaryColor, 0.3)}` : '1px solid transparent',
-                            }}
-                          >
-                            {flag} {accent}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Voice Grid */}
-                  {filteredVoices.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                      {filteredVoices.map((voice) => {
-                        const isSelected = selectedVoiceId === voice.id;
-                        const isCurrent = currentVoiceId === voice.id;
-                        const isPlaying = playingVoiceId === voice.id;
-                        return (
-                          <div
-                            key={voice.id}
-                            onClick={() => setSelectedVoiceId(voice.id)}
-                            className="relative p-2 sm:p-3 rounded-xl border-2 cursor-pointer transition-all"
-                            style={{ borderColor: isSelected ? primaryColor : theme.border, backgroundColor: isSelected ? hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) : theme.card }}
-                          >
-                            {isCurrent && (
-                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-white text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: theme.success }}>CURRENT</span>
-                            )}
-                            {voice.recommended && !isCurrent && (
-                              <span className="absolute -top-1.5 sm:-top-2 -right-1.5 sm:-right-2 px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[9px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>★</span>
-                            )}
-                            <div className="flex items-start gap-1.5 sm:gap-2">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
-                                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 transition"
-                                style={{ backgroundColor: isPlaying ? primaryColor : theme.bg, color: isPlaying ? theme.primaryText : theme.textMuted }}
-                              >
-                                {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />}
-                              </button>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold text-xs sm:text-sm truncate" style={{ color: theme.text }}>{voice.name}</span>
-                                  {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: primaryColor }} />}
-                                </div>
-                                <p className="text-[9px] sm:text-[10px] truncate" style={{ color: theme.textMuted4 }}>
-                                  {voice.accent} · {voice.style}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 sm:py-8">
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted4 }}>No voices match this filter</p>
-                      <button onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }} className="mt-2 text-xs sm:text-sm font-medium hover:opacity-80 transition" style={{ color: primaryColor }}>Clear filters</button>
-                    </div>
-                  )}
-
-                  {hasVoiceChanges && (
-                    <button onClick={handleSaveVoice} disabled={savingVoice} className="w-full mt-3 sm:mt-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-                      {savingVoice ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Voice'}
+              {!voicesLoading && !voicesError && totalVoices > 0 && (<>
+                <div className="flex gap-1.5 mb-3">
+                  {(['all','female','male'] as const).map(f => (
+                    <button key={f} onClick={() => setVoiceFilter(f)} className="px-3 py-1.5 rounded-xl text-[11px] font-semibold transition"
+                      style={{ backgroundColor: voiceFilter === f ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', color: voiceFilter === f ? theme.primaryText : theme.textMuted }}>
+                      {f === 'all' ? `All (${totalVoices})` : f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          )}
-        </section>
-
-        {/* Greeting Message */}
-        <section className="mb-4 sm:mb-6">
-          {!isFeatureEnabled('custom_greeting') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-              <SectionHeader icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" />
-              <div className="p-4">
-                <UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} />
-              </div>
-            </div>
-          ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <SectionHeaderLive icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" />
-            <div className="p-3 sm:p-4">
-              {greetingLoading ? (
-                <div className="flex items-center justify-center py-4 sm:py-6">
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" style={{ color: primaryColor }} />
-                  <span className="ml-2 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Loading...</span>
-                </div>
-              ) : (
-                <>
-                  <textarea
-                    value={greetingMessage}
-                    onChange={(e) => setGreetingMessage(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm resize-none focus:outline-none focus:ring-2 transition"
-                    style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }}
-                    placeholder="Hi, you've reached [Business Name]. How can I help you today?"
-                  />
-                  <div className="flex items-center justify-between mt-1.5 sm:mt-2">
-                    <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[10px] sm:text-xs hover:opacity-80 transition" style={{ color: theme.textMuted4 }}>
-                      <RotateCcw className="w-3 h-3" /> Reset
-                    </button>
-                    <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
-                  </div>
-                  {hasGreetingChanges && (
-                    <button onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} className="w-full mt-2 sm:mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm transition disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-                      {savingGreeting ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Greeting'}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          )}
-        </section>
-
-        {/* Business Hours */}
-        <section className="mb-4 sm:mb-6">
-          {!isFeatureEnabled('business_hours') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-              <SectionHeader icon={Clock} title="Business Hours" subtitle="When you're available" />
-              <div className="p-4">
-                <UpgradePrompt feature="business_hours" primaryColor={primaryColor} isDark={theme.isDark} />
-              </div>
-            </div>
-          ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <SectionHeaderLive icon={Clock} title="Business Hours" subtitle="When you're available" />
-            <div className="p-3 sm:p-4">
-              <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
-                <div className="flex flex-wrap gap-1 sm:gap-2 flex-1 min-w-0">
-                  {getHoursSummary().slice(0, 3).map((h, i) => (
-                    <span key={i} className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>{h}</span>
                   ))}
                 </div>
-                <button className="flex items-center gap-1 text-xs sm:text-sm font-medium group-hover:opacity-80 ml-2 flex-shrink-0" style={{ color: primaryColor }}>
-                  {hoursExpanded ? 'Hide' : 'Edit'}
-                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${hoursExpanded ? 'rotate-180' : ''}`} />
+                {availableAccents.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    <button onClick={() => setAccentFilter('all')} className="px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 transition"
+                      style={{ backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, 0.12) : 'transparent', color: accentFilter === 'all' ? primaryColor : theme.textMuted, border: `1px solid ${accentFilter === 'all' ? hexToRgba(primaryColor, 0.25) : 'transparent'}` }}>
+                      🌍 All
+                    </button>
+                    {availableAccents.map(a => { const flag = a === 'British' ? '🇬🇧' : a === 'American' ? '🇺🇸' : a === 'Australian' ? '🇦🇺' : '🌍'; return (
+                      <button key={a} onClick={() => setAccentFilter(a)} className="px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 transition"
+                        style={{ backgroundColor: accentFilter === a ? hexToRgba(primaryColor, 0.12) : 'transparent', color: accentFilter === a ? primaryColor : theme.textMuted, border: `1px solid ${accentFilter === a ? hexToRgba(primaryColor, 0.25) : 'transparent'}` }}>
+                        {flag} {a}
+                      </button>
+                    ); })}
+                  </div>
+                )}
+                {filteredVoices.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {filteredVoices.map(voice => { const sel = selectedVoiceId === voice.id; const cur = currentVoiceId === voice.id; const playing = playingVoiceId === voice.id; return (
+                      <div key={voice.id} onClick={() => setSelectedVoiceId(voice.id)}
+                        className="relative p-3 rounded-xl cursor-pointer transition-all"
+                        style={{ ...glass, borderColor: sel ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), borderWidth: '2px', backgroundColor: sel ? hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) : glass.backgroundColor }}>
+                        {cur && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-white text-[8px] font-bold rounded-full" style={{ backgroundColor: theme.success }}>CURRENT</span>}
+                        {voice.recommended && !cur && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>★</span>}
+                        <div className="flex items-start gap-2">
+                          <button onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition"
+                            style={{ backgroundColor: playing ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: playing ? theme.primaryText : theme.textMuted }}>
+                            {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <span className="font-semibold text-[13px] truncate" style={{ color: theme.text }}>{voice.name}</span>
+                              {sel && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primaryColor }} />}
+                            </div>
+                            <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.accent} · {voice.style}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ); })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-xs" style={{ color: theme.textMuted4 }}>No voices match</p>
+                    <button onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }} className="mt-2 text-xs font-medium" style={{ color: primaryColor }}>Clear filters</button>
+                  </div>
+                )}
+                {hasVoiceChanges && <SaveButton onClick={handleSaveVoice} disabled={savingVoice} loading={savingVoice} label="Save Voice" />}
+              </>)}
+            </SectionCard>
+          )}
+        </div>
+
+        {/* Greeting */}
+        <div className="fu fu3">
+          {!isFeatureEnabled('custom_greeting') ? (
+            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first"><UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+          ) : (
+            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" live>
+              {greetingLoading ? <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /></div> : (<>
+                <textarea value={greetingMessage} onChange={(e) => setGreetingMessage(e.target.value)} rows={3} maxLength={500}
+                  className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none transition" style={inputStyle} placeholder="Hi, you've reached [Business Name]..." />
+                <div className="flex items-center justify-between mt-2">
+                  <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[11px]" style={{ color: theme.textMuted4 }}><RotateCcw className="w-3 h-3" /> Reset</button>
+                  <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
+                </div>
+                {hasGreetingChanges && <SaveButton onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} loading={savingGreeting} label="Save Greeting" />}
+              </>)}
+            </SectionCard>
+          )}
+        </div>
+
+        {/* Business Hours */}
+        <div className="fu fu3">
+          {!isFeatureEnabled('business_hours') ? (
+            <SectionCard icon={Clock} title="Business Hours" subtitle="When you're available"><UpgradePrompt feature="business_hours" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+          ) : (
+            <SectionCard icon={Clock} title="Business Hours" subtitle="When you're available" live>
+              <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
+                <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+                  {getHoursSummary().slice(0,3).map((h,i) => <span key={i} className="px-2 py-1 rounded-lg text-[11px]" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', color: theme.textMuted }}>{h}</span>)}
+                </div>
+                <button className="flex items-center gap-1 text-[13px] font-medium ml-2 flex-shrink-0" style={{ color: primaryColor }}>
+                  {hoursExpanded ? 'Hide' : 'Edit'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${hoursExpanded ? 'rotate-180' : ''}`} />
                 </button>
               </div>
-
               {hoursExpanded && (
-                <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
+                <div className="mt-4 space-y-2">
                   {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => (
-                    <div key={day} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-lg" style={{ backgroundColor: theme.bg }}>
-                      <span className="w-10 sm:w-16 text-[10px] sm:text-xs font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0, 3)}</span>
-                      <label className="flex items-center gap-1">
-                        <input type="checkbox" checked={businessHours[day].closed} onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded" />
-                        <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Closed</span>
-                      </label>
+                    <div key={day} className="flex items-center gap-2 p-2 rounded-xl" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}>
+                      <span className="w-10 sm:w-14 text-[11px] font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0,3)}</span>
+                      <label className="flex items-center gap-1"><input type="checkbox" checked={businessHours[day].closed} onChange={(e) => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3.5 h-3.5 rounded" /><span className="text-[11px]" style={{ color: theme.textMuted }}>Closed</span></label>
                       {!businessHours[day].closed && (
                         <div className="flex items-center gap-1 ml-auto">
-                          <select value={businessHours[day].open} onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)} className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }}>
-                            {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
-                          </select>
-                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>-</span>
-                          <select value={businessHours[day].close} onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)} className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs border rounded focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }}>
-                            {TIME_OPTIONS.map(time => <option key={time} value={time}>{time}</option>)}
-                          </select>
+                          <select value={businessHours[day].open} onChange={(e) => updateBusinessHoursField(day, 'open', e.target.value)} className="px-2 py-1 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                          <span className="text-[10px]" style={{ color: theme.textMuted4 }}>–</span>
+                          <select value={businessHours[day].close} onChange={(e) => updateBusinessHoursField(day, 'close', e.target.value)} className="px-2 py-1 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                         </div>
                       )}
                     </div>
                   ))}
-                  <button onClick={handleSaveBusinessHours} disabled={savingHours} className="w-full mt-2 sm:mt-3 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-                    {savingHours ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Sparkles className="w-4 h-4" /> Save Hours</>}
-                  </button>
+                  <SaveButton onClick={handleSaveBusinessHours} disabled={savingHours} loading={savingHours} label="Save Hours" />
                 </div>
               )}
-            </div>
-          </div>
+            </SectionCard>
           )}
-        </section>
+        </div>
 
         {/* Knowledge Base */}
-        <section className="mb-4 sm:mb-6">
+        <div className="fu fu4">
           {!isFeatureEnabled('knowledge_base') ? (
-            <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-              <SectionHeader icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business" />
-              <div className="p-4">
-                <UpgradePrompt feature="knowledge_base" primaryColor={primaryColor} isDark={theme.isDark} />
-              </div>
-            </div>
+            <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business"><UpgradePrompt feature="knowledge_base" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
           ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <SectionHeaderLive icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business" />
-            <div className="p-3 sm:p-4">
+            <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Teach your AI about your business" live>
               <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
-                <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Updated: {formatDate(kbLastUpdated)}</div>
-                <button className="flex items-center gap-1 text-xs sm:text-sm font-medium group-hover:opacity-80 transition" style={{ color: primaryColor }}>
-                  {kbExpanded ? 'Hide' : 'Edit'}
-                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
+                <div className="text-[13px]" style={{ color: theme.textMuted }}>Updated: {formatDate(kbLastUpdated)}</div>
+                <button className="flex items-center gap-1 text-[13px] font-medium" style={{ color: primaryColor }}>
+                  {kbExpanded ? 'Hide' : 'Edit'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
                 </button>
               </div>
-
               {kbExpanded && (
-                <div className="mt-3 sm:mt-4 space-y-4 sm:space-y-5">
+                <div className="mt-4 space-y-5">
                   <div>
-                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Website
-                    </label>
-                    <input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none transition" style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }} />
+                    <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><Globe className="w-4 h-4" style={{ color: primaryColor }} /> Website</label>
+                    <input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
                   </div>
-
                   <div>
-                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Services & Pricing
-                    </label>
+                    <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><Briefcase className="w-4 h-4" style={{ color: primaryColor }} /> Services & Pricing</label>
                     <div className="space-y-2">
-                      {services.map((service) => (
-                        <div key={service.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
-                          <div className="flex gap-1.5 sm:gap-2">
-                            <input type="text" value={service.name} onChange={(e) => updateService(service.id, 'name', e.target.value)} placeholder="Service name" className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
-                            <input type="text" value={service.price} onChange={(e) => updateService(service.id, 'price', e.target.value)} placeholder="$100" className="w-16 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
-                            <button onClick={() => removeService(service.id)} disabled={services.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+                      {services.map(s => (
+                        <div key={s.id} className="p-3 rounded-xl space-y-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}>
+                          <div className="flex gap-2">
+                            <input type="text" value={s.name} onChange={(e) => updateService(s.id, 'name', e.target.value)} placeholder="Service name" className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none min-w-0" style={inputStyle} />
+                            <input type="text" value={s.price} onChange={(e) => updateService(s.id, 'price', e.target.value)} placeholder="$100" className="w-20 px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle} />
+                            <button onClick={() => removeService(s.id)} disabled={services.length === 1} className="p-2 disabled:opacity-30" style={{ color: theme.textMuted4 }}><Trash2 className="w-4 h-4" /></button>
                           </div>
-                          <textarea value={service.description} onChange={(e) => updateService(service.id, 'description', e.target.value)} placeholder="Brief description..." rows={2} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
+                          <textarea value={s.description} onChange={(e) => updateService(s.id, 'description', e.target.value)} placeholder="Brief description..." rows={2} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none" style={inputStyle} />
                         </div>
                       ))}
                     </div>
-                    <button onClick={addService} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) }}>
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Add Service
-                    </button>
+                    <button onClick={addService} className="mt-2 flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-xl transition" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) }}><Plus className="w-4 h-4" /> Add Service</button>
                   </div>
-
                   <div>
-                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> FAQs
-                    </label>
+                    <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="w-4 h-4" style={{ color: primaryColor }} /> FAQs</label>
                     <div className="space-y-2">
-                      {faqs.map((faq) => (
-                        <div key={faq.id} className="p-2 sm:p-3 rounded-lg space-y-1.5 sm:space-y-2" style={{ backgroundColor: theme.bg }}>
-                          <div className="flex gap-1.5 sm:gap-2">
-                            <input type="text" value={faq.question} onChange={(e) => updateFAQ(faq.id, 'question', e.target.value)} placeholder="Question..." className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none min-w-0" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
-                            <button onClick={() => removeFAQ(faq.id)} disabled={faqs.length === 1} className="p-1.5 sm:p-2 hover:text-red-500 disabled:opacity-30 transition" style={{ color: theme.textMuted4 }}><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+                      {faqs.map(f => (
+                        <div key={f.id} className="p-3 rounded-xl space-y-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}>
+                          <div className="flex gap-2">
+                            <input type="text" value={f.question} onChange={(e) => updateFAQ(f.id, 'question', e.target.value)} placeholder="Question..." className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none min-w-0" style={inputStyle} />
+                            <button onClick={() => removeFAQ(f.id)} disabled={faqs.length === 1} className="p-2 disabled:opacity-30" style={{ color: theme.textMuted4 }}><Trash2 className="w-4 h-4" /></button>
                           </div>
-                          <textarea value={faq.answer} onChange={(e) => updateFAQ(faq.id, 'answer', e.target.value)} placeholder="Answer..." rows={2} className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none resize-none" style={{ borderColor: theme.border, backgroundColor: theme.card, color: theme.text }} />
+                          <textarea value={f.answer} onChange={(e) => updateFAQ(f.id, 'answer', e.target.value)} placeholder="Answer..." rows={2} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none" style={inputStyle} />
                         </div>
                       ))}
                     </div>
-                    <button onClick={addFAQ} className="mt-2 flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition hover:opacity-80" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05) }}>
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Add FAQ
-                    </button>
+                    <button onClick={addFAQ} className="mt-2 flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium rounded-xl transition" style={{ color: primaryColor, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) }}><Plus className="w-4 h-4" /> Add FAQ</button>
                   </div>
-
                   <div>
-                    <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.text }}>
-                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: primaryColor }} /> Additional Info
-                    </label>
-                    <textarea value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods, etc." rows={3} className="w-full px-3 py-2 sm:py-2.5 text-sm border rounded-lg focus:outline-none resize-none transition" style={{ borderColor: theme.border, backgroundColor: theme.input, color: theme.text }} />
+                    <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: primaryColor }} /> Additional Info</label>
+                    <textarea value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods..." rows={3} className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none resize-none" style={inputStyle} />
                   </div>
-
-                  <button onClick={handleSaveKnowledgeBase} disabled={savingKB} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-xl transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-                    {savingKB ? <><Loader2 className="w-4 h-4 animate-spin" />Updating...</> : <><Sparkles className="w-4 h-4" />Update AI Knowledge</>}
-                  </button>
+                  <SaveButton onClick={handleSaveKnowledgeBase} disabled={savingKB} loading={savingKB} label="Update AI Knowledge" />
                 </div>
               )}
-            </div>
-          </div>
+            </SectionCard>
           )}
-        </section>
+        </div>
 
-        {/* Pro Tip */}
-        <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.05), border: `1px solid ${hexToRgba(primaryColor, 0.2)}` }}>
-          <div className="flex items-start gap-2 sm:gap-3">
-            <div className="text-base sm:text-xl flex-shrink-0">💡</div>
+        {/* Tip */}
+        <div className="rounded-2xl p-4 fu fu4" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.03), border: `1px solid ${hexToRgba(primaryColor, 0.12)}` }}>
+          <div className="flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">💡</span>
             <div>
-              <h4 className="font-semibold text-xs sm:text-sm mb-0.5 sm:mb-1" style={{ color: primaryColor }}>Pro Tip</h4>
-              <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                After changes, tap "Test Your AI" to hear them in action!
-              </p>
+              <h4 className="font-semibold text-[13px] mb-0.5" style={{ color: primaryColor }}>Pro Tip</h4>
+              <p className="text-xs" style={{ color: theme.textMuted }}>After changes, tap "Test Your AI" to hear them in action!</p>
             </div>
           </div>
         </div>
