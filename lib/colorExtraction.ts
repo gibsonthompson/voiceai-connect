@@ -1,8 +1,10 @@
 // ============================================================================
 // COLOR EXTRACTION UTILITY
-// Extracted from agency onboarding for reuse in client-level branding.
 // Analyzes a logo image to detect background color, extract brand colors,
 // and suggest a light/dark theme.
+//
+// FIX: Added isUsableBrandColor() to reject near-black/white results
+// that are background/text colors, not actual brand colors.
 // ============================================================================
 
 export function rgbToHex(r: number, g: number, b: number): string {
@@ -16,6 +18,32 @@ export function adjustColorBrightness(hex: string, percent: number): string {
   const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
   const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
   return rgbToHex(R, G, B);
+}
+
+/**
+ * Check if a hex color is a usable brand color (not near-black, near-white, or gray).
+ * Returns false for colors that are almost certainly background/text, not brand colors.
+ */
+export function isUsableBrandColor(hex: string): boolean {
+  if (!hex || hex.length < 7) return false;
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  // Too dark (near-black) — likely a background
+  if (luminance < 0.12) return false;
+  // Too light (near-white) — likely text on dark or background
+  if (luminance > 0.88) return false;
+  
+  // Check saturation — grays are not brand colors
+  const max = Math.max(r, g, b) / 255;
+  const min = Math.min(r, g, b) / 255;
+  const saturation = max === 0 ? 0 : (max - min) / max;
+  if (saturation < 0.15) return false; // Too gray
+  
+  return true;
 }
 
 export function detectLogoBackground(
@@ -104,6 +132,7 @@ export async function extractColorsFromImage(imageUrl: string): Promise<Extracte
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
         if (a < 128) continue;
 
+        // Skip pixels too close to detected background
         const bgDist = Math.sqrt(
           Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)
         );
@@ -120,8 +149,9 @@ export async function extractColorsFromImage(imageUrl: string): Promise<Extracte
           ? (max - min) / (2 - max - min)
           : (max - min) / (max + min);
 
-        if (lightness < 0.15 || lightness > 0.65) continue;
-        if (saturation < 0.25) continue;
+        // Filter: skip too dark, too light, or too unsaturated
+        if (lightness < 0.12 || lightness > 0.88) continue;
+        if (saturation < 0.2) continue;
 
         const key = `${br},${bg2},${bb}`;
         if (!colorData[key]) {
@@ -130,13 +160,20 @@ export async function extractColorsFromImage(imageUrl: string): Promise<Extracte
         colorData[key].count++;
       }
 
-      const colors = Object.values(colorData)
+      // Sort by saturation × log(count) — prefer vibrant, common colors
+      let colors = Object.values(colorData)
         .filter(c => c.count >= 5)
         .sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count)))
-        .slice(0, 6)
+        .slice(0, 10)
         .map(c => rgbToHex(c.r, c.g, c.b));
 
-      if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; }
+      // CRITICAL: Filter out near-black/white/gray from final candidates
+      colors = colors.filter(c => isUsableBrandColor(c));
+
+      if (!colors.length) {
+        resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme });
+        return;
+      }
 
       const primary = colors[0];
       const secondary = colors[1] || adjustColorBrightness(primary, -25);

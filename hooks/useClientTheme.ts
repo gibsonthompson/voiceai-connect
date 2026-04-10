@@ -46,19 +46,34 @@ function contrastDiff(hex1: string, hex2: string): number {
   return Math.abs(lum(hex1) - lum(hex2));
 }
 
+/**
+ * Safety net: reject near-black/white/gray as primary.
+ * This should already be caught in client-context.tsx, but
+ * this prevents broken themes if a color leaks through.
+ */
+function isUsablePrimary(hex: string): boolean {
+  if (!hex || hex.length < 7) return false;
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (luminance < 0.08 || luminance > 0.92) return false;
+  return true;
+}
+
 export function useClientTheme() {
   const { client, branding } = useClient();
 
   return useMemo(() => {
     const isDark = branding.websiteTheme === 'dark';
-    const primary = branding.primaryColor || '#3b82f6';
+    const rawPrimary = branding.primaryColor || '#3b82f6';
+    // Safety net: if primary is near-black/white, fall back to blue
+    const primary = isUsablePrimary(rawPrimary) ? rawPrimary : '#3b82f6';
     const overrides = client?.agency?.branding_overrides;
 
     // ========================================================================
     // SIDEBAR COLORS — derived from actual nav bg, NOT from isDark page mode.
-    // An agency can have website_theme='light' (light content area) but
-    // branding_overrides.nav_bg='#0d1666' (dark sidebar). Nav text must adapt
-    // to the sidebar's own background, not the page background.
     // ========================================================================
     const navBgResolved = (isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : null) || (isDark ? '#0a0a0a' : '#ffffff');
     const isNavDark = !isLightColor(navBgResolved);
@@ -68,7 +83,6 @@ export function useClientTheme() {
     const navBorder = isNavDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
     const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)';
 
-    // Active item: if primary has poor contrast against nav bg, use white
     const primaryContrastOk = contrastDiff(primary, navBgResolved) > 0.25;
     const navActiveColor = primaryContrastOk ? primary : '#ffffff';
     const navActiveItemBg = isNavDark
@@ -94,7 +108,6 @@ export function useClientTheme() {
       input: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff',
       inputBorder: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
 
-      // Nav — derived from actual nav bg
       navBg: navBgResolved,
       navText: navTextResolved,
       navTextMuted,

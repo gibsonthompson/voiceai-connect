@@ -225,30 +225,23 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   // LOGO BADGE — Reusable logo display with initial fallback
   // ============================================================================
   const LogoBadge = ({ size }: { size: 'sm' | 'md' | 'lg' }) => {
-    const dims = size === 'lg'
-      ? { box: 56, img: 40, font: 20, radius: '16px' }
+    // Logo sizes: lg = desktop sidebar header, md = mobile header, sm = compact
+    const logoStyle = size === 'lg'
+      ? { maxHeight: '80px', maxWidth: '180px' }
       : size === 'md'
-      ? { box: 44, img: 32, font: 16, radius: '12px' }
-      : { box: 36, img: 26, font: 14, radius: '10px' };
+      ? { maxHeight: '36px', maxWidth: '140px' }
+      : { maxHeight: '28px', maxWidth: '100px' };
+    const initialSize = size === 'lg' ? { box: 56, font: 22 } : size === 'md' ? { box: 40, font: 16 } : { box: 32, font: 14 };
+    const radius = size === 'lg' ? '16px' : '12px';
 
     if (displayLogo) {
       return (
-        <div
-          className="flex items-center justify-center overflow-hidden flex-shrink-0"
-          style={{
-            height: `${dims.box}px`,
-            width: `${dims.box}px`,
-            borderRadius: dims.radius,
-            backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
-          }}
-        >
-          <img
-            src={displayLogo}
-            alt=""
-            className="object-contain"
-            style={{ height: `${dims.img}px`, width: `${dims.img}px` }}
-          />
-        </div>
+        <img
+          src={displayLogo}
+          alt=""
+          className="object-contain flex-shrink-0"
+          style={{ ...logoStyle, width: 'auto', height: 'auto' }}
+        />
       );
     }
 
@@ -257,12 +250,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       <div
         className="flex items-center justify-center flex-shrink-0 font-bold"
         style={{
-          height: `${dims.box}px`,
-          width: `${dims.box}px`,
-          borderRadius: dims.radius,
+          height: `${initialSize.box}px`,
+          width: `${initialSize.box}px`,
+          borderRadius: radius,
           backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.08)' : `${theme.primary}12`,
           color: theme.isNavDark ? '#ffffff' : theme.primary,
-          fontSize: `${dims.font}px`,
+          fontSize: `${initialSize.font}px`,
         }}
       >
         {initial}
@@ -434,8 +427,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {/* Desktop: Logo only, centered, large */}
-        <div className="hidden lg:flex h-20 items-center justify-center border-b" style={{ borderColor: nav.border }}>
+        {/* Desktop: Logo, centered, large */}
+        <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}>
           <LogoBadge size="lg" />
         </div>
 
