@@ -159,6 +159,52 @@ function buildBranding(fetchedClient: any): Branding {
   };
 }
 
+// ============================================================================
+// AUTO-DERIVE NAV COLORS FROM PRIMARY
+// If client has their own primary_color, inject nav_bg, nav_text, button_text
+// into branding_overrides IN MEMORY so the theme hook picks them up.
+// Manual overrides are NOT replaced.
+// ============================================================================
+function darkenHex(hex: string, amount: number): string {
+  const c = hex.replace('#', '');
+  const r = Math.max(0, Math.round(parseInt(c.substring(0, 2), 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(parseInt(c.substring(2, 4), 16) * (1 - amount)));
+  const b = Math.max(0, Math.round(parseInt(c.substring(4, 6), 16) * (1 - amount)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function getContrastText(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#111827' : '#ffffff';
+}
+
+function injectDerivedOverrides(clientObj: any): any {
+  if (!clientObj) return clientObj;
+  const primary = clientObj.primary_color;
+  if (!isUsableBrandColor(primary)) return clientObj;
+
+  const existing = clientObj.branding_overrides || {};
+  const derivedNavBg = darkenHex(primary, 0.65);
+
+  clientObj.branding_overrides = {
+    nav_bg: existing.nav_bg || derivedNavBg,
+    nav_text: existing.nav_text || getContrastText(derivedNavBg),
+    button_text: existing.button_text || getContrastText(primary),
+    // Preserve any other manual overrides
+    ...(existing.page_bg ? { page_bg: existing.page_bg } : {}),
+    ...(existing.card_bg ? { card_bg: existing.card_bg } : {}),
+    ...(existing.card_border ? { card_border: existing.card_border } : {}),
+    ...(existing.theme ? { theme: existing.theme } : {}),
+    ...(existing.text_primary ? { text_primary: existing.text_primary } : {}),
+    ...(existing.text_muted ? { text_muted: existing.text_muted } : {}),
+  };
+
+  return clientObj;
+}
+
 interface ClientContextType {
   client: Client | null;
   user: User | null;
@@ -201,7 +247,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   const [client, setClient] = useState<Client | null>(() => {
     try {
       const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
-      return cached ? JSON.parse(cached) : null;
+      return cached ? injectDerivedOverrides(JSON.parse(cached)) : null;
     } catch { return null; }
   });
 
@@ -216,7 +262,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     try {
       const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
       if (cached) {
-        const parsed = JSON.parse(cached);
+        const parsed = injectDerivedOverrides(JSON.parse(cached));
         if (parsed.agency) return buildBranding(parsed);
       }
     } catch {}
@@ -253,7 +299,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      const fetchedClient = data.client;
+      const fetchedClient = injectDerivedOverrides(data.client);
       if (!fetchedClient) { router.push('/client/login'); return; }
 
       // Update state with fresh data
