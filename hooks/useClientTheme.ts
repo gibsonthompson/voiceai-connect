@@ -25,8 +25,7 @@ function isLightColor(hex: string): boolean {
   const r = parseInt(c.substring(0, 2), 16);
   const g = parseInt(c.substring(2, 4), 16);
   const b = parseInt(c.substring(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 }
 
 function isValidHex(val: string | undefined | null): val is string {
@@ -53,8 +52,16 @@ function isUsablePrimary(hex: string): boolean {
   const g = parseInt(c.substring(2, 4), 16);
   const b = parseInt(c.substring(4, 6), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (luminance < 0.08 || luminance > 0.92) return false;
-  return true;
+  return luminance >= 0.08 && luminance <= 0.92;
+}
+
+/** Darken a hex color by a fraction (0-1) */
+function darkenHex(hex: string, amount: number): string {
+  const c = hex.replace('#', '');
+  const r = Math.max(0, Math.round(parseInt(c.substring(0, 2), 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(parseInt(c.substring(2, 4), 16) * (1 - amount)));
+  const b = Math.max(0, Math.round(parseInt(c.substring(4, 6), 16) * (1 - amount)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
 export function useClientTheme() {
@@ -62,14 +69,20 @@ export function useClientTheme() {
 
   return useMemo(() => {
     // ========================================================================
-    // OVERRIDE CASCADE: client.branding_overrides → agency.branding_overrides → defaults
+    // OVERRIDE CASCADE:
+    //   client.branding_overrides → auto-derived from client primary → 
+    //   agency.branding_overrides → defaults
     // ========================================================================
     const clientOv = (client as any)?.branding_overrides as Record<string, string> | null;
     const agencyOv = client?.agency?.branding_overrides;
 
-    // Helper: resolve a key through the cascade
+    // Does this client have their OWN primary color set? (not inherited from agency)
+    const clientHasOwnPrimary = isValidHex(client?.primary_color) && isUsablePrimary(client!.primary_color!);
+
     const resolve = (key: string): string | null => {
+      // 1. Client manual override
       if (isValidHex(clientOv?.[key])) return clientOv![key];
+      // 2. Agency override
       if (isValidHex((agencyOv as any)?.[key])) return (agencyOv as any)[key];
       return null;
     };
@@ -84,12 +97,27 @@ export function useClientTheme() {
     const primary = isUsablePrimary(rawPrimary) ? rawPrimary : '#3b82f6';
 
     // ========================================================================
-    // SIDEBAR COLORS
+    // NAV COLORS
+    // If client has their own primary_color, auto-derive nav from it.
+    // This means picking a primary color immediately changes the nav —
+    // no separate branding_overrides save needed.
+    // Manual overrides (client.branding_overrides.nav_bg) still take priority.
     // ========================================================================
-    const navBgResolved = resolve('nav_bg') || (isDark ? '#0a0a0a' : '#ffffff');
+    const clientNavBgOverride = isValidHex(clientOv?.nav_bg) ? clientOv!.nav_bg : null;
+    const agencyNavBg = isValidHex((agencyOv as any)?.nav_bg) ? (agencyOv as any).nav_bg : null;
+
+    // Auto-derive: darken the client's primary by 70% for a deep nav
+    const autoDerivedNavBg = clientHasOwnPrimary ? darkenHex(primary, 0.65) : null;
+
+    const navBgResolved = clientNavBgOverride || autoDerivedNavBg || agencyNavBg || (isDark ? '#0a0a0a' : '#ffffff');
     const isNavDark = !isLightColor(navBgResolved);
 
-    const navTextResolved = resolve('nav_text') || (isNavDark ? '#fafaf9' : '#111827');
+    const clientNavTextOverride = isValidHex(clientOv?.nav_text) ? clientOv!.nav_text : null;
+    const agencyNavText = isValidHex((agencyOv as any)?.nav_text) ? (agencyOv as any).nav_text : null;
+    // Auto-derive nav text from nav bg
+    const autoDerivedNavText = clientHasOwnPrimary ? getContrastColor(navBgResolved) : null;
+
+    const navTextResolved = clientNavTextOverride || autoDerivedNavText || agencyNavText || (isNavDark ? '#fafaf9' : '#111827');
     const navTextMuted = isNavDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
     const navBorder = isNavDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
     const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)';
@@ -99,6 +127,10 @@ export function useClientTheme() {
     const navActiveItemBg = isNavDark
       ? (primaryContrastOk ? hexToRgba(primary, 0.15) : 'rgba(255,255,255,0.1)')
       : hexToRgba(primary, 0.15);
+
+    // Button text: client override → auto from primary → agency override → contrast default
+    const autoDerivedButtonText = clientHasOwnPrimary ? getContrastColor(primary) : null;
+    const buttonTextResolved = resolve('button_text') || autoDerivedButtonText || getContrastColor(primary);
 
     return {
       isDark,
@@ -127,7 +159,7 @@ export function useClientTheme() {
       navActiveColor,
       navActiveItemBg,
       isNavDark,
-      buttonText: resolve('button_text') || getContrastColor(primary),
+      buttonText: buttonTextResolved,
 
       error: isDark ? '#f87171' : '#dc2626',
       errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
@@ -149,5 +181,5 @@ export function useClientTheme() {
       infoText: isDark ? '#93c5fd' : '#1e40af',
       infoBorder: isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.2)',
     };
-  }, [branding, client?.agency?.branding_overrides, (client as any)?.branding_overrides]);
+  }, [branding, client?.agency?.branding_overrides, (client as any)?.branding_overrides, client?.primary_color]);
 }
