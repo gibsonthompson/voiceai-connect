@@ -264,36 +264,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ============================================================================
-  // LOADING SCREEN — clean, minimal, works for any theme
+  // FIRST LOAD ONLY — if no cached data exists at all, show minimal spinner.
+  // This almost never triggers because client-context initializes from cache.
   // ============================================================================
-  if (loading) {
-    let isDark = true;
-    try { const saved = localStorage.getItem('voiceai_ui_theme'); if (saved === 'light') isDark = false; } catch {}
-
-    const bg = isDark ? '#0C1120' : '#f8f9fb';
-    const spinnerColor = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)';
-    const spinnerAccent = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
-    const textColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-
+  if (loading && !client) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bg }}>
-        <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes ldSpin { to { transform: rotate(360deg); } }
-          @keyframes ldFade { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-          .ld-spinner {
-            width: 32px; height: 32px; border-radius: 50%;
-            border: 3px solid ${spinnerColor};
-            border-top-color: ${spinnerAccent};
-            animation: ldSpin 0.8s linear infinite;
-          }
-          .ld-text { animation: ldFade 2s ease-in-out infinite; }
-        `}} />
-        <div className="flex flex-col items-center gap-5">
-          <div className="ld-spinner" />
-          <p className="ld-text text-[13px] font-medium tracking-wide" style={{ color: textColor }}>
-            Loading...
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0C1120' }}>
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid rgba(255,255,255,0.15);border-top-color:rgba(255,255,255,0.6);animation:ldSpin .7s linear infinite}` }} />
+        <div className="ld-s" />
       </div>
     );
   }

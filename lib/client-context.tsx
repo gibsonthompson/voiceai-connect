@@ -4,9 +4,6 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useRouter } from 'next/navigation';
 import DynamicFavicon from '@/components/DynamicFavicon';
 
-// ============================================================================
-// COLOR VALIDATION — prevents near-black/white/gray from being used as primary
-// ============================================================================
 function isUsableBrandColor(hex: string | null | undefined): hex is string {
   if (!hex || hex.length < 7) return false;
   const c = hex.replace('#', '');
@@ -15,12 +12,12 @@ function isUsableBrandColor(hex: string | null | undefined): hex is string {
   const g = parseInt(c.substring(2, 4), 16);
   const b = parseInt(c.substring(4, 6), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (luminance < 0.12) return false; // near-black
-  if (luminance > 0.88) return false; // near-white
+  if (luminance < 0.12) return false;
+  if (luminance > 0.88) return false;
   const max = Math.max(r, g, b) / 255;
   const min = Math.min(r, g, b) / 255;
   const saturation = max === 0 ? 0 : (max - min) / max;
-  if (saturation < 0.15) return false; // gray
+  if (saturation < 0.15) return false;
   return true;
 }
 
@@ -105,28 +102,13 @@ interface Branding {
 }
 
 type ClientFeatureKey = 
-  | 'sms_notifications'
-  | 'email_summaries'
-  | 'custom_greeting'
-  | 'custom_voice'
-  | 'knowledge_base'
-  | 'business_hours'
-  | 'advanced_analytics'
-  | 'priority_support';
+  | 'sms_notifications' | 'email_summaries' | 'custom_greeting' | 'custom_voice'
+  | 'knowledge_base' | 'business_hours' | 'advanced_analytics' | 'priority_support';
 
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
-  starter: {
-    sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: false,
-    knowledge_base: true, business_hours: true, advanced_analytics: false, priority_support: false,
-  },
-  pro: {
-    sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: true,
-    knowledge_base: true, business_hours: true, advanced_analytics: true, priority_support: false,
-  },
-  growth: {
-    sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: true,
-    knowledge_base: true, business_hours: true, advanced_analytics: true, priority_support: true,
-  },
+  starter: { sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, advanced_analytics: false, priority_support: false },
+  pro: { sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, advanced_analytics: true, priority_support: false },
+  growth: { sms_notifications: true, email_summaries: true, custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, advanced_analytics: true, priority_support: true },
 };
 
 const CLIENT_FEATURE_LABELS: Record<ClientFeatureKey, { title: string; description: string }> = {
@@ -155,6 +137,26 @@ function getEffectivePlan(client: Client | null): string {
   if (!client) return 'starter';
   if (isTrialActive(client)) return 'growth';
   return client.plan_type || 'starter';
+}
+
+function buildBranding(fetchedClient: any): Branding {
+  const agency = fetchedClient.agency;
+  const clientPrimary = isUsableBrandColor(fetchedClient.primary_color) ? fetchedClient.primary_color : null;
+  const clientSecondary = isUsableBrandColor(fetchedClient.secondary_color) ? fetchedClient.secondary_color : null;
+  const clientAccent = isUsableBrandColor(fetchedClient.accent_color) ? fetchedClient.accent_color : null;
+
+  return {
+    primaryColor: clientPrimary || agency?.primary_color || '#3b82f6',
+    secondaryColor: clientSecondary || agency?.secondary_color || '#1e40af',
+    accentColor: clientAccent || agency?.accent_color || '#60a5fa',
+    agencyName: agency?.name || 'VoiceAI',
+    businessName: fetchedClient.business_name || '',
+    logoUrl: fetchedClient.logo_url || agency?.logo_url || null,
+    supportEmail: agency?.support_email || null,
+    supportPhone: agency?.support_phone || null,
+    websiteTheme: agency?.website_theme || 'dark',
+    clientHeaderMode: agency?.client_header_mode || 'agency_name',
+  };
 }
 
 interface ClientContextType {
@@ -191,10 +193,49 @@ export function useClient() {
 
 export function ClientProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [client, setClient] = useState<Client | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [branding, setBranding] = useState<Branding>(defaultBranding);
-  const [loading, setLoading] = useState(true);
+
+  // ========================================================================
+  // INSTANT LOAD: Use cached client data from localStorage immediately.
+  // No loading screen. Page renders with cached data, then silently refreshes.
+  // ========================================================================
+  const [client, setClient] = useState<Client | null>(() => {
+    try {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+
+  const [branding, setBranding] = useState<Branding>(() => {
+    try {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.agency) return buildBranding(parsed);
+      }
+    } catch {}
+    return defaultBranding;
+  });
+
+  // loading = true ONLY if we have no cached data at all (first ever visit)
+  const [loading, setLoading] = useState<boolean>(() => {
+    try {
+      const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('auth_token') : false;
+      const hasCached = typeof window !== 'undefined' ? !!localStorage.getItem('client') : false;
+      // If we have cached data, don't show loading
+      if (hasCached) return false;
+      // If no token at all, don't show loading (will redirect)
+      if (!hasToken) return false;
+      // Token but no cache = first load, show loading
+      return true;
+    } catch { return true; }
+  });
 
   const fetchClientData = async () => {
     try {
@@ -215,40 +256,20 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       const fetchedClient = data.client;
       if (!fetchedClient) { router.push('/client/login'); return; }
 
+      // Update state with fresh data
       setClient(fetchedClient);
+      setBranding(buildBranding(fetchedClient));
+      setLoading(false);
+
+      // Update localStorage cache for next visit
+      try { localStorage.setItem('client', JSON.stringify(fetchedClient)); } catch {}
+
       const storedUser = localStorage.getItem('user');
       if (storedUser) setUser(JSON.parse(storedUser));
-
-      const agency = fetchedClient.agency;
-
-      // ====================================================================
-      // BRANDING CASCADE: client → agency → fallback
-      // CRITICAL: Validate client colors with isUsableBrandColor().
-      // If client uploaded a logo with a dark background, the extraction
-      // may have picked #050505 (black) as primary. We skip it so the
-      // dashboard doesn't render invisible buttons/badges.
-      // ====================================================================
-      const clientPrimary = isUsableBrandColor(fetchedClient.primary_color) ? fetchedClient.primary_color : null;
-      const clientSecondary = isUsableBrandColor(fetchedClient.secondary_color) ? fetchedClient.secondary_color : null;
-      const clientAccent = isUsableBrandColor(fetchedClient.accent_color) ? fetchedClient.accent_color : null;
-
-      setBranding({
-        primaryColor: clientPrimary || agency?.primary_color || '#3b82f6',
-        secondaryColor: clientSecondary || agency?.secondary_color || '#1e40af',
-        accentColor: clientAccent || agency?.accent_color || '#60a5fa',
-        agencyName: agency?.name || 'VoiceAI',
-        businessName: fetchedClient.business_name || '',
-        logoUrl: fetchedClient.logo_url || agency?.logo_url || null,
-        supportEmail: agency?.support_email || null,
-        supportPhone: agency?.support_phone || null,
-        websiteTheme: agency?.website_theme || 'dark',
-        clientHeaderMode: agency?.client_header_mode || 'agency_name',
-      });
-
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching client data:', error);
-      router.push('/client/login');
+      // If we have cached data, keep showing it. Only redirect if no cache.
+      if (!client) router.push('/client/login');
     }
   };
 
