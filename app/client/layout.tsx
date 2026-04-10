@@ -264,71 +264,35 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ============================================================================
-  // LOADING SKELETON
+  // LOADING SCREEN — clean, minimal, works for any theme
   // ============================================================================
   if (loading) {
     let isDark = true;
     try { const saved = localStorage.getItem('voiceai_ui_theme'); if (saved === 'light') isDark = false; } catch {}
 
-    const sk = isDark
-      ? { bg: '#0a0a0a', card: '#111111', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
-      : { bg: '#f9fafb', card: '#ffffff', sidebar: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
+    const bg = isDark ? '#0C1120' : '#f8f9fb';
+    const spinnerColor = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.12)';
+    const spinnerAccent = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+    const textColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
 
     return (
-      <div className="min-h-screen flex" style={{ backgroundColor: sk.bg }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bg }}>
         <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-          .sk-p { animation: skPulse 1.8s ease-in-out infinite; }
-          .sk-p2 { animation: skPulse 1.8s ease-in-out 0.3s infinite; }
-          .sk-p3 { animation: skPulse 1.8s ease-in-out 0.6s infinite; }
+          @keyframes ldSpin { to { transform: rotate(360deg); } }
+          @keyframes ldFade { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+          .ld-spinner {
+            width: 32px; height: 32px; border-radius: 50%;
+            border: 3px solid ${spinnerColor};
+            border-top-color: ${spinnerAccent};
+            animation: ldSpin 0.8s linear infinite;
+          }
+          .ld-text { animation: ldFade 2s ease-in-out infinite; }
         `}} />
-        <div className="hidden lg:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
-          <div className="h-20 flex items-center justify-center" style={{ borderBottom: `1px solid ${sk.border}` }}>
-            <div className="w-14 h-14 rounded-2xl sk-p" style={{ backgroundColor: sk.pulse }} />
-          </div>
-          <div className="p-3 space-y-1">
-            {[1,2,3,4,5].map(i => (
-              <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 2 ? 'sk-p' : 'sk-p2'}`}>
-                <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
-                <div className="h-3.5 rounded-md" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2, width: `${60 + i * 12}px` }} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex-1 p-6 lg:p-8">
-          <div className="mb-6">
-            <div className="h-7 w-48 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} />
-            <div className="h-4 w-64 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
-            <div className="lg:col-span-3 rounded-2xl p-5 sk-p" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
-              <div className="h-3 w-28 rounded mb-4" style={{ backgroundColor: sk.pulse2 }} />
-              <div className="h-8 w-52 rounded-lg" style={{ backgroundColor: sk.pulse }} />
-            </div>
-            <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-1 gap-4">
-              {[1,2].map(i => (
-                <div key={i} className={`rounded-2xl p-5 ${i === 2 ? 'sk-p2' : 'sk-p'}`} style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
-                  <div className="h-3 w-16 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
-                  <div className="h-8 w-12 rounded-lg" style={{ backgroundColor: sk.pulse }} />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-2xl sk-p3" style={{ backgroundColor: sk.card, border: `1px solid ${sk.border}` }}>
-            <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${sk.border}` }}>
-              <div className="h-4 w-24 rounded" style={{ backgroundColor: sk.pulse }} />
-              <div className="h-3 w-14 rounded" style={{ backgroundColor: sk.pulse2 }} />
-            </div>
-            {[1,2,3].map(i => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: `1px solid ${sk.border}` }}>
-                <div className="w-10 h-10 rounded-xl" style={{ backgroundColor: sk.pulse2 }} />
-                <div className="flex-1">
-                  <div className="h-3.5 w-32 rounded mb-1.5" style={{ backgroundColor: sk.pulse }} />
-                  <div className="h-2.5 w-20 rounded" style={{ backgroundColor: sk.pulse2 }} />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-col items-center gap-5">
+          <div className="ld-spinner" />
+          <p className="ld-text text-[13px] font-medium tracking-wide" style={{ color: textColor }}>
+            Loading...
+          </p>
         </div>
       </div>
     );
