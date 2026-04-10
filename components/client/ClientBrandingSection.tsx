@@ -1,436 +1,584 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Upload, Palette, Loader2, Check, Sparkles, RotateCcw, Trash2, ChevronDown, Sun, Moon } from 'lucide-react';
-import { extractColorsFromImage } from '@/lib/colorExtraction';
+import { 
+  Palette, Upload, Loader2, ChevronDown, RotateCcw, Eye,
+  Sun, Moon, Check, Paintbrush
+} from 'lucide-react';
 import { useClient } from '@/lib/client-context';
+import { extractColorsFromImage } from '@/lib/colorExtraction';
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const c = hex.replace('#', '').trim();
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function isValidHex(val: string): boolean {
-  return /^#([0-9A-Fa-f]{6})$/.test(val);
+function isValidHex(val: string | null | undefined): val is string {
+  if (!val) return false;
+  return /^#[0-9A-Fa-f]{6}$/.test(val.trim());
 }
 
-function safeHex(val: string | undefined | null, fallback: string = '#888888'): string {
-  if (!val) return fallback;
-  if (/^#[0-9A-Fa-f]{6}$/.test(val)) return val;
-  if (/^#[0-9A-Fa-f]{3}$/.test(val)) {
-    const c = val.replace('#', '');
-    return `#${c[0]}${c[0]}${c[1]}${c[1]}${c[2]}${c[2]}`;
-  }
-  return fallback;
-}
-
-function darkenHex(hex: string, amount: number): string {
-  const c = hex.replace('#', '');
+function darken(hex: string, amount: number): string {
+  const c = hex.replace('#', '').trim();
   const r = Math.max(0, Math.round(parseInt(c.substring(0, 2), 16) * (1 - amount)));
   const g = Math.max(0, Math.round(parseInt(c.substring(2, 4), 16) * (1 - amount)));
   const b = Math.max(0, Math.round(parseInt(c.substring(4, 6), 16) * (1 - amount)));
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-function getContrastText(hex: string): string {
-  const c = hex.replace('#', '');
+function contrastText(hex: string): string {
+  const c = hex.replace('#', '').trim();
   const r = parseInt(c.substring(0, 2), 16);
   const g = parseInt(c.substring(2, 4), 16);
   const b = parseInt(c.substring(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#111827' : '#ffffff';
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#111827' : '#ffffff';
+}
+
+function isLight(hex: string): boolean {
+  const c = hex.replace('#', '').trim();
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
 }
 
 // ============================================================================
-// COLOR PICKER — uses local state so the native picker doesn't close on change
+// COLOR PICKER — uses local state so native picker doesn't close on every change
 // ============================================================================
-function ColorPicker({ label, value, onChange, fallback, description }: {
-  label: string; value: string; onChange: (v: string) => void; fallback: string; description?: string;
+
+function ColorPicker({ 
+  label, value, onChange, previewDerived, theme 
+}: { 
+  label: string; 
+  value: string; 
+  onChange: (hex: string) => void; 
+  previewDerived?: string;
+  theme: any;
 }) {
-  const [localColor, setLocalColor] = useState(value);
-  const [localText, setLocalText] = useState(value);
-  const textRef = useRef<HTMLInputElement>(null);
+  const [localColor, setLocalColor] = useState(value || '#3b82f6');
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync from parent when value changes externally
-  useEffect(() => { setLocalColor(value); setLocalText(value); }, [value]);
+  useEffect(() => {
+    if (isValidHex(value)) setLocalColor(value);
+  }, [value]);
 
-  const commitColor = useCallback((hex: string) => {
-    if (hex && isValidHex(hex)) {
-      onChange(hex);
-    } else if (!hex) {
-      onChange('');
-    }
-  }, [onChange]);
+  const handleChange = (hex: string) => {
+    setLocalColor(hex);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onChange(hex), 80);
+  };
+
+  const displayColor = isValidHex(localColor) ? localColor : '#3b82f6';
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-[11px] font-medium" style={{ color: 'var(--tm, #6b7280)' }}>{label}</p>
-        {value && <button onClick={() => { setLocalColor(''); setLocalText(''); onChange(''); }} className="text-[10px]" style={{ color: 'var(--tm4, #9ca3af)' }}>Clear</button>}
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div 
+          className="w-8 h-8 rounded-lg flex-shrink-0 border"
+          style={{ 
+            backgroundColor: displayColor,
+            borderColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+          }} 
+        />
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium" style={{ color: theme.text }}>{label}</p>
+          {previewDerived && !isValidHex(value) && (
+            <p className="text-[10px]" style={{ color: theme.textMuted4 }}>Auto: {previewDerived}</p>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <input
-          type="color"
-          value={safeHex(localColor, safeHex(fallback))}
+          type="text"
+          value={localColor}
           onChange={(e) => {
-            setLocalColor(e.target.value);
-            setLocalText(e.target.value);
+            const v = e.target.value;
+            setLocalColor(v);
+            if (isValidHex(v)) onChange(v);
           }}
-          onBlur={() => commitColor(localColor)}
-          // Also commit on change for browsers that only fire onChange on close
-          onInput={(e) => {
-            const val = (e.target as HTMLInputElement).value;
-            setLocalColor(val);
-            setLocalText(val);
+          className="w-[80px] px-2 py-1 text-[11px] font-mono rounded-lg text-center focus:outline-none"
+          style={{
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+            border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+            color: theme.text,
           }}
-          onPointerUp={() => setTimeout(() => commitColor(localColor), 50)}
-          className="w-9 h-9 rounded-lg border cursor-pointer flex-shrink-0"
-          style={{ borderColor: 'var(--border, #e5e7eb)' }}
         />
         <input
-          ref={textRef}
-          type="text"
-          value={localText}
-          onChange={(e) => setLocalText(e.target.value)}
-          onBlur={() => commitColor(localText)}
-          onKeyDown={(e) => { if (e.key === 'Enter') commitColor(localText); }}
-          placeholder={fallback}
-          className="flex-1 min-w-0 rounded-lg border px-2 py-1.5 text-[11px] font-mono focus:outline-none"
-          style={{ borderColor: 'var(--iborder, #e5e7eb)', backgroundColor: 'var(--input, #fff)', color: 'var(--text, #111)' }}
+          type="color"
+          value={displayColor}
+          onChange={(e) => handleChange(e.target.value)}
+          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0"
+          style={{ backgroundColor: 'transparent' }}
         />
       </div>
-      {description && <p className="text-[9px] mt-1" style={{ color: 'var(--tm4, #9ca3af)' }}>{description}</p>}
     </div>
   );
 }
 
-interface BrandingOverrides {
-  nav_bg?: string; nav_text?: string; button_text?: string;
-  page_bg?: string; card_bg?: string; card_border?: string;
-  theme?: 'light' | 'dark';
-}
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
-interface ClientBrandingSectionProps {
+interface Props {
   clientId: string;
   theme: any;
 }
 
-export default function ClientBrandingSection({ clientId, theme }: ClientBrandingSectionProps) {
+export default function ClientBrandingSection({ clientId, theme }: Props) {
   const { client, branding, refreshClient } = useClient();
 
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('');
-  const [secondaryColor, setSecondaryColor] = useState('');
-  const [accentColor, setAccentColor] = useState('');
+  // ── State: brand colors ───────────────────────────────────────────
+  const [logoUrl, setLogoUrl] = useState(client?.logo_url || '');
+  const [primaryColor, setPrimaryColor] = useState(client?.primary_color || branding.primaryColor);
+  const [secondaryColor, setSecondaryColor] = useState(client?.secondary_color || branding.secondaryColor);
+  const [accentColor, setAccentColor] = useState(client?.accent_color || branding.accentColor);
 
-  const [navBg, setNavBg] = useState('');
-  const [navText, setNavText] = useState('');
-  const [buttonText, setButtonText] = useState('');
-  const [pageBg, setPageBg] = useState('');
-  const [cardBg, setCardBg] = useState('');
-  const [cardBorder, setCardBorder] = useState('');
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | ''>('');
+  // ── State: advanced overrides (flat columns) ──────────────────────
+  const [navBg, setNavBg] = useState(client?.nav_bg || '');
+  const [navText, setNavText] = useState(client?.nav_text || '');
+  const [buttonText, setButtonText] = useState(client?.button_text || '');
+  const [pageBg, setPageBg] = useState(client?.page_bg || '');
+  const [cardBg, setCardBg] = useState(client?.card_bg || '');
+  const [cardBorder, setCardBorder] = useState(client?.card_border || '');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | ''>(
+    (client?.theme_mode as 'light' | 'dark') || ''
+  );
 
-  const [extracting, setExtracting] = useState(false);
+  // ── UI state ──────────────────────────────────────────────────────
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [hasChanges, setHasChanges] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // CSS variables for child components
-  const cssVars = {
-    '--tm': theme.textMuted, '--tm4': theme.textMuted4, '--border': theme.border,
-    '--iborder': theme.inputBorder, '--input': theme.input, '--text': theme.text,
-  } as React.CSSProperties;
-
+  // ── Sync from client when data refreshes ──────────────────────────
   useEffect(() => {
     if (client) {
-      setPrimaryColor(client.primary_color || '');
-      setSecondaryColor(client.secondary_color || '');
-      setAccentColor(client.accent_color || '');
-      const ov = (client as any).branding_overrides as BrandingOverrides | null;
-      if (ov) {
-        setNavBg(ov.nav_bg || '');
-        setNavText(ov.nav_text || '');
-        setButtonText(ov.button_text || '');
-        setPageBg(ov.page_bg || '');
-        setCardBg(ov.card_bg || '');
-        setCardBorder(ov.card_border || '');
-        setThemeMode(ov.theme || '');
-        if (ov.nav_bg || ov.page_bg || ov.card_bg) setAdvancedOpen(true);
-      }
+      setLogoUrl(client.logo_url || '');
+      setPrimaryColor(client.primary_color || branding.primaryColor);
+      setSecondaryColor(client.secondary_color || branding.secondaryColor);
+      setAccentColor(client.accent_color || branding.accentColor);
+      setNavBg(client.nav_bg || '');
+      setNavText(client.nav_text || '');
+      setButtonText(client.button_text || '');
+      setPageBg(client.page_bg || '');
+      setCardBg(client.card_bg || '');
+      setCardBorder(client.card_border || '');
+      setThemeMode((client.theme_mode as 'light' | 'dark') || '');
     }
-  }, [client]);
+  }, [client?.id]);
 
-  // ========================================================================
-  // AUTO-DERIVE: When primary changes, auto-populate nav/button/page colors
-  // Only auto-fill if the field is currently empty (user hasn't manually set it)
-  // ========================================================================
-  const prevPrimaryRef = useRef('');
-  useEffect(() => {
-    if (!primaryColor || !isValidHex(primaryColor)) return;
-    if (prevPrimaryRef.current === primaryColor) return;
-    const isFirstSet = !prevPrimaryRef.current;
-    prevPrimaryRef.current = primaryColor;
+  // ── Derived preview values (what the theme hook would compute) ────
+  const previewPrimary = isValidHex(primaryColor) ? primaryColor : '#3b82f6';
+  const derivedNavBg = darken(previewPrimary, 0.65);
+  const derivedNavText = contrastText(derivedNavBg);
+  const derivedButtonText = contrastText(previewPrimary);
+  const effectiveNavBg = isValidHex(navBg) ? navBg : derivedNavBg;
+  const effectiveNavText = isValidHex(navText) ? navText : derivedNavText;
 
-    // Only auto-derive if fields are empty (not manually overridden)
-    if (!navBg || isFirstSet) setNavBg(darkenHex(primaryColor, 0.7));
-    if (!navText || isFirstSet) setNavText(getContrastText(darkenHex(primaryColor, 0.7)));
-    if (!buttonText || isFirstSet) setButtonText(getContrastText(primaryColor));
-  }, [primaryColor]);
-
-  useEffect(() => {
-    if (!client) return;
-    const ov = (client as any).branding_overrides as BrandingOverrides | null;
-    const changed =
-      logoPreview !== null ||
-      primaryColor !== (client.primary_color || '') ||
-      secondaryColor !== (client.secondary_color || '') ||
-      accentColor !== (client.accent_color || '') ||
-      navBg !== (ov?.nav_bg || '') ||
-      navText !== (ov?.nav_text || '') ||
-      buttonText !== (ov?.button_text || '') ||
-      pageBg !== (ov?.page_bg || '') ||
-      cardBg !== (ov?.card_bg || '') ||
-      cardBorder !== (ov?.card_border || '') ||
-      themeMode !== (ov?.theme || '');
-    setHasChanges(changed);
-  }, [logoPreview, primaryColor, secondaryColor, accentColor, navBg, navText, buttonText, pageBg, cardBg, cardBorder, themeMode, client]);
-
+  // ── Logo upload ───────────────────────────────────────────────────
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setMessage('Please upload an image file'); return; }
-    if (file.size > 5 * 1024 * 1024) { setMessage('Image must be under 5MB'); return; }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const dataUrl = reader.result as string;
-      setLogoPreview(dataUrl);
-      setExtracting(true);
-      try {
-        const result = await extractColorsFromImage(dataUrl);
-        prevPrimaryRef.current = ''; // Reset so auto-derive triggers
-        setPrimaryColor(result.primary);
-        setSecondaryColor(result.secondary);
-        setAccentColor(result.accent);
-        setMessage('');
-      } catch (err) { console.error('Color extraction failed:', err); }
-      finally { setExtracting(false); }
-    };
-    reader.readAsDataURL(file);
-  };
 
-  const handleRemoveLogo = () => { setLogoPreview('__remove__'); setMessage(''); };
-  const handleClearAll = () => {
-    setPrimaryColor(''); setSecondaryColor(''); setAccentColor('');
-    setNavBg(''); setNavText(''); setButtonText('');
-    setPageBg(''); setCardBg(''); setCardBorder(''); setThemeMode('');
-    prevPrimaryRef.current = '';
-  };
+    if (!file.type.startsWith('image/')) {
+      setMessage('❌ Please upload an image file');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
 
-  const handleSave = async () => {
-    setSaving(true); setMessage('');
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('❌ Image must be under 5MB');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    setUploading(true);
     try {
-      const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+      
+      const formData = new FormData();
+      formData.append('logo', file);
+      formData.append('clientId', clientId);
 
-      const body: Record<string, any> = {};
-      if (logoPreview === '__remove__') body.logo_url = null;
-      else if (logoPreview) body.logo_url = logoPreview;
+      const response = await fetch(`${backendUrl}/api/upload/logo`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
 
-      body.primary_color = primaryColor || null;
-      body.secondary_color = secondaryColor || null;
-      body.accent_color = accentColor || null;
+      if (!response.ok) throw new Error('Upload failed');
 
-      const overrides: BrandingOverrides = {};
-      if (navBg) overrides.nav_bg = navBg;
-      if (navText) overrides.nav_text = navText;
-      if (buttonText) overrides.button_text = buttonText;
-      if (pageBg) overrides.page_bg = pageBg;
-      if (cardBg) overrides.card_bg = cardBg;
-      if (cardBorder) overrides.card_border = cardBorder;
-      if (themeMode) overrides.theme = themeMode;
-      body.branding_overrides = Object.keys(overrides).length > 0 ? overrides : null;
+      const data = await response.json();
+      if (data.url) {
+        setLogoUrl(data.url);
+
+        // Auto-extract brand colors from logo
+        try {
+          const colors = await extractColorsFromImage(data.url);
+          if (colors?.primary && isValidHex(colors.primary)) {
+            setPrimaryColor(colors.primary);
+            if (colors.secondary && isValidHex(colors.secondary)) setSecondaryColor(colors.secondary);
+            if (colors.accent && isValidHex(colors.accent)) setAccentColor(colors.accent);
+            setMessage('✅ Logo uploaded! Colors extracted automatically');
+          } else {
+            setMessage('✅ Logo uploaded');
+          }
+        } catch {
+          setMessage('✅ Logo uploaded');
+        }
+      }
+    } catch (err) {
+      setMessage('❌ Failed to upload logo');
+    } finally {
+      setUploading(false);
+      setTimeout(() => setMessage(''), 4000);
+    }
+  };
+
+  // ── Save all branding ─────────────────────────────────────────────
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage('');
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+
+      const body: Record<string, any> = {
+        logo_url: logoUrl || null,
+        primary_color: isValidHex(primaryColor) ? primaryColor.trim() : null,
+        secondary_color: isValidHex(secondaryColor) ? secondaryColor.trim() : null,
+        accent_color: isValidHex(accentColor) ? accentColor.trim() : null,
+        nav_bg: isValidHex(navBg) ? navBg.trim() : null,
+        nav_text: isValidHex(navText) ? navText.trim() : null,
+        button_text: isValidHex(buttonText) ? buttonText.trim() : null,
+        page_bg: isValidHex(pageBg) ? pageBg.trim() : null,
+        card_bg: isValidHex(cardBg) ? cardBg.trim() : null,
+        card_border: isValidHex(cardBorder) ? cardBorder.trim() : null,
+        theme_mode: themeMode || null,
+      };
 
       const response = await fetch(`${backendUrl}/api/client/${clientId}/branding`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(body),
       });
 
       const data = await response.json();
+
       if (data.success) {
-        setMessage('Branding updated! Reloading...');
-        setLogoPreview(null);
-        setTimeout(() => window.location.reload(), 600);
+        setMessage('✅ Branding saved!');
+        // Update localStorage cache so theme updates immediately
+        try {
+          const cached = localStorage.getItem('client');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            Object.assign(parsed, data.client || body);
+            localStorage.setItem('client', JSON.stringify(parsed));
+          }
+        } catch {}
+        // Refresh context so theme hook recalculates
+        await refreshClient();
       } else {
-        setMessage(data.error || 'Failed to save branding');
+        setMessage(`❌ ${data.error || 'Failed to save'}`);
       }
-    } catch (error) {
-      console.error('Save branding error:', error);
-      setMessage('Error saving branding');
-    } finally { setSaving(false); }
+    } catch (err) {
+      setMessage('❌ Error saving branding');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(''), 4000);
+    }
   };
 
-  const currentLogo = logoPreview === '__remove__' ? null : (logoPreview || client?.logo_url || null);
-  const hasLogo = !!currentLogo;
-  const agencyPrimary = client?.agency?.primary_color || '#3b82f6';
-  const effectivePrimary = safeHex(primaryColor, agencyPrimary);
+  // ── Reset advanced to auto-derived ────────────────────────────────
+  const handleResetAdvanced = () => {
+    setNavBg('');
+    setNavText('');
+    setButtonText('');
+    setPageBg('');
+    setCardBg('');
+    setCardBorder('');
+    setThemeMode('');
+  };
+
+  const hasAdvancedOverrides = navBg || navText || buttonText || pageBg || cardBg || cardBorder || themeMode;
+
+  // ── Glass card style ──────────────────────────────────────────────
+  const glass = {
+    backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
+    border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+    backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)',
+    WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)',
+  };
 
   return (
-    <section className="mb-4 sm:mb-6" style={cssVars}>
+    <section className="mb-4 sm:mb-6">
       <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-        <Palette className="w-4 h-4" style={{ color: theme.primary }} /> Branding
+        <Palette className="w-4 h-4" style={{ color: theme.primary }} />
+        Branding
       </h2>
 
-      <div className="rounded-xl border p-4 sm:p-5 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+      <div className="rounded-xl border p-4 sm:p-5 shadow-sm space-y-5" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+
+        {/* Status message */}
         {message && (
-          <div className="mb-4 p-3 rounded-lg text-sm font-medium text-center"
-            style={message.includes('updated') || message.includes('Reloading')
+          <div
+            className="p-3 rounded-xl text-center font-medium text-sm"
+            style={message.includes('✅')
               ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
               : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }
-            }>{message}</div>
+            }
+          >
+            {message}
+          </div>
         )}
 
-        {/* LOGO */}
-        <div className="mb-5">
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Logo</label>
+        {/* ── Logo Upload ──────────────────────────────────────────── */}
+        <div>
+          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-2" style={{ color: theme.textMuted }}>
+            Logo
+          </label>
           <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center overflow-hidden flex-shrink-0"
-              style={{ width: '72px', height: '72px', borderRadius: '16px', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', border: `2px dashed ${hasLogo ? 'transparent' : theme.border}` }}>
-              {hasLogo ? <img src={currentLogo!} alt="Logo" className="w-full h-full object-contain p-2" /> : <Upload className="w-6 h-6" style={{ color: theme.textMuted4 }} />}
+            {logoUrl ? (
+              <div
+                className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden"
+                style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', border: `1px solid ${theme.border}` }}
+              >
+                <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+              </div>
+            ) : (
+              <div
+                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', border: `1px dashed ${theme.border}` }}
+              >
+                <Upload className="w-5 h-5" style={{ color: theme.textMuted4 }} />
+              </div>
+            )}
+            <div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+              >
+                {uploading ? <><Loader2 className="w-3 h-3 animate-spin inline mr-1" />Uploading...</> : 'Upload Logo'}
+              </button>
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>
+                PNG, JPG, or SVG · Max 5MB · Colors auto-extracted
+              </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="cursor-pointer">
-                <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                <span className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80"
-                  style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08), color: theme.primary }}>
-                  <Upload className="w-3.5 h-3.5" /> {hasLogo ? 'Change' : 'Upload'}
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </div>
+        </div>
+
+        {/* ── Brand Colors ─────────────────────────────────────────── */}
+        <div>
+          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-3" style={{ color: theme.textMuted }}>
+            Brand Colors
+          </label>
+          <div className="space-y-3">
+            <ColorPicker label="Primary Color" value={primaryColor} onChange={setPrimaryColor} theme={theme} />
+            <ColorPicker label="Secondary Color" value={secondaryColor} onChange={setSecondaryColor} theme={theme} />
+            <ColorPicker label="Accent Color" value={accentColor} onChange={setAccentColor} theme={theme} />
+          </div>
+          <p className="text-[10px] mt-2" style={{ color: theme.textMuted4 }}>
+            Primary color auto-derives your nav background, nav text, and button text.
+          </p>
+        </div>
+
+        {/* ── Advanced Appearance ───────────────────────────────────── */}
+        <div>
+          <button
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            className="flex items-center justify-between w-full group"
+          >
+            <div className="flex items-center gap-2">
+              <Paintbrush className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
+              <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                Advanced Appearance
+              </span>
+              {hasAdvancedOverrides && (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>
+                  CUSTOM
                 </span>
-              </label>
-              {hasLogo && logoPreview !== '__remove__' && (
-                <button onClick={handleRemoveLogo} className="inline-flex items-center gap-1.5 text-xs transition hover:opacity-80" style={{ color: theme.error }}>
-                  <Trash2 className="w-3 h-3" /> Remove
-                </button>
               )}
             </div>
-            {extracting && <div className="flex items-center gap-2 text-xs" style={{ color: theme.primary }}><Loader2 className="w-3.5 h-3.5 animate-spin" /> Extracting...</div>}
-          </div>
-        </div>
-
-        {/* BRAND COLORS — primary auto-derives nav/button colors */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Brand Colors</label>
-            {(primaryColor || secondaryColor || accentColor) && (
-              <button onClick={handleClearAll} className="inline-flex items-center gap-1 text-[10px] font-medium transition hover:opacity-80" style={{ color: theme.textMuted4 }}>
-                <RotateCcw className="w-3 h-3" /> Reset all
-              </button>
-            )}
-          </div>
-          <p className="text-[10px] mb-3" style={{ color: theme.textMuted4 }}>Primary color automatically sets your nav and button colors. Adjust individually below if needed.</p>
-          <div className="grid grid-cols-3 gap-3">
-            <ColorPicker label="Primary" value={primaryColor} onChange={setPrimaryColor} fallback={agencyPrimary} description="Buttons, links, accents" />
-            <ColorPicker label="Secondary" value={secondaryColor} onChange={setSecondaryColor} fallback={client?.agency?.secondary_color || '#1e40af'} />
-            <ColorPicker label="Accent" value={accentColor} onChange={setAccentColor} fallback={client?.agency?.accent_color || '#60a5fa'} />
-          </div>
-        </div>
-
-        {/* APPEARANCE OVERRIDES */}
-        <div className="mb-5">
-          <button onClick={() => setAdvancedOpen(!advancedOpen)} className="flex items-center justify-between w-full py-2 text-left"
-            style={{ borderTop: `1px solid ${theme.border}`, marginTop: '4px', paddingTop: '16px' }}>
-            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Appearance Details</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} style={{ color: theme.textMuted4 }} />
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}
+              style={{ color: theme.textMuted4 }}
+            />
           </button>
 
           {advancedOpen && (
-            <div className="mt-4 space-y-5">
-              {/* Theme */}
+            <div className="mt-4 space-y-4">
+              {/* Theme Mode */}
               <div>
-                <p className="text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Theme Mode</p>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Theme Mode</label>
                 <div className="flex gap-2">
-                  {([
-                    { value: '' as const, label: 'Agency Default', icon: null },
-                    { value: 'dark' as const, label: 'Dark', icon: Moon },
-                    { value: 'light' as const, label: 'Light', icon: Sun },
-                  ]).map(opt => (
-                    <button key={opt.value} onClick={() => setThemeMode(opt.value)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all"
+                  {[
+                    { value: '', label: 'Auto', icon: null },
+                    { value: 'light', label: 'Light', icon: Sun },
+                    { value: 'dark', label: 'Dark', icon: Moon },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setThemeMode(opt.value as any)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition"
                       style={{
-                        backgroundColor: themeMode === opt.value ? hexToRgba(theme.primary, 0.12) : theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+                        backgroundColor: themeMode === opt.value
+                          ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08)
+                          : theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
                         color: themeMode === opt.value ? theme.primary : theme.textMuted,
                         border: `1px solid ${themeMode === opt.value ? hexToRgba(theme.primary, 0.3) : 'transparent'}`,
-                      }}>
-                      {opt.icon && <opt.icon className="w-3.5 h-3.5" />} {opt.label}
+                      }}
+                    >
+                      {opt.icon && <opt.icon className="w-3 h-3" />}
+                      {opt.label}
                     </button>
                   ))}
                 </div>
+                <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>Auto inherits from agency setting</p>
               </div>
 
-              {/* Nav */}
+              {/* Nav Colors */}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Navigation</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <ColorPicker label="Nav Background" value={navBg} onChange={setNavBg} fallback={darkenHex(effectivePrimary, 0.7)} description="Auto-derived from primary" />
-                  <ColorPicker label="Nav Text" value={navText} onChange={setNavText} fallback="#ffffff" description="Menu items" />
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Navigation</label>
+                <div className="space-y-2.5">
+                  <ColorPicker label="Nav Background" value={navBg} onChange={setNavBg} previewDerived={derivedNavBg} theme={theme} />
+                  <ColorPicker label="Nav Text" value={navText} onChange={setNavText} previewDerived={derivedNavText} theme={theme} />
                 </div>
               </div>
 
-              {/* Buttons */}
+              {/* Button */}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Buttons</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <ColorPicker label="Button Text" value={buttonText} onChange={setButtonText} fallback={getContrastText(effectivePrimary)} description="Auto-derived from primary" />
-                  <div className="flex items-end pb-1">
-                    <p className="text-[10px] leading-relaxed" style={{ color: theme.textMuted4 }}>Button background = your Primary color</p>
-                  </div>
-                </div>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Buttons</label>
+                <ColorPicker label="Button Text" value={buttonText} onChange={setButtonText} previewDerived={derivedButtonText} theme={theme} />
               </div>
 
               {/* Page */}
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Page & Cards</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <ColorPicker label="Page Background" value={pageBg} onChange={setPageBg} fallback={theme.isDark ? '#0a0a0a' : '#f9fafb'} />
-                  <ColorPicker label="Card Background" value={cardBg} onChange={setCardBg} fallback={theme.isDark ? '#111111' : '#ffffff'} />
-                  <ColorPicker label="Card Border" value={cardBorder} onChange={setCardBorder} fallback={theme.isDark ? '#1a1a1a' : '#e5e7eb'} />
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Page</label>
+                <div className="space-y-2.5">
+                  <ColorPicker label="Page Background" value={pageBg} onChange={setPageBg} theme={theme} />
+                  <ColorPicker label="Card Background" value={cardBg} onChange={setCardBg} theme={theme} />
+                  <ColorPicker label="Card Border" value={cardBorder} onChange={setCardBorder} theme={theme} />
                 </div>
               </div>
 
-              {/* Preview */}
-              <div className="rounded-xl p-4" style={{ backgroundColor: safeHex(pageBg, theme.isDark ? '#0a0a0a' : '#f9fafb'), border: `1px solid ${safeHex(cardBorder, '#1a1a1a')}` }}>
-                <p className="text-[10px] uppercase tracking-wider font-medium mb-3" style={{ color: theme.textMuted4 }}>Preview</p>
-                <div className="flex gap-2 mb-3">
-                  <div className="rounded-lg p-2.5 flex-1" style={{ backgroundColor: safeHex(navBg, darkenHex(effectivePrimary, 0.7)) }}>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: effectivePrimary }} />
-                      <span className="text-[10px] font-semibold" style={{ color: safeHex(navText, '#ffffff') }}>Dashboard</span>
-                    </div>
-                    <span className="text-[9px] block mt-1 opacity-50" style={{ color: safeHex(navText, '#ffffff') }}>Calls</span>
+              {/* Reset */}
+              {hasAdvancedOverrides && (
+                <button
+                  onClick={handleResetAdvanced}
+                  className="flex items-center gap-1.5 text-[11px] font-medium"
+                  style={{ color: theme.textMuted4 }}
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset to auto-derived
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Live Preview ─────────────────────────────────────────── */}
+        <div>
+          <button
+            onClick={() => setPreviewOpen(!previewOpen)}
+            className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider"
+            style={{ color: theme.textMuted }}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            Live Preview
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${previewOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {previewOpen && (
+            <div className="mt-3 rounded-xl overflow-hidden border" style={{ borderColor: theme.border }}>
+              {/* Preview Nav */}
+              <div
+                className="flex items-center gap-3 px-4 py-3"
+                style={{ backgroundColor: effectiveNavBg }}
+              >
+                {logoUrl ? (
+                  <img src={logoUrl} alt="" className="h-7 w-7 rounded-lg object-contain" />
+                ) : (
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: effectiveNavText }}
+                  >
+                    {(client?.business_name || 'B').charAt(0)}
                   </div>
-                  <div className="rounded-lg p-2.5 flex-[2]" style={{ backgroundColor: safeHex(cardBg, '#111111'), border: `1px solid ${safeHex(cardBorder, '#1a1a1a')}` }}>
-                    <span className="text-[10px]" style={{ color: theme.isDark ? '#fafaf9' : '#111827' }}>Card content</span>
+                )}
+                <span className="text-sm font-medium" style={{ color: effectiveNavText }}>
+                  {client?.business_name || 'Your Business'}
+                </span>
+              </div>
+              {/* Preview nav items */}
+              <div className="px-3 py-2" style={{ backgroundColor: effectiveNavBg }}>
+                {['Dashboard', 'Calls', 'Settings'].map((item, i) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium mb-0.5"
+                    style={{
+                      backgroundColor: i === 0 ? hexToRgba(previewPrimary, 0.15) : 'transparent',
+                      color: i === 0 ? previewPrimary : (isLight(effectiveNavBg) ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'),
+                    }}
+                  >
+                    {item}
                   </div>
+                ))}
+              </div>
+              {/* Preview content area */}
+              <div
+                className="p-4 space-y-2"
+                style={{
+                  backgroundColor: isValidHex(pageBg) ? pageBg : (themeMode === 'light' ? '#f9fafb' : themeMode === 'dark' ? '#0a0a0a' : theme.bg),
+                }}
+              >
+                <div
+                  className="rounded-xl p-3"
+                  style={{
+                    backgroundColor: isValidHex(cardBg) ? cardBg : (theme.isDark ? '#111111' : '#ffffff'),
+                    border: `1px solid ${isValidHex(cardBorder) ? cardBorder : theme.border}`,
+                  }}
+                >
+                  <p className="text-[11px] font-medium" style={{ color: theme.text }}>Sample Card</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>This shows your card and page colors</p>
                 </div>
-                <div className="flex gap-2">
-                  <div className="rounded-lg px-3 py-1.5 text-[10px] font-semibold"
-                    style={{ backgroundColor: effectivePrimary, color: safeHex(buttonText, getContrastText(effectivePrimary)) }}>
-                    Primary Button
-                  </div>
-                </div>
+                <button
+                  className="w-full py-2 rounded-lg text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: previewPrimary,
+                    color: isValidHex(buttonText) ? buttonText : derivedButtonText,
+                  }}
+                >
+                  Sample Button
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* SAVE */}
-        <button onClick={handleSave} disabled={saving || !hasChanges}
-          className="w-full py-2.5 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>
-          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : hasChanges ? <><Check className="w-4 h-4" /> Save Branding</> : 'No Changes'}
+        {/* ── Save Button ──────────────────────────────────────────── */}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+          style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+        >
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Check className="w-4 h-4" /> Save Branding</>}
         </button>
       </div>
     </section>
