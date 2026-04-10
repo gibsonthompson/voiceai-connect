@@ -46,11 +46,6 @@ function contrastDiff(hex1: string, hex2: string): number {
   return Math.abs(lum(hex1) - lum(hex2));
 }
 
-/**
- * Safety net: reject near-black/white/gray as primary.
- * This should already be caught in client-context.tsx, but
- * this prevents broken themes if a color leaks through.
- */
 function isUsablePrimary(hex: string): boolean {
   if (!hex || hex.length < 7) return false;
   const c = hex.replace('#', '');
@@ -66,19 +61,35 @@ export function useClientTheme() {
   const { client, branding } = useClient();
 
   return useMemo(() => {
-    const isDark = branding.websiteTheme === 'dark';
+    // ========================================================================
+    // OVERRIDE CASCADE: client.branding_overrides → agency.branding_overrides → defaults
+    // ========================================================================
+    const clientOv = (client as any)?.branding_overrides as Record<string, string> | null;
+    const agencyOv = client?.agency?.branding_overrides;
+
+    // Helper: resolve a key through the cascade
+    const resolve = (key: string): string | null => {
+      if (isValidHex(clientOv?.[key])) return clientOv![key];
+      if (isValidHex((agencyOv as any)?.[key])) return (agencyOv as any)[key];
+      return null;
+    };
+
+    // Theme: client override → agency → default
+    const themeOverride = clientOv?.theme as string | undefined;
+    const isDark = themeOverride
+      ? themeOverride === 'dark'
+      : branding.websiteTheme === 'dark';
+
     const rawPrimary = branding.primaryColor || '#3b82f6';
-    // Safety net: if primary is near-black/white, fall back to blue
     const primary = isUsablePrimary(rawPrimary) ? rawPrimary : '#3b82f6';
-    const overrides = client?.agency?.branding_overrides;
 
     // ========================================================================
-    // SIDEBAR COLORS — derived from actual nav bg, NOT from isDark page mode.
+    // SIDEBAR COLORS
     // ========================================================================
-    const navBgResolved = (isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : null) || (isDark ? '#0a0a0a' : '#ffffff');
+    const navBgResolved = resolve('nav_bg') || (isDark ? '#0a0a0a' : '#ffffff');
     const isNavDark = !isLightColor(navBgResolved);
 
-    const navTextResolved = (isValidHex(overrides?.nav_text) ? overrides!.nav_text : null) || (isNavDark ? '#fafaf9' : '#111827');
+    const navTextResolved = resolve('nav_text') || (isNavDark ? '#fafaf9' : '#111827');
     const navTextMuted = isNavDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
     const navBorder = isNavDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
     const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)';
@@ -97,13 +108,13 @@ export function useClientTheme() {
       primary20: hexToRgba(primary, 0.2),
       primary30: hexToRgba(primary, 0.3),
 
-      bg: overrides?.page_bg || (isDark ? '#0a0a0a' : '#f9fafb'),
-      text: overrides?.text_primary || (isDark ? '#fafaf9' : '#111827'),
-      textMuted: overrides?.text_muted || (isDark ? 'rgba(250,250,249,0.7)' : '#6b7280'),
+      bg: resolve('page_bg') || (isDark ? '#0a0a0a' : '#f9fafb'),
+      text: resolve('text_primary') || (isDark ? '#fafaf9' : '#111827'),
+      textMuted: resolve('text_muted') || (isDark ? 'rgba(250,250,249,0.7)' : '#6b7280'),
       textMuted4: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af',
-      border: overrides?.card_border || (isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'),
+      border: resolve('card_border') || (isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'),
       borderSubtle: isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
-      card: overrides?.card_bg || (isDark ? '#111111' : '#ffffff'),
+      card: resolve('card_bg') || (isDark ? '#111111' : '#ffffff'),
       hover: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
       input: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff',
       inputBorder: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
@@ -116,7 +127,7 @@ export function useClientTheme() {
       navActiveColor,
       navActiveItemBg,
       isNavDark,
-      buttonText: overrides?.button_text || getContrastColor(primary),
+      buttonText: resolve('button_text') || getContrastColor(primary),
 
       error: isDark ? '#f87171' : '#dc2626',
       errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
@@ -138,5 +149,5 @@ export function useClientTheme() {
       infoText: isDark ? '#93c5fd' : '#1e40af',
       infoBorder: isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.2)',
     };
-  }, [branding, client?.agency?.branding_overrides]);
+  }, [branding, client?.agency?.branding_overrides, (client as any)?.branding_overrides]);
 }

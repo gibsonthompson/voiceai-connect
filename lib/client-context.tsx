@@ -44,6 +44,17 @@ interface Client {
   primary_color: string | null;
   secondary_color: string | null;
   accent_color: string | null;
+  branding_overrides?: {
+    nav_bg?: string;
+    nav_text?: string;
+    button_text?: string;
+    page_bg?: string;
+    card_bg?: string;
+    card_border?: string;
+    text_primary?: string;
+    text_muted?: string;
+    theme?: 'light' | 'dark';
+  } | null;
   agency: {
     id: string;
     name: string;

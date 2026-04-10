@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard
@@ -78,6 +78,7 @@ interface NavItem {
 
 function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -211,7 +212,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   const handleNavClick = (href: string) => {
     setSidebarOpen(false);
-    window.location.href = href;
+    router.push(href);
   };
 
   // Save theme to localStorage for skeleton
