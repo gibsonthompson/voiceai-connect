@@ -12,6 +12,17 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Ensure a value is a valid #rrggbb for <input type="color">. Falls back to fallback. */
+function safeHex(val: string | undefined | null, fallback: string = '#888888'): string {
+  if (!val) return fallback;
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) return val;
+  if (/^#[0-9A-Fa-f]{3}$/.test(val)) {
+    const c = val.replace('#', '');
+    return `#${c[0]}${c[0]}${c[1]}${c[1]}${c[2]}${c[2]}`;
+  }
+  return fallback;
+}
+
 interface ClientBrandingSectionProps {
   clientId: string;
   theme: any;
@@ -30,13 +41,11 @@ interface BrandingOverrides {
 export default function ClientBrandingSection({ clientId, theme }: ClientBrandingSectionProps) {
   const { client, branding, refreshClient } = useClient();
 
-  // Logo + colors
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState('');
   const [secondaryColor, setSecondaryColor] = useState('');
   const [accentColor, setAccentColor] = useState('');
 
-  // Overrides
   const [navBg, setNavBg] = useState('');
   const [navText, setNavText] = useState('');
   const [buttonText, setButtonText] = useState('');
@@ -51,7 +60,6 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
   const [hasChanges, setHasChanges] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Initialize from client data
   useEffect(() => {
     if (client) {
       setPrimaryColor(client.primary_color || '');
@@ -74,7 +82,6 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
     }
   }, [client]);
 
-  // Track changes
   useEffect(() => {
     if (!client) return;
     const ov = (client as any).branding_overrides as BrandingOverrides | null;
@@ -98,7 +105,6 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
     if (!file) return;
     if (!file.type.startsWith('image/')) { setMessage('Please upload an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { setMessage('Image must be under 5MB'); return; }
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       const dataUrl = reader.result as string;
@@ -131,14 +137,8 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
     finally { setExtracting(false); }
   };
 
-  const handleClearColors = () => {
-    setPrimaryColor(''); setSecondaryColor(''); setAccentColor('');
-  };
-
-  const handleClearOverrides = () => {
-    setNavBg(''); setNavText(''); setButtonText('');
-    setPageBg(''); setCardBg(''); setCardBorder(''); setThemeMode('');
-  };
+  const handleClearColors = () => { setPrimaryColor(''); setSecondaryColor(''); setAccentColor(''); };
+  const handleClearOverrides = () => { setNavBg(''); setNavText(''); setButtonText(''); setPageBg(''); setCardBg(''); setCardBorder(''); setThemeMode(''); };
 
   const handleSave = async () => {
     setSaving(true); setMessage('');
@@ -147,7 +147,6 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
       const body: Record<string, any> = {};
-
       if (logoPreview === '__remove__') body.logo_url = null;
       else if (logoPreview) body.logo_url = logoPreview;
 
@@ -155,7 +154,6 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
       body.secondary_color = secondaryColor || null;
       body.accent_color = accentColor || null;
 
-      // Build overrides object
       const overrides: BrandingOverrides = {};
       if (navBg) overrides.nav_bg = navBg;
       if (navText) overrides.nav_text = navText;
@@ -175,10 +173,10 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
 
       const data = await response.json();
       if (data.success) {
-        setMessage('Branding updated!');
+        setMessage('Branding updated! Reloading...');
         setLogoPreview(null);
-        await refreshClient();
-        setTimeout(() => setMessage(''), 3000);
+        // Full reload so all theme tokens recompute from fresh data
+        setTimeout(() => window.location.reload(), 800);
       } else {
         setMessage(data.error || 'Failed to save branding');
       }
@@ -193,37 +191,51 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
   const hasColors = !!(primaryColor || secondaryColor || accentColor);
   const hasOverrides = !!(navBg || navText || buttonText || pageBg || cardBg || cardBorder || themeMode);
 
-  // Color picker row component
-  const ColorRow = ({ label, value, onChange, placeholder, description }: {
-    label: string; value: string; onChange: (v: string) => void; placeholder: string; description?: string;
-  }) => (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-[11px] font-medium" style={{ color: theme.textMuted }}>{label}</p>
-        {value && (
-          <button onClick={() => onChange('')} className="text-[10px]" style={{ color: theme.textMuted4 }}>Clear</button>
-        )}
+  // ========================================================================
+  // COLOR ROW — input type="color" requires valid #rrggbb, never rgba
+  // ========================================================================
+  const ColorRow = ({ label, value, onChange, fallbackHex, description }: {
+    label: string; value: string; onChange: (v: string) => void; fallbackHex: string; description?: string;
+  }) => {
+    const displayHex = safeHex(value || null, safeHex(fallbackHex));
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[11px] font-medium" style={{ color: theme.textMuted }}>{label}</p>
+          {value && <button onClick={() => onChange('')} className="text-[10px]" style={{ color: theme.textMuted4 }}>Clear</button>}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={displayHex}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-9 h-9 rounded-lg border cursor-pointer flex-shrink-0"
+            style={{ borderColor: theme.border }}
+          />
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={fallbackHex}
+            className="flex-1 min-w-0 rounded-lg border px-2 py-1.5 text-[11px] font-mono focus:outline-none"
+            style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
+          />
+        </div>
+        {description && <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>{description}</p>}
       </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value || placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-9 h-9 rounded-lg border cursor-pointer appearance-none bg-transparent flex-shrink-0"
-          style={{ borderColor: theme.border, backgroundColor: value || placeholder }}
-        />
-        <input
-          type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 min-w-0 rounded-lg border px-2 py-1.5 text-[11px] font-mono focus:outline-none"
-          style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
-        />
-      </div>
-      {description && <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>{description}</p>}
-    </div>
-  );
+    );
+  };
+
+  // Stable hex fallbacks for the advanced pickers (never rgba)
+  const agencyPrimary = client?.agency?.primary_color || '#3b82f6';
+  const defaults = {
+    navBg: theme.isDark ? '#0a0a0a' : '#ffffff',
+    navText: theme.isDark ? '#fafaf9' : '#111827',
+    buttonText: '#ffffff',
+    pageBg: theme.isDark ? '#0a0a0a' : '#f9fafb',
+    cardBg: theme.isDark ? '#111111' : '#ffffff',
+    cardBorder: theme.isDark ? '#1a1a1a' : '#e5e7eb',
+  };
 
   return (
     <section className="mb-4 sm:mb-6">
@@ -235,15 +247,13 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
       <div className="rounded-xl border p-4 sm:p-5 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
         {message && (
           <div className="mb-4 p-3 rounded-lg text-sm font-medium text-center"
-            style={message.includes('updated') || message.includes('Updated')
+            style={message.includes('updated') || message.includes('Updated') || message.includes('Reloading')
               ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
               : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }
             }>{message}</div>
         )}
 
-        {/* ================================================================
-            LOGO SECTION
-            ================================================================ */}
+        {/* LOGO */}
         <div className="mb-5">
           <label className="block text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Logo</label>
           <div className="flex items-center gap-4">
@@ -274,9 +284,7 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
           <p className="text-[10px] mt-2" style={{ color: theme.textMuted4 }}>PNG, JPG, or SVG. Used in sidebar, PWA icon, and emails.</p>
         </div>
 
-        {/* ================================================================
-            BRAND COLORS
-            ================================================================ */}
+        {/* BRAND COLORS */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
             <label className="block text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Brand Colors</label>
@@ -295,30 +303,22 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <ColorRow label="Primary" value={primaryColor} onChange={setPrimaryColor} placeholder={client?.agency?.primary_color || '#3b82f6'} />
-            <ColorRow label="Secondary" value={secondaryColor} onChange={setSecondaryColor} placeholder={client?.agency?.secondary_color || '#1e40af'} />
-            <ColorRow label="Accent" value={accentColor} onChange={setAccentColor} placeholder={client?.agency?.accent_color || '#60a5fa'} />
+            <ColorRow label="Primary" value={primaryColor} onChange={setPrimaryColor} fallbackHex={agencyPrimary} />
+            <ColorRow label="Secondary" value={secondaryColor} onChange={setSecondaryColor} fallbackHex={client?.agency?.secondary_color || '#1e40af'} />
+            <ColorRow label="Accent" value={accentColor} onChange={setAccentColor} fallbackHex={client?.agency?.accent_color || '#60a5fa'} />
           </div>
-          {!hasColors && (
-            <p className="text-[10px] mt-2" style={{ color: theme.textMuted4 }}>No custom colors — using agency defaults. Upload a logo to auto-detect, or pick manually.</p>
-          )}
+          {!hasColors && <p className="text-[10px] mt-2" style={{ color: theme.textMuted4 }}>No custom colors — using agency defaults.</p>}
         </div>
 
-        {/* ================================================================
-            ADVANCED: NAV, BUTTONS, PAGE, CARDS
-            ================================================================ */}
+        {/* ADVANCED APPEARANCE */}
         <div className="mb-5">
           <button onClick={() => setAdvancedOpen(!advancedOpen)}
             className="flex items-center justify-between w-full py-2 text-left"
             style={{ borderTop: `1px solid ${theme.border}`, marginTop: '4px', paddingTop: '16px' }}>
-            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
-              Advanced Appearance
-            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Advanced Appearance</span>
             <div className="flex items-center gap-2">
               {hasOverrides && (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>
-                  Customized
-                </span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>Customized</span>
               )}
               <ChevronDown className={`w-4 h-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} style={{ color: theme.textMuted4 }} />
             </div>
@@ -330,12 +330,12 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
               <div>
                 <p className="text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Theme Mode</p>
                 <div className="flex gap-2">
-                  {[
-                    { value: '', label: 'Agency Default', icon: null },
-                    { value: 'dark', label: 'Dark', icon: Moon },
-                    { value: 'light', label: 'Light', icon: Sun },
-                  ].map(opt => (
-                    <button key={opt.value} onClick={() => setThemeMode(opt.value as any)}
+                  {([
+                    { value: '' as const, label: 'Agency Default', icon: null },
+                    { value: 'dark' as const, label: 'Dark', icon: Moon },
+                    { value: 'light' as const, label: 'Light', icon: Sun },
+                  ]).map(opt => (
+                    <button key={opt.value} onClick={() => setThemeMode(opt.value)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium transition-all"
                       style={{
                         backgroundColor: themeMode === opt.value ? hexToRgba(theme.primary, 0.12) : theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
@@ -353,8 +353,8 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Navigation</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <ColorRow label="Nav Background" value={navBg} onChange={setNavBg} placeholder={theme.navBg} description="Sidebar/header background" />
-                  <ColorRow label="Nav Text" value={navText} onChange={setNavText} placeholder={theme.navText} description="Menu items and labels" />
+                  <ColorRow label="Nav Background" value={navBg} onChange={setNavBg} fallbackHex={defaults.navBg} description="Sidebar/header background" />
+                  <ColorRow label="Nav Text" value={navText} onChange={setNavText} fallbackHex={defaults.navText} description="Menu items and labels" />
                 </div>
               </div>
 
@@ -362,10 +362,10 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Buttons</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <ColorRow label="Button Text" value={buttonText} onChange={setButtonText} placeholder={theme.buttonText} description="Text inside primary buttons" />
+                  <ColorRow label="Button Text" value={buttonText} onChange={setButtonText} fallbackHex={defaults.buttonText} description="Text inside primary buttons" />
                   <div>
                     <p className="text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Button Background</p>
-                    <p className="text-[10px]" style={{ color: theme.textMuted4 }}>Uses your Primary color above</p>
+                    <p className="text-[10px] leading-relaxed" style={{ color: theme.textMuted4 }}>Uses your Primary color above</p>
                   </div>
                 </div>
               </div>
@@ -374,46 +374,41 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: theme.textMuted }}>Page & Cards</p>
                 <div className="grid grid-cols-3 gap-3">
-                  <ColorRow label="Page Background" value={pageBg} onChange={setPageBg} placeholder={theme.bg} />
-                  <ColorRow label="Card Background" value={cardBg} onChange={setCardBg} placeholder={theme.card} />
-                  <ColorRow label="Card Border" value={cardBorder} onChange={setCardBorder} placeholder={theme.border} />
+                  <ColorRow label="Page Background" value={pageBg} onChange={setPageBg} fallbackHex={defaults.pageBg} />
+                  <ColorRow label="Card Background" value={cardBg} onChange={setCardBg} fallbackHex={defaults.cardBg} />
+                  <ColorRow label="Card Border" value={cardBorder} onChange={setCardBorder} fallbackHex={defaults.cardBorder} />
                 </div>
               </div>
 
-              {/* Reset all overrides */}
               {hasOverrides && (
                 <button onClick={handleClearOverrides}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-medium transition hover:opacity-80"
-                  style={{ color: theme.textMuted4 }}>
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium transition hover:opacity-80" style={{ color: theme.textMuted4 }}>
                   <RotateCcw className="w-3 h-3" /> Reset all appearance to agency defaults
                 </button>
               )}
 
               {/* Preview */}
-              <div className="rounded-xl p-4" style={{ backgroundColor: pageBg || theme.bg, border: `1px solid ${cardBorder || theme.border}` }}>
+              <div className="rounded-xl p-4" style={{ backgroundColor: safeHex(pageBg, defaults.pageBg), border: `1px solid ${safeHex(cardBorder, defaults.cardBorder)}` }}>
                 <p className="text-[10px] uppercase tracking-wider font-medium mb-3" style={{ color: theme.textMuted4 }}>Live Preview</p>
                 <div className="flex gap-2 mb-3">
-                  {/* Nav preview */}
-                  <div className="rounded-lg p-2 flex-1" style={{ backgroundColor: navBg || theme.navBg }}>
+                  <div className="rounded-lg p-2 flex-1" style={{ backgroundColor: safeHex(navBg, defaults.navBg) }}>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primaryColor || theme.primary }} />
-                      <span className="text-[10px] font-medium" style={{ color: navText || theme.navText }}>Dashboard</span>
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: safeHex(primaryColor, agencyPrimary) }} />
+                      <span className="text-[10px] font-medium" style={{ color: safeHex(navText, defaults.navText) }}>Dashboard</span>
                     </div>
-                    <span className="text-[9px] block mt-1" style={{ color: navText ? hexToRgba(navText, 0.5) : theme.navTextMuted }}>Calls</span>
+                    <span className="text-[9px] block mt-1 opacity-50" style={{ color: safeHex(navText, defaults.navText) }}>Calls</span>
                   </div>
-                  {/* Card preview */}
-                  <div className="rounded-lg p-2 flex-[2]" style={{ backgroundColor: cardBg || theme.card, border: `1px solid ${cardBorder || theme.border}` }}>
+                  <div className="rounded-lg p-2 flex-[2]" style={{ backgroundColor: safeHex(cardBg, defaults.cardBg), border: `1px solid ${safeHex(cardBorder, defaults.cardBorder)}` }}>
                     <span className="text-[10px]" style={{ color: theme.text }}>Card content</span>
                   </div>
                 </div>
-                {/* Button preview */}
                 <div className="flex gap-2">
                   <div className="rounded-lg px-3 py-1.5 text-[10px] font-semibold"
-                    style={{ backgroundColor: primaryColor || theme.primary, color: buttonText || theme.buttonText }}>
+                    style={{ backgroundColor: safeHex(primaryColor, agencyPrimary), color: safeHex(buttonText, defaults.buttonText) }}>
                     Primary Button
                   </div>
                   <div className="rounded-lg px-3 py-1.5 text-[10px] font-medium"
-                    style={{ backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${cardBorder || theme.border}` }}>
+                    style={{ backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${safeHex(cardBorder, defaults.cardBorder)}` }}>
                     Secondary
                   </div>
                 </div>
@@ -422,9 +417,7 @@ export default function ClientBrandingSection({ clientId, theme }: ClientBrandin
           )}
         </div>
 
-        {/* ================================================================
-            SAVE BUTTON
-            ================================================================ */}
+        {/* SAVE */}
         <button onClick={handleSave} disabled={saving || !hasChanges}
           className="w-full py-2.5 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>
