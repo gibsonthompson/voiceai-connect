@@ -571,6 +571,28 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
           )}
         </div>
 
+        {/* ── Reset to Agency Defaults ──────────────────────────────── */}
+        {(isValidHex(primaryColor) && primaryColor !== branding.primaryColor) || logoUrl || navBg || navText || buttonText || pageBg || cardBg || cardBorder || themeMode ? (
+          <button
+            onClick={() => {
+              // Clear all client-level overrides
+              setLogoUrl('');
+              setPrimaryColor(client?.agency?.primary_color || '#3b82f6');
+              setSecondaryColor(client?.agency?.secondary_color || '#1e40af');
+              setAccentColor(client?.agency?.accent_color || '#60a5fa');
+              handleResetAdvanced();
+            }}
+            className="w-full py-2 rounded-xl text-xs font-medium transition hover:opacity-80 flex items-center justify-center gap-1.5"
+            style={{
+              backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+              color: theme.textMuted,
+              border: `1px solid ${theme.border}`,
+            }}
+          >
+            <RotateCcw className="w-3 h-3" /> Reset to Agency Defaults
+          </button>
+        ) : null}
+
         {/* ── Save Button ──────────────────────────────────────────── */}
         <button
           onClick={handleSave}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Phone, Loader2, User, CreditCard, Link2, 
   Check, Copy, Building2, Lock, Eye, EyeOff, Calendar, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, Edit3, X
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
@@ -93,6 +93,14 @@ const formatDate = (dateString: string | null): string => {
   });
 };
 
+/** Capitalize and format industry: "home_services" → "Home Services" */
+function formatIndustry(raw: string | null | undefined): string {
+  if (!raw) return 'Not set';
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function ClientSettingsContent({ client: initialClient, branding }: Props) {
   const router = useRouter();
   const theme = useClientTheme();
@@ -104,6 +112,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [isCopied, setIsCopied] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [showPwaModal, setShowPwaModal] = useState(false);
+
+  // Editable business name
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(client.business_name || '');
+  const [savingName, setSavingName] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -191,6 +204,44 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     finally { setSaving(false); }
   };
 
+  const handleSaveBusinessName = async () => {
+    if (!nameValue.trim() || nameValue.trim() === client.business_name) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ business_name: nameValue.trim() }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setClient(prev => ({ ...prev, business_name: nameValue.trim() }));
+        // Update localStorage so nav/dashboard reflect immediately
+        try {
+          const cached = localStorage.getItem('client');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            parsed.business_name = nameValue.trim();
+            localStorage.setItem('client', JSON.stringify(parsed));
+          }
+        } catch {}
+        setMessage('Business name updated!');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.error || 'Failed to update name');
+      }
+    } catch {
+      setMessage('Error updating business name');
+    } finally {
+      setSavingName(false);
+      setEditingName(false);
+    }
+  };
+
   const handleCallModeChange = async (newMode: 'primary' | 'fallback') => {
     const currentOwnerPhone = client.owner_phone || ownerPhone;
     if (newMode === 'fallback' && !currentOwnerPhone) { setCallModeMessage('Please add your phone number in Contact Information first.'); setTimeout(() => setCallModeMessage(''), 4000); return; }
@@ -266,7 +317,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const isCalendarPlanAllowed = calendarStatus?.plan_allowed !== false;
 
   const getMessageStyle = (msg: string) => {
-    const isSuccess = msg.includes('success') || msg.includes('Success') || msg.includes('enabled') || msg.includes('Enabled');
+    const isSuccess = msg.includes('success') || msg.includes('Success') || msg.includes('enabled') || msg.includes('Enabled') || msg.includes('updated');
     return isSuccess
       ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }
       : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` };
@@ -293,9 +344,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
       <div className="max-w-3xl">
 
-        {/* ================================================================
-            BRANDING SECTION — Logo upload + color extraction
-            ================================================================ */}
+        {/* Branding */}
         <ClientBrandingSection clientId={client.id} theme={theme} />
 
         {/* Business Overview */}
@@ -305,8 +354,45 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </h2>
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Business Name</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.business_name}</div></div>
-              <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Industry</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.industry || 'Not set'}</div></div>
+              {/* Editable Business Name */}
+              <div>
+                <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
+                {editingName ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveBusinessName();
+                        if (e.key === 'Escape') { setEditingName(false); setNameValue(client.business_name || ''); }
+                      }}
+                      className="font-medium text-xs sm:text-sm rounded-lg px-2 py-1 focus:outline-none min-w-0 flex-1"
+                      style={{
+                        backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
+                        border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                        color: theme.text,
+                      }}
+                    />
+                    <button onClick={handleSaveBusinessName} disabled={savingName} className="p-1 rounded" style={{ color: theme.success }}>
+                      {savingName ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <button onClick={() => { setEditingName(false); setNameValue(client.business_name || ''); }} className="p-1 rounded" style={{ color: theme.textMuted4 }}>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 group">
+                    <div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.business_name}</div>
+                    <button onClick={() => { setNameValue(client.business_name || ''); setEditingName(true); }} className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.textMuted4 }}>
+                      <Edit3 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {/* Formatted Industry */}
+              <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Industry</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{formatIndustry(client.industry)}</div></div>
               <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Location</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : 'Not set'}</div></div>
               <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Member Since</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{formatDate(client.created_at)}</div></div>
             </div>
