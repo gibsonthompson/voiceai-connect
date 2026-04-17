@@ -147,8 +147,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) metaThemeColor.setAttribute('content', nav.bg);
     return () => {
-      document.documentElement.style.background = '#050505';
-      if (metaThemeColor) metaThemeColor.setAttribute('content', '#050505');
+      // FIXED: default cleanup was dark (#050505), now light to match loading screen
+      document.documentElement.style.background = '#f9fafb';
+      if (metaThemeColor) metaThemeColor.setAttribute('content', '#f9fafb');
     };
   }, [nav.bg]);
 
@@ -264,13 +265,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   // ============================================================================
-  // FIRST LOAD ONLY — if no cached data exists at all, show minimal spinner.
-  // This almost never triggers because client-context initializes from cache.
+  // FIRST LOAD ONLY — neutral light spinner, no branding
+  // FIXED: was dark navy (#0C1120) with white spinner → now light gray with subtle spinner
   // ============================================================================
   if (loading && !client) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0C1120' }}>
-        <style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid rgba(255,255,255,0.15);border-top-color:rgba(255,255,255,0.6);animation:ldSpin .7s linear infinite}` }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid rgba(0,0,0,0.08);border-top-color:rgba(0,0,0,0.3);animation:ldSpin .7s linear infinite}` }} />
         <div className="ld-s" />
       </div>
     );

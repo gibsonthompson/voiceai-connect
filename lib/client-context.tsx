@@ -159,7 +159,7 @@ function buildBranding(c: any): Branding {
       (isUsableBrandColor(c.accent_color) ? c.accent_color.trim() : null)
       || agency?.accent_color
       || '#60a5fa',
-    agencyName: agency?.name || 'VoiceAI',
+    agencyName: agency?.name || '',
     businessName: c.business_name || '',
     logoUrl: c.logo_url || agency?.logo_url || null,
     supportEmail: agency?.support_email || null,
@@ -186,9 +186,10 @@ interface ClientContextType {
   hasPermission: (key: string) => boolean;
 }
 
+// FIXED: agencyName was 'VoiceAI' which caused "V" initial to show during loading
 const defaultBranding: Branding = {
   primaryColor: '#3b82f6', secondaryColor: '#1e40af', accentColor: '#60a5fa',
-  agencyName: 'VoiceAI', businessName: '', logoUrl: null,
+  agencyName: '', businessName: '', logoUrl: null,
   supportEmail: null, supportPhone: null, websiteTheme: 'dark', clientHeaderMode: 'agency_name',
 };
 
