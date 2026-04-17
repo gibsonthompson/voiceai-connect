@@ -65,7 +65,7 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
   return Math.max(0, diffDays);
 }
 function getInitial(name: string | null | undefined): string {
-  if (!name) return '?';
+  if (!name) return '';
   return name.charAt(0).toUpperCase();
 }
 
@@ -247,6 +247,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     }
 
     const initial = getInitial(branding.businessName || branding.agencyName);
+    if (!initial) return null;
     return (
       <div
         className="flex items-center justify-center flex-shrink-0 font-bold"
