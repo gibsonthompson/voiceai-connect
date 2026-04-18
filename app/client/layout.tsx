@@ -155,6 +155,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (displayName) {
+      document.title = displayName;
+      document.title = displayName;
       let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
       if (metaTitle) { metaTitle.setAttribute('content', displayName); }
       else {

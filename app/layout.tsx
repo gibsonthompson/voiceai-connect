@@ -34,8 +34,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "VoiceAI Connect - White-Label AI Receptionist Platform",
-    template: "%s | VoiceAI Connect",
+    default: "Dashboard",
+    template: "%s",
   },
   description:
     "Launch your own AI voice receptionist agency. White-label platform with your brand, your pricing, 100% of the revenue.",
