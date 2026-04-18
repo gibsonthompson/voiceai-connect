@@ -40,7 +40,7 @@ function ClientUpgradeContent() {
   const [error, setError] = useState<string | null>(null);
 
   const isDark = agency?.website_theme === 'dark';
-  const primaryColor = agency?.primary_color || '#122092';
+  const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
 
   const theme = useMemo(() => ({
@@ -57,6 +57,8 @@ function ClientUpgradeContent() {
   const isPricingConfigured = agency && typeof agency.price_starter === 'number' && typeof agency.price_pro === 'number' && typeof agency.price_growth === 'number' && !isNaN(agency.price_starter) && !isNaN(agency.price_pro) && !isNaN(agency.price_growth);
 
   useEffect(() => { fetchClientData(); }, []);
+
+  useEffect(() => { if (agency?.name) document.title = `${agency.name} — Upgrade Your Plan`; }, [agency]);
 
   const fetchClientData = async () => {
     try {
