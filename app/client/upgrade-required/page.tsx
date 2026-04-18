@@ -39,8 +39,8 @@ function ClientUpgradeContent() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isDark = agency?.website_theme !== 'light';
-  const primaryColor = agency?.primary_color || '#10b981';
+  const isDark = agency?.website_theme === 'dark';
+  const primaryColor = agency?.primary_color || '#122092';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
 
   const theme = useMemo(() => ({
