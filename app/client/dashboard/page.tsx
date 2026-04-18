@@ -67,7 +67,7 @@ export default function ClientDashboardPage() {
   if (loading || !client) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-white/50" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#9ca3af" }} />
       </div>
     );
   }
