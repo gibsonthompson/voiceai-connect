@@ -84,7 +84,10 @@ function ClientUpgradeContent() {
     setCheckoutLoading(planTier); setError(null);
     try {
       const token = localStorage.getItem('auth_token');
-      const r = await fetch('/api/client/create-checkout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: client.id, planTier }) });
+      // FIXED: was hitting relative /api/client/create-checkout with wrong field names
+      // Backend expects POST /api/client/checkout with { client_id, plan }
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
       if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Failed'); }
       const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No URL');
     } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
@@ -170,7 +173,7 @@ function ClientUpgradeContent() {
 
 export default function ClientUpgradePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#050505]"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#6b7280' }} /></div>}>
       <ClientUpgradeContent />
     </Suspense>
   );

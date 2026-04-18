@@ -74,7 +74,7 @@ export default function UpgradePrompt({ feature, primaryColor, isDark, message }
       
       <div>
         <a
-          href="/client/upgrade"
+          href="/client/upgrade-required"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90"
           style={{ 
             backgroundColor: primaryColor, 

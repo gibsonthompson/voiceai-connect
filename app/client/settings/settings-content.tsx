@@ -93,7 +93,6 @@ const formatDate = (dateString: string | null): string => {
   });
 };
 
-/** Capitalize and format industry: "home_services" → "Home Services" */
 function formatIndustry(raw: string | null | undefined): string {
   if (!raw) return 'Not set';
   return raw
@@ -113,7 +112,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [upgrading, setUpgrading] = useState(false);
   const [showPwaModal, setShowPwaModal] = useState(false);
 
-  // Editable business name
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(client.business_name || '');
   const [savingName, setSavingName] = useState(false);
@@ -220,7 +218,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       const data = await response.json();
       if (data.success) {
         setClient(prev => ({ ...prev, business_name: nameValue.trim() }));
-        // Update localStorage so nav/dashboard reflect immediately
         try {
           const cached = localStorage.getItem('client');
           if (cached) {
@@ -293,10 +290,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     finally { setDisconnectingCalendar(false); }
   };
 
+  // FIXED: was sending { clientId, planTier } — backend expects { client_id, plan }
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
-      const response = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }, body: JSON.stringify({ clientId: client.id, planTier: client.plan_type || 'pro' }) });
+      const response = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }, body: JSON.stringify({ client_id: client.id, plan: client.plan_type || 'pro' }) });
       const data = await response.json();
       if (data.url) { window.location.href = data.url; } else { setMessage('Failed to create checkout'); setUpgrading(false); }
     } catch (error) { setMessage('Error creating checkout'); setUpgrading(false); }
@@ -344,7 +342,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
       <div className="max-w-3xl">
 
-        {/* Branding */}
         <ClientBrandingSection clientId={client.id} theme={theme} />
 
         {/* Business Overview */}
@@ -354,27 +351,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </h2>
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {/* Editable Business Name */}
               <div>
                 <label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
                 {editingName ? (
                   <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={nameValue}
-                      onChange={(e) => setNameValue(e.target.value)}
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveBusinessName();
-                        if (e.key === 'Escape') { setEditingName(false); setNameValue(client.business_name || ''); }
-                      }}
+                    <input type="text" value={nameValue} onChange={(e) => setNameValue(e.target.value)} autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveBusinessName(); if (e.key === 'Escape') { setEditingName(false); setNameValue(client.business_name || ''); } }}
                       className="font-medium text-xs sm:text-sm rounded-lg px-2 py-1 focus:outline-none min-w-0 flex-1"
-                      style={{
-                        backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
-                        border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                        color: theme.text,
-                      }}
-                    />
+                      style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text }} />
                     <button onClick={handleSaveBusinessName} disabled={savingName} className="p-1 rounded" style={{ color: theme.success }}>
                       {savingName ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                     </button>
@@ -391,7 +375,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   </div>
                 )}
               </div>
-              {/* Formatted Industry */}
               <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Industry</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{formatIndustry(client.industry)}</div></div>
               <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Location</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : 'Not set'}</div></div>
               <div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Member Since</label><div className="font-medium text-xs sm:text-sm truncate" style={{ color: theme.text }}>{formatDate(client.created_at)}</div></div>
