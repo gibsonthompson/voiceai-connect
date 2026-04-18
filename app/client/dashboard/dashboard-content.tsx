@@ -77,7 +77,6 @@ function getFirstName(name: string | null | undefined): string {
   return name.split(' ')[0];
 }
 
-// Shared animation CSS injected once
 const ANIM_CSS = `
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}
@@ -107,7 +106,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const circ = 2 * Math.PI * 34;
   const offset = circ - (usagePercent / 100) * circ;
 
-  // Glass card style helper
   const glass = {
     backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
     border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
@@ -122,9 +120,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         .call-row:hover{background:${theme.hover} !important}
       `}} />
 
-      {/* ────────────────────────────────────────────────────────────────
-          HEADER
-          ──────────────────────────────────────────────────────────────── */}
+      {/* HEADER */}
       <div className="mb-5 sm:mb-7 fu fu1">
         <h1 className="text-xl sm:text-2xl lg:text-[28px] font-semibold tracking-tight" style={{ color: theme.text }}>
           {getGreeting()}{firstName ? `, ${firstName}` : ''}
@@ -134,9 +130,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </p>
       </div>
 
-      {/* ────────────────────────────────────────────────────────────────
-          TRIAL BANNER
-          ──────────────────────────────────────────────────────────────── */}
+      {/* TRIAL BANNER */}
       {client.subscription_status === 'trial' && stats.trialDaysLeft !== null && (
         <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
           style={{
@@ -159,7 +153,8 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 <p className="text-xs" style={{ color: theme.textMuted }}>Upgrade to keep your AI receptionist active.</p>
               </div>
             </div>
-            <a href="/client/upgrade"
+            {/* FIXED: was /client/upgrade (404) → /client/upgrade-required */}
+            <a href="/client/upgrade-required"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               Upgrade Now
@@ -168,15 +163,11 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────
-          PHONE NUMBER + STATS
-          ──────────────────────────────────────────────────────────────── */}
+      {/* PHONE NUMBER + STATS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 mb-5 sm:mb-7">
 
-        {/* Phone Number Card — 7 cols on desktop */}
+        {/* Phone Number Card */}
         <div className="lg:col-span-7 rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
-
-          {/* Top row: label + status */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: theme.textMuted }}>
               Your AI Number
@@ -192,7 +183,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             )}
           </div>
 
-          {/* Phone number + copy */}
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl flex-shrink-0"
@@ -220,7 +210,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             )}
           </div>
 
-          {/* Provisioning steps */}
           {isProvisioningPending && (
             <div className="flex items-center gap-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
               {[{ label: 'Phone Number', done: hasPhoneNumber }, { label: 'AI Assistant', done: hasAssistant }].map(s => (
@@ -232,7 +221,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             </div>
           )}
 
-          {/* Forwarding instructions — fixed mobile layout */}
           {isProvisioned && (
             <div className="pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
               <p className="text-xs sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
@@ -249,10 +237,8 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           )}
         </div>
 
-        {/* Stats — 5 cols on desktop, 2-col grid on mobile */}
+        {/* Stats */}
         <div className="lg:col-span-5 grid grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-5">
-
-          {/* Calls Today */}
           <div className="rounded-2xl p-5 sm:p-6 fu fu3" style={glass}>
             <div className="flex items-center justify-between">
               <div>
@@ -267,7 +253,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             </div>
           </div>
 
-          {/* Monthly Usage */}
           <div className="rounded-2xl p-5 sm:p-6 fu fu4" style={glass}>
             <div className="flex items-center justify-between">
               <div>
@@ -302,12 +287,8 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </div>
       </div>
 
-      {/* ────────────────────────────────────────────────────────────────
-          RECENT CALLS
-          ──────────────────────────────────────────────────────────────── */}
+      {/* RECENT CALLS */}
       <div className="rounded-2xl overflow-hidden fu fu5" style={glass}>
-
-        {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5"
           style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
           <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Recent Calls</h2>
@@ -318,7 +299,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           </a>
         </div>
 
-        {/* Empty state */}
         {recentCalls.length === 0 ? (
           <div className="py-14 sm:py-20 text-center px-6">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
@@ -331,7 +311,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             </p>
           </div>
         ) : (
-          /* Call rows */
           <div>
             {recentCalls.slice(0, 5).map((call, idx) => {
               const isSpam = call.is_spam || call.call_status === 'spam';
@@ -350,7 +329,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                   className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 sm:py-4 call-row"
                   style={{ borderBottom: idx < Math.min(recentCalls.length, 5) - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
 
-                  {/* Icon */}
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
                     style={{ backgroundColor: isSpam ? theme.errorBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
                     {isSpam ? <ShieldX className="h-[18px] w-[18px]" style={{ color: theme.error }} />
@@ -358,7 +336,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                       : <PhoneCall className="h-[18px] w-[18px]" style={{ color: theme.primary }} />}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-[13px] sm:text-sm truncate" style={{ color: theme.text }}>
                       {isSpam ? 'Spam Call' : (call.customer_name || 'Unknown Caller')}
@@ -370,7 +347,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                     <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{formatRelativeDate(call.created_at)}</p>
                   </div>
 
-                  {/* Badge */}
                   <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize flex-shrink-0" style={badgeStyle}>
                     {isSpam ? 'spam' : (call.urgency_level || 'normal')}
                   </span>
