@@ -1,0 +1,102 @@
+/* app/blog/[slug]/generated-post.css */
+/* Supplements article.css for blog-farm auto-generated HTML.
+   Hand-coded .tsx posts use React components (ComparisonTable, Callout, etc).
+   Auto-generated posts use raw HTML equivalents — these need CSS. */
+
+/* ── Tables ── */
+.article-content .table-wrap {
+  overflow-x: auto;
+  margin: 1.5rem 0 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.article-content .table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+  font-size: 0.95rem;
+}
+
+.article-content .table-wrap thead { background: rgba(255, 255, 255, 0.04); }
+
+.article-content .table-wrap th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #fafaf9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.article-content .table-wrap td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(250, 250, 249, 0.7);
+}
+
+.article-content .table-wrap tbody tr:last-child td { border-bottom: none; }
+.article-content .table-wrap .hl { background: rgba(16, 185, 129, 0.06); color: #10b981; font-weight: 600; }
+.article-content .table-wrap thead .hl { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+
+/* ── CTA Box ── */
+.article-content .cta-box {
+  margin: 2rem 0;
+  padding: 1.5rem 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.05);
+  text-align: center;
+}
+
+.article-content .cta-box h3,
+.article-content .cta-box h2 {
+  color: #fafaf9; margin-top: 0; padding-top: 0; border-top: none;
+  font-size: 1.25rem; margin-bottom: 0.5rem;
+}
+
+.article-content .cta-box p { color: rgba(250, 250, 249, 0.6); margin-bottom: 1.25rem; }
+
+.article-content .cta-box a {
+  display: inline-block; background: #10b981; color: #050505 !important;
+  font-weight: 600; padding: 0.7rem 1.75rem; border-radius: 9999px;
+  text-decoration: none !important; transition: background 0.2s;
+}
+.article-content .cta-box a:hover { background: #34d399; text-decoration: none !important; }
+
+/* ── Stat Highlight ── */
+.article-content .stat-highlight {
+  background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem; padding: 1.25rem 1.5rem; margin: 1.5rem 0; text-align: center;
+}
+.article-content .stat-highlight .stat-number { font-size: 2.25rem; font-weight: 800; color: #10b981; display: block; }
+.article-content .stat-highlight .stat-label { font-size: 0.9rem; color: rgba(250, 250, 249, 0.5); margin-top: 0.25rem; }
+
+/* ── Callout ── */
+.article-content .callout {
+  margin: 1.5rem 0 2rem; padding: 1rem 1.25rem;
+  border-left: 3px solid #fbbf24; border-radius: 0 0.75rem 0.75rem 0;
+  background: rgba(251, 191, 36, 0.05);
+}
+.article-content .callout p { color: rgba(250, 250, 249, 0.8); margin-bottom: 0; }
+.article-content .callout strong { color: #fbbf24; }
+.article-content .callout-info { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+.article-content .callout-info strong { color: #60a5fa; }
+.article-content .callout-tip { border-left-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+.article-content .callout-tip strong { color: #34d399; }
+
+/* ── FAQ Items ── */
+.article-content .faq-item {
+  margin-bottom: 0.75rem; padding: 1.25rem; border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.article-content .faq-item h4 { font-weight: 600; margin-bottom: 0.5rem; }
+.article-content .faq-item p { color: rgba(250, 250, 249, 0.7); margin-bottom: 0; font-size: 1rem; }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .article-content .cta-box { padding: 1.25rem; }
+  .article-content .table-wrap { margin-left: -1rem; margin-right: -1rem; border-radius: 0; border-left: none; border-right: none; }
+  .article-content .stat-highlight .stat-number { font-size: 1.75rem; }
+}

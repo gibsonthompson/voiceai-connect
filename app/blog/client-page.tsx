@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, Search, ChevronRight, Menu, X } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 
-// ============================================================================ ============================================================================
+// ============================================================================
 // NAV LINKS (shared between desktop + mobile)
 // ============================================================================
 const navLinks = [
@@ -37,6 +37,7 @@ interface BlogPost {
   publishedAt: string;
   readTime: string;
   featured?: boolean;
+  generated?: boolean;
 }
 
 const blogPosts: BlogPost[] = [
@@ -271,7 +272,7 @@ const blogPosts: BlogPost[] = [
 // ============================================================================
 // BLOG PAGE
 // ============================================================================
-export default function BlogPage() {
+export default function BlogPage({ generatedPosts = [] }: { generatedPosts?: BlogPost[] }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -292,17 +293,24 @@ export default function BlogPage() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  // Merge hardcoded posts with auto-generated posts from Supabase
+  const allPosts = useMemo(() => {
+    const existingSlugs = new Set(blogPosts.map(p => p.slug));
+    const newPosts = generatedPosts.filter(p => !existingSlugs.has(p.slug));
+    return [...blogPosts, ...newPosts];
+  }, [generatedPosts]);
+
   const filteredPosts = useMemo(() => {
-    return blogPosts.filter((post) => {
+    return allPosts.filter((post) => {
       const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
       const matchesSearch = searchQuery === '' || 
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, allPosts]);
 
-  const featuredPosts = blogPosts.filter((p) => p.featured);
+  const featuredPosts = allPosts.filter((p) => p.featured);
 
   const categoryColor = (cat: string) => ({
     guides: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',

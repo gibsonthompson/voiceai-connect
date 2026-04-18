@@ -57,6 +57,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "/",
+    types: {
+      "application/rss+xml": "https://myvoiceaiconnect.com/feed.xml",
+    },
   },
   openGraph: {
     type: "website",
@@ -82,7 +85,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
-        {/* PWA - These exact meta tags are required */}
+        {/* RSS Feed Discovery */}
+        <link rel="alternate" type="application/rss+xml" title="VoiceAI Connect Blog" href="https://myvoiceaiconnect.com/feed.xml" />
+
+        {/* PWA */}
         <meta name="application-name" content="VoiceAI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

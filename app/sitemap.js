@@ -1,684 +1,118 @@
-export default function sitemap() {
-  const baseUrl = 'https://www.myvoiceaiconnect.com'
-  
+// app/sitemap.ts
+import { createClient } from '@supabase/supabase-js';
+import type { MetadataRoute } from 'next';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = 'https://www.myvoiceaiconnect.com';
+
+  // Fetch auto-generated blog posts from Supabase
+  let generatedEntries: MetadataRoute.Sitemap = [];
+  const hardcodedBlogSlugs = new Set<string>();
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      const { data: biz } = await supabase.from('blog_businesses').select('id').eq('slug', 'voiceai-connect').single();
+      if (biz) {
+        const { data: posts } = await supabase.from('blog_generated_posts')
+          .select('slug, publish_date').eq('business_id', biz.id).eq('status', 'published');
+        generatedEntries = (posts || []).map(p => ({
+          url: `${baseUrl}/blog/${p.slug}`,
+          lastModified: p.publish_date ? new Date(p.publish_date) : new Date(),
+          changeFrequency: 'monthly' as const,
+          priority: 0.6,
+        }));
+      }
+    }
+  } catch { /* non-critical */ }
+
+  // All hardcoded blog slugs for dedup
+  const blogSlugs = [
+    'white-label-ai-receptionist-pricing-breakdown', 'best-white-label-ai-receptionist-platforms-ranked',
+    'how-to-resell-ai-receptionist-services', 'white-label-ai-receptionist-lead-gen-agencies',
+    'set-up-white-label-ai-receptionist-business-24-hours', 'white-label-ai-receptionist-compliance-guide',
+    'how-to-choose-white-label-ai-receptionist-platform', 'white-label-ai-voice-agent-platform-agencies',
+    'voiceai-connect-vs-autocalls', 'voiceai-connect-vs-echowin', 'voiceai-connect-vs-voxtell',
+    'voiceai-connect-vs-callin-io', 'voiceai-connect-vs-insighto',
+    'missed-call-cost-small-business', 'ai-receptionist-vs-ivr-vs-answering-service',
+    'how-to-sell-ai-to-local-businesses', 'what-is-ai-receptionist-how-it-works',
+    'how-to-set-up-ai-receptionist', 'what-can-ai-receptionist-handle',
+    'ai-receptionist-prompt-templates', 'smma-profit-margins-2026', 'ai-agency-profit-margins-2026',
+    'how-to-find-leads-google-maps', 'ai-receptionist-agency-vs-smma', 'best-industries-ai-receptionist',
+    'best-recurring-revenue-business-ideas-2026', 'building-referral-program-agency',
+    'cold-outreach-templates-that-work', 'how-much-do-ai-receptionist-agencies-make',
+    'how-to-price-ai-receptionist-services', 'how-to-start-ai-receptionist-agency',
+    'my-ai-front-desk-alternative', 'phone-only-business-ai-agency',
+    'pitch-ai-receptionists-home-services', 'white-label-ai-receptionist-platform',
+    'white-label-vs-build-ai-receptionist', 'best-online-businesses-no-experience',
+    'ai-agency-vs-dropshipping', 'recurring-revenue-business-no-code',
+    'first-month-ai-receptionist-agency', 'can-you-start-ai-business-no-technical-skills',
+    'voiceai-connect-vs-trillet', 'voiceai-connect-vs-goodcall', 'voiceai-connect-vs-smith-ai',
+    'best-ai-receptionist-platforms-compared-2026', 'why-agencies-switch-answering-services-to-ai',
+    'sell-ai-receptionist-to-plumbers', 'sell-ai-receptionist-to-dental-offices',
+    'sell-ai-receptionist-to-law-firms', 'sell-ai-receptionist-to-restaurants',
+    'sell-ai-receptionist-to-auto-shops', 'complete-guide-white-label-ai-receptionist-business',
+    'ai-receptionist-agency-profit-calculator', 'ai-receptionist-vs-human-receptionist-cost',
+    'signs-ai-receptionist-agency-is-right-for-you', 'mistakes-new-ai-agency-owners-make',
+    'white-label-saas-business-model-explained', 'start-ai-receptionist-agency-from-india',
+    'start-ai-business-from-anywhere', 'ai-receptionist-for-plumbers',
+    'ai-receptionist-for-dentists', 'ai-receptionist-for-lawyers',
+    'ai-receptionist-for-hvac', 'ai-receptionist-for-real-estate',
+  ];
+
+  blogSlugs.forEach(s => hardcodedBlogSlugs.add(s));
+
   return [
     // Core Pages
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/platform`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/how-it-works`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/signup`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/faq`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
+    { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
+    { url: `${baseUrl}/platform`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${baseUrl}/how-it-works`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/signup`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/faq`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
 
     // Features Index
-    {
-      url: `${baseUrl}/features`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
+    { url: `${baseUrl}/features`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
 
     // Features Pages
-    {
-      url: `${baseUrl}/features/24-7-coverage`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/ai-demo`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/ai-intelligence`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/ai-summaries`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/analytics`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/api-access`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/appointments`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/auto-provisioning`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/business-hours`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/call-recordings`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/client-crm`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/exports`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/hipaa`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/industries`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/instant-answer`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/knowledge-base`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/leads-crm`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/marketing-site`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/mobile-dashboard`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/notifications`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/phone-numbers`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/security`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/sms-summaries`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/stripe-connect`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/transcripts`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/uptime`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/urgency-detection`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/voice-options`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/features/voicemail`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      // CHANGED: priority 0.7 → 0.5 to de-emphasize vs future /white-label pillar
-      url: `${baseUrl}/features/white-label`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+    ...['24-7-coverage', 'ai-demo', 'ai-intelligence', 'ai-summaries', 'analytics', 'api-access',
+      'appointments', 'auto-provisioning', 'business-hours', 'call-recordings', 'client-crm',
+      'exports', 'hipaa', 'industries', 'instant-answer', 'knowledge-base', 'leads-crm',
+      'marketing-site', 'mobile-dashboard', 'notifications', 'phone-numbers', 'security',
+      'sms-summaries', 'stripe-connect', 'transcripts', 'uptime', 'urgency-detection',
+      'voice-options', 'voicemail',
+    ].map(f => ({
+      url: `${baseUrl}/features/${f}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7,
+    })),
+    { url: `${baseUrl}/features/white-label`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
 
     // Blog Index
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
+    { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
 
-    // Blog Posts — White-Label Content Push (April 2026)
-    {
-      url: `${baseUrl}/blog/white-label-ai-receptionist-pricing-breakdown`,
+    // Blog Posts — all existing hardcoded
+    ...blogSlugs.map(slug => ({
+      url: `${baseUrl}/blog/${slug}`,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/best-white-label-ai-receptionist-platforms-ranked`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/how-to-resell-ai-receptionist-services`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/white-label-ai-receptionist-lead-gen-agencies`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/set-up-white-label-ai-receptionist-business-24-hours`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/white-label-ai-receptionist-compliance-guide`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-
-    // Blog Posts — White-Label Buyer's Guide + Voice Agent Terminology (March 2026)
-    {
-      url: `${baseUrl}/blog/how-to-choose-white-label-ai-receptionist-platform`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/white-label-ai-voice-agent-platform-agencies`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-
-    // Blog Posts — Competitor Comparisons: New Entrants (March 2026)
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-autocalls`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-echowin`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-voxtell`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-callin-io`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-insighto`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — AEO Content (March 2026)
-    {
-      url: `${baseUrl}/blog/missed-call-cost-small-business`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/ai-receptionist-vs-ivr-vs-answering-service`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/how-to-sell-ai-to-local-businesses`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/what-is-ai-receptionist-how-it-works`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/how-to-set-up-ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/what-can-ai-receptionist-handle`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-
-    // Blog Posts — Prompt Templates (February 2026)
-    {
-      url: `${baseUrl}/blog/ai-receptionist-prompt-templates`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — SEO Gap Posts (February 2026)
-    {
-      url: `${baseUrl}/blog/smma-profit-margins-2026`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/ai-agency-profit-margins-2026`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts (Existing)
-    {
-      url: `${baseUrl}/blog/how-to-find-leads-google-maps`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/ai-receptionist-agency-vs-smma`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/best-industries-ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/best-recurring-revenue-business-ideas-2026`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/building-referral-program-agency`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/cold-outreach-templates-that-work`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/how-much-do-ai-receptionist-agencies-make`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/how-to-price-ai-receptionist-services`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/how-to-start-ai-receptionist-agency`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/my-ai-front-desk-alternative`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/phone-only-business-ai-agency`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/pitch-ai-receptionists-home-services`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/white-label-ai-receptionist-platform`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/white-label-vs-build-ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — Pillar 1: Start a Business / MMO
-    {
-      url: `${baseUrl}/blog/best-online-businesses-no-experience`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/ai-agency-vs-dropshipping`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/recurring-revenue-business-no-code`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/first-month-ai-receptionist-agency`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/can-you-start-ai-business-no-technical-skills`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — Pillar 2: Competitor Comparisons
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-trillet`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-goodcall`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/voiceai-connect-vs-smith-ai`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/best-ai-receptionist-platforms-compared-2026`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/why-agencies-switch-answering-services-to-ai`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — Pillar 3: Industry Sales Playbooks
-    {
-      url: `${baseUrl}/blog/sell-ai-receptionist-to-plumbers`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/sell-ai-receptionist-to-dental-offices`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/sell-ai-receptionist-to-law-firms`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/sell-ai-receptionist-to-restaurants`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/sell-ai-receptionist-to-auto-shops`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — Pillar 4: AEO Definitive Guides
-    {
-      url: `${baseUrl}/blog/complete-guide-white-label-ai-receptionist-business`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/ai-receptionist-agency-profit-calculator`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/ai-receptionist-vs-human-receptionist-cost`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — Pillar 5: Trust & Social Proof
-    {
-      url: `${baseUrl}/blog/signs-ai-receptionist-agency-is-right-for-you`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/mistakes-new-ai-agency-owners-make`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-
-    // Blog Posts — White-Label SaaS Model (March 2026)
-    {
-      url: `${baseUrl}/blog/white-label-saas-business-model-explained`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
+      changeFrequency: 'monthly' as const,
+      priority: ['pricing-breakdown', 'platforms-ranked', 'resell'].some(k => slug.includes(k)) ? 0.7 : 0.6,
+    })),
 
     // SEO Landing Pages
-    {
-      url: `${baseUrl}/ai-receptionist-agency-pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/ai-receptionist-answering-service-reseller`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/best-white-label-ai-receptionist-platforms`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/gohighlevel-ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/how-much-can-you-make-ai-receptionist-reseller`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/how-to-start-ai-receptionist-agency`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/voiceai-connect-vs-bland-ai`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/voiceai-connect-vs-synthflow`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/what-is-white-label-ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/white-label-ai-receptionist-marketing-agencies`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/white-label-vs-build-your-own`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-  ]
+    ...['ai-receptionist-agency-pricing', 'ai-receptionist-answering-service-reseller',
+      'best-white-label-ai-receptionist-platforms', 'gohighlevel-ai-receptionist',
+      'how-much-can-you-make-ai-receptionist-reseller', 'how-to-start-ai-receptionist-agency',
+      'voiceai-connect-vs-bland-ai', 'voiceai-connect-vs-synthflow',
+      'what-is-white-label-ai-receptionist', 'white-label-ai-receptionist-marketing-agencies',
+      'white-label-vs-build-your-own',
+    ].map(slug => ({
+      url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8,
+    })),
+
+    // Auto-generated posts from blog-farm (deduplicated)
+    ...generatedEntries.filter(e => {
+      const slug = e.url.split('/blog/')[1];
+      return slug && !hardcodedBlogSlugs.has(slug);
+    }),
+  ];
 }
