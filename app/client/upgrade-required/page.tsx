@@ -23,7 +23,7 @@ function formatPrice(cents: number | undefined | null): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(cents / 100);
 }
 function formatLimit(limit: number | undefined | null): string {
-  if (limit === undefined || limit === null || isNaN(limit)) return 'Unlimited';
+  if (limit === undefined || limit === null || isNaN(limit) || limit === -1) return 'Unlimited';
   return limit.toLocaleString();
 }
 
