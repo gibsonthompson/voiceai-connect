@@ -93,7 +93,7 @@ function ClientUpgradeContent() {
     } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
   if (!client || !agency) return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
       <div className="text-center"><AlertTriangle className="h-12 w-12 mx-auto mb-4 text-amber-500" /><h1 className="text-xl font-semibold mb-2" style={{ color: theme.text }}>Unable to load account</h1><p className="mb-4" style={{ color: theme.textMuted4 }}>{error || 'Please try logging in again.'}</p><a href="/client/login" className="inline-flex items-center px-4 py-2 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Go to Login</a></div>
