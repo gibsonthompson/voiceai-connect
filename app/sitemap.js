@@ -1,13 +1,12 @@
-// app/sitemap.ts
+// app/sitemap.js
 import { createClient } from '@supabase/supabase-js';
-import type { MetadataRoute } from 'next';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default async function sitemap() {
   const baseUrl = 'https://www.myvoiceaiconnect.com';
 
   // Fetch auto-generated blog posts from Supabase
-  let generatedEntries: MetadataRoute.Sitemap = [];
-  const hardcodedBlogSlugs = new Set<string>();
+  let generatedEntries = [];
+  const hardcodedBlogSlugs = new Set();
 
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -19,14 +18,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         generatedEntries = (posts || []).map(p => ({
           url: `${baseUrl}/blog/${p.slug}`,
           lastModified: p.publish_date ? new Date(p.publish_date) : new Date(),
-          changeFrequency: 'monthly' as const,
+          changeFrequency: 'monthly',
           priority: 0.6,
         }));
       }
     }
-  } catch { /* non-critical */ }
+  } catch (e) { /* non-critical — return hardcoded entries only */ }
 
-  // All hardcoded blog slugs for dedup
   const blogSlugs = [
     'white-label-ai-receptionist-pricing-breakdown', 'best-white-label-ai-receptionist-platforms-ranked',
     'how-to-resell-ai-receptionist-services', 'white-label-ai-receptionist-lead-gen-agencies',
@@ -83,7 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       'sms-summaries', 'stripe-connect', 'transcripts', 'uptime', 'urgency-detection',
       'voice-options', 'voicemail',
     ].map(f => ({
-      url: `${baseUrl}/features/${f}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7,
+      url: `${baseUrl}/features/${f}`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7,
     })),
     { url: `${baseUrl}/features/white-label`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
 
@@ -94,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...blogSlugs.map(slug => ({
       url: `${baseUrl}/blog/${slug}`,
       lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
+      changeFrequency: 'monthly',
       priority: ['pricing-breakdown', 'platforms-ranked', 'resell'].some(k => slug.includes(k)) ? 0.7 : 0.6,
     })),
 
@@ -106,7 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       'what-is-white-label-ai-receptionist', 'white-label-ai-receptionist-marketing-agencies',
       'white-label-vs-build-your-own',
     ].map(slug => ({
-      url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8,
+      url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8,
     })),
 
     // Auto-generated posts from blog-farm (deduplicated)
