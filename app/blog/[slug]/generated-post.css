@@ -173,18 +173,15 @@
 }
 .article-content div .cta-box p { color: rgba(250, 250, 249, 0.8); }
 .article-content div .cta-box a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 0.625rem 1.5rem;
-  background: #10b981;
   color: #050505 !important;
+  background: #10b981;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: inherit;
   text-decoration: none !important;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 .article-content div .cta-box a:hover {
   background: #34d399;
