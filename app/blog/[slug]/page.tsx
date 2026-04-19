@@ -59,11 +59,12 @@ async function getPost(slug: string) {
 }
 
 type PageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
   if (!post) return {};
 
   return {
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     keywords: post.primary_keyword
       ? [post.primary_keyword, ...(post.secondary_keywords || [])]
       : undefined,
-    alternates: { canonical: `/blog/${params.slug}` },
+    alternates: { canonical: `/blog/${slug}` },
     openGraph: {
       title: post.title,
       description: post.meta_description || post.title,
@@ -94,7 +95,8 @@ function mapCategory(cat: string | null): string {
 }
 
 export default async function GeneratedBlogPost({ params }: PageProps) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
 
   if (!post || !post.html_content) {
     notFound();
