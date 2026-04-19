@@ -599,7 +599,7 @@ function ForgotPasswordContent() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: isDark ? '#0a0a0a' : '#f5f5f5' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     );
@@ -762,7 +762,7 @@ function ForgotPasswordContent() {
 export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     }>
