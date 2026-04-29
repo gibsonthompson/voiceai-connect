@@ -1,708 +1,385 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  ArrowRight, Check, Play, Zap, Clock, Users, DollarSign, 
-  ChevronRight, Phone, Mic, Globe, Smartphone, BarChart3, 
-  Sparkles, Menu, X, Shield, FileText, Mail, Target
-} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowRight, ArrowDown, Check, X as XIcon, ChevronRight, Phone, Menu, X } from 'lucide-react';
 import { usePrice } from '@/hooks/usePrice';
 
-// ============================================================================
-// STACKING CARDS HOOK — Cross-browser (sticky + scroll listener)
-// Based on CodyHouse technique: position sticky on cards, scale on scroll
-// ============================================================================
-function useStackingCards(cardCount: number) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scales, setScales] = useState<number[]>(Array(cardCount).fill(1));
-
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const cards = container.querySelectorAll<HTMLElement>('[data-stack-card]');
-    if (!cards.length) return;
-
-    const containerTop = container.getBoundingClientRect().top;
-    const newScales: number[] = [];
-
-    cards.forEach((card, i) => {
-      const cardTop = card.getBoundingClientRect().top;
-      const stickyTop = 80; // matches sticky top offset
-      const scrollPast = stickyTop - cardTop;
-      
-      if (scrollPast > 0 && i < cards.length - 1) {
-        // Card is stuck — scale it down as user scrolls past
-        const scale = Math.max(0.9, 1 - scrollPast * 0.0004);
-        newScales.push(scale);
-      } else {
-        newScales.push(1);
-      }
-    });
-
-    setScales(newScales);
-  }, []);
-
+function useReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
-  return { containerRef, scales };
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { el.classList.add('visible'); obs.unobserve(el); }
+    }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return ref;
 }
 
-// ============================================================================
-// COUNTER ANIMATION HOOK
-// ============================================================================
-function useCountUp(end: number, duration = 2000, startOnView = true) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLElement>(null);
-  const started = useRef(false);
-
+function useCounter(end: number) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const ran = useRef(false);
   useEffect(() => {
-    if (!startOnView || !ref.current) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true;
-        const start = performance.now();
-        const animate = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          setCount(Math.round(eased * end));
-          if (progress < 1) requestAnimationFrame(animate);
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !ran.current) {
+        ran.current = true;
+        const t0 = performance.now();
+        const tick = (now: number) => {
+          const p = Math.min((now - t0) / 2000, 1);
+          setVal(Math.round((1 - Math.pow(1 - p, 3)) * end));
+          if (p < 1) requestAnimationFrame(tick);
         };
-        requestAnimationFrame(animate);
+        requestAnimationFrame(tick);
       }
     }, { threshold: 0.3 });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [end, duration, startOnView]);
-
-  return { count, ref };
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [end]);
+  return { val, ref };
 }
 
-// ============================================================================
-// FADE IN ON SCROLL HOOK
-// ============================================================================
-function useFadeIn() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setVisible(true);
-    }, { threshold: 0.1 });
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, visible };
-}
-
-// ============================================================================
-// MAIN LANDING PAGE
-// ============================================================================
-export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export default function HomePage() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [showBottomCta, setShowBottomCta] = useState(false);
-  const { formatPrice: fmtPrice } = usePrice();
-  const { containerRef, scales } = useStackingCards(4);
-
-  // Counter animations
-  const stat1 = useCountUp(34, 1500);
-  const stat2 = useCountUp(106, 2000);
-  const stat3 = useCountUp(85, 1800);
+  const [activeTab, setActiveTab] = useState(0);
+  const { formatPrice } = usePrice();
+  const c1 = useCounter(60);
+  const c2 = useCounter(97);
+  const c3 = useCounter(24);
+  const r1 = useReveal(); const r2 = useReveal(); const r3 = useReveal();
+  const r4 = useReveal(); const r5 = useReveal(); const r6 = useReveal();
+  const r7 = useReveal();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-      setShowBottomCta(window.scrollY > 600);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const h = () => setScrolled(window.scrollY > 30);
+    window.addEventListener('scroll', h, { passive: true });
+    return () => window.removeEventListener('scroll', h);
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [mobileMenuOpen]);
+  }, [menuOpen]);
 
-  const navLinks = [
-    { name: 'Platform', href: '/platform' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'Blog', href: '/blog' },
+  const tabs = [
+    { label: 'Agency Dashboard', title: 'YOUR COMMAND CENTER', desc: 'See every client, every call, every dollar — from your phone or desktop. Add clients, manage billing, customize branding, track revenue.', mockup: 'agency' },
+    { label: 'Client Dashboard', title: 'WHAT YOUR CLIENTS SEE', desc: 'Each client gets their own branded dashboard with call recordings, transcripts, AI summaries, and SMS notifications. Your brand, not ours.', mockup: 'client' },
+    { label: 'Marketing Site', title: 'YOUR BRANDED WEBSITE', desc: 'Professional and Enterprise plans include a complete marketing website with your logo, colors, domain, and an interactive AI demo phone line.', mockup: 'marketing' },
+    { label: 'Leads CRM', title: 'FIND AND CLOSE CLIENTS', desc: '13+ outreach templates, Google Maps lead finder, follow-up tracking, and smart variable auto-fill. Everything to fill your pipeline.', mockup: 'crm' },
   ];
 
-  return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden" style={{ fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
-      {/* Grain overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+  const renderMockup = (type: string) => {
+    const frame = 'rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-2xl shadow-black/10';
+    const bar = (url: string) => (
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/80">
+        <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400/60" /><div className="w-3 h-3 rounded-full bg-yellow-400/60" /><div className="w-3 h-3 rounded-full bg-green-400/60" /></div>
+        <div className="flex-1 text-center"><span className="inline-block px-5 py-1 rounded-md bg-gray-100 text-[10px] text-gray-400 font-mono">{url}</span></div>
+      </div>
+    );
 
-      {/* ═══ NAVIGATION ═══ */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-        scrolled ? 'bg-[#050505]/90 backdrop-blur-2xl border-b border-white/[0.06]' : 'bg-transparent'
-      }`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
-              </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>VoiceAI Connect</span>
-            </Link>
-
-            <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((item) => (
-                <Link key={item.name} href={item.href} className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors rounded-lg hover:bg-white/[0.03]">{item.name}</Link>
-              ))}
-            </div>
-
-            <div className="hidden lg:flex items-center gap-3">
-              <Link href="/agency/login" className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Sign In</Link>
-              <Link href="/signup" className="group relative inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10">
-                Start Free Trial<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]" aria-label="Toggle menu">
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+    if (type === 'agency') return (
+      <div className={frame}>
+        {bar('app.smartcallsolutions.com/agency')}
+        <div className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600" /><span className="text-sm font-semibold text-gray-800">SmartCall Solutions</span></div>
+            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-medium">● Live</span>
           </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-16 z-50 bg-[#050505]/98 backdrop-blur-xl">
-            <div className="flex flex-col h-full px-6 pt-8 pb-10">
-              <div className="space-y-1 flex-1">
-                {navLinks.map((item) => (
-                  <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)} className="block px-2 py-4 text-lg text-[#fafaf9]/80 hover:text-[#fafaf9] border-b border-white/[0.04]">{item.name}</Link>
-                ))}
-                <Link href="/agency/login" onClick={() => setMobileMenuOpen(false)} className="block px-2 py-4 text-lg text-[#fafaf9]/50 hover:text-[#fafaf9]">Sign In</Link>
-              </div>
-              <div className="pt-6">
-                <Link href="/signup" className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-4 text-base" onClick={() => setMobileMenuOpen(false)}>
-                  Start Free Trial<ArrowRight className="h-5 w-5" />
-                </Link>
-                <p className="mt-3 text-center text-xs text-[#fafaf9]/30">No credit card required</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[['Active Clients','23'],['Monthly Revenue','$3,427'],['Calls Today','47']].map(([l,v])=>(
+              <div key={l} className="p-3 rounded-xl bg-gray-50 border border-gray-100"><p className="text-[10px] text-gray-400 uppercase tracking-wider">{l}</p><p className="text-lg font-bold text-gray-800 mt-0.5">{v}</p></div>
+            ))}
           </div>
-        )}
-      </nav>
-
-      {/* ═══════════════════════════════════════
-          HERO — "Build Your AI Receptionist Agency"
-          ═══════════════════════════════════════ */}
-      <section className="relative pt-28 sm:pt-36 lg:pt-44 pb-16 sm:pb-28">
-        {/* Ambient glow */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-1.5 text-sm mb-6 sm:mb-8">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <span className="text-emerald-300/90">White-label AI receptionist platform</span>
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight leading-[0.95]" style={{ fontFamily: 'var(--font-sora)' }}>
-              <span className="block">Build Your AI</span>
-              <span className="block mt-1 sm:mt-3 bg-gradient-to-r from-emerald-400 via-emerald-300 to-white bg-clip-text text-transparent">
-                Receptionist Agency
-              </span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/55 max-w-2xl mx-auto leading-relaxed">
-              The white-label platform that handles the AI, the phone numbers, and the client dashboard. 
-              You sell to local businesses and keep every dollar.
-            </p>
-
-            {/* Proof points */}
-            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/45">
-              {['No coding required', 'Clients live in 60 seconds', 'Keep 100% revenue'].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-400" />{item}
-                </span>
-              ))}
-            </div>
-
-            {/* CTAs */}
-            <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <Link href="/signup" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-4 text-base font-semibold text-[#050505] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
-                Start Your Free Trial
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link href="/interactive-demo" className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-7 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 group-hover:bg-white/20 transition-colors">
-                  <Play className="h-4 w-4 fill-current ml-0.5" />
-                </span>
-                Watch Demo
-              </Link>
-            </div>
-
-            <p className="mt-5 text-sm text-[#fafaf9]/35">No credit card required · 14-day free trial · Cancel anytime</p>
-          </div>
-
-          {/* Trust logos */}
-          <div className="mt-16 sm:mt-20">
-            <p className="text-center text-xs uppercase tracking-[0.2em] text-[#fafaf9]/25 mb-6">Built on enterprise infrastructure</p>
-            <div className="flex items-center justify-center gap-8 sm:gap-12 opacity-40 grayscale">
-              {['VAPI', 'Telnyx', 'Stripe', 'Supabase'].map((name) => (
-                <span key={name} className="text-sm sm:text-base font-semibold tracking-wide text-[#fafaf9]/60" style={{ fontFamily: 'var(--font-sora)' }}>{name}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          STACKING CARDS — "How It Works"
-          Telnyx-inspired scroll-driven stacking
-          ═══════════════════════════════════════ */}
-      <section id="how-it-works" className="relative border-t border-white/[0.06] scroll-mt-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="text-center mb-6">
-            <span className="text-xs uppercase tracking-[0.2em] text-emerald-400/80">How It Works</span>
-          </div>
-          <h2 className="text-center text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4" style={{ fontFamily: 'var(--font-sora)' }}>
-            From signup to revenue.
-          </h2>
-          <p className="text-center text-lg text-[#fafaf9]/45 max-w-xl mx-auto mb-4">
-            Four steps. One afternoon. Your first client could come this week.
-          </p>
-        </div>
-
-        {/* Stacking cards container */}
-        <div ref={containerRef} className="mx-auto max-w-4xl px-4 sm:px-6 pb-16 sm:pb-32">
-          {[
-            {
-              step: '01',
-              title: 'Brand it as yours',
-              description: 'Upload your logo, pick your colors, set your pricing. The signup page, client dashboard, and marketing site all show your brand. VoiceAI Connect is invisible.',
-              accent: 'from-emerald-500/20 to-emerald-500/5',
-              border: 'border-emerald-500/20',
-              icon: Sparkles,
-              iconColor: 'text-emerald-400',
-              detail: '10 minutes to set up',
-            },
-            {
-              step: '02',
-              title: 'Connect Stripe',
-              description: 'Link your Stripe account. When clients subscribe, money goes directly to you. No middleman, no revenue share, no per-client fees. You set the price.',
-              accent: 'from-blue-500/20 to-blue-500/5',
-              border: 'border-blue-500/20',
-              icon: DollarSign,
-              iconColor: 'text-blue-400',
-              detail: '5 minutes',
-            },
-            {
-              step: '03',
-              title: 'Share your signup link',
-              description: "Send your branded page to a local business. They fill out a form, the platform provisions their AI receptionist and phone number automatically. They're live in 60 seconds.",
-              accent: 'from-amber-500/20 to-amber-500/5',
-              border: 'border-amber-500/20',
-              icon: Users,
-              iconColor: 'text-amber-400',
-              detail: 'Fully automated',
-            },
-            {
-              step: '04',
-              title: 'Collect recurring revenue',
-              description: "Payments hit your Stripe monthly. The AI answers calls 24/7. Clients see their own dashboard with recordings, transcripts, and summaries. You focus on adding more clients.",
-              accent: 'from-purple-500/20 to-purple-500/5',
-              border: 'border-purple-500/20',
-              icon: BarChart3,
-              iconColor: 'text-purple-400',
-              detail: 'Every month',
-            },
-          ].map((card, i) => (
-            <div key={card.step} data-stack-card className="sticky mb-6 sm:mb-8" style={{ top: `${80 + i * 20}px`, zIndex: 10 + i }}>
-              <div
-                className={`relative rounded-2xl sm:rounded-3xl border ${card.border} bg-gradient-to-br ${card.accent} backdrop-blur-sm p-6 sm:p-10 transition-transform duration-300 ease-out`}
-                style={{
-                  transform: `scale(${scales[i] || 1})`,
-                  transformOrigin: 'center top',
-                  backgroundColor: 'rgba(10,10,10,0.85)',
-                }}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center gap-4">
-                      <span className="text-5xl sm:text-6xl font-bold text-white/[0.04]" style={{ fontFamily: 'var(--font-sora)' }}>{card.step}</span>
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] border border-white/[0.08]`}>
-                        <card.icon className={`h-6 w-6 ${card.iconColor}`} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl sm:text-2xl font-semibold mb-3" style={{ fontFamily: 'var(--font-sora)' }}>{card.title}</h3>
-                    <p className="text-[#fafaf9]/55 leading-relaxed text-base">{card.description}</p>
-                    <div className="mt-4 inline-flex items-center gap-2 text-sm text-[#fafaf9]/35">
-                      <Clock className="h-3.5 w-3.5" />
-                      {card.detail}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Post-stack CTA */}
-        <div className="text-center pb-16 sm:pb-24">
-          <div className="inline-flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] px-6 py-4">
-            <Zap className="h-5 w-5 text-emerald-400" />
-            <p className="text-base">
-              <span className="text-emerald-300 font-medium">Zero fulfillment.</span>
-              <span className="text-[#fafaf9]/50 ml-1">The platform handles AI setup, phone provisioning, and client support.</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          THE PROBLEM — Revenue opportunity
-          ═══════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.008] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            {/* Left — the problem */}
-            <div>
-              <span className="text-xs uppercase tracking-[0.2em] text-emerald-400/80">The Opportunity</span>
-              <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]" style={{ fontFamily: 'var(--font-sora)' }}>
-                Local businesses lose money
-                <span className="block text-[#fafaf9]/35 mt-1">every time the phone rings.</span>
-              </h2>
-              <p className="mt-6 text-lg text-[#fafaf9]/50 leading-relaxed">
-                Every plumber, dentist, and contractor misses calls. A single missed call can cost $500+. 
-                They need 24/7 coverage but a human receptionist costs $3,000/month.
-              </p>
-              <p className="mt-4 text-lg text-[#fafaf9]/50 leading-relaxed">
-                You offer them an AI receptionist at $99-299/month. They save money. You build recurring revenue. 
-                The platform makes it possible without writing a line of code.
-              </p>
-
-              {/* Animated stats */}
-              <div className="mt-10 grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <p className="text-3xl sm:text-4xl font-bold text-emerald-400" ref={stat1.ref as any} style={{ fontFamily: 'var(--font-sora)' }}>{stat1.count}%</p>
-                  <p className="text-xs text-[#fafaf9]/40 mt-1">of calls go unanswered</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <p className="text-3xl sm:text-4xl font-bold text-emerald-400" ref={stat2.ref as any} style={{ fontFamily: 'var(--font-sora)' }}>${stat2.count}B</p>
-                  <p className="text-xs text-[#fafaf9]/40 mt-1">lost annually to missed calls</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <p className="text-3xl sm:text-4xl font-bold text-emerald-400" ref={stat3.ref as any} style={{ fontFamily: 'var(--font-sora)' }}>{stat3.count}%</p>
-                  <p className="text-xs text-[#fafaf9]/40 mt-1">won&apos;t call back if unanswered</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right — revenue calculator */}
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/10 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-8">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#fafaf9]/30 mb-8" style={{ fontFamily: 'var(--font-sora)' }}>Revenue Calculator</p>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-5">
-                    <span className="text-[#fafaf9]/55">50 clients × $149/mo</span>
-                    <span className="text-2xl font-semibold" style={{ fontFamily: 'var(--font-sora)' }}>$7,450</span>
-                  </div>
-                  <div className="flex justify-between items-baseline border-b border-white/[0.06] pb-5">
-                    <span className="text-[#fafaf9]/55">Your platform cost</span>
-                    <span className="text-2xl font-semibold text-[#fafaf9]/35" style={{ fontFamily: 'var(--font-sora)' }}>−$199</span>
-                  </div>
-                  <div className="flex justify-between items-baseline pt-2">
-                    <span className="text-[#fafaf9]/70 font-medium">Monthly profit</span>
-                    <span className="text-4xl font-bold text-emerald-400" style={{ fontFamily: 'var(--font-sora)' }}>$7,251</span>
-                  </div>
-                </div>
-                <div className="mt-8 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20">
-                  <p className="text-sm text-emerald-300/80 leading-relaxed">
-                    <strong className="text-emerald-300">That&apos;s 97% margin.</strong> Same $199 platform fee 
-                    whether you have 10 clients or 100. Revenue scales. Costs don&apos;t.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          COMPARISON TABLE — vs GoHighLevel & others
-          ═══════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <span className="text-xs uppercase tracking-[0.2em] text-emerald-400/80">Competition</span>
-            <h2 className="mt-4 text-3xl sm:text-5xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>
-              Not retrofitted for resale.
-              <span className="block text-[#fafaf9]/35 mt-1">Built for it.</span>
-            </h2>
-            <p className="mt-4 text-lg text-[#fafaf9]/45 max-w-2xl mx-auto">
-              Most platforms bolt on white-labeling as an afterthought. VoiceAI Connect was architected 
-              for agency-to-client resale from day one.
-            </p>
-          </div>
-
-          {/* Comparison grid */}
-          <div className="max-w-5xl mx-auto overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left py-4 pr-4 text-[#fafaf9]/40 font-medium w-[240px]">Feature</th>
-                  <th className="py-4 px-4 text-center">
-                    <div className="inline-flex flex-col items-center gap-1 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                      <span className="font-semibold text-emerald-300" style={{ fontFamily: 'var(--font-sora)' }}>VoiceAI Connect</span>
-                    </div>
-                  </th>
-                  <th className="py-4 px-4 text-center text-[#fafaf9]/50">GoHighLevel</th>
-                  <th className="py-4 px-4 text-center text-[#fafaf9]/50">Autocalls</th>
-                  <th className="py-4 px-4 text-center text-[#fafaf9]/50 hidden sm:table-cell">echowin</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { feature: 'Client-facing dashboard', vaic: true, ghl: false, auto: false, echo: false },
-                  { feature: '60-second client onboarding', vaic: true, ghl: false, auto: false, echo: false },
-                  { feature: 'No A2P registration required', vaic: true, ghl: false, auto: true, echo: true },
-                  { feature: 'Built-in leads CRM + templates', vaic: true, ghl: false, auto: false, echo: false },
-                  { feature: 'Mobile-first design', vaic: true, ghl: false, auto: true, echo: true },
-                  { feature: 'Interactive demo phone line', vaic: true, ghl: false, auto: false, echo: false },
-                  { feature: 'Flat pricing (no per-client fees)', vaic: true, ghl: false, auto: true, echo: false },
-                  { feature: 'White-label marketing website', vaic: true, ghl: false, auto: true, echo: true },
-                  { feature: 'Stripe Connect (direct payments)', vaic: true, ghl: true, auto: false, echo: false },
-                ].map((row, i) => (
-                  <tr key={row.feature} className={`border-b border-white/[0.04] ${i % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
-                    <td className="py-3.5 pr-4 text-[#fafaf9]/60">{row.feature}</td>
-                    <td className="py-3.5 px-4 text-center">
-                      {row.vaic ? <Check className="h-5 w-5 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-[#fafaf9]/20 mx-auto" />}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      {row.ghl ? <Check className="h-5 w-5 text-[#fafaf9]/40 mx-auto" /> : <X className="h-4 w-4 text-[#fafaf9]/20 mx-auto" />}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      {row.auto ? <Check className="h-5 w-5 text-[#fafaf9]/40 mx-auto" /> : <X className="h-4 w-4 text-[#fafaf9]/20 mx-auto" />}
-                    </td>
-                    <td className="py-3.5 px-4 text-center hidden sm:table-cell">
-                      {row.echo ? <Check className="h-5 w-5 text-[#fafaf9]/40 mx-auto" /> : <X className="h-4 w-4 text-[#fafaf9]/20 mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          PRICING
-          ═══════════════════════════════════════ */}
-      <section id="pricing" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06] scroll-mt-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <span className="text-xs uppercase tracking-[0.2em] text-emerald-400/80">Pricing</span>
-            <h2 className="mt-4 text-3xl sm:text-5xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>
-              Flat fee. No surprises.
-            </h2>
-            <p className="mt-4 text-lg text-[#fafaf9]/45">
-              Same price whether you have 10 clients or 100. No per-client fees. No revenue share.
-            </p>
-          </div>
-
-          <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-5">
-            {[
-              {
-                name: 'Starter', price: 99, description: 'Test the waters',
-                features: ['Up to 25 clients', 'White-label client dashboard', 'Leads CRM + email templates', 'Stripe Connect payments', 'Email support'],
-                limits: ['Subdomain only', 'No marketing site'],
-              },
-              {
-                name: 'Professional', price: 199, description: 'Most agencies start here', popular: true,
-                features: ['Up to 100 clients', '3 agency + 2 client team members', 'Full marketing website', 'Interactive AI demo line', 'Custom domain', 'API access', 'Priority support'],
-                limits: [],
-              },
-              {
-                name: 'Enterprise', price: 499, description: 'Scale without limits',
-                features: ['Unlimited clients', '10 agency + 5 client team members', 'Everything in Professional', 'Dedicated success manager', 'SLA guarantee', 'Phone support'],
-                limits: [],
-              },
-            ].map((tier) => (
-              <div key={tier.name} className={`relative rounded-2xl border p-6 sm:p-8 transition-all ${
-                tier.popular
-                  ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.06] to-transparent lg:scale-105'
-                  : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
-              }`}>
-                {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-[#050505]">Most Popular</span>
-                  </div>
-                )}
-                <p className="text-sm text-[#fafaf9]/45">{tier.description}</p>
-                <p className="text-xl font-semibold mt-1" style={{ fontFamily: 'var(--font-sora)' }}>{tier.name}</p>
-                <div className="mt-4 mb-6">
-                  <span className="text-4xl font-bold" style={{ fontFamily: 'var(--font-sora)' }}>{fmtPrice(tier.price)}</span>
-                  <span className="text-[#fafaf9]/45">/mo</span>
-                </div>
-                <ul className="space-y-2.5 mb-6">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm">
-                      <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span className="text-[#fafaf9]/65">{f}</span>
-                    </li>
-                  ))}
-                  {tier.limits?.map((l) => (
-                    <li key={l} className="flex items-start gap-2.5 text-sm">
-                      <X className="h-4 w-4 text-[#fafaf9]/15 shrink-0 mt-0.5" />
-                      <span className="text-[#fafaf9]/30">{l}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className={`block w-full rounded-full py-3.5 text-center text-sm font-medium transition-all ${
-                  tier.popular
-                    ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10'
-                    : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
-                }`}>
-                  Start Free Trial
-                </Link>
+          <div className="space-y-2">
+            {[['Dr. Sarah Chen — Dental','12 calls','bg-emerald-400'],['Mike\'s Plumbing','8 calls','bg-blue-400'],['Atlas Law Group','5 calls','bg-purple-400']].map(([n,c,col])=>(
+              <div key={n} className="flex items-center justify-between p-3 rounded-lg bg-gray-50/50 border border-gray-100">
+                <div className="flex items-center gap-2.5"><div className={`w-2 h-2 rounded-full ${col}`}/><span className="text-xs text-gray-700 font-medium">{n}</span></div>
+                <span className="text-[11px] text-gray-400">{c}</span>
               </div>
             ))}
           </div>
-          <p className="text-center mt-8 text-sm text-[#fafaf9]/35">
-            All plans include a 14-day free trial. No credit card required. Cancel anytime.
-          </p>
+        </div>
+      </div>
+    );
+
+    if (type === 'client') return (
+      <div className={frame}>
+        {bar('app.smartcallsolutions.com/dashboard')}
+        <div className="p-5 space-y-4">
+          <div><p className="text-xs text-gray-400">Recent Calls</p><p className="text-sm font-semibold text-gray-800 mt-1">Mike&apos;s Plumbing — AI Receptionist</p></div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+            <div className="flex items-center gap-2 mb-2"><Phone className="w-3.5 h-3.5 text-blue-500" /><span className="text-[11px] font-medium text-blue-700">Call from (404) 555-0189</span><span className="text-[10px] text-blue-400 ml-auto">2 min ago</span></div>
+            <p className="text-xs text-gray-600 leading-relaxed">&quot;Hi, I have a leaking pipe under my kitchen sink. Can someone come out today?&quot;</p>
+            <div className="flex gap-2 mt-3"><span className="px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-medium">Urgent</span><span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-[10px] font-medium">Leak Repair</span></div>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1 py-2 rounded-lg bg-gray-100 text-center text-[11px] text-gray-500 font-medium">▶ Play Recording</div>
+            <div className="flex-1 py-2 rounded-lg bg-gray-100 text-center text-[11px] text-gray-500 font-medium">📄 Transcript</div>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (type === 'marketing') return (
+      <div className={frame}>
+        {bar('smartcallsolutions.com')}
+        <div className="p-5 space-y-4">
+          <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"><span className="text-white text-xs font-bold">SC</span></div><span className="font-semibold text-gray-800">SmartCall Solutions</span></div>
+          <div><p className="text-xl font-bold text-gray-900">Never Miss Another Call</p><p className="text-xs text-gray-500 mt-1">AI-powered receptionist for your business</p></div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 space-y-2">
+            <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-blue-500" /><span className="text-xs font-semibold text-blue-700">Try Our AI Demo</span></div>
+            <p className="text-lg font-mono font-bold text-gray-900">(555) 123-DEMO</p>
+            <p className="text-[10px] text-gray-500">Call now — tell the AI about your business</p>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className={frame}>
+        {bar('app.smartcallsolutions.com/leads')}
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-800">Lead Pipeline</span><span className="text-[10px] text-gray-400">14 prospects</span></div>
+          {[['Ace Plumbing','Outreach 1 sent','bg-yellow-400'],['Bright Dental','Demo scheduled','bg-blue-400'],['Carter Law','Follow-up #2','bg-orange-400'],['Delta HVAC','Ready to close','bg-green-400']].map(([n,s,c])=>(
+            <div key={n} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100">
+              <div className={`w-2.5 h-2.5 rounded-full ${c}`}/><div className="flex-1"><p className="text-xs font-medium text-gray-700">{n}</p><p className="text-[10px] text-gray-400">{s}</p></div>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-300"/>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* NAV */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled?'bg-black/80 backdrop-blur-2xl border-b border-white/[0.06]':''}`}>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12"><div className="flex h-20 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5"><img src="/icon-512x512.png" alt="" className="h-9 w-9 rounded-xl" /><span className="text-lg font-semibold text-white" style={{fontFamily:'var(--font-sora)'}}>VoiceAI Connect</span></Link>
+          <div className="hidden lg:flex items-center gap-8">{['Platform','Pricing','Blog'].map(n=><Link key={n} href={n==='Pricing'?'#pricing':`/${n.toLowerCase()}`} className="text-sm text-white/50 hover:text-white transition-colors">{n}</Link>)}</div>
+          <div className="hidden lg:flex items-center gap-4">
+            <Link href="/agency/login" className="text-sm text-white/50 hover:text-white">Log in</Link>
+            <Link href="/signup" className="btn-pill-secondary text-xs py-2.5 px-5">SIGN UP</Link>
+          </div>
+          <button onClick={()=>setMenuOpen(!menuOpen)} className="lg:hidden text-white/60"><Menu className="w-6 h-6"/></button>
+        </div></div>
+        {menuOpen&&<div className="lg:hidden fixed inset-0 bg-black z-50 flex flex-col"><div className="flex items-center justify-between px-6 h-20"><span className="text-lg font-semibold text-white" style={{fontFamily:'var(--font-sora)'}}>VoiceAI Connect</span><button onClick={()=>setMenuOpen(false)} className="text-white"><X className="w-6 h-6"/></button></div><div className="flex-1 flex flex-col justify-center px-8 gap-6">{['Platform','Pricing','Blog','Log in'].map(n=><Link key={n} href={`/${n.toLowerCase()}`} onClick={()=>setMenuOpen(false)} className="text-3xl font-semibold text-white/80 hover:text-white">{n}</Link>)}<Link href="/signup" onClick={()=>setMenuOpen(false)} className="btn-pill-primary mt-4 justify-center">START FREE TRIAL</Link></div></div>}
+      </nav>
+
+      {/* HERO */}
+      <section className="section-dark relative min-h-screen flex items-center overflow-hidden">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-32 lg:py-0 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-0 items-center">
+            <div className="relative z-10">
+              <h1 className="display-xl text-white">The platform behind<br/><span className="bg-gradient-to-r from-[#4AEABC] via-[#A78BFA] to-[#F9A8D4] bg-clip-text text-transparent">your AI agency</span></h1>
+              <p className="mt-8 text-lg sm:text-xl text-white/50 max-w-lg leading-relaxed">VoiceAI Connect gives you everything to sell AI receptionists to local businesses — white-label branding, automated setup, client dashboards, and a CRM. You sell. We handle the rest.</p>
+              <div className="flex flex-wrap gap-4 mt-10">
+                <Link href="/signup" className="btn-pill-primary">START FREE TRIAL <ArrowDown className="w-4 h-4"/></Link>
+                <Link href="/interactive-demo" className="btn-pill-secondary">WATCH DEMO</Link>
+              </div>
+            </div>
+            <div className="hidden lg:flex justify-end items-center"><div className="hero-visual"><div className="hero-diamond"><div className="hero-layer hero-layer-1"/><div className="hero-layer hero-layer-2"/><div className="hero-layer hero-layer-3"/></div></div></div>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.06] py-8">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+            <p className="label-uppercase text-white/25 mb-5">Built on enterprise infrastructure</p>
+            <div className="flex items-center gap-10 sm:gap-16">{['VAPI','Telnyx','Stripe','Supabase','Vercel'].map(n=><span key={n} className="text-base sm:text-lg font-semibold text-white/20 whitespace-nowrap" style={{fontFamily:'var(--font-sora)'}}>{n}</span>)}</div>
+          </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          FAQ
-          ═══════════════════════════════════════ */}
-      <section id="faq" className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>Common Questions</h2>
+      {/* HOW IT WORKS — Stacking */}
+      <section className="section-dark py-24 lg:py-40">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div ref={r1} className="reveal text-center mb-20">
+            <p className="label-uppercase text-[#4AEABC]/80 mb-4">How It Works</p>
+            <h2 className="display-lg text-white">Four steps to launch.</h2>
+            <p className="mt-4 text-lg text-white/40 max-w-xl mx-auto">Setup takes an afternoon. Your first client could come this week.</p>
           </div>
+          <div className="max-w-3xl mx-auto space-y-6 pb-[30vh]">
+            {[
+              {s:'01',t:'Brand it as yours',d:'Upload your logo, pick colors, set pricing. Every touchpoint shows your brand. VoiceAI Connect is invisible.',g:'from-[#4AEABC]/10',b:'border-[#4AEABC]/15'},
+              {s:'02',t:'Connect Stripe',d:'Link your Stripe account. Client payments go directly to you. No middleman, no revenue share, no per-client fees.',g:'from-[#A78BFA]/10',b:'border-[#A78BFA]/15'},
+              {s:'03',t:'Share your signup link',d:'Send prospects your branded page. They enter business info, the platform provisions AI + phone number — live in 60 seconds.',g:'from-[#F9A8D4]/10',b:'border-[#F9A8D4]/15'},
+              {s:'04',t:'Collect recurring revenue',d:'Payments hit your Stripe monthly. AI answers calls 24/7. Clients see their own dashboard. You add more clients.',g:'from-[#FCD34D]/10',b:'border-[#FCD34D]/15'},
+            ].map((c,i)=>(
+              <div key={c.s} className="stack-card" style={{top:`${100+i*30}px`,zIndex:10+i}}>
+                <div className={`rounded-3xl border ${c.b} bg-gradient-to-br ${c.g} to-transparent p-8 sm:p-12`} style={{backgroundColor:'rgba(12,12,12,0.95)'}}>
+                  <div className="flex items-start gap-6 sm:gap-10">
+                    <span className="text-6xl sm:text-8xl font-bold text-white/[0.04] leading-none select-none" style={{fontFamily:'var(--font-sora)'}}>{c.s}</span>
+                    <div><h3 className="text-2xl sm:text-3xl font-bold text-white mb-3" style={{fontFamily:'var(--font-sora)'}}>{c.t}</h3><p className="text-base text-white/50 leading-relaxed max-w-lg">{c.d}</p></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PLATFORM DEMO — Light */}
+      <section className="section-light py-24 lg:py-40">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div ref={r2} className="reveal text-center mb-16">
+            <p className="label-uppercase text-black/40 mb-4">Platform</p>
+            <h2 className="display-lg text-black">See what you get.</h2>
+            <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">Every tool you need to run an AI receptionist agency — branded as yours, managed from anywhere.</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-1 mb-12 border-b border-black/10">
+            {tabs.map((tab,i)=><button key={tab.label} onClick={()=>setActiveTab(i)} className={`px-5 py-3 text-sm font-medium transition-all relative ${activeTab===i?'text-black':'text-black/40 hover:text-black/60'}`}>{tab.label}{activeTab===i&&<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"/>}</button>)}
+          </div>
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <p className="label-uppercase text-black/30 mb-3">{tabs[activeTab].title}</p>
+              <h3 className="display-md text-black">{tabs[activeTab].label}</h3>
+              <p className="mt-4 text-base text-black/55 leading-relaxed max-w-lg">{tabs[activeTab].desc}</p>
+              <Link href="/signup" className="btn-pill-primary mt-8">START FREE TRIAL <ArrowDown className="w-4 h-4"/></Link>
+            </div>
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#4AEABC]/10 via-[#A78BFA]/10 to-[#F9A8D4]/10 rounded-3xl blur-2xl opacity-50"/>
+              <div className="relative">{renderMockup(tabs[activeTab].mockup)}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPETITION — Light */}
+      <section className="section-light py-24 lg:py-40 border-t border-black/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div ref={r3} className="reveal text-center mb-16">
+            <p className="label-uppercase text-black/40 mb-4">Competition</p>
+            <h2 className="display-lg text-black">Not retrofitted for resale.<br/>Built for it.</h2>
+            <p className="mt-4 text-lg text-black/50 max-w-2xl mx-auto">Most platforms bolt on white-labeling as an afterthought. VoiceAI Connect was built for agency-to-client resale from day one.</p>
+          </div>
+          <div className="max-w-5xl mx-auto overflow-x-auto">
+            <table className="w-full text-sm"><thead><tr>
+              <th className="text-left py-5 pr-6 text-black/40 font-semibold label-uppercase w-[280px]">Feature</th>
+              <th className="py-5 px-6 text-center comparison-highlight"><span className="font-bold text-black text-base" style={{fontFamily:'var(--font-sora)'}}>VoiceAI Connect</span></th>
+              <th className="py-5 px-6 text-center text-black/50 font-semibold">GoHighLevel</th>
+              <th className="py-5 px-6 text-center text-black/50 font-semibold">Autocalls</th>
+              <th className="py-5 px-6 text-center text-black/50 font-semibold hidden md:table-cell">echowin</th>
+            </tr></thead><tbody>
+              {[
+                ['Client-facing dashboard for end businesses',true,false,false,false],
+                ['60-second automated client onboarding',true,false,false,false],
+                ['No A2P registration required per client',true,false,true,true],
+                ['Built-in leads CRM with outreach templates',true,false,false,false],
+                ['Mobile-first agency management',true,false,true,true],
+                ['Interactive AI demo phone line',true,false,false,false],
+                ['Flat pricing with no per-client fees',true,false,true,false],
+                ['White-label marketing website included',true,false,true,true],
+                ['Direct Stripe Connect payments to agency',true,true,false,false],
+              ].map(([f,v,g,a,e])=>(
+                <tr key={f as string} className="border-t border-black/[0.06]">
+                  <td className="py-4 pr-6 text-black/60">{f as string}</td>
+                  <td className="py-4 px-6 text-center comparison-highlight">{v?<Check className="w-5 h-5 text-black mx-auto" strokeWidth={2.5}/>:<XIcon className="w-4 h-4 text-black/20 mx-auto"/>}</td>
+                  <td className="py-4 px-6 text-center">{g?<Check className="w-5 h-5 text-black/40 mx-auto"/>:<XIcon className="w-4 h-4 text-black/15 mx-auto"/>}</td>
+                  <td className="py-4 px-6 text-center">{a?<Check className="w-5 h-5 text-black/40 mx-auto"/>:<XIcon className="w-4 h-4 text-black/15 mx-auto"/>}</td>
+                  <td className="py-4 px-6 text-center hidden md:table-cell">{e?<Check className="w-5 h-5 text-black/40 mx-auto"/>:<XIcon className="w-4 h-4 text-black/15 mx-auto"/>}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS + CTA — Dark */}
+      <section className="section-dark py-24 lg:py-40">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div className="grid lg:grid-cols-2 gap-16 items-center mb-24 lg:mb-40">
+            <div ref={r4} className="reveal">
+              <h2 className="display-lg text-white">This is how you start<br/><span className="bg-gradient-to-r from-[#4AEABC] to-white bg-clip-text text-transparent">an AI business.</span></h2>
+              <p className="mt-6 text-lg text-white/45 max-w-lg leading-relaxed">Not a course. Not a community. A platform — with real infrastructure, real clients, and real recurring revenue.</p>
+              <div className="flex flex-wrap gap-4 mt-10"><Link href="/signup" className="btn-pill-primary">START FREE TRIAL <ArrowDown className="w-4 h-4"/></Link><Link href="/interactive-demo" className="btn-pill-secondary">WATCH DEMO</Link></div>
+            </div>
+            <div className="hidden lg:flex justify-end"><div className="hero-visual" style={{width:360,height:360}}><div className="hero-diamond"><div className="hero-layer hero-layer-1"/><div className="hero-layer hero-layer-2"/><div className="hero-layer hero-layer-3"/></div></div></div>
+          </div>
+          <div ref={r5} className="reveal grid sm:grid-cols-3 gap-8 sm:gap-16 border-t border-white/[0.06] pt-16">
+            <div><p className="label-uppercase text-white/30 mb-2">Client Onboarding</p><p className="stat-number text-white"><span ref={c1.ref}>{c1.val}</span>s</p><p className="text-sm text-white/40 mt-2">From signup to live AI receptionist. No coding, no A2P, no waiting.</p></div>
+            <div><p className="label-uppercase text-white/30 mb-2">Profit Margin</p><p className="stat-number text-white"><span ref={c2.ref}>{c2.val}</span>%</p><p className="text-sm text-white/40 mt-2">Same platform fee for 10 or 100 clients. Revenue scales, costs don&apos;t.</p></div>
+            <div><p className="label-uppercase text-white/30 mb-2">AI Coverage</p><p className="stat-number text-white"><span ref={c3.ref}>{c3.val}</span>/7</p><p className="text-sm text-white/40 mt-2">Every call answered — nights, weekends, holidays.</p></div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING — Light */}
+      <section id="pricing" className="section-light py-24 lg:py-40 scroll-mt-24">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div ref={r6} className="reveal text-center mb-16">
+            <p className="label-uppercase text-black/40 mb-4">Pricing</p>
+            <h2 className="display-lg text-black">Flat fee. No surprises.</h2>
+            <p className="mt-4 text-lg text-black/50">Same price whether you have 10 clients or 100.</p>
+          </div>
+          <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-5">
+            {[
+              {name:'Starter',price:99,desc:'Test the waters',features:['Up to 25 clients','White-label client dashboard','Leads CRM + email templates','Stripe Connect payments','Email support'],limits:['Subdomain only','No marketing site']},
+              {name:'Professional',price:199,desc:'Most agencies start here',pop:true,features:['Up to 100 clients','3 agency + 2 client team members','Full marketing website','Interactive AI demo line','Custom domain','API access','Priority support'],limits:[]},
+              {name:'Enterprise',price:499,desc:'Scale without limits',features:['Unlimited clients','10 agency + 5 client team members','Everything in Professional','Dedicated success manager','SLA guarantee','Phone support'],limits:[]},
+            ].map(t=>(
+              <div key={t.name} className={`rounded-2xl border p-7 sm:p-8 relative ${t.pop?'border-black bg-white shadow-xl lg:scale-105':'border-black/10 bg-white/60'}`}>
+                {t.pop&&<div className="absolute -top-3 left-1/2 -translate-x-1/2"><span className="rounded-full bg-black text-white px-4 py-1 text-xs font-semibold" style={{fontFamily:'var(--font-sora)'}}>MOST POPULAR</span></div>}
+                <p className="text-sm text-black/40">{t.desc}</p>
+                <p className="text-xl font-bold text-black mt-1" style={{fontFamily:'var(--font-sora)'}}>{t.name}</p>
+                <div className="my-5"><span className="text-4xl font-bold text-black" style={{fontFamily:'var(--font-sora)'}}>{formatPrice(t.price)}</span><span className="text-black/40">/mo</span></div>
+                <ul className="space-y-2.5 mb-6">
+                  {t.features.map(f=><li key={f} className="flex items-start gap-2.5 text-sm"><Check className="w-4 h-4 text-black shrink-0 mt-0.5" strokeWidth={2.5}/><span className="text-black/65">{f}</span></li>)}
+                  {t.limits?.map(l=><li key={l} className="flex items-start gap-2.5 text-sm"><XIcon className="w-4 h-4 text-black/15 shrink-0 mt-0.5"/><span className="text-black/30">{l}</span></li>)}
+                </ul>
+                <Link href="/signup" className={`block w-full text-center rounded-full py-3.5 text-sm font-semibold transition-all ${t.pop?'bg-black text-white hover:bg-black/80':'border border-black/15 text-black hover:border-black/40'}`}>Start Free Trial</Link>
+              </div>
+            ))}
+          </div>
+          <p className="text-center mt-8 text-sm text-black/35">All plans include 14-day free trial · No credit card · Cancel anytime</p>
+        </div>
+      </section>
+
+      {/* FAQ — Dark */}
+      <section className="section-dark py-24 lg:py-40">
+        <div className="max-w-3xl mx-auto px-6 lg:px-12">
+          <div ref={r7} className="reveal text-center mb-12"><h2 className="display-md text-white">Common Questions</h2></div>
           <div className="space-y-3">
             {[
-              { q: "Wait — is this another 'make money with AI' thing?", a: "No courses. No upsells. No guru nonsense. VoiceAI Connect is infrastructure — the same way Shopify lets you start a store without building an e-commerce platform from scratch. You get a real white-label platform, real clients pay you real money every month, and you keep 100% of what you charge. The math is simple and the business model is proven: local businesses need phone coverage, and AI does it for a fraction of what a human receptionist costs." },
-              { q: "What exactly is VoiceAI Connect?", a: "It's the complete infrastructure for running an AI receptionist agency. Think of it as 'Shopify for AI receptionists.' You brand the platform as your own company, find local businesses that miss phone calls (plumbers, dentists, lawyers, etc.), and sell them an AI receptionist service at $99-299/month. When they sign up through your branded page, the platform automatically configures their AI, provisions a phone number, and creates their dashboard. You collect the payment. We handle everything else." },
-              { q: "Do my clients know about VoiceAI Connect?", a: "No. Your logo, your colors, your domain. The client dashboard, emails, marketing site, and phone experience all show your brand. VoiceAI Connect is completely invisible. As far as your clients know, you built the technology." },
-              { q: "How do I actually get clients?", a: "We provide sales scripts, 13+ email/SMS outreach templates, and a built-in leads CRM to track prospects. Most agencies use cold outreach to local businesses (plumbers, dentists, lawyers), Facebook/Instagram ads, or content marketing. The interactive AI demo phone line is your secret weapon — prospects call it, tell the AI about their business, and it transforms into their receptionist right on the call. It sells itself." },
-              { q: "What's the difference between this and GoHighLevel?", a: "GoHighLevel is a Swiss Army knife for marketing agencies — CRMs, funnels, email, SMS, websites, and more. If you need all of that, GHL is great. VoiceAI Connect does one thing extremely well: AI receptionist resale. The key differences: clients get their own dashboard (GHL has none), onboarding takes 60 seconds (GHL takes days due to A2P registration), and you run the whole business from your phone (GHL is desktop-first). If you're building specifically an AI receptionist agency, you don't need a Swiss Army knife — you need a scalpel." },
-              { q: "Do I need technical skills?", a: "No. If you can use Instagram, you can run this business. Upload your logo, pick colors, set prices, share your link. That's the entire technical requirement. The platform handles AI configuration, phone number provisioning, call routing, and everything else automatically." },
-              { q: "How does pricing work?", a: "You pay us a flat monthly fee ($99-499 depending on your plan). You charge your clients whatever you want — most agencies charge $99-299/month per client. There are no per-client fees, no usage fees, and no revenue share. 10 clients or 100, your platform cost stays the same." },
-              { q: "Can I really charge $99-299/month for this?", a: "Yes, and many charge more. A single missed call can cost a business $500+. A part-time human receptionist costs $2,000-3,000/month. For 24/7 AI coverage at $149/month? It's a no-brainer for them. You're not selling software — you're selling the solution to a problem that's already costing them money." },
-            ].map((item, i) => (
-              <details key={i} className="group rounded-xl border border-white/[0.06] bg-white/[0.015] overflow-hidden">
-                <summary className="flex items-center justify-between p-5 sm:p-6 cursor-pointer list-none select-none">
-                  <h3 className="text-base font-medium pr-4">{item.q}</h3>
-                  <ChevronRight className="h-5 w-5 text-[#fafaf9]/30 shrink-0 transition-transform duration-200 group-open:rotate-90" />
-                </summary>
-                <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-0">
-                  <p className="text-sm text-[#fafaf9]/55 leading-relaxed">{item.a}</p>
-                </div>
+              {q:"Wait — is this another 'make money with AI' thing?",a:"No courses. No upsells. No guru nonsense. VoiceAI Connect is infrastructure — like Shopify lets you start a store without building e-commerce from scratch. Real platform, real clients, real monthly payments. The math is simple: local businesses need phone coverage, AI does it for a fraction of a human receptionist."},
+              {q:"What exactly is VoiceAI Connect?",a:"Think 'Shopify for AI receptionists.' You brand the platform as your company, find local businesses that miss calls, and sell them AI receptionist service at $99-299/month. When they sign up, the platform auto-provisions their AI, phone number, and dashboard. You collect payment. We handle everything else."},
+              {q:"Do my clients know about VoiceAI Connect?",a:"No. Your logo, colors, domain. The client dashboard, emails, marketing site, and phone experience all show your brand. VoiceAI Connect is invisible to your clients."},
+              {q:"What's the difference vs GoHighLevel?",a:"GHL is a Swiss Army knife — CRMs, funnels, email, SMS. VoiceAI Connect does one thing well: AI receptionist resale. Key differences: clients get their own dashboard (GHL has none), onboarding takes 60 seconds (GHL takes days with A2P), and you run it from your phone (GHL is desktop-first)."},
+              {q:"How do I get clients?",a:"13+ outreach templates, sales scripts, built-in leads CRM, Google Maps lead finder. The AI demo phone line is your secret weapon — prospects call, tell the AI about their business, and it becomes their receptionist on the spot."},
+              {q:"Do I need technical skills?",a:"No. Upload your logo, pick colors, set prices, share your link. The platform handles AI config, phone provisioning, and everything else automatically."},
+              {q:"Can I really charge $99-299/month?",a:"Yes. A missed call costs a business $500+. A human receptionist costs $3,000/month. AI coverage at $149? No-brainer. You're solving a problem that's already costing them money."},
+            ].map((item,i)=>(
+              <details key={i} className="group rounded-2xl border border-white/[0.06] overflow-hidden">
+                <summary className="flex items-center justify-between p-6 cursor-pointer select-none"><span className="text-base font-medium text-white/90 pr-4">{item.q}</span><ChevronRight className="w-5 h-5 text-white/25 shrink-0 transition-transform duration-200 group-open:rotate-90"/></summary>
+                <div className="px-6 pb-6"><p className="text-sm text-white/45 leading-relaxed">{item.a}</p></div>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════
-          FINAL CTA
-          ═══════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-amber-500/5 to-emerald-500/10 blur-3xl" />
-            <div className="relative">
-              <h2 className="text-3xl sm:text-5xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-sora)' }}>
-                This is how you start
-                <span className="block mt-1 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                  an AI business.
-                </span>
-              </h2>
-              <p className="mt-6 text-lg text-[#fafaf9]/50 max-w-lg mx-auto">
-                Real infrastructure. Real clients. Real recurring revenue. 
-                Not a course — a platform.
-              </p>
-              <div className="mt-10">
-                <Link href="/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-[#050505] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
-                  Start Your Free Trial
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-              <p className="mt-5 text-sm text-[#fafaf9]/35">No credit card required · 14-day free trial · Cancel anytime</p>
-            </div>
+      {/* FOOTER — Light */}
+      <footer className="section-light py-16 border-t border-black/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+            <div><Link href="/" className="flex items-center gap-2 mb-4"><img src="/icon-512x512.png" alt="" className="h-8 w-8 rounded-lg"/><span className="font-bold text-black" style={{fontFamily:'var(--font-sora)'}}>VoiceAI Connect</span></Link><p className="text-xs text-black/40">The white-label platform for AI receptionist agencies.</p></div>
+            {[{t:'PRODUCT',l:[['Platform','/platform'],['Pricing','/#pricing'],['Blog','/blog'],['Referral Program','/referral-program']]},{t:'COMPARE',l:[['vs GoHighLevel','/blog/voiceai-connect-vs-gohighlevel'],['vs Autocalls','/blog/voiceai-connect-vs-autocalls'],['vs echowin','/blog/voiceai-connect-vs-echowin']]},{t:'LEGAL',l:[['Terms','/terms'],['Privacy','/privacy'],['Contact','mailto:support@voiceaiconnect.com']]}].map(c=>(
+              <div key={c.t}><p className="label-uppercase text-black/30 mb-4">{c.t}</p><div className="space-y-2.5">{c.l.map(([n,h])=><Link key={n} href={h} className="block text-sm text-black/50 hover:text-black transition-colors">{n}</Link>)}</div></div>
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          FOOTER
-          ═══════════════════════════════════════ */}
-      <footer className="border-t border-white/[0.06] py-10 sm:py-12 pb-28 sm:pb-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
-            <div>
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
-                <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-sora)' }}>VoiceAI Connect</span>
-              </Link>
-              <p className="text-xs text-[#fafaf9]/35 leading-relaxed">The white-label platform for AI receptionist agencies.</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-[#fafaf9]/25 mb-3">Product</p>
-              <div className="space-y-2">
-                {[['Platform', '/platform'], ['Features', '/features'], ['Pricing', '/#pricing'], ['Blog', '/blog']].map(([name, href]) => (
-                  <Link key={name} href={href} className="block text-sm text-[#fafaf9]/40 hover:text-[#fafaf9] transition-colors">{name}</Link>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-[#fafaf9]/25 mb-3">Compare</p>
-              <div className="space-y-2">
-                {[['vs GoHighLevel', '/blog/voiceai-connect-vs-gohighlevel'], ['vs Autocalls', '/blog/voiceai-connect-vs-autocalls'], ['vs echowin', '/blog/voiceai-connect-vs-echowin']].map(([name, href]) => (
-                  <Link key={name} href={href} className="block text-sm text-[#fafaf9]/40 hover:text-[#fafaf9] transition-colors">{name}</Link>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-[#fafaf9]/25 mb-3">Legal</p>
-              <div className="space-y-2">
-                {[['Terms', '/terms'], ['Privacy', '/privacy'], ['Contact', 'mailto:support@voiceaiconnect.com']].map(([name, href]) => (
-                  <Link key={name} href={href} className="block text-sm text-[#fafaf9]/40 hover:text-[#fafaf9] transition-colors">{name}</Link>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-white/[0.06] text-center">
-            <p className="text-xs text-[#fafaf9]/20">© 2026 VoiceAI Connect. All rights reserved.</p>
-          </div>
+          <div className="pt-8 border-t border-black/[0.06]"><p className="text-xs text-black/25">© 2026 VoiceAI Connect. All rights reserved.</p></div>
         </div>
       </footer>
 
-      {/* Sticky mobile CTA */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ${
-        showBottomCta && !mobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-      }`}>
-        <div className="bg-[#050505]/95 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-          <Link href="/signup" className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-3.5 text-sm active:scale-[0.98] transition-transform">
-            Start Free Trial — No Card Required<ArrowRight className="h-4 w-4" />
-          </Link>
+      {/* Mobile CTA */}
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled&&!menuOpen?'translate-y-0':'translate-y-full'}`}>
+        <div className="bg-black/95 backdrop-blur-xl border-t border-white/[0.06] px-4 pt-3" style={{paddingBottom:'max(0.75rem, env(safe-area-inset-bottom))'}}>
+          <Link href="/signup" className="flex items-center justify-center gap-2 w-full bg-white text-black font-semibold rounded-full py-3.5 text-sm" style={{fontFamily:'var(--font-sora)'}}>START FREE TRIAL<ArrowRight className="w-4 h-4"/></Link>
         </div>
       </div>
     </div>
