@@ -18,6 +18,8 @@ import {
   Building2, Link2, Tag, ArrowUpDown, MapPin, User, PhoneOff,
   CheckCircle, X, ArrowLeft, Menu
 } from 'lucide-react';
+import MarketingNav from '@/components/marketing-nav';
+import MarketingFooter from '@/components/marketing-footer';
 
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
   return (
@@ -888,8 +890,9 @@ interface TourStep {
   body: string;
 }
 
-function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
+function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, frameRef }: {
   step: TourStep; stepIndex: number; totalSteps: number; onNext: () => void; onPrev: () => void; onPause: () => void;
+  frameRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [ready, setReady] = useState(false);
@@ -911,8 +914,23 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
       return;
     }
 
+    // Some targets exist twice in the DOM (mobile + desktop variants). Pick
+    // the first element that's actually on-screen — hidden or translated-off
+    // elements would wreck tooltip placement.
+    const findVisibleTarget = (): Element | null => {
+      const all = document.querySelectorAll(`[data-tour="${step.target}"]`);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      for (const el of Array.from(all)) {
+        const r = el.getBoundingClientRect();
+        const onScreen = r.width > 0 && r.height > 0 && r.right > 0 && r.left < vw && r.bottom > 0 && r.top < vh;
+        if (onScreen) return el;
+      }
+      return all[0] ?? null;
+    };
+
     const timer = setTimeout(() => {
-      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      const el = findVisibleTarget();
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         setTimeout(() => {
@@ -926,7 +944,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
     }, 250);
 
     const measure = () => {
-      const el = document.querySelector(`[data-tour="${step.target}"]`);
+      const el = findVisibleTarget();
       if (el) setRect(el.getBoundingClientRect());
     };
     window.addEventListener('resize', measure);
@@ -950,13 +968,30 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
   const dx = dragOffset?.x || 0;
   const dy = dragOffset?.y || 0;
 
+  // Convert a viewport-relative DOMRect into frame-relative coordinates.
+  const toFrameRect = (r: DOMRect | null): { top: number; left: number; right: number; bottom: number; width: number; height: number } | null => {
+    if (!r) return null;
+    const f = frameRef.current?.getBoundingClientRect();
+    if (!f) return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    return { top: r.top - f.top, left: r.left - f.left, right: r.right - f.left, bottom: r.bottom - f.top, width: r.width, height: r.height };
+  };
+  const frameW = () => frameRef.current?.clientWidth ?? window.innerWidth;
+  const frameH = () => frameRef.current?.clientHeight ?? window.innerHeight;
+
   const getTooltipStyle = (): React.CSSProperties => {
-    if (isCentered || !rect) return { position: 'fixed', top: '50%', left: '50%', transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))` };
-    const maxW = Math.min(360, window.innerWidth - 32); const tooltipH = 280; const gap = 12;
-    const vw = window.innerWidth; const vh = window.innerHeight; const margin = 12;
-    const headerH = vw < 1024 ? 56 : 0;
-    const spaceAbove = rect.top; const spaceBelow = vh - rect.bottom;
-    const spaceRight = vw - rect.right; const spaceLeft = rect.left;
+    if (isCentered || !rect) return { position: 'absolute', top: '50%', left: '50%', transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))` };
+    const fw = frameW(); const fh = frameH();
+    const relRect = toFrameRect(rect)!;
+    // Measure the actual tooltip if it's already mounted; fall back to a
+    // conservative estimate so initial placement doesn't clip the Next button.
+    const measuredH = tooltipRef.current?.offsetHeight ?? 0;
+    const maxW = Math.min(340, fw - 32);
+    const tooltipH = Math.max(measuredH, 340);
+    const gap = 12;
+    const margin = 12;
+    const headerH = fw < 1024 ? 56 : 0;
+    const spaceAbove = relRect.top; const spaceBelow = fh - relRect.bottom;
+    const spaceRight = fw - relRect.right; const spaceLeft = relRect.left;
 
     let pos = step.position;
     if (pos === 'bottom' && spaceBelow < tooltipH + gap && spaceAbove > spaceBelow) pos = 'top';
@@ -967,27 +1002,29 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
       pos = spaceRight >= maxW + gap ? 'right' : spaceLeft >= maxW + gap ? 'left' : 'bottom';
     }
 
-    const style: React.CSSProperties = { position: 'fixed', maxWidth: maxW, zIndex: 60 };
-    const clampX = (x: number) => Math.max(margin, Math.min(x, vw - maxW - margin));
-    const clampY = (y: number) => Math.max(headerH + margin, Math.min(y, vh - tooltipH - margin));
-    const visTop = Math.max(rect.top, 0); const visBottom = Math.min(rect.bottom, vh);
+    const style: React.CSSProperties = { position: 'absolute', maxWidth: maxW, zIndex: 60 };
+    const clampX = (x: number) => Math.max(margin, Math.min(x, fw - maxW - margin));
+    const clampY = (y: number) => Math.max(headerH + margin, Math.min(y, fh - tooltipH - margin));
+    const visTop = Math.max(relRect.top, 0); const visBottom = Math.min(relRect.bottom, fh);
     const visMidY = (visTop + visBottom) / 2;
-    const visMidX = Math.max(rect.left, 0) + Math.min(rect.width, vw) / 2;
+    const visMidX = Math.max(relRect.left, 0) + Math.min(relRect.width, fw) / 2;
 
     switch (pos) {
-      case 'bottom': style.top = clampY(Math.min(rect.bottom, vh - 56) + gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'top': style.top = clampY(Math.max(rect.top, 56) - tooltipH - gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'right': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = Math.min(rect.right + gap, vw - maxW - margin) + dx; break;
-      case 'left': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = clampX(rect.left - maxW - gap) + dx; break;
+      case 'bottom': style.top = clampY(Math.min(relRect.bottom, fh - 56) + gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
+      case 'top': style.top = clampY(Math.max(relRect.top, 56) - tooltipH - gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
+      case 'right': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = Math.min(relRect.right + gap, fw - maxW - margin) + dx; break;
+      case 'left': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = clampX(relRect.left - maxW - gap) + dx; break;
     }
     return style;
   };
 
   const getClipPath = () => {
     if (!rect || isCentered) return 'none';
-    const x = Math.max(0, rect.left - pad); const y = Math.max(56, rect.top - pad);
-    const x2 = Math.min(window.innerWidth, rect.right + pad);
-    const y2 = Math.min(window.innerHeight, rect.bottom + pad);
+    const fw = frameW(); const fh = frameH();
+    const relRect = toFrameRect(rect)!;
+    const x = Math.max(0, relRect.left - pad); const y = Math.max(0, relRect.top - pad);
+    const x2 = Math.min(fw, relRect.right + pad);
+    const y2 = Math.min(fh, relRect.bottom + pad);
     const w = x2 - x; const h = y2 - y;
     if (w <= 0 || h <= 0) return 'none';
     const r = 12;
@@ -997,7 +1034,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
   const pct = Math.round(((stepIndex + 1) / totalSteps) * 100);
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
+    <div ref={overlayRef} className="absolute inset-0 z-[55]" onClick={e => { if (e.target === overlayRef.current) onPause(); }}>
       <style dangerouslySetInnerHTML={{ __html: TOUR_CSS }} />
       {/* Backdrop — always visible, dims immediately */}
       <div className="absolute inset-0" style={{
@@ -1011,11 +1048,14 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
       {/* Spotlight ring + Tooltip — only render after measurement */}
       {ready && (<>
         {rect && !isCentered && (() => {
-          const rx = Math.max(0, rect.left - pad); const ry = Math.max(56, rect.top - pad);
-          const rx2 = Math.min(window.innerWidth, rect.right + pad);
-          const ry2 = Math.min(window.innerHeight, rect.bottom + pad);
+          const fw = frameW(); const fh = frameH();
+          const rel = toFrameRect(rect);
+          if (!rel) return null;
+          const rx = Math.max(0, rel.left - pad); const ry = Math.max(0, rel.top - pad);
+          const rx2 = Math.min(fw, rel.right + pad);
+          const ry2 = Math.min(fh, rel.bottom + pad);
           return (rx2 - rx > 0 && ry2 - ry > 0) ? (
-            <div key={stepIndex} className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
+            <div key={`spot-${stepIndex}`} className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
               left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
               border: '2px solid rgba(16,185,129,0.4)',
             }} />
@@ -1023,7 +1063,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
         })()}
 
         <div
-          key={stepIndex}
+          key={`tip-${stepIndex}`}
           ref={tooltipRef}
           className={isCentered ? 'tour-tooltip-center' : 'tour-tooltip-enter'}
           style={{ ...getTooltipStyle(), cursor: isDragging ? 'grabbing' : isCentered ? 'default' : 'grab', userSelect: 'none', touchAction: 'none' }}
@@ -1106,7 +1146,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause }: {
 function TourResumePill({ step, total, onResume, onRestart }: { step: number; total: number; onResume: () => void; onRestart: () => void }) {
   const pct = Math.round(((step + 1) / total) * 100);
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 tour-pill-enter">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 tour-pill-enter">
       <div className="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.08)' }}>
         {/* Progress ring */}
         <div className="relative flex items-center justify-center w-9 h-9">
@@ -1141,43 +1181,44 @@ export default function DemoPage() {
   const [tourStep, setTourStep] = useState(0);
   const [tourPaused, setTourPaused] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const demoFrameRef = useRef<HTMLDivElement>(null);
   const agencyNav = [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, { id: 'clients', label: 'Clients', icon: Users }, { id: 'leads', label: 'Leads', icon: Target }, { id: 'outreach', label: 'Outreach', icon: Send }, { id: 'analytics', label: 'Analytics', icon: BarChart3 }, { id: 'demo-phone', label: 'Demo Phone', icon: Phone }, { id: 'marketing', label: 'Marketing', icon: Globe }, { id: 'referrals', label: 'Referrals', icon: Gift }, { id: 'branding', label: 'Branding', icon: Paintbrush }, { id: 'settings', label: 'Settings', icon: Settings }];
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
 
   const TOUR_STEPS = [
     { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const,
-      title: 'What this can become for your agency',
-      body: 'Imagine 47 local businesses paying your agency $99 per month for an AI receptionist.\n\nThat\u2019s $4,653 in monthly recurring revenue from a service that runs automatically. This dashboard shows every client subscription and the total revenue your AI service is producing \u2014 all in one place.' },
+      title: 'Your monthly recurring revenue',
+      body: 'Forty-seven local businesses paying $99/month each \u2014 $4,653 in MRR running on autopilot.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you scale, so this number compounds while costs don\u2019t.' },
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
-      title: 'Each client equals recurring revenue',
-      body: 'Every row here represents a business paying you monthly for their AI receptionist.\n\nYou decide the pricing \u2014 $49, $99, $149 or more depending on your market. When a client signs up, the platform automatically creates their phone number, AI assistant, and dashboard. No setup calls. No fulfillment work.' },
+      title: 'Each row, a paying client',
+      body: 'Every entry is a local business paying you monthly for their AI receptionist.\n\nYou set the price \u2014 $49, $99, $149, your call. The platform handles provisioning, billing, and ongoing operations. No setup calls. No fulfillment work.' },
     { target: 'add-client-form', view: 'agency' as const, tab: 'add-client', position: 'right' as const,
-      title: '60-second client onboarding',
-      body: 'This is all it takes to add a new client.\n\nEnter their business name, pick a plan, and hit Create. The platform provisions their AI phone number, configures the voice assistant for their industry, and sends them login credentials automatically. No technical setup on your end.' },
+      title: 'Onboarding in sixty seconds',
+      body: 'Business name, plan, click Create.\n\nThe platform provisions a dedicated phone number, configures the AI agent for the industry, and sends login credentials. No technical work on your end. No A2P registration delay.' },
     { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
-      title: 'Track the growth of your AI revenue',
-      body: 'See exactly how your AI service is performing.\n\nMonthly recurring revenue, total earnings, active clients, and payouts update in real time. Payments are handled automatically through Stripe Connect, so revenue from your clients goes straight to your account.' },
+      title: 'Real-time analytics',
+      body: 'MRR, total revenue, active clients, and Stripe payouts update live.\n\nStripe Connect routes every subscription directly to your bank \u2014 the platform never custodies funds.' },
     { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const,
-      title: 'The easiest way to sell the service',
-      body: 'Instead of explaining the AI, let prospects experience it.\n\nGive them this demo phone number. When they call, they hear the AI answer live \u2014 scheduling, answering questions, and capturing leads. Most prospects understand the value within seconds.' },
+      title: 'Your highest-converting sales tool',
+      body: 'Instead of explaining what an AI receptionist does, hand prospects this number and let them call.\n\nScheduling, FAQs, lead capture \u2014 they understand the value in 30 seconds. No sales call needed.' },
     { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const,
-      title: 'Your automated sales funnel',
-      body: 'Every agency receives a fully branded marketing site.\n\nIt includes your pricing plans, a live AI demo, and a signup flow for new clients. Prospects can discover the product, try the AI, and subscribe \u2014 without you manually onboarding them.' },
+      title: 'A branded marketing site, included',
+      body: 'Every agency ships with a fully white-labeled marketing site under your domain.\n\nHero, pricing, testimonials, FAQ, embedded demo line, signup flow. Prospects discover, try, and subscribe \u2014 without you onboarding them manually.' },
     { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const,
-      title: 'Convert interest into paying clients',
-      body: 'All prospects flow into your built-in pipeline.\n\nTrack leads, follow up automatically, and move them from first contact to active client. No extra CRM software required.' },
+      title: 'Pipeline and outreach, built in',
+      body: 'Move every prospect from first contact to paying client without leaving the platform.\n\nGoogle Maps prospecting, 13 outreach templates, follow-up tracking, reply detection. No external CRM.' },
     { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: 'What your client sees',
-      body: 'This is the dashboard your client logs into.\n\nEverything is fully white-labeled with your agency\u2019s name and branding. To them, the AI receptionist platform belongs to your business \u2014 strengthening your relationship with every client.' },
+      title: 'Switch into the client view',
+      body: 'This is what your end clients log into when they pay you.\n\nFully white-labeled \u2014 your name, your domain, your colors. They never see VoiceAI Connect at any touchpoint.' },
     { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: 'The value they see every day',
-      body: 'Each client receives their own AI phone number.\n\nHere they can see exactly how many calls the AI answered, how many leads were captured, and how many opportunities were saved from missed calls. That visibility is what keeps the subscription valuable month after month.' },
+      title: 'What clients see every day',
+      body: 'Calls handled, leads captured, missed calls saved.\n\nThat visibility is what justifies the recurring fee \u2014 clients can measure exactly what they\u2019re paying for, every month.' },
     { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const,
-      title: 'They customize it for their business',
-      body: 'Clients personalize their AI assistant by choosing a voice, writing greetings, and adding services or FAQs.\n\nThe more the AI handles their calls and customer questions, the more essential it becomes to their business.' },
+      title: 'Clients tune their own agent',
+      body: 'Voice, greeting, services, FAQ \u2014 the end client configures the AI themselves.\n\nThe more they personalize it, the more central it becomes to their operations. That\u2019s what reduces churn.' },
     { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const,
-      title: 'Launch your AI service',
-      body: 'Create your agency account, set your pricing, and share your signup link.\n\nYour clients receive their own AI receptionist and dashboard instantly \u2014 and you start building recurring monthly revenue.' },
+      title: 'Launch the agency',
+      body: 'Activate a workspace, set your pricing, share your branded signup link.\n\nProspects subscribe under your brand. The platform provisions everything. You build recurring revenue.' },
   ];
 
   const tourActive = !tourPaused && tourStep >= 0 && tourStep < TOUR_STEPS.length;
@@ -1187,7 +1228,11 @@ export default function DemoPage() {
   // Navigate view/tab when tour step changes
   useEffect(() => {
     if (!tourActive || !currentStep) return;
-    setSidebarOpen(false);
+    // On mobile, sidebar-targeted steps need the drawer open so the tour can
+    // anchor to elements that would otherwise be off-screen.
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const targetInSidebar = currentStep.target === 'sidebar-mrr';
+    setSidebarOpen(isMobile && targetInSidebar);
     if (currentStep.view !== view) setView(currentStep.view);
     if (currentStep.view === 'agency' && currentStep.tab !== agencyTab) setAgencyTab(currentStep.tab);
     if (currentStep.view === 'client' && currentStep.tab !== clientTab) setClientTab(currentStep.tab);
@@ -1203,8 +1248,35 @@ export default function DemoPage() {
   const renderClient = () => { switch (clientTab) { case 'calls': return <ClientCalls />; case 'contacts': return <ClientContacts />; case 'ai-agent': return <ClientAIAgent />; case 'settings': return <ClientSettings />; default: return <ClientOverview />; } };
 
   return (
-    <div className="h-screen flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+    <main className="min-h-screen bg-ink">
+      <MarketingNav />
+
+      {/* ════════ HERO ════════ */}
+      <section className="canvas-dot relative pt-32 lg:pt-40 pb-10 lg:pb-14 overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div className="max-w-3xl">
+            <p className="t-eyebrow text-em mb-5">Interactive demo</p>
+            <h1 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 4vw, 3.25rem)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+              Click around. It&apos;s the actual product.
+            </h1>
+            <p className="t-body mt-5 max-w-xl text-[1rem]">
+              A fully-interactive simulation of the platform — agency dashboard, client portal, branding tools, leads CRM. Toggle between agency and end-client views any time. No signup required.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ DEMO FRAME ════════ */}
+      <section className="bg-ink pb-14 lg:pb-20">
+        <div className="max-w-[1320px] mx-auto px-3 sm:px-5 lg:px-8">
+          <div ref={demoFrameRef} className="relative h-[80vh] min-h-[480px] sm:min-h-[600px] lg:min-h-[640px] max-h-[860px] flex flex-col bg-[#050505] text-[#fafaf9] overflow-hidden rounded-xl lg:rounded-2xl border border-white/[0.1] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]">
+      {/* Sample-data disclaimer pill */}
+      <div className="absolute top-3 right-3 z-30 hidden sm:flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-md pointer-events-none" style={{ background: 'rgba(0, 0, 0, 0.55)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4aeabc' }} />
+        <span className="font-mono text-[10px] tracking-[0.12em] uppercase text-white/60">Sample data · live platform has more depth</span>
+      </div>
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       {/* Mobile Header — clean: logo icon + toggle + hamburger */}
       <div className="sticky z-30 lg:hidden" style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', paddingTop: 'env(safe-area-inset-top)', top: 0 }}>
         <header className="flex items-center justify-between h-14 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
@@ -1316,9 +1388,32 @@ export default function DemoPage() {
         </>)}
       </div>
       {/* Tour Overlay */}
-      {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onPause={pauseTour} />}
+      {tourActive && currentStep && <TourOverlay step={currentStep} stepIndex={tourStep} totalSteps={TOUR_STEPS.length} onNext={nextStep} onPrev={prevStep} onPause={pauseTour} frameRef={demoFrameRef} />}
       {/* Resume Pill */}
       {tourHasProgress && <TourResumePill step={tourStep} total={TOUR_STEPS.length} onResume={resumeTour} onRestart={restartTour} />}
-    </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ CTA — Start now or book a call ════════ */}
+      <section className="bg-ink canvas-dot py-28 lg:py-36 border-t border-white/[0.04] relative overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
+          <div className="max-w-3xl">
+            <p className="t-eyebrow text-em mb-6">Ready when you are</p>
+            <h2 className="t-h1 text-white">Start now, or talk to us first.</h2>
+            <p className="t-body mt-7 max-w-lg">
+              Activate a workspace and have your branded platform live by Friday — or hop on a 20-minute call to see how the platform fits your specific business.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-10">
+              <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/demo" className="btn btn-ghost-dark">Book a call <ArrowRight className="w-3.5 h-3.5" /></Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <MarketingFooter />
+    </main>
   );
 }

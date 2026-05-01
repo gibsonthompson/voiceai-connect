@@ -1,28 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { 
-  ArrowRight, ChevronRight, ChevronDown, Search, Menu, X,
-  HelpCircle, DollarSign, Zap, Shield, Users, Phone, Bot,
-  Building2, CreditCard, Headphones, Globe, Code, Settings,
-  Clock, FileText, MessageSquare, BarChart3, Calendar, Lock,
-  Sparkles, CheckCircle2
+import { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  ArrowUpRight, ArrowRight, Search, Plus,
+  HelpCircle, DollarSign, Zap, Shield, Bot,
+  Building2, CreditCard, Settings,
+  Users, Phone, Code, Headphones,
 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import MarketingNav from '@/components/marketing-nav';
+import MarketingFooter from '@/components/marketing-footer';
 
-// Waveform icon component
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
+function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { el.classList.add('in'); obs.unobserve(el); }
+    }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return ref;
 }
 
 // FAQ Categories and Questions
@@ -397,397 +397,157 @@ const faqCategories = [
   },
 ];
 
+
 export default function FAQPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [openQuestions, setOpenQuestions] = useState<Set<string>>(new Set());
+  const r1 = useInView();
+  const r2 = useInView();
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Filter FAQs based on search
   const filteredCategories = useMemo(() => {
-    if (!searchQuery.trim()) return faqCategories;
-    
+    let cats = faqCategories;
+    if (activeCategory) cats = cats.filter(c => c.id === activeCategory);
+    if (!searchQuery.trim()) return cats;
     const query = searchQuery.toLowerCase();
-    return faqCategories.map(category => ({
+    return cats.map(category => ({
       ...category,
       faqs: category.faqs.filter(
-        faq => 
-          faq.q.toLowerCase().includes(query) || 
+        faq =>
+          faq.q.toLowerCase().includes(query) ||
           faq.a.toLowerCase().includes(query)
       ),
     })).filter(category => category.faqs.length > 0);
-  }, [searchQuery]);
-
-  const toggleQuestion = (categoryId: string, index: number) => {
-    const key = `${categoryId}-${index}`;
-    setOpenQuestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
-      } else {
-        newSet.add(key);
-      }
-      return newSet;
-    });
-  };
+  }, [searchQuery, activeCategory]);
 
   const totalQuestions = faqCategories.reduce((sum, cat) => sum + cat.faqs.length, 0);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
-      {/* Premium grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+    <main className="min-h-screen bg-ink">
+      <MarketingNav />
 
-      {/* Ambient glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-500/[0.03] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/[0.02] rounded-full blur-[128px]" />
-      </div>
-
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-        scrolled ? 'bg-[#050505]/90 backdrop-blur-2xl border-b border-white/[0.06]' : 'bg-transparent'
-      }`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
-                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                </div>
-              </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
-            </Link>
-
-            <div className="hidden lg:flex items-center gap-1">
-              {[
-                { name: 'Platform', href: '/platform' },
-                { name: 'How It Works', href: '/how-it-works' },
-                { name: 'Pricing', href: '/#pricing' },
-                { name: 'FAQ', href: '/faq' },
-              ].map((item) => (
-                <Link 
-                  key={item.name}
-                  href={item.href} 
-                  className={`px-4 py-2 text-sm transition-colors rounded-lg hover:bg-white/[0.03] ${
-                    item.href === '/faq' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-
-            <div className="hidden lg:flex items-center gap-3">
-              <Link 
-                href="/agency/login" 
-                className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link 
-                href="/signup" 
-                className="group relative inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10"
-              >
-                Start Free Trial
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        <div className={`lg:hidden transition-all duration-300 ${
-          mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-        }`}>
-          <div className="px-4 pb-6 pt-2 space-y-1 bg-[#050505]/95 backdrop-blur-xl border-b border-white/[0.06]">
-            {[
-              { name: 'Platform', href: '/platform' },
-              { name: 'How It Works', href: '/how-it-works' },
-              { name: 'Pricing', href: '/#pricing' },
-              { name: 'FAQ', href: '/faq' },
-            ].map((item) => (
-              <Link 
-                key={item.name}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-[#fafaf9]/70 hover:text-[#fafaf9] hover:bg-white/[0.03] rounded-lg transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="pt-4 flex flex-col gap-3">
-              <Link 
-                href="/agency/login" 
-                className="px-4 py-3 text-center text-[#fafaf9]/70 hover:text-[#fafaf9] rounded-lg border border-white/10"
-              >
-                Sign In
-              </Link>
-              <Link 
-                href="/signup" 
-                className="px-4 py-3 text-center bg-white text-[#050505] font-medium rounded-full"
-              >
-                Start Free Trial
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="relative pt-28 sm:pt-32 lg:pt-40 pb-12 sm:pb-16">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-emerald-500/[0.07] via-amber-500/[0.03] to-transparent rounded-full blur-3xl" />
-        </div>
-        
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6">
-              <HelpCircle className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">{totalQuestions}+ Questions Answered</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">
-              Frequently Asked
-              <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                Questions
-              </span>
-            </h1>
-            
-            <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto">
-              Everything you need to know about VoiceAI Connect. 
-              Can&apos;t find the answer you&apos;re looking for? Contact our support team.
+      {/* HERO */}
+      <section className="canvas-dot relative pt-40 lg:pt-48 pb-16 lg:pb-20 overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div ref={r1} className="fade-up max-w-3xl">
+            <p className="t-eyebrow text-em mb-7">Frequently asked questions</p>
+            <h1 className="t-h1 text-white max-w-[14ch]">Everything you wanted to ask.</h1>
+            <p className="t-body mt-7 max-w-xl text-[1rem]">
+              {totalQuestions} answers across {faqCategories.length} categories. Start typing to filter, or pick a category below.
             </p>
 
             {/* Search */}
-            <div className="mt-8 max-w-xl mx-auto">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
-                <input
-                  type="text"
-                  placeholder="Search questions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-colors"
-                />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#fafaf9]/30 hover:text-[#fafaf9]/60"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-              {searchQuery && (
-                <p className="mt-3 text-sm text-[#fafaf9]/40">
-                  Found {filteredCategories.reduce((sum, cat) => sum + cat.faqs.length, 0)} results for &quot;{searchQuery}&quot;
-                </p>
-              )}
+            <div className="mt-9 relative max-w-2xl">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search questions and answers…"
+                className="w-full pl-12 pr-5 py-4 rounded-full bg-white/[0.025] border border-white/[0.08] text-[14px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/[0.25] transition-colors font-display"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Category Navigation */}
-      <section className="border-y border-white/[0.06] bg-white/[0.01] py-4 sticky top-16 sm:top-20 z-30 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      {/* CATEGORY FILTER */}
+      <section className="bg-ink border-y border-white/[0.05] py-5 sticky top-16 z-30 backdrop-blur-xl" style={{ background: 'rgba(5, 5, 5, 0.85)' }}>
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ scrollbarWidth: 'none' }}>
             <button
               onClick={() => setActiveCategory(null)}
-              className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full font-mono text-[11px] tracking-[0.12em] uppercase whitespace-nowrap border transition-colors ${
                 activeCategory === null
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-white/[0.03] text-[#fafaf9]/60 hover:text-[#fafaf9] border border-white/[0.06]'
+                  ? 'bg-white text-black border-white'
+                  : 'bg-transparent text-white/55 border-white/[0.12] hover:border-white/30 hover:text-white'
               }`}
             >
-              All Topics
+              All · {totalQuestions}
             </button>
-            {faqCategories.map((category) => (
+            {faqCategories.map(cat => (
               <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                  activeCategory === category.id
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-white/[0.03] text-[#fafaf9]/60 hover:text-[#fafaf9] border border-white/[0.06]'
+                key={cat.id}
+                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                className={`px-4 py-2 rounded-full font-mono text-[11px] tracking-[0.12em] uppercase whitespace-nowrap border transition-colors ${
+                  activeCategory === cat.id
+                    ? 'bg-white text-black border-white'
+                    : 'bg-transparent text-white/55 border-white/[0.12] hover:border-white/30 hover:text-white'
                 }`}
               >
-                <category.icon className="h-4 w-4" />
-                {category.name}
+                {cat.name} · {cat.faqs.length}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ Content */}
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          {(activeCategory ? filteredCategories.filter(c => c.id === activeCategory) : filteredCategories).map((category) => (
-            <div key={category.id} className="mb-12" id={category.id}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <category.icon className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold">{category.name}</h2>
-                  <p className="text-sm text-[#fafaf9]/40">{category.description}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {category.faqs.map((faq, index) => {
-                  const isOpen = openQuestions.has(`${category.id}-${index}`);
-                  return (
-                    <div 
-                      key={index}
-                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleQuestion(category.id, index)}
-                        className="w-full flex items-start justify-between p-5 text-left hover:bg-white/[0.02] transition-colors"
-                      >
-                        <h3 className="font-medium pr-4 leading-relaxed">{faq.q}</h3>
-                        <ChevronDown className={`h-5 w-5 text-[#fafaf9]/40 shrink-0 mt-0.5 transition-transform ${
-                          isOpen ? 'rotate-180' : ''
-                        }`} />
-                      </button>
-                      <div className={`overflow-hidden transition-all duration-300 ${
-                        isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                      }`}>
-                        <div className="px-5 pb-5 pt-0">
-                          <p className="text-[#fafaf9]/60 leading-relaxed whitespace-pre-line">{faq.a}</p>
-                        </div>
+      {/* CATEGORIES + Q&A */}
+      <section className="bg-ink py-16 lg:py-24">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          {filteredCategories.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="font-display text-[20px] text-white/65">No matches for &ldquo;{searchQuery}&rdquo;</p>
+              <p className="font-mono text-[12px] text-white/35 mt-3">Try a broader search term, or pick a category above.</p>
+            </div>
+          ) : (
+            <div className="space-y-16 lg:space-y-24 max-w-4xl">
+              {filteredCategories.map(category => {
+                const Icon = category.icon;
+                return (
+                  <div key={category.id} id={category.id}>
+                    <div className="flex items-start gap-4 mb-8">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.2)' }}>
+                        <Icon className="w-4 h-4 text-em" strokeWidth={1.9} />
+                      </div>
+                      <div>
+                        <h2 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(1.5rem, 2.6vw, 2rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                          {category.name}
+                        </h2>
+                        <p className="text-[14px] text-white/50 mt-2">{category.description}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
 
-          {filteredCategories.length === 0 && (
-            <div className="text-center py-12">
-              <HelpCircle className="h-12 w-12 text-[#fafaf9]/20 mx-auto mb-4" />
-              <p className="text-[#fafaf9]/40">No questions found matching &quot;{searchQuery}&quot;</p>
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="mt-4 text-emerald-400 hover:text-emerald-300 text-sm"
-              >
-                Clear search
-              </button>
+                    <div className="space-y-1">
+                      {category.faqs.map((faq, i) => (
+                        <details key={i} className="group border-b border-white/[0.06] hover:bg-white/[0.012] transition-colors">
+                          <summary className="flex items-start justify-between gap-6 py-5 cursor-pointer select-none">
+                            <span className="font-display text-[16px] sm:text-[17px] text-white/90 leading-snug font-medium">{faq.q}</span>
+                            <Plus className="w-4 h-4 text-white/30 shrink-0 mt-1.5 transition-transform duration-300 group-open:rotate-45" />
+                          </summary>
+                          <div className="pb-5 pr-10 -mt-1">
+                            <p className="text-[14px] text-white/55 leading-relaxed">{faq.a}</p>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
-      {/* Still Have Questions */}
-      <section className="py-16 sm:py-20 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/[0.08] to-transparent p-8 sm:p-12 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-500/20 mx-auto mb-6">
-              <MessageSquare className="h-7 w-7 text-emerald-400" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold mb-4">
-              Still have questions?
-            </h2>
-            <p className="text-[#fafaf9]/50 mb-8 max-w-lg mx-auto">
-              Can&apos;t find the answer you&apos;re looking for? Our support team is here to help. 
-              We typically respond within 24 hours.
+      {/* CTA */}
+      <section className="bg-ink canvas-dot py-32 lg:py-40 border-t border-white/[0.04] relative overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
+          <div ref={r2} className="fade-up max-w-3xl">
+            <p className="t-eyebrow text-em mb-6">Still have questions?</p>
+            <h2 className="t-h1 text-white">Email us. A person reads it.</h2>
+            <p className="t-body mt-7 max-w-lg">
+              <a href="mailto:support@myvoiceaiconnect.com" className="text-em underline-offset-4 hover:underline">support@myvoiceaiconnect.com</a> — a team member responds within one business day.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a 
-                href="mailto:support@voiceaiconnect.com"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-colors"
-              >
-                Contact Support
-                <ArrowRight className="h-4 w-4" />
-              </a>
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-6 py-3 text-base font-medium text-[#fafaf9] hover:bg-white/[0.06] transition-colors"
-              >
-                Start Free Trial
-              </Link>
+            <div className="flex flex-wrap gap-3 mt-10">
+              <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/interactive-demo" className="btn btn-ghost-dark">Watch demo <ArrowRight className="w-3.5 h-3.5" /></Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Quick Links */}
-      <section className="py-16 sm:py-20 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold mb-8 text-center">Helpful Resources</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Zap, title: 'How It Works', description: 'Step-by-step guide to launching', href: '/how-it-works' },
-              { icon: DollarSign, title: 'Pricing', description: 'Plans and pricing details', href: '/#pricing' },
-              { icon: Sparkles, title: 'Platform Features', description: 'All 40+ features explained', href: '/platform' },
-              { icon: CheckCircle2, title: 'Feature Comparison', description: 'Compare all plans side-by-side', href: '/features' },
-            ].map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] transition-all group"
-              >
-                <item.icon className="h-5 w-5 text-emerald-400 mb-3" />
-                <h3 className="font-medium mb-1 group-hover:text-emerald-400 transition-colors">{item.title}</h3>
-                <p className="text-sm text-[#fafaf9]/40">{item.description}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-white/5">
-                <WaveformIcon className="w-5 h-5" />
-              </div>
-              <span className="font-semibold">VoiceAI Connect</span>
-            </Link>
-            
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-[#fafaf9]/40">
-              <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
-              <Link href="/how-it-works" className="hover:text-[#fafaf9] transition-colors">How It Works</Link>
-              <Link href="/features" className="hover:text-[#fafaf9] transition-colors">Features</Link>
-              <Link href="/faq" className="text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">FAQ</Link>
-              <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
-              <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
-            </div>
-            
-            <p className="text-sm text-[#fafaf9]/30">
-              © 2026 VoiceAI Connect. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      <MarketingFooter />
+    </main>
   );
 }

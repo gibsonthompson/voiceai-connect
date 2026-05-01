@@ -1,503 +1,290 @@
 'use client';
 
 import Link from 'next/link';
-import { 
-  Phone, ArrowRight, Check, Star, Zap, Shield, Clock, Users, 
-  DollarSign, ChevronRight, MessageSquare, FileText, Mic, Globe, 
-  Smartphone, BarChart3, Calendar, Bell, Headphones, Code, Mail,
-  Building2, Sparkles, Menu, X, Play, Gauge, BrainCircuit, 
-  PhoneCall, Volume2, FileAudio, Search, Download, AlertTriangle,
-  Timer, Voicemail, Settings, Palette, Link2, CreditCard, 
-  PieChart, TrendingUp, UserPlus, Webhook, Database, Lock,
-  Server, Cloud, RefreshCw, CheckCircle2, ArrowUpRight,
-  Bot, Layers, Workflow, CircuitBoard, Boxes, Coffee, Palmtree
+import { useEffect, useRef } from 'react';
+import {
+  ArrowUpRight, ArrowRight, ArrowDown, Check, Phone,
+  Palette, Globe, Rocket, Mic, MonitorSmartphone, BarChart3, CreditCard, Map,
+  Smartphone, Users, Wand2, Lock, Zap, MessageSquare, FileText, Bell,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import MarketingNav from '@/components/marketing-nav';
+import MarketingFooter from '@/components/marketing-footer';
+
+/* ─── Reveal hook ─── */
+function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { el.classList.add('in'); obs.unobserve(el); }
+    }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return ref;
+}
 
 export default function PlatformPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileMenuOpen]);
-
-  const navLinks = [
-    { name: 'Platform', href: '/platform' },
-    { name: 'How It Works', href: '/how-it-works' },
-    { name: 'Pricing', href: '/#pricing' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Referral Program', href: '/referral-program' },
-  ];
+  const r1 = useInView();
+  const r2 = useInView();
+  const r3 = useInView();
+  const r4 = useInView();
+  const r5 = useInView();
+  const r6 = useInView();
+  const r7 = useInView();
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9] overflow-hidden">
-      {/* Premium grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+    <main className="min-h-screen bg-ink">
+      <MarketingNav />
 
-      {/* Ambient glow effects */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-500/[0.03] rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/[0.02] rounded-full blur-[128px]" />
-      </div>
-
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-        scrolled ? 'bg-[#050505]/90 backdrop-blur-2xl border-b border-white/[0.06]' : 'bg-transparent'
-      }`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
-              </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
-            </Link>
-
-            <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((item) => (
-                <Link 
-                  key={item.name}
-                  href={item.href} 
-                  className={`px-4 py-2 text-sm transition-colors rounded-lg hover:bg-white/[0.03] ${
-                    item.name === 'Platform' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-
-            <div className="hidden lg:flex items-center gap-3">
-              <Link href="/agency/login" className="px-4 py-2 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
-                Sign In
-              </Link>
-              <Link href="/signup" className="group relative inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:shadow-lg hover:shadow-white/10">
-                Start Free Trial
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-              className="lg:hidden p-2 -mr-2 text-[#fafaf9]/60 hover:text-[#fafaf9]"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 top-16 z-50 bg-[#050505]/98 backdrop-blur-xl animate-in fade-in duration-200">
-            <div className="flex flex-col h-full px-6 pt-8 pb-10">
-              <div className="space-y-1 flex-1">
-                {navLinks.map((item) => (
-                  <Link 
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-2 py-4 text-lg border-b border-white/[0.04] transition-colors ${
-                      item.name === 'Platform' ? 'text-[#fafaf9]' : 'text-[#fafaf9]/80 hover:text-[#fafaf9]'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                <Link 
-                  href="/agency/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-2 py-4 text-lg text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
-              <div className="pt-6">
-                <Link 
-                  href="/signup" 
-                  className="flex items-center justify-center gap-2 w-full bg-white text-[#050505] font-medium rounded-full py-4 text-base active:scale-[0.98] transition-transform"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Start Free Trial
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-                <p className="mt-3 text-center text-xs text-[#fafaf9]/30">No credit card required</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative pt-28 sm:pt-32 lg:pt-40 pb-16 sm:pb-20">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-emerald-500/[0.07] via-amber-500/[0.03] to-transparent rounded-full blur-3xl" />
-        </div>
-        
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6 sm:mb-8">
-              <Layers className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Complete Platform Overview</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
-              <span className="block">Everything You Need.</span>
-              <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                Nothing You Have to Build.
-              </span>
+      {/* ════════ HERO ════════ */}
+      <section className="canvas-dot relative pt-40 lg:pt-48 pb-20 lg:pb-32 overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div ref={r1} className="fade-up max-w-4xl">
+            <p className="t-eyebrow text-em mb-7">The platform</p>
+            <h1 className="t-h1 text-white max-w-[18ch]">
+              Everything you need to run an AI receptionist agency.
             </h1>
-            
-            <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-[#fafaf9]/60 max-w-2xl mx-auto leading-relaxed px-4">
-              40+ features. Zero fulfillment work. A complete white-label AI receptionist 
-              platform where we handle the tech and you keep 100% of what you charge.
+            <p className="t-body mt-8 max-w-2xl text-[1rem]">
+              The Platform tier is what an agency operator actually receives at signup. White-label branding, automated client onboarding, end-client dashboards, payment processing, lead generation, and the AI receptionist itself — wired together and shipped as a single multi-tenant application. You manage the business; the platform manages the work.
             </p>
-
-            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-sm text-[#fafaf9]/50">
-              {['Zero client setup work', 'Launch in 24 hours', 'No technical skills needed'].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  {item}
-                </span>
-              ))}
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/#earnings" className="btn btn-ghost-dark">Project earnings <ArrowDown className="w-3.5 h-3.5" /></Link>
             </div>
-
-            <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/signup" className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-white px-6 sm:px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
-                <span>Start Your 14-Day Free Trial</span>
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link href="/#pricing" className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-6 sm:px-8 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20">
-                <span>View Pricing</span>
-                <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
+            <Link href="/interactive-demo" className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] uppercase text-em mt-6 hover:opacity-80 transition-opacity">
+              Or try the interactive demo <ArrowRight className="w-3 h-3" />
+            </Link>
+            <p className="font-mono text-[11px] text-white/35 mt-7">14-day free trial · no credit card required · cancel anytime</p>
           </div>
         </div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="border-y border-white/[0.06] bg-white/[0.01] py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
-            {[
-              { value: '500ms', label: 'Average answer time' },
-              { value: '60 sec', label: 'Client auto-provisioning' },
-              { value: '40+', label: 'Built-in features' },
-              { value: '~12 hrs', label: 'Avg. work per week' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-emerald-400">{stat.value}</p>
-                <p className="text-xs sm:text-sm text-[#fafaf9]/40 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Zero Fulfillment Section */}
-      <section className="py-20 sm:py-24 lg:py-32">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Zap className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Zero Fulfillment</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              You sell.
-              <span className="block text-[#fafaf9]/40">We handle everything else.</span>
-            </h2>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              Most white-label platforms still make you do the work. VoiceAI Connect 
-              handles client setup, technical support, and ongoing maintenance automatically.
+      {/* ════════ TWO TRACKS — agency vs end client ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r2} className="fade-up max-w-3xl mb-14">
+            <p className="t-eyebrow text-em mb-6">Two audiences. One platform.</p>
+            <h2 className="t-h2 text-white">Built for the operator and the customer.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              VoiceAI Connect is multi-tenant from the first commit. Agency operators get a control surface to run the business; end clients (the local businesses you sell to) get a fully branded interface to review their calls. Both surfaces ship at the same time.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              { trigger: 'Client signs up', result: 'Platform auto-configures their AI, provisions phone number, imports business info—all in 60 seconds.', icon: UserPlus },
-              { trigger: 'Client has an issue', result: 'Platform handles support directly. You stay informed, not involved.', icon: Shield },
-              { trigger: 'Client wants changes', result: 'They self-serve in their dashboard. No work for you.', icon: Settings },
-            ].map((item) => (
-              <div key={item.trigger} className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 mb-4">
-                  <item.icon className="h-5 w-5 text-emerald-400" />
+          <div className="grid lg:grid-cols-2 gap-5">
+            {/* Agency owner card */}
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-9">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(74, 234, 188, 0.1)', border: '1px solid rgba(74, 234, 188, 0.22)' }}>
+                  <Users className="w-4 h-4 text-em" strokeWidth={2} />
                 </div>
-                <p className="text-base font-medium text-emerald-400 mb-2">{item.trigger}</p>
-                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{item.result}</p>
+                <p className="font-mono text-[11px] tracking-[0.16em] uppercase text-em">For the agency owner</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Phone-First Platform */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-                <Smartphone className="h-4 w-4 text-amber-400" />
-                <span className="text-amber-300/90">Phone-First Platform</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
-                Manage everything
-                <span className="block text-[#fafaf9]/40">from your phone.</span>
-              </h2>
-              <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                VoiceAI Connect is built phone-first. Check on clients, track revenue, 
-                and manage your entire agency from anywhere. No laptop required.
+              <h3 className="font-display text-[24px] font-medium text-white tracking-tight leading-tight">
+                Run a real business from one screen.
+              </h3>
+              <p className="text-[14px] text-white/55 leading-relaxed mt-4">
+                Configure your brand, set pricing, share a signup link, and watch new clients deploy themselves. The agency dashboard shows every client, every call, every dollar — designed to fit on a phone.
               </p>
-              
-              <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3">
+              <ul className="mt-7 space-y-2.5">
                 {[
-                  'Complete dashboard access',
-                  'Real-time push notifications',
-                  'Client onboarding flow',
-                  'Revenue & analytics tracking',
-                ].map((feature) => (
-                  <div key={feature} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <Check className="h-4 w-4 text-amber-400 shrink-0" />
-                    <span className="text-sm text-[#fafaf9]/70">{feature}</span>
-                  </div>
+                  'Branding engine — logo, palette, custom domain',
+                  'Stripe Connect — clients pay you direct',
+                  'Self-serve onboarding flow under your domain',
+                  'Lead generation CRM with Maps prospecting',
+                  'Real-time MRR, churn, and per-client analytics',
+                  'Mobile-first agency interface',
+                ].map(line => (
+                  <li key={line} className="flex items-start gap-2.5 text-[13.5px] text-white/70">
+                    <Check className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2.5} />
+                    <span>{line}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
-            
-            {/* Phone mockup */}
-            <div className="relative flex justify-center">
-              <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative w-72 sm:w-80">
-                <div className="rounded-[3rem] border-4 border-white/10 bg-[#0a0a0a] p-3 shadow-2xl">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0a0a0a] rounded-b-2xl z-10" />
-                  <div className="rounded-[2.5rem] bg-[#080808] overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-2 text-xs">
-                      <span>9:41</span>
-                      <div className="flex items-center gap-1">
-                        <div className="w-4 h-2 border border-white/40 rounded-sm">
-                          <div className="w-3/4 h-full bg-emerald-400 rounded-sm" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="px-5 pb-8">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-amber-500" />
-                        <div>
-                          <p className="text-sm font-medium">Your Agency</p>
-                          <p className="text-xs text-[#fafaf9]/40">Dashboard</p>
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/20 mb-4">
-                        <p className="text-xs text-emerald-400/70">This Month</p>
-                        <p className="text-3xl font-semibold mt-1">$6,903</p>
-                        <p className="text-xs text-emerald-400 mt-1">↑ 18% from last month</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                          <p className="text-xs text-[#fafaf9]/40">Clients</p>
-                          <p className="text-lg font-semibold">47</p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                          <p className="text-xs text-[#fafaf9]/40">Calls Today</p>
-                          <p className="text-lg font-semibold">127</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs text-[#fafaf9]/40">Recent</p>
-                        {[
-                          { name: 'Smith Plumbing', action: 'signed up', time: '2m ago' },
-                          { name: 'Ace HVAC', action: 'payment received', time: '1h ago' },
-                        ].map((item) => (
-                          <div key={item.name} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
-                            <div>
-                              <p className="text-sm font-medium">{item.name}</p>
-                              <p className="text-xs text-[#fafaf9]/40">{item.action}</p>
-                            </div>
-                            <span className="text-xs text-[#fafaf9]/30">{item.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+
+            {/* End client card */}
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-9">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <Phone className="w-4 h-4 text-white/70" strokeWidth={2} />
                 </div>
-                <div className="absolute -bottom-4 -right-4 px-4 py-2 rounded-xl bg-amber-500 text-[#050505] text-sm font-medium shadow-lg shadow-amber-500/30">
-                  <Smartphone className="h-4 w-4 inline mr-1.5" />
-                  Phone-native
-                </div>
+                <p className="font-mono text-[11px] tracking-[0.16em] uppercase text-white/55">For their end client</p>
               </div>
+              <h3 className="font-display text-[24px] font-medium text-white tracking-tight leading-tight">
+                A receptionist that never closes.
+              </h3>
+              <p className="text-[14px] text-white/55 leading-relaxed mt-4">
+                Each end client (the local business you sold to) receives a fully branded dashboard, dedicated phone number, and AI voice agent trained on their specific business — provisioned the moment they finish your signup form.
+              </p>
+              <ul className="mt-7 space-y-2.5">
+                {[
+                  'Dedicated phone number provisioned on signup',
+                  'AI voice agent answers 24/7 in 4 languages',
+                  'Branded dashboard — under your domain',
+                  'Recording, transcript, and summary on every call',
+                  'SMS and email alerts on configurable triggers',
+                  'Calendar booking and CRM hooks',
+                ].map(line => (
+                  <li key={line} className="flex items-start gap-2.5 text-[13.5px] text-white/70">
+                    <Check className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2.5} />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* AI Voice Features */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Bot className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">AI Voice Technology</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              State-of-the-art voice AI
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">that sounds genuinely human</span>
-            </h2>
+      {/* ════════ AGENCY CAPABILITIES — bento on light ════════ */}
+      <section className="bg-paper py-28 lg:py-40">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r3} className="fade-up max-w-3xl mb-14">
+            <p className="t-eyebrow text-em-deep mb-6">Agency control surface</p>
+            <h2 className="t-h2 text-black">The tools you operate the business with.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              These are the modules an agency owner uses every week. They&apos;re not optional add-ons or tier-locked extras — they ship with the workspace at signup.
+            </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { icon: Zap, title: '500ms Answer Time', description: 'AI picks up before the second ring.', stat: '< 0.5 sec', href: '/features/instant-answer' },
-              { icon: Volume2, title: 'Natural Voice', description: 'Premium ElevenLabs voices.', stat: '16+ voices', href: '/features/voice-options' },
-              { icon: BrainCircuit, title: 'Context Awareness', description: 'Handles complex conversations.', stat: 'GPT-4 powered', href: '/features/ai-intelligence' },
-              { icon: Globe, title: 'Multi-Industry', description: 'Pre-trained for 12+ industries.', stat: '12+ industries', href: '/features/industries' },
-            ].map((feature) => (
-              <Link key={feature.title} href={feature.href} className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.04]">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] group-hover:bg-emerald-500/10 transition-colors">
-                    <feature.icon className="h-5 w-5 text-[#fafaf9]/60 group-hover:text-emerald-400 transition-colors" />
-                  </div>
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">{feature.stat}</span>
+              { icon: Palette, title: 'White-label branding', desc: 'Logo, color palette, custom domain with auto-provisioned SSL, transactional emails, and the entire client surface re-skinned per agency.' },
+              { icon: Rocket, title: 'Self-serve onboarding', desc: 'Branded signup page tied to your domain. Local businesses fill out a form; the platform provisions everything in under 60 seconds.' },
+              { icon: CreditCard, title: 'Stripe Connect billing', desc: 'OAuth-connected Stripe account. Subscriptions deposit directly into your bank. Zero revenue share, zero holdbacks.' },
+              { icon: BarChart3, title: 'Agency dashboard', desc: 'Real-time MRR, churn, per-client call volume. Designed mobile-first — manage clients from a coffee shop.' },
+              { icon: Map, title: 'Lead generation CRM', desc: 'Google Maps prospecting by category and radius. 13 outreach templates. Visual pipeline with reply detection.' },
+              { icon: Globe, title: 'Marketing website', desc: 'Pre-built conversion-tuned site with hero, pricing, testimonials, FAQ, and an interactive AI demo phone line.' },
+              { icon: Smartphone, title: 'Mobile-first PWA', desc: 'Add clients, change branding, listen to call recordings, and review revenue from anywhere. No desktop required.' },
+              { icon: Users, title: 'Team members', desc: 'Invite agency teammates and shared client-side users on Pro and Enterprise tiers.' },
+              { icon: Wand2, title: 'Workflow automation', desc: 'Make and n8n event hooks fire on every platform action — onboarding, billing, calls, churn.' },
+            ].map(c => (
+              <div key={c.title} className="rounded-2xl border border-black/[0.06] bg-white p-6 transition-colors hover:border-black/[0.16]">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.18)' }}>
+                  <c.icon className="w-4 h-4" style={{ color: '#047857' }} strokeWidth={1.9} />
                 </div>
-                <h3 className="text-base sm:text-lg font-medium mb-2 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
-                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{feature.description}</p>
-                <div className="mt-3 flex items-center gap-1 text-xs text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Learn more <ArrowRight className="h-3 w-3" />
-                </div>
-              </Link>
+                <h3 className="font-display text-[16px] font-medium text-black tracking-tight">{c.title}</h3>
+                <p className="text-[13.5px] text-black/60 leading-relaxed mt-2">{c.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* White-Label Marketing Site + AI Demo */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Globe className="h-4 w-4 text-amber-400" />
-              <span className="text-amber-300/90">Professional Plan Feature</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              Your branded marketing site
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">with an AI demo that sells for you</span>
-            </h2>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 max-w-2xl mx-auto">
-              Professional and Scale plans include a complete white-label marketing website.
-              But the killer feature? The interactive AI demo line.
+      {/* ════════ CLIENT EXPERIENCE — bento on dark ════════ */}
+      <section className="bg-ink py-28 lg:py-40">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r4} className="fade-up max-w-3xl mb-14">
+            <p className="t-eyebrow text-em mb-6">End-client experience</p>
+            <h2 className="t-h2 text-white">What the local business actually sees.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              The end client never logs into VoiceAI Connect. Every surface they touch — the signup form, the dashboard, the phone experience, the alert emails — is branded as your agency. We&apos;re invisible.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div>
-              <div className="p-6 rounded-2xl bg-emerald-500/[0.05] border border-emerald-500/20 mb-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20">
-                    <Phone className="h-6 w-6 text-emerald-400" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { icon: Mic, title: 'AI voice receptionist', desc: 'Sub-2-second response. Answers, books appointments, transfers urgent calls, writes a summary on every interaction.' },
+              { icon: Phone, title: 'Dedicated phone number', desc: 'A real local number per client, provisioned at signup. Telnyx for US, Twilio for UK and international.' },
+              { icon: MonitorSmartphone, title: 'Branded dashboard', desc: 'Each client logs into a workspace under your domain. Recent calls, transcripts, summaries, lead categorization.' },
+              { icon: FileText, title: 'Call recordings + transcripts', desc: 'Full audio archive plus time-coded transcripts. Searchable, exportable, and tied to the original phone number.' },
+              { icon: Zap, title: 'AI call summaries', desc: 'Every call ends with an AI-written summary capturing intent, sentiment, key requests, and recommended follow-up.' },
+              { icon: Bell, title: 'SMS + email alerts', desc: 'Configurable triggers — urgent call, new lead, missed appointment. Delivered via the agency&apos;s sender domain.' },
+              { icon: Globe, title: 'Multilingual voice', desc: 'English, Spanish, French, and German voice synthesis included. The agent matches the caller automatically.' },
+              { icon: MessageSquare, title: 'Calendar + CRM hooks', desc: 'Native integration with Google Calendar, Cal.com, and HubSpot for appointment booking and lead routing.' },
+              { icon: Lock, title: 'Encrypted by default', desc: 'Postgres row-level security per agency. SOC2-compliant infrastructure. PII never written to logs.' },
+            ].map(c => (
+              <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.022] p-6 transition-colors hover:border-white/[0.18]">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.2)' }}>
+                  <c.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
+                </div>
+                <h3 className="font-display text-[16px] font-medium text-white tracking-tight">{c.title}</h3>
+                <p className="text-[13.5px] text-white/55 leading-relaxed mt-2">{c.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ LIFECYCLE WALKTHROUGH ════════ */}
+      <section className="bg-paper-soft py-28 lg:py-40">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r5} className="fade-up max-w-3xl mb-14">
+            <p className="t-eyebrow text-em-deep mb-6">Client lifecycle</p>
+            <h2 className="t-h2 text-black">From signup to recurring revenue.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              What happens between a prospect clicking your signup link and a deposit landing in your Stripe account.
+            </p>
+          </div>
+
+          <div className="space-y-3 max-w-4xl">
+            {[
+              { n: '01', title: 'Prospect lands on your branded signup page', desc: 'They see your logo, your colors, your domain, and your pricing tiers. The page is hosted by VoiceAI Connect but the prospect has no way of knowing that.', meta: 'Your domain · your brand' },
+              { n: '02', title: 'They complete the form in under 90 seconds', desc: 'Business name, phone style, hours, calendar integration. The platform validates, charges the first month via Stripe, and starts provisioning.', meta: '~90s' },
+              { n: '03', title: 'Platform provisions everything in under a minute', desc: 'Telnyx (or Twilio, for non-US) issues a phone number. The AI agent is configured for their specific business. Welcome email sequence triggers. Dashboard credentials sent.', meta: '<60s · automated' },
+              { n: '04', title: 'AI receptionist goes live on the new number', desc: 'Calls flow into the AI agent, get transcribed by Deepgram, reasoned by Claude, summarized, and written to the client dashboard in real time.', meta: '24/7 coverage' },
+              { n: '05', title: 'Stripe deposits land in your account monthly', desc: 'Subscription renewals process automatically. The platform never custodies funds — Stripe Connect routes payment directly to the agency&apos;s bank.', meta: 'Direct to your bank' },
+            ].map(step => (
+              <div key={step.n} className="rounded-2xl border border-black/[0.07] bg-white p-6 lg:p-7 flex gap-5 lg:gap-7 items-start">
+                <div className="font-mono text-[12px] tracking-[0.14em] text-black/35 shrink-0 pt-1.5 w-10">{step.n}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-baseline gap-3 justify-between">
+                    <h3 className="font-display text-[18px] font-medium text-black tracking-tight leading-snug">{step.title}</h3>
+                    <span className="font-mono text-[11px] tracking-[0.04em] text-black/45 whitespace-nowrap">{step.meta}</span>
+                  </div>
+                  <p className="text-[14px] text-black/60 leading-relaxed mt-3">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ INFRASTRUCTURE CALLOUT ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r6} className="fade-up grid lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+            <div className="lg:col-span-6">
+              <p className="t-eyebrow text-em mb-6">Infrastructure</p>
+              <h2 className="t-h2 text-white">Fifteen vendors. One bill.</h2>
+              <p className="t-body mt-6 max-w-lg">
+                Anthropic Claude for reasoning. ElevenLabs for voice synthesis. Deepgram for real-time transcription. Telnyx and Twilio for telephony. Stripe Connect for billing. Supabase for data. Vercel and Cloudflare for the edge. Sentry and PostHog for monitoring. Make and n8n for automation. Brevo for transactional email.
+              </p>
+              <p className="t-body mt-4 max-w-lg">
+                Each one is the category leader. Together they would cost an agency thousands per month and a quarter of engineering time to integrate. You get them as one product, billed as one flat fee.
+              </p>
+              <Link href="/#platform" className="btn btn-ghost-dark mt-9">See the full stack <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+            </div>
+
+            <div className="lg:col-span-6">
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-8">
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    'Anthropic', 'ElevenLabs', 'Deepgram', 'OpenAI', 'Telnyx', 'Twilio',
+                    'Stripe', 'Supabase', 'Brevo', 'Vercel', 'Cloudflare', 'Sentry',
+                    'PostHog', 'Make', 'n8n',
+                  ].map(name => (
+                    <div key={name} className="rounded-lg border border-white/[0.06] bg-white/[0.012] px-3 py-3 text-center">
+                      <p className="font-display text-[12px] font-medium text-white/85 tracking-tight">{name}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 pt-5 border-t border-white/[0.06] grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="font-display text-[20px] font-medium text-white t-numeric">15</p>
+                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 mt-1">Vendors</p>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-emerald-300 mb-2">The Role-Playing AI Demo</h3>
-                    <p className="text-sm text-[#fafaf9]/60 leading-relaxed mb-4">
-                      When prospects call your demo line, the AI asks about their business—name, 
-                      type, hours, common questions. Then it <span className="text-[#fafaf9]/80">transforms into their 
-                      receptionist</span> right on the call.
-                    </p>
-                    <p className="text-sm text-[#fafaf9]/60 leading-relaxed">
-                      They can test it, ask questions, and experience exactly what their callers 
-                      will hear. It sells itself—prospects convert because they&apos;ve already felt the value.
-                    </p>
+                    <p className="font-display text-[20px] font-medium text-em t-numeric">1</p>
+                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 mt-1">Bill</p>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-[#fafaf9]/70 mb-4">Marketing site includes:</h4>
-                {[
-                  { icon: Sparkles, text: 'Your logo, colors, and branding everywhere' },
-                  { icon: Globe, text: 'Custom domain support (youragency.com)' },
-                  { icon: Phone, text: 'Interactive AI demo phone number' },
-                  { icon: Mic, text: 'Sample call recordings to showcase' },
-                  { icon: Code, text: 'Fully editable from your agency dashboard' },
-                  { icon: Smartphone, text: 'Mobile-optimized, fast-loading design' },
-                ].map((item) => (
-                  <div key={item.text} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <item.icon className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <span className="text-sm text-[#fafaf9]/70">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link href="/features/marketing-site" className="inline-flex items-center gap-2 mt-6 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
-                Learn more about the marketing site
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            {/* Marketing site mockup */}
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-transparent rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] overflow-hidden shadow-2xl">
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3 bg-[#080808]">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-white/10" />
-                    <div className="h-3 w-3 rounded-full bg-white/10" />
-                    <div className="h-3 w-3 rounded-full bg-white/10" />
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="px-4 py-1 rounded-lg bg-white/[0.03] text-xs text-[#fafaf9]/40 font-mono">
-                      smartcallsolutions.com
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-6 sm:p-8 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <span className="text-sm font-bold">SC</span>
-                      </div>
-                      <span className="font-semibold">SmartCall Solutions</span>
-                    </div>
-                  </div>
-                  
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">Never Miss Another Call</h3>
-                    <p className="text-sm text-[#fafaf9]/50">AI-powered receptionist for your business</p>
+                    <p className="font-display text-[20px] font-medium text-white t-numeric">0</p>
+                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 mt-1">Setup</p>
                   </div>
-                  
-                  <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 border border-blue-500/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
-                        <Phone className="h-5 w-5 text-blue-400" />
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-blue-300">Try Our AI Demo</span>
-                        <p className="text-xs text-[#fafaf9]/50">Experience it as YOUR receptionist</p>
-                      </div>
-                    </div>
-                    <p className="text-2xl font-mono font-semibold text-[#fafaf9]">(555) 123-DEMO</p>
-                  </div>
-                  
-                  <button className="w-full py-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium">
-                    Get Started — $149/mo
-                  </button>
                 </div>
               </div>
             </div>
@@ -505,285 +292,25 @@ export default function PlatformPage() {
         </div>
       </section>
 
-      {/* Client Dashboard Features */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              <span className="text-amber-300/90">What Your Clients Get</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              Everything businesses need
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">to manage their AI receptionist</span>
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[
-              { icon: FileAudio, title: 'Call Recordings', description: 'Every call recorded. One-click playback and download.', highlight: true, href: '/features/call-recordings' },
-              { icon: MessageSquare, title: 'SMS Call Summaries', description: 'Instant text after every call with caller details.', highlight: true, href: '/features/sms-summaries' },
-              { icon: FileText, title: 'Full Transcripts', description: 'Word-for-word transcription. Searchable and exportable.', highlight: true, href: '/features/transcripts' },
-              { icon: Sparkles, title: 'AI Call Summaries', description: 'Intelligent extraction of key details and action items.', highlight: false, href: '/features/ai-summaries' },
-              { icon: Search, title: 'Knowledge Base', description: 'AI learns from their website automatically.', highlight: false, href: '/features/knowledge-base' },
-              { icon: Phone, title: 'Dedicated Number', description: 'Local or toll-free number for each client.', highlight: false, href: '/features/phone-numbers' },
-              { icon: Clock, title: '24/7 AI Coverage', description: 'Never miss a call. Nights, weekends, holidays.', highlight: false, href: '/features/24-7-coverage' },
-              { icon: Calendar, title: 'Appointment Booking', description: 'AI books appointments in real-time.', highlight: false, href: '/features/appointments' },
-              { icon: BarChart3, title: 'Call Analytics', description: 'Volume trends, peak hours, conversion rates.', highlight: false, href: '/features/analytics' },
-            ].map((feature) => (
-              <Link key={feature.title} href={feature.href} className={`group relative rounded-2xl border p-5 sm:p-6 transition-all duration-300 ${feature.highlight ? 'border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/40 hover:bg-emerald-500/[0.06]' : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'}`}>
-                <div className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl mb-4 transition-colors ${feature.highlight ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-white/[0.04] group-hover:bg-white/[0.08]'}`}>
-                  <feature.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${feature.highlight ? 'text-emerald-400' : 'text-[#fafaf9]/60'}`} />
-                </div>
-                <h3 className="text-base sm:text-lg font-medium mb-2 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
-                <p className="text-sm text-[#fafaf9]/50 leading-relaxed">{feature.description}</p>
-                <div className="mt-3 flex items-center gap-1 text-xs text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Learn more <ArrowRight className="h-3 w-3" />
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link href="/features" className="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
-              View all 40+ features
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Agency Tools */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <Building2 className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Agency Business Tools</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              Run your agency like a pro
-              <span className="block mt-1 sm:mt-2 text-[#fafaf9]/40">all from your phone</span>
-            </h2>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
-            <div>
-              <h3 className="text-lg font-medium mb-6 flex items-center gap-2">
-                <Palette className="h-5 w-5 text-emerald-400" />
-                Branding & Marketing
-              </h3>
-              <div className="space-y-4">
-                {[
-                  { title: 'Complete White-Label', description: 'Your logo, colors, domain. We\'re invisible.', badge: null },
-                  { title: 'Marketing Website', description: 'Professional site with your branding and pricing.', badge: 'Pro+' },
-                  { title: 'Interactive AI Demo', description: 'Demo line that transforms into prospects\' receptionist.', badge: 'Pro+' },
-                  { title: 'Custom Domain', description: 'Use youragency.com for everything.', badge: 'Pro+' },
-                  { title: 'White-Label Emails', description: 'All notifications from your domain.', badge: 'Scale' },
-                ].map((feature) => (
-                  <div key={feature.title} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 mt-0.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">{feature.title}</h4>
-                        {feature.badge && <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-[10px] font-medium text-[#fafaf9]/60">{feature.badge}</span>}
-                      </div>
-                      <p className="text-sm text-[#fafaf9]/50">{feature.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-6 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-emerald-400" />
-                Payments & Management
-              </h3>
-              <div className="space-y-4">
-                {[
-                  { title: 'Stripe Connect', description: 'Clients pay you directly. Keep 100%.', badge: null },
-                  { title: 'Custom Pricing', description: 'Set your own price tiers.', badge: null },
-                  { title: 'Client CRM', description: 'View clients, usage, and revenue.', badge: null },
-                  { title: 'Auto Provisioning', description: 'Clients go live in 60 seconds. Zero setup.', badge: null },
-                  { title: 'API Access', description: 'Integrate with your systems.', badge: 'Pro+' },
-                ].map((feature) => (
-                  <div key={feature.title} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 mt-0.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">{feature.title}</h4>
-                        {feature.badge && <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-[10px] font-medium text-[#fafaf9]/60">{feature.badge}</span>}
-                      </div>
-                      <p className="text-sm text-[#fafaf9]/50">{feature.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* ════════ FINAL CTA ════════ */}
+      <section className="bg-ink canvas-dot py-32 lg:py-44 border-t border-white/[0.04] relative overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
+          <div ref={r7} className="fade-up max-w-3xl">
+            <p className="t-eyebrow text-em mb-6">Get started</p>
+            <h2 className="t-h1 text-white">Ship your white-label agency this week.</h2>
+            <p className="t-body mt-7 max-w-lg">
+              14-day free trial. No credit card. No setup fee. Activate a workspace, brand it, hook up Stripe, and your signup link is ready to share by Friday.
+            </p>
+            <div className="flex flex-wrap gap-3 mt-10">
+              <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/interactive-demo" className="btn btn-ghost-dark">Watch demo <ArrowRight className="w-3.5 h-3.5" /></Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Build vs Buy */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06] bg-gradient-to-b from-white/[0.01] to-transparent">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-                <Code className="h-4 w-4 text-red-400" />
-                <span className="text-red-300/90">Build vs. Buy</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
-                What you don&apos;t have to build
-              </h2>
-              <p className="mt-4 sm:mt-6 text-base sm:text-lg text-[#fafaf9]/50 leading-relaxed">
-                Building this yourself would take 6-12 months and $50K+ in development.
-              </p>
-              
-              <div className="mt-8 p-6 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-[#fafaf9]/60">Build yourself</span>
-                  <span className="text-xl font-semibold text-red-400">$50,000+</span>
-                </div>
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/[0.06]">
-                  <span className="text-sm text-[#fafaf9]/60">Development time</span>
-                  <span className="text-xl font-semibold text-red-400">6-12 months</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-[#fafaf9]/60">VoiceAI Connect</span>
-                  <span className="text-xl font-semibold text-emerald-400">From $99/mo</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#fafaf9]/60">Time to launch</span>
-                  <span className="text-xl font-semibold text-emerald-400">24 hours</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {[
-                { icon: Lock, label: 'Auth System' },
-                { icon: Database, label: 'Multi-tenant DB' },
-                { icon: Phone, label: 'VAPI Integration' },
-                { icon: CreditCard, label: 'Stripe Connect' },
-                { icon: PhoneCall, label: 'Phone Provisioning' },
-                { icon: FileText, label: 'Transcription' },
-                { icon: MessageSquare, label: 'SMS Gateway' },
-                { icon: FileAudio, label: 'Recording Storage' },
-                { icon: Search, label: 'Knowledge Base' },
-                { icon: UserPlus, label: 'Client Onboarding' },
-                { icon: Mail, label: 'Email System' },
-                { icon: BarChart3, label: 'Analytics Engine' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
-                    <item.icon className="h-4 w-4 text-red-400" />
-                  </div>
-                  <span className="text-sm text-[#fafaf9]/70">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Enterprise Infrastructure */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4 sm:mb-6">
-              <CircuitBoard className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">Enterprise Infrastructure</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-              Built for scale and reliability
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[
-              { icon: Gauge, title: '99.9% Uptime', description: 'SLA-backed reliability.' },
-              { icon: Shield, title: 'SOC 2 Compliant', description: 'Enterprise-grade security.' },
-              { icon: Cloud, title: 'Global CDN', description: 'Fast loads everywhere.' },
-              { icon: RefreshCw, title: 'Auto Scaling', description: 'Handles traffic spikes.' },
-              { icon: Lock, title: 'HIPAA Ready', description: 'Healthcare compliant.' },
-              { icon: Database, title: 'Daily Backups', description: '30-day retention.' },
-              { icon: Webhook, title: 'Webhook Events', description: 'Real-time integrations.' },
-              { icon: Code, title: 'REST API', description: 'Full API access.' },
-            ].map((feature) => (
-              <div key={feature.title} className="p-5 sm:p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04] transition-all">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 mb-4">
-                  <feature.icon className="h-5 w-5 text-emerald-400" />
-                </div>
-                <h3 className="text-base font-medium mb-2">{feature.title}</h3>
-                <p className="text-sm text-[#fafaf9]/50">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-20 sm:py-24 lg:py-32 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-emerald-500/10 blur-3xl" />
-            <div className="relative">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight">
-                40+ features. Zero fulfillment.
-                <span className="block mt-1 sm:mt-2 bg-gradient-to-r from-emerald-400 to-white bg-clip-text text-transparent">
-                  Manage it all from your phone.
-                </span>
-              </h2>
-              <p className="mt-4 sm:mt-6 text-lg sm:text-xl text-[#fafaf9]/50">
-                Launch your AI receptionist agency in under 24 hours.
-              </p>
-              
-              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/signup" className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] transition-all hover:bg-[#fafaf9] hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98]">
-                  Start Your Free Trial
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link href="/#pricing" className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.06] hover:border-white/20">
-                  View Pricing
-                  <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-              
-              <p className="mt-5 sm:mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · No credit card required · Cancel anytime
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg" />
-              <span className="text-sm font-semibold">VoiceAI Connect</span>
-            </Link>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[#fafaf9]/40">
-              <Link href="/platform" className="hover:text-[#fafaf9] transition-colors">Platform</Link>
-              <Link href="/#pricing" className="hover:text-[#fafaf9] transition-colors">Pricing</Link>
-              <Link href="/blog" className="hover:text-[#fafaf9] transition-colors">Blog</Link>
-              <Link href="/referral-program" className="hover:text-[#fafaf9] transition-colors">Referral Program</Link>
-              <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms</Link>
-              <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy</Link>
-              <a href="mailto:support@voiceaiconnect.com" className="hover:text-[#fafaf9] transition-colors">Contact</a>
-            </div>
-            <p className="text-xs text-[#fafaf9]/25">© 2026 VoiceAI Connect. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      <MarketingFooter />
+    </main>
   );
 }

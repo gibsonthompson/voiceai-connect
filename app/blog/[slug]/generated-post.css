@@ -1,93 +1,142 @@
 /* app/blog/[slug]/generated-post.css */
-/* 
- * Generated content is rendered via dangerouslySetInnerHTML inside a <div>,
- * so elements are grandchildren of .article-content:
+/*
+ * Blog-farm generated content is rendered via dangerouslySetInnerHTML inside
+ * a wrapping <div>, so elements are grandchildren of .article-content:
  *   .article-content > div > h2 (not .article-content > h2)
- * This file mirrors article.css rules targeting the wrapper div's children.
+ * This file mirrors article.css rules for the wrapper-div's children, plus
+ * blog-farm-specific elements (.cta-box, .callout, .faq-item, .stat-highlight, .comparison-table).
  */
+
+/* ── BASE WRAPPER ── */
+.article-content div {
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(0, 0, 0, 0.72);
+  font-weight: 400;
+}
 
 /* ── PARAGRAPHS ── */
 .article-content div > p {
-  font-size: 1.125rem;
-  line-height: 1.8;
-  color: rgba(250, 250, 249, 0.7);
-  margin-bottom: 1.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(0, 0, 0, 0.72);
+  margin-bottom: 1.4rem;
+}
+
+.article-content div > p.lead,
+.article-content div > .lead {
+  font-size: 1.25rem;
+  line-height: 1.7;
+  color: rgba(0, 0, 0, 0.78);
+  margin-bottom: 2rem;
 }
 
 /* ── H2 ── */
 .article-content div > h2 {
+  font-family: 'Geist', system-ui, sans-serif;
   font-size: 1.75rem;
-  font-weight: 600;
-  color: #fafaf9;
-  margin-top: 3.5rem;
-  margin-bottom: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+  color: #0a0a0a;
+  margin-top: 3.25rem;
+  margin-bottom: 1.25rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   scroll-margin-top: 6rem;
 }
 .article-content div > h2:first-of-type {
-  margin-top: 2rem;
+  margin-top: 0.5rem;
   padding-top: 0;
   border-top: none;
 }
 
 /* ── H3 ── */
 .article-content div > h3 {
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: #fafaf9;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 1.3125rem;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+  color: #0a0a0a;
+  margin-top: 2.25rem;
+  margin-bottom: 0.85rem;
   scroll-margin-top: 6rem;
 }
 
 /* ── H4 ── */
 .article-content div h4 {
+  font-family: 'Geist', system-ui, sans-serif;
   font-size: 1.125rem;
-  font-weight: 600;
-  color: #fafaf9;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  color: #0a0a0a;
+  margin-top: 1.75rem;
+  margin-bottom: 0.6rem;
   scroll-margin-top: 6rem;
+}
+
+/* ── INLINE ── */
+.article-content div strong {
+  font-weight: 600;
+  color: #0a0a0a;
+}
+.article-content div em {
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.78);
+}
+
+/* ── LINKS ── */
+.article-content div a {
+  color: #047857;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(4, 120, 87, 0.25);
+  transition: border-color 0.2s ease;
+}
+.article-content div a:hover {
+  border-bottom-color: #047857;
 }
 
 /* ── UNORDERED LISTS ── */
 .article-content div > ul {
-  margin: 1.5rem 0 2rem 0;
+  margin: 1.25rem 0 1.75rem 0;
   padding-left: 0;
   list-style: none;
 }
 .article-content div > ul > li {
   position: relative;
-  padding-left: 1.75rem;
-  margin-bottom: 1rem;
-  font-size: 1.125rem;
-  line-height: 1.75;
-  color: rgba(250, 250, 249, 0.7);
+  padding-left: 1.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: rgba(0, 0, 0, 0.72);
 }
 .article-content div > ul > li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0.75rem;
+  top: 0.65rem;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #10b981;
+  background: #10b981;
 }
 
 /* ── ORDERED LISTS ── */
 .article-content div > ol {
-  margin: 1.5rem 0 2rem 0;
+  margin: 1.25rem 0 1.75rem 0;
   padding-left: 0;
   list-style: none;
   counter-reset: list-counter;
 }
 .article-content div > ol > li {
   position: relative;
-  padding-left: 2.5rem;
-  margin-bottom: 1.25rem;
-  font-size: 1.125rem;
-  line-height: 1.75;
-  color: rgba(250, 250, 249, 0.7);
+  padding-left: 2.25rem;
+  margin-bottom: 0.85rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: rgba(0, 0, 0, 0.72);
   counter-increment: list-counter;
 }
 .article-content div > ol > li::before {
@@ -95,145 +144,297 @@
   position: absolute;
   left: 0;
   top: 0;
-  font-weight: 600;
-  color: #10b981;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #047857;
 }
-
-/* ── INLINE ── */
-.article-content div strong { font-weight: 600; color: #fafaf9; }
-.article-content div a { color: #10b981; text-decoration: none; }
-.article-content div a:hover { text-decoration: underline; }
 
 /* ── BLOCKQUOTES ── */
 .article-content div > blockquote {
-  margin: 2rem 0;
-  padding: 1.25rem 1.5rem;
-  border-left: 4px solid #10b981;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.75rem 0;
+  padding: 1.1rem 1.4rem;
+  border-left: 3px solid #10b981;
+  background: rgba(16, 185, 129, 0.04);
+  border-radius: 0 0.625rem 0.625rem 0;
 }
 .article-content div > blockquote p {
   margin: 0;
-  font-style: italic;
-  color: rgba(250, 250, 249, 0.8);
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 1.0625rem;
+  line-height: 1.7;
 }
 
 /* ── HR ── */
 .article-content div > hr {
-  margin: 3rem 0;
+  margin: 2.5rem 0;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ── INLINE CODE ── */
+.article-content div code {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  color: #047857;
+}
+
+/* ── CODE BLOCKS — kept dark for readability ── */
+.article-content div > pre {
+  margin: 1.75rem 0;
+  padding: 1.25rem 1.4rem;
+  background: #0a0a0a;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.article-content div > pre code {
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* ── TABLES ── */
-.article-content div .table-wrap { width: 100%; margin: 2rem 0; overflow-x: auto; }
-.article-content div table {
-  border-collapse: collapse;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  overflow: hidden;
+.article-content div .table-wrap {
   width: 100%;
+  margin: 1.75rem 0;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.article-content div table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9375rem;
+}
+.article-content div .table-wrap > table {
+  border: none;
+  border-radius: 0;
 }
 .article-content div th {
+  font-family: 'Geist', system-ui, sans-serif;
+  font-weight: 500;
   text-align: left;
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: #fafaf9;
-  font-size: 0.875rem;
+  padding: 0.85rem 1rem;
+  background: rgba(0, 0, 0, 0.025);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: #0a0a0a;
   white-space: nowrap;
 }
 .article-content div td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  color: rgba(250, 250, 249, 0.7);
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.7);
+  vertical-align: top;
+}
+.article-content div tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── COMPARISON TABLE ── */
+.article-content div .comparison-table {
+  margin: 1.75rem 0;
+}
+.article-content div .comparison-table th {
   font-size: 0.875rem;
 }
-.article-content div tr:last-child td { border-bottom: none; }
 
 /* ── STAT HIGHLIGHT ── */
 .article-content div .stat-highlight {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 0.5rem;
-  font-weight: 600;
-  color: #10b981;
+  padding: 0.18rem 0.625rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: 6px;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.92em;
+  font-weight: 500;
+  color: #047857;
 }
 
 /* ── CTA BOX ── */
 .article-content div .cta-box {
-  margin: 2.5rem 0;
-  padding: 1.5rem 2rem;
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  background: rgba(16, 185, 129, 0.05);
-  border-radius: 0.75rem;
+  margin: 2.25rem 0;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.01));
+  border-radius: 14px;
 }
-.article-content div .cta-box p { color: rgba(250, 250, 249, 0.8); }
+.article-content div .cta-box p {
+  color: rgba(0, 0, 0, 0.72);
+  margin: 0 0 0.75rem 0;
+}
+.article-content div .cta-box p:last-child {
+  margin-bottom: 0;
+}
 .article-content div .cta-box a {
-  color: #050505 !important;
-  background: #10b981;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #fff !important;
+  background: #0a0a0a;
+  border: 1px solid #0a0a0a;
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  font-family: 'Geist', system-ui, sans-serif;
   font-weight: 500;
-  font-size: inherit;
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
   text-decoration: none !important;
-  transition: background 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
 }
 .article-content div .cta-box a:hover {
-  background: #34d399;
+  background: transparent;
+  color: #0a0a0a !important;
   text-decoration: none !important;
 }
 
-/* ── CALLOUT ── */
+/* ── CALLOUT (default — info blue) ── */
 .article-content div .callout {
-  margin: 2rem 0;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  background: rgba(59, 130, 246, 0.08);
-  border-radius: 0.75rem;
+  margin: 1.75rem 0;
+  padding: 1.1rem 1.4rem;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.04);
+  border-radius: 12px;
 }
-.article-content div .callout p { color: rgba(250, 250, 249, 0.7); margin: 0; }
+.article-content div .callout p {
+  color: rgba(0, 0, 0, 0.72);
+  margin: 0;
+}
+.article-content div .callout p + p {
+  margin-top: 0.6rem;
+}
 
-/* ── FAQ ── */
-.article-content div .faq-section { margin-top: 3rem; }
+/* ── CALLOUT VARIANTS ── */
+.article-content div .callout-tip,
+.article-content div .callout.tip {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+}
+.article-content div .callout-warning,
+.article-content div .callout.warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.06);
+}
+.article-content div .callout-info,
+.article-content div .callout.info {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* ── FAQ SECTION ── */
+.article-content div .faq-section {
+  margin-top: 2.5rem;
+}
 .article-content div .faq-item {
-  margin-bottom: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
+  margin-bottom: 0.875rem;
+  padding: 1.1rem 1.4rem;
+  background: rgba(0, 0, 0, 0.012);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  transition: border-color 0.2s ease;
+}
+.article-content div .faq-item:hover {
+  border-color: rgba(0, 0, 0, 0.14);
 }
 .article-content div .faq-item h3,
 .article-content div .faq-item h4 {
-  font-size: 1.063rem;
-  font-weight: 600;
-  color: #fafaf9;
-  margin: 0 0 0.75rem 0;
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #0a0a0a;
+  margin: 0 0 0.6rem 0;
   padding: 0;
   border: none;
 }
 .article-content div .faq-item p {
-  color: rgba(250, 250, 249, 0.7);
+  color: rgba(0, 0, 0, 0.65);
   margin: 0;
+  font-size: 1rem;
   line-height: 1.7;
+}
+
+/* ── IMAGES ── */
+.article-content div img {
+  margin: 1.75rem 0;
+  border-radius: 12px;
+  max-width: 100%;
+  height: auto;
 }
 
 /* ── MOBILE ── */
 @media (max-width: 640px) {
-  .article-content div > p { font-size: 1rem; line-height: 1.75; margin-bottom: 1.25rem; }
-  .article-content div > h2 { font-size: 1.375rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-top: 1.5rem; }
-  .article-content div > h2:first-of-type { margin-top: 1.5rem; }
-  .article-content div > h3 { font-size: 1.188rem; margin-top: 2rem; margin-bottom: 0.75rem; }
-  .article-content div h4 { font-size: 1.063rem; }
+  .article-content div > p {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1.15rem;
+  }
+  .article-content div > p.lead,
+  .article-content div > .lead {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+  .article-content div > h2 {
+    font-size: 1.4rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.85rem;
+    padding-top: 1.5rem;
+  }
+  .article-content div > h2:first-of-type {
+    margin-top: 0.25rem;
+  }
+  .article-content div > h3 {
+    font-size: 1.15rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.65rem;
+  }
+  .article-content div h4 {
+    font-size: 1.0625rem;
+    margin-top: 1.5rem;
+  }
   .article-content div > ul > li,
-  .article-content div > ol > li { font-size: 1rem; line-height: 1.7; margin-bottom: 0.75rem; }
-  .article-content div > ol > li { padding-left: 2rem; }
-  .article-content div > blockquote { margin: 1.5rem 0; padding: 1rem 1rem 1rem 1.25rem; font-size: 0.938rem; }
-  .article-content div table { font-size: 0.8125rem; }
-  .article-content div th, .article-content div td { padding: 0.5rem 0.75rem; }
-  .article-content div .cta-box { padding: 1.25rem; }
+  .article-content div > ol > li {
+    font-size: 1rem;
+    line-height: 1.65;
+    margin-bottom: 0.55rem;
+  }
+  .article-content div > blockquote {
+    margin: 1.4rem 0;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.95rem;
+  }
+  .article-content div > blockquote p {
+    font-size: 0.95rem;
+  }
+  .article-content div > pre {
+    margin: 1.4rem -1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 0;
+    font-size: 0.8rem;
+  }
+  .article-content div table {
+    font-size: 0.8125rem;
+  }
+  .article-content div th,
+  .article-content div td {
+    padding: 0.6rem 0.75rem;
+  }
+  .article-content div .cta-box {
+    padding: 1.15rem 1.25rem;
+  }
+  .article-content div .cta-box a {
+    padding: 0.55rem 1rem;
+    font-size: 0.78rem;
+  }
 }

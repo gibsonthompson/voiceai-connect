@@ -1,71 +1,45 @@
-// app/terms/page.tsx
-// 
-// VoiceAI Connect Terms of Service
-// Last Updated: February 2026
-// 
-// Covers: White-label platform terms, AI receptionist usage, call recording compliance,
-// TCPA requirements, payment terms, intellectual property, liability limitations,
-// Google Calendar integration terms
-
+// app/terms/page.tsx — VoiceAI Connect Terms of Service
 import Link from 'next/link';
-
-// Main marketing site URL - used for logo/home links
-const MARKETING_URL = 'https://myvoiceaiconnect.com';
-
+import MarketingNav from '@/components/marketing-nav';
+import MarketingFooter from '@/components/marketing-footer';
 
 export const metadata = {
-  alternates: {
-    canonical: "/terms",
-  },
+  alternates: { canonical: '/terms' },
   title: 'Terms of Service | VoiceAI Connect',
   description: 'VoiceAI Connect Terms of Service. The legal agreement governing your use of our platform.',
 };
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
-      {/* Grain overlay */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
+    <main className="min-h-screen bg-ink">
+      <MarketingNav />
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <a href={MARKETING_URL} className="flex items-center gap-2.5 group">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
-              <span className="text-base font-semibold">VoiceAI Connect</span>
-            </a>
-            <a href={MARKETING_URL} className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
-              ← Back to Home
-            </a>
+      {/* Header — dark hero */}
+      <section className="canvas-dot relative pt-32 lg:pt-40 pb-12 lg:pb-16 overflow-hidden">
+        <div className="hero-aurora" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div className="max-w-3xl">
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase mb-5" style={{ color: '#4aeabc' }}>Legal</p>
+            <h1 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 4vw, 3.25rem)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
+              Terms of Service
+            </h1>
+            <p className="mt-5 font-mono text-[12px] text-white/45">Last Updated: February 19, 2026</p>
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Content */}
-      <main className="relative pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
-        <article className="mx-auto max-w-3xl">
-          <header className="mb-12">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Terms of Service</h1>
-            <p className="mt-4 text-[#fafaf9]/60">
-              Last Updated: February 19, 2026
-            </p>
-          </header>
-
-          <div className="prose prose-invert prose-lg max-w-none
-            prose-headings:font-semibold prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-            prose-p:text-[#fafaf9]/70 prose-p:leading-relaxed prose-p:mb-4
-            prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-            prose-strong:text-[#fafaf9]
-            prose-ul:text-[#fafaf9]/70 prose-ol:text-[#fafaf9]/70
-            prose-li:mb-2
+      {/* Body — light paper */}
+      <section className="bg-paper py-14 lg:py-20">
+        <article className="mx-auto max-w-3xl px-6 lg:px-10">
+          <div className="prose prose-lg max-w-none
+            prose-headings:font-display prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-black
+            prose-h2:text-[1.625rem] prose-h2:mt-10 prose-h2:mb-4 prose-h2:pt-7 prose-h2:border-t prose-h2:border-black/[0.06]
+            prose-h3:text-[1.25rem] prose-h3:mt-7 prose-h3:mb-3
+            prose-p:font-display prose-p:text-[17px] prose-p:text-black/72 prose-p:leading-relaxed prose-p:mb-4
+            prose-a:text-em-deep prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-black prose-strong:font-semibold
+            prose-ul:text-black/72 prose-ol:text-black/72 prose-ul:text-[17px] prose-ol:text-[17px]
+            prose-li:mb-2 prose-li:leading-relaxed
           ">
             
             <p>
@@ -565,24 +539,9 @@ export default function TermsOfService() {
 
           </div>
         </article>
-      </main>
+      </section>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/[0.06] py-12 px-4 sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <a href={MARKETING_URL} className="flex items-center gap-2.5">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 rounded-xl" />
-              <span className="text-sm font-medium">VoiceAI Connect</span>
-            </a>
-            <div className="flex items-center gap-6 text-sm text-[#fafaf9]/40">
-              <Link href="/terms" className="hover:text-[#fafaf9] transition-colors">Terms of Service</Link>
-              <Link href="/privacy" className="hover:text-[#fafaf9] transition-colors">Privacy Policy</Link>
-            </div>
-            <p className="text-sm text-[#fafaf9]/30">© 2026 VoiceAI Connect</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      <MarketingFooter />
+    </main>
   );
 }
