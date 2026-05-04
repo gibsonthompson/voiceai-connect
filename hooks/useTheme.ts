@@ -17,6 +17,10 @@
 //
 // Everything auto-calculates from the base theme, then overrides are applied
 // on top. Pages using useTheme() get overrides automatically.
+//
+// FIX: When agency data hasn't loaded yet (null), the hook reads
+// voiceai_ui_theme from localStorage to select the correct mode on the
+// very first render, preventing a dark-mode flash on light-mode refresh.
 // ============================================================================
 
 'use client';
@@ -362,7 +366,24 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
 export function useTheme(): Theme {
   const { agency, branding } = useAgency();
 
-  const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
+  // ── Determine mode ──────────────────────────────────────────────────
+  // When agency data is loaded, use agency.website_theme (authoritative).
+  // When agency is null (still loading), fall back to localStorage hint
+  // so the FIRST render uses the correct mode — prevents full-page dark
+  // flash on light-mode refresh.
+  let mode: 'dark' | 'light';
+  if (agency) {
+    // Agency loaded — use the real value
+    mode = agency.website_theme === 'light' ? 'light' : 'dark';
+  } else {
+    // Agency not loaded yet — read localStorage hint
+    let hint: string | null = null;
+    if (typeof window !== 'undefined') {
+      try { hint = localStorage.getItem('voiceai_ui_theme'); } catch {}
+    }
+    mode = hint === 'light' ? 'light' : 'dark';
+  }
+
   const primary = branding.primaryColor || '#10b981';
   const overrides = (agency as any)?.branding_overrides as BrandingOverrides | undefined;
 

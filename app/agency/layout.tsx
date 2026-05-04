@@ -226,32 +226,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, shouldBlockAccess]);
 
-  // ══════════════════════════════════════════════════════════════════════
-  // FIX: Immediate body-bg from localStorage on mount
-  // Prevents dark flash on light-mode refresh. Runs BEFORE agency data
-  // loads (when theme.bg would still default to dark).
-  // ══════════════════════════════════════════════════════════════════════
+  // Keep body/html in sync with theme background
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('voiceai_ui_theme');
-      if (saved === 'light') {
-        document.documentElement.style.setProperty('background', '#f9fafb', 'important');
-        document.body.style.setProperty('background', '#f9fafb', 'important');
-      }
-    } catch {}
-  }, []);
-
-  // Once agency loads and theme.bg is authoritative, keep body in sync
-  // Skips during loading so it doesn't override the localStorage value above
-  useEffect(() => {
-    if (loading) return;
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
     return () => {
       document.documentElement.style.removeProperty('background');
       document.body.style.removeProperty('background');
     };
-  }, [theme.bg, loading]);
+  }, [theme.bg]);
 
   useEffect(() => {
     if (!loading) {
@@ -762,7 +745,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="md:pl-64 min-h-screen">
+      <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {children}
       </main>
     </div>
