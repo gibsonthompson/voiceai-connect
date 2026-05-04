@@ -8,6 +8,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import { DEMO_DASHBOARD } from '../demoData';
+import SetupChecklist from '@/components/agency/SetupChecklist';
 
 interface RecentClient {
   id: string;
@@ -298,6 +299,17 @@ export default function AgencyDashboardPage() {
           <span className="hidden sm:inline">Feedback</span>
         </button>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          SETUP CHECKLIST — shows until all 5 steps are complete
+          ════════════════════════════════════════════════════════════════ */}
+      <SetupChecklist
+        agency={agency}
+        clientCount={stats?.clientCount || 0}
+        theme={theme}
+        userRole={user?.role}
+        demoMode={demoMode}
+      />
 
       {/* Trial Info Banner */}
       {!demoMode && isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
