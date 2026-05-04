@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
-  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Eye, Zap, Paintbrush, Clock, Headphones,
+  Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones,
   Check, Crown, Shield,
   type LucideIcon
 } from 'lucide-react';
@@ -135,8 +135,8 @@ const AGENCY_PLAN_TIERS = [
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, demoMode, toggleDemoMode, effectivePlan, hasPermission } = useAgency();
-  const { canUseMarketingSite, planName } = usePlanFeatures();
+  const { agency, branding, loading, effectivePlan, hasPermission } = useAgency();
+  const { canUseMarketingSite, canUseDemoPhoneNumber, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
@@ -180,7 +180,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       href: '/agency/demo-phone', 
       label: 'Demo Phone', 
       icon: Phone,
-      locked: !isEnterprise && agency?.subscription_status !== 'active',
+      locked: !isOnTrial && !canUseDemoPhoneNumber,
       upgradeRequired: 'Professional',
     },
     { 
@@ -690,20 +690,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Bottom Section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
-          {/* Demo Mode Toggle */}
-          <button onClick={toggleDemoMode} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all" style={demoMode ? { backgroundColor: theme.sidebarActiveItemBg, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.sidebarHover, border: `1px solid ${theme.sidebarBorder}` }}
-            onMouseEnter={(e) => { if (!demoMode) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }}
-            onMouseLeave={(e) => { if (!demoMode) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }}
-          >
-            <div className="flex items-center gap-3">
-              <Eye className="h-4 w-4" style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }} />
-              <span style={{ color: demoMode ? theme.primary : theme.sidebarTextMuted }}>Demo Mode</span>
-            </div>
-            <div className="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full transition-colors duration-200" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-              <span className="pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition duration-200" style={{ transform: demoMode ? 'translate(16px, 3px)' : 'translate(3px, 3px)' }} />
-            </div>
-          </button>
-
           {/* Trial Badge */}
           {isOnTrial && trialDaysLeft !== null && (
             <div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
