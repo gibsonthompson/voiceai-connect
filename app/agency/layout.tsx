@@ -226,6 +226,22 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, shouldBlockAccess]);
 
+  // ══════════════════════════════════════════════════════════════════════
+  // FIX: Immediate body-bg from localStorage on mount
+  // Prevents dark flash on light-mode refresh. Runs BEFORE agency data
+  // loads (when theme.bg would still default to dark).
+  // ══════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('voiceai_ui_theme');
+      if (saved === 'light') {
+        document.documentElement.style.setProperty('background', '#f9fafb', 'important');
+        document.body.style.setProperty('background', '#f9fafb', 'important');
+      }
+    } catch {}
+  }, []);
+
+  // Once agency loads and theme.bg is authoritative, keep body in sync
   useEffect(() => {
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
