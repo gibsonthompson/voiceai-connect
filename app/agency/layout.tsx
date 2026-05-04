@@ -242,14 +242,16 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }, []);
 
   // Once agency loads and theme.bg is authoritative, keep body in sync
+  // Skips during loading so it doesn't override the localStorage value above
   useEffect(() => {
+    if (loading) return;
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
     return () => {
       document.documentElement.style.removeProperty('background');
       document.body.style.removeProperty('background');
     };
-  }, [theme.bg]);
+  }, [theme.bg, loading]);
 
   useEffect(() => {
     if (!loading) {
