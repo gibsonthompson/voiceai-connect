@@ -194,7 +194,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
         <div className="nav-content">
           <a href="/" className="logo">
             {branding.logoUrl ? (
-              <div className="logo-wrapper" style={{ backgroundColor: branding.logoBackgroundColor || 'transparent', padding: branding.logoBackgroundColor ? '8px 12px' : '0', borderRadius: '8px' }}>
+              <div className="logo-wrapper">
                 <img src={branding.logoUrl} alt={branding.name} className="logo-image" />
               </div>
             ) : (
@@ -871,7 +871,7 @@ function Footer({ config }: { config: MarketingConfig }) {
           <div className="footer-col">
             <div className="footer-logo">
               {branding.logoUrl ? (
-                <div className="logo-wrapper" style={{ backgroundColor: branding.logoBackgroundColor || 'transparent', padding: branding.logoBackgroundColor ? '8px 12px' : '0', borderRadius: '8px', display: 'inline-block' }}>
+                <div className="logo-wrapper" style={{ display: 'inline-block' }}>
                   <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px' }} />
                 </div>
               ) : (

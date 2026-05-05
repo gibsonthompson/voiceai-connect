@@ -272,10 +272,29 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
+  const isDark = agency.website_theme === 'dark';
+  const primaryColor = agency.primary_color || '#10b981';
+  const accentColor = agency.accent_color || primaryColor;
+  const primaryLight = isLightColor(primaryColor);
+
+  const bgColor = isDark ? '#050505' : '#ffffff';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
+
   useEffect(() => {
     const faviconUrl = agency.favicon_url || agency.logo_url;
     if (faviconUrl) setFavicon(faviconUrl);
   }, [agency]);
+
+  // Fix: override globals.css dark body background to match page theme
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = isDark ? '#050505' : '#ffffff';
+    return () => { document.documentElement.style.backgroundColor = ''; };
+  }, [isDark]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -301,19 +320,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
       setError(err instanceof Error ? err.message : 'Something went wrong'); setLoading(false);
     }
   };
-
-  const isDark = agency.website_theme === 'dark';
-  const primaryColor = agency.primary_color || '#10b981';
-  const accentColor = agency.accent_color || primaryColor;
-  const primaryLight = isLightColor(primaryColor);
-
-  const bgColor = isDark ? '#050505' : '#ffffff';
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
-  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
-  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
 
   const renderStateField = () => {
     if (formData.country === 'US') {
@@ -351,7 +357,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
             <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {agency.logo_url ? (
                 <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
-                  style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                  style={{ border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
               ) : (
                 <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
                   style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
@@ -404,7 +410,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
                 </div>
               </div>
 
-              {/* Country */}
               <ThemedSelect label="Country" name="country" value={formData.country} onChange={handleChange} required icon={Globe} isDark={isDark} primaryColor={primaryColor}>
                 {supportedCountries.map(c => (<option key={c.code} value={c.code}>{c.flag} {c.name}</option>))}
               </ThemedSelect>
@@ -456,19 +461,20 @@ function AgencySignupForm() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    country: '',  // auto-detected, not shown to user
+    firstName: '', lastName: '', email: '', country: '',
   });
 
-  // Auto-detect country on mount
   useEffect(() => {
     const detected = getCountryFromCookie() || 'US';
     setFormData(prev => ({ ...prev, country: detected }));
   }, []);
 
-  // Check for errors from Google OAuth
+  // Fix: override globals.css dark body background
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = '#050505';
+    return () => { document.documentElement.style.backgroundColor = ''; };
+  }, []);
+
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
@@ -485,7 +491,6 @@ function AgencySignupForm() {
     }
   }, [searchParams]);
 
-  // Capture referral code
   useEffect(() => {
     const refFromUrl = searchParams.get('ref') || searchParams.get('referral');
     if (refFromUrl) {
@@ -528,10 +533,8 @@ function AgencySignupForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          country: formData.country,
+          email: formData.email, firstName: formData.firstName,
+          lastName: formData.lastName, country: formData.country,
           referralCode: referralCode,
         }),
       });
@@ -542,7 +545,6 @@ function AgencySignupForm() {
       clearReferralCode();
       if (data.token) localStorage.setItem('agency_password_token', data.token);
       if (data.agencyId) localStorage.setItem('onboarding_agency_id', data.agencyId);
-
       window.location.href = '/onboarding';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -552,16 +554,12 @@ function AgencySignupForm() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.8 }}>
-      {/* Grain overlay */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-
-      {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
       </div>
 
-      {/* Header — actual logo */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
@@ -579,10 +577,8 @@ function AgencySignupForm() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-md">
-          {/* Referral Banner */}
           {referralCode && (
             <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 flex-shrink-0">
@@ -595,7 +591,6 @@ function AgencySignupForm() {
             </div>
           )}
 
-          {/* Form Card */}
           <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
@@ -606,14 +601,12 @@ function AgencySignupForm() {
               <p className="mt-2 text-[#fafaf9]/50">Launch your AI voice agency in minutes</p>
             </div>
 
-            {/* Google Sign Up */}
             <button onClick={handleGoogleSignup} disabled={googleLoading || loading}
               className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-6 py-3.5 text-base font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-6">
               {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon className="h-5 w-5" />}
               Continue with Google
             </button>
 
-            {/* Divider */}
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.06]" /></div>
               <div className="relative flex justify-center text-xs uppercase">
@@ -628,8 +621,6 @@ function AgencySignupForm() {
               </div>
               
               <ThemedFormInput label="Email Address" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required icon={Mail} isDark={true} />
-
-              {/* Country auto-detected — no selector shown */}
 
               {error && (
                 <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
