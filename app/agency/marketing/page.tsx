@@ -282,23 +282,6 @@ export default function MarketingWebsitePage() {
     finally { setSavingDomain(false); }
   };
 
-  const colorPresets = [
-    { name: 'Emerald', primary: '#10b981', secondary: '#059669', accent: '#34d399' },
-    { name: 'Blue', primary: '#3b82f6', secondary: '#2563eb', accent: '#60a5fa' },
-    { name: 'Purple', primary: '#8b5cf6', secondary: '#7c3aed', accent: '#a78bfa' },
-    { name: 'Red', primary: '#ef4444', secondary: '#dc2626', accent: '#f87171' },
-    { name: 'Orange', primary: '#f97316', secondary: '#ea580c', accent: '#fb923c' },
-    { name: 'Teal', primary: '#14b8a6', secondary: '#0d9488', accent: '#2dd4bf' },
-    { name: 'Navy', primary: '#122092', secondary: '#0d1666', accent: '#f6b828' },
-    { name: 'Rose', primary: '#f43f5e', secondary: '#e11d48', accent: '#fb7185' },
-  ];
-
-  const applyPreset = (preset: typeof colorPresets[0]) => {
-    setPrimaryColor(preset.primary);
-    setSecondaryColor(preset.secondary);
-    setAccentColor(preset.accent);
-  };
-
   const tabs = [
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
@@ -580,23 +563,6 @@ export default function MarketingWebsitePage() {
                 Dashboard colors are configured separately in{' '}
                 <button onClick={() => { window.location.href = '/agency/settings?tab=branding'; }} className="underline font-medium" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>Settings → Branding</button>.
               </p>
-            </div>
-          </div>
-
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Quick Presets</h3>
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-3">
-              {colorPresets.map((preset) => (
-                <button key={preset.name} onClick={() => applyPreset(preset)} className="p-2 sm:p-3 rounded-lg transition-all hover:scale-105"
-                  style={primaryColor === preset.primary ? { backgroundColor: `${agencyPrimaryColor}15`, border: `2px solid ${agencyPrimaryColor}` } : { backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-                  <div className="flex gap-0.5 mb-1 sm:mb-2 justify-center">
-                    <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.primary }} />
-                    <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
-                    <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: preset.accent }} />
-                  </div>
-                  <p className="text-[8px] sm:text-[10px] text-center truncate" style={{ color: mutedTextColor }}>{preset.name}</p>
-                </button>
-              ))}
             </div>
           </div>
 
