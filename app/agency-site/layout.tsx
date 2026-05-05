@@ -82,9 +82,9 @@ export default function AgencySiteLayout({
   return (
     <>
       {/* 
-        Inline script to prevent white flash on dark-themed agency sites.
-        Reads cached theme from sessionStorage BEFORE React hydrates.
-        This runs synchronously before paint.
+        Inline script to prevent flash on themed agency sites.
+        Sets background on <html> BEFORE React hydrates so the
+        body's default dark background from globals.css doesn't bleed through.
       */}
       <script
         dangerouslySetInnerHTML={{
@@ -95,13 +95,18 @@ export default function AgencySiteLayout({
                 if (t === 'dark') {
                   document.documentElement.style.backgroundColor = '#0f0f0f';
                   document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.style.backgroundColor = '#ffffff';
+                  document.documentElement.style.colorScheme = 'light';
                 }
-              } catch(e) {}
+              } catch(e) {
+                document.documentElement.style.backgroundColor = '#ffffff';
+              }
             })();
           `,
         }}
       />
-      <div style={{ minHeight: '100vh' }}>
+      <div style={{ minHeight: '100vh', zoom: 0.8 }}>
         {children}
       </div>
     </>
