@@ -144,6 +144,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const theme = useTheme();
 
+  // Set dashboard tab title (root layout default is the marketing SEO title)
+  useEffect(() => {
+    document.title = 'Dashboard | VoiceAI Connect';
+  }, []);
+
   const primaryColor = branding.primaryColor || '#10b981';
   const secondaryColor = branding.secondaryColor || '#059669';
   const accentColor = branding.accentColor || '#34d399';

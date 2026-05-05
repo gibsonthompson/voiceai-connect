@@ -332,10 +332,30 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
+  // Theme detection
+  const isDark = agency.website_theme === 'dark';
+  const primaryColor = agency.primary_color || '#10b981';
+  const accentColor = agency.accent_color || primaryColor;
+  const primaryLight = isLightColor(primaryColor);
+
+  const bgColor = isDark ? '#050505' : '#ffffff';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
+
   useEffect(() => {
     const faviconUrl = agency.favicon_url || agency.logo_url;
     if (faviconUrl) setFavicon(faviconUrl);
   }, [agency]);
+
+  // Fix: override globals.css dark body background to match page theme
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = isDark ? '#050505' : '#ffffff';
+    return () => { document.documentElement.style.backgroundColor = ''; };
+  }, [isDark]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -429,20 +449,6 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     }
   };
 
-  // Theme detection
-  const isDark = agency.website_theme === 'dark';
-  const primaryColor = agency.primary_color || '#10b981';
-  const accentColor = agency.accent_color || primaryColor;
-  const primaryLight = isLightColor(primaryColor);
-
-  const bgColor = isDark ? '#050505' : '#ffffff';
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
-  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
-  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
-
   // State field rendering
   const renderStateField = () => {
     if (formData.country === 'US') {
@@ -472,7 +478,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   // ==========================================================================
   if (signupSuccess && credentials) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
+      <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
         {isDark && (
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -624,7 +630,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   // SIGNUP FORM (original, with Phase 2B button text change)
   // ==========================================================================
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
+    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
       {isDark && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -797,6 +803,12 @@ function AgencySignupForm() {
     setFormData(prev => ({ ...prev, country: detected }));
   }, []);
 
+  // Fix: override globals.css dark body background
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = '#050505';
+    return () => { document.documentElement.style.backgroundColor = ''; };
+  }, []);
+
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
@@ -876,7 +888,7 @@ function AgencySignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.8 }}>
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.9 }}>
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">

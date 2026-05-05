@@ -34,11 +34,21 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Dashboard",
-    template: "%s",
+    default: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
+    template: "%s | VoiceAI Connect",
   },
   description:
-    "Launch your own AI voice receptionist agency. White-label platform with your brand, your pricing, 100% of the revenue.",
+    "Launch your own AI voice receptionist agency. White-label platform purpose-built for agencies and resellers — your brand, your pricing, 100% of the revenue. 14-day free trial, no credit card required.",
+  keywords: [
+    "white-label AI receptionist",
+    "AI receptionist platform",
+    "AI phone answering service",
+    "white-label voice AI",
+    "AI receptionist reseller",
+    "AI receptionist for agencies",
+    "voice AI platform",
+    "AI answering service white label",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -56,7 +66,7 @@ export const metadata: Metadata = {
     title: "VoiceAI",
   },
   alternates: {
-    canonical: "/",
+    canonical: "https://www.myvoiceaiconnect.com",
     types: {
       "application/rss+xml": "https://myvoiceaiconnect.com/feed.xml",
     },
@@ -66,9 +76,26 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://www.myvoiceaiconnect.com",
     siteName: "VoiceAI Connect",
-    title: "VoiceAI Connect - Launch Your AI Voice Agency",
+    title: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
     description:
-      "The complete white-label platform to resell AI receptionists under your brand.",
+      "Launch your own AI voice receptionist agency. White-label platform with branded dashboards, automated phone provisioning, and Stripe Connect billing. 14-day free trial.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
+    description:
+      "Launch your own AI voice receptionist agency. White-label platform with your brand, your pricing, 100% of the revenue.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   metadataBase: new URL("https://www.myvoiceaiconnect.com"),
 };
