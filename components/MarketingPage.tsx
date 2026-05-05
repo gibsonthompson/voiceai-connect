@@ -878,7 +878,7 @@ function Footer({ config }: { config: MarketingConfig }) {
                 <span>{branding.name}</span>
               )}
             </div>
-            <p className="footer-tagline">AI receptionist that never sleeps</p>
+            <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.</p>
             <div className="footer-contact">
               {footer.address && <p>{footer.address}</p>}
               {footer.phone && <p><a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a></p>}

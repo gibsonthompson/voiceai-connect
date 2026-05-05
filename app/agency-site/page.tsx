@@ -268,7 +268,9 @@ export default function AgencySitePage() {
   }
 
   // Use logo_background_color from DB (pre-computed) instead of detecting on every load
-  const logoBgColor = agency.logo_background_color || '';
+  const logoBgColor = (agency.logo_background_color && agency.logo_background_color !== '#000000' && agency.logo_background_color !== '#000')
+  ? agency.logo_background_color
+  : 'transparent';
 
   // Build marketing config
   const marketingConfig: Partial<MarketingConfig> = {
