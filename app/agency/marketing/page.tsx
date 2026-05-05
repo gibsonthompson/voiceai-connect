@@ -588,7 +588,6 @@ export default function MarketingWebsitePage() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
             <h3 className="font-medium text-sm sm:text-base mb-1">Custom Colors</h3>
-            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Fine-tune each color individually, or use a preset above as a starting point.</p>
             <div className="space-y-4">
               {[
                 { label: 'Primary Color', desc: 'Buttons, CTAs, hero gradient, nav highlights, pricing column highlights, and "Start Free Trial" buttons.', value: primaryColor, setter: setPrimaryColor },
