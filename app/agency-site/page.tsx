@@ -14,6 +14,7 @@ interface Agency {
   name: string;
   slug: string;
   status: string;
+  subscription_status: string | null;
   logo_url: string | null;
   primary_color: string;
   secondary_color: string;
@@ -62,11 +63,16 @@ function formatPhoneDisplay(phone: string): string {
 
 // ============================================================================
 // HELPER: Check if agency has marketing site access
+// Allowed: professional, enterprise, scale plans + trial users
 // ============================================================================
-function hasMarketingSiteAccess(planType: string | null | undefined): boolean {
-  if (!planType) return false;
-  const plan = planType.toLowerCase();
-  return plan === 'professional' || plan === 'enterprise' || plan === 'scale';
+function hasMarketingSiteAccess(agency: Agency): boolean {
+  // Trial users get full access to evaluate the marketing site
+  const status = agency.subscription_status;
+  if (status === 'trial' || status === 'trialing') return true;
+
+  const plan = agency.plan_type;
+  if (!plan) return false;
+  return ['professional', 'enterprise', 'scale'].includes(plan.toLowerCase());
 }
 
 // ============================================================================
@@ -194,7 +200,6 @@ export default function AgencySitePage() {
     if (agency.logo_url) setFavicon(agency.logo_url);
     setPageTitle(`${agency.name} - AI Phone Answering`);
     setCachedTheme(agency.website_theme);
-    // OG meta tags are now handled server-side by layout.tsx generateMetadata
   }
 
   if (loading) {
@@ -226,8 +231,8 @@ export default function AgencySitePage() {
     );
   }
 
-  // If agency is on Starter plan, redirect to /get-started instead of showing marketing page
-  if (!hasMarketingSiteAccess(agency.plan_type)) {
+  // If agency doesn't have marketing site access, redirect to signup
+  if (!hasMarketingSiteAccess(agency)) {
     if (typeof window !== 'undefined') {
       window.location.href = '/get-started';
     }
