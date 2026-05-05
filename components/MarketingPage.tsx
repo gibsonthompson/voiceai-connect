@@ -15,7 +15,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
 }
 
-/** Returns "r, g, b" string for use in CSS rgba(var(--x), alpha) */
 function hexToRgbString(hex: string): string {
   const rgb = hexToRgb(hex);
   return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '18, 32, 146';
@@ -71,15 +70,10 @@ const Icons = {
 // ============================================================================
 // SHARED TYPES
 // ============================================================================
-interface ContrastColors {
-  text: string;
-  textMuted: string;
-  buttonBg: string;
-  isLight: boolean;
-}
+interface ContrastColors { text: string; textMuted: string; buttonBg: string; isLight: boolean; }
 
 // ============================================================================
-// SAFE FAQ RENDERER (replaces dangerouslySetInnerHTML)
+// SAFE FAQ RENDERER
 // ============================================================================
 function SafeFAQContent({ html }: { html: string }) {
   const parts = html.split(/(<\/?(?:p|ul|ol|li|strong|br)\s*\/?>)/gi);
@@ -87,30 +81,22 @@ function SafeFAQContent({ html }: { html: string }) {
   let inList = false;
   let listItems: React.ReactNode[] = [];
   let key = 0;
-
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
     const lower = part.toLowerCase().trim();
-
     if (lower === '<ul>' || lower === '<ol>') { inList = true; listItems = []; continue; }
     if (lower === '</ul>') { elements.push(<ul key={key++} style={{ marginLeft: '1.25rem', marginTop: '0.375rem' }}>{listItems}</ul>); inList = false; continue; }
     if (lower === '</ol>') { elements.push(<ol key={key++} style={{ marginLeft: '1.25rem', marginTop: '0.375rem' }}>{listItems}</ol>); inList = false; continue; }
-    if (lower === '<li>') continue;
-    if (lower === '</li>') continue;
+    if (lower === '<li>' || lower === '</li>') continue;
     if (lower === '<p>') continue;
     if (lower === '</p>') { elements.push(<br key={key++} />); continue; }
     if (lower === '<br>' || lower === '<br/>') { elements.push(<br key={key++} />); continue; }
     if (lower === '<strong>' || lower === '</strong>') continue;
-
     if (part.trim() && !part.startsWith('<')) {
       const prevTag = i > 0 ? parts[i - 1]?.toLowerCase().trim() : '';
       const textNode = prevTag === '<strong>' ? <strong key={key++}>{part}</strong> : <span key={key++}>{part}</span>;
-      if (inList) {
-        listItems.push(<li key={key++} style={{ marginBottom: '0.375rem' }}>{textNode}</li>);
-      } else {
-        elements.push(textNode);
-      }
+      if (inList) { listItems.push(<li key={key++} style={{ marginBottom: '0.375rem' }}>{textNode}</li>); } else { elements.push(textNode); }
     }
   }
   return <div className="faq-answer-content">{elements}</div>;
@@ -120,33 +106,9 @@ function SafeFAQContent({ html }: { html: string }) {
 // SCHEMA.ORG STRUCTURED DATA
 // ============================================================================
 function SchemaOrg({ config }: { config: MarketingConfig }) {
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: config.faqs.map(faq => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: { '@type': 'Answer', text: faq.answer.replace(/<[^>]*>/g, '') },
-    })),
-  };
-
-  const productSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: config.branding.name,
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    offers: config.pricing.map(tier => ({
-      '@type': 'Offer', name: tier.name, price: tier.price, priceCurrency: 'USD', description: tier.subtitle,
-    })),
-  };
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
-    </>
-  );
+  const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: config.faqs.map(faq => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer.replace(/<[^>]*>/g, '') } })) };
+  const productSchema = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: config.branding.name, applicationCategory: 'BusinessApplication', operatingSystem: 'Web', offers: config.pricing.map(tier => ({ '@type': 'Offer', name: tier.name, price: tier.price, priceCurrency: 'USD', description: tier.subtitle })) };
+  return (<><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} /></>);
 }
 
 // ============================================================================
@@ -155,30 +117,10 @@ function SchemaOrg({ config }: { config: MarketingConfig }) {
 function AnalyticsScripts({ analytics }: { analytics?: MarketingConfig['analytics'] }) {
   if (!analytics) return null;
   const scripts: string[] = [];
-
-  if (analytics.gtmId) {
-    scripts.push(`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${analytics.gtmId}');`);
-  }
-  if (analytics.googleAnalyticsId) {
-    scripts.push(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analytics.googleAnalyticsId}');`);
-  }
-  if (analytics.fbPixelId) {
-    scripts.push(`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${analytics.fbPixelId}');fbq('track','PageView');`);
-  }
-
-  return (
-    <>
-      {analytics.googleAnalyticsId && (
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${analytics.googleAnalyticsId}`} />
-      )}
-      {scripts.length > 0 && (
-        <script dangerouslySetInnerHTML={{ __html: scripts.join('\n') }} />
-      )}
-      {analytics.customHeadScripts && (
-        <script dangerouslySetInnerHTML={{ __html: analytics.customHeadScripts }} />
-      )}
-    </>
-  );
+  if (analytics.gtmId) { scripts.push(`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${analytics.gtmId}');`); }
+  if (analytics.googleAnalyticsId) { scripts.push(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analytics.googleAnalyticsId}');`); }
+  if (analytics.fbPixelId) { scripts.push(`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${analytics.fbPixelId}');fbq('track','PageView');`); }
+  return (<>{analytics.googleAnalyticsId && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analytics.googleAnalyticsId}`} />}{scripts.length > 0 && <script dangerouslySetInnerHTML={{ __html: scripts.join('\n') }} />}{analytics.customHeadScripts && <script dangerouslySetInnerHTML={{ __html: analytics.customHeadScripts }} />}</>);
 }
 
 // ============================================================================
@@ -187,7 +129,6 @@ function AnalyticsScripts({ analytics }: { analytics?: MarketingConfig['analytic
 function Navigation({ config }: { config: MarketingConfig }) {
   const { branding } = config;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
     <nav className="navbar">
       <div className="container">
@@ -201,24 +142,17 @@ function Navigation({ config }: { config: MarketingConfig }) {
               <span className="logo-text">{branding.name}</span>
             )}
           </a>
-
           <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
             <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
             <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
             <li><a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
           </ul>
-
           <div className="nav-actions">
-            {config.clientLoginPath && (
-              <a href={config.clientLoginPath} className="client-login-link">Client Login</a>
-            )}
-            {config.footer.phone && (
-              <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>
-            )}
+            {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
+            {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
             <a href="/get-started" className="btn-primary">Start Free Trial</a>
           </div>
-
           <button className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`} aria-label="Toggle menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <span></span><span></span><span></span>
           </button>
@@ -234,51 +168,31 @@ function Navigation({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function HeroSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { hero, branding } = config;
-
   return (
     <section className="hero">
       <div className="container">
         <div className="hero-content">
-          <div className="hero-badge">
-            <span className="badge-dot"></span>
-            <span>{hero.badge}</span>
-          </div>
-
+          <div className="hero-badge"><span className="badge-dot"></span><span>{hero.badge}</span></div>
           <h1 className="hero-title">
             {hero.headline.map((line, i) => (<span key={i} style={{ display: 'block' }}>{line}</span>))}
           </h1>
-
           <p className="hero-subtitle">{hero.description}</p>
-
           <div className="hero-ctas">
             <a href="/get-started" className="btn-large btn-primary">Start Free Trial — 7 Days Free</a>
             {hero.demoPhone ? (
               <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-large btn-ghost">
-                <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>
-                Try Live Demo
+                <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
               </a>
-            ) : (
-              <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>
-            )}
+            ) : (<a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>)}
           </div>
-
           <div className="trust-bar">
             {hero.trustItems.map((item, i) => (<div key={i} className="trust-item">✓ {item}</div>))}
           </div>
-
           {hero.videoUrl && (
-            <div className="hero-video">
-              <div className="hero-video-wrapper">
-                <iframe
-                  src={hero.videoUrl}
-                  title={`${branding.name} Demo Video`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
+            <div className="hero-video"><div className="hero-video-wrapper">
+              <iframe src={hero.videoUrl} title={`${branding.name} Demo Video`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div></div>
           )}
-
           {hero.demoPhone && (
             <div className="demo-cta">
               <div className="demo-box" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`, color: contrastColors.text }}>
@@ -286,8 +200,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
                 <div className="demo-content">
                   <h3 style={{ color: contrastColors.text }}>HEAR IT IN ACTION:</h3>
                   <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="demo-phone" style={{ color: contrastColors.text, background: contrastColors.buttonBg }}>
-                    <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>{Icons.phone}</span>
-                    {hero.demoPhone}
+                    <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>{Icons.phone}</span>{hero.demoPhone}
                   </a>
                   {hero.demoInstructions && <p className="demo-instructions" style={{ color: contrastColors.textMuted }}>{hero.demoInstructions}</p>}
                 </div>
@@ -297,25 +210,6 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
         </div>
       </div>
       <div className="hero-bg"><div className="hero-gradient"></div><div className="hero-pattern"></div></div>
-    </section>
-  );
-}
-
-// ============================================================================
-// STATS SECTION
-// ============================================================================
-function StatsSection({ config }: { config: MarketingConfig }) {
-  const { stats } = config;
-  return (
-    <section className="stats-section">
-      <div className="container">
-        <div className="live-stats">
-          <div className="stat-item"><div className="stat-icon">{Icons.zap}</div><div className="stat-number">{stats.setupTime}</div><div className="stat-label">Setup Time</div></div>
-          <div className="stat-item"><div className="stat-icon">{Icons.clock}</div><div className="stat-number">{stats.responseTime}</div><div className="stat-label">Avg Response</div></div>
-          <div className="stat-item"><div className="stat-icon">{Icons.calendar}</div><div className="stat-number">{stats.businessesServed}</div><div className="stat-label">Businesses Served</div></div>
-          <div className="stat-item"><div className="stat-icon">{Icons.thumbsUp}</div><div className="stat-number">{stats.satisfaction}</div><div className="stat-label">Satisfaction</div></div>
-        </div>
-      </div>
     </section>
   );
 }
@@ -386,8 +280,6 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
 function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { benefits, branding } = config;
   const benefitIcons: Record<string, React.ReactElement> = { smartphone: Icons.smartphone, phone: Icons.phone, chart: Icons.chart, bell: Icons.bell };
-
-  // Derive lighter tint from primary for backgrounds
   const primaryRgb = hexToRgb(branding.primaryColor);
   const tintBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.08)` : 'rgba(18, 32, 146, 0.08)';
   const tintBgStrong = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.15)` : 'rgba(18, 32, 146, 0.15)';
@@ -399,33 +291,23 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
           <h2>See Every Conversation. Manage Everything from Your Phone.</h2>
           <p>Unlike old-school answering services that just take messages, {branding.name} gives you a complete command center for every customer interaction.</p>
         </div>
-
         <div className="app-features">
           <div className="app-screenshot">
             <div className="dashboard-mockup">
               <svg viewBox="0 0 320 640" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
-                {/* Phone frame */}
                 <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
                 <rect x="18" y="18" width="284" height="604" rx="32" fill="#f8fafc"/>
-                {/* Dark bezel fill above header */}
                 <rect x="18" y="18" width="284" height="42" rx="32" fill="#1a1a1a"/>
                 <rect x="18" y="40" width="284" height="16" fill="#1a1a1a"/>
-                {/* Notch */}
                 <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
-
-                {/* ── Header bar ── */}
                 <rect x="18" y="56" width="284" height="44" fill={branding.primaryColor}/>
                 <path d="M36 78 L44 70 M36 78 L44 86" stroke={contrastColors.text} strokeWidth="2" strokeLinecap="round"/>
                 <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill={contrastColors.text}>Call Details</text>
-
-                {/* ── Caller header ── */}
                 <rect x="18" y="100" width="284" height="56" fill="white"/>
                 <text x="32" y="124" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
                 <text x="32" y="142" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM · 3m 42s</text>
                 <rect x="224" y="114" width="64" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
                 <text x="256" y="130" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
-
-                {/* ── AI Summary card ── */}
                 <rect x="26" y="170" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <rect x="38" y="182" width="28" height="28" rx="8" fill={tintBg}/>
                 <path d="M48 192 L48 200 M52 192 L56 196 L52 200 M48 196 L56 196" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
@@ -436,47 +318,35 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                   <tspan x="38" dy="17">Requested a callback at their</tspan>
                   <tspan x="38" dy="17">earliest convenience.</tspan>
                 </text>
-
-                {/* ── Recording card ── */}
                 <rect x="26" y="320" width="268" height="64" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <text x="38" y="345" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Call Recording</text>
                 <rect x="38" y="356" width="244" height="14" rx="7" fill="#f3f4f6"/>
                 <rect x="38" y="356" width="110" height="14" rx="7" fill={branding.primaryColor} opacity="0.4"/>
                 <circle cx="148" cy="363" r="5" fill={branding.primaryColor}/>
                 <text x="258" y="367" textAnchor="end" fontFamily="system-ui" fontSize="9" fill="#6b7280">1:24 / 3:42</text>
-
-                {/* ── Contact Details card ── */}
                 <rect x="26" y="398" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <text x="38" y="422" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Contact Details</text>
-                {/* Name */}
                 <rect x="38" y="434" width="24" height="24" rx="6" fill="#f3f4f6"/>
                 <circle cx="50" cy="442" r="4" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <path d="M44 451 Q50 447 56 451" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <text x="70" y="440" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
                 <text x="70" y="453" fontFamily="system-ui" fontSize="11" fill="#1f2937">John Davidson</text>
-                {/* Phone */}
                 <rect x="38" y="468" width="24" height="24" rx="6" fill="#f3f4f6"/>
                 <path d="M47 474 C47 474 47 480 51 484" stroke="#9ca3af" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
                 <text x="70" y="476" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
                 <text x="70" y="489" fontFamily="system-ui" fontSize="11" fill={branding.primaryColor}>(555) 123-4567</text>
-                {/* Service */}
                 <rect x="38" y="502" width="24" height="24" rx="6" fill="#f3f4f6"/>
                 <rect x="45" y="509" width="10" height="10" rx="2" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <text x="70" y="510" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
                 <text x="70" y="523" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project Estimate</text>
-
-                {/* ── Action buttons ── */}
                 <rect x="26" y="550" width="130" height="40" rx="20" fill={branding.primaryColor}/>
                 <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill={contrastColors.text}>Call Back</text>
                 <rect x="164" y="550" width="130" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <text x="229" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">Send SMS</text>
-
-                {/* Home indicator */}
                 <rect x="120" y="606" width="80" height="4" rx="2" fill="#1a1a1a"/>
               </svg>
             </div>
           </div>
-
           <div className="app-benefits">
             {benefits.map((benefit, i) => (
               <div key={i} className="benefit-item">
@@ -487,8 +357,6 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
             ))}
           </div>
         </div>
-
-        {/* SMS Example */}
         <div className="sms-example">
           <div className="sms-mockup">
             <div className="sms-header" style={{ background: branding.primaryColor }}>Messages</div>
@@ -572,7 +440,6 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
   const cs = config.currencySymbol || '$';
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const highestPrice = pricing.length > 0 ? pricing[pricing.length - 1].price : 197;
-
   const comparisonData = [
     { label: 'Monthly Cost', ours: `${cs}${lowestPrice}-${highestPrice}`, human: '$3,000-4,500', ruby: '$299-600', vm: '$0' },
     { label: 'Setup Time', ours: '10 min', human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant' },
@@ -584,13 +451,10 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
     { label: 'Trained on YOUR Biz', ours: '✓', human: 'After weeks', ruby: 'Generic', vm: 'N/A' },
     { label: 'Multiple Calls', ours: 'Unlimited', human: 'One at a time', ruby: 'Limited', vm: 'Unlimited' },
   ];
-
   return (
     <section className="comparison">
       <div className="container">
         <div className="section-header"><h2>Why {branding.name} Beats Every Other Option</h2></div>
-
-        {/* Mobile cards */}
         <div className="comparison-cards">
           {[
             { name: branding.name, highlight: true, getData: (d: typeof comparisonData[0]) => d.ours },
@@ -608,44 +472,18 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
                   const val = option.getData(row);
                   const isYes = val === '✓' || val.includes('Unlimited') || val === '24/7/365' || val === '10 min';
                   const isNo = val === '✗' || val === 'N/A';
-                  return (
-                    <li key={j}>
-                      <span className="feature-label">{row.label}</span>
-                      <span className={`feature-value ${isYes ? 'feature-value--yes' : isNo ? 'feature-value--no' : ''}`}>{val}</span>
-                    </li>
-                  );
+                  return (<li key={j}><span className="feature-label">{row.label}</span><span className={`feature-value ${isYes ? 'feature-value--yes' : isNo ? 'feature-value--no' : ''}`}>{val}</span></li>);
                 })}
               </ul>
             </div>
           ))}
         </div>
-
-        {/* Desktop table */}
         <div className="comparison-table-wrapper">
           <table className="comparison-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th className="highlight-col"><div className="table-header-highlight">{branding.name}</div></th>
-                <th>Human Receptionist</th>
-                <th>Traditional Service</th>
-                <th>Just Voicemail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonData.map((row, i) => (
-                <tr key={i}>
-                  <td><strong>{row.label}</strong></td>
-                  <td className="highlight-col"><strong>{row.ours}</strong></td>
-                  <td>{row.human}</td>
-                  <td>{row.ruby}</td>
-                  <td>{row.vm}</td>
-                </tr>
-              ))}
-            </tbody>
+            <thead><tr><th></th><th className="highlight-col"><div className="table-header-highlight">{branding.name}</div></th><th>Human Receptionist</th><th>Traditional Service</th><th>Just Voicemail</th></tr></thead>
+            <tbody>{comparisonData.map((row, i) => (<tr key={i}><td><strong>{row.label}</strong></td><td className="highlight-col"><strong>{row.ours}</strong></td><td>{row.human}</td><td>{row.ruby}</td><td>{row.vm}</td></tr>))}</tbody>
           </table>
         </div>
-
         <div className="comparison-summary">
           <h3>The Bottom Line</h3>
           <p><strong>You have three choices:</strong></p>
@@ -662,32 +500,85 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// TESTIMONIALS SECTION
+// ROI CALCULATOR — Uses agency's actual pricing
 // ============================================================================
-function TestimonialsSection({ config }: { config: MarketingConfig }) {
-  const { testimonials } = config;
+function ROICalculatorSection({ config }: { config: MarketingConfig }) {
+  const { branding, pricing } = config;
+  const cs = config.currencySymbol || '$';
+  const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
+
+  const [missedPerWeek, setMissedPerWeek] = useState(5);
+  const COST_PER_MISSED = 500;
+
+  const monthlyMissed = Math.round(missedPerWeek * 4.33);
+  const monthlyLost = monthlyMissed * COST_PER_MISSED;
+  const annualLost = monthlyLost * 12;
+  const annualAICost = lowestPrice * 12;
+  const annualSavings = annualLost - annualAICost;
+  const roiMultiple = annualAICost > 0 ? Math.round(annualSavings / annualAICost) : 0;
+
+  const primaryRgb = hexToRgb(branding.primaryColor);
+  const tintBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.08)` : 'rgba(18, 32, 146, 0.08)';
+
   return (
-    <section className="testimonials">
+    <section className="stats-section" style={{ scrollMarginTop: '6rem' }}>
       <div className="container">
-        <div className="section-header"><h2>What Our Customers Are Saying</h2></div>
-        <div className="testimonials-grid">
-          {testimonials.map((testimonial, i) => (
-            <div key={i} className="testimonial-card">
-              <div className="testimonial-rating">
-                {Array.from({ length: testimonial.rating }).map((_, j) => (<span key={j} style={{ color: '#f59e0b', width: '1.25rem', height: '1.25rem' }}>{Icons.star}</span>))}
+        <div className="section-header">
+          <h2>What Are Missed Calls Costing You?</h2>
+          <p>Industry research shows the average missed call costs a small business <strong>{cs}500</strong> in lost revenue. Use the slider to see your potential losses.</p>
+        </div>
+
+        <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
+          {/* Slider */}
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
+              <span style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }}>Calls you miss per week</span>
+              <span style={{ fontFamily: 'var(--font-primary)', fontSize: '2rem', fontWeight: 800, color: branding.primaryColor }}>{missedPerWeek}</span>
+            </div>
+            <input
+              type="range" min={1} max={25} value={missedPerWeek}
+              onChange={e => setMissedPerWeek(Number(e.target.value))}
+              style={{ width: '100%', accentColor: branding.primaryColor, height: '6px', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>
+              <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span>
+            </div>
+          </div>
+
+          {/* Results Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ef4444', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Revenue Lost</p>
+              <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: '#ef4444', fontFamily: 'var(--font-primary)', lineHeight: 1.1 }}>{cs}{monthlyLost.toLocaleString()}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>{monthlyMissed} missed calls × {cs}{COST_PER_MISSED}</p>
+            </div>
+            <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Revenue Lost</p>
+              <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: '#dc2626', fontFamily: 'var(--font-primary)', lineHeight: 1.1 }}>{cs}{annualLost.toLocaleString()}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>That&apos;s going to your competitors</p>
+            </div>
+          </div>
+
+          {/* Solution row */}
+          <div style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', background: tintBg, border: `1px solid ${branding.primaryColor}25`, textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', alignItems: 'center' }}>
+              <div>
+                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} Cost</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p>
               </div>
-              <h3>&quot;{testimonial.headline}&quot;</h3>
-              <p>&quot;{testimonial.quote}&quot;</p>
-              <div className="testimonial-author">
-                <div className="author-avatar">{Icons.user}</div>
-                <div className="author-info">
-                  <strong>{testimonial.authorName}</strong>
-                  <span>{testimonial.authorTitle}</span>
-                  <span className="author-stats">{testimonial.stats}</span>
-                </div>
+              <div>
+                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p>
               </div>
             </div>
-          ))}
+            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>
+              Stop Losing {cs}{monthlyLost.toLocaleString()}/month — Start Free Trial
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -752,12 +643,9 @@ function FAQSection({ config }: { config: MarketingConfig }) {
           {faqs.map((faq, i) => (
             <div key={i} className={`faq-item ${activeIndex === i ? 'active' : ''}`}>
               <button className="faq-question" onClick={() => setActiveIndex(activeIndex === i ? null : i)}>
-                <span>{faq.question}</span>
-                <span className="faq-icon">+</span>
+                <span>{faq.question}</span><span className="faq-icon">+</span>
               </button>
-              <div className="faq-answer">
-                <SafeFAQContent html={faq.answer} />
-              </div>
+              <div className="faq-answer"><SafeFAQContent html={faq.answer} /></div>
             </div>
           ))}
         </div>
@@ -815,45 +703,23 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
 function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose: () => void }) {
   const { hero, branding } = config;
   const demoPhone = hero.demoPhone;
-
   return (
     <div className="exit-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="exit-modal" style={{ textAlign: 'center' }}>
-        <button className="exit-modal-close" onClick={onClose} aria-label="Close">
-          <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.close}</span>
-        </button>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-          <span style={{ width: '3rem', height: '3rem', color: branding.primaryColor }}>{Icons.headphones}</span>
-        </div>
+        <button className="exit-modal-close" onClick={onClose} aria-label="Close"><span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.close}</span></button>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}><span style={{ width: '3rem', height: '3rem', color: branding.primaryColor }}>{Icons.headphones}</span></div>
         <h3>Wait — Hear It Before You Leave!</h3>
         <p>Call our AI receptionist right now. No signup, no commitment — just see how it handles a real call for your business.</p>
         {demoPhone ? (
           <>
-            <a
-              href={`tel:+1${demoPhone.replace(/\D/g, '')}`}
-              className="btn-large btn-primary"
-              style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                  (window as any).dataLayer.push({ event: 'exit_intent_demo_call' });
-                }
-              }}
-            >
-              <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>
-              {demoPhone}
+            <a href={`tel:+1${demoPhone.replace(/\D/g, '')}`} className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
+              onClick={() => { if (typeof window !== 'undefined' && (window as any).dataLayer) { (window as any).dataLayer.push({ event: 'exit_intent_demo_call' }); } }}>
+              <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>{demoPhone}
             </a>
-            <p style={{ fontSize: '0.813rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
-              {hero.demoInstructions || 'Takes 30 seconds. Your phone will ring with a live demo.'}
-            </p>
+            <p style={{ fontSize: '0.813rem', color: 'var(--text-light)', marginBottom: '1rem' }}>{hero.demoInstructions || 'Takes 30 seconds. Your phone will ring with a live demo.'}</p>
           </>
-        ) : (
-          <a href="/get-started" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>
-            Start Your 7-Day Free Trial
-          </a>
-        )}
-        <a href="/get-started" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>
-          Or start your free trial →
-        </a>
+        ) : (<a href="/get-started" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>Start Your 7-Day Free Trial</a>)}
+        <a href="/get-started" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>Or start your free trial →</a>
       </div>
     </div>
   );
@@ -874,9 +740,7 @@ function Footer({ config }: { config: MarketingConfig }) {
                 <div className="logo-wrapper" style={{ display: 'inline-block' }}>
                   <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px' }} />
                 </div>
-              ) : (
-                <span>{branding.name}</span>
-              )}
+              ) : (<span>{branding.name}</span>)}
             </div>
             <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.</p>
             <div className="footer-contact">
@@ -939,9 +803,7 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-interface MarketingPageProps {
-  config?: Partial<MarketingConfig>;
-}
+interface MarketingPageProps { config?: Partial<MarketingConfig>; }
 
 export default function MarketingPage({ config: partialConfig }: MarketingPageProps) {
   const config: MarketingConfig = {
@@ -961,7 +823,6 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     return { text: getContrastTextColor(pc), textMuted: getContrastTextColorMuted(pc), buttonBg: getOverlayButtonBg(pc), isLight: isLightColor(pc) };
   }, [config.branding.primaryColor]);
 
-  // Exit intent
   const [showExitModal, setShowExitModal] = useState(false);
   const exitShownRef = React.useRef(false);
 
@@ -980,7 +841,6 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
-  // Compute RGB channels for CSS rgba() usage
   const primaryRgbStr = hexToRgbString(config.branding.primaryColor || '#122092');
   const accentRgbStr = hexToRgbString(config.branding.accentColor || '#f6b828');
 
@@ -1008,23 +868,20 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       <AnalyticsScripts analytics={config.analytics} />
       <Navigation config={config} />
       <HeroSection config={config} contrastColors={contrastColors} />
-      <StatsSection config={config} />
       <ProblemSolutionSection config={config} contrastColors={contrastColors} />
       <HowItWorksSection config={config} />
       <AppShowcaseSection config={config} contrastColors={contrastColors} />
       <FeaturesSection config={config} />
       {config.showIndustries && <IndustriesSection config={config} />}
       {config.showComparison && <ComparisonSection config={config} />}
-      {config.showTestimonials && <TestimonialsSection config={config} />}
+      <ROICalculatorSection config={config} />
       <PricingSection config={config} />
       <FAQSection config={config} />
       <FinalCTASection config={config} contrastColors={contrastColors} />
       <Footer config={config} />
       <StickyCTA config={config} />
       {showExitModal && <ExitIntentModal config={config} onClose={() => setShowExitModal(false)} />}
-      {config.analytics?.customBodyScripts && (
-        <script dangerouslySetInnerHTML={{ __html: config.analytics.customBodyScripts }} />
-      )}
+      {config.analytics?.customBodyScripts && <script dangerouslySetInnerHTML={{ __html: config.analytics.customBodyScripts }} />}
     </div>
   );
 }
