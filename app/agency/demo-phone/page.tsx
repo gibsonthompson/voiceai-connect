@@ -140,21 +140,17 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // LOCKED STATE — Trial or unpaid (only when NOT in demo mode)
+  // LOCKED STATE — Only for expired/cancelled/unpaid (trial users pass through)
   // ============================================================================
-  if (!isPaid && !demoMode) {
+  if (!isPaid && !isTrialing && !demoMode) {
     return (
       <LockedFeature
         title="Demo Phone Number"
-        description="Get a dedicated phone number that showcases your AI receptionist to prospects. Available on paid plans after your trial ends."
+        description="Get a dedicated phone number that showcases your AI receptionist to prospects. Subscribe to unlock this feature."
         requiredPlan="Professional"
         badgeText="Paid Feature"
-        ctaText={isTrialing ? 'Subscribe to Unlock' : 'Upgrade to Unlock'}
-        currentPlanText={
-          isTrialing
-            ? "This feature is available once your trial converts to a paid subscription"
-            : `You're on the ${agency?.plan_type || 'Starter'} plan`
-        }
+        ctaText="Subscribe to Unlock"
+        currentPlanText={`You're on the ${agency?.plan_type || 'Starter'} plan`}
         features={[
           'Dedicated demo phone number',
           'AI roleplays as prospect\'s receptionist',
@@ -431,7 +427,7 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // CREATE STATE — No demo yet, paid plan
+  // CREATE STATE — No demo yet, paid or trial user
   // ============================================================================
   return (
     <div className="p-4 sm:p-6 lg:p-8">
