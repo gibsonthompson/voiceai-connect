@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Users, DollarSign, PhoneCall, Clock, Copy, Check,
+  Users, DollarSign, PhoneCall, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
   Phone, Headphones, Sparkles, Mail, MessageCircle
 } from 'lucide-react';
@@ -34,10 +34,6 @@ function formatCurrency(cents: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(cents / 100);
-}
-
-function isTrialStatus(status: string | null | undefined): boolean {
-  return status === 'trial' || status === 'trialing';
 }
 
 function formatDemoPhone(phone: string): string {
@@ -121,10 +117,6 @@ export default function AgencyDashboardPage() {
   const copySmsTemplate = () => { navigator.clipboard.writeText(smsTemplate); setSmsCopied(true); setTimeout(() => setSmsCopied(false), 2000); };
   const copyEmailTemplate = () => { navigator.clipboard.writeText(emailTemplate); setEmailCopied(true); setTimeout(() => setEmailCopied(false), 2000); };
 
-  const trialDaysLeft = agency?.trial_ends_at
-    ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null;
-
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -187,19 +179,6 @@ export default function AgencyDashboardPage() {
 
       {/* Setup Checklist */}
       <SetupChecklist agency={agency} clientCount={stats?.clientCount || 0} theme={theme} userRole={user?.role} demoMode={demoMode} />
-
-      {/* Trial Info Banner */}
-      {!demoMode && isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && (
-        <div className="mb-6 sm:mb-8 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-          <div className="flex items-center gap-3 flex-1">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.infoBg }}><Clock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.info }} /></div>
-            <div>
-              <p className="font-medium text-sm sm:text-base" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining in your trial</p>
-              <p className="text-xs sm:text-sm" style={{ color: theme.infoText, opacity: 0.7 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically when the trial ends. No action needed.' : 'Subscribe before your trial ends to keep access to your agency dashboard.'}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ════════════════════════════════════════════════════════════════
           TRY YOUR AI — CTA to test the demo phone
