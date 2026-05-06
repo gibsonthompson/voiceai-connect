@@ -29,15 +29,12 @@ interface Agency {
   limit_pro: number;
   limit_growth: number;
   created_at: string;
-  // Marketing website content
   company_tagline: string | null;
   website_headline: string | null;
   website_subheadline: string | null;
   marketing_config: Record<string, unknown> | null;
-  // Theme settings
   website_theme: 'auto' | 'light' | 'dark' | null;
   logo_background_color: string | null;
-  // Dashboard branding overrides (nav, bg, card, button colors)
   branding_overrides: {
     nav_bg?: string;
     nav_text?: string;
@@ -48,17 +45,14 @@ interface Agency {
     text_primary?: string;
     text_muted?: string;
   } | null;
-  // Demo phone (auto-provisioned via VAPI)
   demo_phone_number: string | null;
   demo_assistant_id: string | null;
   demo_vapi_phone_id: string | null;
-  // Analytics & Tracking
   gtm_id: string | null;
   fb_pixel_id: string | null;
   google_analytics_id: string | null;
   custom_head_scripts: string | null;
   custom_body_scripts: string | null;
-  // OG / Social meta
   og_title: string | null;
   og_description: string | null;
   og_image_url: string | null;
@@ -92,10 +86,8 @@ interface AgencyContextType {
   trialDaysLeft: number | null;
   effectivePlan: string;
   refreshAgency: () => Promise<void>;
-  // Demo mode
   demoMode: boolean;
   toggleDemoMode: () => void;
-  // Team permissions
   hasPermission: (key: string) => boolean;
 }
 
@@ -130,17 +122,14 @@ export function useAgency() {
   return context;
 }
 
-// Helper to check if subscription is in trial state (handles both 'trial' and 'trialing')
 function isTrialStatus(status: string | null | undefined): boolean {
   return status === 'trial' || status === 'trialing';
 }
 
-// Helper to check if subscription is expired
 function isExpiredStatus(status: string | null | undefined): boolean {
   return status === 'expired' || status === 'trial_expired' || status === 'canceled' || status === 'cancelled';
 }
 
-// Calculate trial days remaining
 function calculateTrialDays(trialEndsAt: string | null): number | null {
   if (!trialEndsAt) return null;
   const endDate = new Date(trialEndsAt);
@@ -150,62 +139,74 @@ function calculateTrialDays(trialEndsAt: string | null): number | null {
   return Math.max(0, diffDays);
 }
 
+function buildBranding(agency: any): Branding {
+  return {
+    primaryColor: agency.primary_color || '#10b981',
+    secondaryColor: agency.secondary_color || '#059669',
+    accentColor: agency.accent_color || '#34d399',
+    logoUrl: agency.logo_url || null,
+    name: agency.name || 'VoiceAI Connect',
+  };
+}
+
 export function AgencyProvider({ children }: { children: ReactNode }) {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [branding, setBranding] = useState<Branding>(defaultBranding);
   const [loading, setLoading] = useState(true);
-
-  // Demo mode state — persisted in localStorage
   const [demoMode, setDemoMode] = useState(false);
 
-  // Initialize demo mode from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem('voiceai_demo_mode');
-      if (stored === 'true') {
-        setDemoMode(true);
-      }
-    } catch {
-      // localStorage unavailable
-    }
+      if (stored === 'true') setDemoMode(true);
+    } catch {}
   }, []);
 
   const toggleDemoMode = () => {
     setDemoMode(prev => {
       const next = !prev;
-      try {
-        localStorage.setItem('voiceai_demo_mode', next.toString());
-      } catch {
-        // localStorage unavailable
-      }
+      try { localStorage.setItem('voiceai_demo_mode', next.toString()); } catch {}
       return next;
     });
   };
 
+  // =========================================================================
+  // Stale-while-revalidate: use localStorage cache immediately, then refresh
+  // in the background. This eliminates the loading skeleton on every navigation
+  // when using <a> tags (full page reloads).
+  // =========================================================================
   const fetchAgencyData = async () => {
     try {
-      // Check localStorage for auth (matching client pattern exactly)
       const token = localStorage.getItem('auth_token');
       const storedAgency = localStorage.getItem('agency');
 
-      // If either is missing, redirect to login
       if (!token || !storedAgency) {
         window.location.href = '/agency/login';
         return;
       }
 
-      // Parse stored agency to get ID
       const agencyData = JSON.parse(storedAgency);
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-      // Fetch fresh agency data from backend
+      // Get user from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+
+      // Use cached data IMMEDIATELY — skip the loading skeleton
+      setAgency(agencyData);
+      setBranding(buildBranding(agencyData));
+      setLoading(false);
+
+      // Then refresh from server in the background (silent update)
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/agency/${agencyData.id}/settings`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
-        // Clear auth and redirect
+        // Token expired or invalid — clear and redirect
         localStorage.removeItem('auth_token');
         localStorage.removeItem('agency');
         localStorage.removeItem('user');
@@ -214,35 +215,21 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
-      const fetchedAgency = data.agency || agencyData; // Fallback to stored data
+      const freshAgency = data.agency;
 
-      if (!fetchedAgency) {
-        window.location.href = '/agency/login';
-        return;
+      if (freshAgency) {
+        // Update state with fresh data
+        setAgency(freshAgency);
+        setBranding(buildBranding(freshAgency));
+        // Update localStorage cache for next navigation
+        localStorage.setItem('agency', JSON.stringify(freshAgency));
       }
-
-      // Set state
-      setAgency(fetchedAgency);
-      
-      // Get user from localStorage
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-
-      // Set branding
-      setBranding({
-        primaryColor: fetchedAgency.primary_color || '#10b981',
-        secondaryColor: fetchedAgency.secondary_color || '#059669',
-        accentColor: fetchedAgency.accent_color || '#34d399',
-        logoUrl: fetchedAgency.logo_url || null,
-        name: fetchedAgency.name || 'VoiceAI Connect',
-      });
-
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching agency data:', error);
-      window.location.href = '/agency/login';
+      // Only redirect if we don't already have cached data
+      if (!agency) {
+        window.location.href = '/agency/login';
+      }
     }
   };
 
@@ -250,19 +237,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     fetchAgencyData();
   }, []);
 
-  // Calculate derived state
   const trialDaysLeft = calculateTrialDays(agency?.trial_ends_at || null);
   const isTrialActive = isTrialStatus(agency?.subscription_status) && (trialDaysLeft === null || trialDaysLeft > 0);
-  
-  // Check if expired: either status is expired OR trial has ended
   const isExpired = isExpiredStatus(agency?.subscription_status) || 
     (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
-
-  // During trial, grant full enterprise access regardless of chosen plan.
-  // After trial ends and they're on an active subscription, use their actual plan.
   const effectivePlan = isTrialActive ? 'enterprise' : (agency?.plan_type || 'starter');
 
-  // Team permission check — owners/super_admin get everything, staff checks permissions object
   const hasPermission = (key: string): boolean => {
     if (!user) return false;
     if (user.role === 'agency_owner' || user.role === 'super_admin') return true;
