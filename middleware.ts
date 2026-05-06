@@ -32,6 +32,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // =========================================================================
+  // Skip RSC payload requests (client-side navigation via <Link>)
+  // These are internal Next.js fetches — they don't need cookie setting,
+  // Supabase clients, or domain detection. All of that was handled on the
+  // initial full page load. Interfering with RSC responses breaks
+  // client-side navigation (URL changes but page content doesn't swap).
+  // =========================================================================
+  if (request.headers.get('RSC') === '1') {
+    return NextResponse.next();
+  }
+
   // Create a response that we can modify
   let response = NextResponse.next({
     request: {
