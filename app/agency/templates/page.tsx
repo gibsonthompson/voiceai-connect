@@ -11,6 +11,7 @@ import {
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
   BookOpen, Plus, Trash2, Globe, HelpCircle, FileText
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 import LockedFeature from '@/components/LockedFeature';
@@ -574,7 +575,7 @@ export default function AILabPage() {
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (
-                    <a key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}>
@@ -593,7 +594,7 @@ export default function AILabPage() {
                       <p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>
                         Configure package <ArrowUpRight className="h-2.5 w-2.5" />
                       </p>
-                    </a>); })}
+                    </Link>); })}
                 </div>
               </div>
             )}

@@ -7,6 +7,7 @@ import {
   Check, Info, ChevronDown,
   BookOpen, Globe, Briefcase, HelpCircle, FileText, Plus, Trash2
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -226,9 +227,9 @@ export default function TemplateEditorPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <a href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
+        <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
           <ArrowLeft className="h-4 w-4" /> Back to AI Lab
-        </a>
+        </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{industryInfo?.label || 'Edit Template'}</h1>

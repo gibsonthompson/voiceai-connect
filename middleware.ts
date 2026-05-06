@@ -33,15 +33,43 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // Skip RSC payload requests (client-side navigation via <Link>)
-  // These are internal Next.js fetches — they don't need cookie setting,
-  // Supabase clients, or domain detection. All of that was handled on the
-  // initial full page load. Interfering with RSC responses breaks
-  // client-side navigation (URL changes but page content doesn't swap).
+  // Skip client-side navigation requests (RSC payloads from <Link>)
+  // These are internal Next.js fetches that must pass through unmodified.
   // =========================================================================
-  if (request.headers.get('RSC') === '1') {
+  if (
+    request.headers.get('RSC') === '1' ||
+    request.headers.get('Next-Router-State-Tree') ||
+    request.headers.get('Next-Router-Prefetch') === '1'
+  ) {
     return NextResponse.next();
   }
+
+  // =========================================================================
+  // GEO-DETECTION: Set country cookie from Vercel headers
+  // =========================================================================
+  const existingCountryCookie = request.cookies.get('vc_country')?.value;
+
+  // =========================================================================
+  // PLATFORM DOMAIN — return immediately, no Supabase needed
+  // =========================================================================
+  if (PLATFORM_DOMAINS.includes(hostname)) {
+    if (!existingCountryCookie) {
+      const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+      const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+      const response = NextResponse.next();
+      response.cookies.set('vc_country', validCountry, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+      return response;
+    }
+    return NextResponse.next();
+  }
+
+  // =========================================================================
+  // SUBDOMAIN / CUSTOM DOMAIN — Supabase needed for agency lookup
+  // =========================================================================
 
   // Create a response that we can modify
   let response = NextResponse.next({
@@ -50,22 +78,17 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // =========================================================================
-  // GEO-DETECTION: Set country cookie from Vercel headers
-  // =========================================================================
-  const existingCountryCookie = request.cookies.get('vc_country')?.value;
   if (!existingCountryCookie) {
     const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
-    // Only set if it's a Stripe-supported country, otherwise default to US
     const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
     response.cookies.set('vc_country', validCountry, {
       path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+      maxAge: 60 * 60 * 24 * 30,
       sameSite: 'lax',
     });
   }
 
-  // Create Supabase client for middleware
+  // Create Supabase client for middleware (only for subdomain/custom domain lookups)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -84,15 +107,9 @@ export async function middleware(request: NextRequest) {
   );
 
   // =========================================================================
-  // ROUTING LOGIC
+  // ROUTING LOGIC — subdomain and custom domain handling
+  // (Platform domain already returned above before Supabase client creation)
   // =========================================================================
-
-  // 1. Check if this is the main platform domain
-  if (PLATFORM_DOMAINS.includes(hostname)) {
-    // Platform domain - serve platform pages directly
-    // No rewrites needed, no agency cookie
-    return response;
-  }
 
   // 2. Check for agency subdomain (xxx.myvoiceaiconnect.com)
   const subdomainMatch = hostname.match(new RegExp(`^([^.]+)\\.${PLATFORM_DOMAIN.replace('.', '\\.')}$`));
