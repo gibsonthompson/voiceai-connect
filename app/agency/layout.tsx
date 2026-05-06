@@ -725,7 +725,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      <main key={pathname} className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {children}
       </main>
     </div>
