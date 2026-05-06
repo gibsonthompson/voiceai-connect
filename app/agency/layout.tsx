@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
   Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones,
@@ -266,17 +267,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       return pathname?.startsWith('/agency/templates');
     }
     return pathname?.startsWith(href);
-  };
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isLocked?: boolean, upgradeRequired?: string) => {
-    e.preventDefault();
-    setSidebarOpen(false);
-    
-    if (isLocked) {
-      window.location.href = href;
-    } else {
-      window.location.href = href;
-    }
   };
 
   // ==========================================================================
@@ -653,10 +643,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             const IconComponent = item.icon;
             
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
-                onClick={(e) => handleNavClick(e, item.href, isLocked, item.upgradeRequired)}
                 className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all"
                 style={
                   isLocked 
@@ -688,7 +677,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                     {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
                   </span>
                 )}
-              </a>
+              </Link>
             );
           })}
         </nav>
