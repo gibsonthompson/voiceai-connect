@@ -11,14 +11,10 @@ import {
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
   BookOpen, Plus, Trash2, Globe, HelpCircle, FileText
 } from 'lucide-react';
-import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 import LockedFeature from '@/components/LockedFeature';
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
 const ICON_MAP: Record<string, React.ElementType> = {
   Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
   UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag, Car, Building2,
@@ -32,9 +28,6 @@ const MODEL_OPTIONS = [
 
 const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes.';
 
-// ============================================================================
-// TYPES
-// ============================================================================
 interface ClientItem {
   id: string; business_name: string; industry: string; owner_name: string;
   owner_phone: string; email: string; vapi_assistant_id: string | null;
@@ -68,9 +61,6 @@ interface Industry {
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'ended';
 
-// ============================================================================
-// HELPERS
-// ============================================================================
 function uid(): string { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
 function fmtPhone(phone: string | null): string {
@@ -94,9 +84,6 @@ function hexToRgba(hex: string, alpha: number): string {
   } catch { return `rgba(0,0,0,${alpha})`; }
 }
 
-// ============================================================================
-// CALL MODAL
-// ============================================================================
 function CallModal({ callState, callDuration, isMuted, transcript, eventLog, theme,
   onEnd, onToggleMute, onClose, clientName, transcriptEndRef, eventLogEndRef,
 }: {
@@ -109,7 +96,6 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
       <div className="w-full max-w-5xl rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, maxHeight: '90vh' }}>
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: theme.border }}>
           <div className="flex items-center gap-3">
             {callState === 'connected' ? (
@@ -132,10 +118,7 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
             )}
           </div>
         </div>
-
-        {/* Body */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
-          {/* Transcript */}
           <div className="flex-1 flex flex-col border-r" style={{ borderColor: theme.border }}>
             <div className="px-4 py-2 border-b" style={{ borderColor: theme.border }}>
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Transcript</span>
@@ -160,7 +143,6 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
               <div ref={transcriptEndRef} />
             </div>
           </div>
-          {/* Events */}
           <div className="w-72 flex-shrink-0 flex-col hidden md:flex">
             <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: theme.border }}>
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Events</span>
@@ -183,8 +165,6 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
             </div>
           </div>
         </div>
-
-        {/* Footer */}
         <div className="flex items-center justify-center gap-4 px-5 py-5 border-t" style={{ borderColor: theme.border }}>
           {callState === 'connected' && (<>
             <button onClick={onToggleMute} className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
@@ -210,9 +190,6 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
   );
 }
 
-// ============================================================================
-// MAIN PAGE
-// ============================================================================
 export default function AILabPage() {
   const { agency, loading: ctxLoading, effectivePlan } = useAgency();
   const theme = useTheme();
@@ -283,7 +260,6 @@ export default function AILabPage() {
     setEventLog(prev => [...prev, { id: uid(), type, timestamp: Date.now(), message, level }]);
   }, []);
 
-  // ---- VAPI init ----
   useEffect(() => {
     if (!vapiKey) return;
     let m = true;
@@ -313,24 +289,20 @@ export default function AILabPage() {
   const startTimer = () => { setCallDuration(0); timerRef.current = setInterval(() => setCallDuration(p => p + 1), 1000); };
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
 
-  // ---- Fetch voices ----
   useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); }).catch(() => {}); }, [api]);
 
-  // ---- Fetch clients ----
   useEffect(() => {
     if (!agency) return; setClientsLoading(true);
     fetch(`${api}/api/agency/${agency.id}/ai-playground/clients`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.json()).then(d => setClients(d.clients || [])).catch(() => {}).finally(() => setClientsLoading(false));
   }, [agency, api]);
 
-  // ---- Fetch templates ----
   useEffect(() => {
     if (!agency || effectivePlan !== 'enterprise') return;
     fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {});
   }, [agency, effectivePlan, api]);
 
-  // ---- Voice preview ----
   const playPreview = (voice: VoiceOption) => {
     if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; }
     if (audioRef.current) audioRef.current.pause();
@@ -343,7 +315,6 @@ export default function AILabPage() {
   const filteredVoices = (voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter))
     .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
 
-  // ---- Select client ----
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
     setConfigSaved(false); setConfigError(''); setPromptExpanded(false);
@@ -370,7 +341,6 @@ export default function AILabPage() {
     finally { setConfigLoading(false); }
   };
 
-  // ---- Save ----
   const saveConfig = async () => {
     if (!agency || !selectedClient) return;
     setConfigSaving(true); setConfigSaved(false); setConfigError('');
@@ -390,7 +360,6 @@ export default function AILabPage() {
 
   const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editCallMode !== ((selectedClient?.call_mode as any) || 'primary') || editTransferPhone !== (selectedClient?.owner_phone || '')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
 
-  // ---- Call ----
   const startCall = async () => {
     if (!vapiRef.current || !selectedClient?.vapi_assistant_id) return;
     setCallState('connecting'); setTranscript([]); setEventLog([]); setCallDuration(0); setShowCallModal(true);
@@ -402,7 +371,6 @@ export default function AILabPage() {
   const toggleMute = () => { if (!vapiRef.current) return; vapiRef.current.setMuted(!isMuted); setIsMuted(!isMuted); };
   const closeModal = () => { setShowCallModal(false); setCallState('idle'); };
 
-  // ---- SMS ----
   const swapPhone = async () => {
     if (!agency || !selectedClient || !notifPhone.trim()) return; setPhoneSwapping(true);
     try { const r = await fetch(`${api}/api/agency/${agency.id}/ai-playground/clients/${selectedClient.id}/notification-phone`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ phone: notifPhone }) }); if (r.ok) { setPhoneSwapped(notifPhone !== origPhone); setPhoneEditing(false); } } catch {} finally { setPhoneSwapping(false); }
@@ -414,7 +382,6 @@ export default function AILabPage() {
 
   const copyCompliance = () => { navigator.clipboard.writeText(COMPLIANCE_GREETING); setCopiedCompliance(true); setTimeout(() => setCopiedCompliance(false), 2000); };
 
-  // ---- Knowledge Base (structured — same data as client dashboard) ----
   const fetchKB = async (clientId: string) => {
     setKbLoading(true);
     try {
@@ -487,19 +454,10 @@ export default function AILabPage() {
     try {
       const r = await fetch(`${api}/api/knowledge-base/update`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({
-          clientId: selectedClient.id,
-          websiteUrl: kbWebsite,
-          businessHours: kbHours,
-          services: formatKbServices(),
-          faqs: formatKbFaqs(),
-          additionalInfo: kbAdditionalInfo,
-        }),
+        body: JSON.stringify({ clientId: selectedClient.id, websiteUrl: kbWebsite, businessHours: kbHours, services: formatKbServices(), faqs: formatKbFaqs(), additionalInfo: kbAdditionalInfo }),
       });
-      if (r.ok) {
-        setKbLastUpdated(new Date().toISOString());
-        addEvent('kb-saved', 'Knowledge base updated', 'success');
-      } else { const d = await r.json(); addEvent('kb-error', d.error || 'KB save failed', 'error'); }
+      if (r.ok) { setKbLastUpdated(new Date().toISOString()); addEvent('kb-saved', 'Knowledge base updated', 'success'); }
+      else { const d = await r.json(); addEvent('kb-error', d.error || 'KB save failed', 'error'); }
     } catch { addEvent('kb-error', 'KB save network error', 'error'); }
     finally { setKbSaving(false); }
   };
@@ -528,7 +486,6 @@ export default function AILabPage() {
       )}
 
       <div className="p-4 sm:p-6 lg:p-8">
-        {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
@@ -551,10 +508,8 @@ export default function AILabPage() {
           </div>
         )}
 
-        {/* CLIENT TABS — always visible, scrollable */}
         {!clientsLoading && clients.length > 0 && (
           <div className="mb-6">
-            {/* Search + scroll controls */}
             <div className="flex items-center gap-2 mb-3">
               <div className="relative flex-1 max-w-xs">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: theme.textMuted }} />
@@ -573,7 +528,6 @@ export default function AILabPage() {
               </div>
             </div>
 
-            {/* Scrollable tab row */}
             <div ref={clientScrollRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }`}</style>
               {filtered.map(c => {
@@ -581,11 +535,7 @@ export default function AILabPage() {
                 return (
                   <button key={c.id} onClick={() => selectClient(c)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all flex-shrink-0"
-                    style={{
-                      backgroundColor: isActive ? theme.primary : theme.card,
-                      color: isActive ? theme.primaryText : theme.text,
-                      border: `1px solid ${isActive ? theme.primary : theme.border}`,
-                    }}>
+                    style={{ backgroundColor: isActive ? theme.primary : theme.card, color: isActive ? theme.primaryText : theme.text, border: `1px solid ${isActive ? theme.primary : theme.border}` }}>
                     <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : theme.primary15 }}>
                       <Building className="h-3 w-3" style={{ color: isActive ? theme.primaryText : theme.primary }} />
@@ -610,7 +560,6 @@ export default function AILabPage() {
           <div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No clients yet.</p></div>
         )}
 
-        {/* INDUSTRY TEMPLATES — show when no client selected */}
         {!selectedClient && !clientsLoading && (
           <div>
             {effectivePlan === 'enterprise' && industries.length > 0 && (
@@ -625,7 +574,7 @@ export default function AILabPage() {
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (
-                    <Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                    <a key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}>
@@ -644,7 +593,7 @@ export default function AILabPage() {
                       <p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>
                         Configure package <ArrowUpRight className="h-2.5 w-2.5" />
                       </p>
-                    </Link>); })}
+                    </a>); })}
                 </div>
               </div>
             )}
@@ -655,10 +604,8 @@ export default function AILabPage() {
           </div>
         )}
 
-        {/* SELECTED CLIENT */}
         {selectedClient && (
           <div>
-            {/* Client + Agency Info */}
             <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -682,14 +629,12 @@ export default function AILabPage() {
               </div>
             </div>
 
-            {/* AI Configuration */}
             {configLoading ? (
               <div className="rounded-xl p-10 flex items-center justify-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading AI configuration...</span>
               </div>
             ) : config ? (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                {/* Section header + save */}
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2"><Pencil className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Configuration</span></div>
                   <div className="flex items-center gap-2">
@@ -703,7 +648,6 @@ export default function AILabPage() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Row: Call Mode + Model + Temperature */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Call Mode</label>
@@ -727,7 +671,6 @@ export default function AILabPage() {
                     </div>
                   </div>
 
-                  {/* Voice Selector — card grid */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Voice</label>
@@ -770,7 +713,6 @@ export default function AILabPage() {
                     </div>
                   </div>
 
-                  {/* Greeting */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label>
@@ -786,7 +728,6 @@ export default function AILabPage() {
                     </div>
                   </div>
 
-                  {/* System Prompt — expandable */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -809,7 +750,6 @@ export default function AILabPage() {
                       style={{ ...inputStyle, resize: 'vertical', minHeight: promptExpanded ? '400px' : '120px', maxHeight: promptExpanded ? 'none' : '200px' }} />
                   </div>
 
-                  {/* Transfer Call Tool */}
                   {config.tools.includes('transferCall') && (
                     <div className="rounded-lg p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
                       <div className="flex items-center gap-2 mb-3">
@@ -828,7 +768,6 @@ export default function AILabPage() {
                     </div>
                   )}
 
-                  {/* Other tools */}
                   {config.tools.filter(t => t !== 'transferCall').length > 0 && (
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>Other Tools:</span>
@@ -847,7 +786,6 @@ export default function AILabPage() {
               </div>
             )}
 
-            {/* Knowledge Base */}
             {selectedClient?.vapi_assistant_id && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between mb-3">
@@ -877,7 +815,6 @@ export default function AILabPage() {
                   </p>
                 ) : (
                   <div className="space-y-5 mt-3">
-                    {/* Website */}
                     <div>
                       <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
                         <Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Website
@@ -885,8 +822,6 @@ export default function AILabPage() {
                       <input type="url" value={kbWebsite} onChange={e => setKbWebsite(e.target.value)} placeholder="https://yourbusiness.com"
                         className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                     </div>
-
-                    {/* Services */}
                     <div>
                       <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
                         <Briefcase className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Services & Pricing
@@ -913,8 +848,6 @@ export default function AILabPage() {
                         <Plus className="w-3 h-3" /> Add Service
                       </button>
                     </div>
-
-                    {/* FAQs */}
                     <div>
                       <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
                         <HelpCircle className="w-3.5 h-3.5" style={{ color: theme.primary }} /> FAQs
@@ -939,8 +872,6 @@ export default function AILabPage() {
                         <Plus className="w-3 h-3" /> Add FAQ
                       </button>
                     </div>
-
-                    {/* Additional Info */}
                     <div>
                       <label className="flex items-center gap-1.5 text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>
                         <FileText className="w-3.5 h-3.5" style={{ color: theme.primary }} /> Additional Info
@@ -948,8 +879,6 @@ export default function AILabPage() {
                       <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods, etc."
                         rows={3} className="w-full rounded-lg px-3 py-2 text-xs resize-none" style={inputStyle} />
                     </div>
-
-                    {/* Save */}
                     <button onClick={saveKB} disabled={kbSaving}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition disabled:opacity-50"
                       style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
@@ -960,7 +889,6 @@ export default function AILabPage() {
               </div>
             )}
 
-            {/* Test Call */}
             <div className="rounded-xl p-6 text-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <button onClick={startCall} disabled={!selectedClient?.vapi_assistant_id || !vapiKey}
                 className="inline-flex items-center justify-center gap-3 rounded-2xl px-10 py-4 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
@@ -970,7 +898,6 @@ export default function AILabPage() {
               <p className="text-xs mt-3" style={{ color: theme.textMuted }}>Opens a live browser call to this client&apos;s AI assistant</p>
             </div>
 
-            {/* SMS Swap */}
             <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS Notifications Go To</span></div>
