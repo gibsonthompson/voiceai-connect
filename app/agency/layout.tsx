@@ -646,6 +646,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all"
                 style={
                   isLocked 
