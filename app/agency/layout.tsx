@@ -2,7 +2,6 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { 
   LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone,
   Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones,
@@ -643,7 +642,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             const IconComponent = item.icon;
             
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
@@ -678,7 +677,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                     {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
                   </span>
                 )}
-              </Link>
+              </a>
             );
           })}
         </nav>
