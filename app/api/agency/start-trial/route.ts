@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
-const VALID_PLANS = ['starter', 'professional', 'enterprise'];
+const VALID_PLANS = ['starter', 'professional', 'enterprise', 'free', 'pro', 'scale'];
 const TRIAL_DAYS = 14;
 
 export async function POST(request: NextRequest) {

@@ -72,7 +72,7 @@ function hasMarketingSiteAccess(agency: Agency): boolean {
 
   const plan = agency.plan_type;
   if (!plan) return false;
-  return ['professional', 'enterprise', 'scale'].includes(plan.toLowerCase());
+  return ['professional', 'enterprise', 'scale', 'pro'].includes(plan.toLowerCase());
 }
 
 // ============================================================================
