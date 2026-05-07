@@ -147,18 +147,30 @@ export const PLAN_PRICES = {
   free: 0,
   pro: 199,
   scale: 499,
+  // Legacy aliases (layout.tsx, sidebar, etc. still reference old names)
+  starter: 0,
+  professional: 199,
+  enterprise: 499,
 } as const;
 
 export const PLAN_RATES = {
   free:  { perClient: 39.99, perMinute: 0.12 },
   pro:   { perClient: 9.99,  perMinute: 0.10 },
   scale: { perClient: 0,     perMinute: 0.05 },
+  // Legacy aliases
+  starter:      { perClient: 39.99, perMinute: 0.12 },
+  professional: { perClient: 9.99,  perMinute: 0.10 },
+  enterprise:   { perClient: 0,     perMinute: 0.05 },
 } as const;
 
 export const PLAN_NAMES = {
   free: 'Free',
   pro: 'Pro',
   scale: 'Scale',
+  // Legacy aliases (layout.tsx, sidebar, etc. still reference old names)
+  starter: 'Free',
+  professional: 'Pro',
+  enterprise: 'Scale',
 } as const;
 
 // ============================================================================
