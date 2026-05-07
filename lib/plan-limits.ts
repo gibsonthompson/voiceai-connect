@@ -1,153 +1,106 @@
 // lib/plan-limits.ts
 // Centralized plan configuration for feature gating
 // REWRITTEN: 2026-05-06 — Pricing Restructure (free/pro/scale + usage-based billing)
-// IMPORTANT: Plan names must match backend (free, pro, scale)
+// IMPORTANT: Includes legacy aliases (starter/professional/enterprise) so existing
+//            UI code compiles during transition. Remove after Phase 2 UI migration.
 
 // ============================================================================
 // PLAN FEATURE GATES
 // ============================================================================
-export const PLAN_LIMITS = {
-  free: {
-    // Capacity
-    maxClients: Infinity, // No client limit — usage-based billing
 
-    // White-label & Branding
-    whiteLabel: false,      // VoiceAI Connect branding hardcoded
-    customDomain: false,
-    customBranding: false,  // logo, colors, name
-
-    // Marketing & Sales Tools
-    marketingSite: false,
-    demoPhoneNumber: false,
-
-    // Lead Generation
-    leadFinderBasic: false,
-    leadFinderAdvanced: false,
-
-    // AI Lab
-    aiLab: false,
-    industryTemplates: false,
-
-    // Team
-    maxTeamMembers: 0,
-
-    // Analytics
-    basicAnalytics: true,
-    fullAnalytics: false,
-
-    // Integrations
-    apiAccess: false,
-
-    // Core Features (included on all tiers)
-    aiReceptionist: true,
-    callNotificationsSms: true,
-    callNotificationsEmail: true,
-    spamDetection: true,
-    callerRecognition: true,
-    clientManagement: true,
-
-    // Support
-    supportLevel: 'community' as const,
-    prioritySupport: false,
-  },
-
-  pro: {
-    // Capacity
-    maxClients: Infinity, // No client limit — usage-based billing
-
-    // White-label & Branding
-    whiteLabel: true,
-    customDomain: true,
-    customBranding: true,
-
-    // Marketing & Sales Tools
-    marketingSite: true,
-    demoPhoneNumber: true,
-
-    // Lead Generation
-    leadFinderBasic: true,
-    leadFinderAdvanced: false,
-
-    // AI Lab
-    aiLab: false,
-    industryTemplates: false,
-
-    // Team
-    maxTeamMembers: 5,
-
-    // Analytics
-    basicAnalytics: true,
-    fullAnalytics: true,
-
-    // Integrations
-    apiAccess: false,
-
-    // Core Features
-    aiReceptionist: true,
-    callNotificationsSms: true,
-    callNotificationsEmail: true,
-    spamDetection: true,
-    callerRecognition: true,
-    clientManagement: true,
-
-    // Support
-    supportLevel: 'email' as const,
-    prioritySupport: false,
-  },
-
-  scale: {
-    // Capacity
-    maxClients: Infinity, // No client limit — usage-based billing
-
-    // White-label & Branding
-    whiteLabel: true,
-    customDomain: true,
-    customBranding: true,
-
-    // Marketing & Sales Tools
-    marketingSite: true,
-    demoPhoneNumber: true,
-
-    // Lead Generation
-    leadFinderBasic: true,
-    leadFinderAdvanced: true,
-
-    // AI Lab
-    aiLab: true,
-    industryTemplates: true,
-
-    // Team
-    maxTeamMembers: Infinity,
-
-    // Analytics
-    basicAnalytics: true,
-    fullAnalytics: true,
-
-    // Integrations
-    apiAccess: true,
-
-    // Core Features
-    aiReceptionist: true,
-    callNotificationsSms: true,
-    callNotificationsEmail: true,
-    spamDetection: true,
-    callerRecognition: true,
-    clientManagement: true,
-
-    // Support
-    supportLevel: 'priority' as const,
-    prioritySupport: true,
-  },
+const FREE_FEATURES = {
+  maxClients: Infinity,
+  whiteLabel: false,
+  customDomain: false,
+  customBranding: false,
+  marketingSite: false,
+  demoPhoneNumber: false,
+  leadFinderBasic: false,
+  leadFinderAdvanced: false,
+  aiLab: false,
+  industryTemplates: false,
+  maxTeamMembers: 0,
+  basicAnalytics: true,
+  fullAnalytics: false,
+  apiAccess: false,
+  aiReceptionist: true,
+  callNotificationsSms: true,
+  callNotificationsEmail: true,
+  spamDetection: true,
+  callerRecognition: true,
+  clientManagement: true,
+  supportLevel: 'community' as const,
+  prioritySupport: false,
 } as const;
 
+const PRO_FEATURES = {
+  maxClients: Infinity,
+  whiteLabel: true,
+  customDomain: true,
+  customBranding: true,
+  marketingSite: true,
+  demoPhoneNumber: true,
+  leadFinderBasic: true,
+  leadFinderAdvanced: false,
+  aiLab: false,
+  industryTemplates: false,
+  maxTeamMembers: 5,
+  basicAnalytics: true,
+  fullAnalytics: true,
+  apiAccess: false,
+  aiReceptionist: true,
+  callNotificationsSms: true,
+  callNotificationsEmail: true,
+  spamDetection: true,
+  callerRecognition: true,
+  clientManagement: true,
+  supportLevel: 'email' as const,
+  prioritySupport: false,
+} as const;
+
+const SCALE_FEATURES = {
+  maxClients: Infinity,
+  whiteLabel: true,
+  customDomain: true,
+  customBranding: true,
+  marketingSite: true,
+  demoPhoneNumber: true,
+  leadFinderBasic: true,
+  leadFinderAdvanced: true,
+  aiLab: true,
+  industryTemplates: true,
+  maxTeamMembers: Infinity,
+  basicAnalytics: true,
+  fullAnalytics: true,
+  apiAccess: true,
+  aiReceptionist: true,
+  callNotificationsSms: true,
+  callNotificationsEmail: true,
+  spamDetection: true,
+  callerRecognition: true,
+  clientManagement: true,
+  supportLevel: 'priority' as const,
+  prioritySupport: true,
+} as const;
+
+export const PLAN_LIMITS = {
+  // New plan names
+  free: FREE_FEATURES,
+  pro: PRO_FEATURES,
+  scale: SCALE_FEATURES,
+  // Legacy aliases (same feature objects — keeps all existing UI code compiling)
+  starter: FREE_FEATURES,
+  professional: PRO_FEATURES,
+  enterprise: SCALE_FEATURES,
+};
+
 // ============================================================================
-// PRICING (platform fees — per-client and per-minute are in usage tracker)
+// PRICING
 // ============================================================================
 export const PLAN_PRICES = {
   free: 0,
   pro: 199,
   scale: 499,
-  // Legacy aliases (layout.tsx, sidebar, etc. still reference old names)
   starter: 0,
   professional: 199,
   enterprise: 499,
@@ -157,7 +110,6 @@ export const PLAN_RATES = {
   free:  { perClient: 39.99, perMinute: 0.12 },
   pro:   { perClient: 9.99,  perMinute: 0.10 },
   scale: { perClient: 0,     perMinute: 0.05 },
-  // Legacy aliases
   starter:      { perClient: 39.99, perMinute: 0.12 },
   professional: { perClient: 9.99,  perMinute: 0.10 },
   enterprise:   { perClient: 0,     perMinute: 0.05 },
@@ -167,22 +119,24 @@ export const PLAN_NAMES = {
   free: 'Free',
   pro: 'Pro',
   scale: 'Scale',
-  // Legacy aliases (layout.tsx, sidebar, etc. still reference old names)
   starter: 'Free',
   professional: 'Pro',
   enterprise: 'Scale',
 } as const;
 
 // ============================================================================
-// TYPES
+// TYPES — includes both new and legacy names so all existing code compiles
 // ============================================================================
 export type PlanType = keyof typeof PLAN_LIMITS;
-export type PlanFeature = keyof typeof PLAN_LIMITS.free;
+//  = 'free' | 'pro' | 'scale' | 'starter' | 'professional' | 'enterprise'
+
+export type PlanFeature = keyof typeof FREE_FEATURES;
 
 // ============================================================================
 // PLAN HIERARCHY
 // ============================================================================
 export const PLAN_HIERARCHY: PlanType[] = ['free', 'pro', 'scale'];
+export const LEGACY_PLAN_HIERARCHY: PlanType[] = ['starter', 'professional', 'enterprise'];
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -196,7 +150,7 @@ export function canAccessFeature(plan: PlanType, feature: PlanFeature): boolean 
 }
 
 export function getClientLimit(plan: PlanType): number {
-  return Infinity; // All tiers are usage-based — no client cap
+  return Infinity;
 }
 
 export function getClientLimitDisplay(plan: PlanType): string {
@@ -223,16 +177,18 @@ export function getPlanRates(plan: PlanType) {
 }
 
 export function isAtClientLimit(plan: PlanType, currentClients: number): boolean {
-  return false; // No client limits in new pricing
+  return false;
 }
 
 export function hasWhiteLabel(plan: PlanType): boolean {
-  return plan === 'pro' || plan === 'scale';
+  const limits = PLAN_LIMITS[plan];
+  return limits?.whiteLabel ?? false;
 }
 
 export function isPlanHigherOrEqual(currentPlan: PlanType, requiredPlan: PlanType): boolean {
-  const currentIndex = PLAN_HIERARCHY.indexOf(currentPlan);
-  const requiredIndex = PLAN_HIERARCHY.indexOf(requiredPlan);
+  const norm = (p: PlanType): PlanType => (LEGACY_PLAN_MAP[p] as PlanType) || p;
+  const currentIndex = PLAN_HIERARCHY.indexOf(norm(currentPlan));
+  const requiredIndex = PLAN_HIERARCHY.indexOf(norm(requiredPlan));
   if (currentIndex === -1) return false;
   if (requiredIndex === -1) return true;
   return currentIndex >= requiredIndex;
@@ -272,7 +228,7 @@ export function getUpgradeReason(plan: PlanType, feature: PlanFeature): string |
 }
 
 // ============================================================================
-// LEGACY PLAN MAPPING (old names → new names)
+// LEGACY PLAN MAPPING (old names → new names for normalization)
 // ============================================================================
 export const LEGACY_PLAN_MAP: Record<string, PlanType> = {
   starter: 'free',
@@ -283,7 +239,6 @@ export const LEGACY_PLAN_MAP: Record<string, PlanType> = {
 export function normalizePlanType(plan: string | undefined | null): PlanType {
   if (!plan) return 'free';
   const lower = plan.toLowerCase();
-  if (LEGACY_PLAN_MAP[lower]) return LEGACY_PLAN_MAP[lower];
-  if (PLAN_HIERARCHY.includes(lower as PlanType)) return lower as PlanType;
+  if (lower in PLAN_LIMITS) return lower as PlanType;
   return 'free';
 }
