@@ -26,7 +26,10 @@ export function UpgradeBanner({
     starter: Zap,
     professional: Sparkles,
     enterprise: Crown,  // CHANGED from 'scale' to 'enterprise'
-  };
+  // New plan names
+  free: Zap,
+  pro: Crown,
+  scale: Building,  };
   
   // Normalize plan types in case legacy 'scale' is passed
   const normalizedRequired = normalizePlanType(requiredPlan);
