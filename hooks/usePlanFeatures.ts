@@ -1,101 +1,122 @@
 // hooks/usePlanFeatures.ts
 // React hook for checking plan features and limits
+// REWRITTEN: 2026-05-06 — Pricing Restructure (free/pro/scale)
 
 import { useAgency } from '@/app/agency/context';
-import { 
-  PLAN_LIMITS, 
+import {
+  PLAN_LIMITS,
   PLAN_PRICES,
+  PLAN_RATES,
   PLAN_NAMES,
-  PlanType, 
+  PlanType,
   PlanFeature,
   canAccessFeature,
-  getClientLimit,
-  getClientLimitDisplay,
-  isAtClientLimit,
+  getTeamMemberLimit,
+  getTeamMemberLimitDisplay,
   getUpgradeReason,
   isPlanHigherOrEqual,
   getMinimumPlanForFeature,
+  hasWhiteLabel,
   normalizePlanType,
 } from '@/lib/plan-limits';
 
 export function usePlanFeatures() {
   const { agency, effectivePlan } = useAgency();
   const agencyData = agency as any;
-  
-  // Use effectivePlan from context (enterprise during trial, real plan after)
+
+  // Use effectivePlan from context (scale during trial, real plan after)
   const plan = normalizePlanType(effectivePlan);
   const limits = PLAN_LIMITS[plan];
-  const currentClients = agencyData?.client_count || 0;
-  
+  const rates = PLAN_RATES[plan];
+
   return {
-    // Current plan info
+    // ── Current plan info ──────────────────────────────────────────────
     plan,
     planName: PLAN_NAMES[plan],
     planPrice: PLAN_PRICES[plan],
     limits,
-    
-    // Client capacity
-    clientLimit: getClientLimit(plan),
-    clientLimitDisplay: getClientLimitDisplay(plan),
-    currentClients,
-    isAtClientLimit: isAtClientLimit(plan, currentClients),
-    clientsRemaining: Math.max(0, getClientLimit(plan) - currentClients),
-    
-    // Feature checks - boolean flags for easy use
+    rates,
+
+    // ── Usage-based pricing info ───────────────────────────────────────
+    perClientRate: rates.perClient,
+    perMinuteRate: rates.perMinute,
+    platformFee: PLAN_PRICES[plan],
+
+    // ── Team capacity ──────────────────────────────────────────────────
+    teamMemberLimit: getTeamMemberLimit(plan),
+    teamMemberLimitDisplay: getTeamMemberLimitDisplay(plan),
+
+    // ── White-label ────────────────────────────────────────────────────
+    hasWhiteLabel: hasWhiteLabel(plan),
+    isVoiceAIBranded: !hasWhiteLabel(plan), // Free tier = VoiceAI Connect branding
+
+    // ── Feature checks — boolean flags ─────────────────────────────────
+    // White-label & Branding
+    canUseWhiteLabel: limits.whiteLabel,
     canUseCustomDomain: limits.customDomain,
+    canUseCustomBranding: limits.customBranding,
+
+    // Marketing & Sales
     canUseMarketingSite: limits.marketingSite,
     canUseDemoPhoneNumber: limits.demoPhoneNumber,
-    canUseSampleRecordings: limits.sampleRecordings,
-    canUseWhitelabelEmails: limits.whitelabelEmails,
-    canUseTollFreeNumbers: limits.tollFreeNumbers,
-    canUseNumberPorting: limits.numberPorting,
-    canUseAdvancedAnalytics: limits.advancedAnalytics,
-    canUseCallVolumeTrends: limits.callVolumeTrends,
-    canUseCustomReports: limits.customReports,
+
+    // Lead Generation
+    canUseLeadFinderBasic: limits.leadFinderBasic,
+    canUseLeadFinderAdvanced: limits.leadFinderAdvanced,
+    canUseLeadFinder: limits.leadFinderBasic, // alias
+
+    // AI Lab
+    canUseAiLab: limits.aiLab,
+    canUseIndustryTemplates: limits.industryTemplates,
+
+    // Analytics
+    canUseFullAnalytics: limits.fullAnalytics,
+
+    // Integrations
     canUseApiAccess: limits.apiAccess,
-    canUseWebhooks: limits.webhooks,
-    canUseCrmIntegrations: limits.crmIntegrations,
-    canUseZapierIntegration: limits.zapierIntegration,
-    canUseCustomIntegrations: limits.customIntegrations,
-    canUseInvoiceCustomization: limits.invoiceCustomization,
+
+    // Support
     hasPrioritySupport: limits.prioritySupport,
-    hasPhoneSupport: limits.phoneSupport,
-    hasDedicatedSuccessManager: limits.dedicatedSuccessManager,
-    hasSlaGuarantee: limits.slaGuarantee,
     supportLevel: limits.supportLevel,
-    onboardingType: limits.onboardingType,
-    
-    // Generic feature check
+
+    // ── Generic feature check ──────────────────────────────────────────
     canAccess: (feature: PlanFeature) => canAccessFeature(plan, feature),
-    
-    // Upgrade helpers
+
+    // ── Upgrade helpers ────────────────────────────────────────────────
     needsUpgradeFor: (feature: PlanFeature) => !canAccessFeature(plan, feature),
     getUpgradeMessage: (feature: PlanFeature) => getUpgradeReason(plan, feature),
     getMinimumPlan: (feature: PlanFeature) => getMinimumPlanForFeature(feature),
-    
-    // Plan comparison
+
+    // ── Plan comparison ────────────────────────────────────────────────
     isPlanHigherOrEqual: (requiredPlan: PlanType) => isPlanHigherOrEqual(plan, requiredPlan),
-    isStarter: plan === 'starter',
-    isProfessional: plan === 'professional',
-    isEnterprise: plan === 'enterprise',
+    isFree: plan === 'free',
+    isPro: plan === 'pro',
+    isScale: plan === 'scale',
+
+    // ── Legacy aliases (for code that still checks old names) ──────────
+    isStarter: plan === 'free',
+    isProfessional: plan === 'pro',
+    isEnterprise: plan === 'scale',
   };
 }
 
 // Type for the hook return value
 export type PlanFeatures = ReturnType<typeof usePlanFeatures>;
 
-// Export for use without hook (e.g., in API routes)
+// Re-export for use without hook (e.g., in API routes or server components)
 export {
   PLAN_LIMITS,
   PLAN_PRICES,
+  PLAN_RATES,
   PLAN_NAMES,
   canAccessFeature,
-  getClientLimit,
-  getClientLimitDisplay,
-  isAtClientLimit,
+  getTeamMemberLimit,
+  getTeamMemberLimitDisplay,
   getUpgradeReason,
   isPlanHigherOrEqual,
   getMinimumPlanForFeature,
+  hasWhiteLabel,
+  normalizePlanType,
 };
 
 export type { PlanType, PlanFeature };
