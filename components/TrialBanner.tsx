@@ -28,8 +28,8 @@ export function UpgradeBanner({
     enterprise: Crown,  // CHANGED from 'scale' to 'enterprise'
   // New plan names
   free: Zap,
-  pro: Crown,
-  scale: Building,  };
+  pro: Sparkles,
+  scale: Crown,  };
   
   // Normalize plan types in case legacy 'scale' is passed
   const normalizedRequired = normalizePlanType(requiredPlan);
