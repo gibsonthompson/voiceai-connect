@@ -11,7 +11,7 @@ import {
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
-import { PLAN_PRICES, PLAN_NAMES } from '../../lib/plan-limits';
+import { PLAN_PRICES, PLAN_NAMES, PLAN_RATES } from '../../lib/plan-limits';
 import DynamicFavicon from '@/components/DynamicFavicon';
 
 // Waveform icon component with color prop
@@ -83,52 +83,52 @@ interface NavItem {
   permissionKey?: string;
 }
 
+// ============================================================================
+// PLAN TIERS — shown in trial-expired upgrade gate
+// Updated for Free/Pro/Scale pricing restructure (2026-05-07)
+// ============================================================================
 const AGENCY_PLAN_TIERS = [
   {
-    id: 'starter' as const,
-    name: PLAN_NAMES.starter,
-    price: PLAN_PRICES.starter,
+    id: 'free' as const,
+    name: 'Free',
+    price: 0,
     icon: Zap,
-    description: 'For new agencies',
-    clients: '25',
+    description: 'Get started',
     features: [
-      'Up to 25 clients',
-      'White-label branding',
-      'Agency dashboard',
-      'Email support',
+      'AI receptionist per client',
+      'Call notifications (SMS + email)',
+      'Spam detection & caller recognition',
+      `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`,
+      'VoiceAI Connect branded',
     ],
   },
   {
-    id: 'professional' as const,
-    name: PLAN_NAMES.professional,
-    price: PLAN_PRICES.professional,
+    id: 'pro' as const,
+    name: 'Pro',
+    price: PLAN_PRICES.pro,
     icon: Shield,
     popular: true,
     description: 'Most popular',
-    clients: '100',
     features: [
-      'Up to 100 clients',
-      'Full marketing website',
-      'Demo phone number',
-      'Custom domain',
-      'Priority support',
-      'API access',
+      'Full white-label branding',
+      'Marketing website + demo phone',
+      'Lead finder',
+      'Up to 5 team members',
+      `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`,
     ],
   },
   {
-    id: 'enterprise' as const,
-    name: PLAN_NAMES.enterprise,
-    price: PLAN_PRICES.enterprise,
+    id: 'scale' as const,
+    name: 'Scale',
+    price: PLAN_PRICES.scale,
     icon: Crown,
     description: 'For established agencies',
-    clients: 'Unlimited',
     features: [
-      'Unlimited clients',
-      'Everything in Professional',
-      'Dedicated success manager',
-      'Phone support',
-      'SLA guarantee',
-      'Custom AI templates',
+      'Everything in Pro',
+      'AI Lab / industry templates',
+      'Advanced lead finder + API access',
+      'Unlimited team members',
+      `$0/client + $${PLAN_RATES.scale.perMinute}/min`,
     ],
   },
 ];
@@ -136,7 +136,13 @@ const AGENCY_PLAN_TIERS = [
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, effectivePlan, hasPermission } = useAgency();
-  const { canUseMarketingSite, canUseDemoPhoneNumber, planName } = usePlanFeatures();
+  const { 
+    canUseMarketingSite, 
+    canUseDemoPhoneNumber, 
+    canUseAiLab,
+    hasWhiteLabel,
+    planName,
+  } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
@@ -165,8 +171,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
   const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
 
-  const isEnterprise = effectivePlan === 'enterprise';
-
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
@@ -178,7 +182,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       label: 'Marketing Website', 
       icon: Globe,
       locked: !canUseMarketingSite,
-      upgradeRequired: 'Professional',
+      upgradeRequired: 'Pro',
       permissionKey: 'marketing',
     },
     { 
@@ -186,16 +190,22 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       label: 'Demo Phone', 
       icon: Phone,
       locked: !isOnTrial && !canUseDemoPhoneNumber,
-      upgradeRequired: 'Professional',
+      upgradeRequired: 'Pro',
     },
     { 
       href: '/agency/templates', 
       label: 'AI Lab', 
       icon: Cpu,
-      locked: !isEnterprise,
-      upgradeRequired: 'Enterprise',
+      locked: !canUseAiLab,
+      upgradeRequired: 'Scale',
     },
-    { href: '/agency/branding', label: 'Branding', icon: Paintbrush },
+    { 
+      href: '/agency/branding', 
+      label: 'Branding', 
+      icon: Paintbrush,
+      locked: !hasWhiteLabel,
+      upgradeRequired: 'Pro',
+    },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
@@ -422,7 +432,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // ============================================================================
-  // TRIAL EXPIRED GATE
+  // TRIAL EXPIRED GATE — Updated for Free/Pro/Scale
   // ============================================================================
   if (agencyTrialExpiredNoCard) {
     const handleSelectPlan = async (planId: string) => {
@@ -475,6 +485,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             {AGENCY_PLAN_TIERS.map((plan) => {
               const isSelected = selectedPlan === plan.id;
               const isLoading = subscribeLoading && isSelected;
+              const isFree = plan.id === 'free';
               return (
                 <div key={plan.id} className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-200" style={{ backgroundColor: theme.card, borderColor: plan.popular ? (theme.isDark ? `${theme.primary}50` : theme.primary) : theme.border, boxShadow: plan.popular ? (theme.isDark ? `0 0 40px ${theme.primary}10` : '0 8px 30px rgba(0,0,0,0.08)') : 'none', transform: plan.popular ? 'scale(1.02)' : undefined }}>
                   {plan.popular && (
@@ -489,10 +500,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                     <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
                     <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
                     <div className="mt-2">
-                      <span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span>
-                      <span className="text-sm" style={{ color: theme.textMuted }}>/mo</span>
+                      {isFree ? (
+                        <span className="text-3xl font-bold" style={{ color: theme.text }}>Free</span>
+                      ) : (
+                        <>
+                          <span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span>
+                          <span className="text-sm" style={{ color: theme.textMuted }}>/mo</span>
+                        </>
+                      )}
                     </div>
-                    <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>{plan.clients} clients</p>
+                    {isFree && (
+                      <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>Pay per client + per minute</p>
+                    )}
                   </div>
                   <ul className="space-y-2.5 mb-5">
                     {plan.features.map((feature) => (
@@ -505,14 +524,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                     ))}
                   </ul>
                   <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>
-                    {isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : (<><CreditCard className="h-4 w-4" />Subscribe — ${plan.price}/mo</>)}
+                    {isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : isFree ? (<>Continue on Free</>) : (<><CreditCard className="h-4 w-4" />Subscribe — ${plan.price}/mo</>)}
                   </button>
                 </div>
               );
             })}
           </div>
           <div className="text-center">
-            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>All plans include a 14-day money-back guarantee. Cancel anytime.</p>
+            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Pro and Scale include a 14-day money-back guarantee. Cancel anytime.</p>
             <button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
           </div>
         </div>
@@ -674,7 +693,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
                 {isLocked && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>
-                    {item.upgradeRequired === 'Enterprise' ? 'Ent' : 'Pro'}
+                    {item.upgradeRequired}
                   </span>
                 )}
               </a>
@@ -707,7 +726,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {agency?.subscription_status === 'active' && (
             <div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}>
               <p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p>
-              <p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || agency?.plan_type || 'Starter'}</p>
+              <p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Free'}</p>
             </div>
           )}
           

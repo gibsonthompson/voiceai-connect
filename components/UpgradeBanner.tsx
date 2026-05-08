@@ -2,10 +2,11 @@
 
 // components/UpgradeBanner.tsx
 // Reusable component to show upgrade prompts when features are gated
+// Updated: 2026-05-07 — Pro/Scale plan names, updated hierarchy
 
 import Link from 'next/link';
 import { Lock, ArrowRight, Sparkles, Zap, Crown } from 'lucide-react';
-import { PLAN_NAMES, PLAN_PRICES, PlanType, normalizePlanType } from '@/lib/plan-limits';
+import { PLAN_NAMES, PLAN_PRICES, PlanType, normalizePlanType, isPlanHigherOrEqual } from '@/lib/plan-limits';
 
 interface UpgradeBannerProps {
   feature: string;
@@ -22,15 +23,15 @@ export function UpgradeBanner({
   variant = 'card',
   className = ''
 }: UpgradeBannerProps) {
-  const planIcons = {
-    starter: Zap,
-    professional: Sparkles,
-    enterprise: Crown,  // CHANGED from 'scale' to 'enterprise'
+  const planIcons: Record<string, typeof Zap> = {
     free: Zap,
     pro: Sparkles,
-    scale: Crown,  };
+    scale: Crown,
+    starter: Zap,
+    professional: Sparkles,
+    enterprise: Crown,
+  };
   
-  // Normalize plan types in case legacy 'scale' is passed
   const normalizedRequired = normalizePlanType(requiredPlan);
   const normalizedCurrent = normalizePlanType(currentPlan);
   
@@ -44,7 +45,7 @@ export function UpgradeBanner({
         <Lock className="h-3.5 w-3.5" />
         <span>Requires {planName} plan</span>
         <Link 
-          href="/agency/settings/billing"
+          href="/agency/settings?tab=billing"
           className="text-emerald-400 hover:text-emerald-300 transition-colors"
         >
           Upgrade →
@@ -63,7 +64,7 @@ export function UpgradeBanner({
           </span>
         </div>
         <Link 
-          href="/agency/settings/billing"
+          href="/agency/settings?tab=billing"
           className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
         >
           Upgrade
@@ -90,15 +91,17 @@ export function UpgradeBanner({
           </p>
           <div className="flex items-center gap-4">
             <Link
-              href="/agency/settings/billing"
+              href="/agency/settings?tab=billing"
               className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-medium text-[#050505] hover:bg-emerald-400 transition-colors"
             >
               Upgrade to {planName}
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <span className="text-sm text-[#fafaf9]/40">
-              ${price}/month
-            </span>
+            {price > 0 && (
+              <span className="text-sm text-[#fafaf9]/40">
+                ${price}/month
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -124,17 +127,10 @@ export function FeatureGate({
   fallback,
   showUpgradeBanner = true,
 }: FeatureGateProps) {
-  // CHANGED from 'scale' to 'enterprise'
-  const planHierarchy: PlanType[] = ['starter', 'professional', 'enterprise'];
-  
-  // Normalize plan types
   const normalizedCurrent = normalizePlanType(currentPlan);
   const normalizedRequired = normalizePlanType(requiredPlan);
   
-  const currentLevel = planHierarchy.indexOf(normalizedCurrent);
-  const requiredLevel = planHierarchy.indexOf(normalizedRequired);
-  
-  const hasAccess = currentLevel >= requiredLevel;
+  const hasAccess = isPlanHigherOrEqual(normalizedCurrent, normalizedRequired);
   
   if (hasAccess) {
     return <>{children}</>;
@@ -157,7 +153,8 @@ export function FeatureGate({
   return null;
 }
 
-// ClientLimitBanner - shows when approaching or at client limit
+// ClientLimitBanner - kept for backward compatibility but dormant
+// (no client limits in new usage-based pricing — always returns null)
 interface ClientLimitBannerProps {
   currentClients: number;
   maxClients: number;
@@ -175,16 +172,13 @@ export function ClientLimitBanner({
   const isAtLimit = remaining <= 0;
   const isNearLimit = remaining <= 3 && remaining > 0;
   
+  // With usage-based pricing, maxClients is Infinity — this never renders
   if (!isAtLimit && !isNearLimit) {
     return null;
   }
   
-  // Normalize current plan
   const normalizedCurrent = normalizePlanType(currentPlan);
-  
-  // CHANGED from 'scale' to 'enterprise'
-  const nextPlan: PlanType = normalizedCurrent === 'starter' ? 'professional' : 'enterprise';
-  const nextPlanLimit = normalizedCurrent === 'starter' ? 100 : '∞';
+  const planName = PLAN_NAMES[normalizedCurrent];
   
   if (isAtLimit) {
     return (
@@ -196,11 +190,10 @@ export function ClientLimitBanner({
           <div className="flex-1">
             <h4 className="font-medium text-red-200 mb-1">Client limit reached</h4>
             <p className="text-sm text-red-200/70 mb-3">
-              You&apos;ve reached the maximum of {maxClients} clients on your {PLAN_NAMES[normalizedCurrent]} plan.
-              Upgrade to {PLAN_NAMES[nextPlan]} for up to {nextPlanLimit} clients.
+              You&apos;ve reached the maximum of {maxClients} clients on your {planName} plan.
             </p>
             <Link
-              href="/agency/settings/billing"
+              href="/agency/settings?tab=billing"
               className="inline-flex items-center gap-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors"
             >
               Upgrade now
@@ -212,7 +205,6 @@ export function ClientLimitBanner({
     );
   }
   
-  // Near limit warning
   return (
     <div className={`rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 ${className}`}>
       <div className="flex items-center gap-3">
@@ -221,9 +213,9 @@ export function ClientLimitBanner({
         </div>
         <div className="flex-1">
           <p className="text-sm text-amber-200">
-            <strong>{remaining} client{remaining !== 1 ? 's' : ''} remaining</strong> on your {PLAN_NAMES[normalizedCurrent]} plan.{' '}
+            <strong>{remaining} client{remaining !== 1 ? 's' : ''} remaining</strong> on your {planName} plan.{' '}
             <Link
-              href="/agency/settings/billing"
+              href="/agency/settings?tab=billing"
               className="text-amber-400 hover:text-amber-300 transition-colors underline"
             >
               Upgrade for more

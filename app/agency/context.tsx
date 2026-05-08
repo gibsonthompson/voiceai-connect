@@ -107,7 +107,7 @@ const AgencyContext = createContext<AgencyContextType>({
   isTrialActive: false,
   isExpired: false,
   trialDaysLeft: null,
-  effectivePlan: 'starter',
+  effectivePlan: 'free',
   refreshAgency: async () => {},
   demoMode: false,
   toggleDemoMode: () => {},
@@ -241,7 +241,10 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const isTrialActive = isTrialStatus(agency?.subscription_status) && (trialDaysLeft === null || trialDaysLeft > 0);
   const isExpired = isExpiredStatus(agency?.subscription_status) || 
     (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
-  const effectivePlan = isTrialActive ? 'enterprise' : (agency?.plan_type || 'starter');
+  
+  // During active trial → full access (scale-level features)
+  // Otherwise → whatever plan they're on (free/pro/scale)
+  const effectivePlan = isTrialActive ? 'scale' : (agency?.plan_type || 'free');
 
   const hasPermission = (key: string): boolean => {
     if (!user) return false;

@@ -3,6 +3,7 @@
 import { Lock, Sparkles, ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
+import { PLAN_NAMES, normalizePlanType } from '@/lib/plan-limits';
 import { ReactNode } from 'react';
 
 interface LockedFeatureOverlayProps {
@@ -12,8 +13,8 @@ interface LockedFeatureOverlayProps {
   title: string;
   /** Brief description of what the feature does */
   description: string;
-  /** Plan required to unlock */
-  requiredPlan: 'Professional' | 'Enterprise';
+  /** Plan required to unlock (display name) */
+  requiredPlan: 'Pro' | 'Scale' | 'Professional' | 'Enterprise';
   /** Optional list of features/benefits */
   features?: string[];
   /** URL to upgrade page */
@@ -48,15 +49,16 @@ export default function LockedFeatureOverlay({
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const cardBg = isDark ? 'rgba(10,10,10,0.98)' : 'rgba(255,255,255,0.98)';
-  const overlayBg = isDark 
-    ? 'rgba(5,5,5,0.75)' 
-    : 'rgba(249,250,251,0.80)';
 
-  // Determine current plan display
+  // Normalize plan name for display
+  const normalizedPlan = normalizePlanType(agency?.plan_type);
+  const currentPlanDisplay = PLAN_NAMES[normalizedPlan] || 'Free';
+
+  // Determine current plan display text
   const isTrialing = agency?.subscription_status === 'trialing' || agency?.subscription_status === 'trial';
   const defaultPlanText = isTrialing
     ? `You're currently on a free trial`
-    : `You're on the ${agency?.plan_type || 'Starter'} plan`;
+    : `You're on the ${currentPlanDisplay} plan`;
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
