@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign } from 'lucide-react';
 import { useAgency } from '../../context';
 import { countries as SUPPORTED_COUNTRIES } from '@/lib/currency';
+import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -36,7 +37,6 @@ const US_STATES = [
   { value: 'DC', label: 'District of Columbia' }
 ];
 
-// Canadian provinces for CA country selection
 const CA_PROVINCES = [
   { value: 'AB', label: 'Alberta' }, { value: 'BC', label: 'British Columbia' },
   { value: 'MB', label: 'Manitoba' }, { value: 'NB', label: 'New Brunswick' },
@@ -47,7 +47,6 @@ const CA_PROVINCES = [
   { value: 'YT', label: 'Yukon' }
 ];
 
-// Country calling codes for phone formatting hints
 const COUNTRY_PHONE_CODES: Record<string, { code: string; placeholder: string; minDigits: number; maxDigits: number }> = {
   US: { code: '+1', placeholder: '(770) 555-1234', minDigits: 10, maxDigits: 10 },
   CA: { code: '+1', placeholder: '(416) 555-1234', minDigits: 10, maxDigits: 10 },
@@ -65,7 +64,6 @@ const COUNTRY_PHONE_CODES: Record<string, { code: string; placeholder: string; m
   AE: { code: '+971', placeholder: '50 123 4567', minDigits: 9, maxDigits: 9 },
 };
 
-// Fallback for countries not in the map
 const DEFAULT_PHONE_CONFIG = { code: '', placeholder: 'Phone number', minDigits: 7, maxDigits: 15 };
 
 const INDUSTRIES = [
@@ -127,7 +125,6 @@ export default function AddClientPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const router = useRouter();
 
-  // Default country to agency's country, fallback to US
   const defaultCountry = agency?.country?.toUpperCase() || 'US';
 
   const [form, setForm] = useState<FormData>({
@@ -151,7 +148,6 @@ export default function AddClientPage() {
   const [success, setSuccess] = useState<{ clientId: string; businessName: string; phoneNumber: string; email: string; tempPassword: string } | null>(null);
   const [showPassword, setShowPassword] = useState(true);
 
-  // Theme
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
   const buttonTextColor = getContrastColor(primaryColor);
@@ -168,20 +164,22 @@ export default function AddClientPage() {
   const errorText = isDark ? '#f87171' : '#dc2626';
   const successBg = isDark ? `${primaryColor}10` : `${primaryColor}08`;
 
-  // Derived state
   const isUS = form.businessCountry === 'US';
   const isCA = form.businessCountry === 'CA';
   const hasStateDropdown = isUS || isCA;
   const phoneConfig = COUNTRY_PHONE_CODES[form.businessCountry] || DEFAULT_PHONE_CONFIG;
   const selectedCountryData = SUPPORTED_COUNTRIES.find(c => c.code === form.businessCountry);
 
+  // Per-client cost for the agency (from their platform plan)
+  const agencyPlanRates = PLAN_RATES[normalizePlanType(agency?.plan_type)];
+  const perClientCost = agencyPlanRates?.perClient ?? 0;
+
   const updateForm = (field: keyof FormData, value: string) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
-      // Reset state when country changes
       if (field === 'businessCountry' && value !== prev.businessCountry) {
         updated.businessState = '';
-        updated.phone = ''; // Reset phone since format changes
+        updated.phone = '';
       }
       return updated;
     });
@@ -192,25 +190,20 @@ export default function AddClientPage() {
   };
 
   const formatPhoneDisplay = (value: string) => {
-    // Only format US/CA phones with the mask
     if (isUS || isCA) {
       const digits = value.replace(/\D/g, '').slice(0, 10);
       if (digits.length <= 3) return digits;
       if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
       return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     }
-    // For international, just return the raw digits — let user format themselves
     return value;
   };
 
   const handlePhoneChange = (value: string) => {
     if (isUS || isCA) {
-      // US/CA: strip to digits, max 10
       const digits = value.replace(/\D/g, '').slice(0, 10);
       updateForm('phone', digits);
     } else {
-      // International: allow digits, spaces, dashes, parens — store as-is
-      // Strip everything except digits for storage
       const cleaned = value.replace(/[^\d\s\-()+ ]/g, '');
       updateForm('phone', cleaned);
     }
@@ -237,7 +230,6 @@ export default function AddClientPage() {
     if (!form.firstName.trim()) errs.push('First name is required');
     if (!form.email.trim() || !form.email.includes('@')) errs.push('Valid email is required');
 
-    // Phone validation — adaptive to country
     const digitCount = getPhoneDigitCount(form.phone);
     const minDigits = phoneConfig.minDigits;
     const maxDigits = phoneConfig.maxDigits;
@@ -272,7 +264,6 @@ export default function AddClientPage() {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-      // Strip phone to digits only for backend
       const phoneDigits = form.phone.replace(/\D/g, '');
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/add`, {
@@ -332,7 +323,6 @@ export default function AddClientPage() {
     );
   }
 
-  // Success state
   if (success) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
@@ -425,7 +415,6 @@ export default function AddClientPage() {
     color: textColor
   };
 
-  // Build the state/region label based on country
   const stateLabel = isUS ? 'State' : isCA ? 'Province' : 'State / Region';
 
   return (
@@ -776,7 +765,7 @@ export default function AddClientPage() {
         {/* Submit Section */}
         <div className="p-5 sm:p-6">
           <div
-            className="rounded-xl p-3.5 mb-5 flex gap-3"
+            className="rounded-xl p-3.5 mb-4 flex gap-3"
             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${borderColor}` }}
           >
             <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
@@ -786,6 +775,20 @@ export default function AddClientPage() {
               This may take up to 30 seconds.
             </p>
           </div>
+
+          {/* Per-client platform cost note */}
+          {perClientCost > 0 && (
+            <div
+              className="rounded-xl p-3.5 mb-5 flex gap-3"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f0fdf4', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#bbf7d0'}` }}
+            >
+              <DollarSign className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+              <p className="text-xs leading-relaxed" style={{ color: mutedTextColor }}>
+                Adding this client adds <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>${perClientCost}/mo</strong> to your platform bill, plus voice usage at your plan rate.{' '}
+                <a href="/agency/settings?tab=billing" className="underline" style={{ color: primaryColor }}>View billing</a>
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button

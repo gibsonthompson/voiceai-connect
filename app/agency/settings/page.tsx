@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import BYOTSettings from '@/components/BYOTSettings';
+import { PLAN_NAMES } from '@/lib/plan-limits';import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'team' | 'demo' | 'feedback';
@@ -36,6 +36,9 @@ function isTrialStatus(status: string | null | undefined): boolean {
 }
 
 const PLAN_PRICING: Record<string, number> = {
+  free: 0,
+  pro: 179,
+  scale: 499,
   starter: 99,
   professional: 199,
   enterprise: 499,
@@ -807,7 +810,7 @@ function AgencySettingsContent() {
                       <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Team Members</p>
                       <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
                         Your plan includes <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_agency ?? 0} agency team members</strong> and <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_client ?? 0} team members per client</strong>. 
-                        {((agency as any)?.max_team_members_agency ?? 0) === 0 && ' Upgrade to Professional or Enterprise to unlock team access.'}
+                        {((agency as any)?.max_team_members_agency ?? 0) === 0 && ' Upgrade to Pro or Scale to unlock team access.'}
                       </p>
                       <div className="flex items-center gap-4 mt-2.5">
                         <div className="flex items-center gap-1.5">
@@ -915,7 +918,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
                       <p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p>
-                      <p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{agency?.plan_type || 'Starter'}</p>
+                      <p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{PLAN_NAMES[agency?.plan_type as keyof typeof PLAN_NAMES] || 'Free'}</p>
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
                   </div>
