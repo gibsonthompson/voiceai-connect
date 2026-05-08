@@ -10,8 +10,15 @@ import {
   ArrowRight, 
   Lock,
   Building,
-  ChevronDown
+  ChevronDown,
+  Zap,
+  Shield,
+  Crown,
+  Check,
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
+import { PLAN_PRICES, PLAN_RATES } from '@/lib/plan-limits';
 
 // ============================================================================
 // REFERRAL SOURCE OPTIONS
@@ -48,11 +55,70 @@ function WaveformIcon({ className }: { className?: string }) {
 }
 
 // ============================================================================
-// STEP DEFINITIONS (trimmed to 2 steps)
+// STEP DEFINITIONS — 3 steps
 // ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
-  { id: 2, name: 'Password', icon: Lock, description: 'Secure & start trial' },
+  { id: 2, name: 'Plan', icon: Zap, description: 'Choose your plan' },
+  { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
+];
+
+// ============================================================================
+// PLAN CARDS DATA
+// ============================================================================
+const AGENCY_PLANS = [
+  {
+    id: 'free',
+    name: 'Free',
+    price: PLAN_PRICES.free,
+    icon: Zap,
+    description: 'Get started — no commitment',
+    badge: null,
+    features: [
+      'AI receptionist per client',
+      'Call notifications (SMS + email)',
+      'Spam detection & caller recognition',
+      `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`,
+      'VoiceAI Connect branded',
+    ],
+    cta: 'Start Free',
+    trial: false,
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: PLAN_PRICES.pro,
+    icon: Shield,
+    description: 'Most popular',
+    badge: 'Recommended',
+    popular: true,
+    features: [
+      'Full white-label branding',
+      'Marketing website + demo phone',
+      'Lead finder',
+      'Up to 5 team members',
+      `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`,
+    ],
+    cta: 'Start 14-Day Trial',
+    trial: true,
+  },
+  {
+    id: 'scale',
+    name: 'Scale',
+    price: PLAN_PRICES.scale,
+    icon: Crown,
+    description: 'For established agencies',
+    badge: null,
+    features: [
+      'Everything in Pro',
+      'AI Lab / industry templates',
+      'Advanced lead finder + API access',
+      'Unlimited team members',
+      `$0/client + $${PLAN_RATES.scale.perMinute}/min`,
+    ],
+    cta: 'Start 14-Day Trial',
+    trial: true,
+  },
 ];
 
 // ============================================================================
@@ -114,6 +180,7 @@ function OnboardingContent() {
   const [error, setError] = useState('');
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyData, setAgencyData] = useState<any>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   
   const [agencyDetails, setAgencyDetails] = useState({
     name: '',
@@ -121,9 +188,6 @@ function OnboardingContent() {
     referralSource: '',
   });
 
-  // ==========================================================================
-  // Accept ?agency= URL param as fallback for localStorage.
-  // ==========================================================================
   useEffect(() => {
     const fetchAgency = async () => {
       if (!sessionId) {
@@ -168,7 +232,6 @@ function OnboardingContent() {
         const data = await response.json();
         setAgencyData(data.agency);
         
-        // If agency already has a real name, they've done step 1 — go to step 2
         if (data.agency.name && !data.agency.name.includes("'s Agency") && data.agency.name !== 'My Agency') {
           setAgencyDetails({
             name: data.agency.name || '',
@@ -218,9 +281,7 @@ function OnboardingContent() {
     }
   };
 
-  const handleNext = async () => {
-    if (currentStep !== 1) return;
-
+  const handleStep1Next = async () => {
     if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
     if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
     if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
@@ -236,19 +297,19 @@ function OnboardingContent() {
     }
   };
 
-  // ==========================================================================
-  // FIX: Use relative URL so this hits Next.js API route, NOT Express backend.
-  // The Express backend has no /api/agency/start-trial route — only Next.js does.
-  // The old code used `${backendUrl}/api/agency/start-trial` which 404'd silently,
-  // leaving subscription_status stuck at 'pending' and triggering the dashboard gate.
-  // ==========================================================================
-  const startDefaultTrial = async () => {
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlan(planId);
+    setCurrentStep(3);
+  };
+
+  // Start trial for Pro/Scale plans only
+  const startTrial = async (planType: string) => {
     if (!agencyId) return;
     try {
       const response = await fetch('/api/agency/start-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agencyId, planType: 'starter' }),
+        body: JSON.stringify({ agencyId, planType }),
       });
       
       if (!response.ok) {
@@ -257,7 +318,7 @@ function OnboardingContent() {
         return;
       }
       
-      console.log('✅ Trial started with default plan (starter)');
+      console.log(`✅ Trial started with plan: ${planType}`);
     } catch (err) {
       console.error('⚠️ Failed to start trial:', err);
     }
@@ -266,18 +327,19 @@ function OnboardingContent() {
   const handleSetPassword = async () => {
     setLoading(true);
     
-    // Start trial FIRST — this flips pending → trialing so the dashboard gate won't block
-    await startDefaultTrial();
+    // For Pro/Scale: start 14-day trial
+    // For Free: skip trial — agency is already active with plan_type='free'
+    if (selectedPlan && selectedPlan !== 'free') {
+      await startTrial(selectedPlan);
+    }
     
     const token = localStorage.getItem('agency_password_token');
     
     if (token && agencyId) {
       localStorage.removeItem('agency_password_token');
       const returnTo = encodeURIComponent('/agency/dashboard');
-      // Use window.location for a clean navigation (no flash/jump)
       window.location.href = `/auth/set-password?token=${token}&returnTo=${returnTo}`;
     } else if (agencyId) {
-      // No token means they already have a password (e.g. Google OAuth or forgot-password flow)
       localStorage.removeItem('onboarding_agency_id');
       window.location.href = '/agency/dashboard';
     } else {
@@ -287,6 +349,9 @@ function OnboardingContent() {
 
   const renderStepContent = () => {
     switch (currentStep) {
+      // ====================================================================
+      // STEP 1: Name Your Agency
+      // ====================================================================
       case 1:
         return (
           <div className="space-y-8">
@@ -355,30 +420,129 @@ function OnboardingContent() {
               </div>
             </div>
 
-            {/* Continue Button */}
             <div className="flex justify-center">
               <button
-                onClick={handleNext}
+                onClick={handleStep1Next}
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    Continue
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                {loading ? (<><Loader2 className="w-4 h-4 animate-spin" />Saving...</>) : (<>Continue<ArrowRight className="w-4 h-4" /></>)}
               </button>
             </div>
           </div>
         );
 
+      // ====================================================================
+      // STEP 2: Choose Your Plan
+      // ====================================================================
       case 2:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Choose Your Plan</h2>
+              <p className="mt-2 text-[#fafaf9]/50">Start free or unlock everything with a 14-day trial</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
+              {AGENCY_PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-300 hover:border-white/[0.15]"
+                  style={{
+                    backgroundColor: plan.popular ? '#0a0a0a' : 'rgba(10,10,10,0.5)',
+                    borderColor: plan.popular ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)',
+                    boxShadow: plan.popular ? '0 0 60px rgba(16,185,129,0.1)' : undefined,
+                    transform: plan.popular ? 'scale(1.02)' : undefined,
+                  }}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-[#050505] shadow-lg shadow-emerald-500/30">
+                        {plan.badge}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-5">
+                    <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl mb-3 ${plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.05]'}`}>
+                      <plan.icon className={`h-5 w-5 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]'}`} />
+                    </div>
+                    <p className="text-xs text-[#fafaf9]/50 mb-1">{plan.description}</p>
+                    <h3 className="text-lg font-semibold">{plan.name}</h3>
+                    <div className="mt-2">
+                      {plan.price === 0 ? (
+                        <span className="text-3xl font-bold">Free</span>
+                      ) : (
+                        <>
+                          <span className="text-3xl font-bold">${plan.price}</span>
+                          <span className="text-[#fafaf9]/50 text-sm">/mo</span>
+                        </>
+                      )}
+                    </div>
+                    {plan.price === 0 && (
+                      <p className="mt-1 text-xs text-[#fafaf9]/40">Pay per client + per minute</p>
+                    )}
+                  </div>
+
+                  <ul className="space-y-2.5 mb-5">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-sm">
+                        <div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-emerald-500/10">
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        </div>
+                        <span className="text-[#fafaf9]/70">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleSelectPlan(plan.id)}
+                    className={`group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                      plan.popular
+                        ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-xl hover:shadow-white/10'
+                        : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
+                    }`}
+                  >
+                    {plan.cta}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center">
+              <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/40">
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-emerald-400" />
+                  No credit card required
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-emerald-400" />
+                  Upgrade anytime
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-emerald-400" />
+                  Cancel anytime
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => setCurrentStep(1)}
+                className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            </div>
+          </div>
+        );
+
+      // ====================================================================
+      // STEP 3: Set Password & Go
+      // ====================================================================
+      case 3:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -386,13 +550,40 @@ function OnboardingContent() {
                 <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h2>
-              <p className="mt-2 text-[#fafaf9]/50">Create a password and your 14-day free trial begins</p>
+              <p className="mt-2 text-[#fafaf9]/50">
+                {selectedPlan === 'free'
+                  ? 'Create a password and start building your agency'
+                  : 'Create a password and your 14-day free trial begins'}
+              </p>
             </div>
             <div className="max-w-md mx-auto space-y-6">
+              {/* Plan confirmation */}
+              <div className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-center gap-3">
+                {selectedPlan === 'free' && <Zap className="h-5 w-5 text-emerald-400 flex-shrink-0" />}
+                {selectedPlan === 'pro' && <Shield className="h-5 w-5 text-emerald-400 flex-shrink-0" />}
+                {selectedPlan === 'scale' && <Crown className="h-5 w-5 text-emerald-400 flex-shrink-0" />}
+                <div>
+                  <p className="text-sm font-medium text-[#fafaf9]">
+                    {selectedPlan === 'free' ? 'Free Plan' : selectedPlan === 'pro' ? 'Pro Plan — 14-day trial' : 'Scale Plan — 14-day trial'}
+                  </p>
+                  <p className="text-xs text-[#fafaf9]/50">
+                    {selectedPlan === 'free' ? 'No platform fee, pay per usage' : `$${PLAN_PRICES[selectedPlan as keyof typeof PLAN_PRICES]}/mo after trial`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="ml-auto text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  Change
+                </button>
+              </div>
+
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] space-y-3">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">Full platform access for 14 days</p>
+                  <p className="text-sm text-[#fafaf9]/60">
+                    {selectedPlan === 'free' ? 'Instant access to your dashboard' : 'Full platform access for 14 days'}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
@@ -400,7 +591,9 @@ function OnboardingContent() {
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">Customize branding, pricing & more in your dashboard</p>
+                  <p className="text-sm text-[#fafaf9]/60">
+                    {selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more in your dashboard'}
+                  </p>
                 </div>
               </div>
               <button
@@ -409,15 +602,9 @@ function OnboardingContent() {
                 className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Starting your trial...
-                  </>
+                  <><Loader2 className="w-5 h-5 animate-spin" />{selectedPlan === 'free' ? 'Setting up...' : 'Starting your trial...'}</>
                 ) : (
-                  <>
-                    Set Password & Start Trial
-                    <ArrowRight className="w-5 h-5" />
-                  </>
+                  <>{selectedPlan === 'free' ? 'Set Password & Go' : 'Set Password & Start Trial'}<ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
             </div>
@@ -449,7 +636,6 @@ function OnboardingContent() {
 export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.75 }}>
-      {/* Grain overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
@@ -457,12 +643,10 @@ export default function OnboardingPage() {
         }}
       />
 
-      {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
       </div>
 
-      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
@@ -476,7 +660,6 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main content */}
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="relative mx-auto max-w-4xl">
           <Suspense fallback={

@@ -147,6 +147,8 @@ export default function AddClientPage() {
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<{ clientId: string; businessName: string; phoneNumber: string; email: string; tempPassword: string } | null>(null);
   const [showPassword, setShowPassword] = useState(true);
+  const [billingRequired, setBillingRequired] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
@@ -173,6 +175,30 @@ export default function AddClientPage() {
   // Per-client cost for the agency (from their platform plan)
   const agencyPlanRates = PLAN_RATES[normalizePlanType(agency?.plan_type)];
   const perClientCost = agencyPlanRates?.perClient ?? 0;
+
+  const handleSetupBilling = async () => {
+    if (!agency) return;
+    setBillingLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ agency_id: agency.id, plan: 'free' }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Failed to set up billing');
+        setBillingLoading(false);
+      }
+    } catch (err) {
+      setError('Failed to connect to billing. Please try again.');
+      setBillingLoading(false);
+    }
+  };
 
   const updateForm = (field: keyof FormData, value: string) => {
     setForm(prev => {
@@ -291,6 +317,10 @@ export default function AddClientPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error === 'billing_required') {
+          setBillingRequired(true);
+          return;
+        }
         if (data.errors) {
           setFieldErrors(data.errors);
         } else {
@@ -452,6 +482,43 @@ export default function AddClientPage() {
               </ul>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Billing required prompt */}
+      {billingRequired && (
+        <div
+          className="rounded-2xl p-6 sm:p-8 mb-6 text-center"
+          style={{ backgroundColor: cardBg, border: `1px solid ${isDark ? 'rgba(251,191,36,0.2)' : '#fde68a'}` }}
+        >
+          <div
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full mb-4"
+            style={{ backgroundColor: isDark ? 'rgba(251,191,36,0.1)' : '#fffbeb' }}
+          >
+            <DollarSign className="h-7 w-7" style={{ color: '#f59e0b' }} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: textColor }}>Set Up Billing First</h3>
+          <p className="text-sm mb-1" style={{ color: mutedTextColor }}>
+            Add a payment method to start adding clients. You&apos;ll be charged per client and per minute of voice usage.
+          </p>
+          <p className="text-sm mb-5" style={{ color: mutedTextColor }}>
+            <strong style={{ color: textColor }}>${perClientCost}/client/mo</strong> + voice minutes at your plan rate.
+          </p>
+          <button
+            onClick={handleSetupBilling}
+            disabled={billingLoading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-all hover:opacity-90"
+            style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+          >
+            {billingLoading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Redirecting to Stripe...</>
+            ) : (
+              <><DollarSign className="h-4 w-4" />Add Payment Method</>
+            )}
+          </button>
+          <p className="text-xs mt-3" style={{ color: mutedTextColor }}>
+            Secure checkout powered by Stripe. No charge until you add a client.
+          </p>
         </div>
       )}
 
