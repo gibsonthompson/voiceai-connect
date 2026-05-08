@@ -293,6 +293,13 @@ function OnboardingContent() {
     });
     
     if (result?.success) {
+      // Provision test client in background (non-blocking, ~30s)
+      // By the time agency finishes steps 2-3, test client is ready
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      fetch(`${backendUrl}/api/agency/${agencyId}/provision-test-client`, { method: 'POST' })
+        .then(() => console.log('✅ Test client provisioning started'))
+        .catch(() => console.warn('⚠️ Test client provisioning failed (non-blocking)'));
+      
       setCurrentStep(2);
     }
   };

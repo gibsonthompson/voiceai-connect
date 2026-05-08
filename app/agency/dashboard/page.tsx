@@ -54,6 +54,9 @@ export default function AgencyDashboardPage() {
   const [smsCopied, setSmsCopied] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
 
+  // Test client
+  const [testClient, setTestClient] = useState<any>(null);
+
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [sendingFeedback, setSendingFeedback] = useState(false);
@@ -64,6 +67,7 @@ export default function AgencyDashboardPage() {
     if (!agency) return;
     if (demoMode) { setStats(DEMO_DASHBOARD as DashboardStats); setLoading(false); return; }
     fetchDashboardData();
+    fetchTestClient();
   }, [agency, demoMode]);
 
   const fetchDashboardData = async () => {
@@ -80,6 +84,21 @@ export default function AgencyDashboardPage() {
       }
     } catch (error) { console.error('Failed to fetch dashboard data:', error); }
     finally { setLoading(false); }
+  };
+
+  const fetchTestClient = async () => {
+    if (!agency) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/test-client`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTestClient(data.client);
+      }
+    } catch (err) { console.error('Failed to fetch test client:', err); }
   };
 
   const handleSendFeedback = async () => {
@@ -179,6 +198,40 @@ export default function AgencyDashboardPage() {
 
       {/* Setup Checklist */}
       <SetupChecklist agency={agency} clientCount={stats?.clientCount || 0} theme={theme} userRole={user?.role} demoMode={demoMode} />
+
+      {/* ════════════════════════════════════════════════════════════════
+          YOUR TEST AI — test client with real phone number
+          ════════════════════════════════════════════════════════════════ */}
+      {testClient?.vapi_phone_number && (
+        <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: theme.infoBg }}>
+                  <Phone className="h-4 w-4" style={{ color: theme.info }} />
+                </div>
+                <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Your Test AI</h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Test Client</span>
+              </div>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+                Call this number to experience what your clients get. This is a fully working AI receptionist.
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <a href={`tel:${testClient.vapi_phone_number}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  <Phone className="h-3.5 w-3.5" />Call {formatDemoPhone(testClient.vapi_phone_number)}
+                </a>
+                <a href={`/agency/clients/${testClient.id}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                  View Client Dashboard
+                </a>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0 hidden sm:block">
+              <p className="text-xs" style={{ color: theme.textMuted }}>Usage</p>
+              <p className="text-lg font-bold" style={{ color: theme.text }}>{testClient.calls_this_month || 0}<span className="text-sm font-normal" style={{ color: theme.textMuted }}>/{testClient.monthly_call_limit || 30} calls</span></p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════════
           TRY YOUR AI — CTA to test the demo phone
