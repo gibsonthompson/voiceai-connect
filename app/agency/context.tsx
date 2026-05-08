@@ -246,6 +246,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   // Otherwise → whatever plan they're on (free/pro/scale)
   const effectivePlan = isTrialActive ? 'scale' : (agency?.plan_type || 'free');
 
+  // White-label enforcement: free tier = VoiceAI Connect branding
+  // Agency keeps their name, but colors/logo revert to platform defaults
+  const resolvedBranding = effectivePlan === 'free'
+    ? { ...defaultBranding, name: branding.name }
+    : branding;
+
   const hasPermission = (key: string): boolean => {
     if (!user) return false;
     if (user.role === 'agency_owner' || user.role === 'super_admin') return true;
@@ -257,7 +263,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     <AgencyContext.Provider value={{ 
       agency, 
       user, 
-      branding, 
+      branding: resolvedBranding, 
       loading, 
       isTrialActive,
       isExpired,
