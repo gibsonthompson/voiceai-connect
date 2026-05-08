@@ -99,18 +99,18 @@ export const PLAN_LIMITS = {
 // ============================================================================
 export const PLAN_PRICES = {
   free: 0,
-  pro: 199,
+  pro: 179,
   scale: 499,
   starter: 0,
-  professional: 199,
+  professional: 179,
   enterprise: 499,
 } as const;
 
 export const PLAN_RATES = {
-  free:  { perClient: 39.99, perMinute: 0.12 },
+  free:  { perClient: 29.99, perMinute: 0.12 },
   pro:   { perClient: 9.99,  perMinute: 0.10 },
   scale: { perClient: 0,     perMinute: 0.05 },
-  starter:      { perClient: 39.99, perMinute: 0.12 },
+  starter:      { perClient: 29.99, perMinute: 0.12 },
   professional: { perClient: 9.99,  perMinute: 0.10 },
   enterprise:   { perClient: 0,     perMinute: 0.05 },
 } as const;
