@@ -2,1087 +2,135 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  Upload, Check, AlertCircle, ExternalLink,
-  CreditCard, Building, Loader2, DollarSign,
-  AlertTriangle, RefreshCw, Trash2,
-  Receipt, XCircle, Eye, Phone, Users,
-  Globe, Info, MessageSquare, Send, Sparkles
-} from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import { PLAN_NAMES } from '@/lib/plan-limits';import BYOTSettings from '@/components/BYOTSettings';
+import { PLAN_NAMES } from '@/lib/plan-limits';
+import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'team' | 'demo' | 'feedback';
+interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
+interface FeedbackItem { id: string; message: string; created_at: string; }
+function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
 
-interface StripeStatus {
-  connected: boolean;
-  account_id?: string;
-  onboarding_complete: boolean;
-  charges_enabled: boolean;
-  payouts_enabled: boolean;
-  details_submitted?: boolean;
-}
-
-interface FeedbackItem {
-  id: string;
-  message: string;
-  created_at: string;
-}
-
-function isTrialStatus(status: string | null | undefined): boolean {
-  return status === 'trial' || status === 'trialing';
-}
-
-const PLAN_PRICING: Record<string, number> = {
-  free: 0,
-  pro: 179,
-  scale: 499,
-  starter: 99,
-  professional: 199,
-  enterprise: 499,
-};
-
+const PLAN_PRICING: Record<string, number> = { free: 0, pro: 179, scale: 499, starter: 99, professional: 199, enterprise: 499 };
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
-  starter: {
-    email_summaries: false,
-    custom_greeting: false,
-    custom_voice: false,
-    knowledge_base: false,
-    business_hours: false,
-    google_calendar: false,
-    advanced_analytics: false,
-    priority_support: false,
-    // AI Tools
-    caller_recognition: false,
-    spam_detection: true,
-    call_transfer: false,
-    transfer_fallback: false,
-    after_hours_mode: false,
-  },
-  pro: {
-    email_summaries: true,
-    custom_greeting: true,
-    custom_voice: false,
-    knowledge_base: true,
-    business_hours: true,
-    google_calendar: true,
-    advanced_analytics: true,
-    priority_support: false,
-    // AI Tools
-    caller_recognition: true,
-    spam_detection: true,
-    call_transfer: true,
-    transfer_fallback: true,
-    after_hours_mode: true,
-  },
-  growth: {
-    email_summaries: true,
-    custom_greeting: true,
-    custom_voice: true,
-    knowledge_base: true,
-    business_hours: true,
-    google_calendar: true,
-    advanced_analytics: true,
-    priority_support: true,
-    // AI Tools
-    caller_recognition: true,
-    spam_detection: true,
-    call_transfer: true,
-    transfer_fallback: true,
-    after_hours_mode: true,
-  },
+  starter: { email_summaries: false, custom_greeting: false, custom_voice: false, knowledge_base: false, business_hours: false, google_calendar: false, advanced_analytics: false, priority_support: false, caller_recognition: false, spam_detection: true, call_transfer: false, transfer_fallback: false, after_hours_mode: false },
+  pro: { email_summaries: true, custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: false, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true },
+  growth: { email_summaries: true, custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true },
 };
-
 const FEATURE_LABELS: Record<string, { label: string; description: string }> = {
-  email_summaries: { label: 'Email Summaries', description: 'Detailed email with call summary, transcript, and caller details' },
-  custom_greeting: { label: 'Custom Greeting', description: 'Client can write their own AI opening message' },
-  custom_voice: { label: 'Custom Voice', description: 'Client can choose from multiple AI voice options' },
-  knowledge_base: { label: 'Knowledge Base', description: 'Client can upload business FAQs for the AI to reference' },
-  business_hours: { label: 'Business Hours', description: 'Client can configure hours and after-hours behavior' },
-  google_calendar: { label: 'Google Calendar', description: 'AI receptionist can check availability and book appointments directly' },
-  advanced_analytics: { label: 'Advanced Analytics', description: 'Detailed reporting beyond basic call counts' },
-  priority_support: { label: 'Priority Support', description: 'Faster response times from your support team' },
-  // AI Tools
-  caller_recognition: { label: 'Caller Recognition', description: 'AI greets returning callers by name with context from previous calls' },
-  spam_detection: { label: 'Spam Detection', description: 'AI detects and blocks robocalls and telemarketers automatically' },
-  call_transfer: { label: 'Call Transfer', description: 'AI can transfer calls to the business owner for urgent requests' },
-  transfer_fallback: { label: 'Transfer Fallback', description: 'If transfer fails, AI takes a message instead of dropping the call' },
-  after_hours_mode: { label: 'After-Hours Mode', description: 'AI switches to message-taking mode outside business hours' },
+  email_summaries: { label: 'Email Summaries', description: 'Detailed email with call summary, transcript, and caller details' }, custom_greeting: { label: 'Custom Greeting', description: 'Client can write their own AI opening message' }, custom_voice: { label: 'Custom Voice', description: 'Client can choose from multiple AI voice options' }, knowledge_base: { label: 'Knowledge Base', description: 'Client can upload business FAQs for the AI to reference' }, business_hours: { label: 'Business Hours', description: 'Client can configure hours and after-hours behavior' }, google_calendar: { label: 'Google Calendar', description: 'AI receptionist can check availability and book appointments directly' }, advanced_analytics: { label: 'Advanced Analytics', description: 'Detailed reporting beyond basic call counts' }, priority_support: { label: 'Priority Support', description: 'Faster response times from your support team' }, caller_recognition: { label: 'Caller Recognition', description: 'AI greets returning callers by name with context from previous calls' }, spam_detection: { label: 'Spam Detection', description: 'AI detects and blocks robocalls and telemarketers automatically' }, call_transfer: { label: 'Call Transfer', description: 'AI can transfer calls to the business owner for urgent requests' }, transfer_fallback: { label: 'Transfer Fallback', description: 'If transfer fails, AI takes a message instead of dropping the call' }, after_hours_mode: { label: 'After-Hours Mode', description: 'AI switches to message-taking mode outside business hours' },
 };
+const FEATURE_ORDER = ['email_summaries', 'custom_greeting', 'custom_voice', 'knowledge_base', 'business_hours', 'google_calendar', 'advanced_analytics', 'priority_support', 'caller_recognition', 'spam_detection', 'call_transfer', 'transfer_fallback', 'after_hours_mode'];
 
-const FEATURE_ORDER = [
-  'email_summaries', 'custom_greeting', 'custom_voice', 'knowledge_base',
-  'business_hours', 'google_calendar', 'advanced_analytics', 'priority_support',
-  // AI Tools
-  'caller_recognition', 'spam_detection', 'call_transfer', 'transfer_fallback', 'after_hours_mode',
-];
+function rgbToHex(r: number, g: number, b: number): string { return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join(''); }
+function adjustColorBrightness(hex: string, percent: number): string { const num = parseInt(hex.replace('#', ''), 16); const amt = Math.round(2.55 * percent); const R = Math.min(255, Math.max(0, (num >> 16) + amt)); const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt)); const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt)); return rgbToHex(R, G, B); }
+function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): { r: number; g: number; b: number; isTransparent: boolean } { const w = canvas.width; const h = canvas.height; const step = Math.max(1, Math.floor(Math.min(w, h) / 20)); const edgePixels: ImageData[] = []; for (let x = 0; x < w; x += step) { edgePixels.push(ctx.getImageData(x, 0, 1, 1)); edgePixels.push(ctx.getImageData(x, h - 1, 1, 1)); } for (let y = 0; y < h; y += step) { edgePixels.push(ctx.getImageData(0, y, 1, 1)); edgePixels.push(ctx.getImageData(w - 1, y, 1, 1)); } const transparentCount = edgePixels.filter(p => p.data[3] < 128).length; if (transparentCount > edgePixels.length * 0.5) return { r: 0, g: 0, b: 0, isTransparent: true }; let r = 0, g = 0, b = 0, count = 0; edgePixels.forEach(p => { if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; } }); return count > 0 ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false } : { r: 255, g: 255, b: 255, isTransparent: false }; }
+async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> { const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const }; return new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); if (!ctx) { resolve(fallback); return; } const size = 150; canvas.width = size; canvas.height = size; ctx.drawImage(img, 0, 0, size, size); const bg = detectLogoBackground(canvas, ctx); const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b); let suggestedTheme: 'light' | 'dark' = 'dark'; if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; } const pixels = ctx.getImageData(0, 0, size, size).data; const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {}; for (let i = 0; i < pixels.length; i += 4) { const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]; if (a < 128) continue; const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)); if (bgDist < 50) continue; const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25; const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255; const lightness = (max + min) / 2; const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min); if (lightness < 0.15 || lightness > 0.65) continue; if (saturation < 0.25) continue; const key = `${br},${bg2},${bb}`; if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness }; colorData[key].count++; } const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b)); if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; } const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30); resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme }); }; img.onerror = () => resolve(fallback); img.src = imageUrl; }); }
 
-// ============================================================================
-// COLOR EXTRACTION
-// ============================================================================
-function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
-function adjustColorBrightness(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
-  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-  return rgbToHex(R, G, B);
-}
-
-function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): { r: number; g: number; b: number; isTransparent: boolean } {
-  const w = canvas.width;
-  const h = canvas.height;
-  const step = Math.max(1, Math.floor(Math.min(w, h) / 20));
-  const edgePixels: ImageData[] = [];
-  for (let x = 0; x < w; x += step) { edgePixels.push(ctx.getImageData(x, 0, 1, 1)); edgePixels.push(ctx.getImageData(x, h - 1, 1, 1)); }
-  for (let y = 0; y < h; y += step) { edgePixels.push(ctx.getImageData(0, y, 1, 1)); edgePixels.push(ctx.getImageData(w - 1, y, 1, 1)); }
-  const transparentCount = edgePixels.filter(p => p.data[3] < 128).length;
-  if (transparentCount > edgePixels.length * 0.5) return { r: 0, g: 0, b: 0, isTransparent: true };
-  let r = 0, g = 0, b = 0, count = 0;
-  edgePixels.forEach(p => { if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; } });
-  return count > 0 ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false } : { r: 255, g: 255, b: 255, isTransparent: false };
-}
-
-async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> {
-  const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const };
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { resolve(fallback); return; }
-      const size = 150;
-      canvas.width = size; canvas.height = size;
-      ctx.drawImage(img, 0, 0, size, size);
-      const bg = detectLogoBackground(canvas, ctx);
-      const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
-      let suggestedTheme: 'light' | 'dark' = 'dark';
-      if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; }
-      const pixels = ctx.getImageData(0, 0, size, size).data;
-      const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {};
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
-        if (a < 128) continue;
-        const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2));
-        if (bgDist < 50) continue;
-        const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25;
-        const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255;
-        const lightness = (max + min) / 2;
-        const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
-        if (lightness < 0.15 || lightness > 0.65) continue;
-        if (saturation < 0.25) continue;
-        const key = `${br},${bg2},${bb}`;
-        if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness };
-        colorData[key].count++;
-      }
-      const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b));
-      if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; }
-      const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30);
-      resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme });
-    };
-    img.onerror = () => resolve(fallback);
-    img.src = imageUrl;
-  });
-}
-
-// ============================================================================
-// FEATURE TOGGLE COMPONENT
-// ============================================================================
-function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) {
-  const info = FEATURE_LABELS[featureKey];
-  if (!info) return null;
-  return (
-    <div className="flex items-center justify-between py-2.5 px-1 group">
-      <div className="flex-1 min-w-0 mr-3">
-        <p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p>
-      </div>
-      <button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-      </button>
-    </div>
-  );
-}
+function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) { const info = FEATURE_LABELS[featureKey]; if (!info) return null; return (<div className="flex items-center justify-between py-2.5 px-1 group"><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p></div><button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div>); }
 
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode } = useAgency();
   const theme = useTheme();
   const searchParams = useSearchParams();
-  
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'team', 'demo', 'feedback'];
-  
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
-  const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
-  const [connectingStripe, setConnectingStripe] = useState(false);
-  const [disconnectingStripe, setDisconnectingStripe] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [agencyName, setAgencyName] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [extractingColors, setExtractingColors] = useState(false);
-  const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
+  const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
+  const [connectingStripe, setConnectingStripe] = useState(false); const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false); const [cancelLoading, setCancelLoading] = useState(false); const [portalLoading, setPortalLoading] = useState(false);
+  const [agencyName, setAgencyName] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [extractingColors, setExtractingColors] = useState(false); const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
   const [brandColors, setBrandColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
-  const [priceStarter, setPriceStarter] = useState('49');
-  const [pricePro, setPricePro] = useState('99');
-  const [priceGrowth, setPriceGrowth] = useState('149');
-  const [limitStarter, setLimitStarter] = useState('50');
-  const [limitPro, setLimitPro] = useState('150');
-  const [limitGrowth, setLimitGrowth] = useState('500');
-  const [unlimitedStarter, setUnlimitedStarter] = useState(false);
-  const [unlimitedPro, setUnlimitedPro] = useState(false);
-  const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
+  const [priceStarter, setPriceStarter] = useState('49'); const [pricePro, setPricePro] = useState('99'); const [priceGrowth, setPriceGrowth] = useState('149');
+  const [limitStarter, setLimitStarter] = useState('50'); const [limitPro, setLimitPro] = useState('150'); const [limitGrowth, setLimitGrowth] = useState('500');
+  const [unlimitedStarter, setUnlimitedStarter] = useState(false); const [unlimitedPro, setUnlimitedPro] = useState(false); const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean>>>(DEFAULT_PLAN_FEATURES);
   const [displayCurrency, setDisplayCurrency] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [sendingFeedback, setSendingFeedback] = useState(false);
-  const [feedbackSent, setFeedbackSent] = useState(false);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]);
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState(''); const [sendingFeedback, setSendingFeedback] = useState(false); const [feedbackSent, setFeedbackSent] = useState(false); const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]); const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [usageData, setUsageData] = useState<any>(null); const [usageLoading, setUsageLoading] = useState(false); const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [clientHeaderMode, setClientHeaderMode] = useState<'agency_name' | 'business_name'>('agency_name');
-  const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null);
-  const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
-
+  const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null); const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const isOnTrial = isTrialStatus(agency?.subscription_status);
-  const trialDaysLeft = agency?.trial_ends_at
-    ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : null;
+  const trialDaysLeft = agency?.trial_ends_at ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
 
-  useEffect(() => {
-    if (agency) {
-      setAgencyName(agency.name || '');
-      setLogoUrl(agency.logo_url || '');
-      setLogoPreview(agency.logo_url);
-      setPriceStarter(((agency.price_starter || 4900) / 100).toString());
-      setPricePro(((agency.price_pro || 9900) / 100).toString());
-      setPriceGrowth(((agency.price_growth || 14900) / 100).toString());
-      const ls = agency.limit_starter;
-      const lp = agency.limit_pro;
-      const lg = agency.limit_growth;
-      setUnlimitedStarter(ls === -1);
-      setUnlimitedPro(lp === -1);
-      setUnlimitedGrowth(lg === -1);
-      setLimitStarter(ls === -1 ? '50' : (ls || 50).toString());
-      setLimitPro(lp === -1 ? '150' : (lp || 150).toString());
-      setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString());
-      setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES);
-      setDisplayCurrency((agency as any).display_currency || '');
-      setBrandColors({
-        primary: agency.primary_color || '#10b981',
-        secondary: agency.secondary_color || '#059669',
-        accent: agency.accent_color || '#34d399',
-      });
-      setClientHeaderMode((agency as any).client_header_mode || 'agency_name');
-    }
-  }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 4900) / 100).toString()); setPricePro(((agency.price_pro || 9900) / 100).toString()); setPriceGrowth(((agency.price_growth || 14900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setDisplayCurrency((agency as any).display_currency || ''); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
+  useEffect(() => { if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
+  useEffect(() => { if (activeTab === 'billing' && agency?.id) fetchUsageData(); }, [activeTab, agency?.id]);
 
-  useEffect(() => {
-    if (activeTab === 'payments' && agency?.id) fetchStripeStatus();
-  }, [activeTab, agency?.id]);
+  const handleTabChange = (tab: SettingsTab) => { setActiveTab(tab); const url = new URL(window.location.href); url.searchParams.set('tab', tab); window.history.replaceState({}, '', url.toString()); };
+  const fetchStripeStatus = async () => { if (!agency) return; setLoadingStripeStatus(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) setStripeStatus(await response.json()); } catch (err) { console.error('Failed to fetch Stripe status:', err); } finally { setLoadingStripeStatus(false); } };
+  const fetchFeedbackHistory = async () => { if (!agency) return; setLoadingFeedback(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) { const data = await response.json(); setFeedbackHistory(data.feedback || []); } } catch (err) { console.error('Failed to fetch feedback:', err); } finally { setLoadingFeedback(false); } };
+  const fetchUsageData = async () => { if (!agency) return; setUsageLoading(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/usage`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) { const data = await response.json(); setUsageData(data.usage); } } catch (err) { console.error('Failed to fetch usage:', err); } finally { setUsageLoading(false); } };
+  const handleUpgrade = async (targetPlan: string) => { if (!agency) return; setUpgradeLoading(targetPlan); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, plan: targetPlan }) }); const data = await response.json(); if (data.url) window.location.href = data.url; else setError(data.error || 'Failed to start upgrade'); } catch (err) { setError('Failed to connect to billing'); } finally { setUpgradeLoading(null); } };
+  const handleSendFeedback = async () => { if (!agency || !feedbackMessage.trim()) return; setSendingFeedback(true); setFeedbackError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: feedbackMessage.trim() }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); } const data = await response.json(); setFeedbackSent(true); setFeedbackMessage(''); if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]); setTimeout(() => setFeedbackSent(false), 3000); } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); } finally { setSendingFeedback(false); } };
 
-  useEffect(() => {
-    if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory();
-  }, [activeTab, agency?.id]);
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; return true; });
 
-  const handleTabChange = (tab: SettingsTab) => {
-    setActiveTab(tab);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', tab);
-    window.history.replaceState({}, '', url.toString());
-  };
-
-  const fetchStripeStatus = async () => {
-    if (!agency) return;
-    setLoadingStripeStatus(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (response.ok) setStripeStatus(await response.json());
-    } catch (err) { console.error('Failed to fetch Stripe status:', err); }
-    finally { setLoadingStripeStatus(false); }
-  };
-
-  const fetchFeedbackHistory = async () => {
-    if (!agency) return;
-    setLoadingFeedback(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (response.ok) { const data = await response.json(); setFeedbackHistory(data.feedback || []); }
-    } catch (err) { console.error('Failed to fetch feedback:', err); }
-    finally { setLoadingFeedback(false); }
-  };
-
-  const handleSendFeedback = async () => {
-    if (!agency || !feedbackMessage.trim()) return;
-    setSendingFeedback(true);
-    setFeedbackError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ message: feedbackMessage.trim() }),
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); }
-      const data = await response.json();
-      setFeedbackSent(true);
-      setFeedbackMessage('');
-      if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]);
-      setTimeout(() => setFeedbackSent(false), 3000);
-    } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); }
-    finally { setSendingFeedback(false); }
-  };
-
-  const settingsTabs = [
-    { id: 'profile' as SettingsTab, label: 'Profile', icon: Building },
-    { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign },
-    { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard },
-    { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt },
-    { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe },
-    { id: 'team' as SettingsTab, label: 'Team', icon: Users },
-    { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye },
-    { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare },
-  ].filter(tab => {
-    // Hide Team tab from staff users — only owners manage team
-    if (tab.id === 'team' && user?.role === 'agency_staff') return false;
-    return true;
-  });
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const dataUrl = reader.result as string;
-        setLogoPreview(dataUrl);
-        setLogoUrl(dataUrl);
-        setExtractingColors(true);
-        try {
-          const result = await extractColorsFromImage(dataUrl);
-          setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
-          setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent });
-          setDetectedWebsiteTheme(result.suggestedTheme);
-          setDetectedLogoBgColor(result.logoBgColor);
-          console.log(`🎨 Logo analyzed: theme=${result.suggestedTheme}, bg=${result.logoBgColor}`);
-        } catch (err) { console.error('Color extraction failed:', err); }
-        finally { setExtractingColors(false); }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const toggleFeature = (plan: string, feature: string) => {
-    setPlanFeatures(prev => ({ ...prev, [plan]: { ...prev[plan], [feature]: !prev[plan]?.[feature] } }));
-  };
-
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = async () => { const dataUrl = reader.result as string; setLogoPreview(dataUrl); setLogoUrl(dataUrl); setExtractingColors(true); try { const result = await extractColorsFromImage(dataUrl); setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setDetectedWebsiteTheme(result.suggestedTheme); setDetectedLogoBgColor(result.logoBgColor); } catch (err) { console.error('Color extraction failed:', err); } finally { setExtractingColors(false); } }; reader.readAsDataURL(file); } };
+  const toggleFeature = (plan: string, feature: string) => { setPlanFeatures(prev => ({ ...prev, [plan]: { ...prev[plan], [feature]: !prev[plan]?.[feature] } })); };
   const resetPlanFeatures = () => setPlanFeatures(DEFAULT_PLAN_FEATURES);
+  const deriveCalendarEnabledPlans = (features: Record<string, Record<string, boolean>>): string[] => { return Object.entries(features).filter(([, fm]) => fm.google_calendar).map(([plan]) => plan); };
 
-  const deriveCalendarEnabledPlans = (features: Record<string, Record<string, boolean>>): string[] => {
-    return Object.entries(features).filter(([, fm]) => fm.google_calendar).map(([plan]) => plan);
-  };
+  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const payload: any = {}; if (activeTab === 'profile') { payload.name = agencyName; payload.logo_url = logoUrl; if (extractedColors) { payload.primary_color = brandColors.primary; payload.secondary_color = brandColors.secondary; payload.accent_color = brandColors.accent; } if (detectedWebsiteTheme) payload.website_theme = detectedWebsiteTheme; if (detectedLogoBgColor) payload.logo_background_color = detectedLogoBgColor; payload.client_header_mode = clientHeaderMode; } else if (activeTab === 'pricing') { payload.price_starter = Math.round(parseFloat(priceStarter) * 100); payload.price_pro = Math.round(parseFloat(pricePro) * 100); payload.price_growth = Math.round(parseFloat(priceGrowth) * 100); payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter); payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro); payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth); payload.plan_features = planFeatures; payload.display_currency = displayCurrency || null; payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures); } const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); } await refreshAgency(); setSaved(true); setDetectedWebsiteTheme(null); setDetectedLogoBgColor(null); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+  const handleStripeConnect = async () => { if (!agency) return; setConnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to start Stripe onboarding'); } const data = await response.json(); window.location.href = data.url; } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); } };
+  const handleStripeDisconnect = async () => { if (!agency) return; if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return; setDisconnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); } await refreshAgency(); setStripeStatus(null); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); } finally { setDisconnectingStripe(false); } };
+  const handleManageSubscription = async () => { if (!agency) return; setPortalLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); } const data = await response.json(); if (data.url) window.location.href = data.url; else if (data.needs_payment_method) setError('Add a payment method first. Use the upgrade options below.'); else setError('Failed to open billing portal'); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); } finally { setPortalLoading(false); } };
+  const handleCancelTrial = async () => { if (!agency) return; setCancelLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to cancel subscription'); } localStorage.removeItem('auth_token'); localStorage.removeItem('agency'); localStorage.removeItem('user'); window.location.href = '/agency/login?canceled=true'; } catch (err) { setError(err instanceof Error ? err.message : 'Failed to cancel'); setCancelLoading(false); setShowCancelModal(false); } };
 
-  const handleSave = async () => {
-    if (!agency) return;
-    setSaving(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const payload: any = {};
-      if (activeTab === 'profile') {
-        payload.name = agencyName;
-        payload.logo_url = logoUrl;
-        if (extractedColors) {
-          payload.primary_color = brandColors.primary;
-          payload.secondary_color = brandColors.secondary;
-          payload.accent_color = brandColors.accent;
-        }
-        if (detectedWebsiteTheme) payload.website_theme = detectedWebsiteTheme;
-        if (detectedLogoBgColor) payload.logo_background_color = detectedLogoBgColor;
-        payload.client_header_mode = clientHeaderMode;
-      } else if (activeTab === 'pricing') {
-        payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
-        payload.price_pro = Math.round(parseFloat(pricePro) * 100);
-        payload.price_growth = Math.round(parseFloat(priceGrowth) * 100);
-        payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter);
-        payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro);
-        payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
-        payload.plan_features = planFeatures;
-        payload.display_currency = displayCurrency || null;
-        payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
-      }
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); }
-      await refreshAgency();
-      setSaved(true);
-      setDetectedWebsiteTheme(null);
-      setDetectedLogoBgColor(null);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); }
-    finally { setSaving(false); }
-  };
+  if (contextLoading) return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
 
-  const handleStripeConnect = async () => {
-    if (!agency) return;
-    setConnectingStripe(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agency.id }),
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to start Stripe onboarding'); }
-      const data = await response.json();
-      window.location.href = data.url;
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); }
-  };
-
-  const handleStripeDisconnect = async () => {
-    if (!agency) return;
-    if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return;
-    setDisconnectingStripe(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); }
-      await refreshAgency();
-      setStripeStatus(null);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); }
-    finally { setDisconnectingStripe(false); }
-  };
-
-  const handleManageSubscription = async () => {
-    if (!agency) return;
-    setPortalLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/portal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agency.id }),
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); }
-      const data = await response.json();
-      window.location.href = data.url;
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); setPortalLoading(false); }
-  };
-
-  const handleCancelTrial = async () => {
-    if (!agency) return;
-    setCancelLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agency.id }),
-      });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to cancel subscription'); }
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('agency');
-      localStorage.removeItem('user');
-      window.location.href = '/agency/login?canceled=true';
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to cancel'); setCancelLoading(false); setShowCancelModal(false); }
-  };
-
-  if (contextLoading) {
-    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
-  }
-
-  const getStripeStatusDisplay = () => {
-    if (!stripeStatus?.connected && !agency?.stripe_account_id) return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
-    if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) return { status: 'active', label: 'Active', color: '#34d399' };
-    if (stripeStatus?.connected || agency?.stripe_account_id) return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' };
-    return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted };
-  };
+  const getStripeStatusDisplay = () => { if (!stripeStatus?.connected && !agency?.stripe_account_id) return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted }; if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) return { status: 'active', label: 'Active', color: '#34d399' }; if (stripeStatus?.connected || agency?.stripe_account_id) return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' }; return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted }; };
   const stripeDisplay = getStripeStatusDisplay();
-
-  const getSubscriptionDisplay = () => {
-    const status = agency?.subscription_status;
-    if (status === 'active') return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' };
-    if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' };
-    if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' };
-    if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' };
-    return { label: status || 'Unknown', color: theme.textMuted, bgColor: theme.input };
-  };
+  const getSubscriptionDisplay = () => { const status = agency?.subscription_status; if (status === 'active') return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' }; if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' }; if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' }; if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; return { label: status || 'Unknown', color: theme.textMuted, bgColor: theme.input }; };
   const subscriptionDisplay = getSubscriptionDisplay();
-
-  const demoFeatures = [
-    { label: 'Dashboard', desc: '14 clients, $1,185 MRR, 847 total calls' },
-    { label: 'Clients', desc: '14 realistic service businesses with plans & call data' },
-    { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' },
-    { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' },
-    { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' },
-    { label: 'Referrals', desc: '3 referred agencies, commissions, payout history' },
-  ];
-
-  const dynamicStyles = `
-    .agency-settings ::selection { background-color: ${theme.primary}40; color: inherit; }
-    .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus {
-      outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important;
-    }
-  `;
-
+  const demoFeatures = [{ label: 'Dashboard', desc: '14 clients, $1,185 MRR, 847 total calls' }, { label: 'Clients', desc: '14 realistic service businesses with plans & call data' }, { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' }, { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' }, { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' }, { label: 'Referrals', desc: '3 referred agencies, commissions, payout history' }];
+  const dynamicStyles = `.agency-settings ::selection { background-color: ${theme.primary}40; color: inherit; } .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus { outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important; }`;
   const getFeatureCount = (plan: string) => Object.values(planFeatures[plan] || {}).filter(Boolean).length;
 
   return (
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
-      
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !cancelLoading && setShowCancelModal(false)} />
-          <div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.errorBg }}>
-                <AlertTriangle className="h-6 w-6" style={{ color: theme.errorText }} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Cancel Trial?</h3>
-                <p className="text-sm" style={{ color: theme.textMuted }}>This action cannot be undone.</p>
-              </div>
-            </div>
-            <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: theme.errorBg }}>
-              <p className="text-sm" style={{ color: theme.errorText }}>If you cancel now:</p>
-              <ul className="mt-2 space-y-1 text-sm" style={{ color: theme.errorText }}>
-                <li>• You&apos;ll lose access to your agency dashboard immediately</li>
-                <li>• All client AI receptionists will be disabled</li>
-                <li>• You won&apos;t be charged</li>
-              </ul>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowCancelModal(false)} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>Keep My Trial</button>
-              <button onClick={handleCancelTrial} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                {cancelLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Canceling...</>) : 'Yes, Cancel Trial'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showCancelModal && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4"><div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !cancelLoading && setShowCancelModal(false)} /><div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.border}` }}><div className="flex items-center gap-4 mb-4"><div className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.errorBg }}><AlertTriangle className="h-6 w-6" style={{ color: theme.errorText }} /></div><div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Cancel Trial?</h3><p className="text-sm" style={{ color: theme.textMuted }}>This action cannot be undone.</p></div></div><div className="rounded-xl p-4 mb-6" style={{ backgroundColor: theme.errorBg }}><p className="text-sm" style={{ color: theme.errorText }}>If you cancel now:</p><ul className="mt-2 space-y-1 text-sm" style={{ color: theme.errorText }}><li>• You&apos;ll lose access to your agency dashboard immediately</li><li>• All client AI receptionists will be disabled</li><li>• You won&apos;t be charged</li></ul></div><div className="flex gap-3"><button onClick={() => setShowCancelModal(false)} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>Keep My Trial</button><button onClick={handleCancelTrial} disabled={cancelLoading} className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2">{cancelLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Canceling...</>) : 'Yes, Cancel Trial'}</button></div></div></div>)}
 
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p>
-      </div>
+      <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p></div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-        <div className="lg:w-48 flex-shrink-0">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {settingsTabs.map((tab) => (
-              <button key={tab.id} onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`}
-                style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}>
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-                {tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}
-              </button>
-            ))}
-          </nav>
-        </div>
+        <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">{settingsTabs.map((tab) => (<button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`} style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}><tab.icon className="h-4 w-4" />{tab.label}{tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}</button>))}</nav></div>
 
         <div className="flex-1 max-w-2xl">
-          {error && (
-            <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
-              <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
-            </div>
-          )}
-          {saved && (
-            <div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-              <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
-              <p className="text-sm" style={{ color: theme.primary }}>Settings saved!</p>
-            </div>
-          )}
+          {error && (<div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
+          {saved && (<div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Settings saved!</p></div>)}
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
 
-            {activeTab === 'profile' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label>
-                  <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label>
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                      {logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}
-                    </div>
-                    <div className="min-w-0">
-                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                      <button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                        <Upload className="h-4 w-4" />Upload
-                      </button>
-                      <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p>
-                    </div>
-                  </div>
+            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/signup</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div></div>)}
 
-                  {extractingColors && (
-                    <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}>
-                      <Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span>
-                    </div>
-                  )}
+            {activeTab === 'pricing' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p></div><div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Every client gets the core AI receptionist regardless of plan. The features below are extras you can include or exclude per plan.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1">Marketing Page Currency</label><p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Choose which currency symbol to display on your marketing site.</p><select value={displayCurrency} onChange={(e) => setDisplayCurrency(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors appearance-none cursor-pointer" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}><option value="">Same as account currency</option><option value="USD">$ — US Dollar</option><option value="GBP">£ — British Pound</option><option value="EUR">€ — Euro</option><option value="CAD">C$ — Canadian Dollar</option><option value="AUD">A$ — Australian Dollar</option></select></div><div className="space-y-4">{[{ key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false }, { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true }, { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false }].map((plan) => (<div key={plan.key} className="rounded-xl p-3 sm:p-4" style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><h4 className="font-medium text-sm sm:text-base">{plan.label} Plan</h4>{plan.highlight && <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>}</div><span className="text-xs" style={{ color: theme.textMuted }}>{getFeatureCount(plan.key)} features</span></div><div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4"><div><label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label><input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><div><label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>{plan.unlimited ? (<div className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary, height: '38px' }}>Unlimited</div>) : (<input type="number" value={plan.limit} onChange={(e) => plan.setLimit(e.target.value)} min="1" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />)}<button type="button" onClick={() => plan.setUnlimited(!plan.unlimited)} className="mt-1.5 text-[10px] sm:text-xs transition-colors" style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}>{plan.unlimited ? '✓ Unlimited — click to set a cap' : 'Set to unlimited'}</button></div></div><div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p><div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>{FEATURE_ORDER.map((featureKey) => (<div key={featureKey}>{featureKey === 'caller_recognition' && (<div className="pt-2 pb-1 mt-1" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}><p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>AI Tools</p></div>)}<FeatureToggle featureKey={featureKey} enabled={planFeatures[plan.key]?.[featureKey] ?? false} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} /></div>))}</div></div></div>))}</div><div className="flex items-center justify-between pt-2"><button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button></div><div className="rounded-xl p-4 mt-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><div className="flex items-start gap-3"><Users className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Team Members</p><p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Your plan includes <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_agency ?? 0} agency</strong> and <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_client ?? 0} per client</strong>.{((agency as any)?.max_team_members_agency ?? 0) === 0 && ' Upgrade to Pro or Scale to unlock team access.'}</p></div></div></div></div>)}
 
-                  {extractedColors && !extractingColors && (
-                    <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
-                        <span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        {([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (
-                          <div key={key} className="flex items-center gap-2">
-                            <div className="relative">
-                              <div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} />
-                              <input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p>
-                              <p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {detectedWebsiteTheme && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} />
-                          <p className="text-xs" style={{ color: theme.textMuted }}>
-                            Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span> (from logo background)
-                          </p>
-                        </div>
-                      )}
-                      <p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label>
-                  <div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div>
-                  <p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/signup</p>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label>
-                  <p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p>
-                  <div className="flex gap-2">
-                    {([
-                      { value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' },
-                      { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" },
-                    ]).map((option) => (
-                      <button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}>
-                        <p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p>
-                        <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeTab === 'payments' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments.</p></div><div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-start justify-between gap-3 sm:gap-4"><div className="flex items-center gap-3 sm:gap-4"><div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" /></div><div className="min-w-0"><p className="font-medium text-sm sm:text-base">Stripe Connect</p><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{loadingStripeStatus ? 'Loading...' : stripeDisplay.label}</p></div></div>{stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />}{stripeDisplay.status === 'restricted' && <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />}</div>{(stripeStatus?.connected || agency?.stripe_account_id) && (<div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}><div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm"><div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}><span style={{ color: theme.textMuted }}>Charges</span>{stripeStatus?.charges_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}</div><div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}><span style={{ color: theme.textMuted }}>Payouts</span>{stripeStatus?.payouts_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}</div></div><p className="text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>ID: {agency?.stripe_account_id}</p>{stripeDisplay.status === 'restricted' && (<div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><p className="text-xs sm:text-sm" style={{ color: theme.warningText }}>Complete setup to receive payments.</p></div>)}<div className="flex flex-wrap items-center gap-2 pt-2">{stripeDisplay.status === 'restricted' && (<button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Complete</button>)}<a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}><ExternalLink className="h-4 w-4" />Dashboard</a><button onClick={fetchStripeStatus} disabled={loadingStripeStatus} className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }} title="Refresh"><RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} /></button></div></div>)}{stripeDisplay.status === 'not_connected' && (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Connect Stripe</button><p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You&apos;ll be redirected to Stripe.</p></div>)}</div>{(stripeStatus?.connected || agency?.stripe_account_id) && (<div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Disconnect Stripe</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won&apos;t receive payments until reconnected.</p></div><button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button></div></div>)}</div>)}
 
-            {activeTab === 'pricing' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
-                </div>
-                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                  <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Every client gets the core AI receptionist (24/7 call answering, dedicated phone number, call history, recordings, and transcripts) regardless of plan. The features below are extras you can include or exclude per plan.</p>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1">Marketing Page Currency</label>
-                  <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Choose which currency symbol to display on your marketing site. Defaults to your account currency.</p>
-                  <select value={displayCurrency} onChange={(e) => setDisplayCurrency(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors appearance-none cursor-pointer" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${theme.isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}>
-                    <option value="">Same as account currency</option>
-                    <option value="USD">$ — US Dollar (USD)</option>
-                    <option value="GBP">£ — British Pound (GBP)</option>
-                    <option value="EUR">€ — Euro (EUR)</option>
-                    <option value="CAD">C$ — Canadian Dollar (CAD)</option>
-                    <option value="AUD">A$ — Australian Dollar (AUD)</option>
-                    <option value="NZD">NZ$ — New Zealand Dollar (NZD)</option>
-                    <option value="JPY">¥ — Japanese Yen (JPY)</option>
-                    <option value="CHF">CHF — Swiss Franc (CHF)</option>
-                    <option value="SGD">S$ — Singapore Dollar (SGD)</option>
-                    <option value="HKD">HK$ — Hong Kong Dollar (HKD)</option>
-                    <option value="INR">₹ — Indian Rupee (INR)</option>
-                    <option value="BRL">R$ — Brazilian Real (BRL)</option>
-                    <option value="MXN">MX$ — Mexican Peso (MXN)</option>
-                    <option value="AED">AED — UAE Dirham (AED)</option>
-                    <option value="SEK">kr — Swedish Krona (SEK)</option>
-                    <option value="NOK">kr — Norwegian Krone (NOK)</option>
-                    <option value="DKK">kr — Danish Krone (DKK)</option>
-                    <option value="PLN">zł — Polish Zloty (PLN)</option>
-                    <option value="THB">฿ — Thai Baht (THB)</option>
-                    <option value="MYR">RM — Malaysian Ringgit (MYR)</option>
-                  </select>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    { key: 'starter', label: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false },
-                    { key: 'pro', label: 'Pro', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true },
-                    { key: 'growth', label: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false },
-                  ].map((plan) => (
-                    <div key={plan.key} className="rounded-xl p-3 sm:p-4" style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-sm sm:text-base">{plan.label} Plan</h4>
-                          {plan.highlight && <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>}
-                        </div>
-                        <span className="text-xs" style={{ color: theme.textMuted }}>{getFeatureCount(plan.key)} features included</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
-                          <input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
-                          {plan.unlimited ? (
-                            <div className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary, height: '38px' }}>Unlimited</div>
-                          ) : (
-                            <input type="number" value={plan.limit} onChange={(e) => plan.setLimit(e.target.value)} min="1" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                          )}
-                          <button type="button" onClick={() => plan.setUnlimited(!plan.unlimited)} className="mt-1.5 text-[10px] sm:text-xs transition-colors" style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}>
-                            {plan.unlimited ? '✓ Unlimited — click to set a cap' : 'Set to unlimited'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
-                        <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
-                        <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
-                          {FEATURE_ORDER.map((featureKey) => (
-                            <div key={featureKey}>
-                              {featureKey === 'caller_recognition' && (
-                                <div className="pt-2 pb-1 mt-1" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                                  <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>AI Tools</p>
-                                </div>
-                              )}
-                              <FeatureToggle featureKey={featureKey} enabled={planFeatures[plan.key]?.[featureKey] ?? false} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
-                </div>
+            {activeTab === 'billing' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div><div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-start justify-between gap-4 mb-4"><div><p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{PLAN_NAMES[agency?.plan_type as keyof typeof PLAN_NAMES] || 'Free'}</p></div><span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span></div>{isOnTrial && trialDaysLeft !== null && (<div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><div className="flex items-center gap-2"><Receipt className="h-4 w-4" style={{ color: theme.infoText }} /><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p></div><p className="text-xs mt-1" style={{ color: theme.textMuted }}>{agency?.stripe_subscription_id ? `Your card will be charged on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.` : `Subscribe before ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'} to keep access.`}</p></div>)}<div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Platform Fee</p><p className="font-medium">{planPrice === 0 ? 'Free' : `$${planPrice}/mo`}</p></div><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p></div></div>{usageLoading ? (<div className="mt-4 pt-4 flex items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /><span className="text-sm" style={{ color: theme.textMuted }}>Loading usage...</span></div>) : usageData ? (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-3" style={{ color: theme.textMuted }}>Current Period Usage</p><div className="space-y-2"><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Billable clients</span><span className="font-medium">{usageData.billableClients ?? 0} × ${usageData.perClientRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Voice minutes</span><span className="font-medium">{usageData.totalMinutes ?? 0} × ${usageData.perMinuteRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm pt-2" style={{ borderTop: `1px solid ${theme.border}` }}><span className="font-medium">Estimated total</span><span className="font-semibold" style={{ color: theme.primary }}>${((usageData.estimatedTotal ?? 0) / 100).toFixed(2)}/mo</span></div></div></div>) : null}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription</button><p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p></div></div>{(agency?.plan_type === 'free' || agency?.plan_type === 'starter') && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade your plan</p></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onClick={() => handleUpgrade('pro')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Pro — $179/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>White-label, marketing site, demo phone, $9.99/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'pro' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro →'}</div></button><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Scale — $499/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>Everything in Pro, AI Lab, unlimited team, $0/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale →'}</div></button></div></div>)}{agency?.plan_type === 'pro' && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-2"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade to Scale</p></div><p className="text-xs mb-3" style={{ color: theme.textMuted }}>$499/mo — $0/client, $0.05/min, AI Lab, unlimited team</p><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale'}</button></div>)}{isOnTrial && (<div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You&apos;ll lose access immediately and won&apos;t be charged.</p></div><button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel Trial</button></div></div>)}</div>)}
 
-                {/* Team member allocation display */}
-                <div className="rounded-xl p-4 mt-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                  <div className="flex items-start gap-3">
-                    <Users className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <div>
-                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Team Members</p>
-                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
-                        Your plan includes <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_agency ?? 0} agency team members</strong> and <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_client ?? 0} team members per client</strong>. 
-                        {((agency as any)?.max_team_members_agency ?? 0) === 0 && ' Upgrade to Pro or Scale to unlock team access.'}
-                      </p>
-                      <div className="flex items-center gap-4 mt-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ((agency as any)?.max_team_members_agency ?? 0) > 0 ? theme.primary : theme.textMuted }} />
-                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>
-                            Agency: {(agency as any)?.max_team_members_agency ?? 0}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ((agency as any)?.max_team_members_client ?? 0) > 0 ? theme.primary : theme.textMuted }} />
-                          <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>
-                            Per client: {(agency as any)?.max_team_members_client ?? 0}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeTab === 'twilio' && (<div className="space-y-4 sm:space-y-6"><div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p><p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Phone numbers for the US and Canada are provisioned automatically. Connect your own Twilio account for international numbers.</p></div></div><BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} /></div>)}
 
-            {activeTab === 'payments' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments.</p>
-                </div>
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3 sm:gap-4">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" /></div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
-                        <p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{loadingStripeStatus ? 'Loading...' : stripeDisplay.label}</p>
-                      </div>
-                    </div>
-                    {stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />}
-                    {stripeDisplay.status === 'restricted' && <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />}
-                  </div>
-                  {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                    <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}>
-                          <span style={{ color: theme.textMuted }}>Charges</span>
-                          {stripeStatus?.charges_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
-                        </div>
-                        <div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}>
-                          <span style={{ color: theme.textMuted }}>Payouts</span>
-                          {stripeStatus?.payouts_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}
-                        </div>
-                      </div>
-                      <p className="text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>ID: {agency?.stripe_account_id}</p>
-                      {stripeDisplay.status === 'restricted' && (
-                        <div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                          <p className="text-xs sm:text-sm" style={{ color: theme.warningText }}>Complete setup to receive payments.</p>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap items-center gap-2 pt-2">
-                        {stripeDisplay.status === 'restricted' && (
-                          <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
-                            {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Complete
-                          </button>
-                        )}
-                        <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
-                          <ExternalLink className="h-4 w-4" />Dashboard
-                        </a>
-                        <button onClick={fetchStripeStatus} disabled={loadingStripeStatus} className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }} title="Refresh">
-                          <RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {stripeDisplay.status === 'not_connected' && (
-                    <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-                      <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">
-                        {connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Connect Stripe
-                      </button>
-                      <p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You&apos;ll be redirected to Stripe.</p>
-                    </div>
-                  )}
-                </div>
-                {(stripeStatus?.connected || agency?.stripe_account_id) && (
-                  <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-sm" style={{ color: theme.errorText }}>Disconnect Stripe</p>
-                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won&apos;t receive payments until reconnected.</p>
-                      </div>
-                      <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
-                        {disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {activeTab === 'team' && agency?.id && (<AgencyTeamTab agencyId={agency.id} theme={theme} />)}
 
-            {activeTab === 'billing' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p>
-                </div>
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
-                      <p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p>
-                      <p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{PLAN_NAMES[agency?.plan_type as keyof typeof PLAN_NAMES] || 'Free'}</p>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
-                  </div>
-                  {isOnTrial && trialDaysLeft !== null && (
-                    <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                      <div className="flex items-center gap-2">
-                        <Receipt className="h-4 w-4" style={{ color: theme.infoText }} />
-                        <p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p>
-                      </div>
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                        {agency?.stripe_subscription_id
-                          ? `Your card will be charged automatically on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.`
-                          : `Subscribe before ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'} to keep access.`
-                        }
-                      </p>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Price</p>
-                      <p className="font-medium">${planPrice}/mo</p>
-                    </div>
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Status</p>
-                      <p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-                    <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                      {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription
-                    </button>
-                    <p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p>
-                  </div>
-                </div>
-                {isOnTrial && (
-                  <div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p>
-                        <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You&apos;ll lose access immediately and won&apos;t be charged.</p>
-                      </div>
-                      <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>
-                        <XCircle className="h-4 w-4" />Cancel Trial
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {activeTab === 'demo' && (<div className="space-y-4 sm:space-y-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}><Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p></div></div><button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div><div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} /><span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>{demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}</span></div><div><h4 className="font-medium text-sm mb-3">What demo mode shows</h4><div className="space-y-2.5">{demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-3"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} /><div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div></div>))}</div></div><div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p><p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing.</p></div></div></div>)}
 
-            {activeTab === 'twilio' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                  <Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p>
-                    <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
-                      Phone numbers for the US and Canada are provisioned automatically. If you or your clients need numbers outside the US/Canada (UK, Australia, Europe, etc.), you&apos;ll need to connect your own Twilio account below. Twilio supports phone numbers in 100+ countries.
-                    </p>
-                  </div>
-                </div>
-                <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
-              </div>
-            )}
+            {activeTab === 'feedback' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests — we read every message.</p></div>{feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p></div>)}{feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}<div><textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><div className="flex items-center justify-between mt-2"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span><button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}</button></div></div>{loadingFeedback ? (<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>) : feedbackHistory.length > 0 ? (<div><h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p><p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>))}</div></div>) : null}</div>)}
 
-            {activeTab === 'team' && agency?.id && (
-              <AgencyTeamTab agencyId={agency.id} theme={theme} />
-            )}
-
-            {activeTab === 'demo' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}>
-                      <Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-medium">Demo Mode</h3>
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p>
-                    </div>
-                  </div>
-                  <button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                    <span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                  </button>
-                </div>
-                <div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}>
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} />
-                  <span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>
-                    {demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-3">What demo mode shows</h4>
-                  <div className="space-y-2.5">
-                    {demoFeatures.map((f) => (
-                      <div key={f.label} className="flex items-start gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} />
-                        <div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p>
-                    <p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing. Toggle it off anytime from the sidebar or this page.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'feedback' && (
-              <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests — we read every message.</p>
-                </div>
-                {feedbackSent && (
-                  <div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                    <Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
-                    <p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p>
-                  </div>
-                )}
-                {feedbackError && (
-                  <div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} />
-                    <p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p>
-                  </div>
-                )}
-                <div>
-                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span>
-                    <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                      {sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}
-                    </button>
-                  </div>
-                </div>
-                {loadingFeedback ? (
-                  <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
-                ) : feedbackHistory.length > 0 ? (
-                  <div>
-                    <h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4>
-                    <div className="space-y-2">
-                      {feedbackHistory.map((item) => (
-                        <div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                          <p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p>
-                          <p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {(activeTab === 'profile' || activeTab === 'pricing') && (
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
-                <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                  {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}
-                </button>
-              </div>
-            )}
+            {(activeTab === 'profile' || activeTab === 'pricing') && (<div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}</button></div>)}
           </div>
         </div>
       </div>
@@ -1090,14 +138,6 @@ function AgencySettingsContent() {
   );
 }
 
-function SettingsLoading() {
-  return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>);
-}
+function SettingsLoading() { return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>); }
 
-export default function AgencySettingsPage() {
-  return (
-    <Suspense fallback={<SettingsLoading />}>
-      <AgencySettingsContent />
-    </Suspense>
-  );
-}
+export default function AgencySettingsPage() { return (<Suspense fallback={<SettingsLoading />}><AgencySettingsContent /></Suspense>); }
