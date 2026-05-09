@@ -6,7 +6,7 @@ import {
   Phone, Users, DollarSign, PhoneCall, 
   Settings, LogOut, Copy, ExternalLink,
   TrendingUp, Clock, ChevronRight, Zap, Check,
-  Sun, Moon
+  Sun, Moon, FlaskConical
 } from 'lucide-react';
 
 interface Branding {
@@ -395,49 +395,63 @@ export function DashboardClient({
               </div>
             ) : (
               <div style={{ borderColor: theme.border }}>
-                {recentClients.map((client, index) => (
-                  <Link
-                    key={client.id}
-                    href={`/agency/clients/${client.id}`}
-                    className="flex items-center justify-between p-4 transition-colors"
-                    style={{ 
-                      borderTop: index > 0 ? `1px solid ${theme.border}` : 'none',
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium"
-                        style={{ 
-                          backgroundColor: primaryBg,
-                          color: branding.primaryColor,
-                        }}
-                      >
-                        {client.business_name?.charAt(0) || '?'}
+                {recentClients.map((client, index) => {
+                  const isTest = client.is_test_client;
+                  return (
+                    <Link
+                      key={client.id}
+                      href={`/agency/clients/${client.id}`}
+                      className="flex items-center justify-between p-4 transition-colors"
+                      style={{ 
+                        borderTop: index > 0 ? `1px solid ${theme.border}` : 'none',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium"
+                          style={{ 
+                            backgroundColor: isTest ? (darkMode ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)') : primaryBg,
+                            color: isTest ? '#8b5cf6' : branding.primaryColor,
+                          }}
+                        >
+                          {isTest ? (
+                            <FlaskConical className="h-4 w-4" />
+                          ) : (
+                            client.business_name?.charAt(0) || '?'
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium" style={{ color: theme.text }}>{client.business_name}</p>
+                            {isTest && (
+                              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: darkMode ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>
+                            )}
+                          </div>
+                          <p className="text-sm capitalize" style={{ color: theme.textMuted }}>
+                            {isTest ? 'Test client' : `${client.plan_type || 'starter'} plan`}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium" style={{ color: theme.text }}>{client.business_name}</p>
-                        <p className="text-sm capitalize" style={{ color: theme.textMuted }}>{client.plan_type || 'starter'} plan</p>
+                      <div className="flex items-center gap-3">
+                        <span 
+                          className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
+                          style={
+                            client.subscription_status === 'active' 
+                              ? { backgroundColor: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }
+                              : client.subscription_status === 'trial'
+                              ? { backgroundColor: accentBg, color: branding.accentColor }
+                              : client.subscription_status === 'past_due'
+                              ? { backgroundColor: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24' }
+                              : { backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', color: theme.textMuted6 }
+                          }
+                        >
+                          {client.subscription_status || client.status}
+                        </span>
+                        <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted2 }} />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span 
-                        className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
-                        style={
-                          client.subscription_status === 'active' 
-                            ? { backgroundColor: 'rgba(52, 211, 153, 0.1)', color: '#34d399' }
-                            : client.subscription_status === 'trial'
-                            ? { backgroundColor: accentBg, color: branding.accentColor }
-                            : client.subscription_status === 'past_due'
-                            ? { backgroundColor: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24' }
-                            : { backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', color: theme.textMuted6 }
-                        }
-                      >
-                        {client.subscription_status || client.status}
-                      </span>
-                      <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted2 }} />
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight
+  Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -21,6 +21,7 @@ interface Client {
   calls_this_month: number;
   created_at: string;
   vapi_phone_number: string;
+  is_test_client?: boolean;
 }
 
 export default function AgencyClientsPage() {
@@ -68,34 +69,29 @@ export default function AgencyClientsPage() {
   const getPlanPrice = (planType: string) => {
     if (!agency) return 0;
     switch (planType) {
-      case 'starter':
-        return agency.price_starter || 4900;
-      case 'pro':
-        return agency.price_pro || 9900;
-      case 'growth':
-        return agency.price_growth || 14900;
-      default:
-        return 0;
+      case 'starter': return agency.price_starter || 4900;
+      case 'pro': return agency.price_pro || 9900;
+      case 'growth': return agency.price_growth || 14900;
+      default: return 0;
     }
   };
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'active':
-        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
-      case 'trial':
-        return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
-      case 'past_due':
-        return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
+      case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
+      case 'trial': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
+      case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
       case 'suspended':
-      case 'cancelled':
-        return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
-      default:
-        return { bg: theme.hover, text: theme.textMuted, border: theme.border };
+      case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
+      default: return { bg: theme.hover, text: theme.textMuted, border: theme.border };
     }
   };
 
-  // Filter clients
+  // Counts
+  const billableClients = clients.filter(c => !c.is_test_client);
+  const testClients = clients.filter(c => c.is_test_client);
+
+  // Filter clients — test client always shows but at the bottom
   const filteredClients = clients.filter(client => {
     const matchesSearch = !searchQuery || 
       client.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -104,6 +100,11 @@ export default function AgencyClientsPage() {
       client.subscription_status === statusFilter || 
       client.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Test clients sort to bottom
+    if (a.is_test_client && !b.is_test_client) return 1;
+    if (!a.is_test_client && b.is_test_client) return -1;
+    return 0;
   });
 
   if (contextLoading || loading) {
@@ -121,7 +122,12 @@ export default function AgencyClientsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>{clients.length} total clients</p>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+              {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
+              {testClients.length > 0 && (
+                <span> · {testClients.length} test</span>
+              )}
+            </p>
           </div>
           
           <Link
@@ -201,6 +207,7 @@ export default function AgencyClientsPage() {
             <div>
               {filteredClients.map((client, idx) => {
                 const statusStyle = getStatusStyle(client.subscription_status || client.status);
+                const isTest = client.is_test_client;
                 return (
                   <Link
                     key={client.id}
@@ -218,14 +225,23 @@ export default function AgencyClientsPage() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div 
                             className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0"
-                            style={{ backgroundColor: theme.primary15 }}
+                            style={{ backgroundColor: isTest ? (theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)') : theme.primary15 }}
                           >
-                            <span className="text-sm font-medium" style={{ color: theme.primary }}>
-                              {client.business_name?.charAt(0) || '?'}
-                            </span>
+                            {isTest ? (
+                              <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} />
+                            ) : (
+                              <span className="text-sm font-medium" style={{ color: theme.primary }}>
+                                {client.business_name?.charAt(0) || '?'}
+                              </span>
+                            )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{client.business_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium truncate">{client.business_name}</p>
+                              {isTest && (
+                                <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>
+                              )}
+                            </div>
                             <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
                           </div>
                         </div>
@@ -239,8 +255,8 @@ export default function AgencyClientsPage() {
                           {client.subscription_status || client.status}
                         </span>
                         <div className="flex items-center gap-3" style={{ color: theme.textMuted }}>
-                          <span className="capitalize">{client.plan_type || 'starter'}</span>
-                          <span>•</span>
+                          {!isTest && <span className="capitalize">{client.plan_type || 'starter'}</span>}
+                          {!isTest && <span>·</span>}
                           <span>{client.calls_this_month || 0} calls</span>
                         </div>
                       </div>
@@ -251,23 +267,38 @@ export default function AgencyClientsPage() {
                       <div className="col-span-4 flex items-center gap-3">
                         <div 
                           className="flex h-10 w-10 items-center justify-center rounded-lg"
-                          style={{ backgroundColor: theme.primary15 }}
+                          style={{ backgroundColor: isTest ? (theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)') : theme.primary15 }}
                         >
-                          <span className="text-sm font-medium" style={{ color: theme.primary }}>
-                            {client.business_name?.charAt(0) || '?'}
-                          </span>
+                          {isTest ? (
+                            <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} />
+                          ) : (
+                            <span className="text-sm font-medium" style={{ color: theme.primary }}>
+                              {client.business_name?.charAt(0) || '?'}
+                            </span>
+                          )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium truncate">{client.business_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{client.business_name}</p>
+                            {isTest && (
+                              <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>
+                            )}
+                          </div>
                           <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
                         </div>
                       </div>
                       
                       <div className="col-span-2">
-                        <p className="text-sm capitalize">{client.plan_type || 'starter'}</p>
-                        <p className="text-xs" style={{ color: theme.textMuted }}>
-                          ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo
-                        </p>
+                        {isTest ? (
+                          <p className="text-sm" style={{ color: '#8b5cf6' }}>Test client</p>
+                        ) : (
+                          <>
+                            <p className="text-sm capitalize">{client.plan_type || 'starter'}</p>
+                            <p className="text-xs" style={{ color: theme.textMuted }}>
+                              ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo
+                            </p>
+                          </>
+                        )}
                       </div>
                       
                       <div className="col-span-2 flex items-center gap-2">
