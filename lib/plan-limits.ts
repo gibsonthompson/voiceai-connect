@@ -1,6 +1,7 @@
 // lib/plan-limits.ts
 // Centralized plan configuration for feature gating
 // REWRITTEN: 2026-05-06 — Pricing Restructure (free/pro/scale + usage-based billing)
+// UPDATED: 2026-05-09 — Demo phone enabled for free tier
 // IMPORTANT: Includes legacy aliases (starter/professional/enterprise) so existing
 //            UI code compiles during transition. Remove after Phase 2 UI migration.
 
@@ -14,7 +15,7 @@ const FREE_FEATURES = {
   customDomain: false,
   customBranding: false,
   marketingSite: false,
-  demoPhoneNumber: false,
+  demoPhoneNumber: true,
   leadFinderBasic: false,
   leadFinderAdvanced: false,
   aiLab: false,
