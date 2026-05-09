@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     template: "%s | VoiceAI Connect",
   },
   description:
-    "Launch your own AI voice receptionist agency. White-label platform purpose-built for agencies and resellers — your brand, your pricing, 100% of the revenue. 14-day free trial, no credit card required.",
+    "Launch your own AI voice receptionist agency. White-label platform purpose-built for agencies and resellers — your brand, your pricing, 100% of the revenue. Start free, no credit card required.",
   keywords: [
     "white-label AI receptionist",
     "AI receptionist platform",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     siteName: "VoiceAI Connect",
     title: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
     description:
-      "Launch your own AI voice receptionist agency. White-label platform with branded dashboards, automated phone provisioning, and Stripe Connect billing. 14-day free trial.",
+      "Launch your own AI voice receptionist agency. White-label platform with branded dashboards, automated phone provisioning, and Stripe Connect billing. Start free, no credit card required.",
   },
   twitter: {
     card: "summary_large_image",
