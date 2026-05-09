@@ -40,7 +40,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const theme = useTheme();
 
-  useEffect(() => { document.title = 'Dashboard | VoiceAI Connect'; }, []);
+  useEffect(() => { const name = agency?.name || branding?.name; document.title = name ? `Dashboard | ${name}` : 'Dashboard'; }, []);
 
   const primaryColor = branding.primaryColor || '#10b981';
   const secondaryColor = branding.secondaryColor || '#059669';
