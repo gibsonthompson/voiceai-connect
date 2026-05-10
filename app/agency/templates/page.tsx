@@ -14,6 +14,8 @@ import {
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -194,6 +196,8 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
 export default function AILabPage() {
   const { agency, loading: ctxLoading, effectivePlan } = useAgency();
   const theme = useTheme();
+  const { canUseAiLab } = usePlanFeatures();
+  const { canUseAiLab } = usePlanFeatures();
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 
@@ -475,6 +479,17 @@ export default function AILabPage() {
   const selectedModelObj = MODEL_OPTIONS.find(m => m.id === editModel);
 
   if (ctxLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
+
+  if (!canUseAiLab) {
+    return (
+      <LockedFeature title="AI Lab" description="Configure, test, and ship AI receptionists with industry templates, voice selection, and live browser calls." requiredPlan="Scale"
+        features={['Industry-specific AI templates', 'Voice selection & live test calls', 'Knowledge base editor', 'System prompt customization']}>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center gap-3 mb-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div>
+        </div>
+      </LockedFeature>
+    );
+  }
 
   return (
     <>
