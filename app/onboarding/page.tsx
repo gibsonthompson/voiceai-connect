@@ -63,7 +63,7 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get('session_id');
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -263,13 +263,9 @@ function OnboardingContent() {
                     <span className="text-5xl font-bold tracking-tight">$0</span>
                     <span className="text-base text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-sm text-[#fafaf9]/40">
-                    ${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min
-                  </p>
+                  <p className="text-sm text-[#fafaf9]/40">${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min</p>
                 </div>
-
                 <div className="h-px bg-white/[0.06] mb-6" />
-
                 <ul className="space-y-4 mb-8 flex-1">
                   {['AI receptionist for every client', 'Demo phone line included', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Industry templates included'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
@@ -282,7 +278,6 @@ function OnboardingContent() {
                     <span className="text-sm text-[#fafaf9]/30 leading-snug">VoiceAI Connect branding</span>
                   </li>
                 </ul>
-
                 <button onClick={() => handleSelectPlan('free')}
                   className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Get Started Free
@@ -298,11 +293,8 @@ function OnboardingContent() {
                 }}>
                 <div className="h-1 bg-emerald-500 w-full" />
                 <div className="flex justify-center pt-5">
-                  <span className="px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">
-                    Popular
-                  </span>
+                  <span className="px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">Popular</span>
                 </div>
-
                 <div className="p-7 pt-4 flex flex-col flex-1">
                   <div className="mb-6">
                     <div className="flex items-center gap-2.5 mb-4">
@@ -315,28 +307,17 @@ function OnboardingContent() {
                       <span className="text-5xl font-bold tracking-tight">$179</span>
                       <span className="text-base text-[#fafaf9]/30">/mo</span>
                     </div>
-                    <p className="text-sm text-emerald-400/70">
-                      ${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min
-                    </p>
+                    <p className="text-sm text-emerald-400/70">${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min</p>
                   </div>
-
                   <div className="h-px bg-emerald-500/20 mb-6" />
-
                   <ul className="space-y-4 mb-8 flex-1">
-                    {[
-                      'Your brand on everything',
-                      'Custom domain + marketing site',
-                      'Lead finder to grow pipeline',
-                      'Team members',
-                      'Industry templates included',
-                    ].map((f) => (
+                    {['Everything in Free', 'Your brand on everything', 'Custom domain + marketing site', 'Lead finder to grow pipeline', 'Team members'].map((f) => (
                       <li key={f} className="flex items-start gap-3">
                         <Check className="h-4 w-4 mt-0.5 text-emerald-400 shrink-0" />
                         <span className="text-sm text-[#fafaf9]/80 leading-snug">{f}</span>
                       </li>
                     ))}
                   </ul>
-
                   <button onClick={() => handleSelectPlan('pro')}
                     className="group w-full rounded-full py-4 text-sm font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                     style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}>
@@ -359,13 +340,9 @@ function OnboardingContent() {
                     <span className="text-5xl font-bold tracking-tight">$499</span>
                     <span className="text-base text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-sm text-[#fafaf9]/40">
-                    $0/client + ${PLAN_RATES.scale.perMinute}/min
-                  </p>
+                  <p className="text-sm text-[#fafaf9]/40">$0/client + ${PLAN_RATES.scale.perMinute}/min</p>
                 </div>
-
                 <div className="h-px bg-white/[0.06] mb-6" />
-
                 <ul className="space-y-4 mb-8 flex-1">
                   {['Everything in Pro', 'Advanced lead finder + API', 'Unlimited team members', 'Industry templates included', 'Priority support'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
@@ -374,7 +351,6 @@ function OnboardingContent() {
                     </li>
                   ))}
                 </ul>
-
                 <button onClick={() => handleSelectPlan('scale')}
                   className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Start 14-Day Free Trial
@@ -478,7 +454,7 @@ export default function OnboardingPage() {
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon512x512.png" alt="VoiceAI Connect" width={40} height={40} className="rounded-xl sm:w-[44px] sm:h-[44px]" />
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" width={40} height={40} className="rounded-xl sm:w-[44px] sm:h-[44px]" />
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
           </div>
