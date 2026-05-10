@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   Phone, CheckCircle2, Loader2, ArrowRight, Lock,
   Building, ChevronDown, Zap, Shield, Crown, Check, ArrowLeft
@@ -28,65 +27,6 @@ const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
   { id: 2, name: 'Plan', icon: Zap, description: 'Choose your plan' },
   { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
-];
-
-const AGENCY_PLANS = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: PLAN_PRICES.free,
-    icon: Zap,
-    subtitle: `$${PLAN_RATES.free.perClient}/client + $${PLAN_RATES.free.perMinute}/min`,
-    badge: null,
-    features: [
-      'AI receptionist for every client',
-      'Call summaries via SMS + email',
-      'Spam detection & caller ID',
-      'Client dashboard included',
-    ],
-    limitation: 'VoiceAI Connect branding',
-    cta: 'Get Started Free',
-    trial: false,
-    popular: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: PLAN_PRICES.pro,
-    icon: Shield,
-    subtitle: `$${PLAN_RATES.pro.perClient}/client + $${PLAN_RATES.pro.perMinute}/min`,
-    badge: 'Most Popular',
-    features: [
-      'Your brand on everything',
-      'Custom domain + marketing site',
-      'Demo phone line for prospects',
-      'Lead finder to grow your pipeline',
-      'Up to 5 team members',
-    ],
-    limitation: null,
-    cta: 'Start 14-Day Free Trial',
-    trial: true,
-    popular: true,
-  },
-  {
-    id: 'scale',
-    name: 'Scale',
-    price: PLAN_PRICES.scale,
-    icon: Crown,
-    subtitle: `$0/client + $${PLAN_RATES.scale.perMinute}/min`,
-    badge: null,
-    features: [
-      'Everything in Pro',
-      'AI Lab with industry templates',
-      'Advanced lead finder + API',
-      'Unlimited team members',
-      'Priority support',
-    ],
-    limitation: null,
-    cta: 'Start 14-Day Free Trial',
-    trial: true,
-    popular: false,
-  },
 ];
 
 // ============================================================================
@@ -242,7 +182,7 @@ function OnboardingContent() {
   const renderStepContent = () => {
     switch (currentStep) {
       // ================================================================
-      // STEP 1: Name Your Agency
+      // STEP 1
       // ================================================================
       case 1:
         return (
@@ -310,117 +250,171 @@ function OnboardingContent() {
         );
 
       // ================================================================
-      // STEP 2: Choose Your Plan — REDESIGNED
+      // STEP 2: PLAN SELECTION — FULLY REDESIGNED
       // ================================================================
       case 2:
         return (
-          <div className="space-y-10">
+          <div className="space-y-10" style={{ maxWidth: '960px', margin: '0 auto' }}>
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Choose Your Plan</h2>
-              <p className="mt-2 text-[#fafaf9]/50">Start free or unlock everything with a 14-day trial</p>
+              <p className="mt-3 text-base text-[#fafaf9]/50">No credit card required. Start free or try Pro for 14 days.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-4xl mx-auto items-start">
-              {AGENCY_PLANS.map((plan) => (
-                <div
-                  key={plan.id}
-                  className={`relative rounded-2xl border transition-all duration-300 ${
-                    plan.popular
-                      ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.08] to-emerald-500/[0.02] shadow-[0_0_80px_-20px_rgba(16,185,129,0.25)] md:-mt-3 md:mb-0'
-                      : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
-                  }`}
-                >
-                  {/* Badge */}
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                      <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500 text-[#050505] shadow-lg shadow-emerald-500/30">
-                        {plan.badge}
-                      </span>
+            {/* 3-column grid with wider max */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+              {/* ── FREE ─────────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="h-9 w-9 rounded-lg bg-white/[0.05] flex items-center justify-center">
+                      <Zap className="h-4.5 w-4.5 text-[#fafaf9]/60" />
                     </div>
-                  )}
-
-                  <div className={`p-6 sm:p-7 ${plan.popular ? 'pt-8' : ''}`}>
-                    {/* Plan icon + name */}
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                        plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.05]'
-                      }`}>
-                        <plan.icon className={`h-5 w-5 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]/70'}`} />
-                      </div>
-                      <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    </div>
-
-                    {/* Price */}
-                    <div className="mb-1">
-                      {plan.price === 0 ? (
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-bold">$0</span>
-                          <span className="text-[#fafaf9]/40 text-sm">/mo</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-bold">${plan.price}</span>
-                          <span className="text-[#fafaf9]/40 text-sm">/mo</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Usage pricing subtitle */}
-                    <p className="text-sm text-[#fafaf9]/40 mb-6">{plan.subtitle}</p>
-
-                    {/* Divider */}
-                    <div className={`h-px mb-6 ${plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.06]'}`} />
-
-                    {/* Features */}
-                    <ul className="space-y-3.5 mb-6">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-3 text-sm">
-                          <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${
-                            plan.popular ? 'bg-emerald-500/15' : 'bg-white/[0.06]'
-                          }`}>
-                            <Check className={`h-3 w-3 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]/50'}`} />
-                          </div>
-                          <span className="text-[#fafaf9]/70">{feature}</span>
-                        </li>
-                      ))}
-                      {plan.limitation && (
-                        <li className="flex items-start gap-3 text-sm">
-                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-white/[0.04]">
-                            <span className="text-[#fafaf9]/25 text-xs">—</span>
-                          </div>
-                          <span className="text-[#fafaf9]/35">{plan.limitation}</span>
-                        </li>
-                      )}
-                    </ul>
-
-                    {/* CTA */}
-                    <button
-                      onClick={() => handleSelectPlan(plan.id)}
-                      className={`group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                        plan.popular
-                          ? 'bg-emerald-500 text-[#050505] hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
-                          : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
-                      }`}
-                    >
-                      {plan.cta}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </button>
+                    <span className="text-base font-semibold text-[#fafaf9]/80">Free</span>
                   </div>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-5xl font-bold tracking-tight">$0</span>
+                    <span className="text-base text-[#fafaf9]/30">/mo</span>
+                  </div>
+                  <p className="text-sm text-[#fafaf9]/40">
+                    ${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min
+                  </p>
                 </div>
-              ))}
+
+                <div className="h-px bg-white/[0.06] mb-6" />
+
+                <ul className="space-y-4 mb-8 flex-1">
+                  {['AI receptionist for every client', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Client dashboard included'].map((f) => (
+                    <li key={f} className="flex items-start gap-3">
+                      <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
+                      <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
+                    </li>
+                  ))}
+                  <li className="flex items-start gap-3">
+                    <span className="h-4 w-4 mt-0.5 shrink-0 flex items-center justify-center text-[#fafaf9]/20 text-xs">—</span>
+                    <span className="text-sm text-[#fafaf9]/30 leading-snug">VoiceAI Connect branding</span>
+                  </li>
+                </ul>
+
+                <button
+                  onClick={() => handleSelectPlan('free')}
+                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  Get Started Free
+                </button>
+              </div>
+
+              {/* ── PRO (POPULAR) ────────────────────────────── */}
+              <div className="rounded-2xl relative overflow-hidden flex flex-col md:-mt-4 md:mb-0"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.03) 40%, rgba(5,5,5,0.95) 100%)',
+                  border: '1.5px solid rgba(16,185,129,0.35)',
+                  boxShadow: '0 0 60px -10px rgba(16,185,129,0.15), 0 20px 60px -20px rgba(0,0,0,0.5)',
+                }}>
+                {/* Top accent bar */}
+                <div className="h-1 bg-emerald-500 w-full" />
+                
+                {/* Badge */}
+                <div className="flex justify-center pt-5">
+                  <span className="px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">
+                    Popular
+                  </span>
+                </div>
+
+                <div className="p-7 pt-4 flex flex-col flex-1">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="h-9 w-9 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <Shield className="h-4.5 w-4.5 text-emerald-400" />
+                      </div>
+                      <span className="text-base font-semibold text-[#fafaf9]">Pro</span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className="text-5xl font-bold tracking-tight">$179</span>
+                      <span className="text-base text-[#fafaf9]/30">/mo</span>
+                    </div>
+                    <p className="text-sm text-emerald-400/70">
+                      ${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min
+                    </p>
+                  </div>
+
+                  <div className="h-px bg-emerald-500/20 mb-6" />
+
+                  <ul className="space-y-4 mb-8 flex-1">
+                    {[
+                      'Your brand on everything',
+                      'Custom domain + marketing site',
+                      'Demo phone line for prospects',
+                      'Lead finder to grow pipeline',
+                      'Up to 5 team members',
+                    ].map((f) => (
+                      <li key={f} className="flex items-start gap-3">
+                        <Check className="h-4 w-4 mt-0.5 text-emerald-400 shrink-0" />
+                        <span className="text-sm text-[#fafaf9]/80 leading-snug">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleSelectPlan('pro')}
+                    className="group w-full rounded-full py-4 text-sm font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                    style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}
+                  >
+                    Start 14-Day Free Trial
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+
+              {/* ── SCALE ────────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="h-9 w-9 rounded-lg bg-white/[0.05] flex items-center justify-center">
+                      <Crown className="h-4.5 w-4.5 text-[#fafaf9]/60" />
+                    </div>
+                    <span className="text-base font-semibold text-[#fafaf9]/80">Scale</span>
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-5xl font-bold tracking-tight">$499</span>
+                    <span className="text-base text-[#fafaf9]/30">/mo</span>
+                  </div>
+                  <p className="text-sm text-[#fafaf9]/40">
+                    $0/client + ${PLAN_RATES.scale.perMinute}/min
+                  </p>
+                </div>
+
+                <div className="h-px bg-white/[0.06] mb-6" />
+
+                <ul className="space-y-4 mb-8 flex-1">
+                  {['Everything in Pro', 'AI Lab with industry templates', 'Advanced lead finder + API', 'Unlimited team members', 'Priority support'].map((f) => (
+                    <li key={f} className="flex items-start gap-3">
+                      <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
+                      <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleSelectPlan('scale')}
+                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]"
+                >
+                  Start 14-Day Free Trial
+                </button>
+              </div>
             </div>
 
-            {/* Trust line */}
-            <div className="text-center">
-              <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/40">
-                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />No credit card required</span>
-                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Upgrade anytime</span>
-                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Cancel anytime</span>
+            {/* Trust */}
+            <div className="text-center pt-2">
+              <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-[#fafaf9]/40">
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />No credit card required</span>
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Upgrade anytime</span>
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Cancel anytime</span>
               </div>
             </div>
 
             <div className="flex justify-center">
-              <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
+              <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors">
                 <ArrowLeft className="h-4 w-4" />Back
               </button>
             </div>
@@ -428,7 +422,7 @@ function OnboardingContent() {
         );
 
       // ================================================================
-      // STEP 3: Set Password & Go
+      // STEP 3
       // ================================================================
       case 3:
         return (
@@ -452,7 +446,7 @@ function OnboardingContent() {
                     {selectedPlan === 'free' ? 'Free Plan' : selectedPlan === 'pro' ? 'Pro Plan — 14-day trial' : 'Scale Plan — 14-day trial'}
                   </p>
                   <p className="text-xs text-[#fafaf9]/50">
-                    {selectedPlan === 'free' ? 'No platform fee, pay per usage' : `$${PLAN_PRICES[selectedPlan as keyof typeof PLAN_PRICES]}/mo after trial`}
+                    {selectedPlan === 'free' ? 'No platform fee — pay per usage' : `$${PLAN_PRICES[selectedPlan as keyof typeof PLAN_PRICES]}/mo after trial`}
                   </p>
                 </div>
                 <button onClick={() => setCurrentStep(2)} className="ml-auto text-xs text-emerald-400 hover:text-emerald-300 transition-colors">Change</button>
@@ -468,7 +462,7 @@ function OnboardingContent() {
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more in your dashboard'}</p>
+                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more'}</p>
                 </div>
               </div>
               <button onClick={handleSetPassword} disabled={loading}
@@ -491,7 +485,7 @@ function OnboardingContent() {
       {error && (
         <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center text-sm text-red-400 max-w-md mx-auto">{error}</div>
       )}
-      <div className="max-w-2xl mx-auto">{renderStepContent()}</div>
+      <div className="mx-auto" style={{ maxWidth: '960px' }}>{renderStepContent()}</div>
     </>
   );
 }
@@ -512,7 +506,8 @@ export default function OnboardingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/icon512x512.png"
                 alt="VoiceAI Connect"
                 width={40}
@@ -526,7 +521,7 @@ export default function OnboardingPage() {
       </header>
 
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
-        <div className="relative mx-auto max-w-4xl">
+        <div className="relative mx-auto" style={{ maxWidth: '1060px' }}>
           <Suspense fallback={
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
