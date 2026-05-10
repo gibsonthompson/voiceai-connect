@@ -29,9 +29,6 @@ const steps = [
   { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
 ];
 
-// ============================================================================
-// PROGRESS
-// ============================================================================
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
     <div className="mb-10 sm:mb-12">
@@ -62,9 +59,6 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
   );
 }
 
-// ============================================================================
-// MAIN CONTENT
-// ============================================================================
 function OnboardingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -181,9 +175,6 @@ function OnboardingContent() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      // ================================================================
-      // STEP 1
-      // ================================================================
       case 1:
         return (
           <div className="space-y-8">
@@ -249,9 +240,6 @@ function OnboardingContent() {
           </div>
         );
 
-      // ================================================================
-      // STEP 2: PLAN SELECTION — FULLY REDESIGNED
-      // ================================================================
       case 2:
         return (
           <div className="space-y-10" style={{ maxWidth: '960px', margin: '0 auto' }}>
@@ -260,10 +248,9 @@ function OnboardingContent() {
               <p className="mt-3 text-base text-[#fafaf9]/50">No credit card required. Start free or try Pro for 14 days.</p>
             </div>
 
-            {/* 3-column grid with wider max */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              {/* ── FREE ─────────────────────────────────────── */}
+              {/* FREE */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
                 <div className="mb-6">
                   <div className="flex items-center gap-2.5 mb-4">
@@ -284,7 +271,7 @@ function OnboardingContent() {
                 <div className="h-px bg-white/[0.06] mb-6" />
 
                 <ul className="space-y-4 mb-8 flex-1">
-                  {['AI receptionist for every client', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Client dashboard included'].map((f) => (
+                  {['AI receptionist for every client', 'Demo phone line included', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Industry templates included'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
                       <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
                       <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
@@ -296,25 +283,20 @@ function OnboardingContent() {
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => handleSelectPlan('free')}
-                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]"
-                >
+                <button onClick={() => handleSelectPlan('free')}
+                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Get Started Free
                 </button>
               </div>
 
-              {/* ── PRO (POPULAR) ────────────────────────────── */}
+              {/* PRO */}
               <div className="rounded-2xl relative overflow-hidden flex flex-col md:-mt-4 md:mb-0"
                 style={{
                   background: 'linear-gradient(180deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.03) 40%, rgba(5,5,5,0.95) 100%)',
                   border: '1.5px solid rgba(16,185,129,0.35)',
                   boxShadow: '0 0 60px -10px rgba(16,185,129,0.15), 0 20px 60px -20px rgba(0,0,0,0.5)',
                 }}>
-                {/* Top accent bar */}
                 <div className="h-1 bg-emerald-500 w-full" />
-                
-                {/* Badge */}
                 <div className="flex justify-center pt-5">
                   <span className="px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">
                     Popular
@@ -344,9 +326,9 @@ function OnboardingContent() {
                     {[
                       'Your brand on everything',
                       'Custom domain + marketing site',
-                      'Demo phone line for prospects',
                       'Lead finder to grow pipeline',
-                      'Up to 5 team members',
+                      'Team members',
+                      'Industry templates included',
                     ].map((f) => (
                       <li key={f} className="flex items-start gap-3">
                         <Check className="h-4 w-4 mt-0.5 text-emerald-400 shrink-0" />
@@ -355,18 +337,16 @@ function OnboardingContent() {
                     ))}
                   </ul>
 
-                  <button
-                    onClick={() => handleSelectPlan('pro')}
+                  <button onClick={() => handleSelectPlan('pro')}
                     className="group w-full rounded-full py-4 text-sm font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                    style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}
-                  >
+                    style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}>
                     Start 14-Day Free Trial
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
               </div>
 
-              {/* ── SCALE ────────────────────────────────────── */}
+              {/* SCALE */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
                 <div className="mb-6">
                   <div className="flex items-center gap-2.5 mb-4">
@@ -387,7 +367,7 @@ function OnboardingContent() {
                 <div className="h-px bg-white/[0.06] mb-6" />
 
                 <ul className="space-y-4 mb-8 flex-1">
-                  {['Everything in Pro', 'AI Lab with industry templates', 'Advanced lead finder + API', 'Unlimited team members', 'Priority support'].map((f) => (
+                  {['Everything in Pro', 'Advanced lead finder + API', 'Unlimited team members', 'Industry templates included', 'Priority support'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
                       <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
                       <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
@@ -395,16 +375,13 @@ function OnboardingContent() {
                   ))}
                 </ul>
 
-                <button
-                  onClick={() => handleSelectPlan('scale')}
-                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]"
-                >
+                <button onClick={() => handleSelectPlan('scale')}
+                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Start 14-Day Free Trial
                 </button>
               </div>
             </div>
 
-            {/* Trust */}
             <div className="text-center pt-2">
               <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-[#fafaf9]/40">
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />No credit card required</span>
@@ -421,9 +398,6 @@ function OnboardingContent() {
           </div>
         );
 
-      // ================================================================
-      // STEP 3
-      // ================================================================
       case 3:
         return (
           <div className="space-y-8">
@@ -490,9 +464,6 @@ function OnboardingContent() {
   );
 }
 
-// ============================================================================
-// PAGE
-// ============================================================================
 export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.75 }}>
@@ -507,13 +478,7 @@ export default function OnboardingPage() {
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/icon512x512.png"
-                alt="VoiceAI Connect"
-                width={40}
-                height={40}
-                className="rounded-xl sm:w-[44px] sm:h-[44px]"
-              />
+              <img src="/icon512x512.png" alt="VoiceAI Connect" width={40} height={40} className="rounded-xl sm:w-[44px] sm:h-[44px]" />
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
           </div>
