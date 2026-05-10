@@ -81,6 +81,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); return pathname?.startsWith(href); };
 
+  // ── LOADING SKELETON ────────────────────────────────────────────────
   if (loading) {
     let isDark = true;
     try { const saved = localStorage.getItem('voiceai_ui_theme'); if (saved === 'light') isDark = false; else if (saved === 'dark') isDark = true; else { const stored = localStorage.getItem('agency'); if (stored) { const parsed = JSON.parse(stored); isDark = parsed.website_theme !== 'light'; } } } catch {}
@@ -106,6 +107,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ── NEEDS PLAN SELECTION ────────────────────────────────────────────
   if (agencyNeedsPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
@@ -123,6 +125,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ── TRIAL EXPIRED NO CARD ───────────────────────────────────────────
   if (agencyTrialExpiredNoCard) {
     const handleSelectPlan = async (planId: string) => { setSelectedPlan(planId); setSubscribeLoading(true); try { const backendUrl = process.env.NEXT_PUBLIC_API_URL || ''; const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency?.id, plan: planId, skipTrial: true }) }); const data = await response.json(); if (data.url) { window.location.href = data.url; } else { console.error('No URL returned from checkout:', data); setSubscribeLoading(false); setSelectedPlan(null); } } catch (err) { console.error('Failed to create checkout session:', err); setSubscribeLoading(false); setSelectedPlan(null); } };
     return (
@@ -156,6 +159,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ── BLOCKED ACCESS ──────────────────────────────────────────────────
   if (shouldBlockAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
@@ -171,6 +175,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ── MAIN LAYOUT ─────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/manifest.json" />
@@ -180,23 +185,27 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
       {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<a href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</a>)}</div>)}
 
+      {/* Mobile header */}
       <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div>)}<span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{agency?.name || 'Agency'}</span></div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
 
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
+      {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>)}<span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{agency?.name || 'Agency'}</span></div>
 
+        {/* NAV — UPDATED: locked items no longer navigate */}
         <nav className="p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
-            <a key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
+            <a key={item.href} href={isLocked ? '#' : item.href} onClick={(e) => { if (isLocked) { e.preventDefault(); return; } setSidebarOpen(false); }} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'default' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
               <div className="flex items-center gap-3"><IconComponent className="h-5 w-5" /><span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
               {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
               {isLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
             </a>); })}
         </nav>
 
+        {/* Sidebar bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
           {isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
           {hasPaymentIssue && (<a href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></a>)}

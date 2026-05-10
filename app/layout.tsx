@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/voiceai-favicon.ico", sizes: "48x48" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
     ],
@@ -109,22 +109,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakarta.variable} ${sora.variable} ${inter.variable}`}>
       <head>
-        {/* Preconnect */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
-        {/* RSS Feed Discovery */}
         <link rel="alternate" type="application/rss+xml" title="VoiceAI Connect Blog" href="https://myvoiceaiconnect.com/feed.xml" />
-
-        {/* PWA */}
         <meta name="application-name" content="VoiceAI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="VoiceAI" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-
-        {/* Google Tag Manager */}
         <Script
           id="gtm-script"
           strategy="afterInteractive"
@@ -138,7 +131,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
       </head>
       <body className="font-sans antialiased">
-        {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-TL2XTKPJ"
@@ -147,7 +139,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-
         <ErrorReporter />
         {children}
       </body>
