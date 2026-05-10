@@ -1,24 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/expire-agency-trials",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/retry-meter-events",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/reset-monthly-counters",
-      "schedule": "0 5 1 * *"
-    },
-    {
-      "path": "/api/cron/cleanup-orphaned-test-clients",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/activation-sms",
-      "schedule": "15,45 * * * *"
-    }
-  ]
+  "crons": []
 }
