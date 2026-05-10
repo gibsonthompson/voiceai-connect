@@ -171,11 +171,6 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // =========================================================================
-  // Stale-while-revalidate: use localStorage cache immediately, then refresh
-  // in the background. This eliminates the loading skeleton on every navigation
-  // when using <a> tags (full page reloads).
-  // =========================================================================
   const fetchAgencyData = async () => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -188,25 +183,21 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
 
       const agencyData = JSON.parse(storedAgency);
 
-      // Get user from localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
 
-      // Use cached data IMMEDIATELY — skip the loading skeleton
       setAgency(agencyData);
       setBranding(buildBranding(agencyData));
       setLoading(false);
 
-      // Then refresh from server in the background (silent update)
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/agency/${agencyData.id}/settings`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
-        // Token expired or invalid — clear and redirect
         localStorage.removeItem('auth_token');
         localStorage.removeItem('agency');
         localStorage.removeItem('user');
@@ -218,15 +209,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       const freshAgency = data.agency;
 
       if (freshAgency) {
-        // Update state with fresh data
         setAgency(freshAgency);
         setBranding(buildBranding(freshAgency));
-        // Update localStorage cache for next navigation
         localStorage.setItem('agency', JSON.stringify(freshAgency));
       }
     } catch (error) {
       console.error('Error fetching agency data:', error);
-      // Only redirect if we don't already have cached data
       if (!agency) {
         window.location.href = '/agency/login';
       }
@@ -242,14 +230,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const isExpired = isExpiredStatus(agency?.subscription_status) || 
     (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
   
-  // During active trial → full access (scale-level features)
-  // Otherwise → whatever plan they're on (free/pro/scale)
   const effectivePlan = isTrialActive ? 'scale' : (agency?.plan_type || 'free');
 
-  // White-label enforcement: free tier = VoiceAI Connect branding
-  // Agency keeps their name, but colors/logo revert to platform defaults
+  // Free plan = full VoiceAI Connect branding (name, colors, logo)
+  // Pro/Scale = agency's own branding
   const resolvedBranding = effectivePlan === 'free'
-    ? { ...defaultBranding, name: branding.name }
+    ? defaultBranding
     : branding;
 
   const hasPermission = (key: string): boolean => {
