@@ -3,26 +3,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
-  Phone, 
-  CheckCircle2, 
-  Loader2, 
-  ArrowRight, 
-  Lock,
-  Building,
-  ChevronDown,
-  Zap,
-  Shield,
-  Crown,
-  Check,
-  Sparkles,
-  ArrowLeft
+  Phone, CheckCircle2, Loader2, ArrowRight, Lock,
+  Building, ChevronDown, Zap, Shield, Crown, Check, ArrowLeft
 } from 'lucide-react';
 import { PLAN_PRICES, PLAN_RATES } from '@/lib/plan-limits';
 
-// ============================================================================
-// REFERRAL SOURCE OPTIONS
-// ============================================================================
 const REFERRAL_OPTIONS = [
   { value: '', label: 'Select an option...' },
   { value: 'google_search', label: 'Google Search' },
@@ -37,92 +24,73 @@ const REFERRAL_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-function WaveformIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
-  );
-}
-
-// ============================================================================
-// STEP DEFINITIONS — 3 steps
-// ============================================================================
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
   { id: 2, name: 'Plan', icon: Zap, description: 'Choose your plan' },
   { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
 ];
 
-// ============================================================================
-// PLAN CARDS DATA
-// ============================================================================
 const AGENCY_PLANS = [
   {
     id: 'free',
     name: 'Free',
     price: PLAN_PRICES.free,
     icon: Zap,
-    description: 'Get started — no commitment',
+    subtitle: `$${PLAN_RATES.free.perClient}/client + $${PLAN_RATES.free.perMinute}/min`,
     badge: null,
     features: [
-      'AI receptionist per client',
-      'Call notifications (SMS + email)',
-      'Spam detection & caller recognition',
-      `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`,
-      'VoiceAI Connect branded',
+      'AI receptionist for every client',
+      'Call summaries via SMS + email',
+      'Spam detection & caller ID',
+      'Client dashboard included',
     ],
-    cta: 'Start Free',
+    limitation: 'VoiceAI Connect branding',
+    cta: 'Get Started Free',
     trial: false,
+    popular: false,
   },
   {
     id: 'pro',
     name: 'Pro',
     price: PLAN_PRICES.pro,
     icon: Shield,
-    description: 'Most popular',
-    badge: 'Recommended',
-    popular: true,
+    subtitle: `$${PLAN_RATES.pro.perClient}/client + $${PLAN_RATES.pro.perMinute}/min`,
+    badge: 'Most Popular',
     features: [
-      'Full white-label branding',
-      'Marketing website + demo phone',
-      'Lead finder',
+      'Your brand on everything',
+      'Custom domain + marketing site',
+      'Demo phone line for prospects',
+      'Lead finder to grow your pipeline',
       'Up to 5 team members',
-      `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`,
     ],
-    cta: 'Start 14-Day Trial',
+    limitation: null,
+    cta: 'Start 14-Day Free Trial',
     trial: true,
+    popular: true,
   },
   {
     id: 'scale',
     name: 'Scale',
     price: PLAN_PRICES.scale,
     icon: Crown,
-    description: 'For established agencies',
+    subtitle: `$0/client + $${PLAN_RATES.scale.perMinute}/min`,
     badge: null,
     features: [
       'Everything in Pro',
-      'AI Lab / industry templates',
-      'Advanced lead finder + API access',
+      'AI Lab with industry templates',
+      'Advanced lead finder + API',
       'Unlimited team members',
-      `$0/client + $${PLAN_RATES.scale.perMinute}/min`,
+      'Priority support',
     ],
-    cta: 'Start 14-Day Trial',
+    limitation: null,
+    cta: 'Start 14-Day Free Trial',
     trial: true,
+    popular: false,
   },
 ];
 
 // ============================================================================
-// PROGRESS COMPONENT
+// PROGRESS
 // ============================================================================
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
@@ -130,32 +98,19 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
       <div className="flex items-center justify-center gap-1">
         {steps.map((step, index) => (
           <div key={step.id} className="flex items-center">
-            <div
-              className={`relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-300 ${
-                step.id < currentStep
-                  ? 'bg-emerald-500 text-[#050505]'
-                  : step.id === currentStep
-                  ? 'bg-white/10 text-[#fafaf9] ring-2 ring-emerald-500 ring-offset-2 ring-offset-[#050505]'
-                  : 'bg-white/[0.03] text-[#fafaf9]/30'
-              }`}
-            >
-              {step.id < currentStep ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <step.icon className="w-5 h-5" />
-              )}
+            <div className={`relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-300 ${
+              step.id < currentStep ? 'bg-emerald-500 text-[#050505]'
+                : step.id === currentStep ? 'bg-white/10 text-[#fafaf9] ring-2 ring-emerald-500 ring-offset-2 ring-offset-[#050505]'
+                : 'bg-white/[0.03] text-[#fafaf9]/30'
+            }`}>
+              {step.id < currentStep ? <CheckCircle2 className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
             </div>
             {index < steps.length - 1 && (
-              <div
-                className={`w-8 sm:w-12 h-0.5 mx-1.5 transition-colors duration-300 ${
-                  step.id < currentStep ? 'bg-emerald-500' : 'bg-white/[0.06]'
-                }`}
-              />
+              <div className={`w-8 sm:w-12 h-0.5 mx-1.5 transition-colors duration-300 ${step.id < currentStep ? 'bg-emerald-500' : 'bg-white/[0.06]'}`} />
             )}
           </div>
         ))}
       </div>
-
       <div className="flex justify-center mt-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06]">
           <span className="text-emerald-400 text-sm font-medium">Step {currentStep} of {steps.length}</span>
@@ -168,7 +123,7 @@ function OnboardingProgress({ currentStep }: { currentStep: number }) {
 }
 
 // ============================================================================
-// MAIN ONBOARDING CONTENT
+// MAIN CONTENT
 // ============================================================================
 function OnboardingContent() {
   const searchParams = useSearchParams();
@@ -181,12 +136,7 @@ function OnboardingContent() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyData, setAgencyData] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  
-  const [agencyDetails, setAgencyDetails] = useState({
-    name: '',
-    phone: '',
-    referralSource: '',
-  });
+  const [agencyDetails, setAgencyDetails] = useState({ name: '', phone: '', referralSource: '' });
 
   useEffect(() => {
     const fetchAgency = async () => {
@@ -194,33 +144,23 @@ function OnboardingContent() {
         const storedAgencyId = localStorage.getItem('onboarding_agency_id');
         const urlAgencyId = searchParams.get('agency');
         const resolvedAgencyId = storedAgencyId || urlAgencyId;
-
         if (resolvedAgencyId) {
           setAgencyId(resolvedAgencyId);
-          if (!storedAgencyId && urlAgencyId) {
-            localStorage.setItem('onboarding_agency_id', resolvedAgencyId);
-          }
+          if (!storedAgencyId && urlAgencyId) localStorage.setItem('onboarding_agency_id', resolvedAgencyId);
           await loadAgencyData(resolvedAgencyId);
-        } else {
-          router.push('/signup');
-        }
+        } else { router.push('/signup'); }
         return;
       }
-
       try {
         const response = await fetch(`/api/onboarding/verify?session_id=${sessionId}`);
         const data = await response.json();
-        
         if (data.agencyId) {
           setAgencyId(data.agencyId);
           localStorage.setItem('onboarding_agency_id', data.agencyId);
           await loadAgencyData(data.agencyId);
         }
-      } catch (err) {
-        console.error('Failed to verify session:', err);
-      }
+      } catch (err) { console.error('Failed to verify session:', err); }
     };
-
     fetchAgency();
   }, [sessionId, router]);
 
@@ -231,117 +171,64 @@ function OnboardingContent() {
       if (response.ok) {
         const data = await response.json();
         setAgencyData(data.agency);
-        
         if (data.agency.name && !data.agency.name.includes("'s Agency") && data.agency.name !== 'My Agency') {
-          setAgencyDetails({
-            name: data.agency.name || '',
-            phone: data.agency.phone || '',
-            referralSource: data.agency.referral_source || '',
-          });
+          setAgencyDetails({ name: data.agency.name || '', phone: data.agency.phone || '', referralSource: data.agency.referral_source || '' });
           setCurrentStep(2);
-        } else {
-          setCurrentStep(1);
-        }
+        } else { setCurrentStep(1); }
       }
-    } catch (err) {
-      console.error('Failed to load agency:', err);
-    }
+    } catch (err) { console.error('Failed to load agency:', err); }
   };
 
   const saveStep = async (step: number, data: any) => {
     if (!agencyId) return;
-    
-    setLoading(true);
-    setError('');
-    
+    setLoading(true); setError('');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${backendUrl}/api/agency/onboarding`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agency_id: agencyId,
-          step,
-          data,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agency_id: agencyId, step, data }),
       });
-
       const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save');
-      }
-
+      if (!response.ok) throw new Error(result.error || 'Failed to save');
       return result;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       return null;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleStep1Next = async () => {
     if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
     if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
     if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
-
-    const result = await saveStep(1, { 
-      name: agencyDetails.name.trim(),
-      phone: agencyDetails.phone,
-      referral_source: agencyDetails.referralSource,
-    });
-    
+    const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource });
     if (result?.success) {
-      // Provision test client in background (non-blocking, ~30s)
-      // By the time agency finishes steps 2-3, test client is ready
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       fetch(`${backendUrl}/api/agency/${agencyId}/provision-test-client`, { method: 'POST' })
         .then(() => console.log('✅ Test client provisioning started'))
         .catch(() => console.warn('⚠️ Test client provisioning failed (non-blocking)'));
-      
       setCurrentStep(2);
     }
   };
 
-  const handleSelectPlan = (planId: string) => {
-    setSelectedPlan(planId);
-    setCurrentStep(3);
-  };
+  const handleSelectPlan = (planId: string) => { setSelectedPlan(planId); setCurrentStep(3); };
 
-  // Start trial for Pro/Scale plans only
   const startTrial = async (planType: string) => {
     if (!agencyId) return;
     try {
       const response = await fetch('/api/agency/start-trial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agencyId, planType }),
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        console.error('⚠️ Trial start failed:', data.error);
-        return;
-      }
-      
+      if (!response.ok) { const data = await response.json(); console.error('⚠️ Trial start failed:', data.error); return; }
       console.log(`✅ Trial started with plan: ${planType}`);
-    } catch (err) {
-      console.error('⚠️ Failed to start trial:', err);
-    }
+    } catch (err) { console.error('⚠️ Failed to start trial:', err); }
   };
 
   const handleSetPassword = async () => {
     setLoading(true);
-    
-    // For Pro/Scale: start 14-day trial
-    // For Free: skip trial — agency is already active with plan_type='free'
-    if (selectedPlan && selectedPlan !== 'free') {
-      await startTrial(selectedPlan);
-    }
-    
+    if (selectedPlan && selectedPlan !== 'free') await startTrial(selectedPlan);
     const token = localStorage.getItem('agency_password_token');
-    
     if (token && agencyId) {
       localStorage.removeItem('agency_password_token');
       const returnTo = encodeURIComponent('/agency/dashboard');
@@ -349,16 +236,14 @@ function OnboardingContent() {
     } else if (agencyId) {
       localStorage.removeItem('onboarding_agency_id');
       window.location.href = '/agency/dashboard';
-    } else {
-      window.location.href = '/signup';
-    }
+    } else { window.location.href = '/signup'; }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
-      // ====================================================================
+      // ================================================================
       // STEP 1: Name Your Agency
-      // ====================================================================
+      // ================================================================
       case 1:
         return (
           <div className="space-y-8">
@@ -371,13 +256,10 @@ function OnboardingContent() {
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Agency Name</label>
                 <div className="relative">
                   <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
-                  <input
-                    type="text"
-                    value={agencyDetails.name}
+                  <input type="text" value={agencyDetails.name}
                     onChange={(e) => { setAgencyDetails({ ...agencyDetails, name: e.target.value }); setError(''); }}
                     placeholder="SmartCall Solutions"
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
-                  />
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all" />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">This appears on your signup pages, client dashboard, and emails</p>
               </div>
@@ -385,25 +267,19 @@ function OnboardingContent() {
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
-                  <input
-                    type="tel"
-                    value={agencyDetails.phone}
+                  <input type="tel" value={agencyDetails.phone}
                     onChange={(e) => { setAgencyDetails({ ...agencyDetails, phone: e.target.value }); setError(''); }}
-                    placeholder="(555) 123-4567"
-                    required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all"
-                  />
+                    placeholder="(555) 123-4567" required
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all" />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">For support, account updates, and important notifications</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
                 <div className="relative">
-                  <select
-                    value={agencyDetails.referralSource}
+                  <select value={agencyDetails.referralSource}
                     onChange={(e) => { setAgencyDetails({ ...agencyDetails, referralSource: e.target.value }); setError(''); }}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
-                  >
+                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer">
                     {REFERRAL_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value} className="bg-[#1a1a1a] text-[#fafaf9]">{option.label}</option>
                     ))}
@@ -412,8 +288,6 @@ function OnboardingContent() {
                 </div>
               </div>
             </div>
-
-            {/* Preview */}
             <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-xs text-[#fafaf9]/40 mb-3 uppercase tracking-wider">Preview</p>
               <div className="flex items-center gap-3">
@@ -426,129 +300,136 @@ function OnboardingContent() {
                 </div>
               </div>
             </div>
-
             <div className="flex justify-center">
-              <button
-                onClick={handleStep1Next}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-              >
+              <button onClick={handleStep1Next} disabled={loading}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100">
                 {loading ? (<><Loader2 className="w-4 h-4 animate-spin" />Saving...</>) : (<>Continue<ArrowRight className="w-4 h-4" /></>)}
               </button>
             </div>
           </div>
         );
 
-      // ====================================================================
-      // STEP 2: Choose Your Plan
-      // ====================================================================
+      // ================================================================
+      // STEP 2: Choose Your Plan — REDESIGNED
+      // ================================================================
       case 2:
         return (
-          <div className="space-y-8">
+          <div className="space-y-10">
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Choose Your Plan</h2>
               <p className="mt-2 text-[#fafaf9]/50">Start free or unlock everything with a 14-day trial</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-4xl mx-auto items-start">
               {AGENCY_PLANS.map((plan) => (
                 <div
                   key={plan.id}
-                  className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-300 hover:border-white/[0.15]"
-                  style={{
-                    backgroundColor: plan.popular ? '#0a0a0a' : 'rgba(10,10,10,0.5)',
-                    borderColor: plan.popular ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)',
-                    boxShadow: plan.popular ? '0 0 60px rgba(16,185,129,0.1)' : undefined,
-                    transform: plan.popular ? 'scale(1.02)' : undefined,
-                  }}
+                  className={`relative rounded-2xl border transition-all duration-300 ${
+                    plan.popular
+                      ? 'border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.08] to-emerald-500/[0.02] shadow-[0_0_80px_-20px_rgba(16,185,129,0.25)] md:-mt-3 md:mb-0'
+                      : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]'
+                  }`}
                 >
+                  {/* Badge */}
                   {plan.badge && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-[#050505] shadow-lg shadow-emerald-500/30">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                      <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500 text-[#050505] shadow-lg shadow-emerald-500/30">
                         {plan.badge}
                       </span>
                     </div>
                   )}
 
-                  <div className="text-center mb-5">
-                    <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl mb-3 ${plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.05]'}`}>
-                      <plan.icon className={`h-5 w-5 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]'}`} />
+                  <div className={`p-6 sm:p-7 ${plan.popular ? 'pt-8' : ''}`}>
+                    {/* Plan icon + name */}
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                        plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.05]'
+                      }`}>
+                        <plan.icon className={`h-5 w-5 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]/70'}`} />
+                      </div>
+                      <h3 className="text-lg font-semibold">{plan.name}</h3>
                     </div>
-                    <p className="text-xs text-[#fafaf9]/50 mb-1">{plan.description}</p>
-                    <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    <div className="mt-2">
+
+                    {/* Price */}
+                    <div className="mb-1">
                       {plan.price === 0 ? (
-                        <span className="text-3xl font-bold">Free</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-bold">$0</span>
+                          <span className="text-[#fafaf9]/40 text-sm">/mo</span>
+                        </div>
                       ) : (
-                        <>
-                          <span className="text-3xl font-bold">${plan.price}</span>
-                          <span className="text-[#fafaf9]/50 text-sm">/mo</span>
-                        </>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-bold">${plan.price}</span>
+                          <span className="text-[#fafaf9]/40 text-sm">/mo</span>
+                        </div>
                       )}
                     </div>
-                    {plan.price === 0 && (
-                      <p className="mt-1 text-xs text-[#fafaf9]/40">Pay per client + per minute</p>
-                    )}
+
+                    {/* Usage pricing subtitle */}
+                    <p className="text-sm text-[#fafaf9]/40 mb-6">{plan.subtitle}</p>
+
+                    {/* Divider */}
+                    <div className={`h-px mb-6 ${plan.popular ? 'bg-emerald-500/20' : 'bg-white/[0.06]'}`} />
+
+                    {/* Features */}
+                    <ul className="space-y-3.5 mb-6">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3 text-sm">
+                          <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${
+                            plan.popular ? 'bg-emerald-500/15' : 'bg-white/[0.06]'
+                          }`}>
+                            <Check className={`h-3 w-3 ${plan.popular ? 'text-emerald-400' : 'text-[#fafaf9]/50'}`} />
+                          </div>
+                          <span className="text-[#fafaf9]/70">{feature}</span>
+                        </li>
+                      ))}
+                      {plan.limitation && (
+                        <li className="flex items-start gap-3 text-sm">
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-white/[0.04]">
+                            <span className="text-[#fafaf9]/25 text-xs">—</span>
+                          </div>
+                          <span className="text-[#fafaf9]/35">{plan.limitation}</span>
+                        </li>
+                      )}
+                    </ul>
+
+                    {/* CTA */}
+                    <button
+                      onClick={() => handleSelectPlan(plan.id)}
+                      className={`group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                        plan.popular
+                          ? 'bg-emerald-500 text-[#050505] hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30'
+                          : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
+                      }`}
+                    >
+                      {plan.cta}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </button>
                   </div>
-
-                  <ul className="space-y-2.5 mb-5">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm">
-                        <div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-emerald-500/10">
-                          <Check className="h-3 w-3 text-emerald-400" />
-                        </div>
-                        <span className="text-[#fafaf9]/70">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => handleSelectPlan(plan.id)}
-                    className={`group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                      plan.popular
-                        ? 'bg-white text-[#050505] hover:bg-[#fafaf9] hover:shadow-xl hover:shadow-white/10'
-                        : 'bg-white/[0.06] text-[#fafaf9] hover:bg-white/[0.12] border border-white/[0.08]'
-                    }`}
-                  >
-                    {plan.cta}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
                 </div>
               ))}
             </div>
 
+            {/* Trust line */}
             <div className="text-center">
               <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/40">
-                <span className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  No credit card required
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  Upgrade anytime
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-emerald-400" />
-                  Cancel anytime
-                </span>
+                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />No credit card required</span>
+                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Upgrade anytime</span>
+                <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Cancel anytime</span>
               </div>
             </div>
 
             <div className="flex justify-center">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
+              <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/50 hover:text-[#fafaf9] transition-colors">
+                <ArrowLeft className="h-4 w-4" />Back
               </button>
             </div>
           </div>
         );
 
-      // ====================================================================
+      // ================================================================
       // STEP 3: Set Password & Go
-      // ====================================================================
+      // ================================================================
       case 3:
         return (
           <div className="space-y-8">
@@ -558,13 +439,10 @@ function OnboardingContent() {
               </div>
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h2>
               <p className="mt-2 text-[#fafaf9]/50">
-                {selectedPlan === 'free'
-                  ? 'Create a password and start building your agency'
-                  : 'Create a password and your 14-day free trial begins'}
+                {selectedPlan === 'free' ? 'Create a password and start building your agency' : 'Create a password and your 14-day free trial begins'}
               </p>
             </div>
             <div className="max-w-md mx-auto space-y-6">
-              {/* Plan confirmation */}
               <div className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-center gap-3">
                 {selectedPlan === 'free' && <Zap className="h-5 w-5 text-emerald-400 flex-shrink-0" />}
                 {selectedPlan === 'pro' && <Shield className="h-5 w-5 text-emerald-400 flex-shrink-0" />}
@@ -577,20 +455,12 @@ function OnboardingContent() {
                     {selectedPlan === 'free' ? 'No platform fee, pay per usage' : `$${PLAN_PRICES[selectedPlan as keyof typeof PLAN_PRICES]}/mo after trial`}
                   </p>
                 </div>
-                <button
-                  onClick={() => setCurrentStep(2)}
-                  className="ml-auto text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                >
-                  Change
-                </button>
+                <button onClick={() => setCurrentStep(2)} className="ml-auto text-xs text-emerald-400 hover:text-emerald-300 transition-colors">Change</button>
               </div>
-
               <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02] space-y-3">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">
-                    {selectedPlan === 'free' ? 'Instant access to your dashboard' : 'Full platform access for 14 days'}
-                  </p>
+                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Instant access to your dashboard' : 'Full platform access for 14 days'}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
@@ -598,16 +468,11 @@ function OnboardingContent() {
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">
-                    {selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more in your dashboard'}
-                  </p>
+                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more in your dashboard'}</p>
                 </div>
               </div>
-              <button
-                onClick={handleSetPassword}
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50"
-              >
+              <button onClick={handleSetPassword} disabled={loading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50">
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" />{selectedPlan === 'free' ? 'Setting up...' : 'Starting your trial...'}</>
                 ) : (
@@ -623,33 +488,22 @@ function OnboardingContent() {
   return (
     <>
       <OnboardingProgress currentStep={currentStep} />
-
       {error && (
-        <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center text-sm text-red-400 max-w-md mx-auto">
-          {error}
-        </div>
+        <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center text-sm text-red-400 max-w-md mx-auto">{error}</div>
       )}
-
-      <div className="max-w-2xl mx-auto">
-        {renderStepContent()}
-      </div>
+      <div className="max-w-2xl mx-auto">{renderStepContent()}</div>
     </>
   );
 }
 
 // ============================================================================
-// MAIN PAGE COMPONENT
+// PAGE
 // ============================================================================
 export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.75 }}>
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
       </div>
@@ -658,9 +512,13 @@ export default function OnboardingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
-              </div>
+              <Image
+                src="/icon512x512.png"
+                alt="VoiceAI Connect"
+                width={40}
+                height={40}
+                className="rounded-xl sm:w-[44px] sm:h-[44px]"
+              />
               <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
             </Link>
           </div>
