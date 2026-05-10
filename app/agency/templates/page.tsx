@@ -15,7 +15,6 @@ import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
-import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -196,7 +195,6 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
 export default function AILabPage() {
   const { agency, loading: ctxLoading, effectivePlan } = useAgency();
   const theme = useTheme();
-  const { canUseAiLab } = usePlanFeatures();
   const { canUseAiLab } = usePlanFeatures();
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
