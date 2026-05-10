@@ -175,6 +175,9 @@ function OnboardingContent() {
 
   const renderStepContent = () => {
     switch (currentStep) {
+      // ================================================================
+      // STEP 1 — unchanged
+      // ================================================================
       case 1:
         return (
           <div className="space-y-8">
@@ -240,52 +243,55 @@ function OnboardingContent() {
           </div>
         );
 
+      // ================================================================
+      // STEP 2 — SCALED UP to match steps 1/3
+      // ================================================================
       case 2:
         return (
-          <div className="space-y-10" style={{ maxWidth: '960px', margin: '0 auto' }}>
+          <div className="space-y-10" style={{ maxWidth: '1080px', margin: '0 auto' }}>
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Choose Your Plan</h2>
               <p className="mt-3 text-base text-[#fafaf9]/50">No credit card required. Start free or try Pro for 14 days.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
 
               {/* FREE */}
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="h-9 w-9 rounded-lg bg-white/[0.05] flex items-center justify-center">
-                      <Zap className="h-4.5 w-4.5 text-[#fafaf9]/60" />
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-9 flex flex-col">
+                <div className="mb-7">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="h-11 w-11 rounded-xl bg-white/[0.05] flex items-center justify-center">
+                      <Zap className="h-5 w-5 text-[#fafaf9]/60" />
                     </div>
-                    <span className="text-base font-semibold text-[#fafaf9]/80">Free</span>
+                    <span className="text-lg font-semibold text-[#fafaf9]/80">Free</span>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-5xl font-bold tracking-tight">$0</span>
-                    <span className="text-base text-[#fafaf9]/30">/mo</span>
+                  <div className="flex items-baseline gap-1.5 mb-2">
+                    <span className="text-[56px] font-bold tracking-tight leading-none">$0</span>
+                    <span className="text-lg text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-sm text-[#fafaf9]/40">${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min</p>
+                  <p className="text-[15px] text-[#fafaf9]/40">${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min</p>
                 </div>
-                <div className="h-px bg-white/[0.06] mb-6" />
-                <ul className="space-y-4 mb-8 flex-1">
+                <div className="h-px bg-white/[0.06] mb-7" />
+                <ul className="space-y-5 mb-9 flex-1">
                   {['AI receptionist for every client', 'Demo phone line included', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Industry templates included'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
-                      <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
-                      <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
+                      <Check className="h-[18px] w-[18px] mt-0.5 text-[#fafaf9]/30 shrink-0" />
+                      <span className="text-[15px] text-[#fafaf9]/60 leading-snug">{f}</span>
                     </li>
                   ))}
                   <li className="flex items-start gap-3">
-                    <span className="h-4 w-4 mt-0.5 shrink-0 flex items-center justify-center text-[#fafaf9]/20 text-xs">—</span>
-                    <span className="text-sm text-[#fafaf9]/30 leading-snug">VoiceAI Connect branding</span>
+                    <span className="h-[18px] w-[18px] mt-0.5 shrink-0 flex items-center justify-center text-[#fafaf9]/20 text-xs">—</span>
+                    <span className="text-[15px] text-[#fafaf9]/30 leading-snug">VoiceAI Connect branding</span>
                   </li>
                 </ul>
                 <button onClick={() => handleSelectPlan('free')}
-                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
+                  className="w-full rounded-full py-4 text-base font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Get Started Free
                 </button>
               </div>
 
               {/* PRO */}
-              <div className="rounded-2xl relative overflow-hidden flex flex-col md:-mt-4 md:mb-0"
+              <div className="rounded-2xl relative overflow-hidden flex flex-col md:-mt-5 md:mb-0"
                 style={{
                   background: 'linear-gradient(180deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.03) 40%, rgba(5,5,5,0.95) 100%)',
                   border: '1.5px solid rgba(16,185,129,0.35)',
@@ -293,33 +299,33 @@ function OnboardingContent() {
                 }}>
                 <div className="h-1 bg-emerald-500 w-full" />
                 <div className="flex justify-center pt-5">
-                  <span className="px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">Popular</span>
+                  <span className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-emerald-500 text-[#050505]">Popular</span>
                 </div>
-                <div className="p-7 pt-4 flex flex-col flex-1">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2.5 mb-4">
-                      <div className="h-9 w-9 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                        <Shield className="h-4.5 w-4.5 text-emerald-400" />
+                <div className="p-9 pt-5 flex flex-col flex-1">
+                  <div className="mb-7">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="h-11 w-11 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-emerald-400" />
                       </div>
-                      <span className="text-base font-semibold text-[#fafaf9]">Pro</span>
+                      <span className="text-lg font-semibold text-[#fafaf9]">Pro</span>
                     </div>
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-5xl font-bold tracking-tight">$179</span>
-                      <span className="text-base text-[#fafaf9]/30">/mo</span>
+                    <div className="flex items-baseline gap-1.5 mb-2">
+                      <span className="text-[56px] font-bold tracking-tight leading-none">$179</span>
+                      <span className="text-lg text-[#fafaf9]/30">/mo</span>
                     </div>
-                    <p className="text-sm text-emerald-400/70">${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min</p>
+                    <p className="text-[15px] text-emerald-400/70">${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min</p>
                   </div>
-                  <div className="h-px bg-emerald-500/20 mb-6" />
-                  <ul className="space-y-4 mb-8 flex-1">
+                  <div className="h-px bg-emerald-500/20 mb-7" />
+                  <ul className="space-y-5 mb-9 flex-1">
                     {['Everything in Free', 'Your brand on everything', 'Custom domain + marketing site', 'Lead finder to grow pipeline', 'Team members'].map((f) => (
                       <li key={f} className="flex items-start gap-3">
-                        <Check className="h-4 w-4 mt-0.5 text-emerald-400 shrink-0" />
-                        <span className="text-sm text-[#fafaf9]/80 leading-snug">{f}</span>
+                        <Check className="h-[18px] w-[18px] mt-0.5 text-emerald-400 shrink-0" />
+                        <span className="text-[15px] text-[#fafaf9]/80 leading-snug">{f}</span>
                       </li>
                     ))}
                   </ul>
                   <button onClick={() => handleSelectPlan('pro')}
-                    className="group w-full rounded-full py-4 text-sm font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="group w-full rounded-full py-[18px] text-base font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                     style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}>
                     Start 14-Day Free Trial
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -328,38 +334,38 @@ function OnboardingContent() {
               </div>
 
               {/* SCALE */}
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 flex flex-col">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="h-9 w-9 rounded-lg bg-white/[0.05] flex items-center justify-center">
-                      <Crown className="h-4.5 w-4.5 text-[#fafaf9]/60" />
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-9 flex flex-col">
+                <div className="mb-7">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="h-11 w-11 rounded-xl bg-white/[0.05] flex items-center justify-center">
+                      <Crown className="h-5 w-5 text-[#fafaf9]/60" />
                     </div>
-                    <span className="text-base font-semibold text-[#fafaf9]/80">Scale</span>
+                    <span className="text-lg font-semibold text-[#fafaf9]/80">Scale</span>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-5xl font-bold tracking-tight">$499</span>
-                    <span className="text-base text-[#fafaf9]/30">/mo</span>
+                  <div className="flex items-baseline gap-1.5 mb-2">
+                    <span className="text-[56px] font-bold tracking-tight leading-none">$499</span>
+                    <span className="text-lg text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-sm text-[#fafaf9]/40">$0/client + ${PLAN_RATES.scale.perMinute}/min</p>
+                  <p className="text-[15px] text-[#fafaf9]/40">$0/client + ${PLAN_RATES.scale.perMinute}/min</p>
                 </div>
-                <div className="h-px bg-white/[0.06] mb-6" />
-                <ul className="space-y-4 mb-8 flex-1">
+                <div className="h-px bg-white/[0.06] mb-7" />
+                <ul className="space-y-5 mb-9 flex-1">
                   {['Everything in Pro', 'Advanced lead finder + API', 'Unlimited team members', 'Industry templates included', 'Priority support'].map((f) => (
                     <li key={f} className="flex items-start gap-3">
-                      <Check className="h-4 w-4 mt-0.5 text-[#fafaf9]/30 shrink-0" />
-                      <span className="text-sm text-[#fafaf9]/60 leading-snug">{f}</span>
+                      <Check className="h-[18px] w-[18px] mt-0.5 text-[#fafaf9]/30 shrink-0" />
+                      <span className="text-[15px] text-[#fafaf9]/60 leading-snug">{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button onClick={() => handleSelectPlan('scale')}
-                  className="w-full rounded-full py-3.5 text-sm font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
+                  className="w-full rounded-full py-4 text-base font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
                   Start 14-Day Free Trial
                 </button>
               </div>
             </div>
 
             <div className="text-center pt-2">
-              <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-[#fafaf9]/40">
+              <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[15px] text-[#fafaf9]/40">
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />No credit card required</span>
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Upgrade anytime</span>
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Cancel anytime</span>
@@ -367,13 +373,16 @@ function OnboardingContent() {
             </div>
 
             <div className="flex justify-center">
-              <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors">
+              <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 text-[15px] text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors">
                 <ArrowLeft className="h-4 w-4" />Back
               </button>
             </div>
           </div>
         );
 
+      // ================================================================
+      // STEP 3 — unchanged
+      // ================================================================
       case 3:
         return (
           <div className="space-y-8">
@@ -435,14 +444,14 @@ function OnboardingContent() {
       {error && (
         <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center text-sm text-red-400 max-w-md mx-auto">{error}</div>
       )}
-      <div className="mx-auto" style={{ maxWidth: '960px' }}>{renderStepContent()}</div>
+      <div className="mx-auto" style={{ maxWidth: '1080px' }}>{renderStepContent()}</div>
     </>
   );
 }
 
 export default function OnboardingPage() {
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.85 }}>
+    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.75 }}>
       <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -462,7 +471,7 @@ export default function OnboardingPage() {
       </header>
 
       <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
-        <div className="relative mx-auto" style={{ maxWidth: '1060px' }}>
+        <div className="relative mx-auto" style={{ maxWidth: '1160px' }}>
           <Suspense fallback={
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
