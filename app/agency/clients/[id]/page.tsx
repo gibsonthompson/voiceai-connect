@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  Brain, Zap, X, BookOpen, Paintbrush, Lock
+  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -30,6 +30,20 @@ const INDUSTRY_INTELLIGENCE: Record<string, { label: string; services: number; f
 const INDUSTRY_KEY_MAP: Record<string, string> = {
   'Home Services (plumbing, HVAC, contractors)': 'home_services', 'Medical/Dental': 'medical', 'Retail/E-commerce': 'retail', 'Professional Services (legal, accounting)': 'professional_services', 'Restaurants/Food Service': 'restaurants', 'Salon/Spa (hair, nails, skincare)': 'salon_spa', 'home_services': 'home_services', 'medical': 'medical', 'medical_dental': 'medical', 'retail': 'retail', 'professional_services': 'professional_services', 'restaurants': 'restaurants', 'restaurant': 'restaurants', 'salon_spa': 'salon_spa', 'beauty_wellness': 'salon_spa', 'fitness': 'fitness', 'legal': 'legal', 'real_estate': 'real_estate', 'financial_services': 'financial', 'financial': 'financial', 'automotive': 'automotive', 'general': 'professional_services', 'other': 'professional_services',
 };
+
+const INDUSTRY_OPTIONS = [
+  { value: 'home_services', label: 'Home Services (Plumbing, HVAC, Contractors)' },
+  { value: 'medical', label: 'Medical & Dental' },
+  { value: 'professional_services', label: 'Professional Services' },
+  { value: 'restaurants', label: 'Restaurants & Food Service' },
+  { value: 'salon_spa', label: 'Salon & Spa' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'fitness', label: 'Fitness' },
+  { value: 'legal', label: 'Legal Services' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'financial', label: 'Financial Services' },
+  { value: 'automotive', label: 'Automotive' },
+];
 
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
@@ -104,8 +118,38 @@ export default function AgencyClientDetailPage() {
   const [kbEditing, setKbEditing] = useState(false);
   const [kbSaved, setKbSaved] = useState(false);
   const [kbError, setKbError] = useState<string | null>(null);
+
+  // Industry editing
+  const [industryValue, setIndustryValue] = useState('');
+  const [industrySaving, setIndustrySaving] = useState(false);
+  const [industrySaved, setIndustrySaved] = useState(false);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
+
+  useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
+
+  const handleSaveIndustry = async (newIndustry: string) => {
+    if (!agency || !clientId || !newIndustry) return;
+    setIndustrySaving(true);
+    setIndustrySaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ industry: newIndustry })
+      });
+      if (!res.ok) throw new Error('Failed to update industry');
+      setIndustryValue(newIndustry);
+      setIndustrySaved(true);
+      setTimeout(() => setIndustrySaved(false), 3000);
+      fetchClientData();
+    } catch (err) {
+      console.error('Failed to save industry:', err);
+    } finally {
+      setIndustrySaving(false);
+    }
+  };
 
   useEffect(() => { if (!agency || !clientId) return; if (demoMode) { const demoData = getDemoClientDetail(clientId); setClient(demoData.client as Client); setRecentCalls(demoData.calls as Call[]); setLoading(false); setPromptLoading(false); setSystemPrompt('You are the phone assistant for Demo Business...'); setOriginalPrompt('You are the phone assistant for Demo Business...'); return; } fetchClientData(); }, [agency, clientId, demoMode]);
   useEffect(() => { if (client?.vapi_assistant_id && agency && !demoMode) { fetchPrompt(); } }, [client?.id, client?.vapi_assistant_id]);
@@ -123,7 +167,7 @@ export default function AgencyClientDetailPage() {
   const copyPhoneNumber = () => { if (!client?.vapi_phone_number) return; navigator.clipboard.writeText(client.vapi_phone_number); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const formatPhone = (phone: string) => { if (!phone) return '—'; const digits = phone.replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`; if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`; return phone; };
   const getPlanLabel = (plan: string) => { switch (plan) { case 'starter': return 'Starter'; case 'pro': return 'Professional'; case 'growth': return 'Growth'; default: return plan || 'Starter'; } };
-  const getPlanPrice = (planType: string) => { if (!agency) return 0; switch (planType) { case 'starter': return agency.price_starter || 4900; case 'pro': return agency.price_pro || 9900; case 'growth': return agency.price_growth || 14900; default: return 0; } };
+  const getPlanPrice = (planType: string) => { if (!agency) return 0; switch (planType) { case 'starter': return agency.price_starter || 9900; case 'pro': return agency.price_pro || 14900; case 'growth': return agency.price_growth || 29900; default: return 0; } };
   const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'suspended': case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
 
   const industryKey = client?.industry ? (INDUSTRY_KEY_MAP[client.industry] || 'professional_services') : null;
@@ -149,7 +193,7 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: theme.primary }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{client.vapi_assistant_id && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Assistant: {client.vapi_assistant_id.slice(0, 12)}...</p>}</div>{client.vapi_phone_number && (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>)}</div></div></div>
 
           {/* Business Details */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Building2 className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Business Details</h2></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[{ icon: User, label: 'Owner', value: client.owner_name || '—' }, { icon: Mail, label: 'Email', value: client.email }, { icon: Phone, label: 'Phone', value: client.owner_phone ? formatPhone(client.owner_phone) : '—' }, { icon: MapPin, label: 'Location', value: client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—' }].map(({ icon: Icon, label, value }) => (<div key={label} className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Icon className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>{label}</p><p className="text-sm truncate">{value}</p></div></div>))}{client.industry && (<div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Building2 className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>Industry</p><p className="text-sm">{client.industry}</p></div></div>)}{client.business_website && (<div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Globe className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>Website</p><a href={client.business_website} target="_blank" rel="noopener noreferrer" className="text-sm truncate block hover:underline" style={{ color: theme.primary }}>{client.business_website.replace(/^https?:\/\//, '')}</a></div></div>)}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Building2 className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Business Details</h2></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[{ icon: User, label: 'Owner', value: client.owner_name || '—' }, { icon: Mail, label: 'Email', value: client.email }, { icon: Phone, label: 'Phone', value: client.owner_phone ? formatPhone(client.owner_phone) : '—' }, { icon: MapPin, label: 'Location', value: client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—' }].map(({ icon: Icon, label, value }) => (<div key={label} className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Icon className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>{label}</p><p className="text-sm truncate">{value}</p></div></div>))}<div className="flex items-center gap-3 sm:col-span-2"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Building2 className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="flex-1 min-w-0"><p className="text-xs mb-1" style={{ color: theme.textMuted }}>Industry</p><div className="flex items-center gap-2"><div className="relative flex-1"><select value={industryValue || client.industry || ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}><option value="">Select industry...</option>{INDUSTRY_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}</select><ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: theme.textMuted }} /></div>{industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}{industrySaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}</div></div></div>{client.business_website && (<div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Globe className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>Website</p><a href={client.business_website} target="_blank" rel="noopener noreferrer" className="text-sm truncate block hover:underline" style={{ color: theme.primary }}>{client.business_website.replace(/^https?:\/\//, '')}</a></div></div>)}</div></div></div>
 
           {/* AI Prompt */}
           {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><Bot className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Receptionist Prompt</h2></div>{promptHasChanges && <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}>Unsaved changes</span>}</div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>This is the system prompt that controls how this client&apos;s AI receptionist behaves on calls. Changes take effect immediately on the next call.</p>{promptError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{promptError}</p></div>}{promptSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Prompt updated — changes are live on the next call.</p></div>}{promptLoading ? (<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>) : (<><textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={14} className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '200px' }} placeholder="Enter system prompt..." /><div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"><button onClick={handleResetPrompt} disabled={promptResetting || promptSaving} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{promptResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><button onClick={handleSavePrompt} disabled={promptSaving || promptResetting || !promptHasChanges} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{promptSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Prompt</>}</button></div></>)}</div></div>)}
