@@ -26,8 +26,8 @@ interface NavItem { href: string; label: string; icon: LucideIcon; locked?: bool
 
 const AGENCY_PLAN_TIERS = [
   { id: 'free' as const, name: 'Free', price: 0, icon: Zap, description: 'Get started', features: ['AI receptionist per client', 'Call notifications (SMS + email)', 'Spam detection & caller recognition', `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`, 'VoiceAI Connect branded'] },
-  { id: 'pro' as const, name: 'Pro', price: PLAN_PRICES.pro, icon: Shield, popular: true, description: 'Most popular', features: ['Full white-label branding', 'Marketing website + demo phone', 'Lead finder', 'Team members', `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`] },
-  { id: 'scale' as const, name: 'Scale', price: PLAN_PRICES.scale, icon: Crown, description: 'For established agencies', features: ['Everything in Pro', 'AI Lab / industry templates', 'Advanced lead finder + API access', 'Unlimited team members', `$0/client + $${PLAN_RATES.scale.perMinute}/min`] },
+  { id: 'pro' as const, name: 'Pro', price: PLAN_PRICES.pro, icon: Shield, popular: true, description: 'Most popular', features: ['Full white-label branding', 'Marketing website + demo phone', 'AI Lab + industry templates', 'Lead finder', 'Team members', `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`] },
+  { id: 'scale' as const, name: 'Scale', price: PLAN_PRICES.scale, icon: Crown, description: 'For established agencies', features: ['Everything in Pro', 'Advanced lead finder + API access', 'Unlimited team members', `$0/client + $${PLAN_RATES.scale.perMinute}/min`] },
 ];
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
@@ -62,9 +62,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
     { href: '/agency/marketing', label: 'Marketing Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
-    { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Scale' },
+    { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
-    { href: '/agency/referrals', label: 'Referrals', icon: Gift },
+    { href: '/agency/referrals', label: 'Referrals', icon: Gift, locked: !canUseLeadFinder, upgradeRequired: 'Pro' },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 

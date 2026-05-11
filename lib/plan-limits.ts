@@ -43,7 +43,7 @@ const PRO_FEATURES = {
   demoPhoneNumber: true,
   leadFinderBasic: true,
   leadFinderAdvanced: false,
-  aiLab: false,
+  aiLab: true,
   industryTemplates: false,
   maxTeamMembers: 5,
   basicAnalytics: true,

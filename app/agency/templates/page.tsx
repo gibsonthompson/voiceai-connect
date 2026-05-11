@@ -480,7 +480,7 @@ export default function AILabPage() {
 
   if (!canUseAiLab) {
     return (
-      <LockedFeature title="AI Lab" description="Configure, test, and ship AI receptionists with industry templates, voice selection, and live browser calls." requiredPlan="Scale"
+      <LockedFeature title="AI Lab" description="Configure, test, and ship AI receptionists with industry templates, voice selection, and live browser calls." requiredPlan="Pro"
         features={['Industry-specific AI templates', 'Voice selection & live test calls', 'Knowledge base editor', 'System prompt customization']}>
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div>
