@@ -14,7 +14,7 @@ interface StripeStatus { connected: boolean; account_id?: string; onboarding_com
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
 
-const PLAN_PRICING: Record<string, number> = { free: 0, pro: 179, scale: 499, starter: 99, professional: 199, enterprise: 499 };
+const PLAN_PRICING: Record<string, number> = { free: 0, pro: 99, scale: 499, starter: 0, professional: 99, enterprise: 499 };
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean>> = {
   starter: { email_summaries: true, custom_greeting: false, custom_voice: false, knowledge_base: false, business_hours: true, google_calendar: false, advanced_analytics: false, priority_support: false, caller_recognition: true, spam_detection: true, call_transfer: false, transfer_fallback: false, after_hours_mode: true },
   pro: { email_summaries: true, custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: false, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true },
