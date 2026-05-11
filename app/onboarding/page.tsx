@@ -310,7 +310,7 @@ function OnboardingContent() {
                       <span className="text-lg font-semibold text-[#fafaf9]">Pro</span>
                     </div>
                     <div className="flex items-baseline gap-1.5 mb-2">
-                      <span className="text-[56px] font-bold tracking-tight leading-none">$179</span>
+                      <span className="text-[56px] font-bold tracking-tight leading-none">$99</span>
                       <span className="text-lg text-[#fafaf9]/30">/mo</span>
                     </div>
                     <p className="text-[15px] text-emerald-400/70">${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min</p>
