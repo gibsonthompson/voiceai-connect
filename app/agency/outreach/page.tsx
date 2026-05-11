@@ -7,6 +7,8 @@ import {
   MoreVertical, Copy, Trash2, Edit, Sparkles
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import LockedFeatureOverlay from '@/components/LockedFeature';
 import { useTheme } from '../../../hooks/useTheme';
 
 interface Template {
@@ -27,6 +29,7 @@ interface Template {
 export default function OutreachPage() {
   const { agency, loading: contextLoading } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,6 +128,98 @@ export default function OutreachPage() {
   const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
   const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
   const callScriptTemplates = filteredTemplates.filter(t => t.type === 'call_script');
+
+  if (!canUseLeadFinder) {
+    const previewEmails = [
+      { name: 'Initial Outreach', desc: 'First contact — introduces AI receptionist value prop' },
+      { name: 'Follow-up #1', desc: 'Soft follow-up with missed call cost data' },
+      { name: 'Follow-up #2', desc: 'Social proof — client results and testimonials' },
+      { name: 'Follow-up #3', desc: 'Urgency — limited availability messaging' },
+      { name: 'Break-up Email', desc: 'Final touch — door stays open' },
+      { name: 'Re-engagement', desc: 'Win-back for cold leads after 30+ days' },
+    ];
+    const previewSms = [
+      { name: 'Initial SMS', desc: 'Quick intro text with value hook' },
+      { name: 'Follow-up SMS', desc: 'Missed call ROI angle' },
+      { name: 'Demo Invite SMS', desc: 'Link to try AI demo line' },
+    ];
+    const previewCalls = [
+      { name: 'Cold Call Opener', desc: 'Pattern interrupt + qualify in 30 seconds' },
+      { name: 'Voicemail Script', desc: 'Curiosity-driven voicemail for callbacks' },
+      { name: 'Follow-up Call', desc: 'Reference previous touch + book demo' },
+      { name: 'Objection Handling', desc: 'Cost, trust, and "not now" rebuttals' },
+    ];
+    return (
+      <LockedFeatureOverlay
+        title="Outreach Templates"
+        description="13 conversion-tested email, SMS, and cold call templates built specifically for selling AI receptionists to local businesses."
+        requiredPlan="Pro"
+        features={[
+          '6 email templates with proven sequences',
+          '3 SMS templates for quick engagement',
+          '4 cold call scripts with objection handling',
+          'Customizable per lead with merge fields',
+        ]}
+      >
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Email column */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Mail className="h-4 w-4 text-purple-400" />
+                <h3 className="text-sm font-medium" style={{ color: theme.text }}>Email Templates</h3>
+                <span className="text-xs" style={{ color: theme.textMuted }}>({previewEmails.length})</span>
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                {previewEmails.map((t, i) => (
+                  <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewEmails.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
+                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
+                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* SMS column */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="h-4 w-4 text-cyan-400" />
+                <h3 className="text-sm font-medium" style={{ color: theme.text }}>SMS Templates</h3>
+                <span className="text-xs" style={{ color: theme.textMuted }}>({previewSms.length})</span>
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                {previewSms.map((t, i) => (
+                  <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewSms.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
+                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
+                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Call Scripts column */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <PhoneCall className="h-4 w-4 text-green-400" />
+                <h3 className="text-sm font-medium" style={{ color: theme.text }}>Call Scripts</h3>
+                <span className="text-xs" style={{ color: theme.textMuted }}>({previewCalls.length})</span>
+              </div>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                {previewCalls.map((t, i) => (
+                  <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewCalls.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
+                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
+                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </LockedFeatureOverlay>
+    );
+  }
 
   if (contextLoading || loading) {
     return (

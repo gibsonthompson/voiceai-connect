@@ -9,6 +9,7 @@ import {
   CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { useAgency } from '../context';
+import LockedFeatureOverlay from '@/components/LockedFeature';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
@@ -272,19 +273,43 @@ export default function AgencyLeadsPage() {
 
   const hasActiveFilters = searchQuery || statusFilter || filterMode !== 'all';
 
-  return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {!canUseLeadFinder && (
-        <div className="rounded-xl p-5 mb-6 flex items-start gap-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-          <Lock className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
-          <div>
-            <p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro to unlock Lead Generation</p>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Find local businesses on Google Maps, run outreach sequences, and track your pipeline.</p>
-            <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium" style={{ color: theme.primary }}>Upgrade to Pro <ArrowUpRight className="h-3 w-3" /></a>
+  if (!canUseLeadFinder) {
+    return (
+      <LockedFeatureOverlay
+        title="Lead Generation"
+        description="Find local businesses on Google Maps, run outreach sequences with conversion-tested templates, and track your entire pipeline from one dashboard."
+        requiredPlan="Pro"
+        features={[
+          'Google Maps business prospecting',
+          '13 email + SMS outreach templates',
+          'Visual pipeline with follow-up tracking',
+          'CSV import and export',
+        ]}
+      >
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* Placeholder preview content */}
+          <div className="mb-8">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Leads</h1>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>0 total leads</p>
+          </div>
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-5 mb-8">
+            {['Active', 'Qualified', 'Pipeline', 'Sequence Due', 'Today'].map((label) => (
+              <div key={label} className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>{label}</p>
+                <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>0</p>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-xl py-20 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <p className="font-medium" style={{ color: theme.textMuted }}>Start building your pipeline</p>
           </div>
         </div>
-      )}
-      <div style={!canUseLeadFinder ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}>
+      </LockedFeatureOverlay>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8">
 
       {/* Header */}
       <div className="mb-6 sm:mb-8">
@@ -920,7 +945,6 @@ export default function AgencyLeadsPage() {
         )}
       </div>
 
-      </div>
       {/* CSV Import Modal */}
       {agency && (
         <CSVImportModal

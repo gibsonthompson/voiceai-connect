@@ -26,14 +26,14 @@ interface NavItem { href: string; label: string; icon: LucideIcon; locked?: bool
 
 const AGENCY_PLAN_TIERS = [
   { id: 'free' as const, name: 'Free', price: 0, icon: Zap, description: 'Get started', features: ['AI receptionist per client', 'Call notifications (SMS + email)', 'Spam detection & caller recognition', `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`, 'VoiceAI Connect branded'] },
-  { id: 'pro' as const, name: 'Pro', price: PLAN_PRICES.pro, icon: Shield, popular: true, description: 'Most popular', features: ['Full white-label branding', 'Marketing website + demo phone', 'Lead finder', 'Up to 5 team members', `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`] },
+  { id: 'pro' as const, name: 'Pro', price: PLAN_PRICES.pro, icon: Shield, popular: true, description: 'Most popular', features: ['Full white-label branding', 'Marketing website + demo phone', 'Lead finder', 'Team members', `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`] },
   { id: 'scale' as const, name: 'Scale', price: PLAN_PRICES.scale, icon: Crown, description: 'For established agencies', features: ['Everything in Pro', 'AI Lab / industry templates', 'Advanced lead finder + API access', 'Unlimited team members', `$0/client + $${PLAN_RATES.scale.perMinute}/min`] },
 ];
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, effectivePlan, hasPermission } = useAgency();
-  const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, hasWhiteLabel, planName } = usePlanFeatures();
+  const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
@@ -57,8 +57,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
-    { href: '/agency/leads', label: 'Leads', icon: Target, permissionKey: 'leads' },
-    { href: '/agency/outreach', label: 'Outreach', icon: Send, permissionKey: 'outreach' },
+    { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
+    { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
     { href: '/agency/marketing', label: 'Marketing Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
