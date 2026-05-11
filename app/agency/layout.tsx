@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Sun, Moon, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -60,7 +60,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
     { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
-    { href: '/agency/marketing', label: 'Marketing Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
+    { href: '/agency/marketing', label: 'Marketing', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
     { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
@@ -76,6 +76,35 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { if (!loading && shouldBlockAccess) { window.location.href = '/agency/settings'; } }, [loading, shouldBlockAccess]);
   useEffect(() => { document.documentElement.style.setProperty('background', theme.bg, 'important'); document.body.style.setProperty('background', theme.bg, 'important'); return () => { document.documentElement.style.removeProperty('background'); document.body.style.removeProperty('background'); }; }, [theme.bg]);
   useEffect(() => { if (!loading) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
+
+  const handleToggleTheme = async () => {
+    const newTheme = theme.isDark ? 'light' : 'dark';
+    // Immediate localStorage update for instant visual switch
+    try { localStorage.setItem('voiceai_ui_theme', newTheme); } catch {}
+    // Update agency object in localStorage
+    try {
+      const stored = localStorage.getItem('agency');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.website_theme = newTheme;
+        localStorage.setItem('agency', JSON.stringify(parsed));
+      }
+    } catch {}
+    // Persist to backend
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+      if (agency?.id && token) {
+        fetch(backendUrl + '/api/agency/' + agency.id + '/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ website_theme: newTheme }),
+        }).catch(() => {});
+      }
+    } catch {}
+    // Reload to apply theme
+    window.location.reload();
+  };
 
   const handleSignOut = () => { localStorage.removeItem('auth_token'); localStorage.removeItem('agency'); localStorage.removeItem('user'); localStorage.removeItem('voiceai_ui_theme'); window.location.href = '/agency/login'; };
 
@@ -210,6 +239,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
           {hasPaymentIssue && (<a href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></a>)}
           {agency?.subscription_status === 'active' && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}><p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p><p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Free'}</p></div>)}
+          <button onClick={handleToggleTheme} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>{theme.isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}{theme.isDark ? 'Light Mode' : 'Dark Mode'}</button>
           <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4" style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><LogOut className="h-5 w-5" />Sign Out</button>
         </div>
       </aside>
