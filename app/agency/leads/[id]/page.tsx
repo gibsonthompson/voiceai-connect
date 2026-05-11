@@ -10,6 +10,7 @@ import {
   Hash, TrendingUp
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../../hooks/useTheme';
 import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
@@ -124,6 +125,13 @@ export default function LeadDetailPage() {
   const leadId = params.id as string;
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
+
+  if (canUseLeadFinder === false) {
+    if (typeof window !== "undefined") window.location.href = "/agency/leads";
+    return null;
+  }
+
   
   const [lead, setLead] = useState<Lead | null>(null);
   const [outreach, setOutreach] = useState<OutreachStats | null>(null);

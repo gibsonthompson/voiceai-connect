@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { 
   Users, Search, Plus, ChevronRight, Loader2, ArrowUpRight,
   Target, Phone, Mail, Calendar, DollarSign, TrendingUp,
-  ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X,
+  ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock,
   CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { useAgency } from '../context';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
@@ -100,6 +101,7 @@ type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active' | 'sequence-d
 export default function AgencyLeadsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -272,6 +274,18 @@ export default function AgencyLeadsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {!canUseLeadFinder && (
+        <div className="rounded-xl p-5 mb-6 flex items-start gap-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+          <Lock className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro to unlock Lead Generation</p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Find local businesses on Google Maps, run outreach sequences, and track your pipeline.</p>
+            <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium" style={{ color: theme.primary }}>Upgrade to Pro <ArrowUpRight className="h-3 w-3" /></a>
+          </div>
+        </div>
+      )}
+      <div style={!canUseLeadFinder ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}>
+
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -906,6 +920,7 @@ export default function AgencyLeadsPage() {
         )}
       </div>
 
+      </div>
       {/* CSV Import Modal */}
       {agency && (
         <CSVImportModal

@@ -343,6 +343,13 @@ const INDEED_PRESETS = [
 // ── Main Page ───────────────────────────────────────────────────────────
 export default function LeadFinderPage() {
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
+
+  if (canUseLeadFinder === false) {
+    if (typeof window !== "undefined") window.location.href = "/agency/leads";
+    return null;
+  }
+
   const { agency } = useAgency();
 
   // Shared state

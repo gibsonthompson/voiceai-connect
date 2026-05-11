@@ -8,6 +8,7 @@ import {
   Calendar, DollarSign, Tag, FileText, Save
 } from 'lucide-react';
 import { useAgency } from '../../context';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../../hooks/useTheme';
 import { addDemoLead } from '../../demoData';
 
@@ -48,6 +49,13 @@ export default function NewLeadPage() {
   const router = useRouter();
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
+
+  if (canUseLeadFinder === false) {
+    if (typeof window !== "undefined") window.location.href = "/agency/leads";
+    return null;
+  }
+
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
