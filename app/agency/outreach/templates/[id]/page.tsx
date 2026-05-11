@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../../../context';
 import { useTheme } from '../../../../../hooks/useTheme';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 
 interface TemplateVariable {
   key: string;
@@ -31,6 +32,12 @@ export default function TemplateEditorPage() {
   
   const { agency, loading: contextLoading } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
+
+  if (canUseLeadFinder === false) {
+    if (typeof window !== "undefined") window.location.href = "/agency/outreach";
+    return null;
+  }
   
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);

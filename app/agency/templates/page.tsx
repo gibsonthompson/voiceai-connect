@@ -479,11 +479,69 @@ export default function AILabPage() {
   if (ctxLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
 
   if (!canUseAiLab) {
+    const PREVIEW_INDUSTRIES = [
+      { key: 'home_services', label: 'Home Services', desc: 'HVAC, plumbing, electrical, roofing', icon: 'Home' },
+      { key: 'medical', label: 'Medical & Dental', desc: 'Clinics, dental offices, specialists', icon: 'Stethoscope' },
+      { key: 'legal', label: 'Legal', desc: 'Law firms, attorneys, paralegals', icon: 'Scale' },
+      { key: 'salon', label: 'Salons & Spas', desc: 'Hair salons, barbershops, day spas', icon: 'Sparkles' },
+      { key: 'real_estate', label: 'Real Estate', desc: 'Agents, brokers, property management', icon: 'Building2' },
+      { key: 'automotive', label: 'Automotive', desc: 'Auto repair, dealerships, detailing', icon: 'Car' },
+      { key: 'restaurant', label: 'Restaurants', desc: 'Restaurants, catering, food service', icon: 'UtensilsCrossed' },
+      { key: 'fitness', label: 'Fitness & Wellness', desc: 'Gyms, yoga studios, personal training', icon: 'Dumbbell' },
+      { key: 'accounting', label: 'Accounting', desc: 'CPAs, bookkeepers, tax prep', icon: 'Calculator' },
+    ];
+
     return (
       <LockedFeature title="AI Lab" description="Configure, test, and ship AI receptionists with industry templates, voice selection, and live browser calls." requiredPlan="Pro"
         features={['Industry-specific AI templates', 'Voice selection & live test calls', 'Knowledge base editor', 'System prompt customization']}>
         <div className="p-4 sm:p-6 lg:p-8">
-          <div className="flex items-center gap-3 mb-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
+              <FlaskConical className="h-5 w-5" style={{ color: theme.primary }} />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1>
+              <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="h-4 w-4" style={{ color: theme.primary }} />
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Packaged Receptionists</span>
+            </div>
+            <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+              Configure the default AI receptionist for each industry. New clients inherit your voice, greeting, prompt, and knowledge base.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {PREVIEW_INDUSTRIES.map(ind => {
+                const Ic = ICON_MAP[ind.icon] || Building2;
+                return (
+                  <div key={ind.key} className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: theme.hover }}>
+                        <Ic className="h-5 w-5" style={{ color: theme.textMuted }} />
+                      </div>
+                      <span className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Default</span>
+                    </div>
+                    <p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            {['Acme Plumbing', 'Bright Dental', 'Metro Law'].map(name => (
+              <div key={name} className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                <div className="w-5 h-5 rounded flex items-center justify-center" style={{ backgroundColor: theme.primary15 }}>
+                  <Building className="h-3 w-3" style={{ color: theme.primary }} />
+                </div>
+                {name}
+              </div>
+            ))}
+          </div>
         </div>
       </LockedFeature>
     );

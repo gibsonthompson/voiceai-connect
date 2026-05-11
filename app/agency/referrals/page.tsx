@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
+import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import LockedFeature from '@/components/LockedFeature';
 import { DEMO_REFERRALS } from '../demoData';
 import { 
   Users, DollarSign, TrendingUp, Copy, Check, ExternalLink, 
@@ -76,6 +78,88 @@ const formatDate = (dateString: string) => {
 export default function ReferralsPage() {
   const { agency, demoMode } = useAgency();
   const theme = useTheme();
+  const { canUseLeadFinder } = usePlanFeatures();
+
+  // ── Free plan gate ──────────────────────────────────────────────────
+  if (!canUseLeadFinder) {
+    return (
+      <LockedFeature
+        title="Referral Program"
+        description="Earn 40% recurring commission for every agency you refer. Share your unique link, track signups, and request payouts."
+        requiredPlan="Pro"
+        features={[
+          'Custom referral link with editable code',
+          '40% recurring commission on referrals',
+          'Real-time tracking of signups and earnings',
+          'One-click payout requests via Stripe Connect',
+        ]}
+      >
+        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary + '20', color: theme.primary }}>
+                <Gift className="h-5 w-5" />
+              </div>
+              <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Referral Program</h1>
+            </div>
+            <p style={{ color: theme.textMuted }}>Earn 40% recurring commission for every agency you refer</p>
+          </div>
+
+          <div className="rounded-2xl p-6 mb-8" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}30` }}>
+            <h2 className="font-medium flex items-center gap-2 mb-2" style={{ color: theme.text }}>
+              <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+              Your Referral Link
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                <span className="text-sm" style={{ color: theme.textMuted }}>myvoiceaiconnect.com/signup?ref=your-code</span>
+              </div>
+              <div className="px-6 py-3 rounded-xl font-medium flex items-center gap-2" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
+                <Copy className="h-4 w-4" /> Copy Link
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Total Referrals', value: '0' },
+              { label: 'This Month', value: '$0.00' },
+              { label: 'Lifetime Earnings', value: '$0.00' },
+              { label: 'Available Balance', value: '$0.00' },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-2xl p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <p className="text-sm mb-1" style={{ color: theme.textMuted }}>{stat.label}</p>
+                <p className="text-2xl font-semibold" style={{ color: theme.text }}>{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium mb-4" style={{ color: theme.text }}>How It Works</h3>
+            <div className="grid sm:grid-cols-3 gap-6">
+              {[
+                { num: '1', title: 'Share Your Link', desc: 'Share your unique referral link with other agency owners' },
+                { num: '2', title: 'They Sign Up', desc: "When they create an agency using your link, they're linked to you" },
+                { num: '3', title: 'Earn 40% Forever', desc: 'Earn 40% of their subscription fee every month' },
+              ].map((step) => (
+                <div key={step.num} className="flex gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg font-semibold text-sm flex-shrink-0" style={{ backgroundColor: theme.primary + '20', color: theme.primary }}>
+                    {step.num}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: theme.text }}>{step.title}</p>
+                    <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </LockedFeature>
+    );
+  }
+
+  // ── Normal page (Pro/Scale) ─────────────────────────────────────────
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
