@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme } from "@/hooks/useTheme";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useAgency } from "../../context";
 import Link from "next/link";
 import {
