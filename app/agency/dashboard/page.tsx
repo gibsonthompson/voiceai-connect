@@ -55,6 +55,7 @@ export default function AgencyDashboardPage() {
   const [sendingFeedback, setSendingFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (!agency) return;
@@ -99,6 +100,26 @@ export default function AgencyDashboardPage() {
       setTimeout(() => { setShowFeedbackModal(false); setFeedbackSent(false); }, 2000);
     } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); }
     finally { setSendingFeedback(false); }
+  };
+
+  const handlePreviewClient = async (clientId: string) => {
+    if (!agency) return;
+    setPreviewLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/preview-token`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to generate preview token');
+      const data = await response.json();
+      window.open(`/client/preview?token=${data.token}`, '_blank');
+    } catch (err) {
+      console.error('Preview failed:', err);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -185,7 +206,7 @@ export default function AgencyDashboardPage() {
               <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Call this number to experience what your clients get. This is a fully working AI receptionist.</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <a href={`tel:${testClient.vapi_phone_number}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-3.5 w-3.5" />Call {formatDemoPhone(testClient.vapi_phone_number)}</a>
-                <a href={`/agency/clients/${testClient.id}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>View Client Dashboard</a>
+                <button onClick={() => handlePreviewClient(testClient.id)} disabled={previewLoading} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{previewLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading...</> : 'Preview Client Dashboard'}</button>
               </div>
             </div>
             <div className="text-right flex-shrink-0 hidden sm:block">
