@@ -100,10 +100,10 @@ export const PLAN_LIMITS = {
 // ============================================================================
 export const PLAN_PRICES = {
   free: 0,
-  pro: 179,
+  pro: 99,
   scale: 499,
   starter: 0,
-  professional: 179,
+  professional: 99,
   enterprise: 499,
 } as const;
 
