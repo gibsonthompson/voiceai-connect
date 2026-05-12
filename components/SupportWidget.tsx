@@ -6,12 +6,13 @@ import {
   Send, Loader2, Bot, User, ArrowUpRight, Sparkles, MessageSquare,
   HelpCircle, Phone, CreditCard, Users, FlaskConical, BookOpen,
   Target, Wrench, Palette, UserPlus, PhoneCall, Receipt, Check,
+  Calendar,
 } from 'lucide-react';
 import { KB_CATEGORIES, KB_ARTICLES, searchKB, getKBContextText, type KBArticle } from '@/lib/support-kb';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Rocket: Sparkles, CreditCard, Receipt, Users, FlaskConical, BookOpen,
-  Phone, Palette, Target, UserPlus, PhoneCall, Wrench, HelpCircle,
+  Phone, Palette, Target, UserPlus, PhoneCall, Wrench, HelpCircle, Calendar,
 };
 
 type WidgetView = 'home' | 'category' | 'article' | 'chat' | 'escalation';

@@ -244,7 +244,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     {
       icon: 'calendar',
       title: 'Appointment Booking',
-      description: 'AI checks your real availability and books appointments directly to your calendar.',
+      description: 'AI checks your Google Calendar in real time, offers available slots to callers, and books appointments automatically — no back-and-forth.',
       integrations: ['Google Calendar', 'Outlook', 'Calendly'],
     },
     {
@@ -372,7 +372,7 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Everything in Starter, plus:',
         'Up to 150 calls per month',
         'Advanced appointment booking',
-        'Multiple calendar integration',
+        'Google Calendar + multi-calendar support',
         'Custom business hours',
         'Lead qualification questions',
         'Priority call transfer rules',
@@ -389,6 +389,7 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Up to 500 calls per month',
         'Up to 3 AI phone numbers',
         'Advanced CRM integration',
+        'Google Calendar integration',
         'Custom AI training',
         'Multi-language support',
         'Dedicated account manager',

@@ -23,6 +23,7 @@ export const KB_CATEGORIES = [
   { id: 'leads-outreach', label: 'Leads & Outreach', icon: 'Target' },
   { id: 'team', label: 'Team Members', icon: 'UserPlus' },
   { id: 'calls', label: 'Call Handling', icon: 'PhoneCall' },
+  { id: 'integrations', label: 'Integrations', icon: 'Calendar' },
   { id: 'troubleshooting', label: 'Troubleshooting', icon: 'Wrench' },
 ];
 
@@ -447,6 +448,64 @@ export const KB_ARTICLES: KBArticle[] = [
     answer: 'Yes. The system prompt and opening greeting are fully customizable. Many agencies configure the AI to introduce itself as a "receptionist" or "assistant" without mentioning AI. For example: "Thank you for calling Smith Plumbing, this is Sarah, how can I help you?"',
     keywords: ['ai', 'mention', 'hide', 'human', 'name', 'receptionist', 'natural'],
     userType: 'agency',
+  },
+
+  // ── GOOGLE CALENDAR INTEGRATION ───────────────────────────────────
+  {
+    id: 'gcal-overview',
+    category: 'integrations',
+    question: 'Does VoiceAI Connect integrate with Google Calendar?',
+    answer: 'Yes. VoiceAI Connect has a built-in Google Calendar integration that lets the AI receptionist check real-time availability and book appointments directly during phone calls. When a caller wants to schedule an appointment, the AI checks your Google Calendar for open slots and books it on the spot — no back-and-forth, no missed bookings.',
+    keywords: ['google', 'calendar', 'integration', 'scheduling', 'appointment', 'booking', 'gcal'],
+    userType: 'both',
+  },
+  {
+    id: 'gcal-how-it-works',
+    category: 'integrations',
+    question: 'How does the Google Calendar booking work during calls?',
+    answer: 'When a caller says they want to book an appointment, the AI checks your connected Google Calendar for available time slots. It offers the caller available times, confirms their preferred slot, and creates the calendar event automatically — including the caller\'s name, phone number, and reason for the appointment. The business owner sees the new booking appear in their Google Calendar instantly.',
+    keywords: ['how', 'works', 'booking', 'appointment', 'schedule', 'available', 'slots', 'real-time'],
+    userType: 'both',
+  },
+  {
+    id: 'gcal-setup',
+    category: 'integrations',
+    question: 'How do I connect Google Calendar?',
+    answer: 'Go to Settings and look for the Google Calendar section. Click "Connect Google Calendar" to authorize access through your Google account. Once connected, the AI receptionist can check availability and book appointments. You control which calendar it reads from and writes to.',
+    keywords: ['connect', 'setup', 'google', 'calendar', 'authorize', 'link', 'enable'],
+    userType: 'client',
+  },
+  {
+    id: 'gcal-agency-setup',
+    category: 'integrations',
+    question: 'How do I enable Google Calendar for my clients?',
+    answer: 'Google Calendar is a per-plan feature you control in Settings > Pricing. Toggle the "Google Calendar" feature on for the plan tiers where you want it available. Once enabled for a plan, clients on that tier can connect their own Google account from their dashboard. The integration uses Google\'s secure OAuth flow — you never see your client\'s credentials.',
+    keywords: ['enable', 'calendar', 'clients', 'plan', 'feature', 'toggle', 'agency'],
+    userType: 'agency',
+  },
+  {
+    id: 'gcal-which-plans',
+    category: 'integrations',
+    question: 'Which client plans include Google Calendar?',
+    answer: 'You decide. In Settings > Pricing, each plan tier has a "Google Calendar" toggle under the features list. You might include it only on your Pro or Growth tiers as a premium upsell, or enable it across all tiers. It\'s entirely up to you.',
+    keywords: ['plans', 'which', 'calendar', 'tier', 'include', 'available'],
+    userType: 'agency',
+  },
+  {
+    id: 'gcal-not-working',
+    category: 'integrations',
+    question: 'Google Calendar integration isn\'t working',
+    answer: 'Check these in order: (1) Verify the Google account is connected — look for a green "Connected" status in Settings. (2) Make sure the correct calendar is selected. (3) Verify the "Google Calendar" feature is enabled for the client\'s plan tier (agency controls this in Settings > Pricing). (4) Try disconnecting and reconnecting the Google account. If the issue persists, contact support.',
+    keywords: ['not working', 'broken', 'calendar', 'fix', 'error', 'disconnect', 'reconnect'],
+    userType: 'both',
+  },
+  {
+    id: 'gcal-multiple-calendars',
+    category: 'integrations',
+    question: 'Can I use multiple Google Calendars?',
+    answer: 'The integration connects to one Google account per client. The AI reads from and writes to the calendar you select during setup. If a business uses a shared team calendar, connect the Google account that owns that calendar.',
+    keywords: ['multiple', 'calendars', 'shared', 'team', 'which', 'select'],
+    userType: 'both',
   },
 
   // ── TROUBLESHOOTING ─────────────────────────────────────────────
