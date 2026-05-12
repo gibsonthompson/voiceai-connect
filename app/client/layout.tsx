@@ -9,6 +9,7 @@ import {
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
+import SupportWidget from '@/components/SupportWidget';
 
 function setFavicon(url: string) {
   const existingLinks = document.querySelectorAll("link[rel*='icon']");
@@ -226,6 +227,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
       <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
+      <SupportWidget theme={theme} userType="client" />
     </div>
   );
 }
