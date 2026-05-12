@@ -118,6 +118,11 @@ const BRAND_ICONS: Record<string, React.ReactNode> = {
       <rect x="16.5" y="3.5" width="4" height="17" rx="0.6" />
     </svg>
   ),
+  google: (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+    </svg>
+  ),
 };
 
 function BrandIcon({ name }: { name: string }) {
@@ -263,13 +268,14 @@ export default function HomePage() {
   const r7 = useInView();
   const r8 = useInView();
   const r9 = useInView();
+  const r10 = useInView();
 
   /* ─── Tower layers — outcome-focused copy ─── */
   const layers = [
     { n: '01', icon: Palette, title: 'Your brand on every surface', sub: 'Logo, color palette, custom domain, transactional emails, and the client phone experience are all configured per agency. End clients see your business at every touchpoint — VoiceAI Connect remains invisible from signup through ongoing usage.', features: ['Token-level color customization across the entire interface', 'Custom domain with auto-provisioned SSL certificates', 'Branded transactional emails and notification SMS'] },
     { n: '02', icon: Globe, title: 'A marketing website that closes for you', sub: 'Each agency receives a complete white-label marketing site — hero, pricing tiers, testimonials, and FAQ — with an interactive AI demo phone line that lets prospects experience the product before they ever speak to a human.', features: ['Conversion-optimized landing page deployed on signup', 'Dedicated AI demo phone number per agency', 'SEO metadata, Open Graph, and sitemap auto-generated'] },
     { n: '03', icon: Rocket, title: 'From signup to live AI in sixty seconds', sub: 'Local businesses fill out a branded form. The platform provisions everything in under a minute: AI voice agent configured for their business, dedicated phone number, dashboard credentials, and welcome sequence triggered. No A2P registration delay, no manual setup.', features: ['White-labeled signup flow tied to your domain', 'Automatic phone number provisioning, no A2P delay', 'Triggered welcome and activation email sequence'] },
-    { n: '04', icon: Mic, title: 'An AI receptionist that never sleeps', sub: "The voice agent answers calls 24/7 in multiple languages, books appointments directly to the client's calendar, transfers urgent matters to the business owner in real time, and writes a summary on every interaction.", features: ['Sub-two-second response latency on every call', 'Google Calendar integration — books appointments in real time', 'Multilingual voice synthesis included'] },
+    { n: '04', icon: Mic, title: 'An AI receptionist that never sleeps', sub: "The voice agent answers calls 24/7 in multiple languages, books appointments directly to the client's Google Calendar, transfers urgent matters to the business owner in real time, and writes a summary on every interaction.", features: ['Sub-two-second response latency on every call', 'Google Calendar integration — books appointments in real time', 'Multilingual voice synthesis included'] },
     { n: '05', icon: MonitorSmartphone, title: 'What end clients log in to every day', sub: 'Each business receives a fully branded dashboard showing call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, lead categorization, and configurable SMS or email alerts on every interaction.', features: ['Full call recordings and time-coded transcripts', 'AI summary with intent and sentiment per call', 'SMS, email, and webhook alerts on configurable triggers'] },
     { n: '06', icon: BarChart3, title: 'Run the entire agency from your phone', sub: 'The agency control surface shows every client, every call, and every dollar in a mobile-first interface. Add clients, modify branding, listen to recordings, and review revenue from anywhere — without ever opening a laptop.', features: ['Real-time MRR, churn, and revenue analytics', 'Per-client call volume and conversion tracking', 'Mobile-optimized layout with offline-capable PWA'] },
     { n: '07', icon: CreditCard, title: 'Money lands in your bank, not ours', sub: 'Stripe Connect routes every client subscription directly into your account at the price tier you set. Zero revenue share, zero holdbacks, zero middleman. The platform never sees the money — your clients pay you.', features: ['Direct-to-agency Stripe Connect deposits', 'Configurable subscription pricing per tier', 'Automated invoicing on every client signup'] },
@@ -310,8 +316,9 @@ export default function HomePage() {
               { n: 'Deepgram', i: 'deepgram' }, { n: 'OpenAI', i: 'openai' },
               { n: 'Telnyx', i: 'telnyx' }, { n: 'Twilio', i: 'twilio' },
               { n: 'Stripe', i: 'stripe' }, { n: 'Supabase', i: 'supabase' },
-              { n: 'Vercel', i: 'vercel' }, { n: 'Cloudflare', i: 'cloudflare' },
-              { n: 'Sentry', i: 'sentry' }, { n: 'PostHog', i: 'posthog' },
+              { n: 'Google', i: 'google' }, { n: 'Vercel', i: 'vercel' },
+              { n: 'Cloudflare', i: 'cloudflare' }, { n: 'Sentry', i: 'sentry' },
+              { n: 'PostHog', i: 'posthog' },
             ].map(b => (
               <div key={b.n} className="trust-item">
                 <BrandIcon name={b.i} />
@@ -402,7 +409,7 @@ export default function HomePage() {
             </div>
             <div className="lg:col-span-6 lg:pt-2">
               <p className="t-body max-w-lg">
-                VoiceAI Connect orchestrates fifteen specialized infrastructure providers behind a single agency-facing application. Anthropic&apos;s Claude handles reasoning. ElevenLabs synthesizes voice. Deepgram transcribes calls in real time. Telnyx routes US numbers, Twilio handles UK and international. Stripe Connect, Supabase, Vercel, and Cloudflare run the platform layer. Sentry and PostHog cover monitoring and analytics — billed to you as a single flat fee.
+                VoiceAI Connect orchestrates fifteen specialized infrastructure providers behind a single agency-facing application. Anthropic&apos;s Claude handles reasoning. ElevenLabs synthesizes voice. Deepgram transcribes calls in real time. Telnyx routes US numbers, Twilio handles UK and international. Stripe Connect, Supabase, Vercel, and Cloudflare run the platform layer. Google Calendar powers real-time appointment booking. Sentry and PostHog cover monitoring and analytics — billed to you as a single flat fee.
               </p>
             </div>
           </div>
@@ -429,7 +436,7 @@ export default function HomePage() {
             <div className="arch-base">
               {[
                 { label: 'Voice & reasoning', vendors: [{ n: 'Anthropic', r: 'Claude reasoning', i: 'anthropic' }, { n: 'ElevenLabs', r: 'Voice synthesis', i: 'elevenlabs' }, { n: 'Deepgram', r: 'Real-time STT', i: 'deepgram' }, { n: 'OpenAI', r: 'Whisper batch STT', i: 'openai' }] },
-                { label: 'Telephony', vendors: [{ n: 'Telnyx', r: 'US numbers + SIP', i: 'telnyx' }, { n: 'Twilio', r: 'UK + international', i: 'twilio' }] },
+                { label: 'Telephony & scheduling', vendors: [{ n: 'Telnyx', r: 'US numbers + SIP', i: 'telnyx' }, { n: 'Twilio', r: 'UK + international', i: 'twilio' }, { n: 'Google', r: 'Calendar booking', i: 'google' }] },
                 { label: 'Backend & observability', vendors: [{ n: 'Supabase', r: 'Postgres + auth', i: 'supabase' }, { n: 'Stripe', r: 'Connect + billing', i: 'stripe' }, { n: 'Brevo', r: 'Transactional email', i: 'brevo' }, { n: 'Sentry', r: 'Error monitoring', i: 'sentry' }, { n: 'PostHog', r: 'Product analytics', i: 'posthog' }] },
                 { label: 'Edge & automation', vendors: [{ n: 'Vercel', r: 'Edge hosting', i: 'vercel' }, { n: 'Cloudflare', r: 'CDN + WAF', i: 'cloudflare' }, { n: 'Make', r: 'Workflow automation', i: 'make' }, { n: 'n8n', r: 'Custom integrations', i: 'n8n' }] },
               ].map(group => (
@@ -505,7 +512,7 @@ export default function HomePage() {
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">01</span><span className="tower-floor-title">Brand identity</span><span className="tower-floor-meta">your-brand.com</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>01</span><div className="tower-color-row">{['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ef4444', '#0a0a0a'].map(c => (<span key={c} style={{ background: c }} />))}</div><span className="tower-floor-sub">Logo · palette · typography</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">02</span><span className="tower-floor-title">Marketing website</span><span className="tower-floor-meta">+ AI demo line</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>02</span><div className="tower-mini-browser"><div className="tower-mini-browser-bar"><span /><span /><span /></div><div className="tower-mini-browser-body" /></div><span className="tower-floor-sub">Hero, pricing, testimonials, CTA</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">03</span><span className="tower-floor-title">Self-serve onboarding</span><span className="tower-floor-meta text-em">47s avg</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>03</span><div className="tower-progress"><div className="tower-progress-fill" /></div><span className="tower-floor-sub">Signup → AI live + phone provisioned</span></div></div>
-                    <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">04</span><span className="tower-floor-title">AI receptionist</span><span className="tower-badge">Voice</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>04</span><div className="waveform">{Array.from({ length: 14 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</div><span className="tower-floor-sub">2.1s response · multilingual</span></div></div>
+                    <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">04</span><span className="tower-floor-title">AI receptionist</span><span className="tower-badge">Voice</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>04</span><div className="waveform">{Array.from({ length: 14 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</div><span className="tower-floor-sub">2.1s response · Google Calendar</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">05</span><span className="tower-floor-title">Client dashboard</span><span className="tower-floor-meta">Per client</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>05</span><div className="tower-bar-row">{[3, 5, 7, 4, 6, 8, 5, 7, 9, 6, 4, 7].map((h, j) => (<span key={j} style={{ height: `${h * 1.6}px` }} />))}</div><span className="tower-floor-sub">Recordings · transcripts · summaries</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">06</span><span className="tower-floor-title">Agency dashboard</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>06</span><span className="tower-stat">23 clients</span><span className="tower-stat">$3.4k MRR</span><span className="tower-stat">47 calls</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">07</span><span className="tower-floor-title">Stripe Connect billing</span><span className="tower-badge">Connected</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>07</span><span className="font-mono text-[11px] text-white/55">Direct deposit to your bank — no holdback</span></div></div>
@@ -561,7 +568,75 @@ export default function HomePage() {
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Lock className="w-3 h-3" />Security</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Postgres row-level security. SOC2-compliant vendors. PII never persisted in logs.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Globe className="w-3 h-3" />Multilingual</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">English, Spanish, French, and German voice support included.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Wand2 className="w-3 h-3" />Automation</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Make and n8n event hooks for every platform action.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Calendar className="w-3 h-3" />Google Calendar</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">AI books appointments to your client's calendar during live calls.</p></div></div>
+            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Calendar className="w-3 h-3" />Google Calendar</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">AI books appointments to your client&apos;s calendar during live calls. Included on all plans.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ GOOGLE CALENDAR + INTEGRATIONS ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r10} className="fade-up grid lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+            <div className="lg:col-span-5">
+              <p className="t-eyebrow text-em mb-6">Scheduling &amp; integrations</p>
+              <h2 className="t-h2 text-white">Every appointment booked. Straight to Google Calendar.</h2>
+              <p className="t-body mt-6 max-w-md">
+                When a caller says &quot;I need to schedule an appointment,&quot; the AI checks the business owner&apos;s Google Calendar in real time, offers available slots, and books it on the spot. The event appears instantly — complete with the caller&apos;s name, phone number, and reason for the visit.
+              </p>
+              <p className="t-body mt-4 max-w-md">
+                No back-and-forth. No missed bookings. No third-party scheduling tool required. Google Calendar integration is <strong className="text-white">included on every plan, including Free.</strong>
+              </p>
+              <Link href="/signup" className="btn btn-em mt-9">Start free — includes calendar <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+            </div>
+
+            <div className="lg:col-span-7">
+              <div className="space-y-6">
+                {/* How it works flow */}
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
+                  <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-6">How it works during a call</p>
+                  <div className="space-y-5">
+                    {[
+                      { step: '01', label: 'Caller requests appointment', detail: '"I\'d like to schedule a consultation for next week"' },
+                      { step: '02', label: 'AI checks Google Calendar', detail: 'Reads real-time availability across all connected calendars' },
+                      { step: '03', label: 'Offers available slots', detail: '"I have Tuesday at 10am or Thursday at 2pm — which works better?"' },
+                      { step: '04', label: 'Books and confirms', detail: 'Event created with caller name, phone, and reason — owner notified instantly' },
+                    ].map(s => (
+                      <div key={s.step} className="flex gap-4 items-start">
+                        <span className="font-mono text-[11px] text-em mt-1 w-6 flex-shrink-0">{s.step}</span>
+                        <div>
+                          <p className="font-display text-[15px] text-white font-medium">{s.label}</p>
+                          <p className="text-[13px] text-white/50 mt-1">{s.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Integration ecosystem */}
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
+                  <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-3">Beyond the calendar</p>
+                  <p className="text-[14px] text-white/60 leading-relaxed mb-6">
+                    Google Calendar is the hub. Every appointment the AI books automatically flows into the business owner&apos;s existing tools — CRM records created, follow-up emails triggered, team notifications sent. The phone call becomes the start of a complete digital pipeline.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {[
+                      { name: 'HubSpot', desc: 'Auto-create CRM contacts' },
+                      { name: 'Salesforce', desc: 'Sync deals and activities' },
+                      { name: 'Zapier', desc: 'Connect 6,000+ apps' },
+                      { name: 'Make', desc: 'Visual workflow automation' },
+                      { name: 'Google Meet', desc: 'Auto-add video links' },
+                      { name: 'Slack', desc: 'Team booking notifications' },
+                    ].map(int => (
+                      <div key={int.name} className="rounded-lg p-3 border border-white/[0.06] bg-white/[0.008]">
+                        <p className="font-display text-[13px] text-white font-medium">{int.name}</p>
+                        <p className="text-[11px] text-white/40 mt-0.5">{int.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[12px] text-white/35 mt-4">Google Calendar syncs natively with these platforms. Appointments booked by the AI flow through automatically — no additional configuration required from your clients.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -617,10 +692,10 @@ export default function HomePage() {
               ['Built-in lead generation CRM with templates', true, false, false, false],
               ['Mobile-first agency interface', true, false, true, true],
               ['Interactive AI demo phone line included', true, false, false, false],
+              ['Google Calendar appointment booking', true, false, false, false],
               ['Usage-based pricing — pay as you grow', true, false, true, false],
               ['White-label marketing website included', true, false, true, true],
               ['Direct Stripe Connect payouts to agency', true, true, false, false],
-              ['Google Calendar appointment booking', true, false, false, false],
             ].map(([f, v, g, a, e]) => (
               <div key={f as string} className="compare-row text-[13.5px] text-black/72">
                 <div className="pr-4">{f as string}</div>
@@ -648,8 +723,8 @@ export default function HomePage() {
 
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
             {[
-              { name: 'Free', price: 0, desc: 'Start building — no commitment', features: ['AI receptionist for every client', 'Call notifications + spam detection', 'Caller recognition + after-hours mode', 'Google Calendar integration', '$29.99/client/mo + $0.12/min', 'Stripe Connect billing'], limits: ['No white-label branding', 'No marketing site'] },
-              { name: 'Pro', price: 99, desc: 'Growing agencies — full white-label', pop: true, features: ['Full white-label branding', 'Custom domain', 'Marketing website + AI demo line', 'Lead generation CRM', 'Google Calendar integration', 'Team members', '$9.99/client/mo + $0.10/min'], limits: [] },
+              { name: 'Free', price: 0, desc: 'Start building — no commitment', features: ['AI receptionist for every client', 'Google Calendar appointment booking', 'Call notifications + spam detection', 'Caller recognition + after-hours mode', '$29.99/client/mo + $0.12/min', 'Stripe Connect billing'], limits: ['No white-label branding', 'No marketing site'] },
+              { name: 'Pro', price: 99, desc: 'Growing agencies — full white-label', pop: true, features: ['Full white-label branding', 'Custom domain', 'Marketing website + AI demo line', 'Google Calendar integration', 'Lead generation CRM', 'Team members', '$9.99/client/mo + $0.10/min'], limits: [] },
               { name: 'Scale', price: 499, desc: 'Established agencies at volume', features: ['Everything in Pro', 'AI Lab + industry templates', 'Unlimited team members', 'Bring Your Own Twilio', '$0/client + $0.05/min only', 'Priority support'], limits: [] },
             ].map(t => (
               <div key={t.name} className={`price-card ${t.pop ? 'price-card-em' : ''}`}>
@@ -705,15 +780,15 @@ export default function HomePage() {
                 { q: 'What is VoiceAI Connect?', a: 'VoiceAI Connect is a white-label AI receptionist platform built for agencies and resellers. Agencies use the platform to brand and resell AI receptionist subscriptions to local service businesses for $99 to $299 per month. The platform automatically provisions the AI voice agent, dedicated phone number, and client-facing dashboard at signup. Subscription payments flow directly to the agency through Stripe Connect, and the underlying infrastructure — voice synthesis, telephony, payments, database, hosting — is operated by VoiceAI Connect as a single integrated product.' },
                 { q: 'How does the white-label experience work?', a: 'Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency&apos;s brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle — from signup through ongoing usage to billing.' },
                 { q: 'How is VoiceAI Connect different from GoHighLevel?', a: 'GoHighLevel is a multi-purpose marketing platform — CRM, funnels, email, SMS, websites — designed for marketing agencies to manage client campaigns. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not provide one), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound).' },
-                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. A 14-day free trial is available for Pro and Scale without a credit card.' },
+                { q: 'Does the AI receptionist integrate with Google Calendar?', a: 'Yes — and it is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner&apos;s Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller&apos;s name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly, which means it also syncs automatically to any connected CRM — HubSpot, Salesforce, Pipedrive — and can trigger downstream automations via Zapier or Make. The phone call becomes the entry point into the business&apos;s complete digital pipeline.' },
+                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. A 14-day free trial is available for Pro and Scale without a credit card. Google Calendar integration is included on all tiers.' },
                 { q: 'Does VoiceAI Connect support international phone numbers?', a: 'Yes. The default integration uses Telnyx for US-based phone numbers and provisions them automatically. For UK, Canadian, or other international numbers, agencies connect their own Twilio account by adding their API credentials in the dashboard. The platform then routes calls for those clients through Twilio automatically — the AI receptionist behavior, client dashboards, billing, and onboarding flow all function identically. No additional configuration is required beyond pasting in the Twilio key.' },
                 { q: 'Can VoiceAI Connect be used from outside the United States?', a: 'Yes. The platform is available globally — agency operators in any country can sign up, build a brand, and run a workspace. End-client coverage is available in the United States, United Kingdom, and Canada. An operator based in India, the Philippines, or anywhere else can run a US-focused agency remotely, selling AI receptionist subscriptions to American local businesses without leaving their home country. Stripe Connect supports payouts to most major countries.' },
                 { q: 'How do agencies acquire clients on the platform?', a: 'The platform includes a built-in lead generation CRM with thirteen pre-written outreach templates, a Google Maps business prospecting tool, sales scripts, and reply tracking. The strongest conversion tool is the interactive AI demo phone line, included on the Pro tier — prospects call the demo number, experience the AI receptionist firsthand, and typically convert without requiring a sales call.' },
                 { q: 'Are technical skills required to operate the platform?', a: 'No. Configuration is point-and-click: upload a logo, select a color palette, set pricing tiers, share a signup link. The platform handles AI agent configuration, phone number provisioning, billing setup, and ongoing operations automatically. There is no code to write and no infrastructure to manage.' },
                 { q: 'Can local businesses realistically be charged $99 to $299 per month?', a: 'Yes. Industry research places the cost of a single missed call at approximately $500 in lost revenue for a small service business. A full-time human receptionist costs roughly $3,000 per month inclusive of payroll taxes and benefits. AI receptionist coverage at $149 per month delivers 24/7 availability for a fraction of either alternative — making it a clear yes for most local service businesses.' },
                 { q: 'Is this another &quot;make money with AI&quot; product?', a: 'No. VoiceAI Connect is software infrastructure, not a course or a coaching program. The platform functions as the operating system for an actual service business — comparable to how Shopify functions as the operating system for an actual e-commerce business. There are no upsells, community fees, or playbooks to purchase. Operators do real sales work and provide a real service to local businesses.' },
-                { q: 'What integrations and infrastructure power the platform?', a: 'VoiceAI Connect orchestrates fifteen enterprise infrastructure providers behind a single application: Anthropic Claude for reasoning, ElevenLabs for voice synthesis, Deepgram for real-time speech-to-text, OpenAI Whisper for batch transcription, Telnyx for US phone numbers and SIP trunking, Twilio for UK and international numbers, Stripe Connect for subscription billing, Supabase for Postgres and authentication, Make and n8n for workflow automation, Vercel and Cloudflare for the edge layer, Brevo for transactional email, Sentry for error monitoring, and PostHog for product analytics.' },
-                { q: 'Does the AI receptionist integrate with Google Calendar?', a: 'Yes. Google Calendar integration is included on all plans, including Free. When a caller wants to book an appointment, the AI checks the business owner\'s Google Calendar for available slots, offers times to the caller, and creates the event automatically — complete with the caller\'s name, phone number, and reason for the appointment. The business owner sees the booking appear in their calendar instantly. Agencies control which client plan tiers include calendar access through the pricing settings in their dashboard.' },
+                { q: 'What integrations and infrastructure power the platform?', a: 'VoiceAI Connect orchestrates fifteen enterprise infrastructure providers behind a single application: Anthropic Claude for reasoning, ElevenLabs for voice synthesis, Deepgram for real-time speech-to-text, OpenAI Whisper for batch transcription, Telnyx for US phone numbers and SIP trunking, Twilio for UK and international numbers, Google Calendar for real-time appointment booking, Stripe Connect for subscription billing, Supabase for Postgres and authentication, Make and n8n for workflow automation, Vercel and Cloudflare for the edge layer, Brevo for transactional email, Sentry for error monitoring, and PostHog for product analytics.' },
                 { q: 'What happens if I cancel my subscription?', a: 'Cancellation is available at any time, with no holdback period or penalty. Operators retain ownership of their client list, custom domain, Stripe Connect account, and all client data. Existing clients can be migrated to another platform or terminated at the operator&apos;s discretion.' },
               ].map((item, i) => (
                 <details key={i} className="faq-item">
