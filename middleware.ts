@@ -107,6 +107,66 @@ export async function middleware(request: NextRequest) {
   );
 
   // =========================================================================
+  // HELPER: Rewrite to agency-site with all cookies/headers set
+  // =========================================================================
+  function rewriteToAgencySite(agency: { id: string; name: string; slug: string }) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-agency-id', agency.id);
+    requestHeaders.set('x-agency-name', agency.name);
+    requestHeaders.set('x-agency-slug', agency.slug || '');
+
+    // Only rewrite routes that exist in (agency-site) folder
+    if (pathname === '/' || pathname.startsWith('/get-started')) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/agency-site${pathname}`;
+
+      const rewriteResponse = NextResponse.rewrite(url, {
+        request: { headers: requestHeaders },
+      });
+
+      if (!existingCountryCookie) {
+        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+        rewriteResponse.cookies.set('vc_country', validCountry, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        });
+      }
+      rewriteResponse.cookies.set('agency_id', agency.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+
+      return rewriteResponse;
+    }
+
+    // For all other routes, pass through with agency cookie
+    const passResponse = NextResponse.next({
+      request: { headers: requestHeaders },
+      headers: response.headers,
+    });
+    passResponse.cookies.set('agency_id', agency.id, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+    return passResponse;
+  }
+
+  // =========================================================================
+  // HELPER: Rewrite to site-unavailable page
+  // =========================================================================
+  function rewriteToUnavailable() {
+    const url = request.nextUrl.clone();
+    url.pathname = '/site-unavailable';
+    return NextResponse.rewrite(url);
+  }
+
+  // =========================================================================
   // ROUTING LOGIC — subdomain and custom domain handling
   // (Platform domain already returned above before Supabase client creation)
   // =========================================================================
@@ -130,126 +190,46 @@ export async function middleware(request: NextRequest) {
       .single();
     
     if (agency) {
-      // Set agency context in headers for downstream use
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-agency-id', agency.id);
-      requestHeaders.set('x-agency-name', agency.name);
-      requestHeaders.set('x-agency-slug', agency.slug || '');
-      
-      // Set agency ID cookie for client-side access
-      response.cookies.set('agency_id', agency.id, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-      });
-      
-      // Only rewrite routes that exist in (agency-site) folder
-      // /signup pages are unified and detect context client-side
-      if (pathname === '/' || pathname.startsWith('/get-started')) {
-        const url = request.nextUrl.clone();
-        url.pathname = `/agency-site${pathname}`;
-        
-        // Preserve geo cookie on rewrite response
-        const rewriteResponse = NextResponse.rewrite(url, {
-          request: {
-            headers: requestHeaders,
-          },
-        });
-        
-        // Copy cookies to rewrite response
-        if (!existingCountryCookie) {
-          const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
-          const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
-          rewriteResponse.cookies.set('vc_country', validCountry, {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 30,
-            sameSite: 'lax',
-          });
-        }
-        rewriteResponse.cookies.set('agency_id', agency.id, {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/',
-        });
-        
-        return rewriteResponse;
-      }
-      
-      // For all other routes (/signup, /agency, /client, /login, etc.)
-      // Just pass through with the agency cookie set - pages handle context detection
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-        headers: response.headers,
-      });
+      return rewriteToAgencySite(agency);
+    }
+
+    // Agency exists but not active — check if suspended/canceled
+    const { data: inactiveAgency } = await supabase
+      .from('agencies')
+      .select('id, status')
+      .eq('slug', slug)
+      .single();
+
+    if (inactiveAgency) {
+      return rewriteToUnavailable();
     }
   }
 
   // 3. Check for custom agency domain
+  const cleanHostname = hostname.replace('www.', '');
+
   const { data: customDomainAgency } = await supabase
     .from('agencies')
     .select('id, name, status, slug, marketing_domain')
-    .eq('marketing_domain', hostname.replace('www.', ''))
+    .eq('marketing_domain', cleanHostname)
     .eq('domain_verified', true)
     .in('status', ['active', 'trial'])
     .single();
 
   if (customDomainAgency) {
-    // Set agency context in headers
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-agency-id', customDomainAgency.id);
-    requestHeaders.set('x-agency-name', customDomainAgency.name);
-    requestHeaders.set('x-agency-slug', customDomainAgency.slug || '');
-    
-    // Set agency ID cookie for client-side access
-    response.cookies.set('agency_id', customDomainAgency.id, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-    });
-    
-    // Only rewrite routes that exist in (agency-site) folder
-    if (pathname === '/' || pathname.startsWith('/get-started')) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/agency-site${pathname}`;
-      
-      const rewriteResponse = NextResponse.rewrite(url, {
-        request: {
-          headers: requestHeaders,
-        },
-      });
-      
-      // Copy cookies to rewrite response
-      if (!existingCountryCookie) {
-        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
-        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
-        rewriteResponse.cookies.set('vc_country', validCountry, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 30,
-          sameSite: 'lax',
-        });
-      }
-      rewriteResponse.cookies.set('agency_id', customDomainAgency.id, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-      });
-      
-      return rewriteResponse;
-    }
-    
-    // For all other routes, pass through with agency cookie
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-      headers: response.headers,
-    });
+    return rewriteToAgencySite(customDomainAgency);
+  }
+
+  // Agency exists with this domain but not active — show unavailable
+  const { data: inactiveCustomDomain } = await supabase
+    .from('agencies')
+    .select('id, status')
+    .eq('marketing_domain', cleanHostname)
+    .eq('domain_verified', true)
+    .single();
+
+  if (inactiveCustomDomain) {
+    return rewriteToUnavailable();
   }
 
   // 4. Unknown domain - could be local dev or misconfigured
