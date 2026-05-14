@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Building2, Users, Target, Mail, MessageSquare, LogOut, Loader2, Menu, X, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Target, Mail, MessageSquare, Youtube, LogOut, Loader2, Menu, X, ChevronRight, Youtube } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
 interface Admin { id: string; email: string; name: string; role: string; }
@@ -45,6 +45,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/admin/leads', label: 'Leads', icon: Target },
     { href: '/admin/outreach', label: 'Outreach', icon: Mail },
     { href: '/admin/sms-log', label: 'SMS Log', icon: MessageSquare },
+    { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
   ];
 
   const isActive = (href: string) => { if (href === '/admin') return pathname === '/admin'; return pathname?.startsWith(href); };
