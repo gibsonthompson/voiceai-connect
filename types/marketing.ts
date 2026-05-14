@@ -356,7 +356,6 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Google Calendar integration',
         'Emergency call transfer',
         'Text summaries after each call',
-        'Automatic English & Spanish',
         'Mobile app access',
         'Call recordings & transcripts',
         'Email support',
@@ -415,24 +414,48 @@ export const defaultMarketingConfig: MarketingConfig = {
       answer: '<p>It handles it gracefully: "I don\'t have that specific information, but I\'d be happy to have [your name] call you back with the details. Can I get your number?" Then you get a text summary so you know exactly what to address.</p>',
     },
     {
+      question: 'Does it block spam and robocalls?',
+      answer: '<p>Yes — automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against your monthly call limit, and you get a notification when one is blocked so you know it\'s working.</p>',
+    },
+    {
+      question: 'Can it handle multiple calls at the same time?',
+      answer: '<p>Yes — unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.</p>',
+    },
+    {
+      question: 'Do I need a website for this to work?',
+      answer: '<p>No. All you need is a phone number. You can forward your existing business line to your AI number, or use the AI number directly. There\'s nothing to install, no website required, and no technical setup on your end.</p>',
+    },
+    {
+      question: 'What happens if the AI transfers a call and nobody picks up?',
+      answer: '<p>The AI stays on the line. Instead of sending the caller to voicemail or dropping the call, it says something like "It looks like the team isn\'t available right now — I can take a message for you." It collects their name, number, and what they need, then sends you the summary by text. The caller never hits a dead end.</p>',
+    },
+    {
       question: 'Does it work in Spanish?',
       answer: '<p>Yes — on every plan, no setup required. The AI automatically detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends you the summary in English so you always know what happened.</p><p>This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.</p>',
     },
     {
+      question: 'Do I get a dashboard or app?',
+      answer: '<p>Yes. You get a mobile-friendly dashboard where you can see every call, listen to recordings, read full transcripts, and review AI-generated summaries. You also get instant text and email notifications after every call, so you don\'t need to check the dashboard unless you want the full details.</p>',
+    },
+    {
+      question: 'What information do you need from me to get started?',
+      answer: '<p>Just the basics: your business name, industry, phone number, and some information about your services, hours, and common questions. Everything is entered through the dashboard — no files to send back and forth. If you have a website, the AI can scan it automatically to learn about your business. Setup takes about 10 minutes total.</p>',
+    },
+    {
       question: 'Can I try it before signing up?',
-      answer: '<p>Absolutely. Call our demo line to experience exactly how it works. Then start your 7-day free trial—no credit card required. If it\'s not for you, just don\'t continue. No commitments, no hassle.</p>',
+      answer: '<p>Absolutely. Call our demo line to experience exactly how it works. Then start your 7-day free trial — no credit card required. If it\'s not for you, just don\'t continue. No commitments, no hassle.</p>',
     },
     {
       question: 'How is this different from a regular answering service?',
-      answer: '<p><strong>Traditional answering services:</strong> Generic scripts, operators handling dozens of businesses, limited hours, no calendar access, $300-600/month.</p><p><strong>Us:</strong> AI trained on YOUR specific business, available 24/7, books directly to your calendar, instant text summaries, full call recordings, and a mobile app—starting at $49/month.</p>',
+      answer: '<p><strong>Traditional answering services:</strong> Generic scripts, operators handling dozens of businesses, limited hours, no calendar access, $300-600/month.</p><p><strong>Us:</strong> AI trained on YOUR specific business, available 24/7, books directly to your calendar, instant text summaries, full call recordings, and a mobile app — starting at $49/month.</p>',
     },
     {
       question: 'What if I go over my call limit?',
-      answer: '<p>We\'ll let you know when you\'re approaching your limit. You can upgrade mid-cycle, or we\'ll charge a small per-call fee (typically $1-2 per call) for overages. No surprise bills—you\'ll always know before it happens.</p>',
+      answer: '<p>We\'ll let you know when you\'re approaching your limit. You can upgrade mid-cycle, or we\'ll charge a small per-call fee (typically $1-2 per call) for overages. No surprise bills — you\'ll always know before it happens.</p>',
     },
     {
       question: 'Is my data secure?',
-      answer: '<p>Yes. All calls are encrypted. Recordings and transcripts are stored securely. We\'re SOC 2 compliant and follow healthcare-grade privacy practices. We never sell or share your call data.</p>',
+      answer: '<p>Yes. All calls are encrypted. Recordings and transcripts are stored securely. We follow healthcare-grade privacy practices and never sell or share your call data.</p>',
     },
   ],
   footer: {
