@@ -591,7 +591,6 @@ export default function HomePage() {
 
             <div className="lg:col-span-7">
               <div className="space-y-6">
-                {/* How it works flow */}
                 <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
                   <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-6">How it works during a call</p>
                   <div className="space-y-5">
@@ -612,7 +611,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Integration ecosystem */}
                 <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
                   <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-3">Beyond the calendar</p>
                   <p className="text-[14px] text-white/60 leading-relaxed mb-6">
@@ -717,15 +715,15 @@ export default function HomePage() {
             <p className="t-eyebrow text-em mb-6">Pricing</p>
             <h2 className="t-h2 text-white">Start free. Scale when ready.</h2>
             <p className="t-body mt-6 max-w-lg">
-              Start free with per-usage billing, or lock in lower rates with Pro or Scale. Your margin compounds as you grow. No revenue share, no hidden fees.
+              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. Every plan includes a 7-day free trial for the clients you onboard. No revenue share, no hidden fees.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
             {[
-              { name: 'Free', price: 0, desc: 'Start building — no commitment', features: ['AI receptionist for every client', 'Google Calendar appointment booking', 'Call notifications + spam detection', 'Caller recognition + after-hours mode', '$29.99/client/mo + $0.12/min', 'Stripe Connect billing'], limits: ['No white-label branding', 'No marketing site'] },
-              { name: 'Pro', price: 99, desc: 'Growing agencies — full white-label', pop: true, features: ['Full white-label branding', 'Custom domain', 'Marketing website + AI demo line', 'Google Calendar integration', 'Lead generation CRM', 'Team members', '$9.99/client/mo + $0.10/min'], limits: [] },
-              { name: 'Scale', price: 499, desc: 'Established agencies at volume', features: ['Everything in Pro', 'AI Lab + industry templates', 'Unlimited team members', 'Bring Your Own Twilio', '$0/client + $0.05/min only', 'Priority support'], limits: [] },
+              { name: 'Free', price: 0, desc: 'Start building — no commitment', trial: null, features: ['AI receptionist for every client', 'Google Calendar appointment booking', 'Call notifications + spam detection', 'Caller recognition + after-hours mode', '7-day free trial for your clients', '$29.99/client/mo + $0.12/min', 'Stripe Connect billing'], limits: ['No white-label branding', 'No marketing site'] },
+              { name: 'Pro', price: 99, desc: 'Growing agencies — full white-label', pop: true, trial: '14-day free trial — no credit card', features: ['Full white-label branding', 'Custom domain', 'Marketing website + AI demo line', 'Google Calendar integration', 'Lead generation CRM', 'Team members', '7-day free trial for your clients', '$9.99/client/mo + $0.10/min'], limits: [] },
+              { name: 'Scale', price: 499, desc: 'Established agencies at volume', trial: '14-day free trial — no credit card', features: ['Everything in Pro', 'AI Lab + industry templates', 'Unlimited team members', 'Bring Your Own Twilio', '7-day free trial for your clients', '$0/client + $0.05/min only', 'Priority support'], limits: [] },
             ].map(t => (
               <div key={t.name} className={`price-card ${t.pop ? 'price-card-em' : ''}`}>
                 {t.pop && (
@@ -735,6 +733,7 @@ export default function HomePage() {
                 )}
                 <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.pop ? 'text-em' : 'text-white/40'}`}>{t.desc}</p>
                 <p className="font-display text-lg font-medium mt-1.5 text-white">{t.name}</p>
+                {t.trial && <p className="font-mono text-[11px] text-em mt-3 tracking-[0.04em]">{t.trial}</p>}
                 <div className="my-6 flex items-baseline gap-1">
                   {t.price === 0 ? (
                     <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>Free</span>
@@ -754,12 +753,12 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.pop ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.pop ? { background: '#4aeabc' } : undefined}>
-                  {t.price === 0 ? 'Start free' : 'Start trial'}
+                  {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
                 </Link>
               </div>
             ))}
           </div>
-          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free · no credit card required · upgrade anytime</p>
+          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free · 14-day Pro trial · 7-day client trials · no credit card required</p>
         </div>
       </section>
 
@@ -781,7 +780,8 @@ export default function HomePage() {
                 { q: 'How does the white-label experience work?', a: 'Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency&apos;s brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle — from signup through ongoing usage to billing.' },
                 { q: 'How is VoiceAI Connect different from GoHighLevel?', a: 'GoHighLevel is a multi-purpose marketing platform — CRM, funnels, email, SMS, websites — designed for marketing agencies to manage client campaigns. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not provide one), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound).' },
                 { q: 'Does the AI receptionist integrate with Google Calendar?', a: 'Yes — and it is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner&apos;s Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller&apos;s name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly, which means it also syncs automatically to any connected CRM — HubSpot, Salesforce, Pipedrive — and can trigger downstream automations via Zapier or Make. The phone call becomes the entry point into the business&apos;s complete digital pipeline.' },
-                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. A 14-day free trial is available for Pro and Scale without a credit card. Google Calendar integration is included on all tiers.' },
+                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial with no credit card required. On the client side, every plan includes a 7-day free trial for the businesses you onboard — giving your clients a risk-free way to experience the AI receptionist before their first billing cycle. Google Calendar integration is included on all tiers.' },
+                { q: 'How do free trials work — for agencies and for clients?', a: 'There are two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial with no credit card required — you get full access to white-label branding, marketing site, CRM, and all platform features for two weeks. The Free plan has no trial because there is no platform fee to trial against — you start immediately. At the client level, every plan (Free, Pro, and Scale) includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins. This gives your clients a risk-free way to experience the product, which increases conversion rates from prospect to paying subscriber.' },
                 { q: 'Does VoiceAI Connect support international phone numbers?', a: 'Yes. The default integration uses Telnyx for US-based phone numbers and provisions them automatically. For UK, Canadian, or other international numbers, agencies connect their own Twilio account by adding their API credentials in the dashboard. The platform then routes calls for those clients through Twilio automatically — the AI receptionist behavior, client dashboards, billing, and onboarding flow all function identically. No additional configuration is required beyond pasting in the Twilio key.' },
                 { q: 'Can VoiceAI Connect be used from outside the United States?', a: 'Yes. The platform is available globally — agency operators in any country can sign up, build a brand, and run a workspace. End-client coverage is available in the United States, United Kingdom, and Canada. An operator based in India, the Philippines, or anywhere else can run a US-focused agency remotely, selling AI receptionist subscriptions to American local businesses without leaving their home country. Stripe Connect supports payouts to most major countries.' },
                 { q: 'How do agencies acquire clients on the platform?', a: 'The platform includes a built-in lead generation CRM with thirteen pre-written outreach templates, a Google Maps business prospecting tool, sales scripts, and reply tracking. The strongest conversion tool is the interactive AI demo phone line, included on the Pro tier — prospects call the demo number, experience the AI receptionist firsthand, and typically convert without requiring a sales call.' },
