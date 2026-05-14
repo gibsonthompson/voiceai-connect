@@ -17,7 +17,7 @@ export interface HeroConfig {
   demoPhone: string;
   demoInstructions: string;
   trustItems: string[];
-  videoUrl?: string; // Optional explainer video (YouTube/Vimeo embed URL)
+  videoUrl?: string;
 }
 
 export interface StatsConfig {
@@ -105,7 +105,6 @@ export interface FooterConfig {
   companyLinks: FooterLink[];
 }
 
-// Analytics / Tracking
 export interface AnalyticsConfig {
   gtmId?: string;
   fbPixelId?: string;
@@ -114,7 +113,6 @@ export interface AnalyticsConfig {
   customBodyScripts?: string;
 }
 
-// Open Graph / Social Meta
 export interface OGConfig {
   title?: string;
   description?: string;
@@ -142,12 +140,12 @@ export interface MarketingConfig {
   showIndustries?: boolean;
   showComparison?: boolean;
   showTestimonials?: boolean;
-  // Client login link (renders in nav + footer)
   clientLoginPath?: string;
 }
 
 // ============================================================================
 // DEFAULT CONFIG
+// UPDATED: 2026-05-14 — Multilingual (English & Spanish auto-detect) on all plans
 // ============================================================================
 export const defaultMarketingConfig: MarketingConfig = {
   theme: 'light',
@@ -273,7 +271,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     {
       icon: 'mic',
       title: 'Natural Conversations',
-      description: 'Our AI sounds human, not robotic. Callers often don\'t realize they\'re talking to an AI.',
+      description: 'Our AI sounds human, not robotic. Callers often don\'t realize they\'re talking to an AI. Speaks English and Spanish — automatically detects the caller\'s language and responds naturally.',
     },
   ],
   industries: [
@@ -358,6 +356,7 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Google Calendar integration',
         'Emergency call transfer',
         'Text summaries after each call',
+        'Automatic English & Spanish',
         'Mobile app access',
         'Call recordings & transcripts',
         'Email support',
@@ -391,7 +390,6 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Advanced CRM integration',
         'Google Calendar integration',
         'Custom AI training',
-        'Multi-language support',
         'Dedicated account manager',
         'Custom reporting',
         'Priority phone support',
@@ -415,6 +413,10 @@ export const defaultMarketingConfig: MarketingConfig = {
     {
       question: 'What happens if the AI can\'t answer something?',
       answer: '<p>It handles it gracefully: "I don\'t have that specific information, but I\'d be happy to have [your name] call you back with the details. Can I get your number?" Then you get a text summary so you know exactly what to address.</p>',
+    },
+    {
+      question: 'Does it work in Spanish?',
+      answer: '<p>Yes — on every plan, no setup required. The AI automatically detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends you the summary in English so you always know what happened.</p><p>This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.</p>',
     },
     {
       question: 'Can I try it before signing up?',

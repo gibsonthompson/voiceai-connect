@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Phone, Settings, ArrowLeft, Clock, User, MapPin,
-  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX
+  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX, Globe
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useClient } from '@/lib/client-context';
@@ -29,7 +29,13 @@ interface Call {
   ended_reason: string | null;
   is_spam: boolean | null;
   spam_reason: string | null;
+  call_language: string | null;
 }
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
+  ja: 'Japanese', ko: 'Korean', zh: 'Chinese', it: 'Italian', nl: 'Dutch',
+};
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -121,7 +127,6 @@ export default function CallDetailPage() {
   const wasTransferred = call.call_status === 'transferred' || call.transfer_status === 'transferred';
   const transferFailed = call.transfer_status === 'transfer_failed';
 
-  // Info row helper
   const InfoRow = ({ icon: Icon, label, value, href, iconColor }: { icon: any; label: string; value: string; href?: string; iconColor?: string }) => (
     <div className="flex items-center gap-3">
       <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
@@ -161,6 +166,13 @@ export default function CallDetailPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {call.call_language && call.call_language !== 'en' && (
+              <span className="rounded-full px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5"
+                style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.08), color: theme.primary }}>
+                <Globe className="h-3.5 w-3.5" />
+                {LANGUAGE_NAMES[call.call_language] || call.call_language.toUpperCase()}
+              </span>
+            )}
             <span className="rounded-full px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5" style={statusStyle}>
               {isSpam && <ShieldX className="h-3.5 w-3.5" />}
               {(wasTransferred || transferFailed) && <PhoneForwarded className="h-3.5 w-3.5" />}
@@ -256,6 +268,9 @@ export default function CallDetailPage() {
               {call.service_requested && <InfoRow icon={Settings} label="Service" value={call.service_requested} />}
               {call.urgency_level && !isSpam && <InfoRow icon={AlertCircle} label="Urgency" value={call.urgency_level.charAt(0).toUpperCase() + call.urgency_level.slice(1)} />}
               {call.duration_seconds && <InfoRow icon={Clock} label="Duration" value={formatDuration(call.duration_seconds)} />}
+              {call.call_language && call.call_language !== 'en' && (
+                <InfoRow icon={Globe} label="Language" value={LANGUAGE_NAMES[call.call_language] || call.call_language.toUpperCase()} iconColor={theme.primary} />
+              )}
             </div>
           </div>
 

@@ -36,6 +36,11 @@ function formatRelativeDate(dateStr: string): string {
   return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
 }
 
+// Language code → display label
+const LANGUAGE_LABELS: Record<string, string> = {
+  es: 'ES', fr: 'FR', de: 'DE', pt: 'PT', ja: 'JA', ko: 'KO', zh: 'ZH', it: 'IT',
+};
+
 const ANIM_CSS = `
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}
@@ -163,6 +168,8 @@ export default function ClientCallsPage() {
             const { Icon, bg: iconBg, color: iconColor } = getCallIcon(call);
             const badge = getBadgeStyle(call);
             const date = formatRelativeDate(call.created_at);
+            const langCode = call.call_language;
+            const showLangBadge = langCode && langCode !== 'en';
 
             return (
               <a key={call.id} href={`/client/calls/${call.id}`}
@@ -185,10 +192,18 @@ export default function ClientCallsPage() {
                   <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{date}</p>
                 </div>
 
-                <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize flex-shrink-0"
-                  style={{ backgroundColor: badge.backgroundColor, color: badge.color }}>
-                  {badge.label}
-                </span>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {showLangBadge && (
+                    <span className="rounded-full px-2 py-[3px] text-[10px] sm:text-[11px] font-semibold uppercase"
+                      style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.08), color: theme.primary }}>
+                      {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
+                    </span>
+                  )}
+                  <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize"
+                    style={{ backgroundColor: badge.backgroundColor, color: badge.color }}>
+                    {badge.label}
+                  </span>
+                </div>
               </a>
             );
           })}

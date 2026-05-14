@@ -16,6 +16,11 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// Language code → display label
+const LANGUAGE_LABELS: Record<string, string> = {
+  es: 'ES', fr: 'FR', de: 'DE', pt: 'PT', ja: 'JA', ko: 'KO', zh: 'ZH', it: 'IT',
+};
+
 interface ClientInfo {
   id: string;
   business_name: string;
@@ -32,7 +37,6 @@ export default function AgencyClientCallsPage() {
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Theme - default to dark unless explicitly light
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
 
@@ -58,8 +62,6 @@ export default function AgencyClientCallsPage() {
 
   useEffect(() => {
     if (!agency || !clientId) return;
-
-    // Demo mode: use sample data
     if (demoMode) {
       const demoClient = DEMO_CLIENTS.find(c => c.id === clientId) || DEMO_CLIENTS[0];
       setClient({ id: demoClient.id, business_name: demoClient.business_name, email: demoClient.email });
@@ -67,7 +69,6 @@ export default function AgencyClientCallsPage() {
       setCallsLoading(false);
       return;
     }
-
     fetchClientAndCalls();
   }, [agency, clientId, demoMode]);
 
@@ -76,8 +77,6 @@ export default function AgencyClientCallsPage() {
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-      // Fetch client info
       const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -85,8 +84,6 @@ export default function AgencyClientCallsPage() {
         const clientData = await clientRes.json();
         setClient(clientData.client);
       }
-
-      // Fetch all calls
       const callsRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/calls`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -200,7 +197,11 @@ export default function AgencyClientCallsPage() {
           </div>
         ) : (
           <div className="divide-y" style={{ borderColor: theme.border }}>
-            {filteredCalls.map((call) => (
+            {filteredCalls.map((call) => {
+              const langCode = call.call_language;
+              const showLangBadge = langCode && langCode !== 'en';
+
+              return (
               <Link
                 key={call.id}
                 href={`/agency/clients/${clientId}/calls/${call.id}`}
@@ -240,18 +241,26 @@ export default function AgencyClientCallsPage() {
                         <p className="font-medium text-sm truncate" style={{ color: theme.text }}>
                           {call.customer_name || 'Unknown Caller'}
                         </p>
-                        <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0"
-                          style={
-                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                              : call.urgency_level === 'medium'
-                              ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                              : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                          }
-                        >
-                          {call.urgency_level || 'normal'}
-                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {showLangBadge && (
+                            <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase"
+                              style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>
+                              {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
+                            </span>
+                          )}
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                            style={
+                              call.urgency_level === 'high' || call.urgency_level === 'emergency'
+                                ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
+                                : call.urgency_level === 'medium'
+                                ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                                : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
+                            }
+                          >
+                            {call.urgency_level || 'normal'}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-xs truncate" style={{ color: theme.textMuted }}>
                         {call.customer_phone || call.caller_phone}
@@ -316,18 +325,26 @@ export default function AgencyClientCallsPage() {
                     </div>
                     
                     <div className="text-right min-w-[80px] lg:min-w-[100px]">
-                      <span
-                        className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
-                        style={
-                          call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                            ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                            : call.urgency_level === 'medium'
-                            ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                            : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                        }
-                      >
-                        {call.urgency_level || 'normal'}
-                      </span>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {showLangBadge && (
+                          <span className="rounded-full px-2 py-0.5 text-[10px] lg:text-xs font-semibold uppercase"
+                            style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: primaryColor }}>
+                            {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
+                          </span>
+                        )}
+                        <span
+                          className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
+                          style={
+                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
+                              ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
+                              : call.urgency_level === 'medium'
+                              ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                              : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
+                          }
+                        >
+                          {call.urgency_level || 'normal'}
+                        </span>
+                      </div>
                       <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textMuted4 }}>
                         {new Date(call.created_at).toLocaleDateString()}
                       </p>
@@ -337,7 +354,8 @@ export default function AgencyClientCallsPage() {
                   </div>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
