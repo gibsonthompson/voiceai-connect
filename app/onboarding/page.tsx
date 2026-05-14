@@ -161,7 +161,11 @@ function OnboardingContent() {
 
   const handleSetPassword = async () => {
     setLoading(true);
-    if (selectedPlan && selectedPlan !== 'free') await startTrial(selectedPlan);
+    // FIX: Call startTrial for ALL plans including free.
+    // start-trial handles both: free → sets active immediately,
+    // pro/scale → sets trialing with 14-day window.
+    // Both paths set onboarding_completed=true.
+    if (selectedPlan) await startTrial(selectedPlan);
     const token = localStorage.getItem('agency_password_token');
     if (token && agencyId) {
       localStorage.removeItem('agency_password_token');
@@ -244,7 +248,7 @@ function OnboardingContent() {
         );
 
       // ================================================================
-      // STEP 2 — SCALED UP to match steps 1/3
+      // STEP 2 — unchanged
       // ================================================================
       case 2:
         return (
