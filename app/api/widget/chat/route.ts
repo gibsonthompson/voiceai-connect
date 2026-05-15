@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server';
+import { isRateLimited } from '@/lib/rate-limit';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    POST /api/widget/chat
    Receives user message + conversation history, calls Claude with
    VoiceAI Connect knowledge base, streams response back.
+   Rate limited: 20 requests/minute per IP.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const SYSTEM_PROMPT = `You are the support assistant for VoiceAI Connect, a white-label AI receptionist platform built for marketing agencies. You help visitors and prospective agency operators understand the platform.
@@ -60,6 +62,15 @@ If the visitor says "talk to a person", "speak to someone", "this isn't helping"
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit by IP
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isRateLimited(ip)) {
+      return new Response('Too many requests. Please wait a moment and try again.', {
+        status: 429,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
+
     const { message, conversationHistory } = await req.json();
 
     if (!message || typeof message !== 'string') {

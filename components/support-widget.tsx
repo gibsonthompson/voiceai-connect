@@ -98,12 +98,16 @@ interface ChatMessage {
 
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'landing' | 'faq-answer' | 'chat'>('landing');
+  const [view, setView] = useState<'landing' | 'faq-answer' | 'chat' | 'escalation'>('landing');
   const [activeFAQ, setActiveFAQ] = useState<FAQItem | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [showTeaser, setShowTeaser] = useState(false);
+  const [escName, setEscName] = useState('');
+  const [escContact, setEscContact] = useState('');
+  const [escSubmitting, setEscSubmitting] = useState(false);
+  const [escSubmitted, setEscSubmitted] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -235,6 +239,40 @@ export default function SupportWidget() {
       }
     }
   }, [openFAQ, startChat]);
+
+  const handleEscalation = useCallback(async () => {
+    if (!escName.trim() || !escContact.trim() || escSubmitting) return;
+    setEscSubmitting(true);
+
+    // Build conversation summary from chat history
+    const conversationSummary = messages
+      .map(m => `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`)
+      .join('\n');
+
+    try {
+      await fetch('/api/widget/escalate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: escName.trim(),
+          contact: escContact.trim(),
+          conversationSummary: conversationSummary || undefined,
+        }),
+      });
+      setEscSubmitted(true);
+    } catch {
+      setEscSubmitted(true); // Show success anyway — don't leave them hanging
+    } finally {
+      setEscSubmitting(false);
+    }
+  }, [escName, escContact, escSubmitting, messages]);
+
+  const openEscalation = useCallback(() => {
+    setView('escalation');
+    setEscSubmitted(false);
+    setEscName('');
+    setEscContact('');
+  }, []);
 
   /* ─── Render helpers ─── */
 
@@ -704,12 +742,192 @@ export default function SupportWidget() {
       )}
       <div ref={chatEndRef} />
 
+      {/* Talk to a person link — visible after 2+ messages */}
+      {messages.length >= 2 && !isStreaming && (
+        <button
+          onClick={openEscalation}
+          style={{
+            alignSelf: 'center',
+            marginTop: '8px',
+            padding: '6px 14px',
+            borderRadius: '6px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: '11px',
+            cursor: 'pointer',
+            fontFamily: "'Geist', system-ui, sans-serif",
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = '#4aeabc';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(74,234,188,0.2)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.4)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+          }}
+        >
+          Talk to a person instead
+        </button>
+      )}
+
       <style>{`
         @keyframes widgetBounce {
           0%, 60%, 100% { transform: translateY(0); }
           30% { transform: translateY(-3px); }
         }
       `}</style>
+    </div>
+  );
+
+  const renderEscalation = () => (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+      {escSubmitted ? (
+        <>
+          <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'rgba(74,234,188,0.1)',
+                border: '1px solid rgba(74,234,188,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                color: '#4aeabc',
+                fontSize: '20px',
+              }}
+            >
+              ✓
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.01em' }}>
+              We got your message
+            </div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginTop: '8px', lineHeight: 1.5 }}>
+              A team member will follow up within one business day at the contact info you provided.
+            </div>
+            <button
+              onClick={backToLanding}
+              style={{
+                marginTop: '20px',
+                padding: '8px 20px',
+                borderRadius: '8px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontFamily: "'Geist', system-ui, sans-serif",
+              }}
+            >
+              Back to help
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
+            Talk to our team
+          </div>
+          <div style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', lineHeight: 1.5 }}>
+            Leave your info and someone will follow up within one business day.
+          </div>
+
+          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.35)',
+                marginBottom: '6px',
+                fontFamily: "'Geist Mono', ui-monospace, monospace",
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase' as const,
+              }}>
+                Name
+              </label>
+              <input
+                value={escName}
+                onChange={e => setEscName(e.target.value)}
+                placeholder="Your name"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  fontFamily: "'Geist', system-ui, sans-serif",
+                  boxSizing: 'border-box' as const,
+                }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.3)'; }}
+                onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              />
+            </div>
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '11px',
+                color: 'rgba(255,255,255,0.35)',
+                marginBottom: '6px',
+                fontFamily: "'Geist Mono', ui-monospace, monospace",
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase' as const,
+              }}>
+                Email or phone
+              </label>
+              <input
+                value={escContact}
+                onChange={e => setEscContact(e.target.value)}
+                placeholder="you@agency.com or (555) 123-4567"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.03)',
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  fontFamily: "'Geist', system-ui, sans-serif",
+                  boxSizing: 'border-box' as const,
+                }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.3)'; }}
+                onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              />
+            </div>
+            <button
+              onClick={handleEscalation}
+              disabled={!escName.trim() || !escContact.trim() || escSubmitting}
+              style={{
+                marginTop: '4px',
+                padding: '10px',
+                borderRadius: '8px',
+                background: escName.trim() && escContact.trim() ? '#4aeabc' : 'rgba(255,255,255,0.04)',
+                color: escName.trim() && escContact.trim() ? '#080b14' : 'rgba(255,255,255,0.2)',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: escName.trim() && escContact.trim() ? 'pointer' : 'default',
+                fontFamily: "'Geist', system-ui, sans-serif",
+                letterSpacing: '0.02em',
+                transition: 'all 0.15s',
+              }}
+            >
+              {escSubmitting ? 'Sending...' : 'Send message'}
+            </button>
+          </div>
+
+          <div style={{ marginTop: '20px', fontSize: '11px', color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>
+            Or email directly: <a href="mailto:support@myvoiceaiconnect.com" style={{ color: '#4aeabc', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -740,7 +958,8 @@ export default function SupportWidget() {
         {view === 'landing' && renderLanding()}
         {view === 'faq-answer' && renderFAQAnswer()}
         {view === 'chat' && renderChat()}
-        {renderInputBar()}
+        {view === 'escalation' && renderEscalation()}
+        {view !== 'escalation' && renderInputBar()}
 
         <style>{`
           @keyframes widgetSlideUp {
