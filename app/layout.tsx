@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Sora, Inter } from "next/font/google";
 import Script from "next/script";
 import ErrorReporter from "@/components/ErrorReporter";
+import SupportWidget from "@/components/support-widget";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -141,6 +142,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         <ErrorReporter />
         {children}
+        <SupportWidget />
       </body>
     </html>
   );
