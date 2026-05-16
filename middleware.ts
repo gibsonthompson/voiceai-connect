@@ -115,8 +115,8 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-agency-name', agency.name);
     requestHeaders.set('x-agency-slug', agency.slug || '');
 
-    // Only rewrite routes that exist in (agency-site) folder
-    if (pathname === '/' || pathname.startsWith('/get-started')) {
+    // Only rewrite routes that exist in agency-site folder
+    if (pathname === '/' || pathname.startsWith('/get-started') || pathname.startsWith('/demo')) {
       const url = request.nextUrl.clone();
       url.pathname = `/agency-site${pathname}`;
 
