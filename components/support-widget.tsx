@@ -30,8 +30,8 @@ const FAQ_DATA: FAQItem[] = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: 'Agency pricing', sub: 'Plans from free to Scale', prompt: 'What does it cost to get started?' },
-  { label: 'White-labeling', sub: 'Your brand, end to end', prompt: 'How does white-labeling work?' },
+  { label: 'Agency pricing', sub: 'Plans from free to Scale', prompt: 'What does it cost to start an AI receptionist agency?' },
+  { label: 'White-labeling', sub: 'Your brand, end to end', prompt: 'How does the white-label experience work?' },
   { label: 'Start free trial', sub: 'No credit card required', href: '/signup' },
   { label: 'Existing agency', sub: 'Get platform support', prompt: "I'm an existing agency and need help with my account." },
 ];
@@ -39,8 +39,12 @@ const QUICK_ACTIONS = [
 interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   INLINE SVG ICONS
+   SVG ICONS — defined OUTSIDE component to prevent re-creation
    ═══════════════════════════════════════════════════════════════════════════ */
+
+const font = "'Geist', system-ui, sans-serif";
+const mono = "'Geist Mono', ui-monospace, monospace";
+const em = '#4aeabc';
 
 function WIcon({ type }: { type: string }) {
   const p = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -56,12 +60,48 @@ function WIcon({ type }: { type: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   STYLES — matches globals.css design tokens exactly
+   SUB-COMPONENTS — defined OUTSIDE to prevent focus loss on re-render
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const font = "'Geist', system-ui, sans-serif";
-const mono = "'Geist Mono', ui-monospace, monospace";
-const em = '#4aeabc';
+function WidgetLogoMark() {
+  return (
+    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(74,234,188,0.15), 0 4px 12px -4px rgba(74,234,188,0.3)' }}>
+      <Image src="/icon-512x512.png" alt="VoiceAI Connect" width={34} height={34} style={{ width: 34, height: 34, objectFit: 'cover' }} />
+    </div>
+  );
+}
+
+function WidgetEyebrow({ children, color }: { children: string; color?: string }) {
+  return <p style={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500, color: color || 'rgba(255,255,255,0.25)', margin: 0 }}>{children}</p>;
+}
+
+function WidgetBtn({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(74,234,188,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(74,234,188,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
+      {children}
+    </button>
+  );
+}
+
+function WidgetInput({ value, onChange, placeholder, label }: { value: string; onChange: (v: string) => void; placeholder: string; label: string }) {
+  return (
+    <div>
+      <WidgetEyebrow>{label}</WidgetEyebrow>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box' }}
+        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.25)'; }}
+        onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 const css = `
 @keyframes wBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
@@ -70,7 +110,7 @@ const css = `
 `;
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   COMPONENT
+   MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function SupportWidget() {
@@ -93,12 +133,11 @@ export default function SupportWidget() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
   useEffect(() => { if (sessionStorage.getItem('w-t')) return; const t = setTimeout(() => setTeaser(true), 5000); return () => clearTimeout(t); }, []);
 
-  const open = () => { setIsOpen(true); setTeaser(false); sessionStorage.setItem('w-t', '1'); };
-  const close = () => setIsOpen(false);
-  const goLanding = () => { setView('landing'); setActiveFAQ(null); };
-  const goFAQ = (f: FAQItem) => { setActiveFAQ(f); setView('faq'); };
-  const goChat = (msg?: string) => { setView('chat'); msg ? send(msg) : setTimeout(() => inputRef.current?.focus(), 100); };
-  const goEsc = () => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); };
+  const open = useCallback(() => { setIsOpen(true); setTeaser(false); sessionStorage.setItem('w-t', '1'); }, []);
+  const close = useCallback(() => setIsOpen(false), []);
+  const goLanding = useCallback(() => { setView('landing'); setActiveFAQ(null); }, []);
+  const goFAQ = useCallback((f: FAQItem) => { setActiveFAQ(f); setView('faq'); }, []);
+  const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); }, []);
 
   const send = useCallback(async (text?: string) => {
     const msg = text || input.trim();
@@ -123,45 +162,25 @@ export default function SupportWidget() {
     } finally { setStreaming(false); }
   }, [input, messages, streaming]);
 
-  const doEsc = async () => {
+  const goChat = useCallback((msg?: string) => {
+    setView('chat');
+    if (msg) send(msg);
+    else setTimeout(() => inputRef.current?.focus(), 100);
+  }, [send]);
+
+  const doEsc = useCallback(async () => {
     if (!escName.trim() || !escContact.trim() || escBusy) return;
     setEscBusy(true);
     const sum = messages.map(m => `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`).join('\n');
     try { await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), conversationSummary: sum || undefined }) }); } catch {}
     setEscDone(true); setEscBusy(false);
-  };
+  }, [escName, escContact, escBusy, messages]);
 
-  const qa = (a: typeof QUICK_ACTIONS[0]) => { if (a.href) { window.location.href = a.href; return; } const m = FAQ_DATA.find(f => f.question === a.prompt); m ? goFAQ(m) : goChat(a.prompt); };
-
-  /* ─── Shared sub-components ─── */
-
-  const LogoMark = () => (
-    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(74,234,188,0.15), 0 4px 12px -4px rgba(74,234,188,0.3)' }}>
-      <Image src="/icon-512x512.png" alt="VoiceAI Connect" width={34} height={34} style={{ width: 34, height: 34, objectFit: 'cover' }} />
-    </div>
-  );
-
-  const Eyebrow = ({ children, color }: { children: string; color?: string }) => (
-    <p style={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500, color: color || 'rgba(255,255,255,0.25)' }}>{children}</p>
-  );
-
-  const Btn = ({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick: () => void }) => (
-    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(74,234,188,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(74,234,188,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
-      {children}
-    </button>
-  );
-
-  const InputField = ({ value, onChange, placeholder, label }: { value: string; onChange: (v: string) => void; placeholder: string; label: string }) => (
-    <div>
-      <Eyebrow>{label}</Eyebrow>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box' }}
-        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.25)'; }}
-        onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }} />
-    </div>
-  );
-
-  /* ─── Main render ─── */
+  const qa = useCallback((a: typeof QUICK_ACTIONS[0]) => {
+    if (a.href) { window.location.href = a.href; return; }
+    const m = FAQ_DATA.find(f => f.question === a.prompt);
+    m ? goFAQ(m) : goChat(a.prompt);
+  }, [goFAQ, goChat]);
 
   // Hide on dashboard routes
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
@@ -182,11 +201,9 @@ export default function SupportWidget() {
 
       {/* FAB */}
       <button onClick={open} aria-label="Open support"
-        className="support-widget-fab"
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 54, height: 54, borderRadius: 16,
-          border: '1px solid rgba(74,234,188,0.25)',
-          background: 'linear-gradient(135deg, rgba(74,234,188,0.12), rgba(4,120,87,0.12))',
+          border: '1px solid rgba(74,234,188,0.25)', background: 'linear-gradient(135deg, rgba(74,234,188,0.12), rgba(4,120,87,0.12))',
           cursor: 'pointer', display: isOpen ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 0 0 1px rgba(74,234,188,0.08), 0 8px 24px -8px rgba(74,234,188,0.2)',
           transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: em,
@@ -208,7 +225,7 @@ export default function SupportWidget() {
 
           {/* Header */}
           <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, background: 'linear-gradient(180deg, rgba(74,234,188,0.03), transparent)' }}>
-            <LogoMark />
+            <WidgetLogoMark />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: font, fontSize: 14, fontWeight: 600, color: '#fafaf9', letterSpacing: '-0.01em' }}>VoiceAI Connect</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
@@ -217,15 +234,11 @@ export default function SupportWidget() {
               </div>
             </div>
             {view !== 'landing' && (
-              <button onClick={goLanding} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', transition: 'background 0.15s', marginRight: 4 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}>
+              <button onClick={goLanding} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', transition: 'background 0.15s', marginRight: 4 }}>
                 <WIcon type="back" />
               </button>
             )}
-            <button onClick={close} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', transition: 'background 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}>
+            <button onClick={close} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', transition: 'background 0.15s' }}>
               <WIcon type="x" />
             </button>
           </div>
@@ -233,7 +246,7 @@ export default function SupportWidget() {
           {/* ── Landing ── */}
           {view === 'landing' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-              <p style={{ fontFamily: font, fontSize: 20, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.02em', lineHeight: 1.15 }}>How can we help?</p>
+              <p style={{ fontFamily: font, fontSize: 20, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.02em', lineHeight: 1.15, margin: 0 }}>How can we help?</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 6, fontFamily: font }}>Instant answers about the platform, pricing, and setup.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 18 }}>
                 {QUICK_ACTIONS.map(a => (
@@ -245,7 +258,7 @@ export default function SupportWidget() {
                   </button>
                 ))}
               </div>
-              <div style={{ marginTop: 24, marginBottom: 6 }}><Eyebrow>Frequently asked</Eyebrow></div>
+              <div style={{ marginTop: 24, marginBottom: 6 }}><WidgetEyebrow>Frequently asked</WidgetEyebrow></div>
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                 {FAQ_DATA.map((f, i) => (
                   <button key={i} onClick={() => goFAQ(f)} style={{ width: '100%', padding: '11px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 13, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textAlign: 'left', fontFamily: font, transition: 'color 0.15s' }}
@@ -262,14 +275,14 @@ export default function SupportWidget() {
           {/* ── FAQ Answer ── */}
           {view === 'faq' && activeFAQ && (
             <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-              <div style={{ marginBottom: 10 }}><Eyebrow color={em}>{activeFAQ.category}</Eyebrow></div>
-              <p style={{ fontFamily: font, fontSize: 17, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em', lineHeight: 1.25 }}>{activeFAQ.question}</p>
+              <div style={{ marginBottom: 10 }}><WidgetEyebrow color={em}>{activeFAQ.category}</WidgetEyebrow></div>
+              <p style={{ fontFamily: font, fontSize: 17, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em', lineHeight: 1.25, margin: 0 }}>{activeFAQ.question}</p>
               <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, marginTop: 14, fontFamily: font }}>{activeFAQ.answer}</p>
               <div style={{ marginTop: 24, borderRadius: 12, background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)', padding: 14 }}>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 10, fontFamily: font }}>Was this helpful?</p>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn active onClick={goLanding}>Yes, thanks</Btn>
-                  <Btn onClick={() => goChat(`Follow-up about: ${activeFAQ.question}`)}>More questions</Btn>
+                  <WidgetBtn active onClick={goLanding}>Yes, thanks</WidgetBtn>
+                  <WidgetBtn onClick={() => goChat(`Follow-up about: ${activeFAQ.question}`)}>More questions</WidgetBtn>
                 </div>
               </div>
             </div>
@@ -312,23 +325,23 @@ export default function SupportWidget() {
               {escDone ? (
                 <div style={{ textAlign: 'center', padding: '32px 12px' }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(74,234,188,0.08)', border: '1px solid rgba(74,234,188,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: em }}><WIcon type="check" /></div>
-                  <p style={{ fontFamily: font, fontSize: 16, fontWeight: 500, color: '#fafaf9' }}>Message received</p>
+                  <p style={{ fontFamily: font, fontSize: 16, fontWeight: 500, color: '#fafaf9', margin: 0 }}>Message received</p>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 8, lineHeight: 1.5, fontFamily: font }}>A team member will follow up within one business day.</p>
                   <button onClick={goLanding} style={{ marginTop: 18, padding: '8px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer', fontFamily: font }}>Back to help</button>
                 </div>
               ) : (
                 <>
-                  <p style={{ fontFamily: font, fontSize: 17, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em' }}>Talk to our team</p>
+                  <p style={{ fontFamily: font, fontSize: 17, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em', margin: 0 }}>Talk to our team</p>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 4, fontFamily: font }}>We respond within one business day.</p>
                   <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <InputField value={escName} onChange={setEscName} placeholder="Your name" label="Name" />
-                    <InputField value={escContact} onChange={setEscContact} placeholder="you@agency.com" label="Email or phone" />
+                    <WidgetInput value={escName} onChange={setEscName} placeholder="Your name" label="Name" />
+                    <WidgetInput value={escContact} onChange={setEscContact} placeholder="you@agency.com" label="Email or phone" />
                     <button onClick={doEsc} disabled={!escName.trim() || !escContact.trim() || escBusy}
                       style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: escName.trim() && escContact.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: escName.trim() && escContact.trim() ? em : 'rgba(255,255,255,0.04)', color: escName.trim() && escContact.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
                       {escBusy ? 'Sending...' : 'Send message'}
                     </button>
                   </div>
-                  <p style={{ marginTop: 18, fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font }}>
+                  <p style={{ marginTop: 18, fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font, margin: '18px 0 0' }}>
                     Or email <a href="mailto:support@myvoiceaiconnect.com" style={{ color: 'rgba(74,234,188,0.5)', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
                   </p>
                 </>
