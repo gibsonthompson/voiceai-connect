@@ -164,7 +164,7 @@ export default function SupportWidget() {
   /* ─── Main render ─── */
 
   // Hide on dashboard routes
-  if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard')) return null;
+  if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
 
   return (
     <>
