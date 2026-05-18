@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Search, ChevronRight, Loader2, Phone, Mail,
-  Plus, X,
+  Plus, X, Download,
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -65,6 +65,9 @@ export default function ClientContactsPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
 
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
   const fetchContacts = useCallback(async () => {
     if (!client) return;
     try {
@@ -98,6 +101,29 @@ export default function ClientContactsPage() {
     finally { setAddLoading(false); }
   };
 
+  const handleExportContacts = async () => {
+    if (!client) return;
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/export/client/${client.id}/contacts`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contacts-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) { console.error('Export failed:', e); }
+    finally { setExporting(false); }
+  };
+
   const glass = {
     backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
     border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
@@ -118,11 +144,23 @@ export default function ClientContactsPage() {
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Contacts</h1>
             <p className="mt-0.5 text-[13px]" style={{ color: theme.textMuted }}>{stats.total} total from calls</p>
           </div>
-          <button onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            <Plus className="h-4 w-4" /> Add Contact
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleExportContacts}
+              disabled={exporting || stats.total === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex-shrink-0"
+              style={{ ...glass, color: theme.textMuted }}
+              title="Export contacts to CSV"
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export'}</span>
+            </button>
+            <button onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex-1 sm:flex-initial"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              <Plus className="h-4 w-4" /> Add Contact
+            </button>
+          </div>
         </div>
       </div>
 

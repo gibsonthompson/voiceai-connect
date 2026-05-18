@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  PhoneCall, Search, Loader2, PhoneForwarded, ShieldX, SlidersHorizontal
+  PhoneCall, Search, Loader2, PhoneForwarded, ShieldX, Download, X, Calendar
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -53,7 +53,23 @@ export default function ClientCallsPage() {
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Export state
+  const [showExport, setShowExport] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { if (client) fetchCalls(); }, [client]);
+
+  // Close export panel on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setShowExport(false);
+    }
+    if (showExport) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExport]);
 
   const fetchCalls = async () => {
     if (!client) return;
@@ -69,6 +85,33 @@ export default function ClientCallsPage() {
       }
     } catch (e) { console.error('Failed to fetch calls:', e); }
     finally { setCallsLoading(false); }
+  };
+
+  const handleExportCalls = async () => {
+    if (!client) return;
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const params = new URLSearchParams();
+      if (exportFrom) params.set('from', exportFrom);
+      if (exportTo) params.set('to', exportTo);
+      const response = await fetch(`${backendUrl}/api/export/client/${client.id}/calls?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `calls-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowExport(false);
+    } catch (e) { console.error('Export failed:', e); }
+    finally { setExporting(false); }
   };
 
   const filteredCalls = calls.filter(call => {
@@ -128,17 +171,78 @@ export default function ClientCallsPage() {
             <p className="mt-0.5 text-[13px]" style={{ color: theme.textMuted }}>{calls.length} total call{calls.length !== 1 ? 's' : ''}</p>
           </div>
 
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted4 }} />
-            <input
-              type="text"
-              placeholder="Search calls..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
-              style={{ ...glass, color: theme.text }}
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Search */}
+            <div className="relative flex-1 sm:w-64 sm:flex-initial">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted4 }} />
+              <input
+                type="text"
+                placeholder="Search calls..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
+                style={{ ...glass, color: theme.text }}
+              />
+            </div>
+
+            {/* Export Button */}
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setShowExport(!showExport)}
+                className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] flex-shrink-0"
+                style={{ ...glass, color: theme.textMuted }}
+                title="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+
+              {showExport && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-72 rounded-2xl p-4 z-50 shadow-xl"
+                  style={{ backgroundColor: theme.isDark ? '#1a1a1a' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold" style={{ color: theme.text }}>Export Calls</p>
+                    <button onClick={() => setShowExport(false)} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.textMuted }}>
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>From</label>
+                      <input
+                        type="date"
+                        value={exportFrom}
+                        onChange={(e) => setExportFrom(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ ...glass, color: theme.text }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>To</label>
+                      <input
+                        type="date"
+                        value={exportTo}
+                        onChange={(e) => setExportTo(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ ...glass, color: theme.text }}
+                      />
+                    </div>
+                    <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Leave blank to export all calls</p>
+                    <button
+                      onClick={handleExportCalls}
+                      disabled={exporting}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                    >
+                      {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                      {exporting ? 'Exporting...' : 'Download CSV'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

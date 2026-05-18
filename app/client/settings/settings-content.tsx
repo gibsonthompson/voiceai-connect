@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
+import AISettingsSection from '@/components/client/AISettingsSection';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
@@ -203,40 +204,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   };
 
   const handleSaveBusinessName = async () => {
-    if (!nameValue.trim() || nameValue.trim() === client.business_name) {
-      setEditingName(false);
-      return;
-    }
+    if (!nameValue.trim() || nameValue.trim() === client.business_name) { setEditingName(false); return; }
     setSavingName(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ business_name: nameValue.trim() }),
-      });
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ business_name: nameValue.trim() }) });
       const data = await response.json();
       if (data.success) {
         setClient(prev => ({ ...prev, business_name: nameValue.trim() }));
-        try {
-          const cached = localStorage.getItem('client');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            parsed.business_name = nameValue.trim();
-            localStorage.setItem('client', JSON.stringify(parsed));
-          }
-        } catch {}
-        setMessage('Business name updated!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage(data.error || 'Failed to update name');
-      }
-    } catch {
-      setMessage('Error updating business name');
-    } finally {
-      setSavingName(false);
-      setEditingName(false);
-    }
+        try { const cached = localStorage.getItem('client'); if (cached) { const parsed = JSON.parse(cached); parsed.business_name = nameValue.trim(); localStorage.setItem('client', JSON.stringify(parsed)); } } catch {}
+        setMessage('Business name updated!'); setTimeout(() => setMessage(''), 3000);
+      } else { setMessage(data.error || 'Failed to update name'); }
+    } catch { setMessage('Error updating business name'); }
+    finally { setSavingName(false); setEditingName(false); }
   };
 
   const handleCallModeChange = async (newMode: 'primary' | 'fallback') => {
@@ -290,7 +270,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     finally { setDisconnectingCalendar(false); }
   };
 
-  // FIXED: was sending { clientId, planTier } — backend expects { client_id, plan }
   const handleUpgrade = async () => {
     setUpgrading(true);
     try {
@@ -310,7 +289,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '');
   const daysRemaining = getDaysRemaining();
   const hasPasswordChanges = currentPassword || newPassword || confirmPassword;
-
   const isCalendarConnected = calendarStatus?.connected || client.google_calendar_connected;
   const isCalendarPlanAllowed = calendarStatus?.plan_allowed !== false;
 
@@ -442,7 +420,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                     <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ borderColor: callMode === 'fallback' ? theme.primary : theme.border }}>{callMode === 'fallback' && (<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2"><PhoneForwarded className="w-3.5 h-3.5" style={{ color: callMode === 'fallback' ? theme.primary : theme.textMuted4 }} /><span className="font-semibold text-xs sm:text-sm" style={{ color: callMode === 'fallback' ? theme.primary : theme.text }}>Fallback — Rings You First</span></div>
-                      <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted4 }}>Your phone rings first. If you don&apos;t answer, the AI picks up automatically — no missed calls, ever. Best for owners who prefer to take calls personally when available.</p>
+                      <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted4 }}>Your phone rings first. If you don&apos;t answer, the AI picks up automatically — no missed calls, ever.</p>
                     </div>
                   </div>
                 </button>
@@ -462,6 +440,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             )}
           </div>
         </section>
+
+        {/* ═══ PHASE 1: AI Personality & Behavior ═══ */}
+        <AISettingsSection clientId={client.id} theme={theme} />
 
         {/* AI Tools */}
         <ToolConfigSection clientId={client.id} theme={theme} />

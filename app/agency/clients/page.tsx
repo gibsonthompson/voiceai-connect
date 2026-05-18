@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
-  Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical
+  Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical,
+  Download, X,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -32,29 +33,45 @@ export default function AgencyClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
+  // Export state
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportingClients, setExportingClients] = useState(false);
+  const [exportingCalls, setExportingCalls] = useState(false);
+  const [showCallsDatePicker, setShowCallsDatePicker] = useState(false);
+  const [callsExportFrom, setCallsExportFrom] = useState('');
+  const [callsExportTo, setCallsExportTo] = useState('');
+  const exportRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!agency) return;
-
     if (demoMode) {
       setClients(DEMO_CLIENTS as Client[]);
       setLoading(false);
       return;
     }
-
     fetchClients();
   }, [agency, demoMode]);
 
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+        setShowCallsDatePicker(false);
+      }
+    }
+    if (showExportMenu || showCallsDatePicker) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu, showCallsDatePicker]);
+
   const fetchClients = async () => {
     if (!agency) return;
-
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/clients`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
@@ -64,6 +81,55 @@ export default function AgencyClientsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportClients = async () => {
+    if (!agency) return;
+    setExportingClients(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/export/agency/${agency.id}/clients`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      triggerDownload(blob, `clients-export-${new Date().toISOString().split('T')[0]}.csv`);
+      setShowExportMenu(false);
+    } catch (e) { console.error('Export failed:', e); }
+    finally { setExportingClients(false); }
+  };
+
+  const handleExportAllCalls = async () => {
+    if (!agency) return;
+    setExportingCalls(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const params = new URLSearchParams();
+      if (callsExportFrom) params.set('from', callsExportFrom);
+      if (callsExportTo) params.set('to', callsExportTo);
+      const response = await fetch(`${backendUrl}/api/export/agency/${agency.id}/calls?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      triggerDownload(blob, `agency-calls-export-${new Date().toISOString().split('T')[0]}.csv`);
+      setShowCallsDatePicker(false);
+      setShowExportMenu(false);
+    } catch (e) { console.error('Export failed:', e); }
+    finally { setExportingCalls(false); }
   };
 
   const getPlanPrice = (planType: string) => {
@@ -130,14 +196,105 @@ export default function AgencyClientsPage() {
             </p>
           </div>
           
-          <Link
-            href="/agency/clients/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-          >
-            <Plus className="h-4 w-4" />
-            Add Client
-          </Link>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Export Dropdown */}
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => { setShowExportMenu(!showExportMenu); setShowCallsDatePicker(false); }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors flex-shrink-0"
+                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
+                title="Export data"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+
+              {showExportMenu && !showCallsDatePicker && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden z-50 shadow-xl"
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                >
+                  <button
+                    onClick={handleExportClients}
+                    disabled={exportingClients}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors text-left"
+                    style={{ color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    {exportingClients ? <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" /> : <Users className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                    <span>{exportingClients ? 'Exporting...' : 'Export Client Roster'}</span>
+                  </button>
+                  <div style={{ borderTop: `1px solid ${theme.border}` }} />
+                  <button
+                    onClick={() => setShowCallsDatePicker(true)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors text-left"
+                    style={{ color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <PhoneCall className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                    <span>Export All Calls</span>
+                  </button>
+                </div>
+              )}
+
+              {showCallsDatePicker && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-72 rounded-2xl p-4 z-50 shadow-xl"
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold" style={{ color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}>Export All Calls</p>
+                    <button onClick={() => { setShowCallsDatePicker(false); setShowExportMenu(false); }} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.textMuted }}>
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>From</label>
+                      <input
+                        type="date"
+                        value={callsExportFrom}
+                        onChange={(e) => setCallsExportFrom(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>To</label>
+                      <input
+                        type="date"
+                        value={callsExportTo}
+                        onChange={(e) => setCallsExportTo(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}
+                      />
+                    </div>
+                    <p className="text-[11px]" style={{ color: theme.textMuted }}>Leave blank to export all calls across all clients</p>
+                    <button
+                      onClick={handleExportAllCalls}
+                      disabled={exportingCalls}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                    >
+                      {exportingCalls ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                      {exportingCalls ? 'Exporting...' : 'Download CSV'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/agency/clients/new"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors flex-1 sm:flex-initial sm:w-auto"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Client
+            </Link>
+          </div>
         </div>
         
         {/* Search & Filter Row */}

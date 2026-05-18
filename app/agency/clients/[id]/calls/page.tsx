@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft
+  PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft, Download, X
 } from 'lucide-react';
 import { useAgency } from '../../../context';
 import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../../demoData';
@@ -36,6 +36,13 @@ export default function AgencyClientCallsPage() {
   const [calls, setCalls] = useState<any[]>([]);
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Export state
+  const [showExport, setShowExport] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#10b981';
@@ -72,6 +79,15 @@ export default function AgencyClientCallsPage() {
     fetchClientAndCalls();
   }, [agency, clientId, demoMode]);
 
+  // Close export panel on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setShowExport(false);
+    }
+    if (showExport) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExport]);
+
   const fetchClientAndCalls = async () => {
     if (!agency || !clientId) return;
     try {
@@ -96,6 +112,34 @@ export default function AgencyClientCallsPage() {
     } finally {
       setCallsLoading(false);
     }
+  };
+
+  const handleExportCalls = async () => {
+    if (!agency || !clientId) return;
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const params = new URLSearchParams();
+      params.set('clientId', clientId);
+      if (exportFrom) params.set('from', exportFrom);
+      if (exportTo) params.set('to', exportTo);
+      const response = await fetch(`${backendUrl}/api/export/agency/${agency.id}/calls?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(client?.business_name || 'client').replace(/[^a-zA-Z0-9]/g, '_')}-calls-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowExport(false);
+    } catch (e) { console.error('Export failed:', e); }
+    finally { setExporting(false); }
   };
 
   const filteredCalls = calls.filter(call => {
@@ -158,17 +202,68 @@ export default function AgencyClientCallsPage() {
               />
             </div>
             
-            <button 
-              className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
-              style={{ 
-                borderColor: theme.border, 
-                backgroundColor: theme.cardBg, 
-                color: theme.textMuted,
-              }}
-            >
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filter</span>
-            </button>
+            {/* Export Button */}
+            <div className="relative" ref={exportRef}>
+              <button 
+                onClick={() => setShowExport(!showExport)}
+                className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
+                style={{ 
+                  borderColor: theme.border, 
+                  backgroundColor: theme.cardBg, 
+                  color: theme.textMuted,
+                }}
+                title="Export CSV"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+
+              {showExport && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-72 rounded-2xl p-4 z-50 shadow-xl"
+                  style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold" style={{ color: theme.text }}>Export Calls</p>
+                    <button onClick={() => setShowExport(false)} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.textMuted }}>
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>From</label>
+                      <input
+                        type="date"
+                        value={exportFrom}
+                        onChange={(e) => setExportFrom(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.text }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>To</label>
+                      <input
+                        type="date"
+                        value={exportTo}
+                        onChange={(e) => setExportTo(e.target.value)}
+                        className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        style={{ backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.text }}
+                      />
+                    </div>
+                    <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Leave blank to export all calls</p>
+                    <button
+                      onClick={handleExportCalls}
+                      disabled={exporting}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: primaryColor, color: '#fff' }}
+                    >
+                      {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                      {exporting ? 'Exporting...' : 'Download CSV'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
