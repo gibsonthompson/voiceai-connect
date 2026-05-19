@@ -146,7 +146,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
             <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
             <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
             <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
-            <li><a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
+            <li><a href="/faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
           </ul>
           <div className="nav-actions">
             {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
