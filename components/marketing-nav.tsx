@@ -9,6 +9,7 @@ const NAV_LINKS: [string, string][] = [
   ['How it works', '/how-it-works'],
   ['Demo', '/interactive-demo'],
   ['Pricing', '/#pricing'],
+  ['FAQ', '/faq'],
   ['Blog', '/blog'],
 ];
 
