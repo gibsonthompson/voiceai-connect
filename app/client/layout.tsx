@@ -1,10 +1,10 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard
+  Menu, X, ChevronRight, Clock, CreditCard, Eye
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -45,20 +45,23 @@ function isTrialExpired(client: any): boolean { if (!client) return false; if (!
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null { if (!trialEndsAt) return null; const endDate = new Date(trialEndsAt); const now = new Date(); const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); return Math.max(0, diffDays); }
 function getInitial(name: string | null | undefined): string { if (!name) return ''; return name.charAt(0).toUpperCase(); }
 
+// Read preview mode synchronously to avoid layout shift
+function getInitialPreviewMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  try { return localStorage.getItem('preview_mode') === 'true'; } catch { return false; }
+}
+
 interface NavItem { href: string; label: string; icon: any; permissionKey?: string; }
 
 function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-
-  useEffect(() => {
-    try { setIsPreviewMode(localStorage.getItem('preview_mode') === 'true'); } catch {}
-  }, []);
+  const [isPreviewMode] = useState(getInitialPreviewMode);
 
   const handleExitPreview = () => {
     try {
@@ -118,7 +121,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });
   const isActive = (href: string) => { if (href === '/client/dashboard') return pathname === '/client/dashboard' || pathname === '/client'; return pathname?.startsWith(href); };
-  const handleNavClick = (href: string) => { setSidebarOpen(false); window.location.href = href; };
+  const handleNavClick = (href: string) => { setSidebarOpen(false); router.push(href); };
 
   useEffect(() => { if (!loading && theme) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
 
@@ -140,6 +143,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
   }
 
+  const PREVIEW_BANNER_HEIGHT = 36;
   const hasBanner = isPreviewMode || clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed);
 
   return (
@@ -148,18 +152,19 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Preview Mode Banner */}
       {isPreviewMode && (
-        <div className="sticky top-0 z-50 px-4 py-2.5 flex items-center justify-between gap-3" style={{ backgroundColor: '#7c3aed', color: '#ffffff' }}>
+        <div className="sticky top-0 z-50 px-4 flex items-center justify-between" style={{ height: `${PREVIEW_BANNER_HEIGHT}px`, background: 'linear-gradient(135deg, #6d28d9 0%, #7c3aed 50%, #8b5cf6 100%)', boxShadow: '0 1px 3px rgba(109,40,217,0.3)' }}>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Previewing client dashboard</span>
-            <span className="text-xs opacity-75 hidden sm:inline">— This is what your client sees</span>
+            <Eye className="h-3 w-3 text-white/70" />
+            <span className="text-xs font-medium text-white/90">Preview mode</span>
+            <span className="text-[10px] text-white/50 hidden sm:inline">— exactly what your client sees</span>
           </div>
-          <button onClick={handleExitPreview} className="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}>← Return to Agency</button>
+          <button onClick={handleExitPreview} className="flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-medium transition-all hover:bg-white/25 active:scale-95" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>← Agency</button>
         </div>
       )}
 
       {/* Payment Failed Banner */}
       {clientPaymentFailed && (
-        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? '44px' : 0, backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', borderBottom: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
+        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? `${PREVIEW_BANNER_HEIGHT}px` : 0, backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', borderBottom: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
           <div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ef4444' }} /><div><p className="font-medium text-sm" style={{ color: theme.isDark ? '#fca5a5' : '#dc2626' }}>Payment failed</p><p className="text-xs hidden sm:block" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Please update your payment method.</p></div></div>
           <a href="/client/settings" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Fix Payment</a>
         </div>
@@ -167,14 +172,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Trial Ending Soon Banner */}
       {clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed && (
-        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? '44px' : 0, backgroundColor: theme.isDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', borderBottom: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.2)' : '#fde68a'}` }}>
+        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? `${PREVIEW_BANNER_HEIGHT}px` : 0, backgroundColor: theme.isDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', borderBottom: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.2)' : '#fde68a'}` }}>
           <div className="flex items-center gap-3"><Clock className="h-5 w-5 flex-shrink-0" style={{ color: '#f59e0b' }} /><p className="text-sm" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>Trial ends in <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</strong></p></div>
           <a href="/client/upgrade-required" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#f59e0b', color: '#1c1917' }}>View Plans</a>
         </div>
       )}
 
       {/* Mobile / Tablet Header */}
-      <div className="sticky z-30 lg:hidden" style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: hasBanner ? '44px' : 0 }}>
+      <div className="sticky z-30 lg:hidden" style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: hasBanner ? `${PREVIEW_BANNER_HEIGHT}px` : 0 }}>
         <header className="flex items-center justify-between h-14 sm:h-16 px-4" style={{ borderBottom: `1px solid ${nav.border}` }}>
           <LogoBadge size="md" />
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl" style={{ color: nav.text }}><Menu className="h-6 w-6" /></button>
@@ -185,7 +190,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${(isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}
-        style={{ backgroundColor: nav.bg, borderRight: `1px solid ${nav.border}`, paddingTop: (isMobile || isTablet) ? 'env(safe-area-inset-top)' : 0, top: (!isMobile && !isTablet) ? (hasBanner ? '44px' : '0') : '0' }}>
+        style={{ backgroundColor: nav.bg, borderRight: `1px solid ${nav.border}`, paddingTop: (isMobile || isTablet) ? 'env(safe-area-inset-top)' : 0, top: (!isMobile && !isTablet) ? (hasBanner ? `${PREVIEW_BANNER_HEIGHT}px` : '0') : '0' }}>
 
         <div className="flex lg:hidden items-center justify-between h-14 px-4 border-b" style={{ borderColor: nav.border }}>
           <span className="font-semibold text-base" style={{ color: nav.text }}>Menu</span>
