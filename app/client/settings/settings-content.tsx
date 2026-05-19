@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Phone, Loader2, User, CreditCard, Link2,
   Check, Copy, Lock, Eye, EyeOff, Calendar, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
@@ -17,6 +17,7 @@ interface Client {
   business_city: string; business_state: string; vapi_phone_number: string; subscription_status: string;
   plan_type: string; trial_ends_at: string | null; monthly_call_limit: number; calls_this_month: number;
   google_calendar_connected: boolean; call_mode?: string; ring_timeout?: number; created_at: string;
+  hipaa_mode?: boolean;
   agency: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; secondary_color: string; accent_color: string; support_email: string | null; support_phone: string | null; } | null;
 }
 
@@ -76,6 +77,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [savingCallMode, setSavingCallMode] = useState(false);
   const [callModeMessage, setCallModeMessage] = useState('');
 
+  const [hipaaMode, setHipaaMode] = useState(client.hipaa_mode || false);
+  const [savingHipaa, setSavingHipaa] = useState(false);
+
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
@@ -97,6 +101,27 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const handleCopyNumber = async () => { if (!client.vapi_phone_number) return; const digitsOnly = client.vapi_phone_number.replace(/\D/g, ''); try { await navigator.clipboard.writeText(`+${digitsOnly}`); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch (error) { console.error('Failed to copy:', error); } };
   const handleConnectCalendar = () => { window.location.href = `${backendUrl}/api/auth/google-calendar/connect?clientId=${client.id}`; };
+
+  const handleToggleHipaa = async (enabled: boolean) => {
+    if (!confirm(enabled
+      ? 'Enable HIPAA mode? This will disable call recordings, transcripts, and caller recognition. Booking will switch to collect-request only. This takes effect on the next call.'
+      : 'Disable HIPAA mode? Call recordings, transcripts, and caller recognition will resume on the next call.'
+    )) return;
+    setSavingHipaa(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ hipaa_mode: enabled }) });
+      const data = await response.json();
+      if (data.success) {
+        setHipaaMode(enabled);
+        setClient(prev => ({ ...prev, hipaa_mode: enabled }));
+        try { const cached = localStorage.getItem('client'); if (cached) { const p = JSON.parse(cached); p.hipaa_mode = enabled; localStorage.setItem('client', JSON.stringify(p)); } } catch {}
+        setMessage(enabled ? 'HIPAA mode enabled — recordings and transcripts disabled' : 'HIPAA mode disabled — standard call handling resumed');
+        setTimeout(() => setMessage(''), 4000);
+      } else { setMessage(data.error || 'Failed to update HIPAA mode'); }
+    } catch { setMessage('Error updating HIPAA mode'); }
+    finally { setSavingHipaa(false); }
+  };
   const handleDisconnectCalendar = async () => { if (!confirm('Are you sure you want to disconnect Google Calendar? Your AI receptionist will no longer be able to book appointments.')) return; setDisconnectingCalendar(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/google-calendar/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ clientId: client.id }) }); const data = await response.json(); if (data.success) { setMessage('Google Calendar disconnected'); setClient(prev => ({ ...prev, google_calendar_connected: false })); setCalendarStatus(prev => prev ? { ...prev, connected: false, token_valid: false } : null); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to disconnect calendar'); } } catch (error) { setMessage('Error disconnecting calendar'); } finally { setDisconnectingCalendar(false); } };
   const handleUpgrade = async () => { setUpgrading(true); try { const response = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` }, body: JSON.stringify({ client_id: client.id, plan: client.plan_type || 'pro' }) }); const data = await response.json(); if (data.url) { window.location.href = data.url; } else { setMessage('Failed to create checkout'); setUpgrading(false); } } catch (error) { setMessage('Error creating checkout'); setUpgrading(false); } };
 
@@ -124,6 +149,53 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       <div className="max-w-3xl">
 
         <ClientBrandingSection clientId={client.id} theme={theme} />
+
+        {/* HIPAA Mode */}
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Shield className="w-4 h-4" style={{ color: theme.primary }} />HIPAA Compliance</h2>
+          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: hipaaMode ? theme.primary : theme.border, backgroundColor: hipaaMode ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : theme.card }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>HIPAA Mode</span>
+                  {hipaaMode && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ backgroundColor: theme.successBg, color: theme.success }}>Active</span>}
+                </div>
+                <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted4 }}>
+                  {hipaaMode
+                    ? 'HIPAA-compliant call handling is active. Call recordings and transcripts are not stored. Booking is set to collect-request only. The AI collects only name, phone, and general reason for visit.'
+                    : 'Enable for healthcare practices. Disables call recordings, transcripts, and caller recognition. Forces collect-request booking mode. The AI will only collect scheduling information — no medical details.'}
+                </p>
+              </div>
+              <button
+                onClick={() => handleToggleHipaa(!hipaaMode)}
+                disabled={savingHipaa}
+                className="relative flex-shrink-0 mt-1 w-11 h-6 rounded-full transition-colors disabled:opacity-50"
+                style={{ backgroundColor: hipaaMode ? theme.primary : theme.isDark ? 'rgba(255,255,255,0.12)' : '#d1d5db' }}
+              >
+                <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform" style={{ transform: hipaaMode ? 'translateX(20px)' : 'translateX(0)' }} />
+              </button>
+            </div>
+            {hipaaMode && (
+              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.success }}>✓</span> Call recordings disabled — no audio stored
+                </div>
+                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.success }}>✓</span> Transcripts disabled — no verbatim text stored
+                </div>
+                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.success }}>✓</span> Caller recognition disabled — no patient identification
+                </div>
+                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.success }}>✓</span> Collect-request booking — office confirms all appointments
+                </div>
+                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.success }}>✓</span> AI collects name, phone, and general visit type only
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* AI Phone Number */}
         <section className="mb-4 sm:mb-6">

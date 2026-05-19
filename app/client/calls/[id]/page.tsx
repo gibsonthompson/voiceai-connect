@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Phone, Settings, ArrowLeft, Clock, User, MapPin,
-  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX, Globe
+  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX, Globe, Shield
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useClient } from '@/lib/client-context';
@@ -56,6 +56,8 @@ export default function CallDetailPage() {
   const theme = useClientTheme();
   const [call, setCall] = useState<Call | null>(null);
   const [callLoading, setCallLoading] = useState(true);
+
+  const hipaaMode = client?.hipaa_mode === true;
 
   useEffect(() => { if (client && callId) fetchCallDetail(); }, [client, callId]);
 
@@ -165,7 +167,13 @@ export default function CallDetailPage() {
               {call.duration_seconds ? ` · ${formatDuration(call.duration_seconds)}` : ''}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            {hipaaMode && (
+              <span className="rounded-full px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5"
+                style={{ backgroundColor: hexToRgba('#10b981', theme.isDark ? 0.12 : 0.08), color: '#10b981' }}>
+                <Shield className="h-3.5 w-3.5" /> HIPAA
+              </span>
+            )}
             {call.call_language && call.call_language !== 'en' && (
               <span className="rounded-full px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5"
                 style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.08), color: theme.primary }}>
@@ -219,21 +227,34 @@ export default function CallDetailPage() {
             </div>
           )}
 
-          {/* Recording */}
-          {call.recording_url && (
+          {/* Recording — hidden when HIPAA mode is active */}
+          {!hipaaMode && call.recording_url && (
             <div className="rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
               <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight mb-4" style={{ color: theme.text }}>Recording</h2>
               <CallPlayback recordingUrl={call.recording_url} callDuration={call.duration_seconds || undefined} brandColor={theme.primary} />
             </div>
           )}
 
-          {/* Transcript */}
-          {call.transcript && (
+          {/* Transcript — hidden when HIPAA mode is active */}
+          {!hipaaMode && call.transcript && (
             <div className="rounded-2xl p-5 sm:p-6 fu fu3" style={glass}>
               <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight mb-4" style={{ color: theme.text }}>Full Transcript</h2>
               <div className="rounded-xl p-4 max-h-72 sm:max-h-96 overflow-y-auto"
                 style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#e5e7eb'}` }}>
                 <p className="text-xs sm:text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: theme.textMuted }}>{call.transcript}</p>
+              </div>
+            </div>
+          )}
+
+          {/* HIPAA notice — shown when HIPAA mode hides recording/transcript */}
+          {hipaaMode && (
+            <div className="rounded-2xl p-5 sm:p-6 fu fu2 flex items-start gap-3" style={{ ...glass, borderColor: hexToRgba('#10b981', 0.2) }}>
+              <Shield className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: theme.text }}>HIPAA Compliance Active</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                  Call recordings and transcripts are not stored when HIPAA mode is enabled. The AI summary above contains only scheduling information — caller name, phone number, and general reason for visit. No protected health information is collected or retained.
+                </p>
               </div>
             </div>
           )}
