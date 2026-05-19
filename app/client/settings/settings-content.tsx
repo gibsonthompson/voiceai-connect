@@ -10,6 +10,8 @@ import {
 import { useClientTheme } from '@/hooks/useClientTheme';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 import AISettingsSection from '@/components/client/AISettingsSection';
+import StaffMembersSection from '@/components/client/StaffMembersSection';
+import ClientServicesSection from '@/components/client/ClientServicesSection';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
@@ -443,6 +445,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* ═══ PHASE 1: AI Personality & Behavior ═══ */}
         <AISettingsSection clientId={client.id} theme={theme} />
+
+        {/* ═══ PHASE 3A: Services & Staff ═══ */}
+        <ClientServicesSection clientId={client.id} theme={theme} />
+        <StaffMembersSection clientId={client.id} theme={theme} />
 
         {/* AI Tools */}
         <ToolConfigSection clientId={client.id} theme={theme} />

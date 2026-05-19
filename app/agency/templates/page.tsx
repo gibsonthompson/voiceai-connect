@@ -18,6 +18,8 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import DashboardAccessSelector from '@/components/agency/DashboardAccessSelector';
+import StaffMembersSection from '@/components/client/StaffMembersSection';
+import ClientServicesSection from '@/components/client/ClientServicesSection';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
@@ -503,6 +505,20 @@ export default function AILabPage() {
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center gap-2 mb-4"><Bot className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Behavior</span></div>
                 <AISettingsSection clientId={selectedClient.id} theme={theme} compact />
+              </div>
+            )}
+
+            {/* ═══ PHASE 3A: Services ═══ */}
+            {selectedClient?.vapi_assistant_id && (
+              <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <ClientServicesSection clientId={selectedClient.id} theme={theme} compact />
+              </div>
+            )}
+
+            {/* ═══ PHASE 3A: Staff Members ═══ */}
+            {selectedClient?.vapi_assistant_id && (
+              <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <StaffMembersSection clientId={selectedClient.id} theme={theme} compact />
               </div>
             )}
 
