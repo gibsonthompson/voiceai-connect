@@ -48,9 +48,6 @@ const INDUSTRY_OPTIONS = [
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
 
-// ============================================================================
-// CLIENT BRANDING CARD
-// ============================================================================
 function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: { client: Client; agencyId?: string; theme: any; backendUrl: string; onUpdate: () => void; }) {
   const [brandingOpen, setBrandingOpen] = useState(false);
   const [savingBranding, setSavingBranding] = useState(false);
@@ -88,9 +85,6 @@ function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: {
   );
 }
 
-// ============================================================================
-// MAIN PAGE
-// ============================================================================
 export default function AgencyClientDetailPage() {
   const params = useParams();
   const clientId = params.id as string;
@@ -118,38 +112,16 @@ export default function AgencyClientDetailPage() {
   const [kbEditing, setKbEditing] = useState(false);
   const [kbSaved, setKbSaved] = useState(false);
   const [kbError, setKbError] = useState<string | null>(null);
-
-  // Industry editing
   const [industryValue, setIndustryValue] = useState('');
   const [industrySaving, setIndustrySaving] = useState(false);
   const [industrySaved, setIndustrySaved] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
 
-  const handleSaveIndustry = async (newIndustry: string) => {
-    if (!agency || !clientId || !newIndustry) return;
-    setIndustrySaving(true);
-    setIndustrySaved(false);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ industry: newIndustry })
-      });
-      if (!res.ok) throw new Error('Failed to update industry');
-      setIndustryValue(newIndustry);
-      setIndustrySaved(true);
-      setTimeout(() => setIndustrySaved(false), 3000);
-      fetchClientData();
-    } catch (err) {
-      console.error('Failed to save industry:', err);
-    } finally {
-      setIndustrySaving(false);
-    }
-  };
+  const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
   useEffect(() => { if (!agency || !clientId) return; if (demoMode) { const demoData = getDemoClientDetail(clientId); setClient(demoData.client as Client); setRecentCalls(demoData.calls as Call[]); setLoading(false); setPromptLoading(false); setSystemPrompt('You are the phone assistant for Demo Business...'); setOriginalPrompt('You are the phone assistant for Demo Business...'); return; } fetchClientData(); }, [agency, clientId, demoMode]);
   useEffect(() => { if (client?.vapi_assistant_id && agency && !demoMode) { fetchPrompt(); } }, [client?.id, client?.vapi_assistant_id]);
@@ -165,6 +137,33 @@ export default function AgencyClientDetailPage() {
   const handleResetKb = async () => { if (!agency || !clientId) return; if (!confirm('Reset to the default industry knowledge base? Your custom changes will be lost.')) return; setKbResetting(true); setKbError(null); setKbSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/knowledge-base/reset`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Failed to reset'); } const data = await res.json(); setKbContent(data.content); setKbOriginalContent(data.content); setKbEditing(false); setKbSaved(true); setTimeout(() => setKbSaved(false), 3000); } catch (err) { setKbError(err instanceof Error ? err.message : 'Failed to reset'); } finally { setKbResetting(false); } };
   const kbHasChanges = kbContent !== kbOriginalContent;
   const copyPhoneNumber = () => { if (!client?.vapi_phone_number) return; navigator.clipboard.writeText(client.vapi_phone_number); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  const handlePreviewAsClient = async () => {
+    if (!agency || !clientId) return;
+    setPreviewLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/preview-token`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Failed to generate preview token');
+        return;
+      }
+      const data = await res.json();
+      if (data.token) {
+        window.open(`/client/preview?token=${data.token}`, '_blank');
+      }
+    } catch (e) {
+      console.error('Preview failed:', e);
+      alert('Failed to open client preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const formatPhone = (phone: string) => { if (!phone) return '—'; const digits = phone.replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`; if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`; return phone; };
   const getPlanLabel = (plan: string) => { switch (plan) { case 'starter': return 'Starter'; case 'pro': return 'Professional'; case 'growth': return 'Growth'; default: return plan || 'Starter'; } };
   const getPlanPrice = (planType: string) => { if (!agency) return 0; switch (planType) { case 'starter': return agency.price_starter || 9900; case 'pro': return agency.price_pro || 14900; case 'growth': return agency.price_growth || 29900; default: return 0; } };
@@ -207,20 +206,10 @@ export default function AgencyClientDetailPage() {
           {/* Knowledge Base */}
           {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-1"><BookOpen className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Knowledge Base</h2></div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>{intelligence ? `Pre-loaded ${intelligence.label} knowledge` : 'AI receptionist knowledge base'}</p>{intelligence && (<div className="flex flex-wrap gap-1.5 mb-4">{intelligence.features.map((feature) => (<span key={feature} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}><Zap className="h-3 w-3" />{feature}</span>))}{client.business_website && <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}><Globe className="h-3 w-3" />Website Integrated</span>}</div>)}<button onClick={handleOpenKbModal} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><BookOpen className="h-4 w-4" /> View / Edit Knowledge Base</button></div></div>)}
 
-          {/* Client Branding — locked for Free plan */}
+          {/* Client Branding */}
           <div>
-            {isFreePlan && (
-              <div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                <Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p>
-                  <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Client branding requires Pro or Scale.</p>
-                </div>
-              </div>
-            )}
-            <div style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}>
-              <ClientBrandingCard client={client} agencyId={agency?.id} theme={theme} backendUrl={backendUrl} onUpdate={fetchClientData} />
-            </div>
+            {isFreePlan && (<div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Client branding requires Pro or Scale.</p></div></div>)}
+            <div style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}><ClientBrandingCard client={client} agencyId={agency?.id} theme={theme} backendUrl={backendUrl} onUpdate={fetchClientData} /></div>
           </div>
 
           {/* Subscription */}
@@ -233,7 +222,18 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
 
           {/* Actions */}
-          <div className="space-y-2"><Link href={`/agency/clients/${clientId}/calls`} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link></div>
+          <div className="space-y-2">
+            <Link href={`/agency/clients/${clientId}/calls`} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link>
+            <button
+              onClick={handlePreviewAsClient}
+              disabled={previewLoading}
+              className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}
+            >
+              {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+              {previewLoading ? 'Opening...' : 'Login as Client'}
+            </button>
+          </div>
         </div>
       </div>
 
