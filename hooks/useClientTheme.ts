@@ -47,22 +47,10 @@ function darken(hex: string, amount: number): string {
 // ============================================================================
 // THE HOOK
 //
-// Inputs:
-//   - client.primary_color (THE color — everything derives from this)
-//   - client.nav_bg, nav_text, button_text, page_bg, card_bg, card_border
-//     (explicit overrides — used as-is when set)
-//   - client.theme_mode ('light' | 'dark' | null)
-//   - agency fallbacks for primary, theme
-//
-// Derivation:
-//   1. Primary color = client.primary_color → agency.primary_color → #3b82f6
-//   2. Nav bg = client.nav_bg → auto-darken(primary, 65%) → default
-//   3. Nav text = client.nav_text → auto-contrast(navBg) → default
-//   4. Button text = client.button_text → auto-contrast(primary) → default
-//   5. Page bg / card bg / card border = client override → theme default
-//   6. Theme = client.theme_mode → agency.website_theme → dark
-//
-// That's it. No JSONB. No injection. No multi-layer cascade.
+// UPDATED 2026-05-20: Nav bg now respects light/dark mode.
+//   - Light mode: white nav (matches agency useTheme behavior)
+//   - Dark mode: auto-darkened primary (original behavior)
+//   - Explicit client.nav_bg override always wins
 // ============================================================================
 
 export function useClientTheme() {
@@ -78,20 +66,23 @@ export function useClientTheme() {
       : (branding.websiteTheme || 'dark') === 'dark';
 
     // ── Nav ─────────────────────────────────────────────────────────
-    const autoNavBg = darken(primary, 0.65);
+    // FIXED: In light mode, use white nav bg (matches agency theme).
+    // In dark mode, auto-darken primary (original behavior).
+    // Explicit client.nav_bg override always takes priority.
+    const autoNavBg = isDark ? darken(primary, 0.65) : '#ffffff';
     const navBg = (isValidHex(client?.nav_bg) ? client!.nav_bg! : null) || autoNavBg;
     const isNavDark = !isLight(navBg);
     const navText = (isValidHex(client?.nav_text) ? client!.nav_text! : null) || (isNavDark ? '#fafaf9' : '#111827');
     const navTextMuted = isNavDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
     const navBorder = isNavDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-    const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)';
+    const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
 
-    // Active item: use primary if it has enough contrast against nav bg, else white
+    // Active item: use primary if it has enough contrast against nav bg, else fallback
     const primaryContrastOk = Math.abs(luminance(primary) - luminance(navBg)) > 0.25;
-    const navActiveColor = primaryContrastOk ? primary : '#ffffff';
-    const navActiveItemBg = isNavDark
-      ? (primaryContrastOk ? hexToRgba(primary, 0.15) : 'rgba(255,255,255,0.1)')
-      : hexToRgba(primary, 0.15);
+    const navActiveColor = primaryContrastOk ? primary : (isNavDark ? '#ffffff' : '#111827');
+    const navActiveItemBg = primaryContrastOk
+      ? hexToRgba(primary, 0.15)
+      : (isNavDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)');
 
     // ── Buttons ─────────────────────────────────────────────────────
     const buttonText = (isValidHex(client?.button_text) ? client!.button_text! : null) || contrastText(primary);

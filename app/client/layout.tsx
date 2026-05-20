@@ -100,7 +100,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const displayLogo = branding.logoUrl;
 
   useEffect(() => { const checkDevice = () => { const w = window.innerWidth; setIsMobile(w < 768); setIsTablet(w >= 768 && w < 1024); }; checkDevice(); window.addEventListener('resize', checkDevice); return () => window.removeEventListener('resize', checkDevice); }, []);
-  useEffect(() => { setSidebarOpen(false); }, [pathname]);
+  // Close sidebar + force RSC re-fetch on route change.
+  // router.refresh() is the critical piece — without it, Next.js may serve
+  // a stale/empty RSC payload on the first navigation, requiring a second
+  // click. This forces a fresh server fetch every time the pathname changes.
+  useEffect(() => { setSidebarOpen(false); router.refresh(); }, [pathname]);
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
   useEffect(() => { if (displayLogo) setFavicon(displayLogo); }, [displayLogo]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
