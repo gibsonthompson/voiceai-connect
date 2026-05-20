@@ -61,7 +61,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
     { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
-    { href: '/agency/marketing', label: 'Marketing', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
+    { href: '/agency/marketing', label: 'Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
     { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },

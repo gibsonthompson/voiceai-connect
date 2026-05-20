@@ -23,7 +23,13 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+html:not([data-dashboard]) {
   background: #050505;
+}
+html[data-dashboard] body {
+  background: inherit;
+  color: inherit;
 }
 
 body {
