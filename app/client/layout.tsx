@@ -2,7 +2,6 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
@@ -100,11 +99,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const displayLogo = branding.logoUrl;
 
   useEffect(() => { const checkDevice = () => { const w = window.innerWidth; setIsMobile(w < 768); setIsTablet(w >= 768 && w < 1024); }; checkDevice(); window.addEventListener('resize', checkDevice); return () => window.removeEventListener('resize', checkDevice); }, []);
-  // Close sidebar + force RSC re-fetch on route change.
-  // router.refresh() is the critical piece — without it, Next.js may serve
-  // a stale/empty RSC payload on the first navigation, requiring a second
-  // click. This forces a fresh server fetch every time the pathname changes.
-  useEffect(() => { setSidebarOpen(false); router.refresh(); }, [pathname]);
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
   useEffect(() => { if (displayLogo) setFavicon(displayLogo); }, [displayLogo]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
@@ -205,20 +200,18 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
 
         {/* ════════════════════════════════════════════════════════════════
-            NAV ITEMS — Uses <Link prefetch={false}> instead of
-            <button> + router.push(). This is the fix for the tab
-            switching bug. router.push + middleware on subdomains causes
-            RSC payload corruption in Next.js App Router. <Link> handles
-            client-side navigation natively and doesn't hit this bug.
-            Sidebar close is handled by useEffect([pathname]) above.
+            NAV ITEMS — Uses <a> tags for full page loads. This bypasses
+            all Next.js RSC/router cache/middleware issues that cause the
+            "URL changes but page doesn't update" bug on subdomains.
+            Client-side navigation (Link, router.push) is unreliable when
+            middleware modifies responses for multi-tenant subdomain routing.
+            Full page loads are ~200ms on Vercel — imperceptible for tab nav.
            ════════════════════════════════════════════════════════════════ */}
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
-              prefetch={false}
-              onClick={() => setSidebarOpen(false)}
               className="client-nav-link w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors"
               style={{
                 backgroundColor: active ? nav.activeItemBg : 'transparent',
@@ -227,7 +220,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             >
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </Link>
+            </a>
           ); })}
         </nav>
 
@@ -252,14 +245,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          MAIN CONTENT — key={pathname} forces React to unmount the old
-          page and mount the new one when the route changes. Without this,
-          React reuses the same <main> element and {children} can get
-          stuck showing the previous page's content. This is the nuclear
-          fix for the "URL changes but content doesn't update" bug.
-         ══════════════════════════════════════════════════════════════════ */}
-      <main key={pathname} className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
       <SupportWidget theme={theme} userType="client" />

@@ -33,14 +33,28 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // Skip client-side navigation requests (RSC payloads from <Link>)
-  // These are internal Next.js fetches that must pass through unmodified.
+  // Skip /client/* routes entirely — client dashboard pages don't need
+  // subdomain context. They get all data from localStorage + backend API.
+  // This prevents middleware from modifying headers/cookies on client page
+  // requests (including RSC navigation fetches), which was corrupting
+  // client-side navigation and causing the double-click tab switching bug.
   // =========================================================================
-  if (
+  if (pathname.startsWith('/client')) {
+    return NextResponse.next();
+  }
+
+  // =========================================================================
+  // Skip ALL internal Next.js navigation requests (RSC payloads from <Link>)
+  // Comprehensive detection: headers, URL params, and accept types.
+  // =========================================================================
+  const isInternalNavigation =
     request.headers.get('RSC') === '1' ||
     request.headers.get('Next-Router-State-Tree') ||
-    request.headers.get('Next-Router-Prefetch') === '1'
-  ) {
+    request.headers.get('Next-Router-Prefetch') === '1' ||
+    request.headers.get('accept')?.includes('text/x-component') ||
+    request.nextUrl.searchParams.has('_rsc');
+
+  if (isInternalNavigation) {
     return NextResponse.next();
   }
 
