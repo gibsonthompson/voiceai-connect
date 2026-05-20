@@ -120,13 +120,13 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/*
-          Blocking script: sets data-dashboard attribute on <html> BEFORE
-          CSS paints. globals.css uses html:not([data-dashboard]) for the
-          dark marketing background, so dashboard pages never get #050505.
+          Blocking script: injects a <style> with !important that overrides
+          globals.css dark background for dashboard pages. Must use a style
+          tag (not just inline styles) to beat CSS specificity before paint.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=window.location.pathname;if(p.indexOf('/client')===0||p.indexOf('/agency')===0){var t=localStorage.getItem('voiceai_ui_theme');var isDark=t!=='light';document.documentElement.setAttribute('data-dashboard','');document.documentElement.style.background=isDark?'#0a0a0a':'#f9fafb';document.body&&(document.body.style.background='inherit',document.body.style.color=isDark?'#fafaf9':'#111827');}}catch(e){}})();`,
+            __html: `(function(){try{var p=window.location.pathname;if(p.indexOf('/client')===0||p.indexOf('/agency')===0){var t=localStorage.getItem('voiceai_ui_theme');var isDark=t!=='light';var bg=isDark?'#0a0a0a':'#f9fafb';var fg=isDark?'#fafaf9':'#111827';var s=document.createElement('style');s.id='theme-init';s.textContent='html,body{background:'+bg+' !important;color:'+fg+' !important}';document.head.appendChild(s);}}catch(e){}})();`,
           }}
         />
         <Script

@@ -1,8 +1,7 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
@@ -55,7 +54,6 @@ interface NavItem { href: string; label: string; icon: any; permissionKey?: stri
 
 function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -104,7 +102,28 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
   useEffect(() => { if (displayLogo) setFavicon(displayLogo); }, [displayLogo]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
-  useEffect(() => { document.documentElement.style.background = nav.bg; let metaThemeColor = document.querySelector('meta[name="theme-color"]'); if (metaThemeColor) metaThemeColor.setAttribute('content', nav.bg); return () => { document.documentElement.style.background = '#f9fafb'; if (metaThemeColor) metaThemeColor.setAttribute('content', '#f9fafb'); }; }, [nav.bg]);
+
+  // ── Background override — SAME PATTERN AS AGENCY LAYOUT ─────────────
+  // Uses setProperty with !important to override globals.css #050505.
+  // This is what makes the agency dashboard not flash. Without !important,
+  // globals.css wins on first paint.
+  useEffect(() => {
+    document.documentElement.style.setProperty('background', theme.bg, 'important');
+    document.body.style.setProperty('background', theme.bg, 'important');
+    document.body.style.setProperty('color', theme.text, 'important');
+    // Update theme-color meta
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) metaThemeColor.setAttribute('content', nav.bg);
+    // Remove the blocking script's init style (no longer needed after hydration)
+    const initStyle = document.getElementById('theme-init');
+    if (initStyle) initStyle.remove();
+    return () => {
+      document.documentElement.style.removeProperty('background');
+      document.body.style.removeProperty('background');
+      document.body.style.removeProperty('color');
+    };
+  }, [theme.bg, theme.text, nav.bg]);
+
   useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', displayName); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', displayName); document.head.appendChild(metaTitle); } } }, [displayName]);
   useEffect(() => { if (!loading && clientTrialExpired && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?expired=true'; } }, [loading, clientTrialExpired, isAccessibleRoute]);
   useEffect(() => { if (!loading && clientCanceled && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?canceled=true'; } }, [loading, clientCanceled, isAccessibleRoute]);
@@ -137,8 +156,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   if (loading && !client) {
-    // Read theme hint from localStorage to match the blocking script in root layout.
-    // This prevents a light spinner flashing on dark-mode dashboards (and vice versa).
     const _hintDark = typeof window !== 'undefined' && localStorage.getItem('voiceai_ui_theme') !== 'light';
     const _bg = _hintDark ? '#0a0a0a' : '#f9fafb';
     const _sb = _hintDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
@@ -155,7 +172,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; } .client-nav-link:hover { background-color: ${nav.hoverBg} !important; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
 
       {/* Preview Mode Banner */}
       {isPreviewMode && (
@@ -206,27 +223,24 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
         <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
 
-        {/* ════════════════════════════════════════════════════════════════
-            NAV ITEMS — <Link prefetch={false}> for client-side navigation.
-            Middleware now skips /client/* entirely (no header/cookie mutation),
-            so RSC payloads are clean — same as agency dashboard on platform domain.
-           ════════════════════════════════════════════════════════════════ */}
+        {/* NAV — <a> tags, same pattern as agency layout */}
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
-              prefetch={false}
               onClick={() => setSidebarOpen(false)}
-              className="client-nav-link w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: active ? nav.activeItemBg : 'transparent',
-                color: active ? nav.activeItemColor : nav.textMuted,
-              }}
+              className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-all"
+              style={active
+                ? { backgroundColor: nav.activeItemBg, color: nav.activeItemColor }
+                : { color: nav.textMuted }
+              }
+              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = nav.hoverBg; }}
+              onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
             >
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </Link>
+            </a>
           ); })}
         </nav>
 
@@ -251,7 +265,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      <main key={pathname} className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
       <SupportWidget theme={theme} userType="client" />
