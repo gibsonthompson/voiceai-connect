@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useLayoutEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
@@ -103,18 +103,15 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { if (displayLogo) setFavicon(displayLogo); }, [displayLogo]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
 
-  // ── Background override — SAME PATTERN AS AGENCY LAYOUT ─────────────
-  // Uses setProperty with !important to override globals.css #050505.
-  // This is what makes the agency dashboard not flash. Without !important,
-  // globals.css wins on first paint.
-  useEffect(() => {
+  // ── Background override — useLayoutEffect runs BEFORE browser paints ──
+  // useEffect runs AFTER paint (causes flash). useLayoutEffect runs BEFORE
+  // paint, so globals.css #050505 is overridden before the user sees it.
+  useLayoutEffect(() => {
     document.documentElement.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('color', theme.text, 'important');
-    // Update theme-color meta
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) metaThemeColor.setAttribute('content', nav.bg);
-    // Remove the blocking script's init style (no longer needed after hydration)
     const initStyle = document.getElementById('theme-init');
     if (initStyle) initStyle.remove();
     return () => {
