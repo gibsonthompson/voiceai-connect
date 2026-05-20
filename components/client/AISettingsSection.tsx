@@ -6,20 +6,20 @@ import { Loader2, Save, Bot, MapPin, AlertTriangle, Calendar, Plus, X } from 'lu
 interface AISettingsProps {
   clientId: string;
   theme: any;
-  compact?: boolean; // true = AI Lab inline view, false = full settings section
+  compact?: boolean;
 }
 
 const TONE_OPTIONS = [
-  { value: 'professional', label: 'Professional', desc: 'Polished and measured — the default for most businesses' },
-  { value: 'friendly', label: 'Friendly', desc: 'Warmer, more personable — great for salons, restaurants, fitness' },
-  { value: 'casual', label: 'Casual', desc: 'Relaxed and informal — like talking to a real person' },
-  { value: 'clinical', label: 'Clinical', desc: 'Precise and formal — ideal for medical, legal, financial' },
+  { value: 'professional', label: 'Professional', desc: 'Clear and to-the-point. The standard for most businesses.' },
+  { value: 'friendly', label: 'Friendly', desc: 'Warm and approachable. Callers feel welcome immediately.' },
+  { value: 'casual', label: 'Casual', desc: 'Natural and easygoing. Like talking to someone who works there.' },
+  { value: 'clinical', label: 'Clinical', desc: 'Precise and measured. Best for medical, legal, and financial.' },
 ];
 
 const BOOKING_OPTIONS = [
-  { value: 'auto_book', label: 'Auto-book', desc: 'AI checks calendar and books appointments directly' },
-  { value: 'collect_request', label: 'Collect request', desc: 'AI takes preferred time and info — office confirms' },
-  { value: 'disabled', label: 'Disabled', desc: 'No booking language — AI just takes messages' },
+  { value: 'auto_book', label: 'Auto-book', desc: 'Books appointments directly to your calendar in real time' },
+  { value: 'collect_request', label: 'Collect request', desc: "Collects the caller's preferred time — your team confirms" },
+  { value: 'disabled', label: 'Disabled', desc: 'No scheduling. AI focuses on messages and answering questions.' },
 ];
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -96,7 +96,7 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
         setOrigTone(aiTone);
         setOrigBooking(bookingMode);
         setOrigAreas([...serviceAreas]);
-        setMessage('AI settings saved! Changes take effect on the next call.');
+        setMessage('Settings saved! Changes take effect on the next call.');
         setTimeout(() => setMessage(''), 4000);
       } else {
         const d = await r.json();
@@ -235,7 +235,7 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
             Service Areas
           </label>
           <p className="text-[10px] mb-2" style={{ color: theme.textMuted || theme.textMuted4 }}>
-            The AI will let callers know if their area is covered.
+            Your AI will let callers know if their location is within your coverage area.
           </p>
           {serviceAreas.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  Phone, Loader2, Bot, Mic, MessageSquare,
-  Play, Pause, Check, RotateCcw, AlertCircle
+  Phone, Loader2, Bot, Mic, MessageSquare, Calendar,
+  Play, Pause, Check, RotateCcw, AlertCircle, Link2
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -12,6 +12,7 @@ import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
+interface CalendarStatus { connected: boolean; token_valid: boolean; plan_allowed: boolean; plan_message: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -20,7 +21,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}`;
+const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
 
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
@@ -44,8 +45,34 @@ export default function ClientAIAgentPage() {
   const [greetingLoading, setGreetingLoading] = useState(true);
   const [savingGreeting, setSavingGreeting] = useState(false);
 
-  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); } }, [client]);
+  // Google Calendar state
+  const [calendarStatus, setCalendarStatus] = useState<CalendarStatus | null>(null);
+  const [calendarLoading, setCalendarLoading] = useState(true);
+  const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+
+  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); } }, [client]);
   useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }; }, []);
+
+  // Handle calendar redirect params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'calendar_connected') {
+      showMessage('Google Calendar connected successfully!');
+      setCalendarStatus(prev => prev ? { ...prev, connected: true, token_valid: true } : null);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    const error = params.get('error');
+    if (error === 'plan_upgrade_required') {
+      showMessage('Calendar integration requires a higher plan. Please contact your provider to upgrade.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'calendar_denied') {
+      showMessage('Google Calendar access was denied. Please try again and grant calendar permissions.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error?.startsWith('calendar_')) {
+      showMessage('Failed to connect Google Calendar. Please try again.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
@@ -54,12 +81,53 @@ export default function ClientAIAgentPage() {
   const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); } } } catch {} };
   const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
 
+  const fetchCalendarStatus = async () => {
+    if (!client) return;
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/auth/google-calendar/status/${client.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCalendarStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch calendar status:', err);
+      setCalendarStatus({ connected: client.google_calendar_connected || false, token_valid: false, plan_allowed: true, plan_message: null });
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const handleConnectCalendar = () => { window.location.href = `${getBackendUrl()}/api/auth/google-calendar/connect?clientId=${client?.id}`; };
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm('Are you sure you want to disconnect Google Calendar? Your AI receptionist will no longer be able to book appointments.')) return;
+    setDisconnectingCalendar(true);
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/auth/google-calendar/disconnect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ clientId: client?.id }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        showMessage('Google Calendar disconnected');
+        setCalendarStatus(prev => prev ? { ...prev, connected: false, token_valid: false } : null);
+      } else {
+        showMessage(data.error || 'Failed to disconnect calendar', true);
+      }
+    } catch {
+      showMessage('Error disconnecting calendar', true);
+    } finally {
+      setDisconnectingCalendar(false);
+    }
+  };
+
   const handlePlayPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const audio = new Audio(voice.previewUrl); audioRef.current = audio; audio.onended = () => setPlayingVoiceId(null); audio.onerror = () => { setPlayingVoiceId(null); showMessage('Failed to play', true); }; audio.play(); setPlayingVoiceId(voice.id); };
   const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); showMessage('Voice updated!'); } else { showMessage('Failed', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
   const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); showMessage('Greeting updated!'); } else { showMessage(d.error || 'Failed', true); } } catch { showMessage('Error', true); } finally { setSavingGreeting(false); } };
   const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
   const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
-  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 3000); };
+  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 4000); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
   const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
@@ -70,6 +138,8 @@ export default function ClientAIAgentPage() {
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
   const filteredVoices = getFilteredVoices();
   const availableAccents = getAvailableAccents();
+  const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected;
+  const isCalendarPlanAllowed = calendarStatus?.plan_allowed !== false;
 
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
@@ -136,6 +206,48 @@ export default function ClientAIAgentPage() {
           </button>
           <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Call your AI number to hear your settings in action</p>
         </section>
+
+        {/* Google Calendar Integration */}
+        <div className="fu fu2">
+          <SectionCard icon={Calendar} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected}>
+            {calendarLoading ? (
+              <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
+            ) : !isCalendarPlanAllowed ? (
+              <div className="space-y-2.5">
+                <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar integration is not included in your current plan.</p>
+                </div>
+                <button disabled className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed opacity-50" style={{ backgroundColor: theme.bg, color: theme.textMuted4, border: `1px solid ${theme.border}` }}>
+                  <Calendar className="w-4 h-4 inline mr-1.5" />Upgrade to Connect Calendar
+                </button>
+              </div>
+            ) : isCalendarConnected ? (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                  <Check className="w-4 h-4" style={{ color: theme.success }} />
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: theme.successText }}>Calendar connected</p>
+                </div>
+                {calendarStatus && !calendarStatus.token_valid && (
+                  <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired.</p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={handleConnectCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Reconnect</button>
+                  <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
+                    {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={handleConnectCalendar} className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+                <Calendar className="w-4 h-4 inline mr-1.5" />Connect Google Calendar
+              </button>
+            )}
+          </SectionCard>
+        </div>
 
         {/* Voice Selection */}
         <div className="fu fu2">
@@ -230,7 +342,7 @@ export default function ClientAIAgentPage() {
           )}
         </div>
 
-        {/* AI Behavior (tone, booking mode, service areas, priority rules) */}
+        {/* AI Behavior */}
         <div className="fu fu3">
           <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
             <div className="p-4 sm:p-5">
@@ -239,7 +351,7 @@ export default function ClientAIAgentPage() {
           </div>
         </div>
 
-        {/* AI Tools (caller recognition, spam detection, transfer, etc.) */}
+        {/* AI Tools */}
         <div className="fu fu4">
           <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
             <div className="p-4 sm:p-5">
@@ -249,7 +361,7 @@ export default function ClientAIAgentPage() {
         </div>
 
         {/* Tip */}
-        <div className="rounded-2xl p-4 fu fu4" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.03), border: `1px solid ${hexToRgba(primaryColor, 0.12)}` }}>
+        <div className="rounded-2xl p-4 fu fu5" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.03), border: `1px solid ${hexToRgba(primaryColor, 0.12)}` }}>
           <div className="flex items-start gap-3">
             <span className="text-lg flex-shrink-0">💡</span>
             <div>
