@@ -439,10 +439,13 @@ export default function AddClientPage() {
     );
   }
 
-  const inputStyle = {
+  // ── FIX: colorScheme tells the browser how to render native <select> popups ──
+  // Without this, dark-mode users on Chrome+Windows get dark-on-dark option text.
+  const inputStyle: React.CSSProperties = {
     backgroundColor: inputBg,
     border: `1px solid ${inputBorder}`,
-    color: textColor
+    color: textColor,
+    colorScheme: isDark ? 'dark' : 'light',
   };
 
   const stateLabel = isUS ? 'State' : isCA ? 'Province' : 'State / Region';
