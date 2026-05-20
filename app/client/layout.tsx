@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
@@ -206,18 +207,17 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
 
         {/* ════════════════════════════════════════════════════════════════
-            NAV ITEMS — Uses <a> tags for full page loads. This bypasses
-            all Next.js RSC/router cache/middleware issues that cause the
-            "URL changes but page doesn't update" bug on subdomains.
-            Client-side navigation (Link, router.push) is unreliable when
-            middleware modifies responses for multi-tenant subdomain routing.
-            Full page loads are ~200ms on Vercel — imperceptible for tab nav.
+            NAV ITEMS — <Link prefetch={false}> for client-side navigation.
+            Middleware now skips /client/* entirely (no header/cookie mutation),
+            so RSC payloads are clean — same as agency dashboard on platform domain.
            ════════════════════════════════════════════════════════════════ */}
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
+              onClick={() => setSidebarOpen(false)}
               className="client-nav-link w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors"
               style={{
                 backgroundColor: active ? nav.activeItemBg : 'transparent',
@@ -226,7 +226,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             >
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </a>
+            </Link>
           ); })}
         </nav>
 
