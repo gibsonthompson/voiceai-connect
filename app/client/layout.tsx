@@ -136,7 +136,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   if (loading && !client) {
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid rgba(0,0,0,0.08);border-top-color:rgba(0,0,0,0.3);animation:ldSpin .7s linear infinite}` }} /><div className="ld-s" /></div>);
+    // Read theme hint from localStorage to match the blocking script in root layout.
+    // This prevents a light spinner flashing on dark-mode dashboards (and vice versa).
+    const _hintDark = typeof window !== 'undefined' && localStorage.getItem('voiceai_ui_theme') !== 'light';
+    const _bg = _hintDark ? '#0a0a0a' : '#f9fafb';
+    const _sb = _hintDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+    const _st = _hintDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: _bg }}><style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid ${_sb};border-top-color:${_st};animation:ldSpin .7s linear infinite}` }} /><div className="ld-s" /></div>);
   }
 
   if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {

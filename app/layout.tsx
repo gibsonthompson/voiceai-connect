@@ -119,6 +119,31 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="VoiceAI" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
+        {/*
+          ══════════════════════════════════════════════════════════════════
+          BLOCKING THEME SCRIPT — Prevents black flash on client/agency pages.
+
+          globals.css sets html/body background to #050505 (dark) for the
+          VoiceAI Connect marketing homepage. But client and agency dashboard
+          pages may be light or dark mode. Without this script, every full
+          page load flashes black before React hydrates and the useEffect
+          sets the correct background.
+
+          This script runs synchronously during HTML parsing — BEFORE any
+          CSS paint — and overrides the background for non-marketing pages.
+          It reads the theme from localStorage (set by the dashboard on
+          every render) to pick the correct colors.
+
+          Platform homepage (/): keeps #050505 from CSS (no override).
+          Agency dashboard (/agency/*): reads voiceai_ui_theme.
+          Client dashboard (/client/*): reads voiceai_ui_theme.
+          ══════════════════════════════════════════════════════════════════
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=window.location.pathname;if(p.startsWith('/client')||p.startsWith('/agency')){var t=localStorage.getItem('voiceai_ui_theme');var d=t==='light'?0:1;var bg=d?'#0a0a0a':'#f9fafb';var fg=d?'#fafaf9':'#111827';document.documentElement.style.background=bg;document.documentElement.style.color=fg;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',bg);}}catch(e){}})();`,
+          }}
+        />
         <Script
           id="gtm-script"
           strategy="afterInteractive"
