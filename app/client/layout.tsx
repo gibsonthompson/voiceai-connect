@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
@@ -45,7 +46,6 @@ function isTrialExpired(client: any): boolean { if (!client) return false; if (!
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null { if (!trialEndsAt) return null; const endDate = new Date(trialEndsAt); const now = new Date(); const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); return Math.max(0, diffDays); }
 function getInitial(name: string | null | undefined): string { if (!name) return ''; return name.charAt(0).toUpperCase(); }
 
-// Read preview mode synchronously to avoid layout shift
 function getInitialPreviewMode(): boolean {
   if (typeof window === 'undefined') return false;
   try { return localStorage.getItem('preview_mode') === 'true'; } catch { return false; }
@@ -123,7 +123,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });
   const isActive = (href: string) => { if (href === '/client/dashboard') return pathname === '/client/dashboard' || pathname === '/client'; return pathname?.startsWith(href); };
-  const handleNavClick = (href: string) => { setSidebarOpen(false); router.push(href); };
 
   useEffect(() => { if (!loading && theme) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
 
@@ -150,7 +149,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; } .client-nav-link:hover { background-color: ${nav.hoverBg} !important; }` }} />
 
       {/* Preview Mode Banner */}
       {isPreviewMode && (
@@ -201,12 +200,30 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
         <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
 
+        {/* ════════════════════════════════════════════════════════════════
+            NAV ITEMS — Uses <Link prefetch={false}> instead of
+            <button> + router.push(). This is the fix for the tab
+            switching bug. router.push + middleware on subdomains causes
+            RSC payload corruption in Next.js App Router. <Link> handles
+            client-side navigation natively and doesn't hit this bug.
+            Sidebar close is handled by useEffect([pathname]) above.
+           ════════════════════════════════════════════════════════════════ */}
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <button key={item.href} onClick={() => handleNavClick(item.href)} className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors text-left" style={{ backgroundColor: active ? nav.activeItemBg : 'transparent', color: active ? nav.activeItemColor : nav.textMuted }}>
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              onClick={() => setSidebarOpen(false)}
+              className="client-nav-link w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: active ? nav.activeItemBg : 'transparent',
+                color: active ? nav.activeItemColor : nav.textMuted,
+              }}
+            >
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </button>
+            </Link>
           ); })}
         </nav>
 
@@ -231,7 +248,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      {/* ══════════════════════════════════════════════════════════════════
+          MAIN CONTENT — key={pathname} forces React to unmount the old
+          page and mount the new one when the route changes. Without this,
+          React reuses the same <main> element and {children} can get
+          stuck showing the previous page's content. This is the nuclear
+          fix for the "URL changes but content doesn't update" bug.
+         ══════════════════════════════════════════════════════════════════ */}
+      <main key={pathname} className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
       <SupportWidget theme={theme} userType="client" />
