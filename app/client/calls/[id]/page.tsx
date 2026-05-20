@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Phone, Settings, ArrowLeft, Clock, User, MapPin,
-  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX, Globe, Shield
+  AlertCircle, MessageSquare, Loader2, PhoneForwarded, ShieldX, Globe, Shield, Send
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useClient } from '@/lib/client-context';
@@ -56,6 +56,10 @@ export default function CallDetailPage() {
   const theme = useClientTheme();
   const [call, setCall] = useState<Call | null>(null);
   const [callLoading, setCallLoading] = useState(true);
+  const [showTextCompose, setShowTextCompose] = useState(false);
+  const [textMessage, setTextMessage] = useState('');
+  const [textSending, setTextSending] = useState(false);
+  const [textSent, setTextSent] = useState(false);
 
   const hipaaMode = client?.hipaa_mode === true;
 
@@ -79,6 +83,25 @@ export default function CallDetailPage() {
   };
 
   const formatDuration = (s: number) => `${Math.floor(s / 60)}m ${s % 60}s`;
+
+  const handleSendText = async () => {
+    if (!textMessage.trim() || !client || !call || textSending) return;
+    const callerPhone = call.customer_phone || call.caller_phone;
+    if (!callerPhone) return;
+    setTextSending(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/sms/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: client.id, to: callerPhone, message: textMessage.trim() }),
+      });
+      const d = await r.json();
+      if (d.success) { setTextSent(true); setTextMessage(''); setTimeout(() => { setTextSent(false); setShowTextCompose(false); }, 3000); }
+    } catch {}
+    finally { setTextSending(false); }
+  };
 
   const getUrgencyStyle = (urgency: string | null) => {
     if (urgency === 'high' || urgency === 'emergency') return { backgroundColor: theme.errorBg, color: theme.error };
@@ -304,11 +327,47 @@ export default function CallDetailPage() {
                 <Phone className="h-4 w-4" /> Call Back
               </a>
             )}
-            {!isSpam && (
-              <button className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition"
-                style={{ ...glass, color: theme.textMuted }}>
-                Mark as Resolved
-              </button>
+            {!isSpam && (call.customer_phone || call.caller_phone) && (
+              <>
+                {!showTextCompose ? (
+                  <button onClick={() => setShowTextCompose(true)}
+                    className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition"
+                    style={{ ...glass, color: theme.textMuted }}>
+                    <MessageSquare className="h-4 w-4" /> Text Caller
+                  </button>
+                ) : (
+                  <div className="rounded-2xl p-4" style={glass}>
+                    {textSent ? (
+                      <div className="text-center py-2">
+                        <p className="text-sm font-medium" style={{ color: theme.success }}>✓ Message sent!</p>
+                        <a href="/client/messages" className="text-xs mt-1 inline-block" style={{ color: theme.primary }}>View in Messages →</a>
+                      </div>
+                    ) : (
+                      <>
+                        <textarea
+                          value={textMessage}
+                          onChange={e => setTextMessage(e.target.value)}
+                          placeholder="Type your message..."
+                          rows={3}
+                          maxLength={1600}
+                          className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none mb-2"
+                          style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setShowTextCompose(false); setTextMessage(''); }}
+                            className="flex-1 py-2 rounded-xl text-xs font-medium" style={{ color: theme.textMuted }}>Cancel</button>
+                          <button onClick={handleSendText} disabled={!textMessage.trim() || textSending}
+                            className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-40"
+                            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                            {textSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            {textSending ? 'Sending...' : 'Send'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

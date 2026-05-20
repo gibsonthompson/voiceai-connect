@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2
+  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -115,6 +115,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
     { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
+    { href: '/client/messages', label: 'Messages', icon: MessageSquare },
     { href: '/client/my-business', label: 'My Business', icon: Building2 },
     { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
     { href: '/client/settings', label: 'Settings', icon: Settings },
