@@ -98,6 +98,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     : (branding.agencyName || 'Dashboard');
   const displayLogo = branding.logoUrl;
 
+  // ── HYDRATION FLASH FIX ──────────────────────────────────────────────
+  // Server-renders with dark defaults (no localStorage). Client hydrates
+  // with light theme from localStorage. The mismatch causes a dark→light
+  // flash. Fix: show a skeleton until mounted (same pattern as agency layout).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => { const checkDevice = () => { const w = window.innerWidth; setIsMobile(w < 768); setIsTablet(w >= 768 && w < 1024); }; checkDevice(); window.addEventListener('resize', checkDevice); return () => window.removeEventListener('resize', checkDevice); }, []);
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
@@ -152,6 +159,48 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     if (!initial) return null;
     return (<div className="flex items-center justify-center flex-shrink-0 font-bold" style={{ height: `${initialSize.box}px`, width: `${initialSize.box}px`, borderRadius: radius, backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.08)' : `${theme.primary}12`, color: theme.isNavDark ? '#ffffff' : theme.primary, fontSize: `${initialSize.font}px` }}>{initial}</div>);
   };
+
+  // ── SKELETON: covers SSR→hydration flash (same pattern as agency) ────
+  if (!mounted) {
+    let _isDark = true;
+    try {
+      const saved = localStorage.getItem('voiceai_ui_theme');
+      if (saved === 'light') _isDark = false;
+      else if (saved === 'dark') _isDark = true;
+      else {
+        const stored = localStorage.getItem('client');
+        if (stored) { const p = JSON.parse(stored); _isDark = p.agency?.website_theme !== 'light'; }
+      }
+    } catch {}
+    const sk = _isDark
+      ? { bg: '#0a0a0a', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
+      : { bg: '#f9fafb', sidebar: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
+    return (
+      <div className="min-h-screen flex" style={{ backgroundColor: sk.bg }}>
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes skP{0%,100%{opacity:1}50%{opacity:0.4}}.sk-p{animation:skP 1.8s ease-in-out infinite}.sk-p2{animation:skP 1.8s ease-in-out .3s infinite}` }} />
+        <div className="hidden lg:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
+          <div className="h-24 flex items-center justify-center" style={{ borderBottom: `1px solid ${sk.border}` }}>
+            <div className="w-10 h-10 rounded-xl sk-p" style={{ backgroundColor: sk.pulse }} />
+          </div>
+          <div className="p-3 space-y-1">{[1,2,3,4,5,6,7].map(i => (
+            <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 3 ? 'sk-p' : 'sk-p2'}`}>
+              <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
+              <div className="h-3 rounded-md" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2, width: `${50 + (i % 4) * 16}px` }} />
+            </div>
+          ))}</div>
+        </div>
+        <div className="flex-1 p-6">
+          <div className="mb-6"><div className="h-7 w-48 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} /><div className="h-3.5 w-64 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} /></div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3].map(i => (
+            <div key={i} className={`rounded-xl p-5 ${i <= 2 ? 'sk-p' : 'sk-p2'}`} style={{ backgroundColor: sk.sidebar, border: `1px solid ${sk.border}` }}>
+              <div className="h-3 w-16 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
+              <div className="h-7 w-12 rounded-lg" style={{ backgroundColor: sk.pulse }} />
+            </div>
+          ))}</div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !client) {
     const _hintDark = typeof window !== 'undefined' && localStorage.getItem('voiceai_ui_theme') !== 'light';
