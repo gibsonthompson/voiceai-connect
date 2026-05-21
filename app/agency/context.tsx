@@ -33,6 +33,7 @@ interface Agency {
   website_headline: string | null;
   website_subheadline: string | null;
   marketing_config: Record<string, unknown> | null;
+  marketing_template: string | null;
   website_theme: 'auto' | 'light' | 'dark' | null;
   logo_background_color: string | null;
   branding_overrides: {
