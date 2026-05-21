@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
-import ClientTeamSection from '@/components/client/ClientTeamSection';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 
 interface Client {
@@ -138,7 +137,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         <ClientBrandingSection clientId={client.id} theme={theme} />
 
-        {/* HIPAA Mode */}
+        {/* HIPAA Mode — only shown for healthcare-related industries */}
+        {['medical_practice','dental','mental_health','veterinary','healthcare','chiropractic','optometry','physical_therapy'].includes(client.industry) && (
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Shield className="w-4 h-4" style={{ color: theme.primary }} />HIPAA Compliance</h2>
           <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: hipaaMode ? theme.primary : theme.border, backgroundColor: hipaaMode ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : theme.card }}>
@@ -169,6 +169,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             )}
           </div>
         </section>
+        )}
 
         {/* AI Phone Number */}
         <section className="mb-4 sm:mb-6">
@@ -239,9 +240,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <button onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasPasswordChanges ? theme.primary : theme.bg, color: hasPasswordChanges ? theme.primaryText : theme.textMuted4, border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}` }}>{changingPassword ? 'Changing...' : 'Change Password'}</button>
           </div>
         </section>
-
-        {/* Team Members */}
-        {isOwner && (<section className="mb-4 sm:mb-6"><div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}><ClientTeamSection clientId={client.id} theme={theme} /></div></section>)}
 
         {/* Subscription & Billing */}
         <section className="mb-4 sm:mb-6">

@@ -9,6 +9,7 @@ import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
+import ClientTeamSection from '@/components/client/ClientTeamSection';
 
 interface BusinessHours {
   monday: { open: string; close: string; closed: boolean };
@@ -42,9 +43,14 @@ function formatIndustry(raw: string | null | undefined): string {
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
 
 export default function MyBusinessPage() {
-  const { client, branding, loading } = useClient();
+  const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const primaryColor = theme.primary;
+
+  // Check if current user is the owner (can manage team)
+  const [userRole, setUserRole] = useState<string | null>(null);
+  useEffect(() => { try { const stored = localStorage.getItem('user'); if (stored) { const parsed = JSON.parse(stored); setUserRole(parsed.role || null); } } catch {} }, []);
+  const isOwner = userRole === 'client' || userRole === null;
 
   const [message, setMessage] = useState('');
 
@@ -308,13 +314,26 @@ export default function MyBusinessPage() {
 
         {/* Services — no animation wrapper, transform traps fixed-position modals */}
         <div className="mb-4 sm:mb-5">
-          <ClientServicesSection clientId={client.id} theme={theme} />
+          <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} />
         </div>
 
-        {/* Staff Members — no animation wrapper, same reason */}
+        {/* Staff Directory — people the AI knows about for routing and scheduling */}
         <div className="mb-4 sm:mb-5">
-          <StaffMembersSection clientId={client.id} theme={theme} />
+          <StaffMembersSection clientId={client.id} theme={theme} industry={client.industry} />
         </div>
+
+        {/* Team Members — dashboard login accounts */}
+        {isOwner && (
+          <div className="fu fu4">
+            <section className="mb-4 sm:mb-5">
+              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                <div className="p-4 sm:p-5">
+                  <ClientTeamSection clientId={client.id} theme={theme} />
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* Knowledge Base */}
         <div className="fu fu5">
