@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, BarChart3, Share2
+  Sun, Moon, Wand2, BarChart3, Share2, Layout
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
+import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
-type ActiveTab = 'overview' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo';
+type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -21,6 +22,46 @@ function isLightColor(hex: string): boolean {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.5;
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Template definitions
+// ────────────────────────────────────────────────────────────────────────────
+interface TemplateOption {
+  id: string;
+  name: string;
+  description: string;
+  style: string;
+  preview: {
+    bgColor: string;
+    accentColor: string;
+    textColor: string;
+    sections: string[];
+  };
+}
+
+const TEMPLATES: TemplateOption[] = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    description: 'Clean, professional layout with centered hero, card-based features, and standard pricing grid. Works for every industry.',
+    style: 'Professional & Versatile',
+    preview: { bgColor: '#f9f9f7', accentColor: '#10b981', textColor: '#1f2937', sections: ['Centered Hero', 'Stats Bar', 'Problem Cards', 'Solution Box', 'Step Cards', 'Feature Grid', 'Pricing Cards', 'FAQ Accordion'] },
+  },
+  {
+    id: 'beside',
+    name: 'Beside',
+    description: 'Product-led storytelling with split hero, floating UI mockups, warm gradient cards, and narrative flow. High-converting for service businesses.',
+    style: 'Modern & Story-Driven',
+    preview: { bgColor: '#ffffff', accentColor: '#e85d2a', textColor: '#0a0a0a', sections: ['Split Hero + UI Cards', 'Demo Phone Strip', 'Pill Tab Features', 'Phone Mockup', '3-Column Proof Row', 'Narrative Sections', 'Industry Cards', 'Pricing Tiers'] },
+  },
+  {
+    id: 'editorial',
+    name: 'Editorial',
+    description: 'Handhold-inspired editorial layout with serif headlines, organic wave illustrations, alternating feature sections, and large testimonials.',
+    style: 'Premium & Editorial',
+    preview: { bgColor: '#FAFAF8', accentColor: '#0a0a0a', textColor: '#0a0a0a', sections: ['Serif Hero + Wave Art', 'Logo Bar', 'Alternating Features', 'Numbered Steps', 'Value Prop Cards', 'Single Testimonial', 'FAQ Accordion', 'Artistic Footer CTA'] },
+  },
+];
 
 export default function MarketingWebsitePage() {
   const router = useRouter();
@@ -35,14 +76,12 @@ export default function MarketingWebsitePage() {
   const [savingDomain, setSavingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<'none' | 'pending' | 'verified'>('none');
-  const [verificationRecords, setVerificationRecords] = useState<{type: string; name: string; value: string; reason: string}[]>([]);
+  const [verificationRecords, setVerificationRecords] = useState<any[]>([]);
 
-  // Content state
+  // Content state (legacy — still used by Overview tab summary)
   const [tagline, setTagline] = useState('');
   const [headline, setHeadline] = useState('');
   const [subheadline, setSubheadline] = useState('');
-  const [savingContent, setSavingContent] = useState(false);
-  const [contentSaved, setContentSaved] = useState(false);
 
   // Colors state
   const [primaryColor, setPrimaryColor] = useState('#10b981');
@@ -68,14 +107,17 @@ export default function MarketingWebsitePage() {
   const [savingSeo, setSavingSeo] = useState(false);
   const [seoSaved, setSeoSaved] = useState(false);
 
-  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
-  const [extractingColors, setExtractingColors] = useState(false);
+  // Template state
+  const [selectedTemplate, setSelectedTemplate] = useState('classic');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
 
-  // Theme - default to dark unless explicitly light
+  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
+
+  // Theme
   const isDark = agency?.website_theme !== 'light';
   const agencyPrimaryColor = branding.primaryColor || '#10b981';
 
-  // Theme-based colors
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
@@ -87,19 +129,15 @@ export default function MarketingWebsitePage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const subdomainUrl = `https://${agency?.slug || 'demo'}.${platformDomain}`;
 
-  // Signup URL — adapts to custom domain if verified
   const signupUrl = agency?.marketing_domain && agency?.domain_verified
     ? `https://${agency.marketing_domain}/signup`
     : `${subdomainUrl}/signup`;
 
-  // Demo mode: grant access even if plan doesn't allow it
   const hasAccess = canUseMarketingSite || demoMode;
 
+  // DNS config fetch
   useEffect(() => {
-    if (demoMode) {
-      setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' });
-      return;
-    }
+    if (demoMode) { setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' }); return; }
     const fetchDnsConfig = async () => {
       try {
         const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
@@ -116,26 +154,25 @@ export default function MarketingWebsitePage() {
     if (agency) fetchDnsConfig();
   }, [agency?.marketing_domain, demoMode]);
 
-  // Fetch verification records from Vercel when domain is pending
+  // Domain verification records fetch
   useEffect(() => {
-    if (demoMode || !agency?.marketing_domain || agency?.domain_verified) return;
-    const fetchDomainStatus = async () => {
+    if (demoMode || !agency || domainStatus !== 'pending') return;
+    const fetchStatus = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        const res = await fetch(`/api/agency/${agency.id}/domain/status`, {
+        const response = await fetch(`/api/agency/${agency.id}/domain/status`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.verification_records?.length > 0) {
-            setVerificationRecords(data.verification_records);
-          }
+        if (response.ok) {
+          const data = await response.json();
+          if (data.verification_records?.length) setVerificationRecords(data.verification_records);
         }
-      } catch (err) { console.error('Failed to fetch domain status:', err); }
+      } catch (error) { console.error('Failed to fetch domain status:', error); }
     };
-    fetchDomainStatus();
-  }, [agency?.marketing_domain, agency?.domain_verified, demoMode]);
+    fetchStatus();
+  }, [agency?.id, domainStatus, demoMode]);
 
+  // Init state from agency
   useEffect(() => {
     if (demoMode) {
       setTagline('AI-Powered Phone Answering');
@@ -147,6 +184,7 @@ export default function MarketingWebsitePage() {
       setSecondaryColor(agency?.secondary_color || '#059669');
       setAccentColor(agency?.accent_color || '#34d399');
       setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light');
+      setSelectedTemplate(agency?.marketing_template || 'classic');
       setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId('');
       setCustomHeadScripts(''); setCustomBodyScripts('');
       setOgTitle(''); setOgDescription(''); setOgImageUrl('');
@@ -164,6 +202,7 @@ export default function MarketingWebsitePage() {
       setSecondaryColor(agency.secondary_color || '#059669');
       setAccentColor(agency.accent_color || '#34d399');
       setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light');
+      setSelectedTemplate(agency.marketing_template || 'classic');
       setGtmId(agency.gtm_id || '');
       setFbPixelId(agency.fb_pixel_id || '');
       setGoogleAnalyticsId(agency.google_analytics_id || '');
@@ -181,21 +220,7 @@ export default function MarketingWebsitePage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleSaveContent = async () => {
-    if (demoMode) { setContentSaved(true); setTimeout(() => setContentSaved(false), 3000); return; }
-    if (!agency) return;
-    setSavingContent(true); setContentSaved(false);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ company_tagline: tagline || null, website_headline: headline || null, website_subheadline: subheadline || null }),
-      });
-      if (response.ok) { await refreshAgency(); setContentSaved(true); setTimeout(() => setContentSaved(false), 3000); }
-    } catch (error) { console.error('Failed to save content:', error); }
-    finally { setSavingContent(false); }
-  };
+  // ── Save handlers ───────────────────────────────────────────────────────
 
   const handleSaveColors = async () => {
     if (demoMode) { setColorsSaved(true); setTimeout(() => setColorsSaved(false), 3000); return; }
@@ -247,6 +272,25 @@ export default function MarketingWebsitePage() {
     finally { setSavingSeo(false); }
   };
 
+  const handleSaveTemplate = async () => {
+    if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; }
+    if (!agency) return;
+    setSavingTemplate(true); setTemplateSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ marketing_template: selectedTemplate }),
+      });
+      if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); }
+      else { const data = await response.json(); alert(data.error || 'Failed to save template'); }
+    } catch (error) { console.error('Failed to save template:', error); }
+    finally { setSavingTemplate(false); }
+  };
+
+  // ── Domain handlers ─────────────────────────────────────────────────────
+
   const handleSaveCustomDomain = async () => {
     if (demoMode) { setDomainStatus('pending'); return; }
     if (!customDomain.trim() || !agency) return;
@@ -261,10 +305,8 @@ export default function MarketingWebsitePage() {
       const data = await response.json();
       if (response.ok && data.success) {
         setDomainStatus('pending');
-        if (data.verification_records?.length > 0) {
-          setVerificationRecords(data.verification_records);
-        }
-        if (data.dns_config) { setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record }); }
+        if (data.dns_config) setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record });
+        if (data.verification_records?.length) setVerificationRecords(data.verification_records);
         await refreshAgency();
       } else { alert(data.error || 'Failed to save domain'); }
     } catch (error) { console.error('Failed to add domain:', error); alert('Failed to connect to server.'); }
@@ -282,13 +324,14 @@ export default function MarketingWebsitePage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
       const data = await response.json();
-      setDomainStatus(data.verified ? 'verified' : 'pending');
-      if (data.verification_records?.length > 0) {
-        setVerificationRecords(data.verification_records);
-      } else if (data.verified) {
+      if (data.verified) {
+        setDomainStatus('verified');
         setVerificationRecords([]);
+      } else {
+        setDomainStatus('pending');
+        if (data.verification_records?.length) setVerificationRecords(data.verification_records);
+        alert(data.message || 'DNS records not found. Please check your configuration and try again.');
       }
-      if (!data.verified) { alert(data.message || 'DNS records not found. Please check your configuration and try again.'); }
       await refreshAgency();
     } catch (error) { console.error('Failed to verify domain:', error); }
     finally { setVerifyingDomain(false); }
@@ -311,8 +354,11 @@ export default function MarketingWebsitePage() {
     finally { setSavingDomain(false); }
   };
 
+  // ── Tabs ────────────────────────────────────────────────────────────────
+
   const tabs = [
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
+    { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
     { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
     { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
@@ -320,75 +366,9 @@ export default function MarketingWebsitePage() {
     { id: 'seo' as ActiveTab, label: 'SEO & Social', icon: Share2 },
   ];
 
-  // Preview content for locked state
-  const PreviewContent = () => (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: textColor }}>Marketing Website</h1>
-        <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div>
-            <span className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: agencyPrimaryColor }} />Live</span>
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1" style={{ color: textColor }}>Your Website</h3>
-          <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
-          <div className="flex gap-2">
-            <div className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-white" style={{ backgroundColor: agencyPrimaryColor }}><Eye className="h-4 w-4" />View</div>
-            <div className="flex items-center justify-center rounded-lg px-3 py-2" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Copy className="h-4 w-4" style={{ color: mutedTextColor }} /></div>
-          </div>
-        </div>
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}><Palette className="h-4 w-4 sm:h-5 sm:w-5" /></div>
-          </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1" style={{ color: textColor }}>Current Theme</h3>
-          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className="flex gap-0.5 sm:gap-1">
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: primaryColor }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: secondaryColor }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: accentColor }} />
-            </div>
-            <span className="text-xs sm:text-sm capitalize flex items-center gap-1" style={{ color: mutedTextColor }}>{websiteTheme === 'dark' ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}{websiteTheme}</span>
-          </div>
-          <div className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}><Palette className="h-4 w-4" />Customize</div>
-        </div>
-      </div>
-      <div className="mb-4 sm:mb-6 overflow-x-auto" style={{ borderBottom: `1px solid ${borderColor}` }}>
-        <nav className="flex gap-4 sm:gap-6 min-w-max">
-          {tabs.map((tab) => (
-            <div key={tab.id} className="flex items-center gap-1.5 sm:gap-2 pb-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap" style={tab.id === 'overview' ? { borderColor: agencyPrimaryColor, color: agencyPrimaryColor } : { borderColor: 'transparent', color: mutedTextColor }}><tab.icon className="h-4 w-4" />{tab.label}</div>
-          ))}
-        </nav>
-      </div>
-      <div className="space-y-4 sm:space-y-6">
-        <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-          <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4" style={{ color: textColor }}>Your website includes:</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {[
-              { title: 'Hero Section', desc: 'Eye-catching headline with CTAs' },
-              { title: 'Features Overview', desc: 'AI receptionist capabilities' },
-              { title: 'How It Works', desc: '4-step process to get started' },
-              { title: 'Pricing Plans', desc: 'Starter, Pro, and Growth tiers' },
-              { title: 'Testimonials', desc: 'Social proof section' },
-              { title: 'FAQ Section', desc: 'Common questions answered' },
-              { title: 'Industry Cards', desc: 'Industries you serve' },
-              { title: 'Comparison Table', desc: 'Compare vs competitors' },
-            ].map((item) => (
-              <div key={item.title} className="flex items-start gap-2 sm:gap-3">
-                <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span>
-                <div><p className="font-medium text-xs sm:text-sm" style={{ color: textColor }}>{item.title}</p><p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{item.desc}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // ── Loading ─────────────────────────────────────────────────────────────
 
-  if (agencyLoading) {
+  if (agencyLoading && !agency) {
     return (<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-400" /></div>);
   }
 
@@ -396,7 +376,9 @@ export default function MarketingWebsitePage() {
     return (
       <LockedFeature title="Marketing Website" description="Get a fully-branded marketing website to attract and convert clients." requiredPlan="Professional"
         features={['Fully branded landing page', 'Customizable colors & content', 'Connect your own domain', 'Built-in pricing & signup']}>
-        <PreviewContent />
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold" style={{ color: textColor }}>Marketing Website</h1></div>
+        </div>
       </LockedFeature>
     );
   }
@@ -431,21 +413,16 @@ export default function MarketingWebsitePage() {
         </div>
         <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-start justify-between mb-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}><Palette className="h-4 w-4 sm:h-5 sm:w-5" /></div>
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}><Layout className="h-4 w-4 sm:h-5 sm:w-5" /></div>
           </div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">Current Theme</h3>
-          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className="flex gap-0.5 sm:gap-1">
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: primaryColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: secondaryColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
-              <div className="h-5 w-5 sm:h-6 sm:w-6 rounded" style={{ backgroundColor: accentColor, border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : '#e5e7eb'}` }} />
-            </div>
-            <span className="text-xs sm:text-sm capitalize flex items-center gap-1" style={{ color: mutedTextColor }}>{websiteTheme === 'dark' ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}{websiteTheme}</span>
-          </div>
-          <button onClick={() => setActiveTab('colors')}
+          <h3 className="font-medium text-sm sm:text-base mb-1">Active Template</h3>
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 capitalize" style={{ color: mutedTextColor }}>
+            {TEMPLATES.find(t => t.id === selectedTemplate)?.name || 'Classic'} — {TEMPLATES.find(t => t.id === selectedTemplate)?.style || 'Professional'}
+          </p>
+          <button onClick={() => setActiveTab('template')}
             className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`}
             style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
-            <Palette className="h-4 w-4" />Customize
+            <Layout className="h-4 w-4" />Change Template
           </button>
         </div>
       </div>
@@ -463,39 +440,20 @@ export default function MarketingWebsitePage() {
         </nav>
       </div>
 
-      {/* Tab: Overview */}
+      {/* ================================================================ */}
+      {/* Tab: Overview                                                    */}
+      {/* ================================================================ */}
       {activeTab === 'overview' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
             <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Your website includes:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              {[
-                { title: 'Hero Section', desc: 'Eye-catching headline with CTAs' },
-                { title: 'Features Overview', desc: 'AI receptionist capabilities' },
-                { title: 'How It Works', desc: '4-step process to get started' },
-                { title: 'Pricing Plans', desc: 'Starter, Pro, and Growth tiers' },
-                { title: 'Testimonials', desc: 'Social proof section' },
-                { title: 'FAQ Section', desc: 'Common questions answered' },
-                { title: 'Industry Cards', desc: 'Industries you serve' },
-                { title: 'Comparison Table', desc: 'Compare vs competitors' },
-              ].map((item) => (
-                <div key={item.title} className="flex items-start gap-2 sm:gap-3">
+              {(TEMPLATES.find(t => t.id === selectedTemplate)?.preview.sections || []).map((section) => (
+                <div key={section} className="flex items-start gap-2 sm:gap-3">
                   <span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span>
-                  <div><p className="font-medium text-xs sm:text-sm">{item.title}</p><p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>{item.desc}</p></div>
+                  <p className="font-medium text-xs sm:text-sm">{section}</p>
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Current Settings</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <div><p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Tagline</p><p className="text-xs sm:text-sm truncate">{tagline || agency?.company_tagline || 'AI-Powered Phone Answering'}</p></div>
-              <div><p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Headline</p><p className="text-xs sm:text-sm truncate">{headline || agency?.website_headline || 'Never Miss Another Call'}</p></div>
-              <div><p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Theme</p><p className="text-xs sm:text-sm capitalize">{websiteTheme === 'dark' ? 'Dark' : 'Light'}</p></div>
-              <div><p className="text-[10px] sm:text-xs uppercase tracking-wide mb-1 sm:mb-2" style={{ color: mutedTextColor }}>Logo</p>
-                {branding.logoUrl ? (<img src={branding.logoUrl} alt="Logo" className="h-6 sm:h-8 w-auto rounded object-contain p-1" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6' }} />) : (<span className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Not uploaded</span>)}
-              </div>
             </div>
           </div>
 
@@ -506,7 +464,7 @@ export default function MarketingWebsitePage() {
               <h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>Embed on Your Own Website</h3>
             </div>
             <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>
-              Already have a website? Add your signup link directly — clients sign up through your branded form without needing the VoiceAI Connect marketing page.
+              Already have a website? Add your signup link directly — clients sign up through your branded form.
             </p>
             <div className="mb-4">
               <label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your Client Signup URL</label>
@@ -522,7 +480,7 @@ export default function MarketingWebsitePage() {
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed Button — copy &amp; paste into your website</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed Button</label>
               <div className="relative">
                 <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto"
                   style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
@@ -541,41 +499,144 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab: Content */}
-      {activeTab === 'content' && (
+      {/* ================================================================ */}
+      {/* Tab: Template                                                    */}
+      {/* ================================================================ */}
+      {activeTab === 'template' && (
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Website Content</h3>
-            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Customize the text on your marketing website.</p>
-            <div className="space-y-4 sm:space-y-5">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Tagline / Badge</label>
-                <input type="text" value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="AI-Powered Phone Answering"
-                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Main Headline</label>
-                <input type="text" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Never Miss Another Call"
-                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Subheadline</label>
-                <input type="text" value={subheadline} onChange={(e) => setSubheadline(e.target.value)} placeholder="AI Receptionist Starting at $49/month"
-                  className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-              </div>
-            </div>
-            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderTop: `1px solid ${borderColor}` }}>
-              {contentSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />{demoMode ? 'Saved! (demo)' : 'Saved!'}</span>)}
-              <button onClick={handleSaveContent} disabled={savingContent}
-                className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto sm:ml-auto" style={{ backgroundColor: agencyPrimaryColor }}>
-                {savingContent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Content
-              </button>
-            </div>
+          <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+            <h3 className="font-medium text-sm sm:text-base mb-1">Choose Your Template</h3>
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+              Each template has a unique layout structure and visual style. Your content carries over between templates.
+            </p>
           </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {TEMPLATES.map((template) => {
+              const isActive = selectedTemplate === template.id;
+              return (
+                <div key={template.id}
+                  className="rounded-xl overflow-hidden transition-all"
+                  style={{
+                    border: isActive ? `2px solid ${agencyPrimaryColor}` : `1px solid ${borderColor}`,
+                    backgroundColor: cardBg,
+                    boxShadow: isActive ? `0 0 0 3px ${agencyPrimaryColor}20` : 'none',
+                  }}>
+                  <div className="flex flex-col sm:flex-row">
+                    {/* Mini preview */}
+                    <div className="sm:w-64 flex-shrink-0 p-4 flex flex-col items-center justify-center gap-3"
+                      style={{ backgroundColor: template.preview.bgColor, minHeight: '180px' }}>
+                      {/* Simplified template thumbnail */}
+                      <div className="w-full max-w-[200px] space-y-2">
+                        <div className="h-2 rounded-full w-3/4 mx-auto" style={{ backgroundColor: template.preview.accentColor, opacity: 0.7 }} />
+                        <div className="h-1.5 rounded-full w-1/2 mx-auto" style={{ backgroundColor: template.preview.textColor, opacity: 0.15 }} />
+                        <div className="h-8 rounded-lg mt-2" style={{ backgroundColor: template.preview.accentColor, opacity: 0.12 }} />
+                        <div className="grid grid-cols-3 gap-1.5 mt-1">
+                          <div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} />
+                          <div className="h-6 rounded" style={{ backgroundColor: template.preview.accentColor, opacity: 0.15 }} />
+                          <div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>{template.name}</h3>
+                          {isActive && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                              style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Active</span>
+                          )}
+                        </div>
+                        <p className="text-xs font-medium mb-2" style={{ color: agencyPrimaryColor }}>{template.style}</p>
+                        <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>{template.description}</p>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {template.preview.sections.slice(0, 4).map(s => (
+                            <span key={s} className="text-[10px] px-2 py-0.5 rounded-full"
+                              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>{s}</span>
+                          ))}
+                          {template.preview.sections.length > 4 && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full"
+                              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>+{template.preview.sections.length - 4} more</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {isActive ? (
+                          <span className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg"
+                            style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />Currently Active
+                          </span>
+                        ) : (
+                          <button onClick={() => setSelectedTemplate(template.id)}
+                            className="text-xs font-medium px-4 py-2 rounded-lg text-white transition-colors"
+                            style={{ backgroundColor: agencyPrimaryColor }}>
+                            Select Template
+                          </button>
+                        )}
+                        <a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer"
+                          onClick={demoMode ? (e) => e.preventDefault() : undefined}
+                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+                          style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
+                          <ExternalLink className="h-3.5 w-3.5" />Preview
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Save */}
+          {selectedTemplate !== (agency?.marketing_template || 'classic') && (
+            <div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
+              style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}` }}>
+              <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>
+                You've selected <strong style={{ color: textColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name}</strong>. Save to apply it to your marketing website.
+              </p>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {templateSaved && (
+                  <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}>
+                    <Check className="h-4 w-4" />Saved!
+                  </span>
+                )}
+                <button onClick={handleSaveTemplate} disabled={savingTemplate}
+                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto"
+                  style={{ backgroundColor: agencyPrimaryColor }}>
+                  {savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Template
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Tab: Colors */}
+      {/* ================================================================ */}
+      {/* Tab: Content                                                     */}
+      {/* ================================================================ */}
+      {activeTab === 'content' && (
+        <MarketingContentEditor
+          agency={agency}
+          demoMode={demoMode}
+          refreshAgency={refreshAgency}
+          isDark={isDark}
+          textColor={textColor}
+          mutedTextColor={mutedTextColor}
+          borderColor={borderColor}
+          cardBg={cardBg}
+          inputBg={inputBg}
+          inputBorder={inputBorder}
+          agencyPrimaryColor={agencyPrimaryColor}
+          backendUrl={backendUrl}
+        />
+      )}
+
+      {/* ================================================================ */}
+      {/* Tab: Colors                                                      */}
+      {/* ================================================================ */}
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)' }}>
@@ -591,7 +652,7 @@ export default function MarketingWebsitePage() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
             <h3 className="font-medium text-sm sm:text-base mb-1">Website Theme</h3>
-            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>Controls the overall background and text colors of your marketing site.</p>
+            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>Controls the overall background and text colors.</p>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {[
                 { value: 'light' as const, label: 'Light', icon: Sun, desc: 'White backgrounds, dark text' },
@@ -613,9 +674,9 @@ export default function MarketingWebsitePage() {
             <h3 className="font-medium text-sm sm:text-base mb-1">Custom Colors</h3>
             <div className="space-y-4">
               {[
-                { label: 'Primary Color', desc: 'Buttons, CTAs, hero gradient, nav highlights, pricing column highlights, and "Start Free Trial" buttons.', value: primaryColor, setter: setPrimaryColor },
-                { label: 'Secondary Color', desc: 'Button hover states and gradient endpoints. Should be a darker shade of your primary color.', value: secondaryColor, setter: setSecondaryColor },
-                { label: 'Accent Color', desc: '"Most Popular" pricing badge, star ratings, and highlight callouts. Works best as a warm contrast to your primary.', value: accentColor, setter: setAccentColor },
+                { label: 'Primary Color', desc: 'Buttons, CTAs, hero gradient, nav highlights.', value: primaryColor, setter: setPrimaryColor },
+                { label: 'Secondary Color', desc: 'Button hover states and gradient endpoints.', value: secondaryColor, setter: setSecondaryColor },
+                { label: 'Accent Color', desc: '"Most Popular" badge, star ratings, highlight callouts.', value: accentColor, setter: setAccentColor },
               ].map((item) => (
                 <div key={item.label}>
                   <label className="block text-xs sm:text-sm font-medium mb-0.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{item.label}</label>
@@ -630,64 +691,10 @@ export default function MarketingWebsitePage() {
             </div>
           </div>
 
-          {/* Website Preview */}
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium text-sm sm:text-base mb-3">Website Preview</h3>
-            {(() => {
-              const prevIsDark = websiteTheme === 'dark';
-              const prevBg = prevIsDark ? '#0f0f0f' : '#f9f9f7';
-              const prevText = prevIsDark ? '#f5f5f0' : '#1f2937';
-              const prevMuted = prevIsDark ? '#a3a3a3' : '#6b7280';
-              const prevCard = prevIsDark ? '#1f1f1f' : '#ffffff';
-              const prevBorder = prevIsDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-              const btnText = isLightColor(primaryColor) ? '#1f2937' : '#ffffff';
-              const primaryIsLight = isLightColor(primaryColor);
-              return (
-                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${prevBorder}` }}>
-                  <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: prevIsDark ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.95)', borderBottom: `1px solid ${prevBorder}` }}>
-                    <span className="text-xs font-bold" style={{ color: primaryColor }}>{agency?.name || 'Agency'}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px]" style={{ color: prevMuted }}>Features</span>
-                      <span className="text-[10px]" style={{ color: prevMuted }}>Pricing</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: primaryColor, color: btnText }}>Free Trial</span>
-                    </div>
-                  </div>
-                  <div className="px-4 py-6 text-center" style={{ backgroundColor: prevBg }}>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold mb-2" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#10b981' }} />AI-Powered
-                    </div>
-                    <h4 className="text-sm font-bold mb-1" style={{ color: prevText }}>Never Miss Another Call</h4>
-                    <p className="text-[10px] mb-3" style={{ color: prevMuted }}>Professional AI receptionist for your business</p>
-                    <div className="rounded-lg p-3 mb-3 mx-auto max-w-[260px]" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
-                      <p className="text-[10px] font-bold mb-1" style={{ color: btnText }}>EXPERIENCE IT LIVE</p>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: primaryIsLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)', color: btnText }}>📞 (555) 123-4567</span>
-                    </div>
-                    <div className="flex justify-center gap-2">
-                      <span className="text-[10px] px-3 py-1 rounded-full font-medium" style={{ backgroundColor: primaryColor, color: btnText }}>Start Free Trial</span>
-                      <span className="text-[10px] px-3 py-1 rounded-full font-medium" style={{ border: `1px solid ${prevBorder}`, color: prevText }}>How It Works</span>
-                    </div>
-                  </div>
-                  <div className="px-4 py-4" style={{ backgroundColor: prevIsDark ? '#1a1a1a' : '#f3f4f6' }}>
-                    <div className="flex gap-2 justify-center">
-                      {['Starter', 'Pro', 'Growth'].map((plan, i) => (
-                        <div key={plan} className="rounded-lg p-2 text-center flex-1 max-w-[90px]" style={{ backgroundColor: prevCard, border: i === 1 ? `2px solid ${primaryColor}` : `1px solid ${prevBorder}` }}>
-                          {i === 1 && (<div className="text-[7px] font-bold px-1.5 py-0.5 rounded-full mx-auto mb-1 inline-block" style={{ backgroundColor: accentColor, color: isLightColor(accentColor) ? '#1f2937' : '#fff' }}>Popular</div>)}
-                          <p className="text-[9px] font-medium" style={{ color: prevText }}>{plan}</p>
-                          <p className="text-sm font-bold" style={{ color: primaryColor }}>${[49, 99, 149][i]}</p>
-                          <p className="text-[8px]" style={{ color: prevMuted }}>/month</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
           <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Changes apply to your public marketing website immediately after saving.</p>
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Changes apply immediately after saving.</p>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {colorsSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />{demoMode ? 'Saved! (demo)' : 'Saved!'}</span>)}
+              {colorsSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}
               <button onClick={handleSaveColors} disabled={savingColors}
                 className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>
                 {savingColors ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Colors
@@ -697,7 +704,9 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab: Domain */}
+      {/* ================================================================ */}
+      {/* Tab: Domain                                                      */}
+      {/* ================================================================ */}
       {activeTab === 'domain' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -706,7 +715,7 @@ export default function MarketingWebsitePage() {
             <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
               <span style={{ color: mutedTextColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" /></span>
               <span className="flex-1 text-xs sm:text-sm font-mono truncate">{subdomainUrl}</span>
-              <button onClick={() => copyToClipboard(subdomainUrl, 'subdomain2')} className="flex-shrink-0 transition-colors" style={{ color: mutedTextColor }}>
+              <button onClick={() => copyToClipboard(subdomainUrl, 'subdomain2')} className="flex-shrink-0" style={{ color: mutedTextColor }}>
                 {copied === 'subdomain2' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
             </div>
@@ -750,37 +759,28 @@ export default function MarketingWebsitePage() {
                 )}
               </div>
             </div>
-
-            {/* TXT Verification Records — shown when Vercel requires ownership proof */}
-            {verificationRecords.length > 0 && domainStatus === 'pending' && (
-              <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.05)', border: `1px solid ${isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.3)'}` }}>
-                <div className="flex items-start gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: isDark ? '#fbbf24' : '#92400e' }}>Domain Ownership Verification Required</p>
-                    <p className="text-xs mt-1" style={{ color: isDark ? 'rgba(251,191,36,0.7)' : '#b45309' }}>This domain is registered on another Vercel account. Add this TXT record at your DNS provider to verify you own it. You can remove the TXT record after verification succeeds.</p>
-                  </div>
-                </div>
-                <div className="space-y-2 text-xs font-mono">
-                  {verificationRecords.map((record, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
-                      <div className="min-w-0 mr-2">
-                        <span style={{ color: mutedTextColor }}>TXT</span>
-                        <span className="mx-2" style={{ color: mutedTextColor }}>Name:</span>
-                        <span style={{ color: textColor }}>{record.name || '_vercel'}</span>
-                        <span className="mx-2" style={{ color: mutedTextColor }}>→</span>
-                        <span className="break-all" style={{ color: textColor }}>{record.value}</span>
+            {/* TXT Verification Records */}
+            {domainStatus === 'pending' && verificationRecords.length > 0 && (
+              <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.06)' : '#fffbeb', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <p className="text-xs font-medium mb-3 flex items-center gap-1.5" style={{ color: isDark ? '#fbbf24' : '#b45309' }}>
+                  <AlertCircle className="h-3.5 w-3.5" />Domain Ownership Verification Required
+                </p>
+                <div className="space-y-2">
+                  {verificationRecords.map((record: any, i: number) => (
+                    <div key={i} className="rounded p-2 text-xs font-mono space-y-1" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: mutedTextColor }}>TXT Record — {record.domain || customDomain}</span>
+                        <button onClick={() => copyToClipboard(record.value, `txt-${i}`)} style={{ color: mutedTextColor }}>
+                          {copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
                       </div>
-                      <button onClick={() => copyToClipboard(record.value, `txt-${i}`)} className="flex-shrink-0" style={{ color: mutedTextColor }}>
-                        {copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}
-                      </button>
+                      <div className="break-all" style={{ color: textColor }}>{record.value}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* DNS Records — A + CNAME */}
+            {/* DNS Records */}
             {domainStatus === 'pending' && dnsConfig && (
               <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
                 <p className="text-xs font-medium mb-3" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add these DNS records at your domain registrar:</p>
@@ -800,7 +800,9 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab: Tracking */}
+      {/* ================================================================ */}
+      {/* Tab: Tracking                                                    */}
+      {/* ================================================================ */}
       {activeTab === 'tracking' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -808,9 +810,9 @@ export default function MarketingWebsitePage() {
             <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Add tracking pixels and analytics to your marketing website.</p>
             <div className="space-y-4 sm:space-y-5">
               {[
-                { label: 'Google Tag Manager ID', value: gtmId, setter: setGtmId, placeholder: 'GTM-XXXXXXX', hint: 'Manages all your tags in one place. Find it at tagmanager.google.com → Container ID.' },
-                { label: 'Google Analytics 4 Measurement ID', value: googleAnalyticsId, setter: setGoogleAnalyticsId, placeholder: 'G-XXXXXXXXXX', hint: 'Track visitor behavior and conversions. Find it at analytics.google.com → Admin → Data Streams.' },
-                { label: 'Facebook / Meta Pixel ID', value: fbPixelId, setter: setFbPixelId, placeholder: '123456789012345', hint: 'Required for Facebook/Instagram ad tracking. Find it at business.facebook.com → Events Manager.' },
+                { label: 'Google Tag Manager ID', value: gtmId, setter: setGtmId, placeholder: 'GTM-XXXXXXX', hint: 'Find it at tagmanager.google.com → Container ID.' },
+                { label: 'Google Analytics 4 Measurement ID', value: googleAnalyticsId, setter: setGoogleAnalyticsId, placeholder: 'G-XXXXXXXXXX', hint: 'Find it at analytics.google.com → Admin → Data Streams.' },
+                { label: 'Facebook / Meta Pixel ID', value: fbPixelId, setter: setFbPixelId, placeholder: '123456789012345', hint: 'Find it at business.facebook.com → Events Manager.' },
               ].map((item) => (
                 <div key={item.label}>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>{item.label}</label>
@@ -823,30 +825,24 @@ export default function MarketingWebsitePage() {
           </div>
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
             <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Custom Scripts</h3>
-            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Add any other tracking scripts or custom code. These run on your marketing website only.</p>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Add other tracking scripts or custom code. Runs on your marketing website only.</p>
             <div className="space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Custom Head Scripts</label>
-                <textarea value={customHeadScripts} onChange={(e) => setCustomHeadScripts(e.target.value)} placeholder={'<!-- Paste scripts that go in <head> -->\n<script>...</script>'} rows={4}
+                <textarea value={customHeadScripts} onChange={(e) => setCustomHeadScripts(e.target.value)} placeholder={'<!-- Paste scripts that go in <head> -->'} rows={4}
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm font-mono transition-colors focus:outline-none resize-y" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Injected into the &lt;head&gt; tag.</p>
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Custom Body Scripts</label>
-                <textarea value={customBodyScripts} onChange={(e) => setCustomBodyScripts(e.target.value)} placeholder={'<!-- Paste scripts that go before </body> -->\n<script>...</script>'} rows={4}
+                <textarea value={customBodyScripts} onChange={(e) => setCustomBodyScripts(e.target.value)} placeholder={'<!-- Paste scripts that go before </body> -->'} rows={4}
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm font-mono transition-colors focus:outline-none resize-y" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Injected before the closing &lt;/body&gt; tag.</p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)' }}>
-            <div className="mt-0.5 text-lg flex-shrink-0" style={{ color: isDark ? '#93c5fd' : '#1d4ed8' }}>ℹ</div>
-            <p className="text-xs sm:text-sm" style={{ color: isDark ? '#93c5fd' : '#1e40af' }}><strong>Tip:</strong> If you use Google Tag Manager, you only need the GTM ID — you can manage GA4, Facebook Pixel, and all other tags from within GTM.</p>
-          </div>
           <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Tracking scripts are injected into your marketing website automatically.</p>
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Tracking scripts are injected automatically.</p>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {trackingSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />{demoMode ? 'Saved! (demo)' : 'Saved!'}</span>)}
+              {trackingSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}
               <button onClick={handleSaveTracking} disabled={savingTracking}
                 className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>
                 {savingTracking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Tracking
@@ -856,51 +852,37 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* Tab: SEO & Social */}
+      {/* ================================================================ */}
+      {/* Tab: SEO & Social                                                */}
+      {/* ================================================================ */}
       {activeTab === 'seo' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
             <h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Social Sharing Preview</h3>
-            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Control how your site looks when shared on Facebook, Twitter, LinkedIn, and iMessage.</p>
+            <p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>Control how your site looks when shared on social media.</p>
             <div className="space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Title</label>
                 <input type="text" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder={`${agency?.name || 'Your Business'} - AI Phone Answering`}
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Keep it under 60 characters.</p>
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Description</label>
-                <textarea value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Professional AI receptionist that answers every call 24/7. Never miss another customer." rows={3}
+                <textarea value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Professional AI receptionist that answers every call 24/7." rows={3}
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none resize-y" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Keep it under 160 characters.</p>
               </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Social Image URL</label>
                 <input type="url" value={ogImageUrl} onChange={(e) => setOgImageUrl(e.target.value)} placeholder="https://your-domain.com/og-image.jpg"
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Recommended: 1200×630px. If empty, your logo will be used.</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Preview</h3>
-            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>Approximate preview of how your link will appear when shared:</p>
-            <div className="rounded-lg overflow-hidden max-w-md mx-auto" style={{ border: `1px solid ${borderColor}`, backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5' }}>
-              <div className="h-40 flex items-center justify-center" style={{ backgroundColor: isDark ? '#333' : '#e5e7eb' }}>
-                {ogImageUrl ? (<img src={ogImageUrl} alt="Social preview" className="w-full h-full object-cover" />) : branding.logoUrl ? (<img src={branding.logoUrl} alt="Logo" className="h-16 w-auto" />) : (<span className="text-4xl">🌐</span>)}
-              </div>
-              <div className="p-3">
-                <p className="text-[10px] uppercase tracking-wide mb-1" style={{ color: mutedTextColor }}>{agency?.marketing_domain || `${agency?.slug || 'demo'}.${platformDomain}`}</p>
-                <p className="text-sm font-semibold mb-1" style={{ color: textColor }}>{ogTitle || `${agency?.name || 'Your Business'} - AI Phone Answering`}</p>
-                <p className="text-xs line-clamp-2" style={{ color: mutedTextColor }}>{ogDescription || 'Professional AI receptionist that answers every call 24/7.'}</p>
+                <p className="mt-1 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Recommended: 1200×630px.</p>
               </div>
             </div>
           </div>
           <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Social sharing previews update automatically when saved.</p>
+            <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Social sharing previews update when saved.</p>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {seoSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />{demoMode ? 'Saved! (demo)' : 'Saved!'}</span>)}
+              {seoSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}
               <button onClick={handleSaveSeo} disabled={savingSeo}
                 className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>
                 {savingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save SEO
