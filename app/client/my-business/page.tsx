@@ -48,12 +48,10 @@ export default function MyBusinessPage() {
 
   const [message, setMessage] = useState('');
 
-  // Business name editing
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
 
-  // Business hours
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
   const [businessHours, setBusinessHours] = useState<BusinessHours>({
@@ -66,7 +64,6 @@ export default function MyBusinessPage() {
     sunday: { open: '9:00 AM', close: '5:00 PM', closed: true },
   });
 
-  // Knowledge base (website, FAQs, additional info — NO services)
   const [kbExpanded, setKbExpanded] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
   const [savingKB, setSavingKB] = useState(false);
@@ -74,7 +71,6 @@ export default function MyBusinessPage() {
   const [website, setWebsite] = useState('');
   const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
   const [additionalInfo, setAdditionalInfo] = useState('');
-  // Keep services text for passthrough on save (don't lose existing KB services data)
   const [existingServicesText, setExistingServicesText] = useState('');
 
   const getAuthToken = () => localStorage.getItem('auth_token');
@@ -310,25 +306,17 @@ export default function MyBusinessPage() {
           </SectionCard>
         </div>
 
-        {/* Services (structured — Phase 3A component) */}
+        {/* Services — NO glass wrapper, modals need viewport-relative positioning */}
         <div className="fu fu3">
-          <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
-            <div className="p-4 sm:p-5">
-              <ClientServicesSection clientId={client.id} theme={theme} />
-            </div>
-          </div>
+          <ClientServicesSection clientId={client.id} theme={theme} />
         </div>
 
-        {/* Staff Members (Phase 3A component) */}
+        {/* Staff Members — NO glass wrapper, modals need viewport-relative positioning */}
         <div className="fu fu4">
-          <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
-            <div className="p-4 sm:p-5">
-              <StaffMembersSection clientId={client.id} theme={theme} />
-            </div>
-          </div>
+          <StaffMembersSection clientId={client.id} theme={theme} />
         </div>
 
-        {/* Knowledge Base (website, FAQs, additional info — NO services) */}
+        {/* Knowledge Base */}
         <div className="fu fu5">
           <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
             <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
