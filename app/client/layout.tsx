@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect, useLayoutEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
   Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
@@ -222,9 +223,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               onClick={() => setSidebarOpen(false)}
               className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-all"
               style={active
@@ -236,7 +238,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
             >
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </a>
+            </Link>
           ); })}
         </nav>
 
