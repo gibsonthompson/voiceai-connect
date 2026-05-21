@@ -306,13 +306,13 @@ export default function MyBusinessPage() {
           </SectionCard>
         </div>
 
-        {/* Services — NO glass wrapper, modals need viewport-relative positioning */}
-        <div className="fu fu3">
+        {/* Services — no animation wrapper, transform traps fixed-position modals */}
+        <div className="mb-4 sm:mb-5">
           <ClientServicesSection clientId={client.id} theme={theme} />
         </div>
 
-        {/* Staff Members — NO glass wrapper, modals need viewport-relative positioning */}
-        <div className="fu fu4">
+        {/* Staff Members — no animation wrapper, same reason */}
+        <div className="mb-4 sm:mb-5">
           <StaffMembersSection clientId={client.id} theme={theme} />
         </div>
 
