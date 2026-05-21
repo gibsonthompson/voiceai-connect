@@ -35,6 +35,7 @@ export default function MarketingWebsitePage() {
   const [savingDomain, setSavingDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<'none' | 'pending' | 'verified'>('none');
+  const [verificationRecords, setVerificationRecords] = useState<{type: string; name: string; value: string; reason: string}[]>([]);
 
   // Content state
   const [tagline, setTagline] = useState('');
@@ -114,6 +115,26 @@ export default function MarketingWebsitePage() {
     };
     if (agency) fetchDnsConfig();
   }, [agency?.marketing_domain, demoMode]);
+
+  // Fetch verification records from Vercel when domain is pending
+  useEffect(() => {
+    if (demoMode || !agency?.marketing_domain || agency?.domain_verified) return;
+    const fetchDomainStatus = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`/api/agency/${agency.id}/domain/status`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.verification_records?.length > 0) {
+            setVerificationRecords(data.verification_records);
+          }
+        }
+      } catch (err) { console.error('Failed to fetch domain status:', err); }
+    };
+    fetchDomainStatus();
+  }, [agency?.marketing_domain, agency?.domain_verified, demoMode]);
 
   useEffect(() => {
     if (demoMode) {
@@ -240,6 +261,9 @@ export default function MarketingWebsitePage() {
       const data = await response.json();
       if (response.ok && data.success) {
         setDomainStatus('pending');
+        if (data.verification_records?.length > 0) {
+          setVerificationRecords(data.verification_records);
+        }
         if (data.dns_config) { setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record }); }
         await refreshAgency();
       } else { alert(data.error || 'Failed to save domain'); }
@@ -259,6 +283,11 @@ export default function MarketingWebsitePage() {
       });
       const data = await response.json();
       setDomainStatus(data.verified ? 'verified' : 'pending');
+      if (data.verification_records?.length > 0) {
+        setVerificationRecords(data.verification_records);
+      } else if (data.verified) {
+        setVerificationRecords([]);
+      }
       if (!data.verified) { alert(data.message || 'DNS records not found. Please check your configuration and try again.'); }
       await refreshAgency();
     } catch (error) { console.error('Failed to verify domain:', error); }
@@ -266,7 +295,7 @@ export default function MarketingWebsitePage() {
   };
 
   const handleRemoveDomain = async () => {
-    if (demoMode) { setCustomDomain(''); setDomainStatus('none'); return; }
+    if (demoMode) { setCustomDomain(''); setDomainStatus('none'); setVerificationRecords([]); return; }
     if (!agency || !confirm('Remove this custom domain? Your site will only be accessible via the subdomain.')) return;
     setSavingDomain(true);
     try {
@@ -276,7 +305,7 @@ export default function MarketingWebsitePage() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
       const data = await response.json();
-      if (response.ok && data.success) { setCustomDomain(''); setDomainStatus('none'); await refreshAgency(); }
+      if (response.ok && data.success) { setCustomDomain(''); setDomainStatus('none'); setVerificationRecords([]); await refreshAgency(); }
       else { alert(data.error || 'Failed to remove domain'); }
     } catch (error) { console.error('Failed to remove domain:', error); alert('Failed to remove domain.'); }
     finally { setSavingDomain(false); }
@@ -434,9 +463,7 @@ export default function MarketingWebsitePage() {
         </nav>
       </div>
 
-      {/* ================================================================ */}
-      {/* Tab: Overview                                                    */}
-      {/* ================================================================ */}
+      {/* Tab: Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -514,9 +541,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* ================================================================ */}
-      {/* Tab: Content                                                     */}
-      {/* ================================================================ */}
+      {/* Tab: Content */}
       {activeTab === 'content' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -550,9 +575,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* ================================================================ */}
-      {/* Tab: Colors                                                      */}
-      {/* ================================================================ */}
+      {/* Tab: Colors */}
       {activeTab === 'colors' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)' }}>
@@ -674,9 +697,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* ================================================================ */}
-      {/* Tab: Domain                                                      */}
-      {/* ================================================================ */}
+      {/* Tab: Domain */}
       {activeTab === 'domain' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -729,6 +750,37 @@ export default function MarketingWebsitePage() {
                 )}
               </div>
             </div>
+
+            {/* TXT Verification Records — shown when Vercel requires ownership proof */}
+            {verificationRecords.length > 0 && domainStatus === 'pending' && (
+              <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.05)', border: `1px solid ${isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.3)'}` }}>
+                <div className="flex items-start gap-2 mb-3">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: isDark ? '#fbbf24' : '#92400e' }}>Domain Ownership Verification Required</p>
+                    <p className="text-xs mt-1" style={{ color: isDark ? 'rgba(251,191,36,0.7)' : '#b45309' }}>This domain is registered on another Vercel account. Add this TXT record at your DNS provider to verify you own it. You can remove the TXT record after verification succeeds.</p>
+                  </div>
+                </div>
+                <div className="space-y-2 text-xs font-mono">
+                  {verificationRecords.map((record, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
+                      <div className="min-w-0 mr-2">
+                        <span style={{ color: mutedTextColor }}>TXT</span>
+                        <span className="mx-2" style={{ color: mutedTextColor }}>Name:</span>
+                        <span style={{ color: textColor }}>{record.name || '_vercel'}</span>
+                        <span className="mx-2" style={{ color: mutedTextColor }}>→</span>
+                        <span className="break-all" style={{ color: textColor }}>{record.value}</span>
+                      </div>
+                      <button onClick={() => copyToClipboard(record.value, `txt-${i}`)} className="flex-shrink-0" style={{ color: mutedTextColor }}>
+                        {copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DNS Records — A + CNAME */}
             {domainStatus === 'pending' && dnsConfig && (
               <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
                 <p className="text-xs font-medium mb-3" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add these DNS records at your domain registrar:</p>
@@ -748,9 +800,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* ================================================================ */}
-      {/* Tab: Tracking                                                    */}
-      {/* ================================================================ */}
+      {/* Tab: Tracking */}
       {activeTab === 'tracking' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -806,9 +856,7 @@ export default function MarketingWebsitePage() {
         </div>
       )}
 
-      {/* ================================================================ */}
-      {/* Tab: SEO & Social                                                */}
-      {/* ================================================================ */}
+      {/* Tab: SEO & Social */}
       {activeTab === 'seo' && (
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
