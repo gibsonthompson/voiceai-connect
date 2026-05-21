@@ -52,16 +52,9 @@ export const metadata: Metadata = {
     "AI answering service white label",
   ],
   manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-  },
+  // icons intentionally omitted — DynamicFavicon handles dashboard pages,
+  // and static <link> tags in <head> handle the marketing site.
+  // Removed to prevent conflict with app/icon.* file conventions.
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -112,6 +105,9 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Static favicon links for marketing site. DynamicFavicon overrides href on dashboard pages. */}
+        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
         <link rel="alternate" type="application/rss+xml" title="VoiceAI Connect Blog" href="https://myvoiceaiconnect.com/feed.xml" />
         <meta name="application-name" content="VoiceAI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
