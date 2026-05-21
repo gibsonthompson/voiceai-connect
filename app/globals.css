@@ -19,6 +19,10 @@
 
 /* ----- Base ----- */
 
+@view-transition {
+  navigation: auto;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;

@@ -220,7 +220,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
         <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
 
-        {/* NAV — <a> tags, same pattern as agency layout */}
         <nav className="p-3 space-y-0.5">
           {filteredNavItems.map((item) => { const active = isActive(item.href); return (
             <a
@@ -262,7 +261,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main key={pathname} className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
       <SupportWidget theme={theme} userType="client" />
