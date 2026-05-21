@@ -7,9 +7,6 @@ import {
   Lock, Bell, BellOff, ChevronDown, ChevronUp
 } from 'lucide-react';
 
-// ============================================================================
-// TYPES
-// ============================================================================
 interface TeamMember {
   id: string;
   display_name: string;
@@ -34,9 +31,6 @@ interface Props {
   theme: any;
 }
 
-// ============================================================================
-// PERMISSION & NOTIFICATION LABELS
-// ============================================================================
 const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; sensitive?: boolean }> = {
   dashboard: { label: 'Dashboard', description: 'View dashboard stats' },
   calls: { label: 'Calls', description: 'View call history and details' },
@@ -52,9 +46,6 @@ const NOTIFICATION_LABELS: Record<string, string> = {
   email_new_call: 'Email on new calls',
 };
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
 export default function ClientTeamSection({ clientId, theme }: Props) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [limits, setLimits] = useState<TeamLimits>({ allowed: true, current: 0, max: 0 });
@@ -62,25 +53,18 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Add form
   const [showAddForm, setShowAddForm] = useState(false);
   const [addName, setAddName] = useState('');
   const [addEmail, setAddEmail] = useState('');
   const [addPhone, setAddPhone] = useState('');
   const [adding, setAdding] = useState(false);
 
-  // Expanded cards
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Password visibility per member
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 
-  // ============================================================================
-  // FETCH
-  // ============================================================================
   const fetchTeam = async () => {
     try {
       setLoading(true);
@@ -100,16 +84,9 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
 
   useEffect(() => { fetchTeam(); }, [clientId]);
 
-  // ============================================================================
-  // ADD MEMBER
-  // ============================================================================
   const handleAdd = async () => {
-    if (!addName.trim() || !addEmail.trim()) {
-      setError('Name and email are required');
-      return;
-    }
-    setAdding(true);
-    setError(null);
+    if (!addName.trim() || !addEmail.trim()) { setError('Name and email are required'); return; }
+    setAdding(true); setError(null);
     try {
       const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, {
         method: 'POST',
@@ -118,7 +95,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to add team member');
-      
       setMembers(prev => [...prev, data.member]);
       setLimits(prev => ({ ...prev, current: prev.current + 1 }));
       setSuccess(`${data.member.display_name} added! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`);
@@ -126,23 +102,15 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       setShowAddForm(false);
       setExpandedId(data.member.id);
       setTimeout(() => setSuccess(null), 5000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setAdding(false);
-    }
+    } catch (err: any) { setError(err.message); }
+    finally { setAdding(false); }
   };
 
-  // ============================================================================
-  // UPDATE PERMISSIONS
-  // ============================================================================
   const togglePermission = async (memberId: string, key: string, currentValue: boolean) => {
     const member = members.find(m => m.id === memberId);
     if (!member) return;
-    
     const newPerms = { ...member.permissions, [key]: !currentValue };
     setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: newPerms } : m));
-
     try {
       const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, {
         method: 'PUT',
@@ -156,16 +124,11 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
     }
   };
 
-  // ============================================================================
-  // TOGGLE NOTIFICATION PREF
-  // ============================================================================
   const toggleNotification = async (memberId: string, key: string, currentValue: boolean) => {
     const member = members.find(m => m.id === memberId);
     if (!member) return;
-
     const newPrefs = { ...member.notification_prefs, [key]: !currentValue };
     setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: newPrefs } : m));
-
     try {
       const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, {
         method: 'PUT',
@@ -178,9 +141,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
     }
   };
 
-  // ============================================================================
-  // RESET PASSWORD
-  // ============================================================================
   const resetPassword = async (memberId: string) => {
     try {
       const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}/reset-password`, {
@@ -190,21 +150,13 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reset');
-      
-      setMembers(prev => prev.map(m => 
-        m.id === memberId ? { ...m, visible_password: data.visible_password } : m
-      ));
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, visible_password: data.visible_password } : m));
       setVisiblePasswords(prev => ({ ...prev, [memberId]: true }));
       setSuccess('Password reset! New credentials sent via SMS.');
       setTimeout(() => setSuccess(null), 4000);
-    } catch (err: any) {
-      setError(err.message);
-    }
+    } catch (err: any) { setError(err.message); }
   };
 
-  // ============================================================================
-  // TOGGLE STATUS
-  // ============================================================================
   const toggleStatus = async (memberId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
     try {
@@ -215,14 +167,9 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       });
       if (!res.ok) throw new Error('Failed to update status');
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m));
-    } catch (err: any) {
-      setError(err.message);
-    }
+    } catch (err: any) { setError(err.message); }
   };
 
-  // ============================================================================
-  // REMOVE MEMBER
-  // ============================================================================
   const removeMember = async (memberId: string, name: string) => {
     if (!confirm(`Remove ${name}? This will delete their account.`)) return;
     try {
@@ -235,22 +182,14 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       setLimits(prev => ({ ...prev, current: Math.max(0, prev.current - 1) }));
       setSuccess(`${name} removed`);
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    }
+    } catch (err: any) { setError(err.message); }
   };
 
   const copyText = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSuccess('Copied!');
-      setTimeout(() => setSuccess(null), 1500);
-    } catch {}
+    try { await navigator.clipboard.writeText(text); setSuccess('Copied!'); setTimeout(() => setSuccess(null), 1500); } catch {}
   };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
+  // Don't show anything while loading
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -259,35 +198,34 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
     );
   }
 
+  // Plan doesn't include team members — don't render the section at all
+  if (limits.max === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
             <Users className="w-4 h-4" style={{ color: theme.primary }} />
             Team Members
           </h2>
-          {limits.max > 0 && (
-            <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>
-              {limits.current} of {limits.max} members
-            </p>
-          )}
+          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>
+            Dashboard login accounts — {limits.current} of {limits.max}
+          </p>
         </div>
-        {limits.max > 0 && (
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            disabled={!limits.allowed}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add
-          </button>
-        )}
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          disabled={!limits.allowed}
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
+          style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add
+        </button>
       </div>
 
-      {/* Alerts */}
       {error && (
         <div className="rounded-lg p-2.5 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
           <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.errorText }} />
@@ -302,18 +240,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
         </div>
       )}
 
-      {/* Plan gate */}
-      {limits.max === 0 && (
-        <div className="rounded-xl border p-4 text-center" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-          <Users className="h-6 w-6 mx-auto mb-1.5" style={{ color: theme.textMuted4 }} />
-          <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Team members not available</p>
-          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted4 }}>
-            Contact your provider to upgrade and unlock team access.
-          </p>
-        </div>
-      )}
-
-      {/* Add form */}
       {showAddForm && (
         <div className="rounded-xl border p-3 sm:p-4" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
           <h3 className="text-xs sm:text-sm font-medium mb-3" style={{ color: theme.text }}>Add Team Member</h3>
@@ -350,7 +276,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
         </div>
       )}
 
-      {/* Member list */}
       {members.length > 0 && (
         <div className="space-y-2">
           {members.map((member) => {
@@ -361,7 +286,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
               <div key={member.id} className="rounded-xl border overflow-hidden transition-all"
                 style={{ borderColor: member.status === 'disabled' ? theme.errorBorder : theme.border, backgroundColor: theme.card, opacity: member.status === 'disabled' ? 0.7 : 1 }}>
                 
-                {/* Header row */}
                 <button onClick={() => setExpandedId(isExpanded ? null : member.id)} className="w-full flex items-center justify-between p-3 text-left">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold"
@@ -381,47 +305,32 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} /> : <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />}
                 </button>
 
-                {/* Expanded */}
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-
-                    {/* Credentials */}
                     <div className="pt-2.5">
                       <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Login Credentials</p>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.bg }}>
                           <Mail className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />
                           <span className="text-[10px] sm:text-xs truncate" style={{ color: theme.text }}>{member.email}</span>
-                          <button onClick={() => copyText(member.email || '')} className="ml-auto flex-shrink-0">
-                            <Copy className="h-3 w-3" style={{ color: theme.textMuted4 }} />
-                          </button>
+                          <button onClick={() => copyText(member.email || '')} className="ml-auto flex-shrink-0"><Copy className="h-3 w-3" style={{ color: theme.textMuted4 }} /></button>
                         </div>
                         <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.bg }}>
                           <Lock className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />
                           {member.visible_password ? (
                             <>
-                              <span className="text-[10px] sm:text-xs font-mono" style={{ color: theme.text }}>
-                                {showPw ? member.visible_password : '••••••••••'}
-                              </span>
-                              <button onClick={() => setVisiblePasswords(prev => ({ ...prev, [member.id]: !showPw }))} className="ml-auto flex-shrink-0">
-                                {showPw ? <EyeOff className="h-3 w-3" style={{ color: theme.textMuted4 }} /> : <Eye className="h-3 w-3" style={{ color: theme.textMuted4 }} />}
-                              </button>
-                              <button onClick={() => copyText(member.visible_password || '')} className="flex-shrink-0">
-                                <Copy className="h-3 w-3" style={{ color: theme.textMuted4 }} />
-                              </button>
+                              <span className="text-[10px] sm:text-xs font-mono" style={{ color: theme.text }}>{showPw ? member.visible_password : '••••••••••'}</span>
+                              <button onClick={() => setVisiblePasswords(prev => ({ ...prev, [member.id]: !showPw }))} className="ml-auto flex-shrink-0">{showPw ? <EyeOff className="h-3 w-3" style={{ color: theme.textMuted4 }} /> : <Eye className="h-3 w-3" style={{ color: theme.textMuted4 }} />}</button>
+                              <button onClick={() => copyText(member.visible_password || '')} className="flex-shrink-0"><Copy className="h-3 w-3" style={{ color: theme.textMuted4 }} /></button>
                             </>
                           ) : (
                             <span className="text-[10px] sm:text-xs italic" style={{ color: theme.textMuted4 }}>Changed by user</span>
                           )}
                         </div>
                       </div>
-                      <button onClick={() => resetPassword(member.id)}
-                        className="mt-1.5 inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.primary }}>
-                        <RefreshCw className="h-3 w-3" /> Reset Password
-                      </button>
+                      <button onClick={() => resetPassword(member.id)} className="mt-1.5 inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.primary }}><RefreshCw className="h-3 w-3" /> Reset Password</button>
                     </div>
 
-                    {/* Permissions */}
                     <div>
                       <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Page Access</p>
                       <div className="grid grid-cols-2 gap-1">
@@ -431,20 +340,14 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
                             <button key={key} onClick={() => togglePermission(member.id, key, enabled)}
                               className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left transition-colors"
                               style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : 'transparent'}` }}>
-                              {enabled
-                                ? <Shield className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} />
-                                : <ShieldOff className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-                              }
-                              <span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.primary : theme.textMuted4 }}>
-                                {info.label}
-                              </span>
+                              {enabled ? <Shield className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} /> : <ShieldOff className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />}
+                              <span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.primary : theme.textMuted4 }}>{info.label}</span>
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* Notifications */}
                     <div>
                       <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Notifications</p>
                       <div className="space-y-1">
@@ -468,7 +371,6 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                       <button onClick={() => toggleStatus(member.id, member.status)}
                         className="rounded-lg px-2.5 py-1 text-[10px] sm:text-xs font-medium transition-colors"
@@ -489,8 +391,7 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
         </div>
       )}
 
-      {/* Empty state */}
-      {members.length === 0 && limits.max > 0 && !showAddForm && (
+      {members.length === 0 && !showAddForm && (
         <div className="rounded-xl border p-4 text-center" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
           <Users className="h-6 w-6 mx-auto mb-1.5" style={{ color: theme.textMuted4 }} />
           <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>No team members yet</p>

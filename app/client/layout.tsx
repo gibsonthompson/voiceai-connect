@@ -12,19 +12,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import SupportWidget from '@/components/SupportWidget';
 
-function setFavicon(url: string) {
-  const existingLinks = document.querySelectorAll("link[rel*='icon']");
-  existingLinks.forEach(link => link.remove());
-  const link = document.createElement('link');
-  link.rel = 'icon';
-  link.type = 'image/png';
-  link.href = url;
-  document.head.appendChild(link);
-  const appleLink = document.createElement('link');
-  appleLink.rel = 'apple-touch-icon';
-  appleLink.href = url;
-  document.head.appendChild(appleLink);
-}
+// Favicon is handled by DynamicFavicon in ClientProvider — no need to set it here
 
 function setManifestLink(clientId: string | null) {
   const existing = document.querySelectorAll('link[rel="manifest"]');
@@ -108,7 +96,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { const checkDevice = () => { const w = window.innerWidth; setIsMobile(w < 768); setIsTablet(w >= 768 && w < 1024); }; checkDevice(); window.addEventListener('resize', checkDevice); return () => window.removeEventListener('resize', checkDevice); }, []);
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
-  useEffect(() => { if (displayLogo) setFavicon(displayLogo); }, [displayLogo]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
 
   // ── Background override — useLayoutEffect runs BEFORE browser paints ──
