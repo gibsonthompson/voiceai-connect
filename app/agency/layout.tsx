@@ -31,6 +31,16 @@ const AGENCY_PLAN_TIERS = [
   { id: 'scale' as const, name: 'Scale', price: PLAN_PRICES.scale, icon: Crown, description: 'For established agencies', features: ['Everything in Pro', 'Advanced lead finder + API access', 'Unlimited team members', `$0/client + $${PLAN_RATES.scale.perMinute}/min`] },
 ];
 
+/**
+ * Renders DynamicFavicon using agency context.
+ * Lives in the layout wrapper (outside AgencyDashboardLayout) so it renders
+ * regardless of loading state, plan selection gates, or blocked access screens.
+ */
+function AgencyFavicon() {
+  const { branding } = useAgency();
+  return <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />;
+}
+
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, effectivePlan, hasPermission } = useAgency();
@@ -80,9 +90,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const handleToggleTheme = async () => {
     const newTheme = theme.isDark ? 'light' : 'dark';
-    // Immediate localStorage update for instant visual switch
     try { localStorage.setItem('voiceai_ui_theme', newTheme); } catch {}
-    // Update agency object in localStorage
     try {
       const stored = localStorage.getItem('agency');
       if (stored) {
@@ -91,7 +99,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         localStorage.setItem('agency', JSON.stringify(parsed));
       }
     } catch {}
-    // Persist to backend
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('auth_token');
@@ -103,7 +110,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         }).catch(() => {});
       }
     } catch {}
-    // Reload to apply theme
     window.location.reload();
   };
 
@@ -209,7 +215,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/manifest.json" />
-      <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={primaryColor} />
+      {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
       {theme.isDark && (<div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />)}
 
@@ -225,7 +231,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>)}<span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></div>
 
-        {/* NAV — UPDATED: locked items no longer navigate */}
         <nav className="p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
             <a key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
@@ -235,7 +240,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </a>); })}
         </nav>
 
-        {/* Sidebar bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
           {isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
           {hasPaymentIssue && (<a href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></a>)}
@@ -254,5 +258,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 export default function AgencyLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname === '/agency/login') return <>{children}</>;
-  return (<AgencyProvider><AgencyDashboardLayout>{children}</AgencyDashboardLayout></AgencyProvider>);
+  return (
+    <AgencyProvider>
+      <AgencyFavicon />
+      <AgencyDashboardLayout>{children}</AgencyDashboardLayout>
+    </AgencyProvider>
+  );
 }
