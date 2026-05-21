@@ -112,7 +112,7 @@ export default function MarketingWebsitePage() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
 
-  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string } | null>(null);
+  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean } | null>(null);
 
   // Theme
   const isDark = agency?.website_theme !== 'light';
@@ -137,24 +137,24 @@ export default function MarketingWebsitePage() {
 
   // DNS config fetch
   useEffect(() => {
-    if (demoMode) { setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' }); return; }
+    if (demoMode) { setDnsConfig({ aRecord: '216.198.79.1', cname: 'cname.vercel-dns.com' }); return; }
     const fetchDnsConfig = async () => {
       try {
         const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : '';
         const response = await fetch(`/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
-          setDnsConfig({ aRecord: data.a_record || '76.76.21.21', cname: data.cname_record || 'cname.vercel-dns.com' });
+          setDnsConfig({ aRecord: data.a_record || '216.198.79.1', cname: data.cname_record || 'cname.vercel-dns.com', misconfigured: data.misconfigured || false });
         }
       } catch (error) {
         console.error('Failed to fetch DNS config:', error);
-        setDnsConfig({ aRecord: '76.76.21.21', cname: 'cname.vercel-dns.com' });
+        setDnsConfig({ aRecord: '216.198.79.1', cname: 'cname.vercel-dns.com' });
       }
     };
     if (agency) fetchDnsConfig();
   }, [agency?.marketing_domain, demoMode]);
 
-  // Domain verification records fetch
+  // Domain verification records + DNS instructions fetch
   useEffect(() => {
     if (demoMode || !agency || domainStatus !== 'pending') return;
     const fetchStatus = async () => {
@@ -166,6 +166,14 @@ export default function MarketingWebsitePage() {
         if (response.ok) {
           const data = await response.json();
           if (data.verification_records?.length) setVerificationRecords(data.verification_records);
+          // Update DNS config from status response (has per-project values)
+          if (data.dns_instructions) {
+            setDnsConfig(prev => ({
+              aRecord: data.dns_instructions.a_record?.value || prev?.aRecord || '216.198.79.1',
+              cname: data.dns_instructions.cname_record?.value || prev?.cname || 'cname.vercel-dns.com',
+              misconfigured: data.misconfigured || false,
+            }));
+          }
         }
       } catch (error) { console.error('Failed to fetch domain status:', error); }
     };
@@ -780,20 +788,41 @@ export default function MarketingWebsitePage() {
                 </div>
               </div>
             )}
+            {/* Misconfigured Warning */}
+            {domainStatus === 'pending' && dnsConfig?.misconfigured && (
+              <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.06)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.15)' : '1px solid #fecaca' }}>
+                <p className="text-xs font-medium flex items-center gap-1.5 mb-2" style={{ color: isDark ? '#f87171' : '#dc2626' }}>
+                  <AlertCircle className="h-3.5 w-3.5" />Domain Misconfigured
+                </p>
+                <p className="text-xs" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
+                  Your domain has conflicting DNS records. Remove any existing A, AAAA, or CNAME records for this domain at your registrar before adding the records below. Conflicting records from a previous host will block verification.
+                </p>
+              </div>
+            )}
             {/* DNS Records */}
             {domainStatus === 'pending' && dnsConfig && (
               <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
-                <p className="text-xs font-medium mb-3" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add these DNS records at your domain registrar:</p>
+                <p className="text-xs font-medium mb-1" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add these DNS records at your domain registrar:</p>
+                <p className="text-[10px] mb-3" style={{ color: mutedTextColor }}>Remove any existing A, AAAA, or CNAME records for the root domain first.</p>
                 <div className="space-y-2 text-xs font-mono">
-                  <div className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
-                    <span style={{ color: mutedTextColor }}>A Record → {dnsConfig.aRecord}</span>
-                    <button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>
+                  <div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}>
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: mutedTextColor }}>A Record — Name: <strong style={{ color: textColor }}>@</strong> (root domain)</span>
+                      <button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+                    </div>
+                    <div style={{ color: textColor }}>{dnsConfig.aRecord}</div>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: inputBg }}>
-                    <span style={{ color: mutedTextColor }}>CNAME → {dnsConfig.cname}</span>
-                    <button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>{copied === 'cname' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>
+                  <div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}>
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: mutedTextColor }}>CNAME Record — Name: <strong style={{ color: textColor }}>www</strong></span>
+                      <button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>{copied === 'cname' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+                    </div>
+                    <div className="break-all" style={{ color: textColor }}>{dnsConfig.cname}</div>
                   </div>
                 </div>
+                {dnsConfig.cname && dnsConfig.cname !== 'cname.vercel-dns.com' && (
+                  <p className="text-[10px] mt-2" style={{ color: agencyPrimaryColor }}>✓ Project-specific CNAME detected — use this exact value.</p>
+                )}
               </div>
             )}
           </div>

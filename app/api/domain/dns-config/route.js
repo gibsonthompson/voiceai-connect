@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN
 const VERCEL_TEAM_ID = process.env.VERCEL_TEAM_ID
+const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -22,10 +23,11 @@ export async function GET(request) {
 
   try {
     // Use /v6/domains/{domain}/config endpoint
-    // This returns recommendedIPv4 and recommendedCNAME
-    const configUrl = VERCEL_TEAM_ID
-      ? `https://api.vercel.com/v6/domains/${domain}/config?teamId=${VERCEL_TEAM_ID}`
-      : `https://api.vercel.com/v6/domains/${domain}/config`
+    // CRITICAL: pass projectIdOrName so Vercel returns per-project CNAME
+    const params = new URLSearchParams()
+    if (VERCEL_TEAM_ID) params.set('teamId', VERCEL_TEAM_ID)
+    if (VERCEL_PROJECT_ID) params.set('projectIdOrName', VERCEL_PROJECT_ID)
+    const configUrl = `https://api.vercel.com/v6/domains/${domain}/config?${params.toString()}`
 
     console.log(`🔍 Fetching from: ${configUrl}`)
 
@@ -65,8 +67,9 @@ export async function GET(request) {
     return NextResponse.json({
       a_record: aRecord,
       cname_record: cnameRecord,
-      source: aRecord !== DEFAULT_CONFIG.a_record ? 'vercel-api' : 'fallback',
-      misconfigured: data.misconfigured
+      source: (aRecord !== DEFAULT_CONFIG.a_record || cnameRecord !== DEFAULT_CONFIG.cname_record) ? 'vercel-api' : 'fallback',
+      misconfigured: data.misconfigured,
+      configured_by: data.configuredBy || null
     })
 
   } catch (error) {
