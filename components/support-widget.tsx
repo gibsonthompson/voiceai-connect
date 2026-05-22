@@ -126,12 +126,14 @@ export default function SupportWidget() {
   const [escContact, setEscContact] = useState('');
   const [escBusy, setEscBusy] = useState(false);
   const [escDone, setEscDone] = useState(false);
+  const [isAllowedDomain, setIsAllowedDomain] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
   useEffect(() => { if (sessionStorage.getItem('w-t')) return; const t = setTimeout(() => setTeaser(true), 5000); return () => clearTimeout(t); }, []);
+  useEffect(() => { const h = window.location.hostname; if (h === 'myvoiceaiconnect.com' || h === 'www.myvoiceaiconnect.com' || h === 'localhost') setIsAllowedDomain(true); }, []);
 
   const open = useCallback(() => { setIsOpen(true); setTeaser(false); sessionStorage.setItem('w-t', '1'); }, []);
   const close = useCallback(() => setIsOpen(false), []);
@@ -186,10 +188,7 @@ export default function SupportWidget() {
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
 
   // Only show on VoiceAI Connect domains — not on agency marketing sites
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host !== 'myvoiceaiconnect.com' && host !== 'www.myvoiceaiconnect.com' && host !== 'localhost') return null;
-  }
+  if (!isAllowedDomain) return null;
 
   return (
     <>
