@@ -245,12 +245,12 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
           {/* Tags row */}
           <div className="flex flex-wrap gap-2">
             {call.service_discussed && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}>
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
                 ✅ {call.service_discussed}
               </span>
             )}
             {call.asked_questions && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}>
+              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
                 ❓ Asked follow-up questions
               </span>
             )}
@@ -405,7 +405,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   {call.service_discussed && (
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{call.service_discussed}</p>
+                    <p className="text-xs truncate" style={{ color: theme.textMuted, textTransform: 'capitalize' }}>{call.service_discussed}</p>
                   )}
                   {!call.service_discussed && call.business_type && (
                     <p className="text-xs truncate capitalize" style={{ color: theme.textMuted }}>{call.business_type.replace(/_/g, ' ')}</p>
