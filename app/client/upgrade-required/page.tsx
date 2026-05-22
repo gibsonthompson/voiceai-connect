@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Loader2, AlertTriangle, Phone, Clock, Zap } from 'lucide-react';
 
-// Default client pricing (cents) — used when agency hasn't configured custom pricing
 const DEFAULT_CLIENT_PRICING = {
   price_starter: 9900,
   price_pro: 14900,
@@ -38,7 +37,6 @@ function formatLimit(limit: number | undefined | null): string {
   return limit.toLocaleString();
 }
 
-// Helper: get pricing with defaults
 function getPrice(agency: Agency | null, key: 'price_starter' | 'price_pro' | 'price_growth'): number {
   const val = agency?.[key];
   return (typeof val === 'number' && !isNaN(val)) ? val : DEFAULT_CLIENT_PRICING[key];
@@ -77,7 +75,22 @@ function ClientUpgradeContent() {
 
   useEffect(() => { fetchClientData(); }, []);
 
-  useEffect(() => { if (agency?.name) document.title = `${agency.name} — Upgrade Your Plan`; }, [agency]);
+  useEffect(() => {
+    if (agency?.name) document.title = `${agency.name} — Upgrade Your Plan`;
+    if (agency?.logo_url) {
+      const existingLinks = document.querySelectorAll("link[rel*='icon']");
+      existingLinks.forEach(link => link.remove());
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/png';
+      link.href = agency.logo_url;
+      document.head.appendChild(link);
+      const appleLink = document.createElement('link');
+      appleLink.rel = 'apple-touch-icon';
+      appleLink.href = agency.logo_url;
+      document.head.appendChild(appleLink);
+    }
+  }, [agency]);
 
   const fetchClientData = async () => {
     try {
@@ -119,7 +132,6 @@ function ClientUpgradeContent() {
     </div>
   );
 
-  // Use agency pricing if configured, fall back to platform defaults
   const plans = [
     { id: 'starter', name: 'Starter', price: getPrice(agency, 'price_starter'), limit: getLimit(agency, 'limit_starter'), popular: false, features: [`${formatLimit(getLimit(agency, 'limit_starter'))} calls/month`, '24/7 AI receptionist', 'Call summaries & transcripts', 'SMS notifications', 'Basic analytics'] },
     { id: 'pro', name: 'Professional', price: getPrice(agency, 'price_pro'), limit: getLimit(agency, 'limit_pro'), popular: true, features: [`${formatLimit(getLimit(agency, 'limit_pro'))} calls/month`, 'Everything in Starter', 'Priority support', 'Advanced analytics', 'Custom greeting'] },
@@ -130,7 +142,6 @@ function ClientUpgradeContent() {
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8 fu fu1">
           {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-4 object-contain" />}
           {expired && <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}><Clock className="h-4 w-4" /><span className="text-sm font-medium">Your trial has ended</span></div>}
@@ -146,7 +157,6 @@ function ClientUpgradeContent() {
           </div>
         )}
 
-        {/* Plans */}
         <div className="grid md:grid-cols-3 gap-5 fu fu2">
           {plans.map(plan => (
             <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
@@ -176,7 +186,6 @@ function ClientUpgradeContent() {
           ))}
         </div>
 
-        {/* Trust */}
         <div className="mt-12 text-center fu fu3">
           <div className="flex flex-wrap items-center justify-center gap-6">
             {[{ icon: Phone, label: 'Cancel anytime' }, { icon: Check, label: 'No setup fees' }, { icon: Clock, label: 'Instant activation' }].map(({ icon: Icon, label }) => (
