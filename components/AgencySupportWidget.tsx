@@ -9,13 +9,63 @@ import {
 
 interface FAQ { question: string; answer: string; }
 
+const PROSPECT_FAQS: FAQ[] = [
+  {
+    question: 'How does the AI receptionist work?',
+    answer: 'When someone calls your business number, the AI answers immediately — no rings, no hold music. It greets the caller, answers questions about your services using information you provide, books appointments to your calendar, takes messages, and sends you a text summary after every call.',
+  },
+  {
+    question: 'Will callers know they are talking to an AI?',
+    answer: 'Most callers do not notice. The AI uses natural speech patterns and sounds conversational, not robotic. Business owners regularly tell us customers compliment their "new receptionist." If a caller asks directly, the AI will be honest.',
+  },
+  {
+    question: 'Can it book appointments to my calendar?',
+    answer: 'Yes. The AI connects to your Google Calendar, checks your real-time availability, offers open slots to the caller, and creates the appointment automatically with the caller\'s name, phone number, and reason. No double-booking, no back-and-forth.',
+  },
+  {
+    question: 'What happens after each call?',
+    answer: 'You get an instant text message with a summary — who called, what they needed, and any action items. You also get full call recordings, word-for-word transcripts, and an AI-generated analysis in your dashboard.',
+  },
+  {
+    question: 'Can the AI transfer calls to me?',
+    answer: 'Yes. You set the rules — for example, transfer if the caller says it\'s urgent, mentions a specific keyword, or asks for you by name. If you do not pick up, the AI stays on the line and takes a message instead of sending the caller to voicemail.',
+  },
+  {
+    question: 'Does it work after hours and on weekends?',
+    answer: 'Yes, 24/7/365. The AI never sleeps, takes breaks, or calls in sick. Over a third of calls businesses receive come outside normal hours — this means you never miss an opportunity.',
+  },
+  {
+    question: 'Does it speak Spanish?',
+    answer: 'Yes. The AI automatically detects when a caller speaks Spanish and switches to Spanish for the entire conversation. No setup needed. Call summaries are still sent to you in English.',
+  },
+  {
+    question: 'How long does setup take?',
+    answer: 'About 10 minutes. You provide your business name, industry, services, hours, and common questions. The AI builds your custom receptionist and provisions a dedicated phone number. No technical skills or website required.',
+  },
+  {
+    question: 'Can I use my existing business phone number?',
+    answer: 'Yes. You get a dedicated AI phone number, then forward your existing business line to it. Callers dial your normal number and the AI answers. You can also publish the AI number directly if you prefer.',
+  },
+  {
+    question: 'How many calls can it handle at once?',
+    answer: 'Unlimited. Unlike a human receptionist who handles one call at a time, the AI takes as many simultaneous calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.',
+  },
+  {
+    question: 'Does it block spam and robocalls?',
+    answer: 'Yes, automatically on every plan. The AI detects telemarketers and robocalls and ends those calls immediately. Spam calls are not counted against your usage.',
+  },
+  {
+    question: 'Can I access this from my phone?',
+    answer: 'Yes. The dashboard works on any device — phone, tablet, or desktop. You can add it to your home screen for instant access that works like a native app. You also get text and email notifications so you do not need to check the dashboard constantly.',
+  },
+];
+
 interface AgencySupportWidgetProps {
   agencyName: string;
   agencyLogo: string | null;
   primaryColor: string;
   supportEmail: string | null;
   isDark: boolean;
-  faqs: FAQ[];
 }
 
 type WidgetView = 'home' | 'faq' | 'chat' | 'escalation';
@@ -34,7 +84,6 @@ export default function AgencySupportWidget({
   primaryColor,
   supportEmail,
   isDark,
-  faqs,
 }: AgencySupportWidgetProps) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<WidgetView>('home');
@@ -49,6 +98,7 @@ export default function AgencySupportWidget({
   const [escContact, setEscContact] = useState('');
   const [escSending, setEscSending] = useState(false);
   const [escDone, setEscDone] = useState(false);
+  const [teaser, setTeaser] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +113,16 @@ export default function AgencySupportWidget({
       setTimeout(() => searchInputRef.current?.focus(), 200);
     }
   }, [open, view]);
+
+  // Show teaser after scrolling 400px, unless already dismissed
+  useEffect(() => {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('agency-w-t')) return;
+    const handleScroll = () => {
+      if (window.scrollY > 1000 && !open) setTeaser(true);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [open]);
 
   // Theme
   const t = {
@@ -89,7 +149,7 @@ export default function AgencySupportWidget({
 
   // Search
   const filteredFAQs = searchQuery.length >= 2
-    ? faqs.filter(f => {
+    ? PROSPECT_FAQS.filter(f => {
         const q = searchQuery.toLowerCase();
         return f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q);
       })
@@ -112,7 +172,7 @@ export default function AgencySupportWidget({
   const openEscalation = () => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); };
 
   // Build FAQ text for AI context
-  const faqContext = faqs.map(f => `Q: ${f.question}\nA: ${f.answer.replace(/<[^>]*>/g, '')}`).join('\n\n');
+  const faqContext = PROSPECT_FAQS.map(f => `Q: ${f.question}\nA: ${f.answer.replace(/<[^>]*>/g, '')}`).join('\n\n');
 
   // Chat
   const handleChatSubmit = async (overrideMsg?: string) => {
@@ -192,21 +252,51 @@ export default function AgencySupportWidget({
     setEscSending(false);
   };
 
-  // Closed state — FAB button
+  // Closed state — FAB button + teaser
   if (!open) {
+    const dismissTeaser = () => { setTeaser(false); try { sessionStorage.setItem('agency-w-t', '1'); } catch {} };
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-        style={{
-          backgroundColor: primaryColor,
-          color: '#ffffff',
-          boxShadow: `0 4px 20px ${hexToRgba(primaryColor, 0.4)}`,
-        }}
-        aria-label="Help"
-      >
-        <MessageCircleQuestion className="h-6 w-6" />
-      </button>
+      <>
+        {teaser && (
+          <div className="fixed bottom-[86px] right-5 z-[89] max-w-[210px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div
+              className="rounded-2xl px-3.5 py-3 text-[13px] leading-snug shadow-lg"
+              style={{
+                backgroundColor: isDark ? 'rgba(30,30,30,0.95)' : '#ffffff',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                color: isDark ? 'rgba(255,255,255,0.7)' : '#374151',
+                boxShadow: isDark ? '0 12px 32px -8px rgba(0,0,0,0.5)' : '0 12px 32px -8px rgba(0,0,0,0.12)',
+              }}
+            >
+              Have questions? We're here to help.
+              <button
+                onClick={dismissTeaser}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] leading-none"
+                style={{
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#f3f4f6',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : '#e5e7eb'}`,
+                  color: isDark ? 'rgba(255,255,255,0.5)' : '#9ca3af',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => { setOpen(true); dismissTeaser(); }}
+          className="fixed bottom-5 right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+          style={{
+            backgroundColor: primaryColor,
+            color: '#ffffff',
+            boxShadow: `0 4px 20px ${hexToRgba(primaryColor, 0.4)}`,
+            outline: 'none',
+          }}
+          aria-label="Help"
+        >
+          <MessageCircleQuestion className="h-6 w-6" />
+        </button>
+      </>
     );
   }
 
@@ -350,13 +440,13 @@ export default function AgencySupportWidget({
                 </div>
 
                 {/* FAQ list */}
-                {faqs.length > 0 && (
+                {PROSPECT_FAQS.length > 0 && (
                   <>
                     <p className="text-[10px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>
                       Frequently asked
                     </p>
                     <div className="space-y-0.5">
-                      {faqs.map((faq, i) => (
+                      {PROSPECT_FAQS.map((faq, i) => (
                         <button
                           key={i}
                           onClick={() => openFAQ(faq)}

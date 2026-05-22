@@ -347,7 +347,7 @@ export const defaultMarketingConfig: MarketingConfig = {
   pricing: [
     {
       name: 'Starter',
-      price: 49,
+      price: 99,
       subtitle: 'Perfect for solo operators',
       features: [
         '1 AI phone number',
@@ -363,7 +363,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     },
     {
       name: 'Professional',
-      price: 99,
+      price: 149,
       subtitle: 'For growing businesses',
       isPopular: true,
       features: [
@@ -380,7 +380,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     },
     {
       name: 'Growth',
-      price: 149,
+      price: 299,
       subtitle: 'For high-volume operations',
       features: [
         'Everything in Professional, plus:',

@@ -448,7 +448,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
     { label: 'Google Calendar', ours: '✓', human: '✓', ruby: '✗', vm: '✗' },
     { label: 'Text Summaries', ours: '✓', human: '✗', ruby: '✗', vm: '✗' },
     { label: 'Mobile App', ours: '✓', human: '✗', ruby: '✗', vm: '✗' },
-    { label: 'Trained on YOUR Biz', ours: '✓', human: 'After weeks', ruby: 'Generic', vm: 'N/A' },
+    { label: 'Trained on YOUR Business', ours: '✓', human: 'After weeks', ruby: 'Generic', vm: 'N/A' },
     { label: 'Multiple Calls', ours: 'Unlimited', human: 'One at a time', ruby: 'Limited', vm: 'Unlimited' },
   ];
   return (
