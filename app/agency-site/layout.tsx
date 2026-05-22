@@ -106,7 +106,7 @@ export default function AgencySiteLayout({
           `,
         }}
       />
-      <div style={{ minHeight: '100vh', zoom: 0.8 }}>
+      <div style={{ minHeight: '100vh',  }}>
         {children}
       </div>
     </>

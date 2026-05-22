@@ -208,13 +208,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ...(agency.marketing_config || {}),
   };
 
-  // Resolve FAQs for the support widget — from marketing_config or defaults
-  const widgetFaqs = (marketingConfig as any).faqs || (agency.marketing_config as any)?.faqs || defaultMarketingConfig.faqs || [];
-  const widgetFaqsCleaned = widgetFaqs.map((f: any) => ({
-    question: f.question || '',
-    answer: f.answer || '',
-  }));
-
   // Resolve theme
   const isDark = (agency.website_theme || 'light') === 'dark';
 
@@ -231,7 +224,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
         primaryColor={agency.primary_color || '#10b981'}
         supportEmail={agency.support_email}
         isDark={isDark}
-        faqs={widgetFaqsCleaned}
       />
     </>
   );
