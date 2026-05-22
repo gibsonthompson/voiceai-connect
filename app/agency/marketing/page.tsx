@@ -112,7 +112,7 @@ export default function MarketingWebsitePage() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
 
-  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean } | null>(null);
+  const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean; isSubdomain?: boolean; subdomainPrefix?: string | null } | null>(null);
 
   // Theme
   const isDark = agency?.website_theme !== 'light';
@@ -144,7 +144,13 @@ export default function MarketingWebsitePage() {
         const response = await fetch(`/api/domain/dns-config${domainParam}`);
         if (response.ok) {
           const data = await response.json();
-          setDnsConfig({ aRecord: data.a_record || '216.198.79.1', cname: data.cname_record || 'cname.vercel-dns.com', misconfigured: data.misconfigured || false });
+          setDnsConfig({
+            aRecord: data.a_record || '216.198.79.1',
+            cname: data.cname_record || 'cname.vercel-dns.com',
+            misconfigured: data.misconfigured || false,
+            isSubdomain: data.is_subdomain || false,
+            subdomainPrefix: data.subdomain_prefix || null,
+          });
         }
       } catch (error) {
         console.error('Failed to fetch DNS config:', error);
@@ -172,6 +178,8 @@ export default function MarketingWebsitePage() {
               aRecord: data.dns_instructions.a_record?.value || prev?.aRecord || '216.198.79.1',
               cname: data.dns_instructions.cname_record?.value || prev?.cname || 'cname.vercel-dns.com',
               misconfigured: data.misconfigured || false,
+              isSubdomain: data.is_subdomain || false,
+              subdomainPrefix: data.subdomain_prefix || null,
             }));
           }
         }
@@ -313,7 +321,14 @@ export default function MarketingWebsitePage() {
       const data = await response.json();
       if (response.ok && data.success) {
         setDomainStatus('pending');
-        if (data.dns_config) setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record });
+        if (data.dns_config) {
+          setDnsConfig({
+            aRecord: data.dns_config.a_record,
+            cname: data.dns_config.cname_record,
+            isSubdomain: data.dns_config.is_subdomain || false,
+            subdomainPrefix: data.dns_config.subdomain_prefix || null,
+          });
+        }
         if (data.verification_records?.length) setVerificationRecords(data.verification_records);
         await refreshAgency();
       } else { alert(data.error || 'Failed to save domain'); }
@@ -531,10 +546,8 @@ export default function MarketingWebsitePage() {
                     boxShadow: isActive ? `0 0 0 3px ${agencyPrimaryColor}20` : 'none',
                   }}>
                   <div className="flex flex-col sm:flex-row">
-                    {/* Mini preview */}
                     <div className="sm:w-64 flex-shrink-0 p-4 flex flex-col items-center justify-center gap-3"
                       style={{ backgroundColor: template.preview.bgColor, minHeight: '180px' }}>
-                      {/* Simplified template thumbnail */}
                       <div className="w-full max-w-[200px] space-y-2">
                         <div className="h-2 rounded-full w-3/4 mx-auto" style={{ backgroundColor: template.preview.accentColor, opacity: 0.7 }} />
                         <div className="h-1.5 rounded-full w-1/2 mx-auto" style={{ backgroundColor: template.preview.textColor, opacity: 0.15 }} />
@@ -546,8 +559,6 @@ export default function MarketingWebsitePage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Info */}
                     <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -597,7 +608,6 @@ export default function MarketingWebsitePage() {
             })}
           </div>
 
-          {/* Save */}
           {selectedTemplate !== (agency?.marketing_template || 'classic') && (
             <div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3"
               style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}` }}>
@@ -735,12 +745,15 @@ export default function MarketingWebsitePage() {
               {domainStatus === 'verified' && (<span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><CheckCircle2 className="h-3.5 w-3.5" />Verified</span>)}
               {domainStatus === 'pending' && (<span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: isDark ? '#fbbf24' : '#d97706' }}><AlertCircle className="h-3.5 w-3.5" />Pending</span>)}
             </div>
-            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain</p>
+            <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain or subdomain (e.g. yourdomain.com or ai.yourdomain.com)</p>
             <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label>
-                <input type="text" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} placeholder="yourdomain.com"
+                <input type="text" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} placeholder="yourdomain.com or ai.yourdomain.com"
                   className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+                <p className="text-[10px] mt-1.5" style={{ color: mutedTextColor }}>
+                  Already using your root domain for another website? Use a subdomain like ai.yourdomain.com instead — your existing site stays untouched.
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {domainStatus === 'none' && (
@@ -773,11 +786,14 @@ export default function MarketingWebsitePage() {
                 <p className="text-xs font-medium mb-3 flex items-center gap-1.5" style={{ color: isDark ? '#fbbf24' : '#b45309' }}>
                   <AlertCircle className="h-3.5 w-3.5" />Domain Ownership Verification Required
                 </p>
+                <p className="text-[10px] mb-3" style={{ color: isDark ? '#fbbf24' : '#92400e' }}>
+                  This domain was previously used on another hosting account. Add the TXT record below at your domain registrar to verify ownership, then click Verify DNS.
+                </p>
                 <div className="space-y-2">
                   {verificationRecords.map((record: any, i: number) => (
                     <div key={i} className="rounded p-2 text-xs font-mono space-y-1" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
                       <div className="flex items-center justify-between">
-                        <span style={{ color: mutedTextColor }}>TXT Record — {record.domain || customDomain}</span>
+                        <span style={{ color: mutedTextColor }}>TXT Record — Name: <strong style={{ color: textColor }}>_vercel</strong></span>
                         <button onClick={() => copyToClipboard(record.value, `txt-${i}`)} style={{ color: mutedTextColor }}>
                           {copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}
                         </button>
@@ -795,26 +811,34 @@ export default function MarketingWebsitePage() {
                   <AlertCircle className="h-3.5 w-3.5" />Domain Misconfigured
                 </p>
                 <p className="text-xs" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>
-                  Your domain has conflicting DNS records. Remove any existing A, AAAA, or CNAME records for this domain at your registrar before adding the records below. Conflicting records from a previous host will block verification.
+                  Your domain has conflicting DNS records. Remove any existing A, AAAA, or CNAME records for {dnsConfig.isSubdomain ? `the "${dnsConfig.subdomainPrefix}" subdomain` : 'this domain'} at your registrar before adding the records below.
                 </p>
               </div>
             )}
-            {/* DNS Records */}
+            {/* DNS Records — adapts to apex vs subdomain */}
             {domainStatus === 'pending' && dnsConfig && (
               <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
-                <p className="text-xs font-medium mb-1" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add these DNS records at your domain registrar:</p>
-                <p className="text-[10px] mb-3" style={{ color: mutedTextColor }}>Remove any existing A, AAAA, or CNAME records for the root domain first.</p>
+                <p className="text-xs font-medium mb-1" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add {dnsConfig.isSubdomain ? 'this DNS record' : 'these DNS records'} at your domain registrar:</p>
+                <p className="text-[10px] mb-3" style={{ color: mutedTextColor }}>
+                  {dnsConfig.isSubdomain
+                    ? `Remove any existing CNAME record for "${dnsConfig.subdomainPrefix}" first.`
+                    : 'Remove any existing A, AAAA, or CNAME records for the root domain first.'}
+                </p>
                 <div className="space-y-2 text-xs font-mono">
-                  <div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}>
-                    <div className="flex items-center justify-between">
-                      <span style={{ color: mutedTextColor }}>A Record — Name: <strong style={{ color: textColor }}>@</strong> (root domain)</span>
-                      <button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+                  {/* A Record — only for apex domains */}
+                  {!dnsConfig.isSubdomain && (
+                    <div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}>
+                      <div className="flex items-center justify-between">
+                        <span style={{ color: mutedTextColor }}>A Record — Name: <strong style={{ color: textColor }}>@</strong> (root domain)</span>
+                        <button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+                      </div>
+                      <div style={{ color: textColor }}>{dnsConfig.aRecord}</div>
                     </div>
-                    <div style={{ color: textColor }}>{dnsConfig.aRecord}</div>
-                  </div>
+                  )}
+                  {/* CNAME Record — name adapts to apex (www) vs subdomain (prefix) */}
                   <div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}>
                     <div className="flex items-center justify-between">
-                      <span style={{ color: mutedTextColor }}>CNAME Record — Name: <strong style={{ color: textColor }}>www</strong></span>
+                      <span style={{ color: mutedTextColor }}>CNAME Record — Name: <strong style={{ color: textColor }}>{dnsConfig.isSubdomain ? dnsConfig.subdomainPrefix : 'www'}</strong></span>
                       <button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>{copied === 'cname' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
                     </div>
                     <div className="break-all" style={{ color: textColor }}>{dnsConfig.cname}</div>
