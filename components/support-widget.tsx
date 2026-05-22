@@ -185,6 +185,12 @@ export default function SupportWidget() {
   // Hide on dashboard routes
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
 
+  // Only show on VoiceAI Connect domains — not on agency marketing sites
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'myvoiceaiconnect.com' && host !== 'www.myvoiceaiconnect.com' && host !== 'localhost') return null;
+  }
+
   return (
     <>
       <style>{css}</style>

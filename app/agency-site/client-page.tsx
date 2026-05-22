@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react';
 import MarketingPage from '@/components/MarketingPage';
+import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 
@@ -207,9 +208,31 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ...(agency.marketing_config || {}),
   };
 
+  // Resolve FAQs for the support widget — from marketing_config or defaults
+  const widgetFaqs = (marketingConfig as any).faqs || (agency.marketing_config as any)?.faqs || defaultMarketingConfig.faqs || [];
+  const widgetFaqsCleaned = widgetFaqs.map((f: any) => ({
+    question: f.question || '',
+    answer: f.answer || '',
+  }));
+
+  // Resolve theme
+  const isDark = (agency.website_theme || 'light') === 'dark';
+
   // Route to the correct template
   const templateKey = agency.marketing_template || 'classic';
   const TemplateComponent = TEMPLATES[templateKey] || TEMPLATES.classic;
 
-  return <TemplateComponent config={marketingConfig} />;
+  return (
+    <>
+      <TemplateComponent config={marketingConfig} />
+      <AgencySupportWidget
+        agencyName={agency.name}
+        agencyLogo={agency.logo_url}
+        primaryColor={agency.primary_color || '#10b981'}
+        supportEmail={agency.support_email}
+        isDark={isDark}
+        faqs={widgetFaqsCleaned}
+      />
+    </>
+  );
 }

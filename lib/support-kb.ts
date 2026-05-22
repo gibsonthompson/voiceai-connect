@@ -679,6 +679,144 @@ export const KB_ARTICLES: KBArticle[] = [
     keywords: ['not answering', 'down', 'broken', 'silent', 'no answer', 'not working'],
     userType: 'client',
   },
+
+  // ── CLIENT: STAFF & USERS ──────────────────────────────────────
+  {
+    id: 'client-staff-directory',
+    category: 'team',
+    question: 'What is the Staff Directory?',
+    answer: 'The Staff Directory is where you add the people your AI knows about. When a caller asks for a specific person by name, the AI can reference their role, transfer the call, or send them a text. Add staff in My Business under Staff Directory with their name, role, phone number, and any notes the AI should know.',
+    keywords: ['staff', 'directory', 'people', 'team', 'employees', 'routing', 'add staff'],
+    userType: 'client',
+  },
+  {
+    id: 'client-add-staff',
+    category: 'team',
+    question: 'How do I add a staff member?',
+    answer: 'Go to My Business and scroll to Staff Directory. Click "Add Staff Member" and enter their name, role or title, phone number, and any notes (like their specialty or schedule). The AI will use this information when callers ask for that person by name.',
+    keywords: ['add', 'staff', 'member', 'new', 'create', 'employee', 'person'],
+    userType: 'client',
+  },
+  {
+    id: 'client-users',
+    category: 'team',
+    question: 'How do I add users who can log into the dashboard?',
+    answer: 'Go to Settings and scroll to the Users section. Click "Add" and enter their name, email, and phone number. They will receive their login credentials via SMS. You can control which pages each user can access under Page Access, and toggle call notifications on or off per user.',
+    keywords: ['users', 'login', 'dashboard', 'access', 'invite', 'add user', 'team'],
+    userType: 'client',
+  },
+  {
+    id: 'client-staff-vs-users',
+    category: 'team',
+    question: 'What is the difference between Staff and Users?',
+    answer: 'Staff members (My Business > Staff Directory) are people your AI knows about and can reference on calls — for routing, scheduling, and referrals. They do not have dashboard login access. Users (Settings > Users) are people who can log into this dashboard with their own email and password to view calls, contacts, and settings. A person can be both.',
+    keywords: ['staff', 'users', 'difference', 'between', 'vs', 'team', 'login', 'directory'],
+    userType: 'client',
+  },
+
+  // ── CLIENT: APP & DASHBOARD ────────────────────────────────────
+  {
+    id: 'client-phone-desktop',
+    category: 'getting-started',
+    question: 'Can I use the app on my phone and desktop?',
+    answer: 'Yes. The dashboard works on any device with a web browser — phone, tablet, or desktop. On your phone, you can add it to your home screen for instant access that works like a native app. Go to Settings and tap "Install" next to "Add to Home Screen" for step-by-step instructions.',
+    keywords: ['phone', 'desktop', 'mobile', 'app', 'device', 'browser', 'pwa', 'home screen'],
+    userType: 'client',
+  },
+  {
+    id: 'client-add-home-screen',
+    category: 'getting-started',
+    question: 'How do I add the app to my home screen?',
+    answer: 'Go to Settings and find the "Add to Home Screen" section. Tap "Install" for step-by-step instructions for your device (iPhone or Android). Once installed, the app appears on your home screen with your provider\'s icon and opens in full-screen mode — no browser bar, just like a regular app.',
+    keywords: ['home screen', 'install', 'app', 'pwa', 'icon', 'shortcut', 'add'],
+    userType: 'client',
+  },
+  {
+    id: 'client-dashboard-overview',
+    category: 'getting-started',
+    question: 'What is on the Dashboard?',
+    answer: 'The Dashboard is your home screen. It shows your AI phone number, recent calls with summaries, total calls this month, and quick stats. Use the sidebar to navigate to Calls (full call history), Contacts (caller directory), AI Agent (configure your AI), My Business (services, hours, staff), and Settings (account, users, billing).',
+    keywords: ['dashboard', 'home', 'overview', 'main', 'page', 'what', 'see'],
+    userType: 'client',
+  },
+
+  // ── CLIENT: BUSINESS CONFIGURATION ─────────────────────────────
+  {
+    id: 'client-add-services',
+    category: 'knowledge-base',
+    question: 'How do I add or edit my services?',
+    answer: 'Go to My Business and find the Services section. Click "Add Service" to create a new one with a name, description, and price. Click any existing service to edit or remove it. Services you add here are what the AI references when callers ask about what you offer and how much things cost.',
+    keywords: ['services', 'add', 'edit', 'pricing', 'offerings', 'what we do', 'cost'],
+    userType: 'client',
+  },
+  {
+    id: 'client-business-hours',
+    category: 'knowledge-base',
+    question: 'How do I set my business hours?',
+    answer: 'Go to My Business and find the Business Hours section. Click "Edit" to set your open and close times for each day of the week. Mark days as "Closed" if applicable. The AI uses these hours to tell callers when you are open and can adjust its behavior for after-hours calls.',
+    keywords: ['hours', 'business hours', 'open', 'close', 'schedule', 'days', 'time'],
+    userType: 'client',
+  },
+  {
+    id: 'client-add-faqs',
+    category: 'knowledge-base',
+    question: 'How do I add FAQs for my AI to answer?',
+    answer: 'Go to My Business and scroll to the Knowledge Base section. Click "Edit" to expand it, then use "Add FAQ" to enter question-and-answer pairs. For example: Q: "Do you offer free estimates?" A: "Yes, we offer free on-site estimates for all services." The more FAQs you add, the better the AI handles common caller questions.',
+    keywords: ['faq', 'question', 'answer', 'add', 'knowledge', 'common', 'frequently asked'],
+    userType: 'client',
+  },
+
+  // ── CLIENT: CALL HANDLING ──────────────────────────────────────
+  {
+    id: 'client-call-forwarding',
+    category: 'phone-telephony',
+    question: 'How do I set up call forwarding to the AI?',
+    answer: 'Your AI receptionist has its own dedicated phone number shown on your Dashboard. To have your existing business number forward to the AI, contact your phone provider and ask them to enable call forwarding to the AI number. On most carriers you can also dial *72 followed by the AI number from your business phone. The AI will then answer any calls you miss or cannot take.',
+    keywords: ['forwarding', 'forward', 'redirect', 'existing number', 'setup', 'carrier', 'provider'],
+    userType: 'client',
+  },
+  {
+    id: 'client-call-mode',
+    category: 'calls',
+    question: 'What is the difference between Primary and Fallback mode?',
+    answer: 'Primary mode means the AI answers every call immediately — best for 24/7 coverage. Fallback mode means your phone rings first, and the AI only picks up if you do not answer. You can switch between modes in Settings under Call Handling. Fallback mode requires your phone number to be set in Settings.',
+    keywords: ['primary', 'fallback', 'mode', 'ring', 'first', 'overflow', 'call handling'],
+    userType: 'client',
+  },
+
+  // ── CLIENT: SETTINGS & SECURITY ────────────────────────────────
+  {
+    id: 'client-change-password',
+    category: 'troubleshooting',
+    question: 'How do I change my password?',
+    answer: 'Go to Settings and scroll to the Change Password section. Enter your current password, then enter and confirm your new password (minimum 6 characters). Click "Change Password" to save. If you have forgotten your current password, contact your provider for a reset.',
+    keywords: ['password', 'change', 'reset', 'security', 'login', 'forgot', 'update'],
+    userType: 'client',
+  },
+  {
+    id: 'client-hipaa',
+    category: 'calls',
+    question: 'What is HIPAA mode?',
+    answer: 'HIPAA mode is available for healthcare businesses. When enabled in Settings, call recordings and transcripts are not stored, caller recognition is disabled, and appointment booking switches to collect-request only (the office confirms all appointments). The AI only collects the caller\'s name, phone number, and general reason for visit — no medical details.',
+    keywords: ['hipaa', 'healthcare', 'medical', 'privacy', 'recording', 'compliance', 'health'],
+    userType: 'client',
+  },
+  {
+    id: 'client-notifications',
+    category: 'calls',
+    question: 'How do I manage my notifications?',
+    answer: 'Your primary notification preferences are tied to the phone number and email in Settings under Contact Information. SMS summaries are sent to your phone number after each call. If you have added users in Settings, each user has their own call notification toggle that you can turn on or off.',
+    keywords: ['notifications', 'sms', 'email', 'alerts', 'text', 'preferences', 'manage'],
+    userType: 'client',
+  },
+  {
+    id: 'client-branding',
+    category: 'branding',
+    question: 'Can I customize the look of my dashboard?',
+    answer: 'You can switch between light and dark mode using the toggle in the sidebar. Your provider may also have set up custom branding (logo, colors) that appears throughout your dashboard. If you want changes to the branding, contact your provider.',
+    keywords: ['customize', 'branding', 'look', 'theme', 'colors', 'logo', 'dark mode', 'light mode'],
+    userType: 'client',
+  },
 ];
 
 // ── Search function ───────────────────────────────────────────────

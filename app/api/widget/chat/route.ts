@@ -4,11 +4,15 @@ import { isRateLimited } from '@/lib/rate-limit';
 /* ═══════════════════════════════════════════════════════════════════════════
    POST /api/widget/chat
    Receives user message + conversation history, calls Claude with
-   VoiceAI Connect knowledge base, streams response back.
+   knowledge base context, streams response back.
    Rate limited: 20 requests/minute per IP.
+
+   Two modes:
+   1. Default (no agencyName) — VoiceAI Connect platform support
+   2. Agency (agencyName + agencyFaqs) — agency marketing site support
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SYSTEM_PROMPT = `You are the support assistant for VoiceAI Connect, a white-label AI receptionist platform built for marketing agencies. You help visitors and prospective agency operators understand the platform.
+const VOICEAI_SYSTEM_PROMPT = `You are the support assistant for VoiceAI Connect, a white-label AI receptionist platform built for marketing agencies. You help visitors and prospective agency operators understand the platform.
 
 IDENTITY:
 - You ARE VoiceAI Connect's support assistant
@@ -84,6 +88,38 @@ For issues the AI can't resolve, direct visitors to email support@myvoiceaiconne
 ESCALATION:
 If the visitor says "talk to a person", "speak to someone", "this isn't helping", or expresses frustration — acknowledge their request, and let them know they can click the "Talk to a person" button at the bottom of the chat to leave their contact info. Confirm someone will respond within one business day.`;
 
+function buildAgencySystemPrompt(agencyName: string, agencyFaqs: string, supportEmail: string): string {
+  return `You are the support assistant for ${agencyName}, an AI receptionist service provider. You help visitors and prospective customers understand the AI receptionist service.
+
+IDENTITY:
+- You represent ${agencyName} — never mention any other platform or provider name
+- Be concise, direct, and helpful — 2-3 sentences preferred, expand only when the question requires detail
+- Use a professional but approachable tone
+- Never make up information — if you don't know, say so and suggest they contact the team${supportEmail ? ` at ${supportEmail}` : ''}
+
+WHAT ${agencyName.toUpperCase()} OFFERS:
+${agencyName} provides an AI-powered phone receptionist that answers your business calls 24/7. The AI greets callers professionally, answers questions about your business, books appointments to your Google Calendar in real time, takes messages, and sends you instant text summaries after every call. It handles unlimited simultaneous calls with no busy signals and detects spam automatically.
+
+KEY FEATURES:
+- 24/7 AI receptionist that answers in under 2 seconds
+- Automatic English and Spanish — detects and switches mid-call
+- Google Calendar integration — books appointments during live calls
+- Full call recordings with transcripts and AI-generated summaries
+- Instant SMS notifications after every call
+- Spam and robocall detection — blocked automatically
+- Unlimited simultaneous calls — no busy signals ever
+- Call transfer to your phone when needed, with AI fallback
+- Your own branded dashboard to view calls, contacts, and settings
+- Works from any device — phone, tablet, or desktop
+
+SETUP:
+Getting started takes under 10 minutes. Provide your business name, industry, phone number, and basic info about your services and hours. A dedicated AI phone number is provisioned automatically. No technical skills or website required.
+
+${agencyFaqs ? `FREQUENTLY ASKED QUESTIONS:\n${agencyFaqs}\n` : ''}
+ESCALATION:
+If the visitor says "talk to a person", "speak to someone", "this isn't helping", or expresses frustration — acknowledge their request and let them know they can click the "Talk to a person" button to leave their contact info. Someone will respond within one business day.`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Rate limit by IP
@@ -95,7 +131,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { message, conversationHistory } = await req.json();
+    const { message, conversationHistory, agencyName, agencyFaqs, supportEmail } = await req.json();
 
     if (!message || typeof message !== 'string') {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -106,11 +142,17 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return new Response("I'm having trouble connecting right now. Please email support@myvoiceaiconnect.com and a team member will respond within one business day.", {
+      const fallbackEmail = supportEmail || 'support@myvoiceaiconnect.com';
+      return new Response(`I'm having trouble connecting right now. Please email ${fallbackEmail} and a team member will respond within one business day.`, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });
     }
+
+    // Select system prompt based on whether agency context is provided
+    const systemPrompt = agencyName
+      ? buildAgencySystemPrompt(agencyName, agencyFaqs || '', supportEmail || '')
+      : VOICEAI_SYSTEM_PROMPT;
 
     // Build messages array
     const messages = [];
@@ -140,7 +182,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages,
         stream: true,
       }),
@@ -149,7 +191,8 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Anthropic API error:', errorText);
-      return new Response("I'm having trouble right now. Please email support@myvoiceaiconnect.com for assistance.", {
+      const fallbackEmail = supportEmail || 'support@myvoiceaiconnect.com';
+      return new Response(`I'm having trouble right now. Please email ${fallbackEmail} for assistance.`, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });
@@ -210,7 +253,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error('Widget chat error:', err);
-    return new Response('Something went wrong. Please email support@myvoiceaiconnect.com for assistance.', {
+    return new Response('Something went wrong. Please try again or contact support.', {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
     });
