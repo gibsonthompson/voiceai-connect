@@ -87,7 +87,7 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       {/* Distinction info */}
       <div className="rounded-lg p-2.5 flex items-start gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
         <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
-        <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Users can log into this dashboard with their own email and password. To add people your AI references on calls (for routing, scheduling, and referrals), use the Staff Directory in My Business.</p>
+        <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Users can log into this dashboard with their own email and password. To add people your AI references on calls (for routing, scheduling, and referrals), use the <a href="/client/my-business" style="font-weight:600;text-decoration:underline">Staff Directory</a> in My Business.</p>
       </div>
 
       {error && (<div className="rounded-lg p-2.5 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{error}</p><button onClick={() => setError(null)} className="ml-auto text-xs" style={{ color: theme.errorText }}>×</button></div>)}
