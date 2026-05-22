@@ -4,6 +4,16 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Loader2, AlertTriangle, Phone, Clock, Zap } from 'lucide-react';
 
+// Default client pricing (cents) — used when agency hasn't configured custom pricing
+const DEFAULT_CLIENT_PRICING = {
+  price_starter: 9900,
+  price_pro: 14900,
+  price_growth: 29900,
+  limit_starter: 50,
+  limit_pro: 150,
+  limit_growth: 500,
+};
+
 function getContrastColor(hex: string): string {
   const c = hex.replace('#', '');
   const r = parseInt(c.substring(0, 2), 16); const g = parseInt(c.substring(2, 4), 16); const b = parseInt(c.substring(4, 6), 16);
@@ -19,12 +29,23 @@ interface Agency { id: string; name: string; logo_url: string | null; primary_co
 interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; }
 
 function formatPrice(cents: number | undefined | null): string {
-  if (cents === undefined || cents === null || isNaN(cents)) return '$--';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(cents / 100);
+  const value = cents ?? 0;
+  if (isNaN(value)) return '$--';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
 }
 function formatLimit(limit: number | undefined | null): string {
   if (limit === undefined || limit === null || isNaN(limit) || limit === -1) return 'Unlimited';
   return limit.toLocaleString();
+}
+
+// Helper: get pricing with defaults
+function getPrice(agency: Agency | null, key: 'price_starter' | 'price_pro' | 'price_growth'): number {
+  const val = agency?.[key];
+  return (typeof val === 'number' && !isNaN(val)) ? val : DEFAULT_CLIENT_PRICING[key];
+}
+function getLimit(agency: Agency | null, key: 'limit_starter' | 'limit_pro' | 'limit_growth'): number {
+  const val = agency?.[key];
+  return (typeof val === 'number' && !isNaN(val)) ? val : DEFAULT_CLIENT_PRICING[key];
 }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
@@ -54,8 +75,6 @@ function ClientUpgradeContent() {
 
   const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: isDark ? 'blur(20px)' : 'blur(12px)' };
 
-  const isPricingConfigured = agency && typeof agency.price_starter === 'number' && typeof agency.price_pro === 'number' && typeof agency.price_growth === 'number' && !isNaN(agency.price_starter) && !isNaN(agency.price_pro) && !isNaN(agency.price_growth);
-
   useEffect(() => { fetchClientData(); }, []);
 
   useEffect(() => { if (agency?.name) document.title = `${agency.name} — Upgrade Your Plan`; }, [agency]);
@@ -82,16 +101,14 @@ function ClientUpgradeContent() {
   };
 
   const handleSelectPlan = async (planTier: 'starter' | 'pro' | 'growth') => {
-    if (!client || !isPricingConfigured) { setError('Pricing not configured. Contact support.'); return; }
+    if (!client) { setError('Account not loaded. Please refresh.'); return; }
     setCheckoutLoading(planTier); setError(null);
     try {
       const token = localStorage.getItem('auth_token');
-      // FIXED: was hitting relative /api/client/create-checkout with wrong field names
-      // Backend expects POST /api/client/checkout with { client_id, plan }
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const r = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
       if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Failed'); }
-      const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No URL');
+      const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No checkout URL returned');
     } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
   };
 
@@ -102,10 +119,11 @@ function ClientUpgradeContent() {
     </div>
   );
 
+  // Use agency pricing if configured, fall back to platform defaults
   const plans = [
-    { id: 'starter', name: 'Starter', price: agency.price_starter, limit: agency.limit_starter, popular: false, features: [`${formatLimit(agency.limit_starter)} calls/month`, '24/7 AI receptionist', 'Call summaries & transcripts', 'SMS notifications', 'Basic analytics'] },
-    { id: 'pro', name: 'Professional', price: agency.price_pro, limit: agency.limit_pro, popular: true, features: [`${formatLimit(agency.limit_pro)} calls/month`, 'Everything in Starter', 'Priority support', 'Advanced analytics', 'Custom greeting'] },
-    { id: 'growth', name: 'Growth', price: agency.price_growth, limit: agency.limit_growth, popular: false, features: [`${formatLimit(agency.limit_growth)} calls/month`, 'Everything in Professional', 'Dedicated support', 'API access', 'Custom integrations'] },
+    { id: 'starter', name: 'Starter', price: getPrice(agency, 'price_starter'), limit: getLimit(agency, 'limit_starter'), popular: false, features: [`${formatLimit(getLimit(agency, 'limit_starter'))} calls/month`, '24/7 AI receptionist', 'Call summaries & transcripts', 'SMS notifications', 'Basic analytics'] },
+    { id: 'pro', name: 'Professional', price: getPrice(agency, 'price_pro'), limit: getLimit(agency, 'limit_pro'), popular: true, features: [`${formatLimit(getLimit(agency, 'limit_pro'))} calls/month`, 'Everything in Starter', 'Priority support', 'Advanced analytics', 'Custom greeting'] },
+    { id: 'growth', name: 'Growth', price: getPrice(agency, 'price_growth'), limit: getLimit(agency, 'limit_growth'), popular: false, features: [`${formatLimit(getLimit(agency, 'limit_growth'))} calls/month`, 'Everything in Professional', 'Dedicated support', 'API access', 'Custom integrations'] },
   ];
 
   return (

@@ -1,89 +1,154 @@
+// ============================================================================
+// components/UpgradePrompt.tsx
+// 
+// Reusable component shown when a client tries to access a feature 
+// not included in their plan. Shows what the feature does and a CTA
+// to upgrade.
+//
+// Usage:
+//   import UpgradePrompt from '@/components/UpgradePrompt';
+//   import { useClientPlanFeatures } from '@/hooks/useClientPlanFeatures';
+//   
+//   const { isFeatureEnabled } = useClientPlanFeatures(client, agency);
+//   
+//   {!isFeatureEnabled('knowledge_base') ? (
+//     <UpgradePrompt 
+//       feature="knowledge_base" 
+//       primaryColor={agency.primary_color}
+//     />
+//   ) : (
+//     <KnowledgeBaseEditor ... />
+//   )}
+// ============================================================================
+
 'use client';
 
-import { Lock, ArrowUpRight } from 'lucide-react';
-import type { ClientFeatureKey } from '@/lib/client-context';
-import { CLIENT_FEATURE_LABELS } from '@/lib/client-context';
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function isLightColor(hex: string): boolean {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
-}
+import { Lock, ArrowRight, Sparkles } from 'lucide-react';
+import type { ClientFeatureKey } from '@/hooks/useClientPlanFeatures';
 
 interface UpgradePromptProps {
   feature: ClientFeatureKey;
-  primaryColor: string;
-  isDark: boolean;
+  primaryColor?: string;
+  isDark?: boolean;
+  /** Optional custom message override */
   message?: string;
+  /** Optional custom CTA text */
+  ctaText?: string;
 }
 
-export default function UpgradePrompt({ feature, primaryColor, isDark, message }: UpgradePromptProps) {
-  const featureInfo = CLIENT_FEATURE_LABELS[feature];
-  const primaryLight = isLightColor(primaryColor);
-  
-  const theme = isDark ? {
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.5)',
-  } : {
-    text: '#111827',
-    textMuted: '#9ca3af',
-  };
+const FEATURE_INFO: Record<ClientFeatureKey, { 
+  title: string; 
+  description: string;
+  icon: string;
+}> = {
+  sms_notifications: {
+    title: 'SMS Notifications',
+    description: 'Get instant text messages after every call with caller name, reason, and urgency level.',
+    icon: '📱',
+  },
+  email_summaries: {
+    title: 'Email Summaries',
+    description: 'Receive detailed email summaries with full call details, transcript preview, and action items.',
+    icon: '📧',
+  },
+  custom_greeting: {
+    title: 'Custom Greeting',
+    description: 'Write your own AI opening message to match your brand voice and style.',
+    icon: '👋',
+  },
+  custom_voice: {
+    title: 'Custom Voice',
+    description: 'Choose from multiple AI voice options to find the perfect voice for your business.',
+    icon: '🎙️',
+  },
+  knowledge_base: {
+    title: 'Knowledge Base',
+    description: 'Upload your business FAQs, services, and pricing so the AI can answer customer questions accurately.',
+    icon: '📚',
+  },
+  business_hours: {
+    title: 'Business Hours',
+    description: 'Set your availability and configure different AI behaviors for after-hours calls.',
+    icon: '🕐',
+  },
+  advanced_analytics: {
+    title: 'Advanced Analytics',
+    description: 'Get detailed insights with call volume trends, peak hours, common reasons, and more.',
+    icon: '📊',
+  },
+  priority_support: {
+    title: 'Priority Support',
+    description: 'Get faster response times and dedicated assistance when you need help.',
+    icon: '⚡',
+  },
+};
+
+export default function UpgradePrompt({ 
+  feature, 
+  primaryColor = '#2563eb',
+  isDark = false,
+  message,
+  ctaText = 'Upgrade Your Plan',
+}: UpgradePromptProps) {
+  const info = FEATURE_INFO[feature];
+  if (!info) return null;
+
+  const bgColor = isDark ? 'rgba(255,255,255,0.02)' : '#fafafa';
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const mutedColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const lockBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
 
   return (
-    <div 
-      className="rounded-xl border-2 border-dashed p-5 sm:p-6 text-center"
-      style={{ 
-        borderColor: hexToRgba(primaryColor, 0.3),
-        backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb',
+    <div
+      className="rounded-xl p-5 sm:p-6 text-center"
+      style={{
+        backgroundColor: bgColor,
+        border: `1px dashed ${borderColor}`,
       }}
     >
       <div 
-        className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
-        style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.15 : 0.1) }}
+        className="inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
+        style={{ backgroundColor: lockBg }}
       >
-        <Lock className="w-5 h-5" style={{ color: primaryColor }} />
+        <div className="relative">
+          <span className="text-2xl">{info.icon}</span>
+          <div 
+            className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: isDark ? '#1a1a1a' : '#ffffff', border: `1px solid ${borderColor}` }}
+          >
+            <Lock className="h-3 w-3" style={{ color: mutedColor }} />
+          </div>
+        </div>
       </div>
+
+      <h3 className="text-base sm:text-lg font-semibold mb-2" style={{ color: textColor }}>
+        {info.title}
+      </h3>
       
-      <h4 className="font-semibold text-sm sm:text-base mb-1" style={{ color: theme.text }}>
-        {featureInfo?.title || feature}
-      </h4>
-      
-      <p className="text-xs sm:text-sm mb-4 max-w-sm mx-auto" style={{ color: theme.textMuted }}>
-        {message || featureInfo?.description || 'This feature is available on a higher plan.'}
+      <p className="text-sm mb-5 max-w-sm mx-auto" style={{ color: mutedColor }}>
+        {message || info.description}
       </p>
-      
+
       <div 
-        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-3"
-        style={{ 
-          backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.08),
-          color: primaryColor,
-        }}
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium mb-4"
+        style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}
       >
-        <Lock className="w-3 h-3" />
-        Available on a higher plan
+        <Sparkles className="h-3 w-3" />
+        Available on higher plans
       </div>
-      
+
       <div>
-        {/* FIXED: was /client/upgrade (404) → /client/upgrade-required */}
         <a
           href="/client/upgrade-required"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90"
-          style={{ 
-            backgroundColor: primaryColor, 
-            color: primaryLight ? '#111827' : '#ffffff',
+          className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            backgroundColor: primaryColor,
+            color: '#ffffff',
           }}
         >
-          Upgrade Your Plan
-          <ArrowUpRight className="w-4 h-4" />
+          {ctaText}
+          <ArrowRight className="h-4 w-4" />
         </a>
       </div>
     </div>

@@ -54,7 +54,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
   const [showPwaModal, setShowPwaModal] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -112,7 +111,25 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     finally { setSavingHipaa(false); }
   };
 
-  const handleUpgrade = async () => { setUpgrading(true); try { const response = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` }, body: JSON.stringify({ client_id: client.id, plan: client.plan_type || 'pro' }) }); const data = await response.json(); if (data.url) { window.location.href = data.url; } else { setMessage('Failed to create checkout'); setUpgrading(false); } } catch (error) { setMessage('Error creating checkout'); setUpgrading(false); } };
+  // FIXED: Redirect to plan selection page instead of hardcoded checkout
+  const handleUpgrade = () => {
+    window.location.href = '/client/upgrade-required';
+  };
+
+  // FIXED: Open Stripe billing portal for active subscribers
+  const handleManageSubscription = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/client/portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: client.id }),
+      });
+      const data = await response.json();
+      if (data.url) { window.location.href = data.url; }
+      else { setMessage('Unable to open billing portal. Please contact support.'); }
+    } catch { setMessage('Error opening billing portal'); }
+  };
 
   const getDaysRemaining = (): number | null => { if (!client.trial_ends_at) return null; const diffTime = new Date(client.trial_ends_at).getTime() - Date.now(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return diffDays > 0 ? diffDays : 0; };
 
@@ -248,7 +265,13 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{client.plan_type || 'Trial'}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
             {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
             <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
-            {client.subscription_status === 'trial' ? (<button onClick={handleUpgrade} disabled={upgrading} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgrading ? (<span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Loading...</span>) : 'Upgrade Now'}</button>) : (<button className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>Manage Subscription</button>)}
+            {(client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
+              <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
+            ) : client.subscription_status === 'active' ? (
+              <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Manage Subscription</button>
+            ) : (
+              <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
+            )}
           </div>
         </section>
 
