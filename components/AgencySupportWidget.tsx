@@ -258,7 +258,7 @@ export default function AgencySupportWidget({
     return (
       <>
         {teaser && (
-          <div className="fixed bottom-[86px] right-5 z-[89] max-w-[210px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="fixed bottom-[148px] right-5 z-[89] max-w-[210px] animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div
               className="rounded-2xl px-3.5 py-3 text-[13px] leading-snug shadow-lg"
               style={{
@@ -285,7 +285,7 @@ export default function AgencySupportWidget({
         )}
         <button
           onClick={() => { setOpen(true); dismissTeaser(); }}
-          className="fixed bottom-5 right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+          className="fixed bottom-[80px] right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
           style={{
             backgroundColor: primaryColor,
             color: '#ffffff',
@@ -302,7 +302,7 @@ export default function AgencySupportWidget({
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col"
+      className="fixed bottom-[80px] right-5 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col"
       style={{
         height: 'min(580px, calc(100vh - 6rem))',
         borderRadius: 20,
