@@ -9,7 +9,6 @@ import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
-import ClientTeamSection from '@/components/client/ClientTeamSection';
 
 interface BusinessHours {
   monday: { open: string; close: string; closed: boolean };
@@ -46,11 +45,6 @@ export default function MyBusinessPage() {
   const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
   const primaryColor = theme.primary;
-
-  // Check if current user is the owner (can manage team)
-  const [userRole, setUserRole] = useState<string | null>(null);
-  useEffect(() => { try { const stored = localStorage.getItem('user'); if (stored) { const parsed = JSON.parse(stored); setUserRole(parsed.role || null); } } catch {} }, []);
-  const isOwner = userRole === 'client' || userRole === null;
 
   const [message, setMessage] = useState('');
 
@@ -312,7 +306,7 @@ export default function MyBusinessPage() {
           </SectionCard>
         </div>
 
-        {/* Services — no animation wrapper, transform traps fixed-position modals */}
+        {/* Services */}
         <div className="mb-4 sm:mb-5">
           <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} />
         </div>
@@ -322,21 +316,8 @@ export default function MyBusinessPage() {
           <StaffMembersSection clientId={client.id} theme={theme} industry={client.industry} />
         </div>
 
-        {/* Team Members — dashboard login accounts */}
-        {isOwner && (
-          <div className="fu fu4">
-            <section className="mb-4 sm:mb-5">
-              <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <div className="p-4 sm:p-5">
-                  <ClientTeamSection clientId={client.id} theme={theme} />
-                </div>
-              </div>
-            </section>
-          </div>
-        )}
-
         {/* Knowledge Base */}
-        <div className="fu fu5">
+        <div className="fu fu4">
           <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
             <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="text-[13px]" style={{ color: theme.textMuted }}>

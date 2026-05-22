@@ -10,6 +10,7 @@ import {
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
+import ClientTeamSection from '@/components/client/ClientTeamSection';
 
 interface Client {
   id: string; business_name: string; email: string; owner_phone: string; industry: string;
@@ -111,12 +112,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     finally { setSavingHipaa(false); }
   };
 
-  // FIXED: Redirect to plan selection page instead of hardcoded checkout
-  const handleUpgrade = () => {
-    window.location.href = '/client/upgrade-required';
-  };
+  const handleUpgrade = () => { window.location.href = '/client/upgrade-required'; };
 
-  // FIXED: Open Stripe billing portal for active subscribers
   const handleManageSubscription = async () => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -257,6 +254,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <button onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasPasswordChanges ? theme.primary : theme.bg, color: hasPasswordChanges ? theme.primaryText : theme.textMuted4, border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}` }}>{changingPassword ? 'Changing...' : 'Change Password'}</button>
           </div>
         </section>
+
+        {/* Users — dashboard login accounts (owner only) */}
+        {isOwner && (
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <ClientTeamSection clientId={client.id} theme={theme} />
+          </div>
+        </section>
+        )}
 
         {/* Subscription & Billing */}
         <section className="mb-4 sm:mb-6">
