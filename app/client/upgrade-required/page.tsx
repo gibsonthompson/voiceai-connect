@@ -140,7 +140,7 @@ function ClientUpgradeContent() {
 
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `\n::selection { background-color: ${primaryColor}40; color: inherit; }` }} />
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8 fu fu1">
           {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-4 object-contain" />}
