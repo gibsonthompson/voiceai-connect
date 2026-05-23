@@ -122,6 +122,7 @@ export interface OGConfig {
 export interface MarketingConfig {
   theme?: 'auto' | 'light' | 'dark';
   currencySymbol?: string;
+  homepageUrl?: string;
   branding: MarketingBranding;
   hero: HeroConfig;
   stats: StatsConfig;

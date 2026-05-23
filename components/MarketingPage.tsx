@@ -133,7 +133,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
     <nav className="navbar">
       <div className="container">
         <div className="nav-content">
-          <a href="/" className="logo">
+          <a href={config.homepageUrl || '/'} className="logo">
             {branding.logoUrl ? (
               <div className="logo-wrapper">
                 <img src={branding.logoUrl} alt={branding.name} className="logo-image" />

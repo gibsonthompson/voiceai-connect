@@ -34,6 +34,9 @@ interface Agency {
   demo_phone: string | null;
   demo_phone_number: string | null;
   logo_background_color: string | null;
+  // Custom domain
+  marketing_domain: string | null;
+  domain_verified: boolean | null;
   // Analytics fields
   gtm_id: string | null;
   fb_pixel_id: string | null;
@@ -104,6 +107,25 @@ function setPageTitle(title: string) {
 }
 
 // ============================================================================
+// Resolve the homepage URL for logo links.
+// If the agency has a verified custom domain, use it (so users on the subdomain
+// get redirected to the custom domain when clicking the logo). If the user is
+// already on the custom domain, use '/' to avoid a full-URL reload.
+// ============================================================================
+function resolveHomepageUrl(agency: Agency): string {
+  const domain = agency.marketing_domain?.trim();
+  if (!domain || agency.domain_verified !== true) return '/';
+
+  // If we're already on the custom domain, use relative path
+  if (typeof window !== 'undefined') {
+    const currentHost = window.location.hostname.replace(/^www\./, '');
+    if (currentHost === domain.replace(/^www\./, '')) return '/';
+  }
+
+  return `https://${domain}`;
+}
+
+// ============================================================================
 // TEMPLATE ROUTING
 // Import additional templates here as they're built:
 //   import MarketingPageModern from '@/components/MarketingPageModern';
@@ -135,6 +157,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // Currency symbol
   const currencySymbol = getCurrencySymbol(agency.display_currency || 'USD');
 
+  // Homepage URL (custom domain if verified, otherwise /)
+  const homepageUrl = resolveHomepageUrl(agency);
+
   // Build pricing from agency price columns
   const agencyPricing = [];
   if (agency.price_starter) {
@@ -165,6 +190,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const marketingConfig: Partial<MarketingConfig> = {
     theme: agency.website_theme || 'light',
     currencySymbol,
+    homepageUrl,
     branding: {
       name: agency.name,
       logoUrl: agency.logo_url || '',
