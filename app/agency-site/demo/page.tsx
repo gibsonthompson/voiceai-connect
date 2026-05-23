@@ -25,6 +25,8 @@ interface Agency {
   support_email: string | null;
   company_tagline: string | null;
   display_currency: string | null;
+  marketing_domain: string | null;
+  domain_verified: boolean | null;
 }
 
 const PLATFORM_DEMO_PHONE = '(470) 487-4561';
@@ -79,52 +81,69 @@ function setFavicon(url: string) {
   document.head.appendChild(link);
 }
 
+function resolveHomepageUrl(agency: Agency): string {
+  const domain = agency.marketing_domain?.trim();
+  if (!domain || agency.domain_verified !== true) return '/';
+  if (typeof window !== 'undefined') {
+    const currentHost = window.location.hostname.replace(/^www\./, '');
+    if (currentHost === domain.replace(/^www\./, '')) return '/';
+  }
+  return `https://${domain}`;
+}
+
 // ============================================================================
-// SVG ICONS
+// SVG ICONS — no inline sizing, parent controls dimensions
 // ============================================================================
 const PhoneIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
   </svg>
 );
 
 const HeadphonesIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
   </svg>
 );
 
 const MicIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
 );
 
 const MessageIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
 );
 
 const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12"/>
   </svg>
 );
 
 const ArrowRightIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
   </svg>
 );
+
+// ============================================================================
+// ICON WRAPPER — constrains SVG to a specific size
+// ============================================================================
+function Icon({ children, size = '1.5rem', color }: { children: React.ReactNode; size?: string; color?: string }) {
+  return <div style={{ width: size, height: size, flexShrink: 0, color, display: 'inline-flex' }}>{children}</div>;
+}
 
 // ============================================================================
 // COMPONENT
@@ -199,6 +218,7 @@ export default function DemoPage() {
   const demoHref = `tel:+1${rawDemo.replace(/\D/g, '')}`;
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
   const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
+  const homeUrl = resolveHomepageUrl(agency);
 
   const themeVars = {
     '--primary-color': pc,
@@ -235,7 +255,7 @@ export default function DemoPage() {
       <nav className="navbar">
         <div className="container">
           <div className="nav-content">
-            <a href="/" className="logo">
+            <a href={homeUrl} className="logo">
               {agency.logo_url ? (
                 <div className="logo-wrapper">
                   <img src={agency.logo_url} alt={agency.name} className="logo-image" style={{ backgroundColor: logoBgColor }} />
@@ -245,7 +265,7 @@ export default function DemoPage() {
               )}
             </a>
             <div className="nav-actions">
-              <a href="/" className="btn-ghost btn-small">← Back to site</a>
+              <a href={homeUrl} className="btn-ghost btn-small">← Back to site</a>
               <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
             </div>
           </div>
@@ -277,10 +297,8 @@ export default function DemoPage() {
               padding: '2rem', boxShadow: '0 20px 60px -15px rgba(0,0,0,0.3)',
               textAlign: 'center', color: textOnPrimary,
             }}>
-              <div style={{ width: '3rem', height: '3rem', margin: '0 auto 0.75rem', color: textOnPrimary }}>
-                <HeadphonesIcon />
-              </div>
-              <p style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.75rem', opacity: 0.85, color: textOnPrimary }}>
+              <Icon size="3rem" color={textOnPrimary}><HeadphonesIcon /></Icon>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.75rem', marginTop: '0.75rem', opacity: 0.85, color: textOnPrimary }}>
                 Call now — it&apos;s free
               </p>
               <a
@@ -294,7 +312,7 @@ export default function DemoPage() {
                   color: textOnPrimary, textDecoration: 'none', transition: 'all 0.2s',
                 }}
               >
-                <span style={{ width: '1.5rem', height: '1.5rem' }}><PhoneIcon /></span>
+                <Icon size="1.5rem"><PhoneIcon /></Icon>
                 {demoPhone}
               </a>
               <p style={{ fontSize: '0.813rem', marginTop: '0.75rem', opacity: 0.7, color: textOnPrimary, marginBottom: 0 }}>
@@ -324,7 +342,7 @@ export default function DemoPage() {
             {steps.map((step, i) => (
               <div key={i} className="step-card">
                 <div className="step-number">{i + 1}</div>
-                <div className="step-icon">{step.icon}</div>
+                <div className="step-icon"><Icon size="2.5rem">{step.icon}</Icon></div>
                 <h3>{step.title}</h3>
                 <p>{step.desc}</p>
               </div>
@@ -346,9 +364,7 @@ export default function DemoPage() {
                 display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.875rem 0',
                 borderBottom: i < benefits.length - 1 ? '1px solid var(--border-color)' : 'none',
               }}>
-                <div style={{ width: '1.25rem', height: '1.25rem', flexShrink: 0, color: 'var(--success-color)', marginTop: '2px' }}>
-                  <CheckIcon />
-                </div>
+                <Icon size="1.25rem" color="var(--success-color)"><CheckIcon /></Icon>
                 <p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-dark)', fontWeight: 500 }}>{b}</p>
               </div>
             ))}
@@ -375,7 +391,7 @@ export default function DemoPage() {
                     display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                   }}>
                     Start Your 7-Day Free Trial
-                    <span style={{ width: '1.25rem', height: '1.25rem' }}><ArrowRightIcon /></span>
+                    <Icon size="1.25rem"><ArrowRightIcon /></Icon>
                   </a>
                   <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
                     <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ Setup in 10 minutes</span>
@@ -393,11 +409,11 @@ export default function DemoPage() {
                 <div className="final-cta-boxes">
                   <div className="cta-box-primary">
                     <h3>
-                      <span style={{ width: '1.5rem', height: '1.5rem', display: 'inline-flex' }}><HeadphonesIcon /></span>
+                      <Icon size="1.5rem"><HeadphonesIcon /></Icon>
                       Try It Right Now
                     </h3>
                     <a href={demoHref} onClick={() => setCallStarted(true)} className="cta-phone-large" style={{ color: pc }}>
-                      <span style={{ width: '1.5rem', height: '1.5rem' }}><PhoneIcon /></span>
+                      <Icon size="1.5rem"><PhoneIcon /></Icon>
                       {demoPhone}
                     </a>
                     <p>&quot;Hear it work before you sign up&quot;</p>
@@ -422,22 +438,22 @@ export default function DemoPage() {
         </div>
       </section>
 
-      {/* ── MINIMAL FOOTER ── */}
+      {/* ── FOOTER ── */}
       <footer className="footer">
         <div className="container">
           <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-            <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--text-dark)', textDecoration: 'none' }}>
+            <a href={homeUrl} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--text-dark)', textDecoration: 'none' }}>
               {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} style={{ height: '32px', borderRadius: '6px', backgroundColor: logoBgColor }} />
+                <img src={agency.logo_url} alt={agency.name} style={{ height: '48px', borderRadius: '8px', backgroundColor: logoBgColor }} />
               ) : (
-                <span style={{ fontFamily: 'var(--font-primary)', fontWeight: 800, fontSize: '1.125rem' }}>{agency.name}</span>
+                <span style={{ fontFamily: 'var(--font-primary)', fontWeight: 800, fontSize: '1.25rem' }}>{agency.name}</span>
               )}
             </a>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', maxWidth: '400px', margin: '0 auto 0.75rem' }}>
               Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', fontSize: '0.813rem' }}>
-              <a href="/" style={{ color: 'var(--text-medium)' }}>Home</a>
+              <a href={homeUrl} style={{ color: 'var(--text-medium)' }}>Home</a>
               <a href="/get-started" style={{ color: 'var(--text-medium)' }}>Get Started</a>
               <a href="/privacy" style={{ color: 'var(--text-medium)' }}>Privacy</a>
               <a href="/terms" style={{ color: 'var(--text-medium)' }}>Terms</a>
