@@ -1,0 +1,6 @@
+// app/agency-site/privacy/page.tsx
+import LegalPage from '@/components/LegalPage';
+
+export default function PrivacyPage() {
+  return <LegalPage type="privacy" />;
+}
