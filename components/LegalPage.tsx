@@ -291,11 +291,31 @@ export default function LegalPage({ type }: LegalPageProps) {
           return;
         }
 
-        // Fetch default template
-        const templateRes = await fetch(`${backendUrl}/api/legal/template?type=${type}`);
+        // Fetch default template directly from Supabase (no backend route needed)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) { setError('Configuration error'); return; }
+
+        const templateRes = await fetch(
+          `${supabaseUrl}/rest/v1/legal_templates?template_type=eq.${type}&select=template_type,title,content,version,updated_at`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+          }
+        );
         if (!templateRes.ok) { setError('Legal page not found'); return; }
-        const templateData = await templateRes.json();
-        setTemplate(templateData.template);
+        const rows = await templateRes.json();
+        if (!rows || rows.length === 0) { setError('Legal page not found'); return; }
+        const row = rows[0];
+        setTemplate({
+          type: row.template_type,
+          title: row.title,
+          content: row.content,
+          version: row.version,
+          updatedAt: row.updated_at,
+        });
       } catch (err) {
         console.error('Legal page load error:', err);
         setError('Failed to load');
