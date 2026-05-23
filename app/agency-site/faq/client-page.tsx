@@ -241,7 +241,7 @@ export default function AgencyFAQPage() {
       </nav>
 
       {/* HERO */}
-      <section style={{ padding: '4rem 0 2rem', textAlign: 'center' }}>
+      <section style={{ padding: '7rem 0 2rem', textAlign: 'center' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem' }}>
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, color: textPrimary, lineHeight: 1.1, letterSpacing: '-0.02em' }}>Frequently Asked Questions</h1>
           <p style={{ fontSize: '1rem', color: textSecondary, marginTop: '1rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>{totalQuestions} answers to help you get the most out of your AI receptionist.</p>
@@ -271,15 +271,15 @@ export default function AgencyFAQPage() {
             filteredCategories.map(cat => (
               <div key={cat.name} style={{ marginBottom: '3rem' }}>
                 <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: textPrimary, marginBottom: '1rem', letterSpacing: '-0.01em' }}>{cat.name}</h2>
-                <div>
+                <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: `1px solid ${borderColor}`, background: isDark ? 'rgba(255,255,255,0.02)' : '#fafafa' }}>
                   {cat.faqs.map((faq, i) => (
-                    <details key={i} className="faq-item" style={{ borderBottom: `1px solid ${borderColor}` }}>
-                      <summary style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1.5rem', padding: '1.125rem 0', cursor: 'pointer', listStyle: 'none' }}>
+                    <details key={i} style={{ borderBottom: i < cat.faqs.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
+                      <summary style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1.5rem', padding: '1.125rem 1.25rem', cursor: 'pointer', listStyle: 'none' }}>
                         <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: textPrimary, lineHeight: 1.4 }}>{faq.q}</span>
                         <span style={{ color: textMuted, flexShrink: 0, fontSize: '1.25rem', fontWeight: 300, marginTop: '0.1rem', transition: 'transform 0.2s' }} className="faq-icon">+</span>
                       </summary>
-                      <div style={{ paddingBottom: '1.125rem', paddingRight: '2rem' }}>
-                        <p style={{ fontSize: '0.875rem', color: textSecondary, lineHeight: 1.7 }}>{faq.a}</p>
+                      <div style={{ padding: '0 1.25rem 1.125rem' }}>
+                        <p style={{ fontSize: '0.875rem', color: textSecondary, lineHeight: 1.7, margin: 0 }}>{faq.a}</p>
                       </div>
                     </details>
                   ))}
