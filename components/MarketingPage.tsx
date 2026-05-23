@@ -129,11 +129,12 @@ function AnalyticsScripts({ analytics }: { analytics?: MarketingConfig['analytic
 function Navigation({ config }: { config: MarketingConfig }) {
   const { branding } = config;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const homeUrl = config.homepageUrl || '/';
   return (
     <nav className="navbar">
       <div className="container">
         <div className="nav-content">
-          <a href={config.homepageUrl || '/'} className="logo">
+          <a href={homeUrl} className="logo">
             {branding.logoUrl ? (
               <div className="logo-wrapper">
                 <img src={branding.logoUrl} alt={branding.name} className="logo-image" />
@@ -145,6 +146,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
           <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
             <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
             <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
+            <li><a href="/demo" onClick={() => setMobileMenuOpen(false)}>Demo</a></li>
             <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
             <li><a href="/faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
           </ul>
@@ -180,7 +182,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
           <div className="hero-ctas">
             <a href="/get-started" className="btn-large btn-primary">Start Free Trial — 7 Days Free</a>
             {hero.demoPhone ? (
-              <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-large btn-ghost">
+              <a href="/demo" className="btn-large btn-ghost">
                 <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
               </a>
             ) : (<a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>)}
@@ -275,7 +277,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// APP SHOWCASE — SVG mockup mirrors real Call Detail page
+// APP SHOWCASE
 // ============================================================================
 function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { benefits, branding } = config;
@@ -500,23 +502,20 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// ROI CALCULATOR — Uses agency's actual pricing
+// ROI CALCULATOR
 // ============================================================================
 function ROICalculatorSection({ config }: { config: MarketingConfig }) {
   const { branding, pricing } = config;
   const cs = config.currencySymbol || '$';
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
-
   const [missedPerWeek, setMissedPerWeek] = useState(5);
   const COST_PER_MISSED = 500;
-
   const monthlyMissed = Math.round(missedPerWeek * 4.33);
   const monthlyLost = monthlyMissed * COST_PER_MISSED;
   const annualLost = monthlyLost * 12;
   const annualAICost = lowestPrice * 12;
   const annualSavings = annualLost - annualAICost;
   const roiMultiple = annualAICost > 0 ? Math.round(annualSavings / annualAICost) : 0;
-
   const primaryRgb = hexToRgb(branding.primaryColor);
   const tintBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.08)` : 'rgba(18, 32, 146, 0.08)';
 
@@ -527,25 +526,15 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
           <h2>What Are Missed Calls Costing You?</h2>
           <p>Industry research shows the average missed call costs a small business <strong>{cs}500</strong> in lost revenue. Use the slider to see your potential losses.</p>
         </div>
-
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
-          {/* Slider */}
           <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
               <span style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }}>Calls you miss per week</span>
               <span style={{ fontFamily: 'var(--font-primary)', fontSize: '2rem', fontWeight: 800, color: branding.primaryColor }}>{missedPerWeek}</span>
             </div>
-            <input
-              type="range" min={1} max={25} value={missedPerWeek}
-              onChange={e => setMissedPerWeek(Number(e.target.value))}
-              style={{ width: '100%', accentColor: branding.primaryColor, height: '6px', cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>
-              <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span>
-            </div>
+            <input type="range" min={1} max={25} value={missedPerWeek} onChange={e => setMissedPerWeek(Number(e.target.value))} style={{ width: '100%', accentColor: branding.primaryColor, height: '6px', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span></div>
           </div>
-
-          {/* Results Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)', textAlign: 'center' }}>
               <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ef4444', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Revenue Lost</p>
@@ -558,26 +547,13 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
               <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>That&apos;s going to your competitors</p>
             </div>
           </div>
-
-          {/* Solution row */}
           <div style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', background: tintBg, border: `1px solid ${branding.primaryColor}25`, textAlign: 'center' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} Cost</p>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p>
-                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p>
-              </div>
+              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} Cost</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p></div>
+              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
+              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
             </div>
-            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>
-              Stop Losing {cs}{monthlyLost.toLocaleString()}/month — Start Free Trial
-            </a>
+            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month — Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -604,16 +580,10 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               {tier.isPopular && (<div className="pricing-badge"><span style={{ color: '#f59e0b', width: '1rem', height: '1rem' }}>{Icons.star}</span>Most Popular</div>)}
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
-                <div className="pricing-price">
-                  <span className="price-currency">{cs}</span>
-                  <span className="price-amount">{tier.price}</span>
-                  <span className="price-period">/month</span>
-                </div>
+                <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{tier.price}</span><span className="price-period">/month</span></div>
                 <p className="pricing-subtitle">{tier.subtitle}</p>
               </div>
-              <ul className="pricing-features">
-                {tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}
-              </ul>
+              <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
               <a href="/get-started" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
               {tier.isPopular && <p className="pricing-recommendation">Most businesses choose {tier.name}</p>}
@@ -791,8 +761,8 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
       <div className="sticky-cta-actions">
         <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
         {hero.demoPhone && (
-          <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="btn-ghost btn-small">
-            <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>Call Demo
+          <a href="/demo" className="btn-ghost btn-small">
+            <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>Try Demo
           </a>
         )}
       </div>
