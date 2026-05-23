@@ -157,6 +157,20 @@ export async function middleware(request: NextRequest) {
       return rewriteResponse;
     }
 
+    // =========================================================================
+    // REDIRECT: /signup* → /get-started on agency subdomains/custom domains
+    // 
+    // Agency clients should never hit the platform signup pages. All client
+    // signup goes through /get-started → /agency-site/get-started (Phase 2B).
+    // This catches: /signup, /signup/plan, /signup/success, and any stale
+    // links from cached pages, old deploys, or bookmarks.
+    // =========================================================================
+    if (pathname === '/signup' || pathname.startsWith('/signup/')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/get-started';
+      return NextResponse.redirect(url);
+    }
+
     // For all other routes, pass through with agency cookie
     const passResponse = NextResponse.next({
       request: { headers: requestHeaders },
