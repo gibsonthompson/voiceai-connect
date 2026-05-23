@@ -6,7 +6,7 @@ import { getCurrencySymbol } from '@/lib/currency-symbols';
 import '@/styles/marketing.css';
 
 // ============================================================================
-// COLOR UTILITIES (same as MarketingPage)
+// COLOR UTILITIES
 // ============================================================================
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const cleanHex = hex.replace(/^#/, '');
@@ -28,12 +28,19 @@ interface Agency {
   company_tagline: string | null; website_theme: 'light' | 'dark' | 'auto' | null;
   support_email: string | null; support_phone: string | null; plan_type: string | null;
   logo_background_color: string | null;
+  price_starter: number | null; price_pro: number | null; price_growth: number | null;
+  currency: string | null; display_currency: string | null;
 }
 
 // ============================================================================
-// FAQ DATA — end-client (business owner) perspective
+// FAQ DATA — uses agency pricing
 // ============================================================================
-const faqCategories = [
+function buildFaqCategories(agency: Agency) {
+  const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
+  const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 99;
+  const highestPrice = agency.price_growth ? Math.round(agency.price_growth / 100) : 299;
+
+  return [
   {
     name: 'Getting Started',
     faqs: [
@@ -79,7 +86,7 @@ const faqCategories = [
       { q: 'What can I see in my dashboard?', a: 'Your dashboard shows everything: call recordings you can play back, word-for-word transcripts, AI-generated summaries, a contact list of everyone who\'s called, and analytics on call volume and trends. You can manage your services, staff, business hours, and knowledge base all from one place.' },
       { q: 'How do text notifications work?', a: 'Immediately after each call, you get a text with who called, why they called, and how urgent it is. You can see at a glance whether you need to call back now or if it can wait.' },
       { q: 'Can I customize what the AI knows about my business?', a: 'Yes. Your dashboard has a "My Business" section where you manage services and pricing, staff members, business hours, and a knowledge base with FAQs and additional info. You also have an "AI Agent" section to change the voice, greeting, conversation tone, and call-handling rules.' },
-      { q: 'Is there a mobile app?', a: 'The dashboard is fully mobile-friendly. You can add it to your home screen for an app-like experience. Text and email notifications work on all devices, so you\'re always in the loop even without opening the dashboard.' },
+      { q: 'Is there a mobile app?', a: 'The dashboard works on your phone and desktop. You can add it to your home screen for an app-like experience. Text and email notifications work on all devices, so you\'re always in the loop even without opening the dashboard.' },
       { q: 'Can I export my call data?', a: 'Yes. You can export call logs, contacts, and analytics as CSV files directly from your dashboard.' },
     ],
   },
@@ -104,7 +111,7 @@ const faqCategories = [
   {
     name: 'Pricing & Billing',
     faqs: [
-      { q: 'How much does this cost?', a: 'Pricing depends on the plan your provider offers. Most businesses pay between $49-299/month for 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking. Contact us for current pricing.' },
+      { q: 'How much does this cost?', a: `Plans range from ${cs}${lowestPrice} to ${cs}${highestPrice}/month for 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking. Visit our pricing page for current plan details.` },
       { q: 'Is there a free trial?', a: 'Yes! New accounts include a free trial period so you can experience the AI receptionist with real calls before committing. No credit card is required to start.' },
       { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified when you\'re approaching your limit. Depending on your plan, you can upgrade mid-cycle or pay a small per-call overage fee. No surprise bills—you\'ll always know before it happens.' },
       { q: 'Can I cancel anytime?', a: 'Yes. There are no long-term contracts or cancellation fees. You can cancel from your dashboard settings at any time.' },
@@ -118,7 +125,8 @@ const faqCategories = [
       { q: 'Is my call data used to train AI?', a: 'No. Your call recordings, transcripts, and conversation data are never used to train AI models. Your data stays private.' },
     ],
   },
-];
+  ];
+}
 
 // ============================================================================
 // AGENCY FAQ PAGE
@@ -129,6 +137,8 @@ export default function AgencyFAQPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [stickyCTAVisible, setStickyCTAVisible] = useState(false);
 
   useEffect(() => {
     async function loadAgency() {
@@ -140,11 +150,7 @@ export default function AgencyFAQPage() {
         if (cached) {
           try {
             const { data, ts } = JSON.parse(cached);
-            if (Date.now() - ts < 5 * 60 * 1000) {
-              setAgency(data);
-              setLoading(false);
-              return;
-            }
+            if (Date.now() - ts < 5 * 60 * 1000) { setAgency(data); setLoading(false); return; }
           } catch {}
         }
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
@@ -159,38 +165,31 @@ export default function AgencyFAQPage() {
     loadAgency();
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => setStickyCTAVisible(window.scrollY > 500);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const faqCategories = useMemo(() => agency ? buildFaqCategories(agency) : [], [agency]);
+
   const filteredCategories = useMemo(() => {
     let cats = faqCategories;
     if (activeCategory) cats = cats.filter(c => c.name === activeCategory);
     if (!searchQuery.trim()) return cats;
     const query = searchQuery.toLowerCase();
-    return cats.map(cat => ({
-      ...cat,
-      faqs: cat.faqs.filter(f => f.q.toLowerCase().includes(query) || f.a.toLowerCase().includes(query)),
-    })).filter(cat => cat.faqs.length > 0);
-  }, [searchQuery, activeCategory]);
+    return cats.map(cat => ({ ...cat, faqs: cat.faqs.filter(f => f.q.toLowerCase().includes(query) || f.a.toLowerCase().includes(query)) })).filter(cat => cat.faqs.length > 0);
+  }, [searchQuery, activeCategory, faqCategories]);
 
   const totalQuestions = faqCategories.reduce((sum, cat) => sum + cat.faqs.length, 0);
 
   if (loading) {
     const bg = (() => { try { return sessionStorage.getItem('agency_theme') === 'dark' ? '#0f0f0f' : '#ffffff'; } catch { return '#ffffff'; } })();
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: bg }}>
-        <div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: bg }}><div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style></div>);
   }
 
   if (error || !agency) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{error || 'Site not found'}</h1>
-          <p style={{ color: '#6b7280' }}>This site is not available.</p>
-        </div>
-      </div>
-    );
+    return (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}><div style={{ textAlign: 'center' }}><h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{error || 'Site not found'}</h1><p style={{ color: '#6b7280' }}>This site is not available.</p></div></div>);
   }
 
   const primaryColor = agency.primary_color || '#10b981';
@@ -200,71 +199,55 @@ export default function AgencyFAQPage() {
   const theme = agency.website_theme || 'light';
   const isDark = theme === 'dark';
 
-  const themeStyle = {
-    '--primary-color': primaryColor,
-    '--primary-hover': agency.secondary_color || primaryColor,
-    '--accent-color': accentColor,
-    '--primary-rgb': primaryRgb,
-    '--accent-rgb': accentRgb,
-    '--primary-text-color': getContrastTextColor(primaryColor),
-  } as React.CSSProperties;
+  const themeStyle = { '--primary-color': primaryColor, '--primary-hover': agency.secondary_color || primaryColor, '--accent-color': accentColor, '--primary-rgb': primaryRgb, '--accent-rgb': accentRgb, '--primary-text-color': getContrastTextColor(primaryColor) } as React.CSSProperties;
 
   const bg = isDark ? '#0f0f0f' : '#ffffff';
   const textPrimary = isDark ? '#ffffff' : '#1f2937';
   const textSecondary = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)';
   const textMuted = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)';
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb';
   const inputBg = isDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
   const pillActiveBg = isDark ? '#ffffff' : '#1f2937';
   const pillActiveText = isDark ? '#000000' : '#ffffff';
-  const pillBg = 'transparent';
   const pillText = textSecondary;
 
   return (
     <div className={`marketing-page theme-${theme}`} style={{ ...themeStyle, background: bg, minHeight: '100vh', fontFamily: 'var(--font-primary, system-ui, sans-serif)' }}>
 
-      {/* NAV */}
-      <nav style={{ borderBottom: `1px solid ${borderColor}`, padding: '1rem 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-            {agency.logo_url ? (
-              <img src={agency.logo_url} alt={agency.name} style={{ height: 32 }} />
-            ) : (
-              <span style={{ fontWeight: 600, fontSize: '1.1rem', color: textPrimary }}>{agency.name}</span>
-            )}
-          </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <a href="/" style={{ fontSize: '0.875rem', color: textSecondary, textDecoration: 'none' }}>Home</a>
-            <a href="/#pricing" style={{ fontSize: '0.875rem', color: textSecondary, textDecoration: 'none' }}>Pricing</a>
-            <a href="/faq" style={{ fontSize: '0.875rem', color: primaryColor, fontWeight: 600, textDecoration: 'none' }}>FAQ</a>
-            <a href="/get-started" className="btn-primary" style={{ fontSize: '0.813rem', padding: '0.5rem 1.25rem', borderRadius: '999px', textDecoration: 'none' }}>Start Free Trial</a>
+      {/* NAV — matches MarketingPage Navigation */}
+      <nav className="navbar">
+        <div className="container">
+          <div className="nav-content">
+            <a href="/" className="logo">
+              {agency.logo_url ? (<div className="logo-wrapper"><img src={agency.logo_url} alt={agency.name} className="logo-image" /></div>) : (<span className="logo-text">{agency.name}</span>)}
+            </a>
+            <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+              <li><a href="/#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
+              <li><a href="/#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
+              <li><a href="/#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
+              <li><a href="/faq" onClick={() => setMobileMenuOpen(false)} style={{ fontWeight: 600 }}>FAQ</a></li>
+            </ul>
+            <div className="nav-actions">
+              <a href="/client/login" className="client-login-link">Client Login</a>
+              {agency.support_phone && <a href={`tel:${agency.support_phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
+              <a href="/get-started" className="btn-primary">Start Free Trial</a>
+            </div>
+            <button className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`} aria-label="Toggle menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <span></span><span></span><span></span>
+            </button>
           </div>
         </div>
+        {mobileMenuOpen && <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />}
       </nav>
 
       {/* HERO */}
       <section style={{ padding: '4rem 0 2rem', textAlign: 'center' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem' }}>
-          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, color: textPrimary, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            Frequently Asked Questions
-          </h1>
-          <p style={{ fontSize: '1rem', color: textSecondary, marginTop: '1rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-            {totalQuestions} answers to help you get the most out of your AI receptionist.
-          </p>
-
-          {/* Search */}
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, color: textPrimary, lineHeight: 1.1, letterSpacing: '-0.02em' }}>Frequently Asked Questions</h1>
+          <p style={{ fontSize: '1rem', color: textSecondary, marginTop: '1rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>{totalQuestions} answers to help you get the most out of your AI receptionist.</p>
           <div style={{ marginTop: '2rem', maxWidth: 560, marginLeft: 'auto', marginRight: 'auto', position: 'relative' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={textMuted} strokeWidth="2" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, pointerEvents: 'none' }}>
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search questions…"
-              style={{ width: '100%', padding: '0.875rem 1rem 0.875rem 2.75rem', borderRadius: 999, border: `1px solid ${borderColor}`, background: inputBg, color: textPrimary, fontSize: '0.875rem', outline: 'none' }}
-            />
+            <svg viewBox="0 0 24 24" fill="none" stroke={textMuted} strokeWidth="2" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, pointerEvents: 'none' }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search questions…" style={{ width: '100%', padding: '0.875rem 1rem 0.875rem 2.75rem', borderRadius: 999, border: `1px solid ${borderColor}`, background: inputBg, color: textPrimary, fontSize: '0.875rem', outline: 'none' }} />
           </div>
         </div>
       </section>
@@ -272,20 +255,9 @@ export default function AgencyFAQPage() {
       {/* CATEGORY FILTER */}
       <section style={{ borderTop: `1px solid ${borderColor}`, borderBottom: `1px solid ${borderColor}`, padding: '0.75rem 0', position: 'sticky', top: 0, zIndex: 30, background: bg, backdropFilter: 'blur(12px)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
-          <button
-            onClick={() => setActiveCategory(null)}
-            style={{ padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${activeCategory === null ? pillActiveBg : borderColor}`, background: activeCategory === null ? pillActiveBg : pillBg, color: activeCategory === null ? pillActiveText : pillText, cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            All ({totalQuestions})
-          </button>
+          <button onClick={() => setActiveCategory(null)} style={{ padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${activeCategory === null ? pillActiveBg : borderColor}`, background: activeCategory === null ? pillActiveBg : 'transparent', color: activeCategory === null ? pillActiveText : pillText, cursor: 'pointer', whiteSpace: 'nowrap' }}>All ({totalQuestions})</button>
           {faqCategories.map(cat => (
-            <button
-              key={cat.name}
-              onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
-              style={{ padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${activeCategory === cat.name ? pillActiveBg : borderColor}`, background: activeCategory === cat.name ? pillActiveBg : pillBg, color: activeCategory === cat.name ? pillActiveText : pillText, cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              {cat.name} ({cat.faqs.length})
-            </button>
+            <button key={cat.name} onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)} style={{ padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${activeCategory === cat.name ? pillActiveBg : borderColor}`, background: activeCategory === cat.name ? pillActiveBg : 'transparent', color: activeCategory === cat.name ? pillActiveText : pillText, cursor: 'pointer', whiteSpace: 'nowrap' }}>{cat.name} ({cat.faqs.length})</button>
           ))}
         </div>
       </section>
@@ -294,10 +266,7 @@ export default function AgencyFAQPage() {
       <section style={{ padding: '3rem 0 4rem' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem' }}>
           {filteredCategories.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-              <p style={{ fontSize: '1.125rem', color: textSecondary }}>No matches for &ldquo;{searchQuery}&rdquo;</p>
-              <p style={{ fontSize: '0.813rem', color: textMuted, marginTop: '0.5rem' }}>Try a broader search term.</p>
-            </div>
+            <div style={{ textAlign: 'center', padding: '4rem 0' }}><p style={{ fontSize: '1.125rem', color: textSecondary }}>No matches for &ldquo;{searchQuery}&rdquo;</p><p style={{ fontSize: '0.813rem', color: textMuted, marginTop: '0.5rem' }}>Try a broader search term.</p></div>
           ) : (
             filteredCategories.map(cat => (
               <div key={cat.name} style={{ marginBottom: '3rem' }}>
@@ -326,35 +295,62 @@ export default function AgencyFAQPage() {
         <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 1.5rem' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: textPrimary, letterSpacing: '-0.02em' }}>Still have questions?</h2>
           <p style={{ fontSize: '0.9375rem', color: textSecondary, marginTop: '0.75rem' }}>
-            {agency.support_email ? (
-              <>Reach out to <a href={`mailto:${agency.support_email}`} style={{ color: primaryColor, fontWeight: 600 }}>{agency.support_email}</a> and we&apos;ll get back to you within one business day.</>
-            ) : (
-              <>Contact us and we&apos;ll get back to you within one business day.</>
-            )}
+            {agency.support_email ? (<>Reach out to <a href={`mailto:${agency.support_email}`} style={{ color: primaryColor, fontWeight: 600 }}>{agency.support_email}</a> and we&apos;ll get back to you within one business day.</>) : (<>Contact us and we&apos;ll get back to you within one business day.</>)}
           </p>
           <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/get-started" className="btn-primary" style={{ padding: '0.75rem 2rem', borderRadius: 999, fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>Start Free Trial</a>
-            {agency.support_phone && (
-              <a href={`tel:${agency.support_phone.replace(/\D/g, '')}`} style={{ padding: '0.75rem 2rem', borderRadius: 999, fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none', border: `1px solid ${borderColor}`, color: textPrimary }}>Call Us</a>
-            )}
+            {agency.support_phone && (<a href={`tel:${agency.support_phone.replace(/\D/g, '')}`} style={{ padding: '0.75rem 2rem', borderRadius: 999, fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none', border: `1px solid ${borderColor}`, color: textPrimary }}>Call Us</a>)}
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ borderTop: `1px solid ${borderColor}`, padding: '2rem 0', textAlign: 'center' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            {agency.logo_url ? <img src={agency.logo_url} alt={agency.name} style={{ height: 24 }} /> : <span style={{ fontWeight: 600, color: textPrimary }}>{agency.name}</span>}
+      {/* FOOTER — matches MarketingPage Footer */}
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-grid">
+            <div className="footer-col">
+              <div className="footer-logo">
+                {agency.logo_url ? (<div className="logo-wrapper" style={{ display: 'inline-block' }}><img src={agency.logo_url} alt={agency.name} style={{ height: '40px' }} /></div>) : (<span>{agency.name}</span>)}
+              </div>
+              <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.</p>
+              <div className="footer-contact">
+                {agency.support_phone && <p><a href={`tel:${agency.support_phone.replace(/\D/g, '')}`}>{agency.support_phone}</a></p>}
+                {agency.support_email && <p><a href={`mailto:${agency.support_email}`}>{agency.support_email}</a></p>}
+              </div>
+            </div>
+            <div className="footer-col">
+              <h4>Product</h4>
+              <ul className="footer-links">
+                <li><a href="/#features">Features</a></li>
+                <li><a href="/#how-it-works">How It Works</a></li>
+                <li><a href="/#pricing">Pricing</a></li>
+                <li><a href="/faq">FAQ</a></li>
+              </ul>
+            </div>
+            <div className="footer-col">
+              <h4>Company</h4>
+              <ul className="footer-links">
+                <li><a href="/get-started">Get Started</a></li>
+                <li><a href="/client/login">Client Login</a></li>
+                <li><a href="/privacy">Privacy</a></li>
+                <li><a href="/terms">Terms</a></li>
+                {agency.support_email && <li><a href={`mailto:${agency.support_email}`}>Contact</a></li>}
+              </ul>
+            </div>
           </div>
-          <p style={{ fontSize: '0.75rem', color: textMuted }}>&copy; {new Date().getFullYear()} {agency.name}. All rights reserved.</p>
-          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-            <a href="/privacy" style={{ fontSize: '0.75rem', color: textMuted, textDecoration: 'none' }}>Privacy</a>
-            <a href="/terms" style={{ fontSize: '0.75rem', color: textMuted, textDecoration: 'none' }}>Terms</a>
-            {agency.support_email && <a href={`mailto:${agency.support_email}`} style={{ fontSize: '0.75rem', color: textMuted, textDecoration: 'none' }}>Contact</a>}
+          <div className="footer-bottom">
+            <p>&copy; {new Date().getFullYear()} {agency.name}. All Rights Reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* STICKY CTA — matches MarketingPage StickyCTA */}
+      <div className={`sticky-cta ${stickyCTAVisible ? 'visible' : ''}`}>
+        <span className="sticky-cta-text">Ready to try {agency.name}?</span>
+        <div className="sticky-cta-actions">
+          <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
+        </div>
+      </div>
     </div>
   );
 }
