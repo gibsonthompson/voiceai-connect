@@ -100,7 +100,7 @@ function replacePlaceholders(content: string, agency: Agency): string {
 
   return content
     .replace(/\{\{AGENCY_NAME\}\}/g, agency.name)
-    .replace(/\{\{SUPPORT_EMAIL\}\}/g, agency.support_email || 'support@example.com')
+    .replace(/\{\{SUPPORT_EMAIL\}\}/g, agency.support_email || 'support@myvoiceaiconnect.com')
     .replace(/\{\{SUPPORT_PHONE\}\}/g, agency.support_phone || '')
     .replace(/\{\{CURRENCY_SYMBOL\}\}/g, cs)
     .replace(/\{\{LOWEST_PRICE\}\}/g, String(lowestPrice))
