@@ -6,6 +6,7 @@ import {
   Check, AlertCircle, Shield, ShieldOff, Mail, Copy,
   Lock, Bell, BellOff, ChevronDown, ChevronUp, Info
 } from 'lucide-react';
+import { useClient } from '@/lib/client-context';
 
 interface TeamMember { id: string; display_name: string; phone: string | null; email: string | null; visible_password: string | null; permissions: Record<string, boolean>; notification_prefs: Record<string, boolean>; status: 'active' | 'invited' | 'disabled'; last_login: string | null; created_at: string; }
 interface TeamLimits { allowed: boolean; current: number; max: number; }
@@ -36,6 +37,14 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+  const { client } = useClient();
+  const agency = client?.agency;
+  const loginUrl = agency?.marketing_domain && agency?.domain_verified
+    ? `https://${agency.marketing_domain}/client/login`
+    : agency?.slug
+      ? `https://${agency.slug}.myvoiceaiconnect.com/client/login`
+      : '/client/login';
 
   const fetchTeam = async () => { try { setLoading(true); const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Failed to fetch team'); const data = await res.json(); setMembers(data.members || []); setLimits(data.limits || { allowed: true, current: 0, max: 0 }); } catch (err) { setError('Failed to load team members'); } finally { setLoading(false); } };
   useEffect(() => { fetchTeam(); }, [clientId]);
@@ -94,9 +103,9 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
       <div className="rounded-lg p-2.5 flex items-center justify-between gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
         <div className="min-w-0">
           <p className="text-[10px]" style={{ color: theme.textMuted }}>Login page</p>
-          <p className="text-[10px] sm:text-xs font-mono truncate" style={{ color: theme.text }}>{typeof window !== 'undefined' ? `${window.location.origin}/client/login` : '/client/login'}</p>
+          <p className="text-[10px] sm:text-xs font-mono truncate" style={{ color: theme.text }}>{loginUrl}</p>
         </div>
-        <button onClick={() => copyText(`${window.location.origin}/client/login`)} className="flex-shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: theme.textMuted }}><Copy className="h-3.5 w-3.5" /></button>
+        <button onClick={() => copyText(loginUrl)} className="flex-shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: theme.textMuted }}><Copy className="h-3.5 w-3.5" /></button>
       </div>
 
       {error && (<div className="rounded-lg p-2.5 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{error}</p><button onClick={() => setError(null)} className="ml-auto text-xs" style={{ color: theme.errorText }}>×</button></div>)}

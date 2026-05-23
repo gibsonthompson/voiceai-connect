@@ -56,6 +56,8 @@ interface Client {
     client_header_mode?: 'agency_name' | 'business_name' | null;
     plan_features?: Record<string, Record<string, boolean>>;
     allow_client_branding?: boolean;
+    marketing_domain?: string | null;
+    domain_verified?: boolean;
   } | null;
 }
 
