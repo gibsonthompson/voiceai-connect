@@ -398,7 +398,7 @@ export default function AILabPage() {
 
   return (
     <>
-      <style>{`::selection { background-color: ${theme.primary}30; color: ${theme.text}; }`}</style>
+      <style>{`::selection { background-color: #3b82f640; color: inherit; }`}</style>
       {showCallModal && selectedClient && (
         <CallModal callState={callState} callDuration={callDuration} isMuted={isMuted} transcript={transcript} eventLog={eventLog} theme={theme} onEnd={endCall} onToggleMute={toggleMute} onClose={closeModal} clientName={selectedClient.business_name} transcriptEndRef={transcriptEndRef} eventLogEndRef={eventLogEndRef} />
       )}

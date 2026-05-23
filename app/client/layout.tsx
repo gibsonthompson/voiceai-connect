@@ -206,7 +206,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: ${theme.primary}40; } ::-moz-selection { background: ${theme.primary}40; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; }` }} />
 
       {/* Preview Mode Banner */}
       {isPreviewMode && (
