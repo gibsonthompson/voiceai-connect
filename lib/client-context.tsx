@@ -55,6 +55,7 @@ interface Client {
     website_theme: 'light' | 'dark' | 'auto' | null;
     client_header_mode?: 'agency_name' | 'business_name' | null;
     plan_features?: Record<string, Record<string, boolean>>;
+    allow_client_branding?: boolean;
   } | null;
 }
 

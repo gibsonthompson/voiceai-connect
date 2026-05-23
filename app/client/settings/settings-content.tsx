@@ -18,7 +18,7 @@ interface Client {
   plan_type: string; trial_ends_at: string | null; monthly_call_limit: number; calls_this_month: number;
   google_calendar_connected: boolean; call_mode?: string; ring_timeout?: number; created_at: string;
   hipaa_mode?: boolean;
-  agency: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; secondary_color: string; accent_color: string; support_email: string | null; support_phone: string | null; } | null;
+  agency: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; secondary_color: string; accent_color: string; support_email: string | null; support_phone: string | null; allow_client_branding?: boolean; } | null;
 }
 
 interface Branding {
@@ -149,7 +149,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
       <div className="max-w-3xl">
 
-        <ClientBrandingSection clientId={client.id} theme={theme} />
+        {client.agency?.allow_client_branding && (
+          <ClientBrandingSection clientId={client.id} theme={theme} />
+        )}
 
         {/* HIPAA Mode — only shown for healthcare-related industries */}
         {['medical_practice','dental','mental_health','veterinary','healthcare','chiropractic','optometry','physical_therapy'].includes(client.industry) && (
@@ -235,7 +237,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><User className="w-4 h-4" style={{ color: theme.primary }} />Contact Information</h2>
           <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>{callMode === 'fallback' ? 'Calls will ring this number first in Fallback mode. SMS notifications also sent here.' : 'SMS notifications sent here'}</p></div>
+            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>{callMode === 'fallback' ? '📞 Calls will ring this number first in Fallback mode. SMS notifications also sent here.' : '📱 SMS notifications sent here'}</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
             <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
           </div>
