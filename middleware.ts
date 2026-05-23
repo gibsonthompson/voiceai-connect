@@ -158,17 +158,39 @@ export async function middleware(request: NextRequest) {
     }
 
     // =========================================================================
-    // REDIRECT: /signup* → /get-started on agency subdomains/custom domains
-    // 
-    // Agency clients should never hit the platform signup pages. All client
-    // signup goes through /get-started → /agency-site/get-started (Phase 2B).
-    // This catches: /signup, /signup/plan, /signup/success, and any stale
-    // links from cached pages, old deploys, or bookmarks.
+    // REWRITE: /signup → /agency-site/get-started on agency subdomains
+    //
+    // Any link pointing to /signup on an agency site should show the agency
+    // signup form, not the platform's signup page. Uses rewrite (not redirect)
+    // to avoid redirect loops with the old signup flow that navigates to
+    // /signup/plan. Only exact /signup match — /signup/plan and /signup/success
+    // pass through until Phase 2B is fully deployed.
     // =========================================================================
-    if (pathname === '/signup' || pathname.startsWith('/signup/')) {
+    if (pathname === '/signup') {
       const url = request.nextUrl.clone();
-      url.pathname = '/get-started';
-      return NextResponse.redirect(url);
+      url.pathname = '/agency-site/get-started';
+
+      const rewriteResponse = NextResponse.rewrite(url, {
+        request: { headers: requestHeaders },
+      });
+
+      if (!existingCountryCookie) {
+        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+        rewriteResponse.cookies.set('vc_country', validCountry, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+          sameSite: 'lax',
+        });
+      }
+      rewriteResponse.cookies.set('agency_id', agency.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+
+      return rewriteResponse;
     }
 
     // For all other routes, pass through with agency cookie
