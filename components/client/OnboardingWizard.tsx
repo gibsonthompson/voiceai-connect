@@ -438,11 +438,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
+      const res = await fetch(`${backendUrl}/api/client/${client.id}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ onboarding_completed: true }),
       });
+      if (!res.ok) throw new Error('Failed to complete onboarding');
       // Update localStorage cache
       try {
         const cached = localStorage.getItem('client');

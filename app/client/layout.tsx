@@ -207,7 +207,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   // onboarding. Once they finish or dismiss, onboarding_completed is set
   // to true in the DB and this never renders again.
   // Skipped in preview mode so agency owners see the real dashboard.
-  if (client && !client.onboarding_completed && !isPreviewMode) {
+  if (client && client.onboarding_completed === false && !isPreviewMode) {
     return (
       <OnboardingWizard
         client={client}
