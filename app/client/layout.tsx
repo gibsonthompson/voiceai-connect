@@ -11,6 +11,7 @@ import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import SupportWidget from '@/components/SupportWidget';
+import OnboardingWizard from '@/components/client/OnboardingWizard';
 
 // Favicon is handled by DynamicFavicon in ClientProvider — no need to set it here
 
@@ -199,6 +200,22 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {
     return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
+  }
+
+  // ── ONBOARDING WIZARD ────────────────────────────────────────────────
+  // Full-screen guided setup for new clients who haven't completed
+  // onboarding. Once they finish or dismiss, onboarding_completed is set
+  // to true in the DB and this never renders again.
+  // Skipped in preview mode so agency owners see the real dashboard.
+  if (client && !client.onboarding_completed && !isPreviewMode) {
+    return (
+      <OnboardingWizard
+        client={client}
+        onComplete={() => {
+          window.location.reload();
+        }}
+      />
+    );
   }
 
   const PREVIEW_BANNER_HEIGHT = 36;

@@ -26,7 +26,9 @@ interface Client {
   calls_this_month: number;
   google_calendar_connected: boolean;
   call_mode?: string;
-  hipaa_mode?: boolean;  ring_timeout?: number;
+  hipaa_mode?: boolean;
+  onboarding_completed?: boolean;
+  ring_timeout?: number;
   created_at: string;
 
   // Branding — flat columns, no JSONB
