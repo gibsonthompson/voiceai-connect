@@ -137,16 +137,18 @@ function OnboardingContent() {
     if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
     const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource });
     if (result?.success) {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      fetch(`${backendUrl}/api/agency/${agencyId}/provision-test-client`, { method: 'POST' })
-        .then(() => console.log('✅ Test client provisioning started'))
-        .catch(() => console.warn('⚠️ Test client provisioning failed (non-blocking)'));
+      // NOTE: The test client is no longer auto-provisioned here. It is now an
+      // on-demand "activate when you're ready" tool — just like the demo phone —
+      // surfaced in the dashboard onboarding checklist. This means a signup that
+      // never gets serious costs zero Telnyx numbers.
       setCurrentStep(2);
     }
   };
 
   const handleSelectPlan = (planId: string) => { setSelectedPlan(planId); setCurrentStep(3); };
 
+  // Free only. Pro/Scale require a card and go through Stripe Checkout instead
+  // (see handleSetPassword). The start-trial route rejects paid plans as defense.
   const startTrial = async (planType: string) => {
     if (!agencyId) return;
     try {
@@ -161,26 +163,66 @@ function OnboardingContent() {
 
   const handleSetPassword = async () => {
     setLoading(true);
-    // FIX: Call startTrial for ALL plans including free.
-    // start-trial handles both: free → sets active immediately,
-    // pro/scale → sets trialing with 14-day window.
-    // Both paths set onboarding_completed=true.
-    if (selectedPlan) await startTrial(selectedPlan);
     const token = localStorage.getItem('agency_password_token');
-    if (token && agencyId) {
-      localStorage.removeItem('agency_password_token');
-      const returnTo = encodeURIComponent('/agency/dashboard');
-      window.location.href = `/auth/set-password?token=${token}&returnTo=${returnTo}`;
-    } else if (agencyId) {
-      localStorage.removeItem('onboarding_agency_id');
-      window.location.href = '/agency/dashboard';
-    } else { window.location.href = '/signup'; }
+
+    // FREE — no card. Activate immediately, then set password → dashboard.
+    if (selectedPlan === 'free') {
+      await startTrial('free');
+      if (token && agencyId) {
+        localStorage.removeItem('agency_password_token');
+        const returnTo = encodeURIComponent('/agency/dashboard');
+        window.location.href = `/auth/set-password?token=${token}&returnTo=${returnTo}`;
+      } else if (agencyId) {
+        localStorage.removeItem('onboarding_agency_id');
+        window.location.href = '/agency/dashboard';
+      } else {
+        window.location.href = '/signup';
+      }
+      return;
+    }
+
+    // PRO / SCALE — card required. Send to Stripe Checkout (card on file, $0 for
+    // 14 days, auto-converts on day 14). After payment, Stripe returns the user
+    // to set-password (token carried in the success URL), then the dashboard.
+    // We intentionally do NOT clear the localStorage token/agency id here, so a
+    // canceled checkout can recover via the cancel URL and retry.
+    if ((selectedPlan === 'pro' || selectedPlan === 'scale') && agencyId) {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const returnPath = token
+          ? `/auth/set-password?token=${token}&returnTo=${encodeURIComponent('/agency/dashboard?trial=started')}`
+          : '/agency/dashboard?trial=started';
+        const response = await fetch(`${backendUrl}/api/agency/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agency_id: agencyId,
+            plan: selectedPlan,
+            successUrl: `${window.location.origin}${returnPath}`,
+            cancelUrl: `${window.location.origin}/onboarding?agency=${agencyId}`,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setError(data.error || 'Could not start checkout. Please try again.');
+      } catch (err) {
+        setError('Could not start checkout. Please try again.');
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Fallback — no plan selected.
+    setLoading(false);
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       // ================================================================
-      // STEP 1 — unchanged
+      // STEP 1 — agency details (test client no longer provisioned here)
       // ================================================================
       case 1:
         return (
@@ -248,14 +290,14 @@ function OnboardingContent() {
         );
 
       // ================================================================
-      // STEP 2 — unchanged
+      // STEP 2 — plan selection (copy made card-accurate)
       // ================================================================
       case 2:
         return (
           <div className="space-y-10" style={{ maxWidth: '1080px', margin: '0 auto' }}>
             <div className="text-center">
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Choose Your Plan</h2>
-              <p className="mt-3 text-base text-[#fafaf9]/50">No credit card required. Start free or try Pro for 14 days.</p>
+              <p className="mt-3 text-base text-[#fafaf9]/50">Start free with no card &mdash; or try Pro &amp; Scale free for 14 days.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
@@ -370,8 +412,8 @@ function OnboardingContent() {
 
             <div className="text-center pt-2">
               <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[15px] text-[#fafaf9]/40">
-                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />No credit card required</span>
-                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Upgrade anytime</span>
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Free plan needs no card</span>
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Paid trials: $0 for 14 days</span>
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400/60" />Cancel anytime</span>
               </div>
             </div>
@@ -385,7 +427,7 @@ function OnboardingContent() {
         );
 
       // ================================================================
-      // STEP 3 — unchanged
+      // STEP 3 — confirm & continue (Free → set password; Pro/Scale → checkout)
       // ================================================================
       case 3:
         return (
@@ -394,9 +436,13 @@ function OnboardingContent() {
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
                 <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h2>
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                {selectedPlan === 'free' ? 'Set Your Password' : "You're Almost In"}
+              </h2>
               <p className="mt-2 text-[#fafaf9]/50">
-                {selectedPlan === 'free' ? 'Create a password and start building your agency' : 'Create a password and your 14-day free trial begins'}
+                {selectedPlan === 'free'
+                  ? 'Create a password and start building your agency'
+                  : 'Add your card to start your 14-day free trial — you won\u2019t be charged today'}
               </p>
             </div>
             <div className="max-w-md mx-auto space-y-6">
@@ -421,21 +467,26 @@ function OnboardingContent() {
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">No credit card required</p>
+                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'No credit card required' : 'You won\u2019t be charged for 14 days'}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Customize branding, pricing & more'}</p>
+                  <p className="text-sm text-[#fafaf9]/60">{selectedPlan === 'free' ? 'Upgrade to Pro or Scale anytime' : 'Cancel anytime before your trial ends'}</p>
                 </div>
               </div>
               <button onClick={handleSetPassword} disabled={loading}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 text-base font-medium text-[#050505] hover:bg-[#fafaf9] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-white/10 active:scale-[0.98] disabled:opacity-50">
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" />{selectedPlan === 'free' ? 'Setting up...' : 'Starting your trial...'}</>
+                  <><Loader2 className="w-5 h-5 animate-spin" />{selectedPlan === 'free' ? 'Setting up...' : 'Redirecting to secure checkout...'}</>
                 ) : (
-                  <>{selectedPlan === 'free' ? 'Set Password & Go' : 'Set Password & Start Trial'}<ArrowRight className="w-5 h-5" /></>
+                  <>{selectedPlan === 'free' ? 'Set Password & Go' : 'Add Card & Start Trial'}<ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
+              {selectedPlan !== 'free' && (
+                <p className="text-center text-xs text-[#fafaf9]/40">
+                  Secure checkout by Stripe. You set your password right after.
+                </p>
+              )}
             </div>
           </div>
         );
