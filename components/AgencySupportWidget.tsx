@@ -66,6 +66,8 @@ interface AgencySupportWidgetProps {
   primaryColor: string;
   supportEmail: string | null;
   isDark: boolean;
+  pricing?: { name: string; price: number; subtitle?: string; features?: string[] }[];
+  currencySymbol?: string;
 }
 
 type WidgetView = 'home' | 'faq' | 'chat' | 'escalation';
@@ -78,12 +80,25 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// Perceived-brightness check so we never put white text/icons on a light brand color.
+function isLightHex(hex: string): boolean {
+  const c = (hex || '').replace('#', '').trim();
+  if (c.length < 6) return false;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return false;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+}
+
 export default function AgencySupportWidget({
   agencyName,
   agencyLogo,
   primaryColor,
   supportEmail,
   isDark,
+  pricing,
+  currencySymbol,
 }: AgencySupportWidgetProps) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<WidgetView>('home');
@@ -124,6 +139,11 @@ export default function AgencySupportWidget({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [open]);
 
+  // Contrast-correct text/icon color for surfaces filled with the brand color.
+  const onPrimary = isLightHex(primaryColor) ? '#111827' : '#ffffff';
+  const cs = currencySymbol || '$';
+  const fabRing = isLightHex(primaryColor) ? ', 0 0 0 1px rgba(0,0,0,0.08)' : '';
+
   // Theme
   const t = {
     bg: isDark ? '#0a0a0a' : '#ffffff',
@@ -138,7 +158,7 @@ export default function AgencySupportWidget({
       ? '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)'
       : '0 25px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
     userBubbleBg: primaryColor,
-    userBubbleText: '#ffffff',
+    userBubbleText: onPrimary,
     aiBubbleBg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
     aiBubbleText: isDark ? 'rgba(255,255,255,0.8)' : '#374151',
     successBg: isDark ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.08)',
@@ -147,9 +167,38 @@ export default function AgencySupportWidget({
     errorText: isDark ? '#f87171' : '#dc2626',
   };
 
+  // Build a pricing FAQ (browsable + searchable) from the agency's configured tiers.
+  const pricingFaq: FAQ | null = (pricing && pricing.length > 0)
+    ? {
+        question: 'How much does it cost? What plans are available?',
+        answer:
+          `${agencyName} offers ${pricing.length} plan${pricing.length > 1 ? 's' : ''}:<br/><br/>` +
+          pricing
+            .map(p => `<strong>${p.name}</strong> — ${cs}${p.price}/month${p.subtitle ? `<br/><span style="opacity:0.7">${p.subtitle}</span>` : ''}`)
+            .join('<br/><br/>') +
+          `<br/><br/>All plans include a 7-day free trial.` +
+          (supportEmail ? ` Have a pricing question? Email ${supportEmail}.` : ''),
+      }
+    : null;
+
+  // Displayed/searchable list: pricing first (when available), then prospect FAQs.
+  const allFaqs: FAQ[] = pricingFaq ? [pricingFaq, ...PROSPECT_FAQS] : PROSPECT_FAQS;
+
+  // Plain-text pricing block for the AI context.
+  const pricingContext = (pricing && pricing.length > 0)
+    ? 'PRICING & PLANS (these are the agency\'s actual prices — quote them exactly when asked about cost):\n' +
+      pricing
+        .map(p => {
+          const feats = (p.features || []).filter(f => !f.toLowerCase().startsWith('everything')).slice(0, 5);
+          return `- ${p.name}: ${cs}${p.price}/month${p.subtitle ? ` (${p.subtitle})` : ''}${feats.length ? ` — includes: ${feats.join(', ')}` : ''}`;
+        })
+        .join('\n') +
+      '\nAll plans include a 7-day free trial.'
+    : '';
+
   // Search
   const filteredFAQs = searchQuery.length >= 2
-    ? PROSPECT_FAQS.filter(f => {
+    ? allFaqs.filter(f => {
         const q = searchQuery.toLowerCase();
         return f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q);
       })
@@ -171,8 +220,9 @@ export default function AgencySupportWidget({
   };
   const openEscalation = () => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); };
 
-  // Build FAQ text for AI context
+  // Build FAQ text for AI context, then fold in the agency's pricing.
   const faqContext = PROSPECT_FAQS.map(f => `Q: ${f.question}\nA: ${f.answer.replace(/<[^>]*>/g, '')}`).join('\n\n');
+  const agencyContext = [faqContext, pricingContext].filter(Boolean).join('\n\n');
 
   // Chat
   const handleChatSubmit = async (overrideMsg?: string) => {
@@ -192,7 +242,8 @@ export default function AgencySupportWidget({
           message: msg,
           conversationHistory: chatMessages.filter((m, i) => i > 0).slice(-10),
           agencyName,
-          agencyFaqs: faqContext,
+          agencyFaqs: agencyContext,
+          agencyPricing: pricingContext || undefined,
           supportEmail: supportEmail || '',
         }),
       });
@@ -288,8 +339,8 @@ export default function AgencySupportWidget({
           className="fixed bottom-[108px] right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
           style={{
             backgroundColor: primaryColor,
-            color: '#ffffff',
-            boxShadow: `0 4px 20px ${hexToRgba(primaryColor, 0.4)}`,
+            color: onPrimary,
+            boxShadow: `0 4px 20px ${hexToRgba(primaryColor, 0.4)}${fabRing}`,
             outline: 'none',
           }}
           aria-label="Help"
@@ -440,13 +491,13 @@ export default function AgencySupportWidget({
                 </div>
 
                 {/* FAQ list */}
-                {PROSPECT_FAQS.length > 0 && (
+                {allFaqs.length > 0 && (
                   <>
                     <p className="text-[10px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>
                       Frequently asked
                     </p>
                     <div className="space-y-0.5">
-                      {PROSPECT_FAQS.map((faq, i) => (
+                      {allFaqs.map((faq, i) => (
                         <button
                           key={i}
                           onClick={() => openFAQ(faq)}
@@ -601,7 +652,7 @@ export default function AgencySupportWidget({
                     onClick={handleEscalation}
                     disabled={!escName.trim() || !escContact.trim() || escSending}
                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-40"
-                    style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                    style={{ backgroundColor: primaryColor, color: onPrimary }}
                   >
                     {escSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                     {escSending ? 'Sending...' : 'Send Message'}
@@ -642,7 +693,7 @@ export default function AgencySupportWidget({
               onClick={() => handleChatSubmit()}
               disabled={chatLoading || !chatInput.trim()}
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-30"
-              style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+              style={{ backgroundColor: primaryColor, color: onPrimary }}
             >
               <Send className="h-3.5 w-3.5" />
             </button>

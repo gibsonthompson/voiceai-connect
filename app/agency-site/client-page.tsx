@@ -250,6 +250,8 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
         primaryColor={agency.primary_color || '#10b981'}
         supportEmail={agency.support_email}
         isDark={isDark}
+        pricing={(marketingConfig.pricing && marketingConfig.pricing.length > 0) ? marketingConfig.pricing : defaultMarketingConfig.pricing}
+        currencySymbol={currencySymbol}
       />
     </>
   );
