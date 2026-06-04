@@ -157,6 +157,14 @@ function SetPasswordContent() {
 
       // Try to set session
       if (data.token) {
+        // ── Wipe any prior session in this browser BEFORE installing the
+        // new one. Without this, leftover auth_token / agency JSON /
+        // theme prefs / demo flags / support-widget state from a previous
+        // account in the same browser contaminate the next render and can
+        // trip dashboard gates against the wrong row. This is the cause
+        // of the post-signup blackout we tracked down.
+        try { localStorage.clear(); } catch {}
+
         try {
           await fetch('/api/auth/set-session', {
             method: 'POST',
@@ -166,9 +174,15 @@ function SetPasswordContent() {
         } catch (sessionErr) {
           console.warn('Session set failed (non-blocking):', sessionErr);
         }
-        
+
+        // Store the new session. auth_token was previously missing here,
+        // which is why the redirect to /agency/dashboard bounced straight
+        // to /agency/login — the agency context reads auth_token from
+        // localStorage to authenticate the settings fetch.
+        try { localStorage.setItem('auth_token', data.token); } catch {}
         if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
         if (data.client) localStorage.setItem('client', JSON.stringify(data.client));
+        if (data.agency) localStorage.setItem('agency', JSON.stringify(data.agency));
       }
 
       // Determine redirect target

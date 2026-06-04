@@ -113,7 +113,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     window.location.reload();
   };
 
-  const handleSignOut = () => { localStorage.removeItem('auth_token'); localStorage.removeItem('agency'); localStorage.removeItem('user'); localStorage.removeItem('voiceai_ui_theme'); window.location.href = '/agency/login'; };
+  const handleSignOut = () => {
+    // Wipe everything in localStorage, not just the named keys. Anything any
+    // component has ever written (theme prefs, demo mode flags, support
+    // widget seen flags, support chat state, anything future code adds) must
+    // not survive into the next account's session in the same browser.
+    try { localStorage.clear(); } catch {}
+    window.location.href = '/agency/login';
+  };
 
   const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); return pathname?.startsWith(href); };
 
