@@ -14,8 +14,9 @@ const FAQ_DATA: FAQItem[] = [
   { category: 'Platform', question: 'What is VoiceAI Connect?', answer: "VoiceAI Connect is a white-label AI receptionist platform built for agencies and resellers. Agencies use the platform to brand and resell AI receptionist subscriptions to local service businesses for $99 to $299 per month. The platform automatically provisions the AI voice agent, dedicated phone number, and client-facing dashboard at signup. Subscription payments flow directly to the agency through Stripe Connect. Fifteen enterprise vendors are integrated and shipped as a single agency-ready application." },
   { category: 'Platform', question: 'How does the white-label experience work?', answer: "Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency's brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle — from signup through ongoing usage to billing." },
   { category: 'Platform', question: 'Do my clients get their own dashboard?', answer: "Yes. Every business you onboard receives their own fully branded dashboard — call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, contact management, and configurable SMS and email alerts. They never see your other clients or your agency backend. You get a separate agency dashboard where you manage all clients, revenue, branding, and operations from one interface." },
-  { category: 'Pricing', question: 'What does it cost to start an AI receptionist agency?', answer: "Three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial with no credit card required." },
-  { category: 'Pricing', question: 'How do free trials work?', answer: "Two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial with no credit card required — full access to white-label branding, marketing site, CRM, and all platform features. The Free plan has no trial because there is no platform fee. At the client level, every plan includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins." },
+  { category: 'Pricing', question: 'What does it cost to start an AI receptionist agency?', answer: "Three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial — you add a card to start it and aren't charged until the trial ends." },
+  { category: 'Pricing', question: 'How do free trials work?', answer: "Two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial — you add a card to start it and aren't charged until day 14, and you can cancel anytime before then at no cost. That gives you full access to white-label branding, marketing site, CRM, and all platform features. The Free plan has no trial because there is no platform fee, and it starts with no card. At the client level, every plan includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins." },
+  { category: 'Pricing', question: 'Why is a credit card required to start a Pro or Scale trial?', answer: "It keeps the 14-day trial reserved for operators who are seriously building an agency. Trials cost real money to run — phone numbers, voice minutes, and infrastructure — so requiring a card lets us avoid subsidizing tire-kickers and keep platform pricing low for everyone who is actually building. You are never charged during the trial and can cancel anytime before it ends at no cost; if you continue, billing simply begins at day 14. The Free plan always needs no card." },
   { category: 'Features', question: 'Does the AI book appointments?', answer: "Yes — Google Calendar integration is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner's Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller's name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly." },
   { category: 'Features', question: 'Does the AI filter spam and robocalls?', answer: "Yes — automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against the client's monthly limit. The business owner receives a notification when spam is blocked. No configuration required — it works out of the box." },
   { category: 'Features', question: 'Can the AI handle multiple calls at once?', answer: "Unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed — no busy signals, no hold music, no missed calls during peak hours. This is one of the strongest selling points to local businesses." },
@@ -32,7 +33,7 @@ const FAQ_DATA: FAQItem[] = [
 const QUICK_ACTIONS = [
   { label: 'Agency pricing', sub: 'Plans from free to Scale', prompt: 'What does it cost to start an AI receptionist agency?' },
   { label: 'White-labeling', sub: 'Your brand, end to end', prompt: 'How does the white-label experience work?' },
-  { label: 'Start free trial', sub: 'No credit card required', href: '/signup' },
+  { label: 'Get started free', sub: 'No card to begin', href: '/signup' },
   { label: 'Existing agency', sub: 'Get platform support', prompt: "I'm an existing agency and need help with my account." },
 ];
 
@@ -126,6 +127,7 @@ export default function SupportWidget() {
   const [escContact, setEscContact] = useState('');
   const [escBusy, setEscBusy] = useState(false);
   const [escDone, setEscDone] = useState(false);
+  const [escErr, setEscErr] = useState('');
   const [isAllowedDomain, setIsAllowedDomain] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
@@ -139,7 +141,7 @@ export default function SupportWidget() {
   const close = useCallback(() => setIsOpen(false), []);
   const goLanding = useCallback(() => { setView('landing'); setActiveFAQ(null); }, []);
   const goFAQ = useCallback((f: FAQItem) => { setActiveFAQ(f); setView('faq'); }, []);
-  const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); }, []);
+  const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscErr(''); setEscName(''); setEscContact(''); }, []);
 
   const send = useCallback(async (text?: string) => {
     const msg = text || input.trim();
@@ -173,9 +175,17 @@ export default function SupportWidget() {
   const doEsc = useCallback(async () => {
     if (!escName.trim() || !escContact.trim() || escBusy) return;
     setEscBusy(true);
+    setEscErr('');
     const sum = messages.map(m => `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`).join('\n');
-    try { await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), conversationSummary: sum || undefined }) }); } catch {}
-    setEscDone(true); setEscBusy(false);
+    try {
+      const res = await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), conversationSummary: sum || undefined }) });
+      if (!res.ok) throw new Error('Failed to send');
+      setEscDone(true);
+    } catch {
+      setEscErr('Something went wrong sending your message. Please email support@myvoiceaiconnect.com and we\'ll respond within one business day.');
+    } finally {
+      setEscBusy(false);
+    }
   }, [escName, escContact, escBusy, messages]);
 
   const qa = useCallback((a: typeof QUICK_ACTIONS[0]) => {
@@ -194,23 +204,23 @@ export default function SupportWidget() {
     <>
       <style>{css}</style>
 
-      {/* Teaser */}
+      {/* Teaser — solid dark so it stays legible over the page's light sections */}
       {teaser && !isOpen && (
         <div style={{ position: 'fixed', bottom: 86, right: 20, maxWidth: 210, zIndex: 9998 }}>
-          <div style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '11px 14px', fontSize: 12.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, fontFamily: font, boxShadow: '0 16px 40px -10px rgba(0,0,0,0.6)' }}>
+          <div style={{ background: 'linear-gradient(180deg, #161616, #0c0c0c)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '11px 14px', fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, fontFamily: font, boxShadow: '0 16px 40px -10px rgba(0,0,0,0.6)' }}>
             Got questions about the platform?
-            <button onClick={() => { setTeaser(false); sessionStorage.setItem('w-t', '1'); }} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>×</button>
+            <button onClick={() => { setTeaser(false); sessionStorage.setItem('w-t', '1'); }} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#1f1f1f', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>×</button>
           </div>
         </div>
       )}
 
-      {/* FAB */}
+      {/* FAB — solid dark base so the button is clearly visible on both dark and light sections */}
       <button onClick={open} aria-label="Open support"
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 54, height: 54, borderRadius: 16,
-          border: '1px solid rgba(74,234,188,0.25)', background: 'linear-gradient(135deg, rgba(74,234,188,0.12), rgba(4,120,87,0.12))',
+          border: '1px solid rgba(74,234,188,0.45)', background: 'linear-gradient(135deg, #0c0c0c, #050505)',
           cursor: 'pointer', display: isOpen ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 0 1px rgba(74,234,188,0.08), 0 8px 24px -8px rgba(74,234,188,0.2)',
+          boxShadow: '0 8px 24px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(74,234,188,0.15)',
           transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: em,
           animation: 'wPulse 3s ease-in-out 2',
         }}>
@@ -341,9 +351,12 @@ export default function SupportWidget() {
                   <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <WidgetInput value={escName} onChange={setEscName} placeholder="Your name" label="Name" />
                     <WidgetInput value={escContact} onChange={setEscContact} placeholder="you@agency.com" label="Email or phone" />
+                    {escErr && (
+                      <p style={{ fontSize: 12, lineHeight: 1.5, color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 12px', margin: 0, fontFamily: font }}>{escErr}</p>
+                    )}
                     <button onClick={doEsc} disabled={!escName.trim() || !escContact.trim() || escBusy}
                       style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: escName.trim() && escContact.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: escName.trim() && escContact.trim() ? em : 'rgba(255,255,255,0.04)', color: escName.trim() && escContact.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
-                      {escBusy ? 'Sending...' : 'Send message'}
+                      {escBusy ? 'Sending...' : escErr ? 'Try again' : 'Send message'}
                     </button>
                   </div>
                   <p style={{ marginTop: 18, fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font, margin: '18px 0 0' }}>

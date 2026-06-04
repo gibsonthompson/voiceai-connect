@@ -113,6 +113,7 @@ export default function AgencySupportWidget({
   const [escContact, setEscContact] = useState('');
   const [escSending, setEscSending] = useState(false);
   const [escDone, setEscDone] = useState(false);
+  const [escError, setEscError] = useState('');
   const [teaser, setTeaser] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -218,7 +219,7 @@ export default function AgencySupportWidget({
     if (msg) handleChatSubmit(msg);
     else setTimeout(() => chatInputRef.current?.focus(), 200);
   };
-  const openEscalation = () => { setView('escalation'); setEscDone(false); setEscName(''); setEscContact(''); };
+  const openEscalation = () => { setView('escalation'); setEscDone(false); setEscError(''); setEscName(''); setEscContact(''); };
 
   // Build FAQ text for AI context, then fold in the agency's pricing.
   const faqContext = PROSPECT_FAQS.map(f => `Q: ${f.question}\nA: ${f.answer.replace(/<[^>]*>/g, '')}`).join('\n\n');
@@ -283,10 +284,11 @@ export default function AgencySupportWidget({
   const handleEscalation = async () => {
     if (!escName.trim() || !escContact.trim() || escSending) return;
     setEscSending(true);
+    setEscError('');
     const summary = chatMessages.map(m => `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`).join('\n');
 
     try {
-      await fetch('/api/widget/escalate', {
+      const res = await fetch('/api/widget/escalate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -297,10 +299,17 @@ export default function AgencySupportWidget({
           agencyName,
         }),
       });
-    } catch {}
-
-    setEscDone(true);
-    setEscSending(false);
+      if (!res.ok) throw new Error('Failed to send');
+      setEscDone(true);
+    } catch {
+      setEscError(
+        supportEmail
+          ? `Something went wrong sending your message. Please email us directly at ${supportEmail} and we'll get right back to you.`
+          : 'Something went wrong sending your message. Please try again in a moment.'
+      );
+    } finally {
+      setEscSending(false);
+    }
   };
 
   // Closed state — FAB button + teaser
@@ -648,6 +657,14 @@ export default function AgencySupportWidget({
                       style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
                     />
                   </div>
+                  {escError && (
+                    <div
+                      className="rounded-xl px-3.5 py-2.5 text-[12px] leading-snug"
+                      style={{ backgroundColor: t.errorBg, color: t.errorText, border: `1px solid ${t.errorText}33` }}
+                    >
+                      {escError}
+                    </div>
+                  )}
                   <button
                     onClick={handleEscalation}
                     disabled={!escName.trim() || !escContact.trim() || escSending}
@@ -655,7 +672,7 @@ export default function AgencySupportWidget({
                     style={{ backgroundColor: primaryColor, color: onPrimary }}
                   >
                     {escSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                    {escSending ? 'Sending...' : 'Send Message'}
+                    {escSending ? 'Sending...' : escError ? 'Try Again' : 'Send Message'}
                   </button>
                 </div>
                 {supportEmail && (

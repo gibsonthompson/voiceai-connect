@@ -3,7 +3,6 @@
 
 import { useEffect } from 'react';
 import MarketingPage from '@/components/MarketingPage';
-import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 
@@ -34,9 +33,6 @@ interface Agency {
   demo_phone: string | null;
   demo_phone_number: string | null;
   logo_background_color: string | null;
-  // Custom domain
-  marketing_domain: string | null;
-  domain_verified: boolean | null;
   // Analytics fields
   gtm_id: string | null;
   fb_pixel_id: string | null;
@@ -107,25 +103,6 @@ function setPageTitle(title: string) {
 }
 
 // ============================================================================
-// Resolve the homepage URL for logo links.
-// If the agency has a verified custom domain, use it (so users on the subdomain
-// get redirected to the custom domain when clicking the logo). If the user is
-// already on the custom domain, use '/' to avoid a full-URL reload.
-// ============================================================================
-function resolveHomepageUrl(agency: Agency): string {
-  const domain = agency.marketing_domain?.trim();
-  if (!domain || agency.domain_verified !== true) return '/';
-
-  // If we're already on the custom domain, use relative path
-  if (typeof window !== 'undefined') {
-    const currentHost = window.location.hostname.replace(/^www\./, '');
-    if (currentHost === domain.replace(/^www\./, '')) return '/';
-  }
-
-  return `https://${domain}`;
-}
-
-// ============================================================================
 // TEMPLATE ROUTING
 // Import additional templates here as they're built:
 //   import MarketingPageModern from '@/components/MarketingPageModern';
@@ -157,9 +134,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // Currency symbol
   const currencySymbol = getCurrencySymbol(agency.display_currency || 'USD');
 
-  // Homepage URL (custom domain if verified, otherwise /)
-  const homepageUrl = resolveHomepageUrl(agency);
-
   // Build pricing from agency price columns
   const agencyPricing = [];
   if (agency.price_starter) {
@@ -190,7 +164,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const marketingConfig: Partial<MarketingConfig> = {
     theme: agency.website_theme || 'light',
     currencySymbol,
-    homepageUrl,
     branding: {
       name: agency.name,
       logoUrl: agency.logo_url || '',
@@ -234,25 +207,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ...(agency.marketing_config || {}),
   };
 
-  // Resolve theme
-  const isDark = (agency.website_theme || 'light') === 'dark';
-
   // Route to the correct template
   const templateKey = agency.marketing_template || 'classic';
   const TemplateComponent = TEMPLATES[templateKey] || TEMPLATES.classic;
 
-  return (
-    <>
-      <TemplateComponent config={marketingConfig} />
-      <AgencySupportWidget
-        agencyName={agency.name}
-        agencyLogo={agency.logo_url}
-        primaryColor={agency.primary_color || '#10b981'}
-        supportEmail={agency.support_email}
-        isDark={isDark}
-        pricing={(marketingConfig.pricing && marketingConfig.pricing.length > 0) ? marketingConfig.pricing : defaultMarketingConfig.pricing}
-        currencySymbol={currencySymbol}
-      />
-    </>
-  );
+  return <TemplateComponent config={marketingConfig} />;
 }

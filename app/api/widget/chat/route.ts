@@ -31,14 +31,14 @@ Every client-facing surface is configured per agency: logo, color palette, custo
 
 PRICING:
 - Free tier: No platform fee. $29.99/client/month + $0.12/minute. Includes AI receptionist, Google Calendar, call notifications, spam detection, caller recognition, after-hours mode, Stripe Connect billing, and 7-day free trial for clients. No white-label branding or marketing site.
-- Pro tier: $99/month. Full white-label branding, custom domain, marketing website + AI demo line, lead generation CRM, team members. $9.99/client/month + $0.10/minute. 14-day free trial, no credit card required. Most popular plan.
-- Scale tier: $499/month. Everything in Pro plus AI Lab, industry templates, unlimited team members, Bring Your Own Twilio. $0/client + $0.05/minute only. 14-day free trial, no credit card required.
+- Pro tier: $99/month. Full white-label branding, custom domain, marketing website + AI demo line, lead generation CRM, team members. $9.99/client/month + $0.10/minute. 14-day free trial — a credit card is required to start it, but you are not charged until the trial ends and you can cancel anytime before then. Most popular plan.
+- Scale tier: $499/month. Everything in Pro plus AI Lab, industry templates, unlimited team members, Bring Your Own Twilio. $0/client + $0.05/minute only. 14-day free trial — a credit card is required to start it, but you are not charged until the trial ends and you can cancel anytime before then.
 - All plans include a 7-day free trial for end clients the agency onboards.
 - Google Calendar integration is included on all plans including Free.
 - No revenue share. No hidden fees. No holdbacks.
 
 FREE TRIALS:
-Two separate systems. Agency-level: Pro and Scale include 14-day free trial, no credit card required. Free plan has no trial since there is no platform fee. Client-level: every plan includes a 7-day free trial for businesses the agency onboards — full AI receptionist service before first billing cycle.
+Two separate systems. Agency-level: Pro and Scale include a 14-day free trial. A credit card is required to start a Pro or Scale trial — the card is added at signup but is not charged until the 14-day trial ends, and the trial can be canceled anytime before then with no charge. Requiring a card keeps trials reserved for serious operators, which helps keep platform pricing low. The Free plan needs no credit card and activates instantly (it has no trial because there is no platform fee). Client-level: every plan includes a 7-day free trial for businesses the agency onboards — full AI receptionist service before first billing cycle.
 
 FEATURES:
 - AI receptionist answers calls 24/7 with sub-2-second response latency

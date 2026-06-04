@@ -8,6 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
    Two modes:
    1. Default (no agencyEmail) — sends to VoiceAI Connect support
    2. Agency (agencyEmail + agencyName) — sends to agency's support email
+
+   IMPORTANT: this route only returns success when the notification is actually
+   sent. If it can't be sent, it returns a non-2xx so the widget can show an
+   error (and the visitor can use the email fallback) instead of being told
+   their message was delivered when it wasn't.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const VOICEAI_SUPPORT_EMAIL = 'support@myvoiceaiconnect.com';
@@ -76,30 +81,38 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // Send email via Resend
+    // Send email via Resend. If we can't send, fail loudly — don't fake success.
     const resendKey = process.env.RESEND_API_KEY;
 
-    if (resendKey) {
-      const emailRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify({
-          from: NOTIFICATION_FROM,
-          to: [recipientEmail],
-          subject: `Support request — ${name}`,
-          html: emailHtml,
-          reply_to: isEmail ? contact : undefined,
-        }),
-      });
+    if (!resendKey) {
+      // Log the full lead so it's recoverable from server logs even though email is down.
+      console.error('RESEND_API_KEY not set — escalation email NOT sent. Undelivered lead:',
+        JSON.stringify({ brandName, recipientEmail, name, contact, message: message || null }));
+      return NextResponse.json({ error: 'Notification service unavailable' }, { status: 503 });
+    }
 
-      if (!emailRes.ok) {
-        console.error('Resend error:', await emailRes.text());
-      }
-    } else {
-      console.warn('RESEND_API_KEY not set — escalation email not sent');
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: NOTIFICATION_FROM,
+        to: [recipientEmail],
+        subject: `Support request — ${name}`,
+        html: emailHtml,
+        reply_to: isEmail ? contact : undefined,
+      }),
+    });
+
+    if (!emailRes.ok) {
+      const errText = await emailRes.text();
+      console.error('Resend error:', errText);
+      // Log the full lead so it's recoverable from server logs.
+      console.error('Undelivered lead:',
+        JSON.stringify({ brandName, recipientEmail, name, contact, message: message || null }));
+      return NextResponse.json({ error: 'Failed to send notification' }, { status: 502 });
     }
 
     return NextResponse.json({ success: true });
