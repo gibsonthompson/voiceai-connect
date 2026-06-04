@@ -8,6 +8,7 @@ import {
   Globe, Wand2, BarChart3, Lock, Smartphone, Map, Palette, MonitorSmartphone, Rocket, Calendar,
 } from 'lucide-react';
 import { usePrice } from '@/hooks/usePrice';
+import { AGENCY_PLAN_TIER_LIST } from '@/lib/plan-features';
 import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
 
@@ -720,18 +721,14 @@ export default function HomePage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
-            {[
-              { name: 'Free', price: 0, desc: 'Start selling — zero commitment', trial: null, features: ['AI receptionist for every client', 'Google Calendar appointment booking', 'Call notifications + spam detection', 'Caller recognition + after-hours mode', '7-day free trial for your clients', '$29.99/client/mo + $0.12/min', 'Stripe Connect billing'], limits: ['No white-label branding', 'No marketing site'] },
-              { name: 'Pro', price: 99, desc: 'A complete white-label business', pop: true, trial: '14-day free trial — card required', features: ['Full white-label branding', 'Custom domain', 'Marketing website + AI demo line', 'Google Calendar integration', 'Lead generation CRM', 'Team members', '7-day free trial for your clients', '$9.99/client/mo + $0.10/min'], limits: [] },
-              { name: 'Scale', price: 499, desc: 'All-in for high-volume agencies', trial: '14-day free trial — card required', features: ['Everything in Pro', 'AI Lab + industry templates', 'Unlimited team members', 'International numbers', '7-day free trial for your clients', '$0/client + $0.05/min only', 'Priority support'], limits: [] },
-            ].map(t => (
-              <div key={t.name} className={`price-card ${t.pop ? 'price-card-em' : ''}`}>
-                {t.pop && (
+            {AGENCY_PLAN_TIER_LIST.map(t => (
+              <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
+                {t.popular && (
                   <div className="absolute -top-3 left-7">
                     <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#4aeabc' }}>Most popular</span>
                   </div>
                 )}
-                <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.pop ? 'text-em' : 'text-white/40'}`}>{t.desc}</p>
+                <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
                 <p className="font-display text-lg font-medium mt-1.5 text-white">{t.name}</p>
                 {t.trial && <p className="font-mono text-[11px] text-em mt-3 tracking-[0.04em]">{t.trial}</p>}
                 <div className="my-6 flex items-baseline gap-1">
@@ -748,11 +745,12 @@ export default function HomePage() {
                   {t.features.map(f => (
                     <li key={f} className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{f}</span></li>
                   ))}
-                  {t.limits?.map(l => (
+                  <li className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{t.rate}</span></li>
+                  {t.limitations.map(l => (
                     <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.pop ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.pop ? { background: '#4aeabc' } : undefined}>
+                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#4aeabc' } : undefined}>
                   {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
                 </Link>
               </div>

@@ -8,6 +8,7 @@ import {
   Building, ChevronDown, Zap, Shield, Crown, Check, ArrowLeft
 } from 'lucide-react';
 import { PLAN_PRICES, PLAN_RATES } from '@/lib/plan-limits';
+import { AGENCY_PLAN_TIERS } from '@/lib/plan-features';
 
 const REFERRAL_OPTIONS = [
   { value: '', label: 'Select an option...' },
@@ -309,26 +310,28 @@ function OnboardingContent() {
                     <div className="h-11 w-11 rounded-xl bg-white/[0.05] flex items-center justify-center">
                       <Zap className="h-5 w-5 text-[#fafaf9]/60" />
                     </div>
-                    <span className="text-lg font-semibold text-[#fafaf9]/80">Free</span>
+                    <span className="text-lg font-semibold text-[#fafaf9]/80">{AGENCY_PLAN_TIERS.free.name}</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-2">
                     <span className="text-[56px] font-bold tracking-tight leading-none">$0</span>
                     <span className="text-lg text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-[15px] text-[#fafaf9]/40">${PLAN_RATES.free.perClient}/client + ${PLAN_RATES.free.perMinute}/min</p>
+                  <p className="text-[15px] text-[#fafaf9]/40">{AGENCY_PLAN_TIERS.free.rate}</p>
                 </div>
                 <div className="h-px bg-white/[0.06] mb-7" />
                 <ul className="space-y-5 mb-9 flex-1">
-                  {['AI receptionist for every client', 'Demo phone line included', 'Call summaries via SMS + email', 'Spam detection & caller ID', 'Industry templates included'].map((f) => (
+                  {AGENCY_PLAN_TIERS.free.features.map((f) => (
                     <li key={f} className="flex items-start gap-3">
                       <Check className="h-[18px] w-[18px] mt-0.5 text-[#fafaf9]/30 shrink-0" />
                       <span className="text-[15px] text-[#fafaf9]/60 leading-snug">{f}</span>
                     </li>
                   ))}
-                  <li className="flex items-start gap-3">
-                    <span className="h-[18px] w-[18px] mt-0.5 shrink-0 flex items-center justify-center text-[#fafaf9]/20 text-xs">—</span>
-                    <span className="text-[15px] text-[#fafaf9]/30 leading-snug">VoiceAI Connect branding</span>
-                  </li>
+                  {AGENCY_PLAN_TIERS.free.limitations.map((l) => (
+                    <li key={l} className="flex items-start gap-3">
+                      <span className="h-[18px] w-[18px] mt-0.5 shrink-0 flex items-center justify-center text-[#fafaf9]/20 text-xs">—</span>
+                      <span className="text-[15px] text-[#fafaf9]/30 leading-snug">{l}</span>
+                    </li>
+                  ))}
                 </ul>
                 <button onClick={() => handleSelectPlan('free')}
                   className="w-full rounded-full py-4 text-base font-semibold border border-white/[0.1] text-[#fafaf9]/80 bg-transparent hover:bg-white/[0.05] hover:border-white/[0.2] transition-all hover:scale-[1.01] active:scale-[0.99]">
@@ -353,17 +356,17 @@ function OnboardingContent() {
                       <div className="h-11 w-11 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                         <Shield className="h-5 w-5 text-emerald-400" />
                       </div>
-                      <span className="text-lg font-semibold text-[#fafaf9]">Pro</span>
+                      <span className="text-lg font-semibold text-[#fafaf9]">{AGENCY_PLAN_TIERS.pro.name}</span>
                     </div>
                     <div className="flex items-baseline gap-1.5 mb-2">
-                      <span className="text-[56px] font-bold tracking-tight leading-none">$99</span>
+                      <span className="text-[56px] font-bold tracking-tight leading-none">${AGENCY_PLAN_TIERS.pro.price}</span>
                       <span className="text-lg text-[#fafaf9]/30">/mo</span>
                     </div>
-                    <p className="text-[15px] text-emerald-400/70">${PLAN_RATES.pro.perClient}/client + ${PLAN_RATES.pro.perMinute}/min</p>
+                    <p className="text-[15px] text-emerald-400/70">{AGENCY_PLAN_TIERS.pro.rate}</p>
                   </div>
                   <div className="h-px bg-emerald-500/20 mb-7" />
                   <ul className="space-y-5 mb-9 flex-1">
-                    {['Everything in Free', 'Your brand on everything', 'Custom domain + marketing site', 'Lead finder to grow pipeline', 'Team members'].map((f) => (
+                    {AGENCY_PLAN_TIERS.pro.features.map((f) => (
                       <li key={f} className="flex items-start gap-3">
                         <Check className="h-[18px] w-[18px] mt-0.5 text-emerald-400 shrink-0" />
                         <span className="text-[15px] text-[#fafaf9]/80 leading-snug">{f}</span>
@@ -386,17 +389,17 @@ function OnboardingContent() {
                     <div className="h-11 w-11 rounded-xl bg-white/[0.05] flex items-center justify-center">
                       <Crown className="h-5 w-5 text-[#fafaf9]/60" />
                     </div>
-                    <span className="text-lg font-semibold text-[#fafaf9]/80">Scale</span>
+                    <span className="text-lg font-semibold text-[#fafaf9]/80">{AGENCY_PLAN_TIERS.scale.name}</span>
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-2">
-                    <span className="text-[56px] font-bold tracking-tight leading-none">$499</span>
+                    <span className="text-[56px] font-bold tracking-tight leading-none">${AGENCY_PLAN_TIERS.scale.price}</span>
                     <span className="text-lg text-[#fafaf9]/30">/mo</span>
                   </div>
-                  <p className="text-[15px] text-[#fafaf9]/40">$0/client + ${PLAN_RATES.scale.perMinute}/min</p>
+                  <p className="text-[15px] text-[#fafaf9]/40">{AGENCY_PLAN_TIERS.scale.rate}</p>
                 </div>
                 <div className="h-px bg-white/[0.06] mb-7" />
                 <ul className="space-y-5 mb-9 flex-1">
-                  {['Everything in Pro', 'Advanced lead finder + API', 'Unlimited team members', 'Industry templates included', 'Priority support'].map((f) => (
+                  {AGENCY_PLAN_TIERS.scale.features.map((f) => (
                     <li key={f} className="flex items-start gap-3">
                       <Check className="h-[18px] w-[18px] mt-0.5 text-[#fafaf9]/30 shrink-0" />
                       <span className="text-[15px] text-[#fafaf9]/60 leading-snug">{f}</span>

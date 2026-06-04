@@ -7,6 +7,7 @@ import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
 import { PLAN_PRICES, PLAN_NAMES, PLAN_RATES } from '../../lib/plan-limits';
+import { AGENCY_PLAN_TIER_LIST } from '../../lib/plan-features';
 import DynamicFavicon from '@/components/DynamicFavicon';
 import SupportWidget from '@/components/SupportWidget';
 
@@ -24,12 +25,6 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
 const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
 
 interface NavItem { href: string; label: string; icon: LucideIcon; locked?: boolean; upgradeRequired?: string; permissionKey?: string; }
-
-const AGENCY_PLAN_TIERS = [
-  { id: 'free' as const, name: 'Free', price: 0, icon: Zap, description: 'Get started', features: ['AI receptionist per client', 'Call notifications (SMS + email)', 'Spam detection & caller recognition', `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`, 'VoiceAI Connect branded'] },
-  { id: 'pro' as const, name: 'Pro', price: PLAN_PRICES.pro, icon: Shield, popular: true, description: 'Most popular', features: ['Full white-label branding', 'Marketing website + demo phone', 'AI Lab + industry templates', 'Lead finder', 'Team members', `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`] },
-  { id: 'scale' as const, name: 'Scale', price: PLAN_PRICES.scale, icon: Crown, description: 'For established agencies', features: ['Everything in Pro', 'Advanced lead finder + API access', 'Unlimited team members', `$0/client + $${PLAN_RATES.scale.perMinute}/min`] },
-];
 
 /**
  * Renders DynamicFavicon using agency context.
@@ -182,7 +177,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             <p className="mb-2 text-base max-w-lg mx-auto" style={{ color: theme.textMuted }}>Choose a plan to keep your agency, clients, and AI receptionists active.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-8">
-            {AGENCY_PLAN_TIERS.map((plan) => { const isSelected = selectedPlan === plan.id; const isLoading = subscribeLoading && isSelected; const isFree = plan.id === 'free'; return (
+            {AGENCY_PLAN_TIER_LIST.map((plan) => { const isSelected = selectedPlan === plan.id; const isLoading = subscribeLoading && isSelected; const isFree = plan.id === 'free'; return (
               <div key={plan.id} className="relative rounded-2xl border p-5 sm:p-6 transition-all duration-200" style={{ backgroundColor: theme.card, borderColor: plan.popular ? (theme.isDark ? `${theme.primary}50` : theme.primary) : theme.border, boxShadow: plan.popular ? (theme.isDark ? `0 0 40px ${theme.primary}10` : '0 8px 30px rgba(0,0,0,0.08)') : 'none', transform: plan.popular ? 'scale(1.02)' : undefined }}>
                 {plan.popular && (<div className="absolute -top-3 left-1/2 -translate-x-1/2"><span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 0 16px #3b82f640` }}>Recommended</span></div>)}
                 <div className="text-center mb-5">
@@ -190,9 +185,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                   <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
                   <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
                   <div className="mt-2">{isFree ? (<span className="text-3xl font-bold" style={{ color: theme.text }}>Free</span>) : (<><span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span><span className="text-sm" style={{ color: theme.textMuted }}>/mo</span></>)}</div>
-                  {isFree && (<p className="mt-1 text-xs" style={{ color: theme.textMuted }}>Pay per client + per minute</p>)}
                 </div>
-                <ul className="space-y-2.5 mb-5">{plan.features.map((feature) => (<li key={feature} className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.primary }} /></div><span style={{ color: theme.textMuted }}>{feature}</span></li>))}</ul>
+                <ul className="space-y-2.5 mb-5">
+                  {plan.features.map((feature) => (<li key={feature} className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.primary }} /></div><span style={{ color: theme.textMuted }}>{feature}</span></li>))}
+                  <li className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.primary }} /></div><span style={{ color: theme.textMuted }}>{plan.rate}</span></li>
+                </ul>
                 <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>{isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : isFree ? (<>Continue on Free</>) : (<><CreditCard className="h-4 w-4" />Subscribe — ${plan.price}/mo</>)}</button>
               </div>); })}
           </div>

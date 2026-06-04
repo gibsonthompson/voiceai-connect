@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { formatPrice as formatLocalPrice, getCurrencyForCountry } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
+import { AGENCY_PLAN_TIER_LIST } from '@/lib/plan-features';
 
 // ============================================================================
 // TYPES
@@ -535,7 +536,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     if (detected) setCountryCode(detected);
   }, []);
 
-  const fmtPrice = (cents: number) => formatLocalPrice(cents / 100, countryCode);
+  const fmtPrice = (dollars: number) => formatLocalPrice(dollars, countryCode);
 
   const handleSelectPlan = async (planType: string) => {
     setSelectedPlan(planType);
@@ -543,81 +544,71 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     setError('');
 
     try {
-      const response = await fetch('/api/agency/start-trial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agencyId, planType }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to start trial');
+      // FREE — no card required. Hit start-trial, land on signup success.
+      if (planType === 'free') {
+        const response = await fetch('/api/agency/start-trial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agencyId, planType }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to start trial');
+        window.location.href = '/signup/success';
+        return;
       }
 
-      window.location.href = '/signup/success';
+      // PRO / SCALE — card required. Go through Stripe Checkout. The
+      // start-trial route rejects paid plans by design, so calling it for
+      // pro/scale (which the old code did) would have errored. We mirror the
+      // onboarding flow: if a password token is queued in localStorage,
+      // chain through set-password after checkout; otherwise land directly
+      // on the dashboard. cancelUrl returns to this page so a canceled
+      // checkout can retry without losing context.
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agency_password_token') : null;
+      const returnPath = token
+        ? `/auth/set-password?token=${token}&returnTo=${encodeURIComponent('/agency/dashboard?trial=started')}`
+        : '/agency/dashboard?trial=started';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agency_id: agencyId,
+          plan: planType,
+          successUrl: `${window.location.origin}${returnPath}`,
+          cancelUrl: `${window.location.origin}/signup/plan?agency=${agencyId}`,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error(data.error || 'Could not start checkout. Please try again.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setSelectedPlan(null);
-    } finally {
       setLoading(false);
     }
   };
 
-  const plans = [
-    { 
-      id: 'free', 
-      name: 'Free', 
-      price: 0, 
-      subtitle: 'Pay per usage',
-      icon: Zap,
-      description: 'Get started',
-      features: [
-        'AI receptionist per client',
-        'Call notifications (SMS + email)',
-        'Spam detection & caller recognition',
-        '$29.99/client/mo + $0.12/min',
-        'VoiceAI Connect branded',
-      ],
-      limitations: [
-        'No white-label branding',
-        'No marketing site',
-      ],
-    },
-    { 
-      id: 'pro', 
-      name: 'Pro', 
-      price: 17900, 
-      subtitle: 'Unlimited clients',
-      icon: Shield,
-      popular: true,
-      description: 'Most popular',
-      features: [
-        'Full white-label branding',
-        'Marketing website + demo phone',
-        'Lead finder',
-        'Up to 5 team members',
-        '$9.99/client/mo + $0.10/min',
-      ],
-      limitations: [],
-    },
-    { 
-      id: 'scale', 
-      name: 'Scale', 
-      price: 49900, 
-      subtitle: 'Unlimited clients',
-      icon: Crown,
-      description: 'For established agencies',
-      features: [
-        'Everything in Pro',
-        'AI Lab / industry templates',
-        'Advanced lead finder + API access',
-        'Unlimited team members',
-        '$0/client + $0.05/min',
-      ],
-      limitations: [],
-    },
-  ];
+  // Plans are now sourced from the canonical shared module so this surface
+  // can't drift from the homepage / onboarding / trial-expired picker. The
+  // subtitle ("Pay per usage" / "Unlimited clients") is derived here since
+  // it's purely a visual layout concern on this surface and not part of the
+  // tier's marketing data.
+  const plans = AGENCY_PLAN_TIER_LIST.map(t => ({
+    id: t.id,
+    name: t.name,
+    price: t.price,
+    subtitle: t.id === 'free' ? 'Pay per usage' : 'Unlimited clients',
+    icon: t.icon,
+    popular: t.popular,
+    description: t.description,
+    rate: t.rate,
+    features: t.features,
+    limitations: t.limitations,
+  }));
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
@@ -657,7 +648,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
           <div className="text-center mb-10 sm:mb-12">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
               <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span className="text-emerald-300/90">No credit card required</span>
+              <span className="text-emerald-300/90">Start free, no card &mdash; or try Pro &amp; Scale free for 14 days</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">Choose Your Plan</h1>
             <p className="mt-3 text-base sm:text-lg text-[#fafaf9]/50 max-w-xl mx-auto">
@@ -712,6 +703,12 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                       <span className="text-[#fafaf9]/70">{feature}</span>
                     </li>
                   ))}
+                  <li className="flex items-start gap-3 text-sm">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-emerald-500/10">
+                      <Check className="h-3 w-3 text-emerald-400" />
+                    </div>
+                    <span className="text-[#fafaf9]/70">{plan.rate}</span>
+                  </li>
                   {plan.limitations.map((limitation) => (
                     <li key={limitation} className="flex items-start gap-3 text-sm">
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 bg-white/[0.03]">
@@ -739,8 +736,8 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
 
           <div className="mt-10 sm:mt-12 text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#fafaf9]/40">
-              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />No credit card required</span>
-              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Upgrade anytime</span>
+              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Free plan needs no card</span>
+              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Paid trials: $0 for 14 days</span>
               <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Cancel anytime</span>
             </div>
           </div>
