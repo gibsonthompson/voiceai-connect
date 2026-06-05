@@ -50,6 +50,8 @@ export default function AgencyDashboardPage() {
   const [smsCopied, setSmsCopied] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
   const [testClient, setTestClient] = useState<any>(null);
+  const [provisioningTestClient, setProvisioningTestClient] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [sendingFeedback, setSendingFeedback] = useState(false);
@@ -86,6 +88,31 @@ export default function AgencyDashboardPage() {
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/test-client`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) { const data = await response.json(); setTestClient(data.client); }
     } catch (err) { console.error('Failed to fetch test client:', err); }
+  };
+
+  const handleProvisionTestClient = async () => {
+    if (!agency || provisioningTestClient) return;
+    setProvisioningTestClient(true);
+    setProvisionError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/provision-test-client`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to provision test client');
+      }
+      const data = await response.json();
+      setTestClient(data.client);
+    } catch (err) {
+      console.error('Test client provisioning failed:', err);
+      setProvisionError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setProvisioningTestClient(false);
+    }
   };
 
   const handleSendFeedback = async () => {
@@ -191,7 +218,16 @@ export default function AgencyDashboardPage() {
       </div>
 
       {/* Setup Checklist — uses billable count so test client doesn't satisfy "add first client" */}
-      <SetupChecklist agency={agency} clientCount={billableClientCount} theme={theme} userRole={user?.role} demoMode={demoMode} />
+      <SetupChecklist
+        agency={agency}
+        clientCount={billableClientCount}
+        theme={theme}
+        userRole={user?.role}
+        demoMode={demoMode}
+        testClient={testClient}
+        onProvisionTestClient={handleProvisionTestClient}
+        provisioningTestClient={provisioningTestClient}
+      />
 
       {/* YOUR TEST AI */}
       {testClient?.vapi_phone_number && (
