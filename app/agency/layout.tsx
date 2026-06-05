@@ -30,10 +30,13 @@ interface NavItem { href: string; label: string; icon: LucideIcon; locked?: bool
  * Renders DynamicFavicon using agency context.
  * Lives in the layout wrapper (outside AgencyDashboardLayout) so it renders
  * regardless of loading state, plan selection gates, or blocked access screens.
+ * When no logo is uploaded (e.g. Free plan), returns null so the static
+ * VoiceAI Connect waveform favicon from the root layout persists.
  */
 function AgencyFavicon() {
   const { branding } = useAgency();
-  return <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />;
+  if (!branding.logoUrl) return null;
+  return <DynamicFavicon logoUrl={branding.logoUrl} />;
 }
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
