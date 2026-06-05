@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical,
-  Download, X,
+  Download, X, Phone,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -41,6 +41,10 @@ export default function AgencyClientsPage() {
   const [callsExportFrom, setCallsExportFrom] = useState('');
   const [callsExportTo, setCallsExportTo] = useState('');
   const exportRef = useRef<HTMLDivElement>(null);
+
+  // Test client provisioning state
+  const [provisioningTestClient, setProvisioningTestClient] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!agency) return;
@@ -80,6 +84,31 @@ export default function AgencyClientsPage() {
       console.error('Failed to fetch clients:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProvisionTestClient = async () => {
+    if (!agency || provisioningTestClient) return;
+    setProvisioningTestClient(true);
+    setProvisionError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/provision-test-client`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to provision test client');
+      }
+      // Refresh clients list so the new test client appears in the table
+      await fetchClients();
+    } catch (err) {
+      console.error('Test client provisioning failed:', err);
+      setProvisionError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setProvisioningTestClient(false);
     }
   };
 
@@ -156,6 +185,7 @@ export default function AgencyClientsPage() {
   // Counts
   const billableClients = clients.filter(c => !c.is_test_client);
   const testClients = clients.filter(c => c.is_test_client);
+  const testClient = testClients[0] || null;
 
   // Filter clients — test client always shows but at the bottom
   const filteredClients = clients.filter(client => {
@@ -325,6 +355,74 @@ export default function AgencyClientsPage() {
           </select>
         </div>
       </div>
+
+      {/* Test Client Setup CTA — shows when the agency hasn't provisioned a test client yet */}
+      {!testClient && !demoMode && !loading && (
+        <div 
+          className="mb-6 rounded-xl p-4 sm:p-5 overflow-hidden"
+          style={{ 
+            background: theme.isDark 
+              ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` 
+              : `linear-gradient(135deg, ${theme.primary}08 0%, ${theme.primary}02 100%)`,
+            border: `1px solid ${theme.primary}30`
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <div 
+                  className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" 
+                  style={{ backgroundColor: theme.primary15 }}
+                >
+                  <FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />
+                </div>
+                <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>
+                  Set up your test client
+                </h3>
+                <span 
+                  className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider" 
+                  style={{ backgroundColor: theme.primary15, color: theme.primary }}
+                >
+                  Free · no billing
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.textMuted }}>
+                Activate a working AI receptionist with its own phone number so you can call it and experience exactly what your clients get. Doesn&apos;t count toward your client limit and isn&apos;t billed.
+              </p>
+              {provisionError && (
+                <p 
+                  className="text-xs mb-3 rounded-lg px-3 py-2" 
+                  style={{ 
+                    backgroundColor: theme.errorBg, 
+                    color: theme.errorText, 
+                    border: `1px solid ${theme.errorBorder}` 
+                  }}
+                >
+                  {provisionError}
+                </p>
+              )}
+              <button
+                onClick={handleProvisionTestClient}
+                disabled={provisioningTestClient}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+              >
+                {provisioningTestClient ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Setting up (~15s)...
+                  </>
+                ) : (
+                  <>
+                    <Phone className="h-3.5 w-3.5" />
+                    Set Up Test Client
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Clients List */}
       <div 
