@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Check, ChevronRight, Upload, Palette, DollarSign, 
-  CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone
+  CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone, Loader2
 } from 'lucide-react';
 
 interface SetupStep {
@@ -13,6 +13,10 @@ interface SetupStep {
   icon: React.ElementType;
   completed: boolean;
   href: string;
+  /** If set, step calls this instead of navigating */
+  onClick?: () => void;
+  /** Show spinner instead of icon */
+  loading?: boolean;
 }
 
 interface SetupChecklistProps {
@@ -21,9 +25,15 @@ interface SetupChecklistProps {
   theme: any;
   userRole?: string;
   demoMode?: boolean;
+  /** The current test client (null if not provisioned) */
+  testClient?: any;
+  /** Called when user clicks "Try your test AI" step */
+  onProvisionTestClient?: () => void;
+  /** True while provisioning is in progress */
+  provisioningTestClient?: boolean;
 }
 
-export default function SetupChecklist({ agency, clientCount, theme, userRole, demoMode }: SetupChecklistProps) {
+export default function SetupChecklist({ agency, clientCount, theme, userRole, demoMode, testClient, onProvisionTestClient, provisioningTestClient }: SetupChecklistProps) {
   const [dismissed, setDismissed] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -43,14 +53,23 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
   const planType = agency?.plan_type || 'free';
   const isFree = planType === 'free' || planType === 'starter';
 
+  // Test client is complete if either the agency has test_client_id OR the
+  // testClient prop is populated (covers the case where provisioning just
+  // finished and the agency context hasn't refreshed yet).
+  const testClientComplete = !!(agency?.test_client_id || testClient);
+
   const steps: SetupStep[] = isFree ? [
     {
       id: 'test_ai',
       title: 'Try your test AI receptionist',
-      description: 'Call your test number to hear it in action',
+      description: provisioningTestClient
+        ? 'Setting up your test AI — this takes about 15 seconds...'
+        : 'We\'ll create a working AI receptionist you can call right now',
       icon: Phone,
-      completed: !!(agency?.test_client_id),
+      completed: testClientComplete,
       href: '/agency/dashboard',
+      onClick: !testClientComplete && onProvisionTestClient ? onProvisionTestClient : undefined,
+      loading: provisioningTestClient,
     },
     {
       id: 'pricing',
@@ -77,6 +96,18 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       href: '/agency/clients/new',
     },
   ] : [
+    {
+      id: 'test_ai',
+      title: 'Try your test AI receptionist',
+      description: provisioningTestClient
+        ? 'Setting up your test AI — this takes about 15 seconds...'
+        : 'We\'ll create a working AI receptionist you can call right now',
+      icon: Phone,
+      completed: testClientComplete,
+      href: '/agency/dashboard',
+      onClick: !testClientComplete && onProvisionTestClient ? onProvisionTestClient : undefined,
+      loading: provisioningTestClient,
+    },
     {
       id: 'logo',
       title: 'Upload your logo',
@@ -178,20 +209,45 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
 }
 
 function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementType; theme: any }) {
+  const handleClick = () => {
+    if (step.completed || step.loading) return;
+    if (step.onClick) {
+      step.onClick();
+    } else {
+      window.location.href = step.href;
+    }
+  };
+
   return (
-    <div onClick={() => { if (!step.completed) window.location.href = step.href; }}
-      className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors group" style={{ cursor: step.completed ? 'default' : 'pointer' }}
-      onMouseEnter={e => { if (!step.completed) (e.currentTarget.style.backgroundColor = theme.hover); }}
+    <div onClick={handleClick}
+      className="flex items-center gap-3 rounded-lg px-3 py-3 transition-colors group"
+      style={{ cursor: step.completed || step.loading ? 'default' : 'pointer' }}
+      onMouseEnter={e => { if (!step.completed && !step.loading) (e.currentTarget.style.backgroundColor = theme.hover); }}
       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
-        style={step.completed ? { backgroundColor: `${theme.primary}15`, border: `1px solid ${theme.primary}30` } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
-        {step.completed ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Icon className="h-4 w-4" style={{ color: theme.textMuted }} />}
+        style={step.completed
+          ? { backgroundColor: `${theme.primary}15`, border: `1px solid ${theme.primary}30` }
+          : step.loading
+          ? { backgroundColor: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }
+          : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.border}` }
+        }>
+        {step.completed ? (
+          <Check className="h-4 w-4" style={{ color: theme.primary }} />
+        ) : step.loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.primary }} />
+        ) : (
+          <Icon className="h-4 w-4" style={{ color: theme.textMuted }} />
+        )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium" style={{ color: step.completed ? theme.textMuted : theme.text, textDecoration: step.completed ? 'line-through' : 'none', opacity: step.completed ? 0.5 : 1 }}>{step.title}</p>
-        {!step.completed && <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{step.description}</p>}
+        <p className="text-sm font-medium" style={{
+          color: step.completed ? theme.textMuted : step.loading ? theme.primary : theme.text,
+          textDecoration: step.completed ? 'line-through' : 'none',
+          opacity: step.completed ? 0.5 : 1
+        }}>{step.loading ? 'Setting up your test AI...' : step.title}</p>
+        {!step.completed && <p className="text-xs mt-0.5" style={{ color: step.loading ? theme.primary : theme.textMuted }}>{step.description}</p>}
       </div>
-      {!step.completed && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />}
+      {!step.completed && !step.loading && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />}
     </div>
   );
 }
