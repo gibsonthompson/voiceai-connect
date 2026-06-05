@@ -27,7 +27,7 @@ interface SetupChecklistProps {
   demoMode?: boolean;
   /** The current test client (null if not provisioned) */
   testClient?: any;
-  /** Called when user clicks "Try your test AI" step */
+  /** Called when user clicks "Set up your test client" step */
   onProvisionTestClient?: () => void;
   /** True while provisioning is in progress */
   provisioningTestClient?: boolean;
@@ -61,10 +61,10 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
   const steps: SetupStep[] = isFree ? [
     {
       id: 'test_ai',
-      title: 'Try your test AI receptionist',
+      title: 'Set up your test client',
       description: provisioningTestClient
-        ? 'Setting up your test AI — this takes about 15 seconds...'
-        : 'We\'ll create a working AI receptionist you can call right now',
+        ? 'Setting up your test client — this takes about 15 seconds...'
+        : 'Activate a working AI receptionist with its own phone number to test the system',
       icon: Phone,
       completed: testClientComplete,
       href: '/agency/dashboard',
@@ -98,10 +98,10 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
   ] : [
     {
       id: 'test_ai',
-      title: 'Try your test AI receptionist',
+      title: 'Set up your test client',
       description: provisioningTestClient
-        ? 'Setting up your test AI — this takes about 15 seconds...'
-        : 'We\'ll create a working AI receptionist you can call right now',
+        ? 'Setting up your test client — this takes about 15 seconds...'
+        : 'Activate a working AI receptionist with its own phone number to test the system',
       icon: Phone,
       completed: testClientComplete,
       href: '/agency/dashboard',
@@ -244,7 +244,7 @@ function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementTy
           color: step.completed ? theme.textMuted : step.loading ? theme.primary : theme.text,
           textDecoration: step.completed ? 'line-through' : 'none',
           opacity: step.completed ? 0.5 : 1
-        }}>{step.loading ? 'Setting up your test AI...' : step.title}</p>
+        }}>{step.loading ? 'Setting up your test client...' : step.title}</p>
         {!step.completed && <p className="text-xs mt-0.5" style={{ color: step.loading ? theme.primary : theme.textMuted }}>{step.description}</p>}
       </div>
       {!step.completed && !step.loading && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />}
