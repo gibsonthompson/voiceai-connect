@@ -119,12 +119,51 @@ export default function AgencyClientDetailPage() {
   const [industrySaving, setIndustrySaving] = useState(false);
   const [industrySaved, setIndustrySaved] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ── Inline-editable fields in Business Details ─────────────────────
+  const [businessName, setBusinessName] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
+  const [savingField, setSavingField] = useState<string | null>(null);
+  const [savedField, setSavedField] = useState<string | null>(null);
+
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
+  useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); } }, [client?.business_name, client?.owner_phone]);
 
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
+
+  const handleSaveField = async (field: 'business_name' | 'owner_phone', value: string) => {
+    if (!agency || !clientId || !client) return;
+    const currentValue = (field === 'business_name' ? client.business_name : client.owner_phone) || '';
+    const newValue = (value || '').trim();
+    if (newValue === currentValue) return;
+    setSavingField(field);
+    setSavedField(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ [field]: newValue }),
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      setSavedField(field);
+      setTimeout(() => setSavedField(null), 2500);
+      fetchClientData();
+      // If the business name changed, refetch the prompt so the UI reflects
+      // any name-dependent content the next time the prompt is generated.
+      if (field === 'business_name' && client.vapi_assistant_id) fetchPrompt();
+    } catch (err) {
+      console.error(`Failed to save ${field}:`, err);
+      // Revert local state on error
+      if (field === 'business_name') setBusinessName(currentValue);
+      if (field === 'owner_phone') setOwnerPhone(currentValue);
+    } finally {
+      setSavingField(null);
+    }
+  };
 
   useEffect(() => { if (!agency || !clientId) return; if (demoMode) { const demoData = getDemoClientDetail(clientId); setClient(demoData.client as Client); setRecentCalls(demoData.calls as Call[]); setLoading(false); setPromptLoading(false); setSystemPrompt('You are the phone assistant for Demo Business...'); setOriginalPrompt('You are the phone assistant for Demo Business...'); return; } fetchClientData(); }, [agency, clientId, demoMode]);
   useEffect(() => { if (client?.vapi_assistant_id && agency && !demoMode) { fetchPrompt(); } }, [client?.id, client?.vapi_assistant_id]);
@@ -183,6 +222,13 @@ export default function AgencyClientDetailPage() {
   const callLimit = client.monthly_call_limit;
   const callPercent = callLimit ? Math.min(100, (callsUsed / callLimit) * 100) : 0;
 
+  // ── Reusable status indicator for the inline-editable rows ────────
+  const FieldStatus = ({ field }: { field: string }) => {
+    if (savingField === field) return <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />;
+    if (savedField === field) return <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />;
+    return <div className="h-4 w-4 flex-shrink-0" />;
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
@@ -194,8 +240,133 @@ export default function AgencyClientDetailPage() {
           {/* AI Phone Number */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: theme.primary }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{client.vapi_assistant_id && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Assistant: {client.vapi_assistant_id.slice(0, 12)}...</p>}</div>{client.vapi_phone_number && (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>)}</div></div></div>
 
-          {/* Business Details */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Building2 className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Business Details</h2></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[{ icon: User, label: 'Owner', value: client.owner_name || '—' }, { icon: Mail, label: 'Email', value: client.email }, { icon: Phone, label: 'Phone', value: client.owner_phone ? formatPhone(client.owner_phone) : '—' }, { icon: MapPin, label: 'Location', value: client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—' }].map(({ icon: Icon, label, value }) => (<div key={label} className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Icon className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>{label}</p><p className="text-sm truncate">{value}</p></div></div>))}<div className="flex items-center gap-3 sm:col-span-2"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Building2 className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="flex-1 min-w-0"><p className="text-xs mb-1" style={{ color: theme.textMuted }}>Industry</p><div className="flex items-center gap-2"><div className="relative flex-1"><select value={industryValue || client.industry || ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }}><option value="">Select industry...</option>{INDUSTRY_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}</select><ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: theme.textMuted }} /></div>{industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}{industrySaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}</div></div></div>{client.business_website && (<div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}><Globe className="h-4 w-4" style={{ color: theme.textMuted }} /></div><div className="min-w-0"><p className="text-xs" style={{ color: theme.textMuted }}>Website</p><a href={client.business_website} target="_blank" rel="noopener noreferrer" className="text-sm truncate block hover:underline" style={{ color: theme.primary }}>{client.business_website.replace(/^https?:\/\//, '')}</a></div></div>)}</div></div></div>
+          {/* Business Details — Name & Phone inline-editable, matches Industry pattern */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-4 w-4" style={{ color: theme.primary }} />
+                <h2 className="font-semibold text-sm sm:text-base">Business Details</h2>
+              </div>
+
+              <div className="space-y-4">
+                {/* Business Name — editable */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
+                    <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Business Name</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        onBlur={() => handleSaveField('business_name', businessName)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        disabled={savingField === 'business_name'}
+                        placeholder="Business name"
+                        className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none disabled:opacity-50 transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                      <FieldStatus field="business_name" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Owner Phone — editable */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
+                    <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Phone</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="tel"
+                        value={ownerPhone}
+                        onChange={(e) => setOwnerPhone(e.target.value)}
+                        onBlur={() => handleSaveField('owner_phone', ownerPhone)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        disabled={savingField === 'owner_phone'}
+                        placeholder="(555) 555-5555"
+                        className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none disabled:opacity-50 transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                      <FieldStatus field="owner_phone" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Read-only row: Owner | Email */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                      <User className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Owner</p>
+                      <p className="text-sm truncate">{client.owner_name || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                      <Mail className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Email</p>
+                      <p className="text-sm truncate">{client.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Read-only: Location */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                    <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
+                    <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—'}</p>
+                  </div>
+                </div>
+
+                {/* Industry — existing dropdown */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
+                    <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Industry</p>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <select value={industryValue || client.industry || ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }}>
+                          <option value="">Select industry...</option>
+                          {INDUSTRY_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: theme.textMuted }} />
+                      </div>
+                      {industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}
+                      {industrySaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}
+                      {!industrySaving && !industrySaved && <div className="h-4 w-4 flex-shrink-0" />}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Website — conditional read-only */}
+                {client.business_website && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                      <Globe className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Website</p>
+                      <a href={client.business_website} target="_blank" rel="noopener noreferrer" className="text-sm truncate block hover:underline" style={{ color: theme.primary }}>{client.business_website.replace(/^https?:\/\//, '')}</a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* AI Prompt */}
           {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><Bot className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Receptionist Prompt</h2></div>{promptHasChanges && <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}>Unsaved changes</span>}</div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>This is the system prompt that controls how this client&apos;s AI receptionist behaves on calls. Changes take effect immediately on the next call.</p>{promptError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{promptError}</p></div>}{promptSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Prompt updated — changes are live on the next call.</p></div>}{promptLoading ? (<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>) : (<><textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={14} className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '200px' }} placeholder="Enter system prompt..." /><div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"><button onClick={handleResetPrompt} disabled={promptResetting || promptSaving} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{promptResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><button onClick={handleSavePrompt} disabled={promptSaving || promptResetting || !promptHasChanges} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{promptSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Prompt</>}</button></div></>)}</div></div>)}
