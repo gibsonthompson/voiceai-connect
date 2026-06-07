@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Users, DollarSign, PhoneCall, Copy, Check,
+  Users, Copy, Check, UserPlus, BarChart3,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
-  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Settings
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -168,12 +168,6 @@ export default function AgencyDashboardPage() {
     return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
   }
 
-  const statCards = [
-    { label: 'Clients', value: billableClientCount, icon: Users, color: theme.primary },
-    { label: 'Monthly Revenue', value: formatCurrency(stats?.mrr || 0), icon: DollarSign, color: theme.warning },
-    { label: 'Calls This Month', value: stats?.totalCalls || 0, icon: PhoneCall, color: theme.info },
-  ];
-
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Feedback Modal */}
@@ -312,16 +306,26 @@ export default function AgencyDashboardPage() {
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-3 mb-6 sm:mb-8">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <div className="flex items-center justify-between sm:justify-start sm:gap-4">
-              <div className="order-2 sm:order-1"><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>{stat.label}</p><p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p></div>
-              <div className="order-1 sm:order-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${stat.color}15` }}><stat.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: stat.color }} /></div>
-            </div>
-          </div>
-        ))}
+      {/* Quick Actions */}
+      <div className={`grid gap-3 mb-6 sm:mb-8 ${hasDemo ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+        <a href="/agency/clients/new" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><UserPlus className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <span className="text-sm font-medium" style={{ color: theme.text }}>Add Client</span>
+        </a>
+        <button onClick={copySignupLink} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.info}15` }}><Copy className="h-5 w-5" style={{ color: theme.info }} /></div>
+          <span className="text-sm font-medium" style={{ color: copied ? theme.primary : theme.text }}>{copied ? 'Copied!' : 'Copy Signup Link'}</span>
+        </button>
+        {hasDemo && (
+          <button onClick={copyDemoNumber} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.warning}15` }}><Phone className="h-5 w-5" style={{ color: theme.warning }} /></div>
+            <span className="text-sm font-medium" style={{ color: demoCopied ? theme.primary : theme.text }}>{demoCopied ? 'Copied!' : 'Copy Demo #'}</span>
+          </button>
+        )}
+        <a href="/agency/analytics" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><BarChart3 className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <span className="text-sm font-medium" style={{ color: theme.text }}>Analytics</span>
+        </a>
       </div>
 
       {/* Recent Clients */}
