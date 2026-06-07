@@ -150,8 +150,11 @@ export default function AgencyDashboardPage() {
   };
 
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-  const signupLink = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/signup` : `https://${agency?.slug}.${platformDomain}/signup`;
-  const websiteUrl = signupLink.replace('/signup', '');
+  // Website URL: verified custom domain takes priority, fall back to agency subdomain.
+  const websiteUrl = agency?.marketing_domain && agency?.domain_verified
+    ? `https://${agency.marketing_domain}`
+    : `https://${agency?.slug}.${platformDomain}`;
+  const signupLink = `${websiteUrl}/signup`;
   const copySignupLink = () => { navigator.clipboard.writeText(signupLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyDemoNumber = () => { navigator.clipboard.writeText(agency?.demo_phone_number || ''); setDemoCopied(true); setTimeout(() => setDemoCopied(false), 2000); };
   const hasDemo = !!agency?.demo_phone_number;
