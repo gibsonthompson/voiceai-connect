@@ -297,17 +297,8 @@ export default function AgencyClientDetailPage() {
                   </div>
                 </div>
 
-                {/* Read-only row: Owner | Email */}
+                {/* Read-only row: Email | Location */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <User className="h-4 w-4" style={{ color: theme.textMuted }} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Owner</p>
-                      <p className="text-sm truncate">{client.owner_name || '—'}</p>
-                    </div>
-                  </div>
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
                       <Mail className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -317,16 +308,14 @@ export default function AgencyClientDetailPage() {
                       <p className="text-sm truncate">{client.email}</p>
                     </div>
                   </div>
-                </div>
-
-                {/* Read-only: Location */}
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                    <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
-                    <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—'}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                      <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
+                      <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—'}</p>
+                    </div>
                   </div>
                 </div>
 
