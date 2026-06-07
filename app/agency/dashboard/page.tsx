@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Copy, Check, UserPlus, BarChart3,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
-  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Settings
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Globe
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -151,6 +151,7 @@ export default function AgencyDashboardPage() {
 
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const signupLink = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/signup` : `https://${agency?.slug}.${platformDomain}/signup`;
+  const websiteUrl = signupLink.replace('/signup', '');
   const copySignupLink = () => { navigator.clipboard.writeText(signupLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyDemoNumber = () => { navigator.clipboard.writeText(agency?.demo_phone_number || ''); setDemoCopied(true); setTimeout(() => setDemoCopied(false), 2000); };
   const hasDemo = !!agency?.demo_phone_number;
@@ -312,10 +313,10 @@ export default function AgencyDashboardPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><UserPlus className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Add Client</span>
         </a>
-        <button onClick={copySignupLink} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.info}15` }}><Copy className="h-5 w-5" style={{ color: theme.info }} /></div>
-          <span className="text-sm font-medium" style={{ color: copied ? theme.primary : theme.text }}>{copied ? 'Copied!' : 'Copy Signup Link'}</span>
-        </button>
+        <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.info}15` }}><Globe className="h-5 w-5" style={{ color: theme.info }} /></div>
+          <span className="text-sm font-medium" style={{ color: theme.text }}>View Website</span>
+        </a>
         {hasDemo && (
           <button onClick={copyDemoNumber} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.warning}15` }}><Phone className="h-5 w-5" style={{ color: theme.warning }} /></div>
