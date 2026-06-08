@@ -130,10 +130,11 @@ export default function AgencySupportWidget({
     }
   }, [open, view]);
 
-  // Show teaser after scrolling 400px, unless already dismissed
+  // Show teaser after scrolling past 1000px, unless already dismissed in this session
   useEffect(() => {
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('agency-w-t')) return;
     const handleScroll = () => {
+      // Check dismissal on EVERY scroll event so once dismissed, teaser stays gone
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('agency-w-t')) return;
       if (window.scrollY > 1000 && !open) setTeaser(true);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -318,7 +319,7 @@ export default function AgencySupportWidget({
     return (
       <>
         {teaser && (
-          <div className="fixed bottom-[176px] right-5 z-[89] max-w-[210px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="fixed bottom-[200px] md:bottom-[150px] right-5 z-[89] max-w-[210px] animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div
               className="rounded-2xl px-3.5 py-3 text-[13px] leading-snug shadow-lg"
               style={{
@@ -345,7 +346,7 @@ export default function AgencySupportWidget({
         )}
         <button
           onClick={() => { setOpen(true); dismissTeaser(); }}
-          className="fixed bottom-[108px] right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+          className="fixed bottom-[140px] md:bottom-[90px] right-5 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
           style={{
             backgroundColor: primaryColor,
             color: onPrimary,
@@ -362,9 +363,9 @@ export default function AgencySupportWidget({
 
   return (
     <div
-      className="fixed bottom-[108px] right-5 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col"
+      className="fixed bottom-[140px] md:bottom-[90px] right-5 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col"
       style={{
-        height: 'min(580px, calc(100vh - 6rem))',
+        height: 'min(580px, calc(100vh - 12rem))',
         borderRadius: 20,
         backgroundColor: t.bg,
         border: `1px solid ${t.border}`,
@@ -411,10 +412,11 @@ export default function AgencySupportWidget({
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+          className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
           style={{ backgroundColor: t.hover, color: t.textMuted }}
+          aria-label="Close"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       </div>
 

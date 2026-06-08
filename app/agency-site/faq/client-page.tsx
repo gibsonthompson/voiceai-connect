@@ -241,7 +241,7 @@ export default function AgencyFAQPage() {
       </nav>
 
       {/* HERO */}
-      <section style={{ padding: '7rem 0 2rem', textAlign: 'center' }}>
+      <section style={{ padding: '7rem 0 2rem', textAlign: 'center', background: bg }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem' }}>
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 700, color: textPrimary, lineHeight: 1.1, letterSpacing: '-0.02em' }}>Frequently Asked Questions</h1>
           <p style={{ fontSize: '1rem', color: textSecondary, marginTop: '1rem', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>{totalQuestions} answers to help you get the most out of your AI receptionist.</p>
@@ -263,7 +263,7 @@ export default function AgencyFAQPage() {
       </section>
 
       {/* FAQ CONTENT */}
-      <section style={{ padding: '3rem 0 4rem' }}>
+      <section style={{ padding: '3rem 0 4rem', background: bg }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 1.5rem' }}>
           {filteredCategories.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0' }}><p style={{ fontSize: '1.125rem', color: textSecondary }}>No matches for &ldquo;{searchQuery}&rdquo;</p><p style={{ fontSize: '0.813rem', color: textMuted, marginTop: '0.5rem' }}>Try a broader search term.</p></div>
@@ -291,7 +291,7 @@ export default function AgencyFAQPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '4rem 0', borderTop: `1px solid ${borderColor}`, textAlign: 'center' }}>
+      <section style={{ padding: '4rem 0', borderTop: `1px solid ${borderColor}`, textAlign: 'center', background: bg }}>
         <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 1.5rem' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: textPrimary, letterSpacing: '-0.02em' }}>Still have questions?</h2>
           <p style={{ fontSize: '0.9375rem', color: textSecondary, marginTop: '0.75rem' }}>

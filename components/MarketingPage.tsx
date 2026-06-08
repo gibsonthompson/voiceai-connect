@@ -640,13 +640,17 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
           <div className="final-cta-boxes">
             {hero.demoPhone && (
               <>
-                <div className="cta-box-primary">
+                <a
+                  href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`}
+                  className="cta-box-primary"
+                  style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
+                >
                   <h3><span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.headphones}</span>Try It Right Now</h3>
-                  <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="cta-phone-large">
+                  <span className="cta-phone-large">
                     <span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.phone}</span>{hero.demoPhone}
-                  </a>
+                  </span>
                   <p>&quot;Hear it work before you sign up&quot;</p>
-                </div>
+                </a>
                 <div className="cta-box-divider" style={{ color: contrastColors.textMuted }}>or</div>
               </>
             )}
