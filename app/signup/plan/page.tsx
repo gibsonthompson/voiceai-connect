@@ -9,6 +9,8 @@ import {
 import { formatPrice as formatLocalPrice, getCurrencyForCountry } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
 import { AGENCY_PLAN_TIER_LIST } from '@/lib/plan-features';
+import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
+import { useEmbedMessaging } from '@/lib/embed-messaging';
 
 // ============================================================================
 // TYPES
@@ -31,7 +33,13 @@ interface Agency {
   limit_starter: number;
   limit_pro: number;
   limit_growth: number;
-  plan_features?: Record<string, Record<string, boolean>>;
+  plan_features?: Record<string, Record<string, boolean | number>>;
+  plan_starter_name?: string | null;
+  plan_pro_name?: string | null;
+  plan_growth_name?: string | null;
+  plan_starter_description?: string | null;
+  plan_pro_description?: string | null;
+  plan_growth_description?: string | null;
 }
 
 interface SignupData {
@@ -69,69 +77,25 @@ function formatAgencyPrice(cents: number, agencyCountry: string = 'US'): string 
   return `${formatted} ${currency.symbol}`;
 }
 
-// ============================================================================
-// PLAN FEATURE DISPLAY CONFIG (for dynamic plan cards)
-// ============================================================================
-const FEATURE_DISPLAY: Record<string, string> = {
-  sms_notifications: 'SMS call notifications',
-  email_summaries: 'Email call summaries',
-  custom_greeting: 'Custom AI greeting',
-  custom_voice: 'Custom AI voice selection',
-  knowledge_base: 'Knowledge base management',
-  business_hours: 'Business hours configuration',
-  advanced_analytics: 'Advanced analytics',
-  priority_support: 'Priority support',
-};
-
-const FEATURE_DISPLAY_ORDER = [
-  'sms_notifications',
-  'email_summaries',
-  'custom_greeting',
-  'knowledge_base',
-  'business_hours',
-  'custom_voice',
-  'advanced_analytics',
-  'priority_support',
-];
-
-const CORE_FEATURES = [
-  'AI receptionist 24/7',
-  'Dedicated phone number',
-  'Call recordings & transcripts',
-  'AI-powered call summaries',
-  'Call history dashboard',
-];
-
-function buildPlanFeatures(
-  planKey: string, 
-  callLimit: number, 
-  planFeatures?: Record<string, Record<string, boolean>>
-): { included: string[]; excluded: string[] } {
-  const included: string[] = [
-    ...CORE_FEATURES,
-    callLimit === -1 ? 'Unlimited calls' : `Up to ${callLimit} calls/month`,
-  ];
-  const excluded: string[] = [];
-
-  if (!planFeatures || !planFeatures[planKey]) {
-    return { included, excluded };
+// Carry embed flag forward when navigating between wizard steps. Without
+// this, transitioning from /signup/plan to /auth/set-password drops the
+// iframe context and the parent stops receiving step/resize events.
+function buildEmbedAwareUrl(path: string, isEmbed: boolean, extras: Record<string, string> = {}): string {
+  const url = new URL(path, window.location.origin);
+  if (isEmbed) url.searchParams.set('embed', 'true');
+  for (const [k, v] of Object.entries(extras)) {
+    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
   }
-
-  const features = planFeatures[planKey];
-  
-  for (const key of FEATURE_DISPLAY_ORDER) {
-    const label = FEATURE_DISPLAY[key];
-    if (!label) continue;
-    
-    if (features[key]) {
-      included.push(label);
-    } else {
-      excluded.push(label);
-    }
-  }
-
-  return { included, excluded };
+  return url.toString();
 }
+
+// Map plan id → presentation icon. Pure visual decision, kept local rather
+// than coupled to lib/plan-features-meta.ts which is environment-agnostic.
+const PLAN_ICON: Record<string, any> = {
+  starter: Zap,
+  pro: Shield,
+  growth: Crown,
+};
 
 // ============================================================================
 // THEME CACHING HELPERS
@@ -236,9 +200,15 @@ function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }:
 }
 
 // ============================================================================
-// CLIENT PLAN SELECTION (for agency subdomains) - WITH AGENCY CURRENCY
+// CLIENT PLAN SELECTION (for agency subdomains)
+// Refactored to use buildClientPlans from lib/plan-features-meta.ts — the
+// single source of truth for client-tier plan rendering. Fixes Bug 11
+// (phantom sms_notifications key) by removing the inline FEATURE_DISPLAY
+// dict that drifted from the Settings UI's feature list.
 // ============================================================================
-function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupData: SignupData }) {
+function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; signupData: SignupData; isEmbed: boolean }) {
+  useEmbedMessaging(isEmbed, 2);
+
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -258,15 +228,47 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
   const primaryLight = isLightColor(primaryColor);
   const agencyCountry = agency.country || 'US';
 
-  const bgColor = isDark ? '#050505' : '#ffffff';
+  // Embed mode: transparent so the host page is the visible background;
+  // skip the fixed header and ambient blobs.
+  const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const cardBg = isDark ? '#0a0a0a' : '#ffffff';
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
+  // Override body background to match — but go transparent in embed mode.
+  useEffect(() => {
+    if (isEmbed) {
+      document.documentElement.style.backgroundColor = 'transparent';
+      document.body.style.backgroundColor = 'transparent';
+      return () => {
+        document.documentElement.style.backgroundColor = '';
+        document.body.style.backgroundColor = '';
+      };
+    }
+  }, [isEmbed]);
+
   const safeRedirect = (url: string) => {
     setRedirecting(true);
     setTimeout(() => { window.location.replace(url); }, 100);
+  };
+
+  // For paid plans in embed mode, the Stripe checkout URL can't be loaded
+  // inside the iframe (Stripe blocks framing). Navigate the TOP frame
+  // instead. Falls back to in-iframe navigation if the browser blocks
+  // window.top access (rare with same-protocol embed).
+  const navigateForCheckout = (checkoutUrl: string) => {
+    if (isEmbed) {
+      try {
+        if (window.top) {
+          window.top.location.href = checkoutUrl;
+          return;
+        }
+      } catch (_) {
+        // Fall through to in-iframe redirect
+      }
+    }
+    safeRedirect(checkoutUrl);
   };
 
   const handleSelectPlan = async (planType: string) => {
@@ -310,13 +312,19 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
       sessionStorage.removeItem('client_signup_data');
 
       if (data.token) {
-        const returnTo = encodeURIComponent('/client/dashboard');
-        safeRedirect(`/auth/set-password?token=${data.token}&returnTo=${returnTo}`);
+        // Trial flow: redirect within iframe to /auth/set-password, which
+        // emits voiceai:auth_complete after the password is set. Embed
+        // flag carried forward.
+        const setPasswordUrl = buildEmbedAwareUrl('/auth/set-password', isEmbed, {
+          token: data.token,
+          returnTo: '/client/dashboard',
+        });
+        safeRedirect(setPasswordUrl);
         return;
       }
       
       if (data.checkoutUrl) {
-        safeRedirect(data.checkoutUrl);
+        navigateForCheckout(data.checkoutUrl);
         return;
       }
       
@@ -370,53 +378,60 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
     );
   }
 
-  const starterFeatures = buildPlanFeatures('starter', agency.limit_starter || 50, agency.plan_features);
-  const proFeatures = buildPlanFeatures('pro', agency.limit_pro || 150, agency.plan_features);
-  const growthFeatures = buildPlanFeatures('growth', agency.limit_growth || 500, agency.plan_features);
+  // Build plans from the canonical helper. Tiles already include
+  // included/excluded feature labels, custom name, tagline, popular flag,
+  // and team-member count. Icon mapping is added locally for presentation.
+  const plans: (ClientPlanTile & { icon: any })[] = buildClientPlans(agency as any).map(tile => ({
+    ...tile,
+    icon: PLAN_ICON[tile.id] || Shield,
+  }));
 
-  const plans = [
-    { id: 'starter', name: 'Starter', price: agency.price_starter || 4900, calls: agency.limit_starter || 50, icon: Zap, included: starterFeatures.included, excluded: starterFeatures.excluded },
-    { id: 'pro', name: 'Professional', price: agency.price_pro || 9900, calls: agency.limit_pro || 150, icon: Shield, popular: true, included: proFeatures.included, excluded: proFeatures.excluded },
-    { id: 'growth', name: 'Growth', price: agency.price_growth || 14900, calls: agency.limit_growth || 500, icon: Crown, included: growthFeatures.included, excluded: growthFeatures.excluded },
-  ];
+  const wrapperClass = isEmbed ? '' : 'min-h-screen';
+  const mainPaddingClass = isEmbed
+    ? 'relative min-h-0 py-2 px-2 sm:px-4'
+    : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
-      {isDark && (
+    <div className={wrapperClass} style={{ backgroundColor: bgColor, color: textColor }}>
+      {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       )}
-      {isDark && (
+      {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[128px] opacity-[0.07]" style={{ backgroundColor: primaryColor }} />
         </div>
       )}
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
-        style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)' }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
-                  style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
-              ) : (
-                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                  <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                </div>
-              )}
-              <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
-            </a>
+      {!isEmbed && (
+        <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
+          style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)' }}>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center justify-between">
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                {agency.logo_url ? (
+                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
+                    style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                ) : (
+                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                  </div>
+                )}
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
+              </a>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
+      <main className={mainPaddingClass}>
         <div className="relative mx-auto max-w-6xl">
-          <a href="/get-started" className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8" style={{ color: mutedTextColor }}>
-            <ArrowLeft className="h-4 w-4" /><span>Back to signup</span>
-          </a>
+          {!isEmbed && (
+            <a href={buildEmbedAwareUrl('/get-started', isEmbed)} className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8" style={{ color: mutedTextColor }}>
+              <ArrowLeft className="h-4 w-4" /><span>Back to signup</span>
+            </a>
+          )}
 
           <div className="mb-8 sm:mb-10">
             <ProgressSteps currentStep={2} accentColor={primaryColor} />
@@ -467,12 +482,15 @@ function ClientPlanSelection({ agency, signupData }: { agency: Agency; signupDat
                     <plan.icon className="h-6 w-6" style={{ color: plan.popular ? primaryColor : textColor }} />
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
+                  {plan.description && (
+                    <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>{plan.description}</p>
+                  )}
                   <div className="mt-3">
                     <span className="text-3xl sm:text-4xl font-bold">{formatAgencyPrice(plan.price, agencyCountry)}</span>
                     <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
                   </div>
                   <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
-                    {plan.calls === -1 ? 'Unlimited calls' : `${plan.calls} calls included`}
+                    {plan.callLimit === -1 ? 'Unlimited calls' : `${plan.callLimit} calls included`}
                   </p>
                 </div>
                 <ul className="space-y-3 mb-4">
@@ -759,6 +777,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
 function PlanContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isEmbed = searchParams.get('embed') === 'true';
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [signupData, setSignupData] = useState<SignupData | null>(null);
@@ -811,13 +830,13 @@ function PlanContent() {
           setCachedTheme(data.agency.website_theme);
           
           const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
-          if (faviconUrl) setFavicon(faviconUrl);
+          if (faviconUrl && !isEmbed) setFavicon(faviconUrl);
           
           const stored = sessionStorage.getItem('client_signup_data');
           if (stored) {
             setSignupData(JSON.parse(stored));
           } else {
-            window.location.href = '/get-started';
+            window.location.href = buildEmbedAwareUrl('/get-started', isEmbed);
             return;
           }
         } else {
@@ -832,13 +851,13 @@ function PlanContent() {
     };
 
     detectContext();
-  }, [searchParams, router]);
+  }, [searchParams, router, isEmbed]);
 
   if (loading) return <ThemedLoading theme={cachedTheme} />;
-  if (isAgencySubdomain && agency && signupData) return <ClientPlanSelection agency={agency} signupData={signupData} />;
+  if (isAgencySubdomain && agency && signupData) return <ClientPlanSelection agency={agency} signupData={signupData} isEmbed={isEmbed} />;
   if (agencyIdFromUrl) return <AgencyPlanSelection agencyId={agencyIdFromUrl} />;
 
-  if (typeof window !== 'undefined') window.location.href = '/get-started';
+  if (typeof window !== 'undefined') window.location.href = buildEmbedAwareUrl('/get-started', isEmbed);
   return <ThemedLoading theme={cachedTheme} message="Redirecting..." />;
 }
 

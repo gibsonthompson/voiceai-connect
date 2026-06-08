@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { useEmbedMessaging, postToParent } from '@/lib/embed-messaging';
 
 // ============================================================================
 // TYPES
@@ -18,6 +19,8 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  marketing_domain?: string | null;
+  domain_verified?: boolean;
 }
 
 // ============================================================================
@@ -79,6 +82,9 @@ function SetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const returnTo = searchParams.get('returnTo');
+  const isEmbed = searchParams.get('embed') === 'true';
+
+  useEmbedMessaging(isEmbed);
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -117,8 +123,10 @@ function SetPasswordContent() {
           setAgency(data.agency);
           setIsAgencySubdomain(true);
           setCachedTheme(data.agency.website_theme);
-          const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
-          if (faviconUrl) setFavicon(faviconUrl);
+          if (!isEmbed) {
+            const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
+            if (faviconUrl) setFavicon(faviconUrl);
+          }
         }
       } catch (err) {
         console.error('Failed to detect agency context:', err);
@@ -127,7 +135,7 @@ function SetPasswordContent() {
       }
     };
     detectContext();
-  }, []);
+  }, [isEmbed]);
 
   useEffect(() => {
     if (!token) {
@@ -198,7 +206,21 @@ function SetPasswordContent() {
       setRedirectTarget(target);
       setSuccess(true);
 
-      // Attempt redirect after brief delay
+      // Embed mode: emit voiceai:auth_complete and let the parent decide
+      // navigation. The iframe's auth_token is set in localStorage on the
+      // platform origin — that won't carry to the agency's marketing
+      // domain. Cross-origin token handoff is a Phase 4 enhancement; for
+      // now the host configures data-redirect-on-success or leaves the
+      // user on the success state in the iframe.
+      if (isEmbed) {
+        postToParent({
+          type: 'voiceai:auth_complete',
+          returnTo: target,
+        });
+        return;
+      }
+
+      // Non-embed: attempt redirect after brief delay
       setTimeout(() => {
         window.location.href = target;
       }, 2000);
@@ -220,7 +242,7 @@ function SetPasswordContent() {
   const brandName = agency?.name || 'VoiceAI Connect';
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
 
-  const bgColor = isDark ? '#050505' : '#ffffff';
+  const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
@@ -229,33 +251,41 @@ function SetPasswordContent() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const inputText = isDark ? '#fafaf9' : '#111827';
 
+  const wrapperStyle: React.CSSProperties = isEmbed
+    ? { backgroundColor: bgColor, color: textColor }
+    : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
+
   // ============================================================================
   // SUCCESS STATE — honest message, link to sign in
   // ============================================================================
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
-        {isDark && (
+      <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6'} style={wrapperStyle}>
+        {isDark && !isEmbed && (
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
         )}
         <div className="w-full max-w-md">
           <div className="rounded-2xl p-8 text-center"
-            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
             <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: `${primaryColor}1A` }}>
               <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Set Successfully!</h1>
             <p className="mb-6" style={{ color: mutedTextColor }}>
-              Taking you to your dashboard. If you&apos;re not redirected, you may need to sign in.
+              {isEmbed
+                ? 'Your account is ready. Check your email for next steps.'
+                : 'Taking you to your dashboard. If you\u2019re not redirected, you may need to sign in.'}
             </p>
-            <a
-              href={loginUrl}
-              className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9' }}
-            >
-              Go to Sign In
-            </a>
+            {!isEmbed && (
+              <a
+                href={loginUrl}
+                className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9' }}
+              >
+                Go to Sign In
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -263,41 +293,43 @@ function SetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
-      {isDark && (
+    <div className={isEmbed ? 'overflow-hidden' : 'min-h-screen overflow-hidden'} style={wrapperStyle}>
+      {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       )}
 
-      {isDark && (
+      {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.07]" style={{ backgroundColor: primaryColor }} />
         </div>
       )}
 
-      {/* Header — actual logo for platform, agency logo for subdomains */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
-        style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              {agency?.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-contain"
-                  style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
-              ) : (
-                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
-              )}
-              <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
-            </a>
+      {/* Header — only outside of embed mode */}
+      {!isEmbed && (
+        <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
+          style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center justify-between">
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                {agency?.logo_url ? (
+                  <img src={agency.logo_url} alt={agency.name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-contain"
+                    style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                ) : (
+                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
+                )}
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
+              </a>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32">
-        <div className="relative w-full max-w-md">
+      <main className={isEmbed ? 'relative min-h-0 py-2 px-2 sm:px-4' : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32'}>
+        <div className="relative w-full max-w-md mx-auto">
           <div className="rounded-2xl p-6 sm:p-8"
-            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
             <div className="text-center mb-8">
               <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: `${primaryColor}15` }}>
                 <Lock className="h-6 w-6" style={{ color: primaryColor }} />
@@ -352,10 +384,12 @@ function SetPasswordContent() {
             )}
           </div>
 
-          <p className="mt-6 text-center text-sm" style={{ color: mutedTextColor }}>
-            Already have a password?{' '}
-            <a href={loginUrl} className="font-medium transition-colors hover:opacity-80" style={{ color: primaryColor }}>Sign in</a>
-          </p>
+          {!isEmbed && (
+            <p className="mt-6 text-center text-sm" style={{ color: mutedTextColor }}>
+              Already have a password?{' '}
+              <a href={loginUrl} className="font-medium transition-colors hover:opacity-80" style={{ color: primaryColor }}>Sign in</a>
+            </p>
+          )}
         </div>
       </main>
     </div>

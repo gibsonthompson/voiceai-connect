@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
+import { useEmbedMessaging } from '@/lib/embed-messaging';
 
 // ============================================================================
 // TYPES
@@ -118,6 +119,22 @@ function setFavicon(url: string) {
   appleLink.rel = 'apple-touch-icon';
   appleLink.href = url;
   document.head.appendChild(appleLink);
+}
+
+// Build a same-origin URL while carrying forward the embed flag (and any
+// other query params the host attached when constructing the iframe src).
+// Always go through this helper before navigating between wizard steps in
+// embed mode — otherwise the parent iframe loses track and reloads without
+// embed styling on the next step.
+function buildNextUrl(path: string, isEmbed: boolean, extras?: Record<string, string>): string {
+  const url = new URL(path, window.location.origin);
+  if (isEmbed) url.searchParams.set('embed', 'true');
+  if (extras) {
+    for (const [k, v] of Object.entries(extras)) {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
+    }
+  }
+  return url.toString();
 }
 
 // Google icon
@@ -258,7 +275,11 @@ const INDUSTRY_OPTIONS = [
 // ============================================================================
 // CLIENT SIGNUP FORM (for agency subdomains) - WITH INTERNATIONAL SUPPORT
 // ============================================================================
-function ClientSignupForm({ agency }: { agency: Agency }) {
+function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolean }) {
+  // Embed mode: emit ready/resize/step events so the host iframe sizes
+  // correctly and fires analytics. step=1 marks the data-collection step.
+  useEmbedMessaging(isEmbed, 1);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -277,7 +298,9 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
-  const bgColor = isDark ? '#050505' : '#ffffff';
+  // In embed mode, background is transparent so the iframe blends with the
+  // host page. Otherwise behave like a normal fullscreen signup.
+  const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
@@ -286,15 +309,25 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
   const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
 
   useEffect(() => {
+    if (isEmbed) return; // host controls favicon when embedded
     const faviconUrl = agency.favicon_url || agency.logo_url;
     if (faviconUrl) setFavicon(faviconUrl);
-  }, [agency]);
+  }, [agency, isEmbed]);
 
-  // Fix: override globals.css dark body background to match page theme
+  // Fix: override globals.css dark body background to match page theme.
+  // Skip in embed mode — the host page is the visible background.
   useEffect(() => {
+    if (isEmbed) {
+      document.documentElement.style.backgroundColor = 'transparent';
+      document.body.style.backgroundColor = 'transparent';
+      return () => {
+        document.documentElement.style.backgroundColor = '';
+        document.body.style.backgroundColor = '';
+      };
+    }
     document.documentElement.style.backgroundColor = isDark ? '#050505' : '#ffffff';
     return () => { document.documentElement.style.backgroundColor = ''; };
-  }, [isDark]);
+  }, [isDark, isEmbed]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -315,7 +348,7 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 
     try {
       sessionStorage.setItem('client_signup_data', JSON.stringify({ ...formData, agency_id: agency.id, agency_slug: agency.slug }));
-      window.location.href = '/signup/plan';
+      window.location.href = buildNextUrl('/signup/plan', isEmbed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong'); setLoading(false);
     }
@@ -341,42 +374,56 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
     return <ThemedFormInput label="State / Region" name="state" placeholder="Region" value={formData.state} onChange={handleChange} required isDark={isDark} primaryColor={primaryColor} />;
   };
 
+  // ── Embed mode skips the fullscreen chrome (header, zoom, ambient blobs)
+  //    and renders just the form card. Padding is collapsed so the iframe
+  //    only needs to be as tall as the form itself.
+  const wrapperStyle: React.CSSProperties = isEmbed
+    ? { backgroundColor: bgColor, color: textColor }
+    : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
+  const mainPaddingClass = isEmbed
+    ? 'relative min-h-0 py-2 px-2 sm:px-4'
+    : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
-      {isDark && (
+    <div className={isEmbed ? '' : 'min-h-screen'} style={wrapperStyle}>
+      {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
       )}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px]" style={{ backgroundColor: primaryColor, opacity: isDark ? 0.07 : 0.1 }} />
-      </div>
-
-      <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-2xl" style={{ backgroundColor: headerBg, borderColor: headerBorder }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
-                  style={{ border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
-              ) : (
-                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                  <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                </div>
-              )}
-              <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
-            </a>
-            <a href="/client/login" className="text-sm transition-colors" style={{ color: mutedTextColor }}>
-              <span className="hidden sm:inline">Already have an account? </span>Sign in
-            </a>
-          </div>
+      {!isEmbed && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px]" style={{ backgroundColor: primaryColor, opacity: isDark ? 0.07 : 0.1 }} />
         </div>
-      </header>
+      )}
 
-      <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
+      {!isEmbed && (
+        <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-2xl" style={{ backgroundColor: headerBg, borderColor: headerBorder }}>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center justify-between">
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                {agency.logo_url ? (
+                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
+                    style={{ border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                ) : (
+                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                  </div>
+                )}
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
+              </a>
+              <a href="/client/login" className="text-sm transition-colors" style={{ color: mutedTextColor }}>
+                <span className="hidden sm:inline">Already have an account? </span>Sign in
+              </a>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <main className={mainPaddingClass}>
         <div className="relative mx-auto max-w-lg">
           <div className="rounded-2xl sm:rounded-3xl backdrop-blur-xl p-6 sm:p-8 shadow-2xl"
-            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+            style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm mb-4"
                 style={{ backgroundColor: `${primaryColor}15`, border: `1px solid ${primaryColor}30` }}>
@@ -453,7 +500,12 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
 // ============================================================================
 // AGENCY SIGNUP FORM — Country auto-detected, no selector shown
 // ============================================================================
-function AgencySignupForm() {
+function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
+  // Embed mode is unusual on platform domain — agencies typically sign up
+  // directly — but support it for consistency in case anyone embeds the
+  // platform-side flow on a marketing partner site.
+  useEmbedMessaging(isEmbed, 1);
+
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -469,11 +521,19 @@ function AgencySignupForm() {
     setFormData(prev => ({ ...prev, country: detected }));
   }, []);
 
-  // Fix: override globals.css dark body background
+  // Fix: override globals.css dark body background. Skip in embed mode.
   useEffect(() => {
+    if (isEmbed) {
+      document.documentElement.style.backgroundColor = 'transparent';
+      document.body.style.backgroundColor = 'transparent';
+      return () => {
+        document.documentElement.style.backgroundColor = '';
+        document.body.style.backgroundColor = '';
+      };
+    }
     document.documentElement.style.backgroundColor = '#050505';
     return () => { document.documentElement.style.backgroundColor = ''; };
-  }, []);
+  }, [isEmbed]);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -552,32 +612,43 @@ function AgencySignupForm() {
     }
   };
 
+  const wrapperStyle: React.CSSProperties = isEmbed
+    ? { backgroundColor: 'transparent', color: '#fafaf9' }
+    : { zoom: 0.8 };
+  const mainPaddingClass = isEmbed
+    ? 'relative min-h-0 py-2 px-2 sm:px-4'
+    : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
+
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.8 }}>
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
-      </div>
-
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl" />
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
-            </a>
-            <div className="flex items-center gap-4">
-              <a href="/" className="hidden sm:flex items-center gap-1.5 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
-                <ArrowLeft className="h-4 w-4" />Back
-              </a>
-              <a href="/agency/login" className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Sign in</a>
-            </div>
+    <div className={isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]'} style={wrapperStyle}>
+      {!isEmbed && (
+        <>
+          <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.07] rounded-full blur-[128px]" />
           </div>
-        </div>
-      </header>
 
-      <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
+          <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="flex h-16 sm:h-20 items-center justify-between">
+                <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl" />
+                  <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
+                </a>
+                <div className="flex items-center gap-4">
+                  <a href="/" className="hidden sm:flex items-center gap-1.5 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
+                    <ArrowLeft className="h-4 w-4" />Back
+                  </a>
+                  <a href="/agency/login" className="text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">Sign in</a>
+                </div>
+              </div>
+            </div>
+          </header>
+        </>
+      )}
+
+      <main className={mainPaddingClass}>
         <div className="relative mx-auto max-w-md">
           {referralCode && (
             <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
@@ -649,6 +720,9 @@ function AgencySignupForm() {
 // MAIN COMPONENT
 // ============================================================================
 function SignupContent() {
+  const searchParams = useSearchParams();
+  const isEmbed = searchParams.get('embed') === 'true';
+
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
@@ -684,14 +758,14 @@ function SignupContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+      <div className={isEmbed ? 'flex items-center justify-center py-8' : 'min-h-screen bg-neutral-100 flex items-center justify-center'}>
         <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
       </div>
     );
   }
 
-  if (isAgencySubdomain && agency) return <ClientSignupForm agency={agency} />;
-  return <AgencySignupForm />;
+  if (isAgencySubdomain && agency) return <ClientSignupForm agency={agency} isEmbed={isEmbed} />;
+  return <AgencySignupForm isEmbed={isEmbed} />;
 }
 
 export default function SignupPage() {

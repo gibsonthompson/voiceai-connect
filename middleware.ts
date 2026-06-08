@@ -129,10 +129,17 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-agency-name', agency.name);
     requestHeaders.set('x-agency-slug', agency.slug || '');
 
-    // Only rewrite routes that exist in agency-site folder
+    // Static marketing routes that live under /agency-site/.
+    //
+    // NOTE: /get-started and /signup are deliberately NOT in this list.
+    // Both now resolve to the canonical multi-step wizard at
+    // app/signup/page.tsx — /get-started is a stub re-export of /signup —
+    // and they need to pass through unmodified so /signup/plan and
+    // /signup/success can stay sibling routes. The old single-step
+    // /agency-site/get-started page was retired during the Phase 3
+    // embed-widget cleanup.
     if (
       pathname === '/' ||
-      pathname.startsWith('/get-started') ||
       pathname.startsWith('/demo') ||
       pathname.startsWith('/faq') ||
       pathname.startsWith('/terms') ||
@@ -164,43 +171,10 @@ export async function middleware(request: NextRequest) {
       return rewriteResponse;
     }
 
-    // =========================================================================
-    // REWRITE: /signup → /agency-site/get-started on agency subdomains
-    //
-    // Any link pointing to /signup on an agency site should show the agency
-    // signup form, not the platform's signup page. Uses rewrite (not redirect)
-    // to avoid redirect loops with the old signup flow that navigates to
-    // /signup/plan. Only exact /signup match — /signup/plan and /signup/success
-    // pass through until Phase 2B is fully deployed.
-    // =========================================================================
-    if (pathname === '/signup') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/agency-site/get-started';
-
-      const rewriteResponse = NextResponse.rewrite(url, {
-        request: { headers: requestHeaders },
-      });
-
-      if (!existingCountryCookie) {
-        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
-        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
-        rewriteResponse.cookies.set('vc_country', validCountry, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 30,
-          sameSite: 'lax',
-        });
-      }
-      rewriteResponse.cookies.set('agency_id', agency.id, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-      });
-
-      return rewriteResponse;
-    }
-
-    // For all other routes, pass through with agency cookie
+    // For everything else (including /get-started, /signup, /signup/plan,
+    // /signup/success, /auth/*, etc.) pass through with the agency_id
+    // cookie set. The pages themselves call /api/agency/by-host to resolve
+    // agency context from the request host.
     const passResponse = NextResponse.next({
       request: { headers: requestHeaders },
       headers: response.headers,

@@ -24,13 +24,40 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-interface Agency { id: string; name: string; logo_url: string | null; primary_color: string; accent_color: string; price_starter?: number; price_pro?: number; price_growth?: number; limit_starter?: number; limit_pro?: number; limit_growth?: number; website_theme?: string; }
+// Phase 1: Agency now carries currency hints so non-US agencies render
+// their plan prices in the right symbol/format instead of forcing USD.
+interface Agency {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  primary_color: string;
+  accent_color: string;
+  price_starter?: number;
+  price_pro?: number;
+  price_growth?: number;
+  limit_starter?: number;
+  limit_pro?: number;
+  limit_growth?: number;
+  website_theme?: string;
+  country?: string | null;
+  currency?: string | null;
+  display_currency?: string | null;
+}
 interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; }
 
-function formatPrice(cents: number | undefined | null): string {
+// Phase 1: formatPrice now accepts currency. Falls back to USD. Uppercases
+// the code because Intl.NumberFormat requires the ISO 4217 form and the DB
+// (countryCurrencyMap in stripe-connect.js) stores lowercase ('usd', 'eur').
+function formatPrice(cents: number | undefined | null, currency?: string | null): string {
   const value = cents ?? 0;
   if (isNaN(value)) return '$--';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
+  const code = (currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 }).format(value / 100);
+  } catch {
+    // Bad currency code from the DB — fall back to USD rather than crash.
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
+  }
 }
 function formatLimit(limit: number | undefined | null): string {
   if (limit === undefined || limit === null || isNaN(limit) || limit === -1) return 'Unlimited';
@@ -61,6 +88,9 @@ function ClientUpgradeContent() {
   const isDark = agency?.website_theme === 'dark';
   const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
+
+  // Phase 1: resolved currency, used by every formatPrice call below.
+  const currencyCode = agency?.display_currency || agency?.currency || 'USD';
 
   const theme = useMemo(() => ({
     bg: isDark ? '#050505' : '#f9fafb', text: isDark ? '#fafaf9' : '#111827', textMuted: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
@@ -108,7 +138,25 @@ function ClientUpgradeContent() {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const cr = await fetch(`${backendUrl}/api/client/${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (!cr.ok) throw new Error('Failed');
-      const cd = await cr.json(); setClient(cd.client || cd); setAgency(cd.agency || cd.client?.agency);
+      const cd = await cr.json();
+      const clientData: Client | undefined = cd.client || cd;
+
+      // ──────────────────────────────────────────────────────────────
+      // Phase 1: Active-subscription guard — frontend half.
+      // If the client already has an active sub (webhook fired, status flipped
+      // to 'active'), bounce them to the dashboard before rendering the plan
+      // tiles. Without this, a user who came back here after Stripe checkout
+      // (state lost, refresh, back-button) could pick a DIFFERENT plan and
+      // create a second sub. Backend has a matching 409 guard as a backstop.
+      // To change plans, they go through the billing portal from the dashboard.
+      // ──────────────────────────────────────────────────────────────
+      if (clientData?.subscription_status === 'active') {
+        window.location.href = '/client/dashboard';
+        return;
+      }
+
+      setClient(clientData || null);
+      setAgency(cd.agency || (cd.client as any)?.agency);
     } catch (err) { setError('Failed to load account'); }
     finally { setLoading(false); }
   };
@@ -120,7 +168,36 @@ function ClientUpgradeContent() {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const r = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
-      if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Failed'); }
+
+      if (!r.ok) {
+        // Read body ONCE (response stream can only be consumed once)
+        let errData: any = {};
+        try { errData = await r.json(); } catch {}
+
+        // ─────────────────────────────────────────────────────────────
+        // Phase 1: backend says we already have an active subscription.
+        // Open the billing portal so the user can change plans there
+        // instead of creating a duplicate sub.
+        // ─────────────────────────────────────────────────────────────
+        if (r.status === 409 && errData.error === 'active_subscription_exists') {
+          setError('You already have an active subscription. Opening your billing portal…');
+          const portalRes = await fetch(`${backendUrl}/api/client/portal`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: client.id }),
+          });
+          if (portalRes.ok) {
+            const portalData = await portalRes.json();
+            if (portalData.url) { window.location.href = portalData.url; return; }
+          }
+          setError("You already have an active subscription, but we couldn't open the billing portal. Please contact support.");
+          setCheckoutLoading(null);
+          return;
+        }
+
+        throw new Error(errData.error || 'Failed');
+      }
+
       const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No checkout URL returned');
     } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
   };
@@ -165,7 +242,7 @@ function ClientUpgradeContent() {
               <div className="text-center mb-6">
                 <h3 className="text-lg font-semibold mb-2 tracking-tight" style={{ color: theme.text }}>{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price)}</span>
+                  <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price, currencyCode)}</span>
                   <span className="text-sm" style={{ color: theme.textMuted4 }}>/mo</span>
                 </div>
               </div>

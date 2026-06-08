@@ -1,5 +1,5 @@
 // app/get-started/page.tsx
-// This stub enables client-side navigation while middleware handles server rewrites
-// The actual component detects agency context via hostname
-
-export { default } from '../agency-site/get-started/page';
+// /get-started is the canonical public URL for the signup wizard. The
+// actual implementation lives at /signup so that /signup/plan and
+// /signup/success can stay sibling routes. This file just re-exports.
+export { default } from '../signup/page';

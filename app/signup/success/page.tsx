@@ -8,6 +8,7 @@ import {
   Sparkles, MessageSquare, LayoutDashboard, PhoneForwarded,
   PartyPopper, Rocket, CreditCard, Globe, Users, Zap
 } from 'lucide-react';
+import { useEmbedMessaging, postToParent } from '@/lib/embed-messaging';
 
 interface Agency {
   id: string;
@@ -67,16 +68,33 @@ function ConfettiEffect() {
 }
 
 // ============================================================================
-// CLIENT SUCCESS PAGE (for agency subdomains) — UNCHANGED
+// CLIENT SUCCESS PAGE (for agency subdomains)
 // ============================================================================
-function ClientSuccessPage({ agency }: { agency: Agency | null }) {
+function ClientSuccessPage({ agency, isEmbed }: { agency: Agency | null; isEmbed: boolean }) {
+  useEmbedMessaging(isEmbed, 3);
+
   const searchParams = useSearchParams();
   const [copied, setCopied] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
   const phoneNumber = searchParams.get('phone');
   const businessName = searchParams.get('business');
+  const planType = searchParams.get('plan');
 
   useEffect(() => { const t = setTimeout(() => setShowConfetti(false), 4000); return () => clearTimeout(t); }, []);
+
+  // Emit voiceai:signup_complete once on mount in embed mode so the host
+  // can fire its own conversion analytics and (optionally) navigate the
+  // top frame via data-redirect-on-success.
+  useEffect(() => {
+    if (!isEmbed) return;
+    postToParent({
+      type: 'voiceai:signup_complete',
+      phone: phoneNumber || undefined,
+      business: businessName || undefined,
+      plan: planType || undefined,
+      tier: 'client',
+    });
+  }, [isEmbed, phoneNumber, businessName, planType]);
 
   const handleCopyPhone = () => { if (phoneNumber) { navigator.clipboard.writeText(phoneNumber); setCopied(true); setTimeout(() => setCopied(false), 2000); } };
 
@@ -90,32 +108,46 @@ function ClientSuccessPage({ agency }: { agency: Agency | null }) {
     { icon: LayoutDashboard, title: 'Explore your dashboard', description: 'View calls, transcripts, and analytics' },
   ];
 
+  const wrapperClass = isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]';
+  const wrapperStyle: React.CSSProperties = isEmbed
+    ? { backgroundColor: 'transparent' }
+    : {};
+  const mainPaddingClass = isEmbed
+    ? 'relative min-h-0 py-2 px-2 sm:px-4'
+    : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32';
+
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.1]" style={{ backgroundColor: primaryColor }} />
-      </div>
+    <div className={wrapperClass} style={wrapperStyle}>
+      {!isEmbed && (
+        <>
+          <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.1]" style={{ backgroundColor: primaryColor }} />
+          </div>
+        </>
+      )}
       {showConfetti && <ConfettiEffect />}
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              {agency?.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain border border-white/10" />
-              ) : (
-                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-white/10" style={{ backgroundColor: primaryColor }}>
-                  <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                </div>
-              )}
-              <span className="text-base sm:text-lg font-semibold tracking-tight">{agency?.name || 'AI Receptionist'}</span>
-            </Link>
+      {!isEmbed && (
+        <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center justify-between">
+              <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                {agency?.logo_url ? (
+                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain border border-white/10" />
+                ) : (
+                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-white/10" style={{ backgroundColor: primaryColor }}>
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                  </div>
+                )}
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency?.name || 'AI Receptionist'}</span>
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32">
+      <main className={mainPaddingClass}>
         <div className="relative w-full max-w-lg">
           <div className="mb-8"><ProgressSteps currentStep={3} accentColor={primaryColor} /></div>
           <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20 text-center">
@@ -176,7 +208,9 @@ function ClientSuccessPage({ agency }: { agency: Agency | null }) {
 // ============================================================================
 // AGENCY SUCCESS PAGE — UPDATED: detects plan, shows correct messaging
 // ============================================================================
-function AgencySuccessPage() {
+function AgencySuccessPage({ isEmbed }: { isEmbed: boolean }) {
+  useEmbedMessaging(isEmbed, 3);
+
   const [showConfetti, setShowConfetti] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
   const [planType, setPlanType] = useState<string>('pro');
@@ -195,6 +229,16 @@ function AgencySuccessPage() {
       }
     } catch {}
   }, []);
+
+  // Emit signup_complete in embed mode for analytics + optional redirect.
+  useEffect(() => {
+    if (!isEmbed) return;
+    postToParent({
+      type: 'voiceai:signup_complete',
+      plan: planType,
+      tier: 'agency',
+    });
+  }, [isEmbed, planType]);
 
   const getAgencySlug = (): string | null => {
     try {
@@ -218,31 +262,43 @@ function AgencySuccessPage() {
     { icon: Globe, title: 'Set up your marketing site', description: 'Customize your landing page and connect a domain', href: '/agency/marketing' },
   ];
 
+  const wrapperClass = isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]';
+  const wrapperStyle: React.CSSProperties = isEmbed ? { backgroundColor: 'transparent' } : {};
+  const mainPaddingClass = isEmbed
+    ? 'relative min-h-0 py-2 px-2 sm:px-4'
+    : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32';
+
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.1] rounded-full blur-[128px]" />
-      </div>
+    <div className={wrapperClass} style={wrapperStyle}>
+      {!isEmbed && (
+        <>
+          <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-emerald-500/[0.1] rounded-full blur-[128px]" />
+          </div>
+        </>
+      )}
       {showConfetti && <ConfettiEffect />}
 
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 sm:h-20 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
-                  <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
+      {!isEmbed && (
+        <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center justify-between">
+              <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
+                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#fafaf9]" />
+                  </div>
                 </div>
-              </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
-            </Link>
+                <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32">
+      <main className={mainPaddingClass}>
         <div className="relative w-full max-w-lg">
           <div className="mb-8"><ProgressSteps currentStep={3} accentColor="#10b981" /></div>
 
@@ -323,6 +379,8 @@ function AgencySuccessPage() {
 // MAIN COMPONENT
 // ============================================================================
 function SuccessContent() {
+  const searchParams = useSearchParams();
+  const isEmbed = searchParams.get('embed') === 'true';
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
@@ -345,14 +403,14 @@ function SuccessContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className={isEmbed ? 'flex items-center justify-center py-8' : 'min-h-screen bg-[#050505] flex items-center justify-center'}>
         <div className="text-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" /><p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p></div>
       </div>
     );
   }
 
-  if (isAgencySubdomain) return <ClientSuccessPage agency={agency} />;
-  return <AgencySuccessPage />;
+  if (isAgencySubdomain) return <ClientSuccessPage agency={agency} isEmbed={isEmbed} />;
+  return <AgencySuccessPage isEmbed={isEmbed} />;
 }
 
 export default function SuccessPage() {
