@@ -14,9 +14,14 @@
 //     between wizard steps so the host can fire analytics (GTM dataLayer,
 //     Meta Pixel, etc).
 //
-// The actual postMessage emissions go to '*' because we don't know which
-// origin is hosting us. The corresponding embed.js loader verifies origin
-// on the RECEIVING side, which is where security matters.
+// Targeting: postMessage targets the value of `?parent_origin=` in the URL
+// when set (embed.js passes the host's window.location.origin in). If
+// missing or malformed we fall back to '*'. Even at '*' the security
+// boundary is correct because the parent embed.js validates `e.origin`
+// against its own known PLATFORM_ORIGIN on the RECEIVING side — that's
+// where the trust check lives. Targeting parent_origin is a defense-in-
+// depth measure to avoid broadcasting resize/step events to unintended
+// listeners.
 //
 // We never put auth tokens or PII into postMessage payloads — those stay
 // inside the iframe.
@@ -37,6 +42,29 @@ export interface EmbedMessage {
   [key: string]: any;
 }
 
+// Module-level cache for parent origin so we don't re-parse on every post.
+// JS modules are re-evaluated per page navigation in Next.js client routing,
+// so this is naturally fresh per page even though it looks long-lived.
+let cachedParentOrigin: string | null | undefined = undefined;
+
+function getParentOrigin(): string {
+  if (cachedParentOrigin !== undefined) return cachedParentOrigin ?? '*';
+  if (typeof window === 'undefined') return '*';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const origin = params.get('parent_origin');
+    // Origin format: protocol://host[:port] — no path, no query, no hash.
+    // Tight regex protects against weird inputs (URL fragments, javascript:,
+    // file:, data: — the URL constructor would accept many of these).
+    if (origin && /^https?:\/\/[a-z0-9.-]+(:\d+)?$/i.test(origin)) {
+      cachedParentOrigin = origin;
+      return origin;
+    }
+  } catch (e) { /* fall through */ }
+  cachedParentOrigin = null;
+  return '*';
+}
+
 /**
  * Post a message from the iframe to its parent. Safe to call from non-iframe
  * contexts — it just no-ops if window.parent === window.
@@ -45,7 +73,7 @@ export function postToParent(message: EmbedMessage): void {
   if (typeof window === 'undefined') return;
   if (window.parent === window) return; // not in an iframe
   try {
-    window.parent.postMessage(message, '*');
+    window.parent.postMessage(message, getParentOrigin());
   } catch (err) {
     // Cross-origin restrictions can throw; ignore. The host won't get this
     // event, which is the worst-case outcome — no security implication.

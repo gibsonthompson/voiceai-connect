@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock } from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { PLAN_NAMES } from '@/lib/plan-limits';
@@ -10,7 +10,7 @@ import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'team' | 'demo' | 'feedback';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'feedback';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
@@ -43,7 +43,7 @@ function AgencySettingsContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'team', 'demo', 'feedback'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'feedback'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
@@ -70,6 +70,7 @@ function AgencySettingsContent() {
 
   const [feedbackMessage, setFeedbackMessage] = useState(''); const [sendingFeedback, setSendingFeedback] = useState(false); const [feedbackSent, setFeedbackSent] = useState(false); const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]); const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
   const [usageData, setUsageData] = useState<any>(null); const [usageLoading, setUsageLoading] = useState(false); const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [clientHeaderMode, setClientHeaderMode] = useState<'agency_name' | 'business_name'>('agency_name');
   const [allowClientBranding, setAllowClientBranding] = useState(false);
@@ -94,7 +95,7 @@ function AgencySettingsContent() {
   const handleUpgrade = async (targetPlan: string) => { if (!agency) return; setUpgradeLoading(targetPlan); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, plan: targetPlan }) }); const data = await response.json(); if (data.url) window.location.href = data.url; else setError(data.error || 'Failed to start upgrade'); } catch (err) { setError('Failed to connect to billing'); } finally { setUpgradeLoading(null); } };
   const handleSendFeedback = async () => { if (!agency || !feedbackMessage.trim()) return; setSendingFeedback(true); setFeedbackError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: feedbackMessage.trim() }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); } const data = await response.json(); setFeedbackSent(true); setFeedbackMessage(''); if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]); setTimeout(() => setFeedbackSent(false), 3000); } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); } finally { setSendingFeedback(false); } };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; return true; });
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; return true; });
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = async () => { const dataUrl = reader.result as string; setLogoPreview(dataUrl); setLogoUrl(dataUrl); setExtractingColors(true); try { const result = await extractColorsFromImage(dataUrl); setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setDetectedWebsiteTheme(result.suggestedTheme); setDetectedLogoBgColor(result.logoBgColor); } catch (err) { console.error('Color extraction failed:', err); } finally { setExtractingColors(false); } }; reader.readAsDataURL(file); } };
   const toggleFeature = (plan: string, feature: string) => { setPlanFeatures(prev => ({ ...prev, [plan]: { ...prev[plan], [feature]: !prev[plan]?.[feature] } })); };
@@ -316,6 +317,70 @@ function AgencySettingsContent() {
             {activeTab === 'billing' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div><div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-start justify-between gap-4 mb-4"><div><p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{PLAN_NAMES[agency?.plan_type as keyof typeof PLAN_NAMES] || 'Free'}</p></div><span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span></div>{isOnTrial && trialDaysLeft !== null && (<div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><div className="flex items-center gap-2"><Receipt className="h-4 w-4" style={{ color: theme.infoText }} /><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p></div><p className="text-xs mt-1" style={{ color: theme.textMuted }}>{agency?.stripe_subscription_id ? `Your card will be charged on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.` : `Subscribe before ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'} to keep access.`}</p></div>)}<div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Platform Fee</p><p className="font-medium">{planPrice === 0 ? 'Free' : `$${planPrice}/mo`}</p></div><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p></div></div>{usageLoading ? (<div className="mt-4 pt-4 flex items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /><span className="text-sm" style={{ color: theme.textMuted }}>Loading usage...</span></div>) : usageData ? (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-3" style={{ color: theme.textMuted }}>Current Period Usage</p><div className="space-y-2"><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Billable clients</span><span className="font-medium">{usageData.billableClients ?? 0} × ${usageData.perClientRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Voice minutes</span><span className="font-medium">{usageData.totalMinutes ?? 0} × ${usageData.perMinuteRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm pt-2" style={{ borderTop: `1px solid ${theme.border}` }}><span className="font-medium">Estimated total</span><span className="font-semibold" style={{ color: theme.primary }}>${((usageData.estimatedTotal ?? 0) / 100).toFixed(2)}/mo</span></div></div></div>) : null}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription</button><p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p></div></div>{(agency?.plan_type === 'free' || agency?.plan_type === 'starter') && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade your plan</p></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onClick={() => handleUpgrade('pro')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Pro — $99/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>White-label, marketing site, AI Lab, demo phone, $9.99/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'pro' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro →'}</div></button><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Scale — $499/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>Everything in Pro, unlimited team, BYOT, $0/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale →'}</div></button></div></div>)}{agency?.plan_type === 'pro' && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-2"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade to Scale</p></div><p className="text-xs mb-3" style={{ color: theme.textMuted }}>$499/mo — $0/client, $0.05/min, AI Lab, unlimited team</p><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale'}</button></div>)}{isOnTrial && (<div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You&apos;ll lose access immediately and won&apos;t be charged.</p></div><button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel Trial</button></div></div>)}</div>)}
 
             {activeTab === 'twilio' && (<div className="space-y-4 sm:space-y-6"><div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p><p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Phone numbers for the US and Canada are provisioned automatically. Connect your own Twilio account for international numbers.</p></div></div><BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} /></div>)}
+
+            {activeTab === 'embed' && agency?.id && (() => {
+              // Path A canonical snippet — single embed.js URL across all agencies,
+              // agency identified by UUID baked into the data-agency attribute.
+              // The platform domain is read from env (defaults to production).
+              const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+              const snippet = `<div data-voiceai-signup data-agency="${agency.id}"></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
+              const handleCopy = async () => { try { await navigator.clipboard.writeText(snippet); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); } catch (e) { console.error('Copy failed:', e); } };
+              return (
+                <div className="space-y-4 sm:space-y-6">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-medium mb-1">Embed Signup Widget</h3>
+                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Paste this snippet on your marketing site to let visitors sign up for your AI receptionist without leaving your page. The form auto-adopts your brand colors, theme, and pricing.</p>
+                  </div>
+
+                  <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Where to paste it</p>
+                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Drop both lines anywhere in the HTML of your marketing site — typically inside a section where you want the form to appear. The widget will auto-resize to fit its content.</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-medium" style={{ color: theme.textMuted }}>Snippet</label>
+                      <button onClick={handleCopy} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors" style={{ backgroundColor: embedCopied ? theme.primary15 : theme.input, border: `1px solid ${embedCopied ? theme.primary30 : theme.inputBorder}`, color: embedCopied ? theme.primary : theme.text }}>
+                        {embedCopied ? <><Check className="h-3 w-3" />Copied</> : <><Code className="h-3 w-3" />Copy</>}
+                      </button>
+                    </div>
+                    <pre className="rounded-xl p-3 sm:p-4 text-xs overflow-x-auto font-mono leading-relaxed whitespace-pre" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{snippet}</pre>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-sm mb-3">Optional attributes</h4>
+                    <div className="space-y-2.5 text-xs sm:text-sm">
+                      <div className="flex items-start gap-3">
+                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-theme</code>
+                        <p style={{ color: theme.textMuted }}><span style={{ color: theme.text }}>{`"light"`}</span> or <span style={{ color: theme.text }}>{`"dark"`}</span> — overrides the agency&apos;s default theme for this widget.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-default-plan</code>
+                        <p style={{ color: theme.textMuted }}><span style={{ color: theme.text }}>{`"starter"`}</span>, <span style={{ color: theme.text }}>{`"pro"`}</span>, or <span style={{ color: theme.text }}>{`"growth"`}</span> — pre-selects a plan on the pricing step.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-redirect-on-success</code>
+                        <p style={{ color: theme.textMuted }}>A URL to send the parent page to after the signup completes (e.g. a thank-you page).</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                    <h4 className="font-medium text-sm mb-2">Analytics</h4>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>The widget pushes events to <code className="rounded px-1 py-0.5 font-mono text-xs" style={{ backgroundColor: theme.input, color: theme.text }}>window.dataLayer</code> if Google Tag Manager is on your page:</p>
+                    <ul className="space-y-1 text-xs font-mono" style={{ color: theme.textMuted }}>
+                      <li><span style={{ color: theme.text }}>voiceai_ready</span> — widget loaded</li>
+                      <li><span style={{ color: theme.text }}>voiceai_signup_step</span> — user advanced a step</li>
+                      <li><span style={{ color: theme.text }}>voiceai_signup_complete</span> — new client signed up</li>
+                      <li><span style={{ color: theme.text }}>voiceai_signup_error</span> — something went wrong</li>
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
 
             {activeTab === 'team' && agency?.id && (<AgencyTeamTab agencyId={agency.id} theme={theme} />)}
 

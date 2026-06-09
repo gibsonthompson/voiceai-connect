@@ -381,9 +381,14 @@ function AgencySuccessPage({ isEmbed }: { isEmbed: boolean }) {
 function SuccessContent() {
   const searchParams = useSearchParams();
   const isEmbed = searchParams.get('embed') === 'true';
+  const agencyParam = searchParams.get('agency');
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
+  // Set when an embed lookup explicitly fails — we render an unavailable
+  // state instead of falling through to AgencySuccessPage (totally wrong
+  // copy for a user who just signed up as a client).
+  const [embedError, setEmbedError] = useState<string | null>(null);
 
   useEffect(() => {
     const detectContext = async () => {
@@ -391,20 +396,49 @@ function SuccessContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
-        if (platformDomains.includes(host)) { setIsAgencySubdomain(false); setLoading(false); return; }
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        // Path A: embed mode on platform domain → fetch agency by ID
+        // and render ClientSuccessPage (not AgencySuccessPage).
+        if (platformDomains.includes(host) && isEmbed && agencyParam) {
+          const res = await fetch(`${backendUrl}/api/agency/by-id?id=${encodeURIComponent(agencyParam)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setAgency(data.agency);
+            setIsAgencySubdomain(true);
+          } else if (res.status === 403) {
+            setEmbedError('This signup form is currently unavailable.');
+          } else {
+            setEmbedError('Signup form could not be loaded.');
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (platformDomains.includes(host)) { setIsAgencySubdomain(false); setLoading(false); return; }
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         if (response.ok) { const data = await response.json(); setAgency(data.agency); setIsAgencySubdomain(true); } else { setIsAgencySubdomain(false); }
       } catch (err) { console.error('Failed to detect context:', err); setIsAgencySubdomain(false); }
       finally { setLoading(false); }
     };
     detectContext();
-  }, []);
+  }, [isEmbed, agencyParam]);
 
   if (loading) {
     return (
       <div className={isEmbed ? 'flex items-center justify-center py-8' : 'min-h-screen bg-[#050505] flex items-center justify-center'}>
         <div className="text-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-400 mx-auto" /><p className="mt-4 text-sm text-[#fafaf9]/40">Loading...</p></div>
+      </div>
+    );
+  }
+
+  if (embedError) {
+    return (
+      <div className="flex items-center justify-center py-12 px-4 text-center">
+        <div>
+          <p className="text-sm font-medium text-neutral-700">{embedError}</p>
+          <p className="text-xs text-neutral-500 mt-1">Please contact the site owner.</p>
+        </div>
       </div>
     );
   }

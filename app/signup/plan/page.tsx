@@ -82,7 +82,16 @@ function formatAgencyPrice(cents: number, agencyCountry: string = 'US'): string 
 // iframe context and the parent stops receiving step/resize events.
 function buildEmbedAwareUrl(path: string, isEmbed: boolean, extras: Record<string, string> = {}): string {
   const url = new URL(path, window.location.origin);
-  if (isEmbed) url.searchParams.set('embed', 'true');
+  if (isEmbed) {
+    url.searchParams.set('embed', 'true');
+    // Embed context propagation: see buildNextUrl in signup-page.tsx — agency
+    // UUID and parent_origin must ride through every internal navigation.
+    const current = new URLSearchParams(window.location.search);
+    const agencyParam = current.get('agency');
+    if (agencyParam) url.searchParams.set('agency', agencyParam);
+    const parentOrigin = current.get('parent_origin');
+    if (parentOrigin) url.searchParams.set('parent_origin', parentOrigin);
+  }
   for (const [k, v] of Object.entries(extras)) {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
   }
@@ -752,6 +761,11 @@ function PlanContent() {
   const [agencyIdFromUrl, setAgencyIdFromUrl] = useState<string | null>(null);
   const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
 
+  // Set when an embed lookup explicitly fails. We render an "unavailable"
+  // state instead of falling through to AgencyPlanSelection (which would
+  // show Free/Pro/Scale agency tiers to someone expecting client tiers).
+  const [embedError, setEmbedError] = useState<string | null>(null);
+
   useEffect(() => {
     setCachedThemeState(getCachedTheme());
   }, []);
@@ -762,17 +776,50 @@ function PlanContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const agencyParam = searchParams.get('agency');
-        
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
-        
+
         if (platformDomains.includes(host)) {
+          // ── Path A: embed mode on platform domain. Look up agency by ID
+          // (no host context to derive) and render ClientPlanSelection. We
+          // must NOT route to AgencyPlanSelection here — that flow is for an
+          // agency picking their OWN tier (Free/Pro/Scale), totally different
+          // semantic. Without isEmbed, ?agency= continues to mean "the agency
+          // is on this page picking their own tier post-signup."
+          if (isEmbed && agencyParam) {
+            const res = await fetch(`${backendUrl}/api/agency/by-id?id=${encodeURIComponent(agencyParam)}`);
+            if (res.ok) {
+              const data = await res.json();
+              setAgency(data.agency);
+              setIsAgencySubdomain(true);
+              setCachedTheme(data.agency.website_theme);
+
+              const stored = sessionStorage.getItem('client_signup_data');
+              if (stored) {
+                setSignupData(JSON.parse(stored));
+              } else {
+                // Lost step-1 data — bounce back to /get-started preserving embed flag
+                window.location.href = buildEmbedAwareUrl('/get-started', isEmbed, { agency: agencyParam });
+                return;
+              }
+            } else if (res.status === 403) {
+              setEmbedError('This signup form is currently unavailable.');
+            } else {
+              setEmbedError('Signup form could not be loaded.');
+            }
+            setLoading(false);
+            return;
+          }
+
+          // Non-embed: ?agency= is the agency's own tier-pick flow (Agency tier).
           if (agencyParam) {
             setAgencyIdFromUrl(agencyParam);
             setIsAgencySubdomain(false);
             setLoading(false);
             return;
           }
-          
+
           const stored = sessionStorage.getItem('client_signup_data');
           if (stored) {
             const data = JSON.parse(stored);
@@ -781,13 +828,12 @@ function PlanContent() {
               return;
             }
           }
-          
+
           setIsAgencySubdomain(false);
           setLoading(false);
           return;
         }
-        
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
         if (response.ok) {
@@ -821,6 +867,16 @@ function PlanContent() {
   }, [searchParams, router, isEmbed]);
 
   if (loading) return <ThemedLoading theme={cachedTheme} />;
+  if (embedError) {
+    return (
+      <div className="flex items-center justify-center py-12 px-4 text-center">
+        <div>
+          <p className="text-sm font-medium text-neutral-700">{embedError}</p>
+          <p className="text-xs text-neutral-500 mt-1">Please contact the site owner.</p>
+        </div>
+      </div>
+    );
+  }
   if (isAgencySubdomain && agency && signupData) return <ClientPlanSelection agency={agency} signupData={signupData} isEmbed={isEmbed} />;
   if (agencyIdFromUrl) return <AgencyPlanSelection agencyId={agencyIdFromUrl} />;
 

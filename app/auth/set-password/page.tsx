@@ -83,6 +83,7 @@ function SetPasswordContent() {
   const token = searchParams.get('token');
   const returnTo = searchParams.get('returnTo');
   const isEmbed = searchParams.get('embed') === 'true';
+  const agencyParam = searchParams.get('agency');
 
   useEmbedMessaging(isEmbed);
   
@@ -108,14 +109,35 @@ function SetPasswordContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
-        
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        // ── Path A: embed mode on platform domain.
+        // No host-based agency context, so look up by ID for branding.
+        // We set isAgencySubdomain=true so downstream login redirect points
+        // at /client/login (agency-themed) rather than /agency/login.
+        if (platformDomains.includes(host) && isEmbed && agencyParam) {
+          const res = await fetch(`${backendUrl}/api/agency/by-id?id=${encodeURIComponent(agencyParam)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setAgency(data.agency);
+            setIsAgencySubdomain(true);
+            setCachedTheme(data.agency.website_theme);
+            // Skip favicon side effects in embed mode (iframe favicon isn't
+            // visible to the user; would just pollute the iframe head).
+          }
+          // Soft-fail: if the lookup fails, fall back to platform-default
+          // branding. The user has a valid token and we still want them to
+          // be able to set their password.
+          setContextLoading(false);
+          return;
+        }
+
         if (platformDomains.includes(host)) {
           setIsAgencySubdomain(false);
           setContextLoading(false);
           return;
         }
         
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
         if (response.ok) {
@@ -135,7 +157,7 @@ function SetPasswordContent() {
       }
     };
     detectContext();
-  }, [isEmbed]);
+  }, [isEmbed, agencyParam]);
 
   useEffect(() => {
     if (!token) {
@@ -206,16 +228,26 @@ function SetPasswordContent() {
       setRedirectTarget(target);
       setSuccess(true);
 
-      // Embed mode: emit voiceai:auth_complete and let the parent decide
-      // navigation. The iframe's auth_token is set in localStorage on the
-      // platform origin — that won't carry to the agency's marketing
-      // domain. Cross-origin token handoff is a Phase 4 enhancement; for
-      // now the host configures data-redirect-on-success or leaves the
-      // user on the success state in the iframe.
+      // Embed mode: emit voiceai:signup_complete (the canonical "user
+      // finished signup" event). Host can:
+      //   - Configure data-redirect-on-success on the embed container →
+      //     parent navigates top frame to that URL (typical white-label
+      //     pattern: send user to a thank-you page on their own marketing
+      //     site, away from our platform domain).
+      //   - Leave it unset → parent falls back to default_url which we
+      //     supply here (platform dashboard, where localStorage auth_token
+      //     is valid and the user lands logged-in).
+      //
+      // Cross-origin auth handoff (so the user can land on the agency's
+      // own dashboard subdomain already logged-in) is a future enhancement.
+      // The auth_complete event is reserved for that flow.
       if (isEmbed) {
+        const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+        const absoluteTarget = target.startsWith('http') ? target : `https://${platformDomain}${target.startsWith('/') ? target : '/' + target}`;
         postToParent({
-          type: 'voiceai:auth_complete',
-          returnTo: target,
+          type: 'voiceai:signup_complete',
+          tier: 'client',
+          default_url: absoluteTarget,
         });
         return;
       }

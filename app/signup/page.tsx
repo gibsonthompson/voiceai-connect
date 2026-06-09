@@ -128,7 +128,17 @@ function setFavicon(url: string) {
 // embed styling on the next step.
 function buildNextUrl(path: string, isEmbed: boolean, extras?: Record<string, string>): string {
   const url = new URL(path, window.location.origin);
-  if (isEmbed) url.searchParams.set('embed', 'true');
+  if (isEmbed) {
+    url.searchParams.set('embed', 'true');
+    // Embed context propagation: agency UUID and parent_origin must ride
+    // through every internal navigation or the next page can't rebuild the
+    // embed context (and falls through to the wrong form / posts to '*').
+    const current = new URLSearchParams(window.location.search);
+    const agencyParam = current.get('agency');
+    if (agencyParam) url.searchParams.set('agency', agencyParam);
+    const parentOrigin = current.get('parent_origin');
+    if (parentOrigin) url.searchParams.set('parent_origin', parentOrigin);
+  }
   if (extras) {
     for (const [k, v] of Object.entries(extras)) {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
@@ -722,10 +732,17 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
 function SignupContent() {
   const searchParams = useSearchParams();
   const isEmbed = searchParams.get('embed') === 'true';
+  const agencyParam = searchParams.get('agency');
 
   const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState<Agency | null>(null);
+  // True when we should render ClientSignupForm (vs AgencySignupForm).
+  // Set on agency-subdomain detect AND on platform+embed+agencyParam (Path A).
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
+  // Set when an embed lookup explicitly fails (suspended/missing agency)
+  // so we render a tasteful unavailable state instead of falling through
+  // to AgencySignupForm — which would be the wrong form entirely.
+  const [embedError, setEmbedError] = useState<string | null>(null);
 
   useEffect(() => {
     const detectContext = async () => {
@@ -733,10 +750,35 @@ function SignupContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
-        
-        if (platformDomains.includes(host)) { setIsAgencySubdomain(false); setLoading(false); return; }
-        
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        // ── Path A: embed mode on the platform domain.
+        // No host-based agency context (we're on myvoiceaiconnect.com), so
+        // look the agency up by UUID baked into the embed snippet. If the
+        // agency lookup fails we set embedError instead of falling through
+        // to AgencySignupForm — the user is in an iframe expecting a
+        // client signup form, not a "become an agency" form.
+        if (platformDomains.includes(host) && isEmbed && agencyParam) {
+          const res = await fetch(`${backendUrl}/api/agency/by-id?id=${encodeURIComponent(agencyParam)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setAgency(data.agency);
+            setIsAgencySubdomain(true);
+          } else if (res.status === 403) {
+            setEmbedError('This signup form is currently unavailable.');
+          } else {
+            setEmbedError('Signup form could not be loaded.');
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (platformDomains.includes(host)) {
+          setIsAgencySubdomain(false);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
         
         if (response.ok) {
@@ -754,12 +796,25 @@ function SignupContent() {
       }
     };
     detectContext();
-  }, []);
+  }, [isEmbed, agencyParam]);
 
   if (loading) {
     return (
       <div className={isEmbed ? 'flex items-center justify-center py-8' : 'min-h-screen bg-neutral-100 flex items-center justify-center'}>
         <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  // Embed-mode lookup failure: tasteful unavailable state inside the iframe.
+  // Plain text, no chrome — the host page provides the surrounding bg.
+  if (embedError) {
+    return (
+      <div className="flex items-center justify-center py-12 px-4 text-center">
+        <div>
+          <p className="text-sm font-medium text-neutral-700">{embedError}</p>
+          <p className="text-xs text-neutral-500 mt-1">Please contact the site owner.</p>
+        </div>
       </div>
     );
   }

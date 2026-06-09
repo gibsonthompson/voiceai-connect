@@ -34,10 +34,29 @@
 (function () {
   'use strict';
 
-  // Embedded by `https://myvoiceaiconnect.com/embed.js`. Change here if the
-  // platform domain ever moves. This is also the ONLY origin we accept
-  // postMessages from inside the iframe.
-  var PLATFORM_ORIGIN = 'https://myvoiceaiconnect.com';
+  // ── PLATFORM_ORIGIN auto-detect ────────────────────────────────────────────
+  // The script's own src tells us which platform we belong to. Lets the same
+  // embed.js work whether agencies load it from myvoiceaiconnect.com (Path A,
+  // recommended) or from an agency subdomain like callbird.myvoiceaiconnect.com
+  // (Path B, also works since slug subdomains are auto-mapped by middleware).
+  // Falls back to the platform domain if detection fails — covers the case
+  // where some bundler strips script[src] or the script was injected by a
+  // non-standard loader.
+  function detectPlatformOrigin() {
+    try {
+      var scripts = document.getElementsByTagName('script');
+      for (var i = scripts.length - 1; i >= 0; i--) {
+        var src = scripts[i].src || '';
+        if (src.indexOf('/embed.js') !== -1) {
+          var url = new URL(src);
+          return url.protocol + '//' + url.host;
+        }
+      }
+    } catch (_) { /* fall through */ }
+    return 'https://myvoiceaiconnect.com';
+  }
+
+  var PLATFORM_ORIGIN = detectPlatformOrigin();
   var IFRAME_PATH = '/get-started';
 
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -63,6 +82,13 @@
 
     var defaultPlan = container.getAttribute('data-default-plan');
     if (defaultPlan) params.set('default_plan', defaultPlan);
+
+    // Pass the host page's origin so the iframe can target postMessage at it
+    // specifically instead of broadcasting to '*'. Defense-in-depth — the
+    // parent still validates e.origin on the receiving side either way.
+    if (window.location && window.location.origin) {
+      params.set('parent_origin', window.location.origin);
+    }
 
     return PLATFORM_ORIGIN + IFRAME_PATH + '?' + params.toString();
   }
@@ -141,10 +167,23 @@
             business: e.data.business || null,
             plan: e.data.plan || null
           });
-          if (redirectOnSuccess) {
+          // Navigation priority:
+          //   1. Agency's data-redirect-on-success (their white-label thank-you page)
+          //   2. The iframe's suggested default_url (platform dashboard, where
+          //      the user is already logged-in via platform-origin localStorage)
+          //   3. Nothing — leave user on iframe success state
+          // Both URLs are sanity-checked for the https:// prefix to block
+          // javascript: / data: URL shenanigans.
+          var navTarget = null;
+          if (redirectOnSuccess && /^https?:\/\//.test(redirectOnSuccess)) {
+            navTarget = redirectOnSuccess;
+          } else if (typeof e.data.default_url === 'string' && /^https:\/\//.test(e.data.default_url)) {
+            navTarget = e.data.default_url;
+          }
+          if (navTarget) {
             // Redirect the TOP frame (the host site), not the iframe.
-            try { window.top.location.href = redirectOnSuccess; } catch (_) {
-              window.location.href = redirectOnSuccess;
+            try { window.top.location.href = navTarget; } catch (_) {
+              window.location.href = navTarget;
             }
           }
           break;
