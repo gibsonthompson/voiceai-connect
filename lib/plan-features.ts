@@ -13,6 +13,14 @@
 // and the agency's own plan_features map in the DB. That system stays as is.
 //
 // Created 2026-06-04 alongside the pricing drift cleanup pass.
+// Updated 2026-06-09 — Pro team-member cap dropped from 5 → 3, Scale stays
+// unlimited. Mirror these in lib/plan-limits.ts (maxTeamMembers),
+// src/routes/team.js (checkTeamLimit defaults), and
+// src/routes/stripe-platform.js (TEAM_MEMBER_LIMITS).
+// Updated 2026-06-09 — Use .toFixed(2) on every rate numeric so 0.10 renders
+// as "0.10" instead of "0.1". JS number-to-string strips trailing zeros, which
+// was making the Pro tier card on the marketing homepage display
+// "$9.99/client/mo + $0.1/min" — reads like a typo.
 
 import { Zap, Shield, Crown, type LucideIcon } from 'lucide-react';
 import { PLAN_PRICES, PLAN_RATES } from './plan-limits';
@@ -48,7 +56,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     price: PLAN_PRICES.free, // 0
     icon: Zap,
     description: 'Start selling — zero commitment',
-    rate: `$${PLAN_RATES.free.perClient}/client/mo + $${PLAN_RATES.free.perMinute}/min`,
+    rate: `$${PLAN_RATES.free.perClient.toFixed(2)}/client/mo + $${PLAN_RATES.free.perMinute.toFixed(2)}/min`,
     trial: null,
     popular: false,
     features: [
@@ -70,7 +78,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     price: PLAN_PRICES.pro, // 99
     icon: Shield,
     description: 'A complete white-label business',
-    rate: `$${PLAN_RATES.pro.perClient}/client/mo + $${PLAN_RATES.pro.perMinute}/min`,
+    rate: `$${PLAN_RATES.pro.perClient.toFixed(2)}/client/mo + $${PLAN_RATES.pro.perMinute.toFixed(2)}/min`,
     trial: '14-day free trial — card required',
     popular: true,
     features: [
@@ -79,7 +87,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
       'Marketing website + AI demo line',
       'Google Calendar integration',
       'Lead generation CRM',
-      'Up to 5 team members',
+      'Up to 3 team members',
       '7-day free trial for your clients',
     ],
     limitations: [],
@@ -90,7 +98,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     price: PLAN_PRICES.scale, // 499
     icon: Crown,
     description: 'All-in for high-volume agencies',
-    rate: `$0/client + $${PLAN_RATES.scale.perMinute}/min only`,
+    rate: `$0/client + $${PLAN_RATES.scale.perMinute.toFixed(2)}/min only`,
     trial: '14-day free trial — card required',
     popular: false,
     features: [

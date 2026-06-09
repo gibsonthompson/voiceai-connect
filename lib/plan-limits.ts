@@ -2,6 +2,11 @@
 // Centralized plan configuration for feature gating
 // REWRITTEN: 2026-05-06 — Pricing Restructure (free/pro/scale + usage-based billing)
 // UPDATED: 2026-05-09 — Demo phone enabled for free tier
+// UPDATED: 2026-06-09 — Pro tier max team members dropped from 5 → 3 (Scale
+//          stays Infinity). Keep in sync with AGENCY_PLAN_TIERS.pro.features
+//          in lib/plan-features.ts, checkTeamLimit() defaults in
+//          src/routes/team.js, and TEAM_MEMBER_LIMITS in
+//          src/routes/stripe-platform.js.
 // IMPORTANT: Includes legacy aliases (starter/professional/enterprise) so existing
 //            UI code compiles during transition. Remove after Phase 2 UI migration.
 
@@ -45,7 +50,7 @@ const PRO_FEATURES = {
   leadFinderAdvanced: false,
   aiLab: true,
   industryTemplates: false,
-  maxTeamMembers: 5,
+  maxTeamMembers: 3,
   basicAnalytics: true,
   fullAnalytics: true,
   apiAccess: false,
