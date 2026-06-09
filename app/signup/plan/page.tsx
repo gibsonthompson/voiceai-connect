@@ -254,22 +254,11 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   };
 
   // For paid plans in embed mode, the Stripe checkout URL can't be loaded
-  // inside the iframe (Stripe blocks framing). Navigate the TOP frame
-  // instead. Falls back to in-iframe navigation if the browser blocks
-  // window.top access (rare with same-protocol embed).
-  const navigateForCheckout = (checkoutUrl: string) => {
-    if (isEmbed) {
-      try {
-        if (window.top) {
-          window.top.location.href = checkoutUrl;
-          return;
-        }
-      } catch (_) {
-        // Fall through to in-iframe redirect
-      }
-    }
-    safeRedirect(checkoutUrl);
-  };
+  // inside the iframe (Stripe blocks framing). When the
+  // requires_card_on_trial flow lands (Phase 5 backlog), reintroduce a
+  // navigateForCheckout helper here that does window.top.location.href = url
+  // with a safeRedirect fallback. Removed for now to keep the file dead-code
+  // free — see git history if you need the prior implementation.
 
   const handleSelectPlan = async (planType: string) => {
     if (loading || redirecting) return;
@@ -311,6 +300,13 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
       sessionStorage.removeItem('client_signup_data');
 
+      // Bug 13 (Phase 5): handleClientSignup ALWAYS returns data.token on
+      // success. The earlier four-branch handler had dead code for
+      // data.checkoutUrl, data.sessionToken, data.exists, and data.clientId
+      // shapes the backend has never returned. The 'already exists' case
+      // arrives as a 409 + Account already exists message — caught by the
+      // !response.ok branch above and surfaced in the error state, so the
+      // UI's includes('already exists') check still renders the Sign In link.
       if (data.token) {
         // Trial flow: redirect within iframe to /auth/set-password, which
         // emits voiceai:auth_complete after the password is set. Embed
@@ -322,41 +318,12 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         safeRedirect(setPasswordUrl);
         return;
       }
-      
-      if (data.checkoutUrl) {
-        navigateForCheckout(data.checkoutUrl);
-        return;
-      }
-      
-      if (data.sessionToken) {
-        try {
-          await fetch('/api/auth/set-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: data.sessionToken }),
-          });
-        } catch (sessionErr) {
-          console.error('Failed to set session:', sessionErr);
-        }
-        safeRedirect('/client/dashboard');
-        return;
-      }
-      
-      if (data.message?.includes('already exists') || data.exists) {
-        if (isMountedRef.current) {
-          setError('An account with this email already exists. Please sign in.');
-          setLoading(false);
-          setSelectedPlan(null);
-        }
-        return;
-      }
-      
-      if (data.clientId || data.client?.id) {
-        safeRedirect('/client/login?message=account-created');
-        return;
-      }
-      
-      safeRedirect('/client/login');
+
+      // Defensive fallback. If we ever get a 2xx response without a token, the
+      // backend invariant has drifted — log it and degrade gracefully to the
+      // login screen rather than leaving the user stuck on a spinner.
+      console.error('Unexpected /api/client/signup response shape (no token):', data);
+      safeRedirect('/client/login?message=account-created');
       
     } catch (err) {
       if (isMountedRef.current && !redirecting) {
