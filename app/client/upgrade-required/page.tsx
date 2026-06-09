@@ -2,16 +2,8 @@
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Check, Loader2, AlertTriangle, Phone, Clock, Zap } from 'lucide-react';
-
-const DEFAULT_CLIENT_PRICING = {
-  price_starter: 9900,
-  price_pro: 14900,
-  price_growth: 29900,
-  limit_starter: 50,
-  limit_pro: 150,
-  limit_growth: 500,
-};
+import { Check, Loader2, AlertTriangle, Phone, Clock, Zap, X } from 'lucide-react';
+import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
 
 function getContrastColor(hex: string): string {
   const c = hex.replace('#', '');
@@ -24,8 +16,10 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// Phase 1: Agency now carries currency hints so non-US agencies render
-// their plan prices in the right symbol/format instead of forcing USD.
+// Phase 3: Agency now also carries the plan rebranding columns + plan_features
+// so buildClientPlans can render agency-specific tier names, taglines, and
+// the actual toggled features instead of the invented hardcoded list that
+// used to live here.
 interface Agency {
   id: string;
   name: string;
@@ -42,12 +36,19 @@ interface Agency {
   country?: string | null;
   currency?: string | null;
   display_currency?: string | null;
+  plan_starter_name?: string | null;
+  plan_pro_name?: string | null;
+  plan_growth_name?: string | null;
+  plan_starter_description?: string | null;
+  plan_pro_description?: string | null;
+  plan_growth_description?: string | null;
+  plan_features?: Record<string, Record<string, boolean | number>> | null;
 }
 interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; }
 
-// Phase 1: formatPrice now accepts currency. Falls back to USD. Uppercases
-// the code because Intl.NumberFormat requires the ISO 4217 form and the DB
-// (countryCurrencyMap in stripe-connect.js) stores lowercase ('usd', 'eur').
+// Phase 1: formatPrice accepts currency. Falls back to USD. Uppercases the
+// code because Intl.NumberFormat requires the ISO 4217 form and the DB stores
+// lowercase ('usd', 'eur').
 function formatPrice(cents: number | undefined | null, currency?: string | null): string {
   const value = cents ?? 0;
   if (isNaN(value)) return '$--';
@@ -55,22 +56,8 @@ function formatPrice(cents: number | undefined | null, currency?: string | null)
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 }).format(value / 100);
   } catch {
-    // Bad currency code from the DB — fall back to USD rather than crash.
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
   }
-}
-function formatLimit(limit: number | undefined | null): string {
-  if (limit === undefined || limit === null || isNaN(limit) || limit === -1) return 'Unlimited';
-  return limit.toLocaleString();
-}
-
-function getPrice(agency: Agency | null, key: 'price_starter' | 'price_pro' | 'price_growth'): number {
-  const val = agency?.[key];
-  return (typeof val === 'number' && !isNaN(val)) ? val : DEFAULT_CLIENT_PRICING[key];
-}
-function getLimit(agency: Agency | null, key: 'limit_starter' | 'limit_pro' | 'limit_growth'): number {
-  const val = agency?.[key];
-  return (typeof val === 'number' && !isNaN(val)) ? val : DEFAULT_CLIENT_PRICING[key];
 }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
@@ -89,8 +76,17 @@ function ClientUpgradeContent() {
   const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
 
-  // Phase 1: resolved currency, used by every formatPrice call below.
+  // Phase 1: resolved currency used by every formatPrice call below.
   const currencyCode = agency?.display_currency || agency?.currency || 'USD';
+
+  // Phase 3: single source of truth for plan tiles. buildClientPlans handles
+  // pricing defaults, the rebranded name/description, the call-limit display,
+  // and converting the plan_features JSONB into included/excluded label lists.
+  // useMemo so it doesn't rebuild on every render while checkout is loading.
+  const plans: ClientPlanTile[] = useMemo(
+    () => (agency ? buildClientPlans(agency) : []),
+    [agency]
+  );
 
   const theme = useMemo(() => ({
     bg: isDark ? '#050505' : '#f9fafb', text: isDark ? '#fafaf9' : '#111827', textMuted: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
@@ -99,6 +95,9 @@ function ClientUpgradeContent() {
     card: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
     errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', errorText: isDark ? '#fca5a5' : '#991b1b', errorBorder: 'rgba(239,68,68,0.3)',
     warningBg: isDark ? 'rgba(245,158,11,0.1)' : '#fffbeb', warningText: isDark ? '#fcd34d' : '#92400e',
+    excludedBg: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+    excludedText: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af',
+    excludedIcon: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db',
   }), [isDark]);
 
   const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: isDark ? 'blur(20px)' : 'blur(12px)' };
@@ -209,12 +208,6 @@ function ClientUpgradeContent() {
     </div>
   );
 
-  const plans = [
-    { id: 'starter', name: 'Starter', price: getPrice(agency, 'price_starter'), limit: getLimit(agency, 'limit_starter'), popular: false, features: [`${formatLimit(getLimit(agency, 'limit_starter'))} calls/month`, '24/7 AI receptionist', 'Call summaries & transcripts', 'SMS notifications', 'Basic analytics'] },
-    { id: 'pro', name: 'Professional', price: getPrice(agency, 'price_pro'), limit: getLimit(agency, 'limit_pro'), popular: true, features: [`${formatLimit(getLimit(agency, 'limit_pro'))} calls/month`, 'Everything in Starter', 'Priority support', 'Advanced analytics', 'Custom greeting'] },
-    { id: 'growth', name: 'Growth', price: getPrice(agency, 'price_growth'), limit: getLimit(agency, 'limit_growth'), popular: false, features: [`${formatLimit(getLimit(agency, 'limit_growth'))} calls/month`, 'Everything in Professional', 'Dedicated support', 'API access', 'Custom integrations'] },
-  ];
-
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `\n::selection { background-color: ${primaryColor}40; color: inherit; }` }} />
@@ -239,22 +232,48 @@ function ClientUpgradeContent() {
             <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
               style={{ ...glass, borderColor: plan.popular ? primaryColor : theme.border, borderWidth: plan.popular ? '2px' : '1px', boxShadow: plan.popular ? `0 0 0 1px ${primaryColor}, 0 8px 30px ${hexToRgba(primaryColor, 0.12)}` : 'none' }}>
               {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: primaryColor, color: primaryText }}>Most Popular</div>}
+
               <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold mb-2 tracking-tight" style={{ color: theme.text }}>{plan.name}</h3>
-                <div className="flex items-baseline justify-center gap-1">
+                <h3 className="text-lg font-semibold mb-1 tracking-tight" style={{ color: theme.text }}>{plan.name}</h3>
+                {/* Phase 3: agency-provided tagline. Skipped silently if null. */}
+                {plan.description && (
+                  <p className="text-[12px] mb-3" style={{ color: theme.textMuted }}>{plan.description}</p>
+                )}
+                <div className="flex items-baseline justify-center gap-1 mt-2">
                   <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price, currencyCode)}</span>
                   <span className="text-sm" style={{ color: theme.textMuted4 }}>/mo</span>
                 </div>
               </div>
-              <ul className="space-y-3 mb-6">
-                {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start gap-2.5">
+
+              {/* Included features — sourced from buildClientPlans so it reflects
+                  exactly what the agency toggled in Settings → Pricing. The
+                  call-limit string and team-member count are already inlined. */}
+              <ul className="space-y-2.5 mb-4">
+                {plan.included.map((f, i) => (
+                  <li key={`inc-${i}`} className="flex items-start gap-2.5">
                     <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
                     <span className="text-[13px]" style={{ color: theme.textSubtle }}>{f}</span>
                   </li>
                 ))}
               </ul>
-              <button onClick={() => handleSelectPlan(plan.id as any)} disabled={checkoutLoading !== null}
+
+              {/* Excluded features — greyed out so the user can see what they'd
+                  gain by picking a higher tier. Same pattern as /signup/plan. */}
+              {plan.excluded.length > 0 && (
+                <ul className="space-y-2.5 mb-6">
+                  {plan.excluded.map((f, i) => (
+                    <li key={`exc-${i}`} className="flex items-start gap-2.5">
+                      <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: theme.excludedBg }}>
+                        <X className="h-2.5 w-2.5" style={{ color: theme.excludedIcon }} />
+                      </div>
+                      <span className="text-[13px]" style={{ color: theme.excludedText }}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {plan.excluded.length === 0 && <div className="mb-6" />}
+
+              <button onClick={() => handleSelectPlan(plan.id)} disabled={checkoutLoading !== null}
                 className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ backgroundColor: plan.popular ? primaryColor : 'transparent', color: plan.popular ? primaryText : primaryColor, border: plan.popular ? 'none' : `2px solid ${primaryColor}` }}>
                 {checkoutLoading === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" />Processing...</> : <><Zap className="h-4 w-4" />Select {plan.name}</>}
