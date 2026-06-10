@@ -26,7 +26,7 @@ interface TeamMember {
 interface TeamLimits {
   allowed: boolean;
   current: number;
-  max: number;
+  max: number; // -1 = unlimited (Scale tier or trial), 0 = blocked, >0 = finite cap
 }
 
 interface Props {
@@ -257,6 +257,18 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
   };
 
   // ============================================================================
+  // DERIVED LIMIT STATE
+  // -1 is the "unlimited" sentinel returned by routes/team.js checkTeamLimit
+  // for Scale tier and any agency currently on a trial. Treat unlimited as
+  // "can add members" and render "Unlimited" instead of the literal -1.
+  // ============================================================================
+  const isUnlimited = limits.max === -1;
+  const canAddMembers = isUnlimited || limits.max > 0;
+  const countText = isUnlimited
+    ? `${limits.current} team members (Unlimited)`
+    : `${limits.current} of ${limits.max} team members`;
+
+  // ============================================================================
   // RENDER
   // ============================================================================
   if (loading) {
@@ -274,12 +286,10 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
         <div>
           <h3 className="text-base sm:text-lg font-medium mb-1">Team Members</h3>
           <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-            {limits.max === 0
-              ? 'Upgrade your plan to add team members.'
-              : `${limits.current} of ${limits.max} team members`}
+            {limits.max === 0 ? 'Upgrade your plan to add team members.' : countText}
           </p>
         </div>
-        {limits.max > 0 && (
+        {canAddMembers && (
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             disabled={!limits.allowed}
@@ -307,13 +317,13 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
         </div>
       )}
 
-      {/* Plan gate message */}
+      {/* Plan gate message — only shows for Free agencies (limits.max=0) */}
       {limits.max === 0 && (
         <div className="rounded-xl p-4 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
           <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>Team members not available</p>
           <p className="text-xs" style={{ color: theme.textMuted }}>
-            Upgrade to Professional or Enterprise to invite team members to your agency dashboard.
+            Upgrade to Pro or Scale to invite team members to your agency dashboard.
           </p>
         </div>
       )}
@@ -556,8 +566,8 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
         </div>
       )}
 
-      {/* Empty state */}
-      {members.length === 0 && limits.max > 0 && !showAddForm && (
+      {/* Empty state — shows when the agency can add members but has none */}
+      {members.length === 0 && canAddMembers && !showAddForm && (
         <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
           <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>No team members yet</p>
