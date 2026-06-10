@@ -35,6 +35,69 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
 
 function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) { const info = FEATURE_LABELS[featureKey]; if (!info) return null; return (<div className="flex items-center justify-between py-2.5 px-1 group"><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p></div><button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div>); }
 
+// ── Pro upgrade prompt ──────────────────────────────────────────────────
+// "This is what you're missing" — the actual feature renders behind a
+// blur+dim, and this card floats on top with a tailored value prop and a
+// hard CTA. Used by every Pro-gated section (Profile branding, Team, Demo,
+// Twilio BYOT) so the visual treatment is identical everywhere.
+function ProUpgradeCard({ title, description, theme }: { title?: string; description: string; theme: any }) {
+  return (
+    <div
+      className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
+      style={{
+        backgroundColor: theme.card,
+        border: `1px solid ${theme.border}`,
+        boxShadow: theme.isDark
+          ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
+          : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}cc 100%)` }}
+        >
+          <Sparkles className="h-5 w-5" style={{ color: theme.primaryText }} />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{title || 'Unlock with Pro'}</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on Pro and above</p>
+        </div>
+      </div>
+      <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
+      <a
+        href="/agency/settings?tab=billing"
+        className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
+        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+      >
+        Upgrade to Pro
+        <ExternalLink className="h-3.5 w-3.5" />
+      </a>
+    </div>
+  );
+}
+
+// When isFreePlan, children render dimmed/blurred and non-interactive in the
+// background and the ProUpgradeCard floats on top via absolute positioning.
+// When not Free, children render normally (no wrapper, no DOM cost).
+function ProFeatureGate({ isFreePlan, title, description, theme, children }: { isFreePlan: boolean; title?: string; description: string; theme: any; children: React.ReactNode }) {
+  if (!isFreePlan) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div
+        className="opacity-40 pointer-events-none select-none"
+        style={{ filter: 'blur(1.5px)' }}
+        aria-hidden="true"
+      >
+        {children}
+      </div>
+      <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-10 px-4 pointer-events-none">
+        <ProUpgradeCard title={title} description={description} theme={theme} />
+      </div>
+    </div>
+  );
+}
+
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode } = useAgency();
   const theme = useTheme();
@@ -194,7 +257,7 @@ function AgencySettingsContent() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
 
-            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div>{isFreePlan ? (<div className="rounded-xl p-5 flex items-start gap-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hover }}><Lock className="h-5 w-5" style={{ color: theme.textMuted }} /></div><div><p className="font-medium text-sm">Pro Plan Required</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>White-label branding — your own logo, custom brand colors, a branded subdomain, and client dashboard customization — is available on Pro and above. Upgrade to make the platform yours.</p><a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors" style={{ color: theme.primary }}>Upgrade to Pro <ExternalLink className="h-3 w-3" /></a></div></div>) : (<><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/get-started</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></>)}</div>)}
+            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><ProFeatureGate isFreePlan={isFreePlan} theme={theme} description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted — saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/get-started</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></ProFeatureGate></div>)}
 
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
@@ -375,53 +438,23 @@ function AgencySettingsContent() {
             })()}
 
             {activeTab === 'team' && agency?.id && (
-              isFreePlan ? (
-                <div className="space-y-4 sm:space-y-6">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-medium mb-1">Team Members</h3>
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Invite team members to manage clients with you.</p>
-                  </div>
-                  <div className="rounded-xl p-5 flex items-start gap-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <Lock className="h-5 w-5" style={{ color: theme.textMuted }} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Pro Plan Required</p>
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Invite up to 3 agency team members on Pro, or unlimited on Scale. Each member gets their own login with granular page-level permissions and per-member notification preferences.</p>
-                      <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors" style={{ color: theme.primary }}>
-                        Upgrade to Pro <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              <ProFeatureGate
+                isFreePlan={isFreePlan}
+                theme={theme}
+                description="Stop being the bottleneck. Invite up to 3 agency team members on Pro, or unlimited on Scale. Each member gets their own login with granular page-level permissions and per-member notification preferences."
+              >
                 <AgencyTeamTab agencyId={agency.id} theme={theme} />
-              )
+              </ProFeatureGate>
             )}
 
             {activeTab === 'demo' && (
-              isFreePlan ? (
-                <div className="space-y-4 sm:space-y-6">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-medium mb-1">Demo Mode</h3>
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data — perfect for sales demos and screen recordings.</p>
-                  </div>
-                  <div className="rounded-xl p-5 flex items-start gap-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <Lock className="h-5 w-5" style={{ color: theme.textMuted }} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Pro Plan Required</p>
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Demo Mode swaps your dashboard for a fully populated preview — 32 clients, $3,200 MRR, 2,417 calls, complete with call history, leads, analytics, and referrals. Perfect for sales demos, screen recordings, and referral pitches.</p>
-                      <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors" style={{ color: theme.primary }}>
-                        Upgrade to Pro <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              <ProFeatureGate
+                isFreePlan={isFreePlan}
+                theme={theme}
+                description="Sell with confidence. Demo Mode swaps your dashboard for a fully populated preview — 32 clients, $3,200 MRR, 2,417 calls, complete with call history, leads, analytics, and referrals. Perfect for sales calls, screen recordings, and referral pitches."
+              >
                 <div className="space-y-4 sm:space-y-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}><Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p></div></div><button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div><div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} /><span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>{demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}</span></div><div><h4 className="font-medium text-sm mb-3">What demo mode shows</h4><div className="space-y-2.5">{demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-3"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} /><div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div></div>))}</div></div><div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p><p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing.</p></div></div></div>
-              )
+              </ProFeatureGate>
             )}
 
             {activeTab === 'feedback' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests — we read every message.</p></div>{feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p></div>)}{feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}<div><textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><div className="flex items-center justify-between mt-2"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span><button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}</button></div></div>{loadingFeedback ? (<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>) : feedbackHistory.length > 0 ? (<div><h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p><p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>))}</div></div>) : null}</div>)}

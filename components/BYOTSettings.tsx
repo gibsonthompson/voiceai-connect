@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Check, AlertCircle, ExternalLink, Loader2, Shield, Trash2, Search, Globe } from 'lucide-react';
+import { Check, AlertCircle, ExternalLink, Loader2, Trash2, Search, Globe, Sparkles } from 'lucide-react';
 
 interface BYOTStatus {
   byot_enabled: boolean;
@@ -29,6 +29,49 @@ interface BYOTSettingsProps {
   planType: string;
   subscriptionStatus: string;
   theme: any;
+}
+
+// ── Pro upgrade overlay card ────────────────────────────────────────────
+// Mirrors the ProUpgradeCard helper in the agency settings page so the
+// "this is what you're missing" pattern looks identical across Profile,
+// Team, Demo, and Twilio. Inlined here (not imported) to keep BYOTSettings
+// self-contained — if you tweak the design in one place, mirror it in the
+// other.
+function ProUpgradeCard({ description, theme }: { description: string; theme: any }) {
+  return (
+    <div
+      className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
+      style={{
+        backgroundColor: theme.card,
+        border: `1px solid ${theme.border}`,
+        boxShadow: theme.isDark
+          ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
+          : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}cc 100%)` }}
+        >
+          <Sparkles className="h-5 w-5" style={{ color: theme.primaryText }} />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Unlock with Pro</p>
+          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on Pro and above</p>
+        </div>
+      </div>
+      <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
+      <a
+        href="/agency/settings?tab=billing"
+        className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
+        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+      >
+        Upgrade to Pro
+        <ExternalLink className="h-3.5 w-3.5" />
+      </a>
+    </div>
+  );
 }
 
 export default function BYOTSettings({ agencyId, planType, subscriptionStatus, theme }: BYOTSettingsProps) {
@@ -163,28 +206,68 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
     }
   };
 
+  // ── Free-plan view ─────────────────────────────────────────────────────
+  // Render the actual setup instructions + credentials form behind a
+  // blur+dim, with the upgrade card floating on top. Same pattern as
+  // Profile/Team/Demo over in the settings page.
   if (!hasAccess) {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h3 className="text-base sm:text-lg font-medium mb-1">Twilio Integration</h3>
           <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-            Connect your own Twilio account for international phone numbers.
+            Connect your own Twilio account to provision phone numbers in any country.
           </p>
         </div>
-        <div className="rounded-xl p-5 flex items-start gap-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-            <Shield className="h-5 w-5" style={{ color: theme.textMuted }} />
+
+        <div className="relative">
+          {/* Greyed feature behind — actual setup instructions and form so
+              the user sees exactly what they'll get on Pro. */}
+          <div
+            className="space-y-4 sm:space-y-6 opacity-40 pointer-events-none select-none"
+            style={{ filter: 'blur(1.5px)' }}
+            aria-hidden="true"
+          >
+            <div className="rounded-xl p-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+              <h4 className="text-xs font-medium mb-2 flex items-center gap-2" style={{ color: theme.infoText }}>
+                <Globe className="h-4 w-4" />
+                Setup Instructions
+              </h4>
+              <ol className="text-xs space-y-1.5 list-decimal list-inside" style={{ color: theme.infoText }}>
+                <li>Go to console.twilio.com</li>
+                <li>Copy your Account SID from the dashboard</li>
+                <li>Go to API Keys &amp; Tokens → Create a Standard API Key</li>
+                <li>Copy the API Key SID (starts with SK) and Secret</li>
+                <li>Paste all three values below</li>
+              </ol>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5">Twilio Account SID</label>
+                <input type="text" placeholder="AC..." readOnly className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5">API Key SID</label>
+                <input type="text" placeholder="SK..." readOnly className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5">API Secret</label>
+                <input type="password" placeholder="Enter your API Secret" readOnly className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                <p className="mt-1 text-[10px]" style={{ color: theme.textMuted }}>Your API Secret is encrypted before storage and never visible after saving.</p>
+              </div>
+              <button type="button" className="w-full rounded-xl px-4 py-2.5 text-sm font-medium" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                Connect Twilio Account
+              </button>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-sm">Pro Plan Required</p>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-              Connect your own Twilio account to provision phone numbers in any country.
-              Upgrade to the Pro plan to unlock international capabilities.
-            </p>
-            <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium transition-colors" style={{ color: theme.primary }}>
-              Upgrade to Pro <ExternalLink className="h-3 w-3" />
-            </a>
+
+          {/* Floating upgrade card */}
+          <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-10 px-4 pointer-events-none">
+            <ProUpgradeCard
+              description="Expand internationally. Connect your own Twilio account to provision phone numbers in any country — UK, Australia, Germany, Singapore, France, and beyond. Without it, you're limited to US and Canada numbers only."
+              theme={theme}
+            />
           </div>
         </div>
       </div>
