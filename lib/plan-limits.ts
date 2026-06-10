@@ -174,6 +174,34 @@ export function getTeamMemberLimitDisplay(plan: PlanType): string {
   return limit === Infinity ? 'Unlimited' : limit.toString();
 }
 
+// ============================================================================
+// AGENCY TEAM LIMIT (UI mirror of checkTeamLimit('agency', ...) in
+// src/routes/team.js). Returns -1 for unlimited so callers can render
+// "Unlimited". Keep the derive branch in sync with that backend function.
+// ============================================================================
+export function deriveAgencyTeamLimit(opts: {
+  maxTeamMembersAgency?: number | null;
+  subscriptionStatus?: string | null;
+  planType?: string | null;
+}): number {
+  const { maxTeamMembersAgency, subscriptionStatus, planType } = opts;
+  // Explicit DB value wins. Strict null/undefined check so an explicit 0
+  // (Free cap) or -1 (Scale unlimited) is respected, matching the backend.
+  if (maxTeamMembersAgency !== null && maxTeamMembersAgency !== undefined) {
+    return maxTeamMembersAgency;
+  }
+  const isTrial = subscriptionStatus === 'trial' || subscriptionStatus === 'trialing';
+  if (isTrial) return -1;
+  const plan = (planType || 'free').toLowerCase();
+  if (plan === 'scale' || plan === 'enterprise') return -1;
+  if (plan === 'pro' || plan === 'professional') return 3;
+  return 0;
+}
+
+export function formatTeamLimit(limit: number): string {
+  return limit === -1 || limit === Infinity ? 'Unlimited' : String(limit);
+}
+
 export function getPlanPrice(plan: PlanType): number {
   return PLAN_PRICES[plan] ?? 0;
 }

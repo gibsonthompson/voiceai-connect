@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import { PLAN_NAMES } from '@/lib/plan-limits';
+import { PLAN_NAMES, deriveAgencyTeamLimit, formatTeamLimit } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
@@ -599,7 +599,7 @@ function AgencySettingsContent() {
                     <Users className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                     <div>
                       <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Team Members</p>
-                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Your agency plan includes <strong style={{ color: theme.text }}>{(agency as any)?.max_team_members_agency ?? 0} agency team members</strong>. Client team limits are set per plan tier above.</p>
+                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Your agency plan includes <strong style={{ color: theme.text }}>{formatTeamLimit(deriveAgencyTeamLimit({ maxTeamMembersAgency: (agency as any)?.max_team_members_agency, subscriptionStatus: agency?.subscription_status, planType: agency?.plan_type }))} agency team members</strong>. Client team limits are set per plan tier above.</p>
                     </div>
                   </div>
                 </div>
