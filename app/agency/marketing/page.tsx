@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code
+  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code, Sparkles
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
