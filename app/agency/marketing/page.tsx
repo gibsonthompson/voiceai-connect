@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign
+  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
@@ -100,6 +100,17 @@ export default function MarketingWebsitePage() {
   const signupUrl = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/signup` : `${subdomainUrl}/signup`;
   const hasAccess = canUseMarketingSite || demoMode;
 
+  // ── Inline embed widget snippet ──
+  // This is the canonical embed.js snippet — same one Free agencies see in
+  // Settings → Embed. Pro/Scale agencies get it here in Marketing so the
+  // widget lives next to all the other marketing-site config (colors, domain,
+  // tracking) rather than buried under Settings.
+  const iframeWidgetSnippet = `<div data-voiceai-signup data-agency="${agency?.id || ''}"></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
+
+  // Button-link snippet — separate const so the JSX stays readable and we
+  // don't recompute it twice (once for the <pre>, once for the copy button).
+  const embedButtonSnippet = `<a href="${signupUrl}" style="display:inline-block;padding:14px 32px;background:${agencyPrimaryColor};color:${isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff'};border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Start Free Trial</a>`;
+
   useEffect(() => {
     if (demoMode) { setDnsConfig({ aRecord: '216.198.79.1', cname: 'cname.vercel-dns.com' }); return; }
     const fetchDnsConfig = async () => { try { const domainParam = agency?.marketing_domain ? `?domain=${agency.marketing_domain}` : ''; const response = await fetch(`/api/domain/dns-config${domainParam}`); if (response.ok) { const data = await response.json(); setDnsConfig({ aRecord: data.a_record || '216.198.79.1', cname: data.cname_record || 'cname.vercel-dns.com', misconfigured: data.misconfigured || false, isSubdomain: data.is_subdomain || false, subdomainPrefix: data.subdomain_prefix || null }); } } catch (error) { console.error('Failed to fetch DNS config:', error); setDnsConfig({ aRecord: '216.198.79.1', cname: 'cname.vercel-dns.com' }); } };
@@ -179,11 +190,55 @@ export default function MarketingWebsitePage() {
           <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Your website includes:</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">{(TEMPLATES.find(t => t.id === selectedTemplate)?.preview.sections || []).map((section) => (<div key={section} className="flex items-start gap-2 sm:gap-3"><span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span><p className="font-medium text-xs sm:text-sm">{section}</p></div>))}</div>
         </div>
+
+        {/* ── Embed on Your Own Website ─────────────────────────────────────
+            Two snippet options:
+            (A) Inline widget — iframe-based embed.js form, lives on prospects'
+                pages directly. Recommended path: no leaving the page, brand
+                colors auto-adopt, full signup flow inline.
+            (B) Embed button — simple anchor link with inline styles, opens the
+                signup page in a new tab. Lighter-weight, no JS, useful if a
+                prospect's page CSP blocks iframes.
+            Both snippets target the same signup destination (this agency).
+        ─────────────────────────────────────────────────────────────────── */}
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2 mb-1"><LinkIcon className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>Embed on Your Own Website</h3></div>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Already have a website? Add your signup link directly — clients sign up through your branded form.</p>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Already have a site? Drop one of these snippets onto your existing page — clients sign up through your branded form without leaving.</p>
+
+          {/* Signup URL row — handy reference even if they pick the widget */}
           <div className="mb-4"><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your Client Signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain — ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
-          <div><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed Button</label><div className="relative"><pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{`<a href="${signupUrl}" style="display:inline-block;padding:14px 32px;background:${agencyPrimaryColor};color:${isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff'};border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Start Free Trial</a>`}</pre><button onClick={() => copyToClipboard(`<a href="${signupUrl}" style="display:inline-block;padding:14px 32px;background:${agencyPrimaryColor};color:${isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff'};border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Start Free Trial</a>`, 'embed-code')} className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: mutedTextColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div className="mt-2 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><span className="inline-block px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' }}>Start Free Trial</span></div></div>
+
+          {/* ── Section A: Inline Signup Widget (recommended) ── */}
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <label className="block text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed Signup Widget</label>
+              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Recommended</span>
+              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Inline Form</span>
+            </div>
+            <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>Drops the full signup form right on your page. Auto-adopts your brand colors, theme, and pricing. Auto-resizes to its content.</p>
+            <div className="relative">
+              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{iframeWidgetSnippet}</pre>
+              <button onClick={() => copyToClipboard(iframeWidgetSnippet, 'widget-code')} className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: mutedTextColor }}>{copied === 'widget-code' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+            </div>
+            <details className="mt-2 group"><summary className="text-[10px] sm:text-xs cursor-pointer transition-colors" style={{ color: mutedTextColor }}>Optional attributes →</summary><div className="mt-2 space-y-1.5 text-[10px] sm:text-xs pl-2 border-l-2" style={{ borderColor: inputBorder }}><div><code className="font-mono" style={{ color: textColor }}>data-theme</code> <span style={{ color: mutedTextColor }}>— "light" or "dark" to override agency default</span></div><div><code className="font-mono" style={{ color: textColor }}>data-default-plan</code> <span style={{ color: mutedTextColor }}>— "starter", "pro", or "growth" to pre-select a plan</span></div><div><code className="font-mono" style={{ color: textColor }}>data-redirect-on-success</code> <span style={{ color: mutedTextColor }}>— URL to send the parent page to after signup</span></div></div></details>
+          </div>
+
+          {/* ── Divider ── */}
+          <div className="my-5" style={{ borderTop: `1px solid ${borderColor}` }} />
+
+          {/* ── Section B: Embed Button (link-style) ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <label className="block text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed Button</label>
+              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Link</span>
+            </div>
+            <p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>A simple branded link to your signup page. Opens in a new tab — useful if your page can't load external scripts.</p>
+            <div className="relative">
+              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{embedButtonSnippet}</pre>
+              <button onClick={() => copyToClipboard(embedButtonSnippet, 'embed-code')} className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: mutedTextColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
+            </div>
+            <div className="mt-2 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><span className="inline-block px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' }}>Start Free Trial</span></div>
+          </div>
         </div>
       </div>)}
 

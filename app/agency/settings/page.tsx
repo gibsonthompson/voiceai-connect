@@ -22,9 +22,6 @@ const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean | number>> = 
   growth: { email_summaries: true, custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true, team_members: 5 },
 };
 
-// Plan display name + tagline defaults. These match the CLIENT_PLAN_IDS tuple
-// in lib/plan-features-meta.ts so the Settings UI agrees with what we render
-// on the signup widget. Empty taglines are stored as NULL in the DB.
 const PLAN_NAME_DEFAULTS: Record<string, string> = {
   starter: 'Starter',
   pro: 'Professional',
@@ -57,10 +54,6 @@ function AgencySettingsContent() {
   const [unlimitedStarter, setUnlimitedStarter] = useState(false); const [unlimitedPro, setUnlimitedPro] = useState(false); const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean | number>>>(DEFAULT_PLAN_FEATURES);
 
-  // ── Plan display names + taglines. These power the public signup widget
-  // so agencies can rebrand their tiers ("Starter" → "Solo", "Growth" → "Scale")
-  // without forking code. Empty string → falls back to the canonical default
-  // name on save; descriptions can be blank (stored as NULL).
   const [planStarterName, setPlanStarterName] = useState('Starter');
   const [planProName, setPlanProName] = useState('Professional');
   const [planGrowthName, setPlanGrowthName] = useState('Growth');
@@ -95,7 +88,12 @@ function AgencySettingsContent() {
   const handleUpgrade = async (targetPlan: string) => { if (!agency) return; setUpgradeLoading(targetPlan); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, plan: targetPlan }) }); const data = await response.json(); if (data.url) window.location.href = data.url; else setError(data.error || 'Failed to start upgrade'); } catch (err) { setError('Failed to connect to billing'); } finally { setUpgradeLoading(null); } };
   const handleSendFeedback = async () => { if (!agency || !feedbackMessage.trim()) return; setSendingFeedback(true); setFeedbackError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: feedbackMessage.trim() }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); } const data = await response.json(); setFeedbackSent(true); setFeedbackMessage(''); if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]); setTimeout(() => setFeedbackSent(false), 3000); } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); } finally { setSendingFeedback(false); } };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; return true; });
+  // ── settingsTabs filter rules ──
+  // 1) hide Team from agency_staff role (existing rule)
+  // 2) NEW: hide Embed tab on Pro/Scale — for those plans the embed widget
+  //    lives in the Marketing Website page. Free agencies keep it here
+  //    since they don't have Marketing access.
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; return true; });
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = async () => { const dataUrl = reader.result as string; setLogoPreview(dataUrl); setLogoUrl(dataUrl); setExtractingColors(true); try { const result = await extractColorsFromImage(dataUrl); setExtractedColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setBrandColors({ primary: result.primary, secondary: result.secondary, accent: result.accent }); setDetectedWebsiteTheme(result.suggestedTheme); setDetectedLogoBgColor(result.logoBgColor); } catch (err) { console.error('Color extraction failed:', err); } finally { setExtractingColors(false); } }; reader.readAsDataURL(file); } };
   const toggleFeature = (plan: string, feature: string) => { setPlanFeatures(prev => ({ ...prev, [plan]: { ...prev[plan], [feature]: !prev[plan]?.[feature] } })); };
@@ -130,14 +128,18 @@ function AgencySettingsContent() {
         payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
         payload.plan_features = planFeatures;
         payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
-        // Plan rebranding: empty → canonical default, trim whitespace.
-        // Descriptions are nullable so blank → null (not empty string).
-        payload.plan_starter_name = planStarterName.trim() || PLAN_NAME_DEFAULTS.starter;
-        payload.plan_pro_name = planProName.trim() || PLAN_NAME_DEFAULTS.pro;
-        payload.plan_growth_name = planGrowthName.trim() || PLAN_NAME_DEFAULTS.growth;
-        payload.plan_starter_description = planStarterDescription.trim() || null;
-        payload.plan_pro_description = planProDescription.trim() || null;
-        payload.plan_growth_description = planGrowthDescription.trim() || null;
+        // Plan rebranding is Pro+ only. On Free, the name/tagline inputs are
+        // locked in the UI (dimmed + non-interactive) and we skip them in the
+        // payload so the request stays clean. The backend whitelist will
+        // also enforce this — UI gating is just the first defense.
+        if (!isFreePlan) {
+          payload.plan_starter_name = planStarterName.trim() || PLAN_NAME_DEFAULTS.starter;
+          payload.plan_pro_name = planProName.trim() || PLAN_NAME_DEFAULTS.pro;
+          payload.plan_growth_name = planGrowthName.trim() || PLAN_NAME_DEFAULTS.growth;
+          payload.plan_starter_description = planStarterDescription.trim() || null;
+          payload.plan_pro_description = planProDescription.trim() || null;
+          payload.plan_growth_description = planGrowthDescription.trim() || null;
+        }
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
@@ -169,13 +171,10 @@ function AgencySettingsContent() {
   const stripeDisplay = getStripeStatusDisplay();
   const getSubscriptionDisplay = () => { const status = agency?.subscription_status; if (status === 'active') return { label: 'Active', color: '#34d399', bgColor: 'rgba(52,211,153,0.1)' }; if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' }; if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' }; if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; return { label: status || 'Unknown', color: theme.textMuted, bgColor: theme.input }; };
   const subscriptionDisplay = getSubscriptionDisplay();
-  const demoFeatures = [{ label: 'Dashboard', desc: '14 clients, $1,185 MRR, 847 total calls' }, { label: 'Clients', desc: '14 realistic service businesses with plans & call data' }, { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' }, { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' }, { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' }, { label: 'Referrals', desc: '3 referred agencies, commissions, payout history' }];
+  const demoFeatures = [{ label: 'Dashboard', desc: '32 clients, $3,200 MRR, 2,417 total calls' }, { label: 'Clients', desc: '32 realistic service businesses with plans & call data' }, { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' }, { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' }, { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' }, { label: 'Referrals', desc: '6 referred agencies, commissions, payout history' }];
   const dynamicStyles = `.agency-settings ::selection { background-color: #3b82f640; color: inherit; } .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus { outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important; }`;
   const getFeatureCount = (plan: string) => Object.entries(planFeatures[plan] || {}).filter(([k, v]) => k !== 'team_members' && v === true).length;
 
-  // Plan rows for the Pricing tab. Adding the display-name + description
-  // state in here keeps the JSX below tight and avoids passing 12 args per
-  // map iteration.
   const pricingPlans = [
     { key: 'starter', defaultLabel: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false, name: planStarterName, setName: setPlanStarterName, description: planStarterDescription, setDescription: setPlanStarterDescription },
     { key: 'pro', defaultLabel: 'Professional', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true, name: planProName, setName: setPlanProName, description: planProDescription, setDescription: setPlanProDescription },
@@ -211,6 +210,22 @@ function AgencySettingsContent() {
                   <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Every client gets the core AI receptionist regardless of plan. The features below are extras you can include or exclude per plan.</p>
                 </div>
 
+                {/* Free-plan lock notice for plan name/tagline inputs. Matches
+                    the Profile tab's inline-banner-then-dim pattern. Only the
+                    rebrandable fields below are locked — prices, limits, team
+                    members, and feature toggles stay interactive on Free since
+                    those still drive what the embed signup widget actually bills
+                    and what features each client tier gets. */}
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: theme.infoText }}>Custom plan names require Pro</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Free agencies show default plan names (Starter, Professional, Growth) on the signup widget. Upgrade to rebrand your tiers.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   {pricingPlans.map((plan) => (
                     <div key={plan.key} className="rounded-xl p-3 sm:p-4" style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -222,10 +237,9 @@ function AgencySettingsContent() {
                         <span className="text-xs" style={{ color: theme.textMuted }}>{getFeatureCount(plan.key)} features</span>
                       </div>
 
-                      {/* Display name + tagline. These flow straight to the public
-                          signup widget; the tagline is the small line under the
-                          tier name on the plan card (e.g. "Best for solo ops"). */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                      {/* Display name + tagline. Locked on Free — dim + non-interactive
+                          via the same pattern used in the Profile tab. */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}>
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Display Name</label>
                           <input
@@ -319,9 +333,6 @@ function AgencySettingsContent() {
             {activeTab === 'twilio' && (<div className="space-y-4 sm:space-y-6"><div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p><p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Phone numbers for the US and Canada are provisioned automatically. Connect your own Twilio account for international numbers.</p></div></div><BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} /></div>)}
 
             {activeTab === 'embed' && agency?.id && (() => {
-              // Path A canonical snippet — single embed.js URL across all agencies,
-              // agency identified by UUID baked into the data-agency attribute.
-              // The platform domain is read from env (defaults to production).
               const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
               const snippet = `<div data-voiceai-signup data-agency="${agency.id}"></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
               const handleCopy = async () => { try { await navigator.clipboard.writeText(snippet); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); } catch (e) { console.error('Copy failed:', e); } };
@@ -382,9 +393,37 @@ function AgencySettingsContent() {
               );
             })()}
 
-            {activeTab === 'team' && agency?.id && (<AgencyTeamTab agencyId={agency.id} theme={theme} />)}
+            {activeTab === 'team' && agency?.id && (
+              <>
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 flex items-center gap-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: theme.infoText }}>Team members require Pro</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Invite up to 3 agency team members on Pro, or unlimited on Scale, with granular page-level permissions and per-member notification preferences.</p>
+                    </div>
+                  </div>
+                )}
+                <div style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}>
+                  <AgencyTeamTab agencyId={agency.id} theme={theme} />
+                </div>
+              </>
+            )}
 
-            {activeTab === 'demo' && (<div className="space-y-4 sm:space-y-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}><Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p></div></div><button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div><div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} /><span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>{demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}</span></div><div><h4 className="font-medium text-sm mb-3">What demo mode shows</h4><div className="space-y-2.5">{demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-3"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} /><div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div></div>))}</div></div><div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p><p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing.</p></div></div></div>)}
+            {activeTab === 'demo' && (
+              <>
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 flex items-center gap-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: theme.infoText }}>Demo Mode requires Pro</p>
+                      <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Show prospects a fully populated dashboard with sample data. Perfect for screen recordings, referral pitches, and live demos.</p>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-4 sm:space-y-6" style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}><Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p></div></div><button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div><div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} /><span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>{demoMode ? 'Demo mode is active — all pages show sample data' : 'Demo mode is off — showing your real data'}</span></div><div><h4 className="font-medium text-sm mb-3">What demo mode shows</h4><div className="space-y-2.5">{demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-3"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} /><div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div></div>))}</div></div><div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p><p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing.</p></div></div></div>
+              </>
+            )}
 
             {activeTab === 'feedback' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests — we read every message.</p></div>{feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent — thanks for sharing.</p></div>)}{feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}<div><textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><div className="flex items-center justify-between mt-2"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span><button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}</button></div></div>{loadingFeedback ? (<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>) : feedbackHistory.length > 0 ? (<div><h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p><p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>))}</div></div>) : null}</div>)}
 
