@@ -57,7 +57,14 @@
   }
 
   var PLATFORM_ORIGIN = detectPlatformOrigin();
-  var IFRAME_PATH = '/get-started';
+
+  // Iframe target: /signup is the canonical signup wizard. Older embed.js
+  // loads on the internet still reference /get-started, which now resolves
+  // via a permanent redirect in next.config.ts (carries embed=true, agency,
+  // parent_origin query params through). New embed.js loads (this version)
+  // load /signup directly to skip the redirect hop. Do not change this back
+  // to /get-started without also removing the redirect rule.
+  var IFRAME_PATH = '/signup';
 
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 

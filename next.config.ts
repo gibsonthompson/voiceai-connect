@@ -12,9 +12,25 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Legacy /get-started URL. The canonical wizard entry point is /signup.
+      // /signup/plan and /signup/success are sibling routes in the same
+      // directory. Embed.js (current version) loads /signup directly and
+      // skips this redirect. Older embed.js files cached on agency
+      // marketing sites still reference /get-started; this rule routes
+      // them to the canonical path with all query params preserved
+      // (embed=true, agency, parent_origin, etc).
+      //
+      // The :path* rule below is defensive. No sub-paths currently exist
+      // under /get-started, but if anyone ever links to /get-started/foo
+      // by accident or in a future regression, it'll still resolve.
       {
         source: "/get-started",
         destination: "/signup",
+        permanent: true,
+      },
+      {
+        source: "/get-started/:path*",
+        destination: "/signup/:path*",
         permanent: true,
       },
     ];

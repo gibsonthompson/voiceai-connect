@@ -124,6 +124,13 @@ function AgencySettingsContent() {
   const [unlimitedStarter, setUnlimitedStarter] = useState(false); const [unlimitedPro, setUnlimitedPro] = useState(false); const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean | number>>>(DEFAULT_PLAN_FEATURES);
 
+  // require_card_for_trial toggle. When true, /api/client/signup creates a
+  // Stripe Connect Checkout with trial_period_days=7 instead of inserting a
+  // DB-only trial. Requires stripe_charges_enabled=true to take effect.
+  // Backend silently no-ops if Stripe Connect isn't ready (falls back to
+  // no-card trial so signups don't break).
+  const [requireCardForTrial, setRequireCardForTrial] = useState(false);
+
   const [planStarterName, setPlanStarterName] = useState('Starter');
   const [planProName, setPlanProName] = useState('Professional');
   const [planGrowthName, setPlanGrowthName] = useState('Growth');
@@ -146,7 +153,12 @@ function AgencySettingsContent() {
   const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
-  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); } }, [agency?.branding_overrides]);
+  // Card-required toggle is only meaningful when the agency has Stripe Connect
+  // set up AND can accept charges. UI grays out the toggle when this is false
+  // and shows a link to the Payments tab.
+  const canEnableCardRequired = !!(agency?.stripe_account_id && (agency as any)?.stripe_charges_enabled);
+
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
   useEffect(() => { if (activeTab === 'billing' && agency?.id) fetchUsageData(); }, [activeTab, agency?.id]);
@@ -199,6 +211,11 @@ function AgencySettingsContent() {
         payload.plan_starter_description = planStarterDescription.trim() || null;
         payload.plan_pro_description = planProDescription.trim() || null;
         payload.plan_growth_description = planGrowthDescription.trim() || null;
+        // Client trial card requirement. Backend silently ignores this if
+        // stripe_charges_enabled is false (falls back to no-card trial at
+        // signup time), but we persist the preference so it takes effect
+        // as soon as Connect is configured.
+        payload.require_card_for_trial = !!requireCardForTrial;
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
@@ -416,6 +433,79 @@ function AgencySettingsContent() {
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Every client gets the core AI receptionist regardless of plan. The features below are extras you can include or exclude per plan.</p>
+                </div>
+
+                {/* ─────────────────────────────────────────────────────────
+                    Trial Setup — require_card_for_trial toggle.
+                    Controls whether new embed-widget signups must enter a
+                    card to start their 7-day trial. Toggle is gated on
+                    Stripe Connect being set up (canEnableCardRequired).
+                ───────────────────────────────────────────────────────── */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lock className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h4 className="font-medium text-sm sm:text-base">Client Trial Setup</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                    Control whether new clients need to enter a credit card to start their 7-day trial.
+                    {' '}<strong style={{ color: theme.text }}>Affects only signups from your embed widget</strong>, not clients you add manually from the dashboard.
+                  </p>
+
+                  <div className="flex items-start justify-between rounded-xl px-4 py-3 mb-3" style={{ backgroundColor: requireCardForTrial && canEnableCardRequired ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${requireCardForTrial && canEnableCardRequired ? theme.primary30 : theme.border}`, opacity: canEnableCardRequired ? 1 : 0.6 }}>
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="text-sm font-medium" style={{ color: requireCardForTrial && canEnableCardRequired ? theme.primary : theme.text }}>
+                        Require credit card to start trial
+                      </p>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                        {requireCardForTrial
+                          ? 'Clients enter a card during signup, get a 7-day free trial, and Stripe auto-charges them at day 7. Best for filtering serious leads.'
+                          : 'Clients get a 7-day no-card trial via the embed widget. They must manually upgrade before or after trial ends to keep service.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => canEnableCardRequired && setRequireCardForTrial(!requireCardForTrial)}
+                      disabled={!canEnableCardRequired}
+                      className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                      style={{
+                        backgroundColor: requireCardForTrial && canEnableCardRequired ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'),
+                        cursor: canEnableCardRequired ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      <span
+                        className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                        style={{ transform: requireCardForTrial && canEnableCardRequired ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }}
+                      />
+                    </button>
+                  </div>
+
+                  {!canEnableCardRequired && (
+                    <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+                      <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
+                        <p className="font-medium mb-0.5">Stripe Connect required</p>
+                        <p style={{ color: theme.textMuted }}>
+                          You need to connect Stripe before clients can be charged.{' '}
+                          <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Set up Stripe Connect</a>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {canEnableCardRequired && requireCardForTrial && (
+                    <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                      <div className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
+                        <p className="font-medium mb-0.5">How it works</p>
+                        <ol className="space-y-0.5 list-decimal list-inside" style={{ color: theme.textMuted }}>
+                          <li>Client fills out signup form on your site</li>
+                          <li>Redirected to Stripe to enter card details</li>
+                          <li>7-day free trial begins after card is on file</li>
+                          <li>Stripe auto-charges on day 7 (client can cancel anytime before)</li>
+                        </ol>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">

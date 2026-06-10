@@ -10,7 +10,7 @@ import { formatPrice as formatLocalPrice, getCurrencyForCountry } from '@/lib/cu
 import { getCountryFromCookie } from '@/lib/geo';
 import { AGENCY_PLAN_TIER_LIST } from '@/lib/plan-features';
 import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
-import { useEmbedMessaging } from '@/lib/embed-messaging';
+import { useEmbedMessaging, postToParent } from '@/lib/embed-messaging';
 
 // ============================================================================
 // TYPES
@@ -262,12 +262,28 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
     setTimeout(() => { window.location.replace(url); }, 100);
   };
 
-  // For paid plans in embed mode, the Stripe checkout URL can't be loaded
-  // inside the iframe (Stripe blocks framing). When the
-  // requires_card_on_trial flow lands (Phase 5 backlog), reintroduce a
-  // navigateForCheckout helper here that does window.top.location.href = url
-  // with a safeRedirect fallback. Removed for now to keep the file dead-code
-  // free — see git history if you need the prior implementation.
+  // For Stripe-Connect-Checkout redirects (card-required trial mode), Stripe
+  // blocks iframe embedding via X-Frame-Options, so we cannot navigate within
+  // the iframe. In embed mode we postMessage the parent with
+  // voiceai:auth_complete and the Stripe URL, embed.js handles the
+  // window.top.location.href = url redirect (with sanity-check for https://).
+  // In standalone mode we just safeRedirect since we're already top-level.
+  // Sets redirecting=true so the spinner state shows during the round-trip.
+  const navigateForCheckout = (url: string) => {
+    setRedirecting(true);
+    if (isEmbed) {
+      postToParent({ type: 'voiceai:auth_complete', url });
+      // Belt-and-suspenders: if for any reason the parent doesn't catch the
+      // message (script error, blocked, etc), fall back to a direct
+      // window.top navigation a beat later.
+      setTimeout(() => {
+        try { (window.top as Window).location.href = url; }
+        catch (_) { window.location.href = url; }
+      }, 400);
+    } else {
+      setTimeout(() => { window.location.replace(url); }, 100);
+    }
+  };
 
   const handleSelectPlan = async (planType: string) => {
     if (loading || redirecting) return;
@@ -309,13 +325,27 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
       sessionStorage.removeItem('client_signup_data');
 
+      // ──────────────────────────────────────────────────────────────────
+      // Card-required trial mode: agency has require_card_for_trial=true.
+      // Backend created a Stripe Connect Checkout with trial_period_days=7
+      // and returned checkout_url. Client must enter a card to activate the
+      // trial. After completing checkout, Stripe redirects to
+      // {agencyUrl}/client/welcome?trial=started and our webhook flips the
+      // client from 'pending_payment' to 'trial'.
+      // ──────────────────────────────────────────────────────────────────
+      if (data.requires_card && data.checkout_url) {
+        navigateForCheckout(data.checkout_url);
+        return;
+      }
+
       // Bug 13 (Phase 5): handleClientSignup ALWAYS returns data.token on
-      // success. The earlier four-branch handler had dead code for
-      // data.checkoutUrl, data.sessionToken, data.exists, and data.clientId
-      // shapes the backend has never returned. The 'already exists' case
-      // arrives as a 409 + Account already exists message — caught by the
-      // !response.ok branch above and surfaced in the error state, so the
-      // UI's includes('already exists') check still renders the Sign In link.
+      // success (no-card trial mode). The earlier four-branch handler had
+      // dead code for data.checkoutUrl, data.sessionToken, data.exists, and
+      // data.clientId shapes the backend has never returned. The 'already
+      // exists' case arrives as a 409 + Account already exists message —
+      // caught by the !response.ok branch above and surfaced in the error
+      // state, so the UI's includes('already exists') check still renders
+      // the Sign In link.
       if (data.token) {
         // Trial flow: redirect within iframe to /auth/set-password, which
         // emits voiceai:auth_complete after the password is set. Embed

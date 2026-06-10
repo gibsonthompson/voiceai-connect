@@ -131,13 +131,13 @@ export async function middleware(request: NextRequest) {
 
     // Static marketing routes that live under /agency-site/.
     //
-    // NOTE: /get-started and /signup are deliberately NOT in this list.
-    // Both now resolve to the canonical multi-step wizard at
-    // app/signup/page.tsx — /get-started is a stub re-export of /signup —
-    // and they need to pass through unmodified so /signup/plan and
-    // /signup/success can stay sibling routes. The old single-step
-    // /agency-site/get-started page was retired during the Phase 3
-    // embed-widget cleanup.
+    // NOTE: /signup (the wizard entry point) and its siblings (/signup/plan,
+    // /signup/success) are deliberately NOT in this list. They pass through
+    // to the canonical multi-step wizard at app/signup/page.tsx so the
+    // pages themselves can call /api/agency/by-host to resolve agency
+    // context from the request host. The legacy /get-started URL is
+    // handled at the next.config.ts redirect layer (308 to /signup with
+    // query params preserved), so middleware never sees it.
     if (
       pathname === '/' ||
       pathname.startsWith('/demo') ||
@@ -171,10 +171,10 @@ export async function middleware(request: NextRequest) {
       return rewriteResponse;
     }
 
-    // For everything else (including /get-started, /signup, /signup/plan,
-    // /signup/success, /auth/*, etc.) pass through with the agency_id
-    // cookie set. The pages themselves call /api/agency/by-host to resolve
-    // agency context from the request host.
+    // For everything else (including /signup, /signup/plan, /signup/success,
+    // /auth/*, etc.) pass through with the agency_id cookie set. The pages
+    // themselves call /api/agency/by-host to resolve agency context from
+    // the request host.
     const passResponse = NextResponse.next({
       request: { headers: requestHeaders },
       headers: response.headers,
