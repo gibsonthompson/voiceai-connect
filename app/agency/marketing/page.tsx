@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code, Sparkles
+  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code
 } from 'lucide-react';
+import LockedFeature from '@/components/LockedFeature';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
@@ -35,61 +36,6 @@ const TEMPLATES: TemplateOption[] = [
   { id: 'beside', name: 'Beside', description: 'Product-led storytelling with split hero, floating UI mockups, warm gradient cards, and narrative flow. High-converting for service businesses.', style: 'Modern & Story-Driven', preview: { bgColor: '#ffffff', accentColor: '#e85d2a', textColor: '#0a0a0a', sections: ['Split Hero + UI Cards', 'Demo Phone Strip', 'Pill Tab Features', 'Phone Mockup', '3-Column Proof Row', 'Narrative Sections', 'Industry Cards', 'Pricing Tiers'] } },
   { id: 'editorial', name: 'Editorial', description: 'Handhold-inspired editorial layout with serif headlines, organic wave illustrations, alternating feature sections, and large testimonials.', style: 'Premium & Editorial', preview: { bgColor: '#FAFAF8', accentColor: '#0a0a0a', textColor: '#0a0a0a', sections: ['Serif Hero + Wave Art', 'Logo Bar', 'Alternating Features', 'Numbered Steps', 'Value Prop Cards', 'Single Testimonial', 'FAQ Accordion', 'Artistic Footer CTA'] } },
 ];
-
-// ── Pro upgrade overlay (mirrors agency settings + BYOTSettings) ────────
-// Same "this is what you're missing" pattern as Settings → Profile/Team/Demo
-// and Twilio. Marketing page accepts a constructed theme object since it
-// builds its own style vars (doesn't use the useTheme hook).
-function ProUpgradeCard({ description, theme }: { description: string; theme: any }) {
-  return (
-    <div
-      className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
-      style={{
-        backgroundColor: theme.card,
-        border: `1px solid ${theme.border}`,
-        boxShadow: theme.isDark
-          ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
-          : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
-      }}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}cc 100%)` }}
-        >
-          <Sparkles className="h-5 w-5" style={{ color: theme.primaryText }} />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Unlock with Pro</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on Pro and above</p>
-        </div>
-      </div>
-      <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
-      <a
-        href="/agency/settings?tab=billing"
-        className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
-        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-      >
-        Upgrade to Pro
-        <ExternalLink className="h-3.5 w-3.5" />
-      </a>
-    </div>
-  );
-}
-
-function ProFeatureGate({ isFreePlan, description, theme, children }: { isFreePlan: boolean; description: string; theme: any; children: React.ReactNode }) {
-  if (!isFreePlan) return <>{children}</>;
-  return (
-    <div className="relative">
-      <div className="opacity-40 pointer-events-none select-none" style={{ filter: 'blur(1.5px)' }} aria-hidden="true">
-        {children}
-      </div>
-      <div className="absolute inset-0 flex items-start justify-center pt-12 sm:pt-20 px-4 pointer-events-none">
-        <ProUpgradeCard description={description} theme={theme} />
-      </div>
-    </div>
-  );
-}
 
 export default function MarketingWebsitePage() {
   const router = useRouter();
@@ -146,19 +92,6 @@ export default function MarketingWebsitePage() {
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-
-  // theme-shape object for ProFeatureGate when !hasAccess so the upgrade
-  // overlay matches the agency's branding colors. White text on primary is
-  // safe for the saturated brand colors we typically see.
-  const gateTheme = {
-    isDark,
-    text: textColor,
-    textMuted: mutedTextColor,
-    card: cardBg,
-    border: borderColor,
-    primary: agencyPrimaryColor,
-    primaryText: '#ffffff',
-  };
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#ffffff';
   const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -219,16 +152,9 @@ export default function MarketingWebsitePage() {
 
   if (agencyLoading && !agency) return (<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-400" /></div>);
 
-  // Page renders its full content always; ProFeatureGate (wrapped around
-  // the return below) handles the Free-plan overlay so users see the real
-  // marketing UI dimmed behind the upgrade card instead of a blank screen.
-
-  return (
-    <ProFeatureGate
-      isFreePlan={!hasAccess}
-      theme={gateTheme}
-      description="Launch a fully-branded marketing site for your agency — a public page where prospects learn about your service, see your pricing, and sign up directly. Three templates, custom domain support, conversion tracking, SEO controls, and your own embed widget. The 60-second way to turn cold traffic into paying clients."
-    >
+  // Full marketing page UI — used as the LockedFeature children when on
+  // Free plan, and as the direct return for Pro/Scale agencies.
+  const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold">Marketing Website</h1><p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p></div>
 
@@ -362,6 +288,28 @@ export default function MarketingWebsitePage() {
         <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Social sharing previews update when saved.</p><div className="flex items-center gap-3 w-full sm:w-auto">{seoSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveSeo} disabled={savingSeo} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save SEO</button></div></div>
       </div>)}
     </div>
-    </ProFeatureGate>
   );
+
+  // Free plan: wrap the full marketing UI in the LockedFeatureOverlay so users
+  // see the real page (templates, content, domains, SEO) dimmed behind the
+  // upgrade card instead of a blank screen.
+  if (!hasAccess) {
+    return (
+      <LockedFeature
+        title="Marketing Website"
+        description="Get a fully-branded marketing website to attract and convert clients."
+        requiredPlan="Professional"
+        features={[
+          'Fully branded landing page',
+          'Customizable colors & content',
+          'Connect your own domain',
+          'Built-in pricing & signup',
+        ]}
+      >
+        {pageContent}
+      </LockedFeature>
+    );
+  }
+
+  return pageContent;
 }

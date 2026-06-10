@@ -6,9 +6,10 @@ import {
   Users, Search, Plus, ChevronRight, Loader2, ArrowUpRight,
   Target, Phone, Mail, Calendar, DollarSign, TrendingUp,
   ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock,
-  CheckCircle2, FileSpreadsheet, Sparkles
+  CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { useAgency } from '../context';
+import LockedFeatureOverlay from '@/components/LockedFeature';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
@@ -98,62 +99,6 @@ function isOverdue(dateStr: string): boolean {
 
 type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active' | 'sequence-due';
 
-// ── Pro upgrade overlay (mirrors settings / BYOTSettings / marketing) ──
-// "This is what you're missing" — the real Leads UI renders behind a
-// blur+dim populated with demo data, and this card floats on top with a
-// hard CTA. On upgrade, isFreePlan flips false → overlay disappears, real
-// leads replace the demo set.
-function ProUpgradeCard({ description, theme }: { description: string; theme: any }) {
-  return (
-    <div
-      className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
-      style={{
-        backgroundColor: theme.card,
-        border: `1px solid ${theme.border}`,
-        boxShadow: theme.isDark
-          ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
-          : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
-      }}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}cc 100%)` }}
-        >
-          <Sparkles className="h-5 w-5" style={{ color: theme.primaryText }} />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Unlock with Pro</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on Pro and above</p>
-        </div>
-      </div>
-      <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
-      <a
-        href="/agency/settings?tab=billing"
-        className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
-        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-      >
-        Upgrade to Pro
-        <ExternalLink className="h-3.5 w-3.5" />
-      </a>
-    </div>
-  );
-}
-
-function ProFeatureGate({ isFreePlan, description, theme, children }: { isFreePlan: boolean; description: string; theme: any; children: React.ReactNode }) {
-  if (!isFreePlan) return <>{children}</>;
-  return (
-    <div className="relative">
-      <div className="opacity-40 pointer-events-none select-none" style={{ filter: 'blur(1.5px)' }} aria-hidden="true">
-        {children}
-      </div>
-      <div className="absolute inset-0 flex items-start justify-center pt-12 sm:pt-20 px-4 pointer-events-none">
-        <ProUpgradeCard description={description} theme={theme} />
-      </div>
-    </div>
-  );
-}
-
 export default function AgencyLeadsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
@@ -206,9 +151,9 @@ export default function AgencyLeadsPage() {
   useEffect(() => {
     if (!agency) return;
 
-    // Demo mode OR Free plan → render demo leads behind the ProFeatureGate
-    // overlay so Free agencies see a populated pipeline instead of an empty
-    // state. Real fetch only runs once they upgrade.
+    // Demo mode OR Free plan → render demo leads so the page is alive
+    // behind the LockedFeatureOverlay (or in normal demo mode for Pro/Scale).
+    // Real fetch only runs once they upgrade.
     if (demoMode || isFreePlan) {
       setLeads(getDemoLeads() as Lead[]);
       setStats(getDemoLeadStats() as LeadStats);
@@ -332,12 +277,10 @@ export default function AgencyLeadsPage() {
 
   const hasActiveFilters = searchQuery || statusFilter || filterMode !== 'all';
 
-  return (
-    <ProFeatureGate
-      isFreePlan={isFreePlan}
-      theme={theme}
-      description="Build your client pipeline. Prospect local businesses on Google Maps, run multi-step outreach sequences with conversion-tested templates, track every follow-up, and manage your entire sales funnel in one dashboard. Plus CSV import, pipeline analytics, and visual stage tracking. Pro unlocks the full lead-gen system."
-    >
+  // Full Leads UI — used as the LockedFeatureOverlay children when Free
+  // (populated with demo data via the useEffect above), AND as the direct
+  // return for Pro/Scale agencies with real data.
+  const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8">
 
       {/* Header */}
@@ -985,6 +928,26 @@ export default function AgencyLeadsPage() {
         />
       )}
     </div>
-    </ProFeatureGate>
   );
+
+  // Free plan: wrap the populated-with-demo-data UI in the LockedFeatureOverlay.
+  if (!canUseLeadFinder) {
+    return (
+      <LockedFeatureOverlay
+        title="Lead Generation"
+        description="Find local businesses on Google Maps, run outreach sequences with conversion-tested templates, and track your entire pipeline from one dashboard."
+        requiredPlan="Pro"
+        features={[
+          'Google Maps business prospecting',
+          '13 email + SMS outreach templates',
+          'Visual pipeline with follow-up tracking',
+          'CSV import and export',
+        ]}
+      >
+        {pageContent}
+      </LockedFeatureOverlay>
+    );
+  }
+
+  return pageContent;
 }
