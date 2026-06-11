@@ -321,7 +321,11 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const hasPermission = (key: string): boolean => {
     if (!user) return false;
     if (user.role === 'agency_owner' || user.role === 'super_admin') return true;
-    if (!user.permissions) return true;
+    // Staff are governed by their Page Access permissions. A missing object
+    // means no grants were loaded, so fail closed rather than open. An absent
+    // individual key on an existing object is allowed (only an explicit false
+    // blocks), matching how the per-member toggles default.
+    if (!user.permissions) return false;
     return user.permissions[key] !== false;
   };
 

@@ -24,6 +24,21 @@ function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null
 
 const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
 
+// Maps a dashboard route prefix to the Page Access permission key required to
+// view it. Used by the route guard below so a staff member can't reach a page
+// by typing its URL when their toggles don't include it. Routes not listed
+// here (demo-phone, templates, branding, referrals) are plan-gated, not
+// permission-gated. /agency/settings is handled separately (settings OR
+// billing, since Billing is a sub-tab inside Settings).
+const PATH_PERMISSIONS: Record<string, string> = {
+  '/agency/dashboard': 'dashboard',
+  '/agency/clients': 'clients',
+  '/agency/leads': 'leads',
+  '/agency/outreach': 'outreach',
+  '/agency/analytics': 'analytics',
+  '/agency/marketing': 'marketing',
+};
+
 interface NavItem { href: string; label: string; icon: LucideIcon; locked?: boolean; upgradeRequired?: string; permissionKey?: string; }
 
 /**
@@ -77,12 +92,47 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
-  const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });
+  const filteredNavItems = navItems.filter(item => {
+    // Settings holds both the settings tabs and the Billing sub-tab, so show
+    // the link if the member has either permission. The settings page itself
+    // gates the individual tabs.
+    if (item.href === '/agency/settings') return hasPermission('settings') || hasPermission('billing');
+    if (!item.permissionKey) return true;
+    return hasPermission(item.permissionKey);
+  });
+
+  // Whether the current path is allowed for this member's Page Access. Owners
+  // and super_admins pass everything via hasPermission.
+  const canAccessCurrentPath = (): boolean => {
+    if (!pathname) return true;
+    if (pathname.startsWith('/agency/settings')) return hasPermission('settings') || hasPermission('billing');
+    const matched = Object.keys(PATH_PERMISSIONS).find(prefix => pathname.startsWith(prefix));
+    if (!matched) return true; // plan-gated or always-open route
+    return hasPermission(PATH_PERMISSIONS[matched]);
+  };
+
+  // First page this member is actually allowed into, used as the redirect
+  // target when they hit a forbidden URL. Prefer an unlocked nav item so we
+  // don't bounce them onto a plan-locked upgrade screen.
+  const firstAllowedHref = (): string => {
+    const item = filteredNavItems.find(i => !i.locked);
+    return item ? item.href : '/agency/dashboard';
+  };
 
   useEffect(() => { const checkMobile = () => setIsMobile(window.innerWidth < 768); checkMobile(); window.addEventListener('resize', checkMobile); return () => window.removeEventListener('resize', checkMobile); }, []);
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && isMobile) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile]);
   useEffect(() => { if (!loading && shouldBlockAccess) { window.location.href = '/agency/settings'; } }, [loading, shouldBlockAccess]);
+  // Permission route guard: bounce agency_staff off any page their Page Access
+  // permissions don't include (covers direct-URL navigation, which the sidebar
+  // filter alone cannot stop). Owners/super_admins pass via canAccessCurrentPath.
+  useEffect(() => {
+    if (loading) return;
+    if (!canAccessCurrentPath()) {
+      const target = firstAllowedHref();
+      if (target && !pathname?.startsWith(target)) window.location.href = target;
+    }
+  }, [loading, pathname]);
   useEffect(() => { document.documentElement.style.setProperty('background', theme.bg, 'important'); document.body.style.setProperty('background', theme.bg, 'important'); return () => { document.documentElement.style.removeProperty('background'); document.body.style.removeProperty('background'); }; }, [theme.bg]);
   useEffect(() => { if (!loading) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
 

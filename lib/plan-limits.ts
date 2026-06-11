@@ -184,14 +184,16 @@ export function deriveAgencyTeamLimit(opts: {
   subscriptionStatus?: string | null;
   planType?: string | null;
 }): number {
-  const { maxTeamMembersAgency, subscriptionStatus, planType } = opts;
+  const { maxTeamMembersAgency, planType } = opts;
   // Explicit DB value wins. Strict null/undefined check so an explicit 0
   // (Free cap) or -1 (Scale unlimited) is respected, matching the backend.
   if (maxTeamMembersAgency !== null && maxTeamMembersAgency !== undefined) {
     return maxTeamMembersAgency;
   }
-  const isTrial = subscriptionStatus === 'trial' || subscriptionStatus === 'trialing';
-  if (isTrial) return -1;
+  // Seat caps follow the SELECTED plan, including during the trial, so this
+  // matches checkTeamLimit() in src/routes/team.js exactly: Scale unlimited,
+  // Pro 3, Free 0. subscriptionStatus is accepted for call-site compatibility
+  // but intentionally no longer grants trial-unlimited.
   const plan = (planType || 'free').toLowerCase();
   if (plan === 'scale' || plan === 'enterprise') return -1;
   if (plan === 'pro' || plan === 'professional') return 3;
