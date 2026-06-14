@@ -124,7 +124,7 @@ export default function AgencyClientDetailPage() {
   const [credPwVisible, setCredPwVisible] = useState(false);
   const [credResetting, setCredResetting] = useState(false);
   const [credError, setCredError] = useState<string | null>(null);
-  const [credCopied, setCredCopied] = useState<'user' | 'pass' | null>(null);
+  const [credCopied, setCredCopied] = useState<'user' | 'pass' | 'url' | null>(null);
 
   // ── Inline-editable fields in Business Details ─────────────────────
   const [businessName, setBusinessName] = useState('');
@@ -212,7 +212,7 @@ export default function AgencyClientDetailPage() {
     }
   };
 
-  const copyCred = (value: string, which: 'user' | 'pass') => { if (!value) return; navigator.clipboard.writeText(value); setCredCopied(which); setTimeout(() => setCredCopied(null), 2000); };
+  const copyCred = (value: string, which: 'user' | 'pass' | 'url') => { if (!value) return; navigator.clipboard.writeText(value); setCredCopied(which); setTimeout(() => setCredCopied(null), 2000); };
 
   const handleResetClientPassword = async () => {
     if (!agency || !clientId) return;
@@ -245,6 +245,15 @@ export default function AgencyClientDetailPage() {
 
   if (contextLoading || loading) { return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>; }
   if (error || !client) { return (<div className="p-4 sm:p-6 lg:p-8"><Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link><div className="text-center py-20"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.errorBg }}><Building2 className="h-8 w-8" style={{ color: theme.errorText, opacity: 0.5 }} /></div><p className="mt-4 font-medium" style={{ color: theme.textMuted }}>{error || 'Client not found'}</p><Link href="/agency/clients" className="mt-4 inline-flex items-center gap-2 text-sm hover:opacity-80" style={{ color: theme.primary }}><ArrowLeft className="h-4 w-4" /> Return to clients</Link></div></div>); }
+
+  // ── Agency-specific client login URL (verified custom domain, else
+  //    {slug}.myvoiceaiconnect.com), matching the backend's agencyUrl logic.
+  //    Path /client/login is the white-labeled client login route. ──
+  const agencyHost: any = agency || {};
+  const agencyBaseHost = agencyHost.marketing_domain && agencyHost.domain_verified
+    ? agencyHost.marketing_domain
+    : (agencyHost.slug ? `${agencyHost.slug}.myvoiceaiconnect.com` : null);
+  const clientLoginUrl = agencyBaseHost ? `https://${agencyBaseHost}/client/login` : null;
 
   const statusStyle = getStatusStyle(client.subscription_status || client.status);
   const callsUsed = client.calls_this_month || 0;
@@ -405,6 +414,17 @@ export default function AgencyClientDetailPage() {
               <p className="text-xs mb-4" style={{ color: theme.textMuted }}>The credentials this client uses to sign in to their dashboard.</p>
 
               {credError && (<div className="rounded-lg p-3 mb-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{credError}</p></div>)}
+
+              {clientLoginUrl && (
+                <div className="mb-3">
+                  <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Login page</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{clientLoginUrl}</div>
+                    <a href={clientLoginUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}><ExternalLink className="h-4 w-4" /></a>
+                    <button onClick={() => copyCred(clientLoginUrl, 'url')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'url' ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}</button>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-3">
                 <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Username</p>
