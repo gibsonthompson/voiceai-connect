@@ -45,7 +45,7 @@ const INDUSTRY_OPTIONS = [
   { value: 'automotive', label: 'Automotive' },
 ];
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; }
+interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
 
 function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: { client: Client; agencyId?: string; theme: any; backendUrl: string; onUpdate: () => void; }) {
@@ -119,6 +119,12 @@ export default function AgencyClientDetailPage() {
   const [industrySaving, setIndustrySaving] = useState(false);
   const [industrySaved, setIndustrySaved] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ── Client login credentials (view + agency-initiated reset) ───────
+  const [credPwVisible, setCredPwVisible] = useState(false);
+  const [credResetting, setCredResetting] = useState(false);
+  const [credError, setCredError] = useState<string | null>(null);
+  const [credCopied, setCredCopied] = useState<'user' | 'pass' | null>(null);
 
   // ── Inline-editable fields in Business Details ─────────────────────
   const [businessName, setBusinessName] = useState('');
@@ -203,6 +209,29 @@ export default function AgencyClientDetailPage() {
       alert('Failed to open client preview');
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const copyCred = (value: string, which: 'user' | 'pass') => { if (!value) return; navigator.clipboard.writeText(value); setCredCopied(which); setTimeout(() => setCredCopied(null), 2000); };
+
+  const handleResetClientPassword = async () => {
+    if (!agency || !clientId) return;
+    if (!confirm("Reset this client's password? Their current password stops working immediately and they'll need the new one to log in.")) return;
+    setCredResetting(true);
+    setCredError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to reset password'); }
+      setCredPwVisible(true);
+      await fetchClientData();
+    } catch (err: any) {
+      setCredError(err.message || 'Failed to reset password');
+    } finally {
+      setCredResetting(false);
     }
   };
 
@@ -368,6 +397,39 @@ export default function AgencyClientDetailPage() {
         <div className="space-y-4 sm:space-y-6">
           {/* Knowledge Base */}
           {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-1"><BookOpen className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Knowledge Base</h2></div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>{intelligence ? `Pre-loaded ${intelligence.label} knowledge` : 'AI receptionist knowledge base'}</p>{intelligence && (<div className="flex flex-wrap gap-1.5 mb-4">{intelligence.features.map((feature) => (<span key={feature} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}><Zap className="h-3 w-3" />{feature}</span>))}{client.business_website && <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}><Globe className="h-3 w-3" />Website Integrated</span>}</div>)}<button onClick={handleOpenKbModal} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><BookOpen className="h-4 w-4" /> View / Edit Knowledge Base</button></div></div>)}
+
+          {/* Client Login Credentials */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-1"><Lock className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Client Login</h2></div>
+              <p className="text-xs mb-4" style={{ color: theme.textMuted }}>The credentials this client uses to sign in to their dashboard.</p>
+
+              {credError && (<div className="rounded-lg p-3 mb-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{credError}</p></div>)}
+
+              <div className="mb-3">
+                <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Username</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{client.login_email || client.email || '—'}</div>
+                  <button onClick={() => copyCred(client.login_email || client.email || '', 'user')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'user' ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}</button>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Password</p>
+                {client.login_password ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{credPwVisible ? client.login_password : '\u2022'.repeat(Math.min(12, (client.login_password || '').length))}</div>
+                    <button onClick={() => setCredPwVisible(v => !v)} className="px-2.5 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credPwVisible ? 'Hide' : 'Show'}</button>
+                    <button onClick={() => copyCred(client.login_password || '', 'pass')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'pass' ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}</button>
+                  </div>
+                ) : (
+                  <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>The client set their own password, so it can&apos;t be shown. Reset it below to generate a new one you can share.</div>
+                )}
+              </div>
+
+              <button onClick={handleResetClientPassword} disabled={credResetting} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{credResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}{credResetting ? 'Resetting...' : 'Reset Password'}</button>
+            </div>
+          </div>
 
           {/* Client Branding */}
           <div>
