@@ -64,6 +64,14 @@ export async function generateMetadata(): Promise<Metadata> {
       // Override the root metadataBase so any relative URLs resolve to this
       // agency host. (og:image / og:url below are absolute anyway.)
       metadataBase: new URL(`https://${host}`),
+      // Server-rendered PWA manifest for this route. Relative, so it resolves
+      // against metadataBase → https://<host>/api/client-manifest. This puts
+      // the agency manifest in the INITIAL HTML (before JS), so "Add to Home
+      // Screen" installs the agency app pointed at THIS subdomain even for
+      // install-prompt logic / scrapers that read the manifest before the
+      // page's client-side injection (page.tsx) runs. The manifest route
+      // resolves the agency by host, so no clientId is needed here.
+      manifest: '/api/client-manifest',
       openGraph: {
         type: 'website',
         url,

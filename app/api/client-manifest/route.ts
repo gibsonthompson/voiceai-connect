@@ -74,7 +74,15 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Per-install identity. Without an explicit id, every client on a shared
+    // agency subdomain installs with the SAME identity (same start_url/scope),
+    // so installs collide. Keying id by clientId keeps each client's install
+    // distinct on the same origin.
+    const manifestId = clientId ? `/client/app/${clientId}` : '/client/app';
+    const resolvedIcon = iconUrl.startsWith('http') ? iconUrl : `${fullOrigin}${iconUrl}`;
+
     const manifest = {
+      id: manifestId,
       name,
       short_name: shortName,
       description: 'Manage your AI receptionist',
@@ -84,19 +92,14 @@ export async function GET(request: NextRequest) {
       background_color: backgroundColor,
       theme_color: themeColor,
       orientation: 'portrait-primary',
+      // 'any' and 'maskable' as separate entries. A combined 'any maskable'
+      // purpose makes Android treat the icon as maskable and crop it to the
+      // safe zone; splitting lets non-maskable contexts show it uncropped.
       icons: [
-        {
-          src: iconUrl.startsWith('http') ? iconUrl : `${fullOrigin}${iconUrl}`,
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any maskable'
-        },
-        {
-          src: iconUrl.startsWith('http') ? iconUrl : `${fullOrigin}${iconUrl}`,
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any maskable'
-        }
+        { src: resolvedIcon, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: resolvedIcon, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: resolvedIcon, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+        { src: resolvedIcon, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
       ]
     };
 

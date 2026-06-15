@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
   Check, CheckCircle2, Circle, AlertCircle, Mail, Copy,
-  Lock, Bell, BellOff, ChevronDown, ChevronUp, Info
+  Lock, Bell, BellOff, ChevronDown, ChevronUp, Info, Phone
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 
@@ -38,6 +38,9 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [editingPasswordId, setEditingPasswordId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [editingPhoneId, setEditingPhoneId] = useState<string | null>(null);
+  const [phoneDraft, setPhoneDraft] = useState('');
+  const [savingPhone, setSavingPhone] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
@@ -77,6 +80,7 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
     }
   };
   const toggleNotification = async (memberId: string, key: string, currentValue: boolean) => { const member = members.find(m => m.id === memberId); if (!member) return; const newPrefs = { ...member.notification_prefs, [key]: !currentValue }; setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: newPrefs } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notification_prefs: newPrefs }) }); if (!res.ok) throw new Error('Failed to update'); } catch { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: member.notification_prefs } : m)); } };
+  const savePhone = async (memberId: string) => { const member = members.find(m => m.id === memberId); if (!member) return; const value = phoneDraft.trim(); const prevPhone = member.phone; setSavingPhone(true); setError(null); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, phone: value || null } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ phone: value || null }) }); const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || (res.status === 403 ? 'Only the account owner can change team members.' : 'Failed to update phone')); setEditingPhoneId(null); setPhoneDraft(''); setSuccess(value ? 'Phone number updated' : 'Phone number removed'); setTimeout(() => setSuccess(null), 2500); } catch (err: any) { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, phone: prevPhone } : m)); setError(err.message || 'Failed to update phone'); } finally { setSavingPhone(false); } };
   const resetPassword = async (memberId: string, customPassword?: string) => { try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(customPassword ? { password: customPassword } : {}) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Failed to reset'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, visible_password: data.visible_password } : m)); setVisiblePasswords(prev => ({ ...prev, [memberId]: true })); setEditingPasswordId(null); setNewPassword(''); setSuccess(customPassword ? 'Password updated!' : 'Password reset! New credentials sent via SMS.'); setTimeout(() => setSuccess(null), 4000); } catch (err: any) { setError(err.message); } };
   const toggleStatus = async (memberId: string, currentStatus: string) => { const newStatus = currentStatus === 'active' ? 'disabled' : 'active'; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus }) }); if (!res.ok) throw new Error('Failed to update status'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m)); } catch (err: any) { setError(err.message); } };
   const removeMember = async (memberId: string, name: string) => { if (!confirm(`Remove ${name}? This will delete their account.`)) return; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Failed to remove'); setMembers(prev => prev.filter(m => m.id !== memberId)); setLimits(prev => ({ ...prev, current: Math.max(0, prev.current - 1) })); setSuccess(`${name} removed`); setTimeout(() => setSuccess(null), 3000); } catch (err: any) { setError(err.message); } };
@@ -181,6 +185,23 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
                         <button onClick={() => resetPassword(member.id)} className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.textMuted }}><RefreshCw className="h-3 w-3" /> Generate Random</button>
                       </div>
                     )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Phone (SMS notifications)</p>
+                    {editingPhoneId === member.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input type="tel" value={phoneDraft} onChange={(e) => setPhoneDraft(e.target.value)} placeholder="+1 (555) 123-4567" autoFocus className="flex-1 rounded-lg px-2.5 py-1.5 text-[10px] sm:text-xs" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.text, minWidth: 0 }} />
+                        <button onClick={() => savePhone(member.id)} disabled={savingPhone} className="rounded-lg px-2.5 py-1.5 text-[10px] sm:text-xs font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#fff' }}>{savingPhone ? 'Saving...' : 'Save'}</button>
+                        <button onClick={() => { setEditingPhoneId(null); setPhoneDraft(''); }} className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.bg }}>
+                        <Phone className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />
+                        <span className="text-[10px] sm:text-xs truncate" style={{ color: member.phone ? theme.text : theme.textMuted4 }}>{member.phone || 'No phone number set'}</span>
+                        <button onClick={() => { setEditingPhoneId(member.id); setPhoneDraft(member.phone || ''); }} className="ml-auto flex-shrink-0 text-[10px] sm:text-xs font-medium" style={{ color: theme.primary }}>{member.phone ? 'Edit' : 'Add'}</button>
+                      </div>
+                    )}
+                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>When Call notifications is on, alerts are texted to this number.</p>
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Page Access</p>

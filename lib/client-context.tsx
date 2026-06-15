@@ -316,7 +316,12 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     if (!user) return false;
     if (user.role === 'client' || user.role === 'super_admin') return true;
     if (!user.permissions) return true;
-    return user.permissions[key] !== false;
+    // Match the Page Access grid exactly: a permission is GRANTED only when it
+    // is explicitly true. An absent key counts as NOT granted (the grid renders
+    // it unchecked via `?? false`). The old `!== false` treated absent keys as
+    // allowed, so tabs added after a member was created (Messages, My Business,
+    // AI Agent) kept showing even though the grid showed them off.
+    return user.permissions[key] === true;
   }, [user]);
 
   return (

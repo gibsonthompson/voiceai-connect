@@ -44,6 +44,29 @@ function ClientLoginContent() {
     detectContext();
   }, []);
 
+  // ── PWA MANIFEST FIX ──────────────────────────────────────────────────
+  // Auth pages render outside ClientProvider (app/client/layout.tsx short-
+  // circuits them), so the dashboard's setManifestLink never runs here and the
+  // login page inherits the ROOT platform manifest. Installing "Add to Home
+  // Screen" from this page would then capture the platform manifest, whose
+  // start_url is the platform origin, so the installed app opens the generic
+  // agency-level login where a client can't sign in.
+  //
+  // Point the manifest at the host-resolved client manifest instead. With no
+  // clientId, /api/client-manifest still resolves THIS agency by host (see
+  // getAgencyByHost subdomain handling), so start_url becomes this subdomain's
+  // /client/dashboard. Installing from the login page now yields an agency-
+  // branded PWA that opens this subdomain and lands on this branded login.
+  useEffect(() => {
+    try {
+      document.querySelectorAll('link[rel="manifest"]').forEach(el => el.remove());
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = '/api/client-manifest';
+      document.head.appendChild(link);
+    } catch {}
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); setError(''); };
 
   const handleSubmit = async (e: React.FormEvent) => {

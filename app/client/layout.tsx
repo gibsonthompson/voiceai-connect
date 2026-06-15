@@ -44,7 +44,7 @@ interface NavItem { href: string; label: string; icon: any; permissionKey?: stri
 
 function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { client, branding, loading, hasPermission } = useClient();
+  const { client, branding, loading, hasPermission, user } = useClient();
   const theme = useClientTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -138,6 +138,26 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { if (!loading && theme) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
 
+  // ── ROUTE-LEVEL PERMISSION GUARD ─────────────────────────────────────
+  // Hiding a nav link is not enforcement: a member could still reach a page
+  // by typing its URL. Find the nav item that owns the current route and, if
+  // the member lacks that permission, redirect them to their first accessible
+  // page. Owners (hasPermission returns true for role 'client'/'super_admin')
+  // and preview mode are never blocked; Settings/upgrade routes are always
+  // accessible. NOTE: client-side UX enforcement only — the backend client
+  // API routes are still open and need requirePermission for true blocking.
+  const activeNavItem = navItems.find(item => item.href === '/client/dashboard'
+    ? (pathname === '/client/dashboard' || pathname === '/client')
+    : pathname?.startsWith(item.href));
+  const routePermissionKey = activeNavItem?.permissionKey;
+  const routeBlocked = !!routePermissionKey && !!user && !isPreviewMode && !isAccessibleRoute && !hasPermission(routePermissionKey);
+  const guardDestination = filteredNavItems[0]?.href || '/client/settings';
+
+  useEffect(() => {
+    if (loading || !user || !routeBlocked) return;
+    if (pathname !== guardDestination) window.location.replace(guardDestination);
+  }, [loading, user, routeBlocked, pathname, guardDestination]);
+
   const LogoBadge = ({ size }: { size: 'sm' | 'md' | 'lg' }) => {
     const logoStyle = size === 'lg' ? { maxHeight: '80px', maxWidth: '180px' } : size === 'md' ? { maxHeight: '36px', maxWidth: '140px' } : { maxHeight: '28px', maxWidth: '100px' };
     const initialSize = size === 'lg' ? { box: 56, font: 22 } : size === 'md' ? { box: 40, font: 16 } : { box: 32, font: 14 };
@@ -199,6 +219,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {
+    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
+  }
+
+  // Member hit a page they do not have permission for — show a redirecting
+  // state while the guard effect above sends them to their first allowed page.
+  if (routeBlocked) {
     return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
   }
 
