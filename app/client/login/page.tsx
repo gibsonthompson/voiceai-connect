@@ -16,6 +16,19 @@ function getContrastColor(hex: string): string {
 
 const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
 
+// -- FLASH FIX ------------------------------------------------------------
+// A freshly installed PWA has an empty storage sandbox, so on first paint the
+// theme is unknown and the page would default to dark before the agency
+// resolves (a dark-to-light flash on a light-themed agency). We seed the
+// initial background from the cached agency theme written on a previous visit,
+// and we write that cache below once the agency resolves. After the first
+// visit, the root blocking script and this loader both paint the correct color
+// with no flash. (First-ever install still relies on the manifest splash.)
+function getThemeHint(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'dark';
+  try { return localStorage.getItem('voiceai_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
+}
+
 function ClientLoginContent() {
   const searchParams = useSearchParams();
   const signupSuccess = searchParams.get('signup') === 'success';
@@ -24,6 +37,7 @@ function ClientLoginContent() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agency, setAgency] = useState<Agency | null>(null);
+  const [themeHint] = useState<'light' | 'dark'>(getThemeHint);
   const [formData, setFormData] = useState({ email: '', password: '' });
 
   useEffect(() => {
@@ -37,14 +51,23 @@ function ClientLoginContent() {
         const pds = [pd, `www.${pd}`, 'localhost:3000', 'localhost'];
         if (!pds.includes(host)) {
           const r = await fetch(`${getBackendUrl()}/api/agency/by-host?host=${host}`);
-          if (r.ok) { const d = await r.json(); setAgency(d.agency); }
+          if (r.ok) {
+            const d = await r.json();
+            setAgency(d.agency);
+            // Cache the resolved theme so the next launch (root blocking script
+            // and this loader) paints the right background with no flash.
+            try {
+              const dark = d.agency?.website_theme !== 'light';
+              localStorage.setItem('voiceai_ui_theme', dark ? 'dark' : 'light');
+            } catch {}
+          }
         }
       } catch {} finally { setPageLoading(false); }
     };
     detectContext();
   }, []);
 
-  // ── PWA MANIFEST FIX ──────────────────────────────────────────────────
+  // -- PWA MANIFEST FIX ---------------------------------------------------
   // Auth pages render outside ClientProvider (app/client/layout.tsx short-
   // circuits them), so the dashboard's setManifestLink never runs here and the
   // login page inherits the ROOT platform manifest. Installing "Add to Home
@@ -53,10 +76,13 @@ function ClientLoginContent() {
   // agency-level login where a client can't sign in.
   //
   // Point the manifest at the host-resolved client manifest instead. With no
-  // clientId, /api/client-manifest still resolves THIS agency by host (see
-  // getAgencyByHost subdomain handling), so start_url becomes this subdomain's
-  // /client/dashboard. Installing from the login page now yields an agency-
-  // branded PWA that opens this subdomain and lands on this branded login.
+  // clientId, /api/client-manifest still resolves THIS agency by host, so
+  // start_url becomes this subdomain's /client/login. Installing from the
+  // login page now yields an agency-branded PWA that opens this subdomain and
+  // lands on this branded login.
+  //
+  // Also pin the iOS home-screen name to "VoiceAI" (per request) regardless of
+  // which page the install was triggered from.
   useEffect(() => {
     try {
       document.querySelectorAll('link[rel="manifest"]').forEach(el => el.remove());
@@ -64,6 +90,15 @@ function ClientLoginContent() {
       link.rel = 'manifest';
       link.href = '/api/client-manifest';
       document.head.appendChild(link);
+
+      let m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (m) { m.setAttribute('content', 'VoiceAI'); }
+      else {
+        m = document.createElement('meta');
+        m.setAttribute('name', 'apple-mobile-web-app-title');
+        m.setAttribute('content', 'VoiceAI');
+        document.head.appendChild(m);
+      }
     } catch {}
   }, []);
 
@@ -109,7 +144,12 @@ function ClientLoginContent() {
     helpText: '#9ca3af',
   };
 
-  if (pageLoading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: t.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
+  // Loader paints from the cached theme hint (not a hard dark default) so a
+  // light agency doesn't flash dark before the agency fetch resolves.
+  if (pageLoading) {
+    const hintDark = themeHint === 'dark';
+    return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: hintDark ? '#050505' : '#ffffff' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
+  }
 
   const dynamicStyles = `
     input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,input:-webkit-autofill:active{-webkit-box-shadow:0 0 0 9999px ${t.autofillBg} inset !important;box-shadow:0 0 0 9999px ${t.autofillBg} inset !important;-webkit-text-fill-color:${t.autofillText} !important;border-color:${t.inputBorder} !important;transition:background-color 0s 600000s,color 0s 600000s !important}
@@ -126,8 +166,8 @@ function ClientLoginContent() {
 
       {isDark && <div className="fixed inset-0 pointer-events-none opacity-[0.015] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />}
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl" style={{ borderBottom: `1px solid ${t.headerBorder}`, backgroundColor: t.headerBg }}>
+      {/* Header -- paddingTop clears the iOS status bar / notch in standalone PWA mode */}
+      <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl" style={{ borderBottom: `1px solid ${t.headerBorder}`, backgroundColor: t.headerBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3 min-w-0">
@@ -147,7 +187,7 @@ function ClientLoginContent() {
         </div>
       </header>
 
-      <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
+      <main className="relative min-h-screen flex items-center justify-center px-6 py-32" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top))' }}>
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl" style={{ backgroundColor: primaryColor, opacity: isDark ? 0.07 : 0.1 }} />
         </div>

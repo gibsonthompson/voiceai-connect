@@ -117,7 +117,10 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     };
   }, [theme.bg, theme.text, nav.bg]);
 
-  useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', displayName); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', displayName); document.head.appendChild(metaTitle); } } }, [displayName]);
+  // Home-screen app name is pinned to "VoiceAI" (per request). The browser tab
+  // title stays branded (displayName); only the iOS apple-mobile-web-app-title,
+  // which is what "Add to Home Screen" reads for the icon label, is fixed.
+  useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', 'VoiceAI'); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', 'VoiceAI'); document.head.appendChild(metaTitle); } } }, [displayName]);
   useEffect(() => { if (!loading && clientTrialExpired && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?expired=true'; } }, [loading, clientTrialExpired, isAccessibleRoute]);
   useEffect(() => { if (!loading && clientCanceled && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?canceled=true'; } }, [loading, clientCanceled, isAccessibleRoute]);
 
