@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Building2, Clock, BookOpen, Globe, HelpCircle, FileText,
+  Building2, Clock, BookOpen, Globe, HelpCircle, FileText, MapPin,
   Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
@@ -73,6 +73,13 @@ export default function MyBusinessPage() {
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [existingServicesText, setExistingServicesText] = useState('');
 
+  // Service areas — stored on the client AI-settings record, moved here from
+  // the AI Agent tab. Feeds the assistant system prompt at call time.
+  const [serviceAreas, setServiceAreas] = useState<string[]>([]);
+  const [origServiceAreas, setOrigServiceAreas] = useState<string[]>([]);
+  const [newArea, setNewArea] = useState('');
+  const [savingAreas, setSavingAreas] = useState(false);
+
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -80,6 +87,7 @@ export default function MyBusinessPage() {
     if (client) {
       setNameValue(client.business_name || '');
       fetchKnowledgeBase();
+      fetchServiceAreas();
     }
   }, [client]);
 
@@ -100,6 +108,19 @@ export default function MyBusinessPage() {
         }
       }
     } catch {} finally { setKbLoading(false); }
+  };
+
+  const fetchServiceAreas = async () => {
+    if (!client) return;
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/ai-settings`, { headers: { Authorization: `Bearer ${getAuthToken()}` } });
+      if (r.ok) {
+        const d = await r.json();
+        const s = d.settings || {};
+        setServiceAreas(s.service_areas || []);
+        setOrigServiceAreas(s.service_areas || []);
+      }
+    } catch {}
   };
 
   const parseFAQs = (t: string) => {
@@ -168,6 +189,27 @@ export default function MyBusinessPage() {
       if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Knowledge base updated!'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Failed', true);
     } catch { showMsg('Error', true); }
     finally { setSavingKB(false); }
+  };
+
+  const addArea = () => {
+    const t = newArea.trim();
+    if (t && !serviceAreas.includes(t)) { setServiceAreas([...serviceAreas, t]); setNewArea(''); }
+  };
+  const removeArea = (a: string) => setServiceAreas(serviceAreas.filter(x => x !== a));
+  const hasAreaChanges = JSON.stringify(serviceAreas) !== JSON.stringify(origServiceAreas);
+
+  const handleSaveServiceAreas = async () => {
+    if (!client) return;
+    setSavingAreas(true);
+    try {
+      // Partial update to the same AI-settings endpoint the AI Agent tab uses.
+      // The backend only writes fields present in the body, so ai_tone and
+      // booking_mode are untouched. service_areas feeds the assistant prompt.
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/ai-settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ service_areas: serviceAreas }) });
+      if (r.ok) { setOrigServiceAreas([...serviceAreas]); showMsg('Service areas updated!'); }
+      else { let e = 'Failed'; try { e = (await r.json()).error || e; } catch {} showMsg(e, true); }
+    } catch { showMsg('Error', true); }
+    finally { setSavingAreas(false); }
   };
 
   const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => { setBusinessHours(p => ({ ...p, [day]: { ...p[day], [field]: value } })); };
@@ -306,6 +348,28 @@ export default function MyBusinessPage() {
           </SectionCard>
         </div>
 
+        {/* Service Areas */}
+        <div className="fu fu2">
+          <SectionCard icon={MapPin} title="Service Areas" subtitle="Cities or regions your AI tells callers you cover">
+            <p className="text-[11px] mb-2" style={{ color: theme.textMuted4 }}>Your AI lets callers know if their location is within your coverage area.</p>
+            {serviceAreas.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {serviceAreas.map(area => (
+                  <span key={area} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}>
+                    {area}
+                    <button onClick={() => removeArea(area)} className="hover:opacity-70"><X className="w-3 h-3" /></button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input type="text" value={newArea} onChange={e => setNewArea(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }} placeholder="e.g. Atlanta, Marietta, Decatur" className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
+              <button onClick={addArea} disabled={!newArea.trim()} className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}><Plus className="w-4 h-4" /> Add</button>
+            </div>
+            {hasAreaChanges && <SaveButton onClick={handleSaveServiceAreas} disabled={savingAreas} loading={savingAreas} label="Save Service Areas" />}
+          </SectionCard>
+        </div>
+
         {/* Services */}
         <div className="mb-4 sm:mb-5">
           <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} />
@@ -350,7 +414,7 @@ export default function MyBusinessPage() {
                 </div>
                 <div>
                   <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: primaryColor }} /> Additional Info</label>
-                  <textarea value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} placeholder="Policies, service areas, payment methods..." rows={3} className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none resize-none" style={inputStyle} />
+                  <textarea value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} placeholder="Policies, payment methods, parking info..." rows={3} className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none resize-none" style={inputStyle} />
                 </div>
                 <SaveButton onClick={handleSaveKnowledgeBase} disabled={savingKB} loading={savingKB} label="Update Knowledge Base" />
               </div>

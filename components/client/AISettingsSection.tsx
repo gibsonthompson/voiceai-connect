@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Bot, MapPin, AlertTriangle, Calendar, Plus, X } from 'lucide-react';
+import { Loader2, Save, Bot, AlertTriangle, Calendar } from 'lucide-react';
 
 interface AISettingsProps {
   clientId: string;
@@ -38,12 +38,9 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
 
   const [aiTone, setAiTone] = useState('professional');
   const [bookingMode, setBookingMode] = useState('auto_book');
-  const [serviceAreas, setServiceAreas] = useState<string[]>([]);
-  const [newArea, setNewArea] = useState('');
 
   const [origTone, setOrigTone] = useState('professional');
   const [origBooking, setOrigBooking] = useState('auto_book');
-  const [origAreas, setOrigAreas] = useState<string[]>([]);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -59,10 +56,8 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
           const s = d.settings;
           setAiTone(s.ai_tone || 'professional');
           setBookingMode(s.booking_mode || 'auto_book');
-          setServiceAreas(s.service_areas || []);
           setOrigTone(s.ai_tone || 'professional');
           setOrigBooking(s.booking_mode || 'auto_book');
-          setOrigAreas(s.service_areas || []);
         }
       } catch (err) {
         console.error('Failed to fetch AI settings:', err);
@@ -75,8 +70,7 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
 
   const hasChanges =
     aiTone !== origTone ||
-    bookingMode !== origBooking ||
-    JSON.stringify(serviceAreas) !== JSON.stringify(origAreas);
+    bookingMode !== origBooking;
 
   const handleSave = async () => {
     setSaving(true);
@@ -89,13 +83,11 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
         body: JSON.stringify({
           ai_tone: aiTone,
           booking_mode: bookingMode,
-          service_areas: serviceAreas,
         }),
       });
       if (r.ok) {
         setOrigTone(aiTone);
         setOrigBooking(bookingMode);
-        setOrigAreas([...serviceAreas]);
         setMessage('Settings saved! Changes take effect on the next call.');
         setTimeout(() => setMessage(''), 4000);
       } else {
@@ -107,18 +99,6 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
     } finally {
       setSaving(false);
     }
-  };
-
-  const addArea = () => {
-    const trimmed = newArea.trim();
-    if (trimmed && !serviceAreas.includes(trimmed)) {
-      setServiceAreas([...serviceAreas, trimmed]);
-      setNewArea('');
-    }
-  };
-
-  const removeArea = (area: string) => {
-    setServiceAreas(serviceAreas.filter(a => a !== area));
   };
 
   const getMessageStyle = (msg: string) => {
@@ -225,52 +205,6 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* Service Areas */}
-        <div>
-          <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
-            <MapPin className="w-3 h-3 inline mr-1" style={{ color: theme.primary }} />
-            Service Areas
-          </label>
-          <p className="text-[10px] mb-2" style={{ color: theme.textMuted || theme.textMuted4 }}>
-            Your AI will let callers know if their location is within your coverage area.
-          </p>
-          {serviceAreas.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {serviceAreas.map(area => (
-                <span
-                  key={area}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
-                  style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06), color: theme.primary }}
-                >
-                  {area}
-                  <button onClick={() => removeArea(area)} className="hover:opacity-70">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newArea}
-              onChange={e => setNewArea(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }}
-              placeholder="e.g. Atlanta, Marietta, Decatur"
-              className="flex-1 rounded-lg px-3 py-2 text-xs"
-              style={inputStyle}
-            />
-            <button
-              onClick={addArea}
-              disabled={!newArea.trim()}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-40 transition"
-              style={{ backgroundColor: hexToRgba(theme.primary, 0.1), color: theme.primary }}
-            >
-              <Plus className="w-3 h-3" /> Add
-            </button>
           </div>
         </div>
 

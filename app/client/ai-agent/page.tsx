@@ -39,6 +39,11 @@ export default function ClientAIAgentPage() {
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [accentFilter, setAccentFilter] = useState('all');
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Greeting-in-voice preview: cache synthesized audio per voice+text for the
+  // session so re-tapping a voice doesn't re-bill ElevenLabs; track which voice
+  // is currently being synthesized to show a spinner.
+  const previewCacheRef = useRef<Map<string, string>>(new Map());
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
 
   const [greetingMessage, setGreetingMessage] = useState('');
   const [originalGreeting, setOriginalGreeting] = useState('');
@@ -51,7 +56,7 @@ export default function ClientAIAgentPage() {
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
 
   useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); } }, [client]);
-  useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }; }, []);
+  useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } previewCacheRef.current.forEach(url => { try { URL.revokeObjectURL(url); } catch {} }); previewCacheRef.current.clear(); }; }, []);
 
   // Handle calendar redirect params
   useEffect(() => {
@@ -122,7 +127,56 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const handlePlayPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const audio = new Audio(voice.previewUrl); audioRef.current = audio; audio.onended = () => setPlayingVoiceId(null); audio.onerror = () => { setPlayingVoiceId(null); showMessage('Failed to play', true); }; audio.play(); setPlayingVoiceId(voice.id); };
+  // Text spoken in the preview: the greeting exactly as currently typed (so it
+  // reflects unsaved edits), falling back to a generic line if it's basically empty.
+  const buildPreviewText = (): string => {
+    const g = greetingMessage.trim();
+    if (g.length >= 5) return g.slice(0, 500);
+    const bn = client?.business_name || branding?.businessName || 'our office';
+    return `Hi, thanks for calling ${bn}. How can I help you today?`;
+  };
+
+  const playFromUrl = (voiceId: string, url: string) => {
+    if (audioRef.current) audioRef.current.pause();
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    audio.onended = () => setPlayingVoiceId(null);
+    audio.onerror = () => setPlayingVoiceId(null);
+    audio.play().catch(() => setPlayingVoiceId(null));
+    setPlayingVoiceId(voiceId);
+  };
+
+  const handlePlayPreview = async (voice: VoiceOption) => {
+    // Tapping the playing voice again stops it.
+    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+
+    const text = buildPreviewText();
+    const cacheKey = `${voice.id}::${text}`;
+    const cachedUrl = previewCacheRef.current.get(cacheKey);
+    if (cachedUrl) { playFromUrl(voice.id, cachedUrl); return; }
+
+    setPreviewLoadingId(voice.id);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/voices/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ voice_id: voice.id, text }),
+      });
+      if (!r.ok) throw new Error('preview failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      previewCacheRef.current.set(cacheKey, url);
+      setPreviewLoadingId(null);
+      playFromUrl(voice.id, url);
+    } catch {
+      setPreviewLoadingId(null);
+      // Fall back to the stock ElevenLabs sample so the button still does something
+      // (e.g. before ELEVENLABS_API_KEY is configured).
+      if (voice.previewUrl) playFromUrl(voice.id, voice.previewUrl);
+      else showMessage('Could not play preview', true);
+    }
+  };
   const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); showMessage('Voice updated!'); } else { showMessage('Failed', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
   const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); showMessage('Greeting updated!'); } else { showMessage(d.error || 'Failed', true); } } catch { showMessage('Error', true); } finally { setSavingGreeting(false); } };
   const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
@@ -296,9 +350,10 @@ export default function ClientAIAgentPage() {
                         {voice.recommended && !cur && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold rounded-full" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>★</span>}
                         <div className="flex items-start gap-2">
                           <button onClick={(e) => { e.stopPropagation(); handlePlayPreview(voice); }}
+                            disabled={previewLoadingId === voice.id}
                             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition"
                             style={{ backgroundColor: playing ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: playing ? theme.primaryText : theme.textMuted }}>
-                            {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                            {previewLoadingId === voice.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
                           </button>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1">
