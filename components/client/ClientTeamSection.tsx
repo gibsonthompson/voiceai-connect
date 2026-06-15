@@ -16,6 +16,8 @@ const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; s
   dashboard: { label: 'Dashboard', description: 'View dashboard stats' },
   calls: { label: 'Calls', description: 'View call history and details' },
   contacts: { label: 'Contacts', description: 'View and manage contacts' },
+  messages: { label: 'Messages', description: 'View and send messages' },
+  my_business: { label: 'My Business', description: 'Edit hours, services, staff, knowledge base', sensitive: true },
   ai_agent: { label: 'AI Agent', description: 'Configure AI voice, greeting, knowledge base', sensitive: true },
   settings: { label: 'Settings', description: 'Edit business settings', sensitive: true },
   billing: { label: 'Billing', description: 'Manage subscription & payments', sensitive: true },
