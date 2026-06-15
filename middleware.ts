@@ -11,6 +11,19 @@ const PLATFORM_DOMAINS = [
   'localhost',
 ];
 
+// Fixed icon paths that link-preview crawlers (SMS / iMessage) request by
+// convention. They are physical files in /public, so they serve the same
+// VoiceAI icon on every host. On an agency host we rewrite them to a
+// host-aware route that renders the agency logo. (The matcher below also
+// has to allow these through, since the default pattern excludes images.)
+const ICON_PATHS = new Set([
+  '/favicon.ico',
+  '/favicon.svg',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/apple-touch-icon.png',
+]);
+
 // Stripe-supported countries (for geo-detection validation)
 const SUPPORTED_COUNTRIES = new Set([
   'US','CA','MX','GB','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR',
@@ -21,7 +34,25 @@ const SUPPORTED_COUNTRIES = new Set([
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const pathname = request.nextUrl.pathname;
-  
+
+  // =========================================================================
+  // HOST-AWARE ICONS (must run BEFORE the static-file skip below).
+  // Platform hosts pass through to the real /public files. Agency hosts get
+  // the icon path rewritten to /api/agency-favicon, which reads the host and
+  // renders that agency's logo. This is what makes the SMS link-preview icon
+  // agency-branded, and it also makes the hardcoded /favicon-*.png <link> tags
+  // in app/layout.tsx resolve to the agency logo on agency hosts.
+  // =========================================================================
+  if (ICON_PATHS.has(pathname)) {
+    if (PLATFORM_DOMAINS.includes(hostname)) {
+      return NextResponse.next();
+    }
+    const iconUrl = request.nextUrl.clone();
+    iconUrl.pathname = '/api/agency-favicon';
+    iconUrl.search = '';
+    return NextResponse.rewrite(iconUrl);
+  }
+
   // Skip static files, API routes, and Next.js internals
   if (
     pathname.startsWith('/_next') ||
@@ -279,5 +310,13 @@ export const config = {
      * - public folder files
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Icon paths are matched explicitly so they run through middleware and can
+    // be made host-aware on agency hosts. The pattern above otherwise excludes
+    // .ico/.png/.svg, so without these entries the rewrite would never fire.
+    '/favicon.ico',
+    '/favicon.svg',
+    '/favicon-16x16.png',
+    '/favicon-32x32.png',
+    '/apple-touch-icon.png',
   ],
 };
