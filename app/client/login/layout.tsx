@@ -80,11 +80,14 @@ export async function generateMetadata(): Promise<Metadata> {
         description,
         ...(logo ? { images: [logo] } : {}),
       },
-      // NOTE: intentionally NOT overriding `icons`. The root layout emits
-      // hardcoded <link rel="icon"> tags directly in <head>, so a metadata
-      // icons override would coexist with (not cleanly replace) them. og:image
-      // above already drives the link preview; the favicon is only a secondary
-      // fallback, and DynamicFavicon swaps it client-side for real users.
+      // Agency logo as the link-preview icon (the small favicon slot iMessage
+      // shows next to the card). Absolute URL, so no host-resolution problem.
+      // NOTE: the root layout also emits VoiceAI favicon links (hardcoded
+      // <link> tags plus the app/icon.* file conventions) on every route, which
+      // coexist with these. If the small icon still resolves to VoiceAI, those
+      // sources have to be suppressed for this route (see app/icon.tsx /
+      // app/apple-icon.tsx).
+      ...(logo ? { icons: { icon: [{ url: logo }], shortcut: [{ url: logo }], apple: [{ url: logo }] } } : {}),
     };
 
     return meta;
