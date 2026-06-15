@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
-  Check, AlertCircle, Shield, ShieldOff, Mail, Copy,
+  Check, CheckCircle2, Circle, AlertCircle, Mail, Copy,
   Lock, Bell, BellOff, ChevronDown, ChevronUp, Info
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
@@ -184,7 +184,7 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Page Access</p>
-                    <div className="grid grid-cols-2 gap-1">{Object.entries(CLIENT_PERMISSIONS).map(([key, info]) => { const enabled = member.permissions[key] ?? false; return (<button key={key} onClick={() => togglePermission(member.id, key, enabled)} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left transition-colors" style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : 'transparent'}` }}>{enabled ? <Shield className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} /> : <ShieldOff className="h-3 w-3 flex-shrink-0" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.primary : theme.textMuted4 }}>{info.label}</span></button>); })}</div>
+                    <div className="grid grid-cols-2 gap-1.5">{Object.entries(CLIENT_PERMISSIONS).map(([key, info]) => { const enabled = member.permissions[key] ?? false; return (<button key={key} onClick={() => togglePermission(member.id, key, enabled)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors" style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : theme.border}` }}>{enabled ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} /> : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{info.label}</span></button>); })}</div>
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Notifications</p>

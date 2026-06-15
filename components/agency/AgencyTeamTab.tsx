@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
-  Check, AlertCircle, Shield, ShieldOff, Phone, Mail, Copy,
+  Check, AlertCircle, CheckCircle2, Circle, Phone, Mail, Copy,
   Lock, Bell, BellOff, ChevronDown, ChevronUp
 } from 'lucide-react';
 
@@ -490,15 +490,15 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                               className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors"
                               style={{
                                 backgroundColor: enabled ? theme.primary15 : theme.hover,
-                                border: `1px solid ${enabled ? theme.primary30 : 'transparent'}`,
+                                border: `1px solid ${enabled ? theme.primary30 : theme.border}`,
                               }}
                             >
                               {enabled
-                                ? <Shield className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.primary }} />
-                                : <ShieldOff className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+                                ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                                : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
                               }
                               <div className="min-w-0">
-                                <span className="text-xs font-medium block truncate" style={{ color: enabled ? theme.primary : theme.textMuted }}>
+                                <span className="text-xs font-medium block truncate" style={{ color: enabled ? theme.text : theme.textMuted }}>
                                   {info.label}
                                 </span>
                               </div>
