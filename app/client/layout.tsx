@@ -127,8 +127,8 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
     { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
-    { href: '/client/messages', label: 'Messages', icon: MessageSquare },
-    { href: '/client/my-business', label: 'My Business', icon: Building2 },
+    { href: '/client/messages', label: 'Messages', icon: MessageSquare, permissionKey: 'messages' },
+    { href: '/client/my-business', label: 'My Business', icon: Building2, permissionKey: 'my_business' },
     { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
     { href: '/client/settings', label: 'Settings', icon: Settings },
   ];

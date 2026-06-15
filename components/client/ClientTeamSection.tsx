@@ -55,7 +55,27 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
 
   const handleAdd = async () => { if (!addName.trim() || !addEmail.trim()) { setError('Name and email are required'); return; } setAdding(true); setError(null); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name: addName.trim(), email: addEmail.trim(), phone: addPhone.trim() || null }) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Failed to add'); setMembers(prev => [...prev, data.member]); setLimits(prev => ({ ...prev, current: prev.current + 1 })); setSuccess(`${data.member.display_name} added! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`); setAddName(''); setAddEmail(''); setAddPhone(''); setShowAddForm(false); setExpandedId(data.member.id); setTimeout(() => setSuccess(null), 5000); } catch (err: any) { setError(err.message); } finally { setAdding(false); } };
 
-  const togglePermission = async (memberId: string, key: string, currentValue: boolean) => { const member = members.find(m => m.id === memberId); if (!member) return; const newPerms = { ...member.permissions, [key]: !currentValue }; setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: newPerms } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ permissions: newPerms }) }); if (!res.ok) throw new Error('Failed to update'); } catch { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: member.permissions } : m)); setError('Failed to update permissions'); } };
+  // Surface the backend's real error (e.g. the owner-only 403) instead of a
+  // generic "Failed to update". A 403 here almost always means the request
+  // carried a non-owner token — common causes: viewing in agency preview, or
+  // a second tab logged in as a team member overwriting the shared auth_token.
+  const togglePermission = async (memberId: string, key: string, currentValue: boolean) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    const newPerms = { ...member.permissions, [key]: !currentValue };
+    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: newPerms } : m));
+    try {
+      const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ permissions: newPerms }) });
+      if (!res.ok) {
+        let msg = res.status === 403 ? 'Only the account owner can change permissions.' : 'Failed to update permissions';
+        try { const data = await res.json(); if (data?.error) msg = data.error; } catch {}
+        throw new Error(msg);
+      }
+    } catch (err: any) {
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: member.permissions } : m));
+      setError(err?.message || 'Failed to update permissions');
+    }
+  };
   const toggleNotification = async (memberId: string, key: string, currentValue: boolean) => { const member = members.find(m => m.id === memberId); if (!member) return; const newPrefs = { ...member.notification_prefs, [key]: !currentValue }; setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: newPrefs } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notification_prefs: newPrefs }) }); if (!res.ok) throw new Error('Failed to update'); } catch { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: member.notification_prefs } : m)); } };
   const resetPassword = async (memberId: string, customPassword?: string) => { try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(customPassword ? { password: customPassword } : {}) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Failed to reset'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, visible_password: data.visible_password } : m)); setVisiblePasswords(prev => ({ ...prev, [memberId]: true })); setEditingPasswordId(null); setNewPassword(''); setSuccess(customPassword ? 'Password updated!' : 'Password reset! New credentials sent via SMS.'); setTimeout(() => setSuccess(null), 4000); } catch (err: any) { setError(err.message); } };
   const toggleStatus = async (memberId: string, currentStatus: string) => { const newStatus = currentStatus === 'active' ? 'disabled' : 'active'; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus }) }); if (!res.ok) throw new Error('Failed to update status'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m)); } catch (err: any) { setError(err.message); } };
