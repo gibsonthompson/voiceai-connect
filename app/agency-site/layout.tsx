@@ -31,8 +31,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const agency = await getAgencyByHost(host);
 
+  // metadataBase = the agency host so the OG image URL (served by
+  // app/agency-site/opengraph-image.tsx) resolves to THIS host. That image
+  // route reads the host to render the agency's own card, so it must be hit
+  // on the agency host, not the platform.
+  const base = host ? { metadataBase: new URL(`https://${host}`) } : {};
+
   if (!agency) {
     return {
+      ...base,
       title: 'AI Phone Answering',
       description: 'Professional AI receptionist that answers every call 24/7.',
     };
@@ -43,22 +50,26 @@ export async function generateMetadata(): Promise<Metadata> {
     agency.og_description ||
     agency.company_tagline ||
     'Professional AI receptionist that answers every call 24/7. Never miss another customer.';
-  const image = agency.og_image_url || agency.logo_url || undefined;
 
   return {
+    ...base,
     title,
     description,
     openGraph: {
       title,
       description,
       type: 'website',
-      ...(image ? { images: [{ url: image }] } : {}),
+      ...(host ? { url: `https://${host}` } : {}),
+      // OG image intentionally NOT set here. app/agency-site/opengraph-image.tsx
+      // owns it: it re-serves the agency's uploaded og_image_url when present,
+      // else renders a clean agency card. Using the file convention guarantees
+      // it overrides the root VoiceAI sales image (closest image file wins),
+      // which config-based images are not guaranteed to do.
     },
     twitter: {
-      card: image ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      ...(image ? { images: [image] } : {}),
     },
     ...(agency.logo_url
       ? {

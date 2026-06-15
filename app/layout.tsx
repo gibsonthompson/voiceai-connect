@@ -51,7 +51,13 @@ export const metadata: Metadata = {
     "voice AI platform",
     "AI answering service white label",
   ],
-  manifest: "/manifest.json",
+  // Host-aware manifest. /api/client-manifest returns the platform manifest
+  // (start_url /agency/dashboard) on the platform host and an agency-branded,
+  // client-scoped manifest (start_url /client/dashboard) on agency hosts. This
+  // is why installing to the home screen from a client subdomain no longer
+  // opens /agency/dashboard → /agency/login. (Plain string, so no page is
+  // forced into dynamic rendering; only the API route itself is dynamic.)
+  manifest: "/api/client-manifest",
   // icons intentionally omitted — the DynamicFavicon handles dashboard pages,
   // and static <link> tags in <head> handle the marketing site.
   // Removed to prevent conflict with app/icon.* file conventions.

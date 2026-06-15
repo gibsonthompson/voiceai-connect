@@ -21,6 +21,44 @@ export async function GET(request: NextRequest) {
     let iconUrl = '/icon.png';
     
     const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+
+    // The root layout links THIS route as the manifest for every host (it used
+    // to link the static /manifest.json, whose start_url is /agency/dashboard).
+    // On the platform domain the installer is an AGENCY OWNER, so keep the old
+    // platform manifest: VoiceAI branding + start_url /agency/dashboard. Only
+    // agency client hosts (subdomain / custom domain) fall through to the
+    // client-scoped manifest below (start_url /client/dashboard, agency brand).
+    const isPlatformHost =
+      hostname === platformDomain ||
+      hostname === `www.${platformDomain}` ||
+      hostname.startsWith('localhost');
+
+    if (isPlatformHost) {
+      return NextResponse.json({
+        id: '/agency/app',
+        name: 'VoiceAI Connect',
+        short_name: 'VoiceAI',
+        description: 'AI Voice Receptionist Platform',
+        start_url: `${fullOrigin}/agency/dashboard`,
+        scope: `${fullOrigin}/`,
+        display: 'standalone',
+        background_color: '#050505',
+        theme_color: '#050505',
+        orientation: 'portrait',
+        icons: [
+          { src: `${fullOrigin}/icon-192x192.png`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: `${fullOrigin}/icon-512x512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: `${fullOrigin}/icon-192x192.png`, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: `${fullOrigin}/icon-512x512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      }, {
+        headers: {
+          'Content-Type': 'application/manifest+json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    }
+
     const subdomainMatch = hostname.match(new RegExp(`^([^.]+)\\.${platformDomain.replace('.', '\\.')}$`));
     
     let agency = null;

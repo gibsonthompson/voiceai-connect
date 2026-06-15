@@ -1,366 +1,97 @@
-'use client';
+// app/client/layout.tsx
+//
+// SERVER layout for the entire /client route group (dashboard + login + all
+// client pages). Its job is to emit AGENCY-branded metadata so these pages
+// never show "VoiceAI Connect" branding — that platform branding belongs only
+// on the platform marketing site and blog, not on a client's dashboard.
+//
+// The interactive layout (sidebar, ClientProvider, route guard, etc.) lives in
+// client-shell.tsx, a client component. Client components can't export
+// metadata, which is the only reason this server wrapper exists.
+//
+// These routes are already dynamic (auth-gated, not statically generated for
+// SEO), so reading the host here costs nothing — it does NOT deopt the static
+// blog/marketing pages, which live in other route groups and keep their own
+// (VoiceAI) metadata untouched.
+//
+// The OG image is provided by app/client/opengraph-image.tsx (host-aware,
+// agency-branded). We set metadataBase to the request host so that image URL
+// resolves to the agency's own host.
 
-import { ReactNode, useState, useEffect, useLayoutEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { 
-  Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
-} from 'lucide-react';
-import { ClientProvider, useClient } from '@/lib/client-context';
-import { useClientTheme } from '@/hooks/useClientTheme';
-import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
-import SupportWidget from '@/components/SupportWidget';
-import OnboardingWizard from '@/components/client/OnboardingWizard';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import ClientShell from './client-shell';
 
-// Favicon is handled by DynamicFavicon in ClientProvider — no need to set it here
+const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://urchin-app-bqb4i.ondigitalocean.app';
 
-function setManifestLink(clientId: string | null) {
-  const existing = document.querySelectorAll('link[rel="manifest"]');
-  existing.forEach(el => el.remove());
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = clientId ? `/api/client-manifest?clientId=${clientId}` : '/api/client-manifest';
-  document.head.appendChild(link);
+function isPlatformHost(host: string): boolean {
+  const h = host.toLowerCase();
+  return !h || h === PLATFORM_DOMAIN || h === `www.${PLATFORM_DOMAIN}` || h.startsWith('localhost');
 }
 
-const AUTH_PAGES = ['/client/login', '/client/signup', '/client/set-password', '/client/upgrade', '/client/preview'];
-const ALWAYS_ACCESSIBLE_ROUTES = ['/client/settings', '/client/upgrade-required', '/client/upgrade'];
+export async function generateMetadata(): Promise<Metadata> {
+  // Client dashboards must never be indexed as part of the platform.
+  const robots = { index: false, follow: false } as const;
 
-function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
-function isTrialActive(client: any): boolean { if (!client) return false; if (!isTrialStatus(client.subscription_status)) return false; if (!client.trial_ends_at) return false; return new Date(client.trial_ends_at) > new Date(); }
-function isPaymentFailed(status: string | null | undefined): boolean { return status === 'past_due' || status === 'unpaid'; }
-function isCanceled(status: string | null | undefined): boolean { return status === 'canceled' || status === 'cancelled'; }
-function isTrialExpired(client: any): boolean { if (!client) return false; if (!isTrialStatus(client.subscription_status)) return false; if (!client.trial_ends_at) return false; return new Date(client.trial_ends_at) < new Date(); }
-function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null { if (!trialEndsAt) return null; const endDate = new Date(trialEndsAt); const now = new Date(); const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); return Math.max(0, diffDays); }
-function getInitial(name: string | null | undefined): string { if (!name) return ''; return name.charAt(0).toUpperCase(); }
+  try {
+    const h = await headers();
+    const host = (h.get('host') || '').toLowerCase();
 
-function getInitialPreviewMode(): boolean {
-  if (typeof window === 'undefined') return false;
-  try { return localStorage.getItem('preview_mode') === 'true'; } catch { return false; }
-}
+    // Clients normally never reach /client on the platform host. If they do,
+    // fall back to a neutral title — never the VoiceAI marketing title.
+    if (isPlatformHost(host)) {
+      return { title: { absolute: 'Client Portal' }, robots };
+    }
 
-interface NavItem { href: string; label: string; icon: any; permissionKey?: string; }
-
-function ClientDashboardLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const { client, branding, loading, hasPermission, user } = useClient();
-  const theme = useClientTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [isPreviewMode] = useState(getInitialPreviewMode);
-
-  const handleExitPreview = () => {
+    let agency: any = null;
     try {
-      const backupToken = localStorage.getItem('agency_auth_backup');
-      const backupAgency = localStorage.getItem('agency_data_backup');
-      const backupUser = localStorage.getItem('agency_user_backup');
-      if (backupToken) localStorage.setItem('auth_token', backupToken);
-      if (backupAgency) localStorage.setItem('agency', backupAgency);
-      if (backupUser) localStorage.setItem('user', backupUser);
-      localStorage.removeItem('client');
-      localStorage.removeItem('preview_mode');
-      localStorage.removeItem('agency_auth_backup');
-      localStorage.removeItem('agency_data_backup');
-      localStorage.removeItem('agency_user_backup');
-      localStorage.removeItem('agency_client_backup');
-      window.location.href = '/agency/dashboard';
-    } catch { window.location.href = '/agency/dashboard'; }
-  };
-
-  const nav = {
-    bg: theme.navBg, text: theme.navText, textMuted: theme.navTextMuted, border: theme.navBorder,
-    activeItemBg: theme.navActiveItemBg, activeItemColor: theme.navActiveColor, hoverBg: theme.navHover,
-    poweredByBg: theme.isNavDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
-  };
-
-  const clientTrialExpired = isTrialExpired(client);
-  const clientPaymentFailed = isPaymentFailed(client?.subscription_status);
-  const clientCanceled = isCanceled(client?.subscription_status);
-  const clientOnTrial = isTrialActive(client);
-  const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
-  const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
-
-  const displayName = branding.clientHeaderMode === 'business_name'
-    ? (branding.businessName || branding.agencyName || 'Dashboard')
-    : (branding.agencyName || 'Dashboard');
-  const displayLogo = branding.logoUrl;
-
-  // ── HYDRATION FLASH FIX ──────────────────────────────────────────────
-  // Server-renders with dark defaults (no localStorage). Client hydrates
-  // with light theme from localStorage. The mismatch causes a dark→light
-  // flash. Fix: show a skeleton until mounted (same pattern as agency layout).
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
-  useEffect(() => { const checkDevice = () => { const w = window.innerWidth; setIsMobile(w < 768); setIsTablet(w >= 768 && w < 1024); }; checkDevice(); window.addEventListener('resize', checkDevice); return () => window.removeEventListener('resize', checkDevice); }, []);
-  useEffect(() => { setSidebarOpen(false); }, [pathname]);
-  useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
-  useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
-
-  // ── Background override — useLayoutEffect runs BEFORE browser paints ──
-  // useEffect runs AFTER paint (causes flash). useLayoutEffect runs BEFORE
-  // paint, so globals.css #050505 is overridden before the user sees it.
-  useLayoutEffect(() => {
-    document.documentElement.style.setProperty('background', theme.bg, 'important');
-    document.body.style.setProperty('background', theme.bg, 'important');
-    document.body.style.setProperty('color', theme.text, 'important');
-    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) metaThemeColor.setAttribute('content', nav.bg);
-    const initStyle = document.getElementById('theme-init');
-    if (initStyle) initStyle.remove();
-    return () => {
-      document.documentElement.style.removeProperty('background');
-      document.body.style.removeProperty('background');
-      document.body.style.removeProperty('color');
-    };
-  }, [theme.bg, theme.text, nav.bg]);
-
-  useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', displayName); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', displayName); document.head.appendChild(metaTitle); } } }, [displayName]);
-  useEffect(() => { if (!loading && clientTrialExpired && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?expired=true'; } }, [loading, clientTrialExpired, isAccessibleRoute]);
-  useEffect(() => { if (!loading && clientCanceled && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?canceled=true'; } }, [loading, clientCanceled, isAccessibleRoute]);
-
-  const handleSignOut = () => { localStorage.removeItem('auth_token'); localStorage.removeItem('client'); localStorage.removeItem('user'); localStorage.removeItem('voiceai_ui_theme'); localStorage.removeItem('preview_mode'); localStorage.removeItem('agency_auth_backup'); localStorage.removeItem('agency_data_backup'); localStorage.removeItem('agency_user_backup'); localStorage.removeItem('agency_client_backup'); window.location.href = '/client/login'; };
-
-  const navItems: NavItem[] = [
-    { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
-    { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
-    { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
-    { href: '/client/messages', label: 'Messages', icon: MessageSquare, permissionKey: 'messages' },
-    { href: '/client/my-business', label: 'My Business', icon: Building2, permissionKey: 'my_business' },
-    { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
-    { href: '/client/settings', label: 'Settings', icon: Settings },
-  ];
-
-  const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });
-  const isActive = (href: string) => { if (href === '/client/dashboard') return pathname === '/client/dashboard' || pathname === '/client'; return pathname?.startsWith(href); };
-
-  useEffect(() => { if (!loading && theme) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
-
-  // ── ROUTE-LEVEL PERMISSION GUARD ─────────────────────────────────────
-  // Hiding a nav link is not enforcement: a member could still reach a page
-  // by typing its URL. Find the nav item that owns the current route and, if
-  // the member lacks that permission, redirect them to their first accessible
-  // page. Owners (hasPermission returns true for role 'client'/'super_admin')
-  // and preview mode are never blocked; Settings/upgrade routes are always
-  // accessible. NOTE: client-side UX enforcement only — the backend client
-  // API routes are still open and need requirePermission for true blocking.
-  const activeNavItem = navItems.find(item => item.href === '/client/dashboard'
-    ? (pathname === '/client/dashboard' || pathname === '/client')
-    : pathname?.startsWith(item.href));
-  const routePermissionKey = activeNavItem?.permissionKey;
-  const routeBlocked = !!routePermissionKey && !!user && !isPreviewMode && !isAccessibleRoute && !hasPermission(routePermissionKey);
-  const guardDestination = filteredNavItems[0]?.href || '/client/settings';
-
-  useEffect(() => {
-    if (loading || !user || !routeBlocked) return;
-    if (pathname !== guardDestination) window.location.replace(guardDestination);
-  }, [loading, user, routeBlocked, pathname, guardDestination]);
-
-  const LogoBadge = ({ size }: { size: 'sm' | 'md' | 'lg' }) => {
-    const logoStyle = size === 'lg' ? { maxHeight: '80px', maxWidth: '180px' } : size === 'md' ? { maxHeight: '36px', maxWidth: '140px' } : { maxHeight: '28px', maxWidth: '100px' };
-    const initialSize = size === 'lg' ? { box: 56, font: 22 } : size === 'md' ? { box: 40, font: 16 } : { box: 32, font: 14 };
-    const radius = size === 'lg' ? '16px' : '12px';
-    if (displayLogo) { return (<img src={displayLogo} alt="" className="object-contain flex-shrink-0" style={{ ...logoStyle, width: 'auto', height: 'auto' }} />); }
-    const initial = getInitial(branding.businessName || branding.agencyName);
-    if (!initial) return null;
-    return (<div className="flex items-center justify-center flex-shrink-0 font-bold" style={{ height: `${initialSize.box}px`, width: `${initialSize.box}px`, borderRadius: radius, backgroundColor: theme.isNavDark ? 'rgba(255,255,255,0.08)' : `${theme.primary}12`, color: theme.isNavDark ? '#ffffff' : theme.primary, fontSize: `${initialSize.font}px` }}>{initial}</div>);
-  };
-
-  // ── SKELETON: covers SSR→hydration flash (same pattern as agency) ────
-  if (!mounted) {
-    let _isDark = true;
-    try {
-      const saved = localStorage.getItem('voiceai_ui_theme');
-      if (saved === 'light') _isDark = false;
-      else if (saved === 'dark') _isDark = true;
-      else {
-        const stored = localStorage.getItem('client');
-        if (stored) { const p = JSON.parse(stored); _isDark = p.agency?.website_theme !== 'light'; }
-      }
+      const res = await fetch(
+        `${BACKEND_URL}/api/agency/by-host?host=${encodeURIComponent(host)}`,
+        { cache: 'no-store' }
+      );
+      if (res.ok) agency = (await res.json())?.agency;
     } catch {}
-    const sk = _isDark
-      ? { bg: '#0a0a0a', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
-      : { bg: '#f9fafb', sidebar: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
-    return (
-      <div className="min-h-screen flex" style={{ backgroundColor: sk.bg }}>
-        <style dangerouslySetInnerHTML={{ __html: `@keyframes skP{0%,100%{opacity:1}50%{opacity:0.4}}.sk-p{animation:skP 1.8s ease-in-out infinite}.sk-p2{animation:skP 1.8s ease-in-out .3s infinite}` }} />
-        <div className="hidden lg:flex flex-col w-64 flex-shrink-0" style={{ backgroundColor: sk.sidebar, borderRight: `1px solid ${sk.border}` }}>
-          <div className="h-24 flex items-center justify-center" style={{ borderBottom: `1px solid ${sk.border}` }}>
-            <div className="w-10 h-10 rounded-xl sk-p" style={{ backgroundColor: sk.pulse }} />
-          </div>
-          <div className="p-3 space-y-1">{[1,2,3,4,5,6,7].map(i => (
-            <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${i <= 3 ? 'sk-p' : 'sk-p2'}`}>
-              <div className="w-5 h-5 rounded" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2 }} />
-              <div className="h-3 rounded-md" style={{ backgroundColor: i === 1 ? sk.pulse : sk.pulse2, width: `${50 + (i % 4) * 16}px` }} />
-            </div>
-          ))}</div>
-        </div>
-        <div className="flex-1 p-6">
-          <div className="mb-6"><div className="h-7 w-48 rounded-lg sk-p mb-2" style={{ backgroundColor: sk.pulse }} /><div className="h-3.5 w-64 rounded-md sk-p2" style={{ backgroundColor: sk.pulse2 }} /></div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3].map(i => (
-            <div key={i} className={`rounded-xl p-5 ${i <= 2 ? 'sk-p' : 'sk-p2'}`} style={{ backgroundColor: sk.sidebar, border: `1px solid ${sk.border}` }}>
-              <div className="h-3 w-16 rounded mb-3" style={{ backgroundColor: sk.pulse2 }} />
-              <div className="h-7 w-12 rounded-lg" style={{ backgroundColor: sk.pulse }} />
-            </div>
-          ))}</div>
-        </div>
-      </div>
-    );
+
+    const name: string = agency?.name || 'Client Portal';
+    const description = `Sign in to your ${name} dashboard.`;
+    const logo: string | null = agency?.logo_url || null;
+
+    return {
+      // `absolute` bypasses the root "%s | VoiceAI Connect" template so the
+      // <title> (and the share-card title) is the agency, not the platform.
+      title: { absolute: name },
+      description,
+      // Make the OG image URL (from opengraph-image.tsx) resolve to this host.
+      metadataBase: new URL(`https://${host}`),
+      robots,
+      openGraph: {
+        type: 'website',
+        url: `https://${host}`,
+        siteName: name,
+        title: name,
+        description,
+        // images intentionally omitted — app/client/opengraph-image.tsx
+        // supplies the agency-branded card and overrides the root one.
+      },
+      twitter: {
+        card: 'summary',
+        title: name,
+        description,
+      },
+      // Agency logo as the favicon/link-preview icon for client pages.
+      ...(logo
+        ? { icons: { icon: [{ url: logo }], shortcut: [{ url: logo }], apple: [{ url: logo }] } }
+        : {}),
+    };
+  } catch {
+    return { title: { absolute: 'Client Portal' }, robots };
   }
-
-  if (loading && !client) {
-    const _hintDark = typeof window !== 'undefined' && localStorage.getItem('voiceai_ui_theme') !== 'light';
-    const _bg = _hintDark ? '#0a0a0a' : '#f9fafb';
-    const _sb = _hintDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-    const _st = _hintDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: _bg }}><style dangerouslySetInnerHTML={{ __html: `@keyframes ldSpin{to{transform:rotate(360deg)}}.ld-s{width:24px;height:24px;border-radius:50%;border:2.5px solid ${_sb};border-top-color:${_st};animation:ldSpin .7s linear infinite}` }} /><div className="ld-s" /></div>);
-  }
-
-  if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
-  }
-
-  // Member hit a page they do not have permission for — show a redirecting
-  // state while the guard effect above sends them to their first allowed page.
-  if (routeBlocked) {
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
-  }
-
-  // ── ONBOARDING WIZARD ────────────────────────────────────────────────
-  // Full-screen guided setup for new clients who haven't completed
-  // onboarding. Once they finish or dismiss, onboarding_completed is set
-  // to true in the DB and this never renders again.
-  // Skipped in preview mode so agency owners see the real dashboard.
-  if (client && client.onboarding_completed === false && !isPreviewMode) {
-    return (
-      <OnboardingWizard
-        client={client}
-        onComplete={() => {
-          window.location.reload();
-        }}
-      />
-    );
-  }
-
-  const PREVIEW_BANNER_HEIGHT = 36;
-  const hasBanner = isPreviewMode || clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed);
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; }` }} />
-
-      {/* Preview Mode Banner */}
-      {isPreviewMode && (
-        <div className="sticky top-0 z-50 px-4 flex items-center justify-between" style={{ height: `${PREVIEW_BANNER_HEIGHT}px`, background: 'linear-gradient(135deg, #6d28d9 0%, #7c3aed 50%, #8b5cf6 100%)', boxShadow: '0 1px 3px rgba(109,40,217,0.3)' }}>
-          <div className="flex items-center gap-2">
-            <Eye className="h-3 w-3 text-white/70" />
-            <span className="text-xs font-medium text-white/90">Preview mode</span>
-            <span className="text-[10px] text-white/50 hidden sm:inline">— exactly what your client sees</span>
-          </div>
-          <button onClick={handleExitPreview} className="flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-medium transition-all hover:bg-white/25 active:scale-95" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>← Agency</button>
-        </div>
-      )}
-
-      {/* Payment Failed Banner */}
-      {clientPaymentFailed && (
-        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? `${PREVIEW_BANNER_HEIGHT}px` : 0, backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', borderBottom: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
-          <div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ef4444' }} /><div><p className="font-medium text-sm" style={{ color: theme.isDark ? '#fca5a5' : '#dc2626' }}>Payment failed</p><p className="text-xs hidden sm:block" style={{ color: theme.isDark ? 'rgba(252,165,165,0.7)' : '#b91c1c' }}>Please update your payment method.</p></div></div>
-          <a href="/client/settings" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Fix Payment</a>
-        </div>
-      )}
-
-      {/* Trial Ending Soon Banner */}
-      {clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed && (
-        <div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: isPreviewMode ? `${PREVIEW_BANNER_HEIGHT}px` : 0, backgroundColor: theme.isDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', borderBottom: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.2)' : '#fde68a'}` }}>
-          <div className="flex items-center gap-3"><Clock className="h-5 w-5 flex-shrink-0" style={{ color: '#f59e0b' }} /><p className="text-sm" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>Trial ends in <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</strong></p></div>
-          <a href="/client/upgrade-required" className="rounded-full px-4 py-2 text-sm font-medium flex-shrink-0" style={{ backgroundColor: '#f59e0b', color: '#1c1917' }}>View Plans</a>
-        </div>
-      )}
-
-      {/* Mobile / Tablet Header */}
-      <div className="sticky z-30 lg:hidden" style={{ backgroundColor: nav.bg, paddingTop: 'env(safe-area-inset-top)', top: hasBanner ? `${PREVIEW_BANNER_HEIGHT}px` : 0 }}>
-        <header className="flex items-center justify-between h-14 sm:h-16 px-4" style={{ borderBottom: `1px solid ${nav.border}` }}>
-          <LogoBadge size="md" />
-          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl" style={{ color: nav.text }}><Menu className="h-6 w-6" /></button>
-        </header>
-      </div>
-
-      {sidebarOpen && (isMobile || isTablet) && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />)}
-
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${(isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}
-        style={{ backgroundColor: nav.bg, borderRight: `1px solid ${nav.border}`, paddingTop: (isMobile || isTablet) ? 'env(safe-area-inset-top)' : 0, top: (!isMobile && !isTablet) ? (hasBanner ? `${PREVIEW_BANNER_HEIGHT}px` : '0') : '0' }}>
-
-        <div className="flex lg:hidden items-center justify-between h-14 px-4 border-b" style={{ borderColor: nav.border }}>
-          <span className="font-semibold text-base" style={{ color: nav.text }}>Menu</span>
-          <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-10 h-10 -mr-1 rounded-xl" style={{ color: nav.text }}><X className="h-6 w-6" /></button>
-        </div>
-
-        <div className="hidden lg:flex h-24 items-center justify-center border-b px-4" style={{ borderColor: nav.border }}><LogoBadge size="lg" /></div>
-
-        <nav className="p-3 space-y-0.5">
-          {filteredNavItems.map((item) => { const active = isActive(item.href); return (
-            <Link
-              key={item.href}
-              href={item.href}
-              prefetch={false}
-              onClick={() => setSidebarOpen(false)}
-              className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-all"
-              style={active
-                ? { backgroundColor: nav.activeItemBg, color: nav.activeItemColor }
-                : { color: nav.textMuted }
-              }
-              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = nav.hoverBg; }}
-              onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
-            >
-              <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
-              {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
-            </Link>
-          ); })}
-        </nav>
-
-        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-3" style={{ paddingBottom: (isMobile || isTablet) ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
-          {clientOnTrial && trialDaysLeft !== null && (
-            <div className="rounded-xl p-3" style={{ backgroundColor: theme.isNavDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isNavDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}` }}>
-              <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: theme.isNavDark ? 'rgba(251,191,36,0.6)' : '#92400e' }}>Trial Period</p>
-              <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fbbf24' : '#78350f' }}>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
-            </div>
-          )}
-          {clientPaymentFailed && (
-            <a href="/client/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.isNavDark ? 'rgba(239,68,68,0.08)' : '#fef2f2', border: `1px solid ${theme.isNavDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}` }}>
-              <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: theme.isNavDark ? 'rgba(252,165,165,0.6)' : '#b91c1c' }}>Payment Issue</p>
-              <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
-            </a>
-          )}
-          <div className="rounded-xl border p-3" style={{ borderColor: nav.border, backgroundColor: nav.poweredByBg }}>
-            <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: nav.textMuted }}>Powered by</p>
-            <p className="text-sm font-semibold" style={{ color: nav.text }}>{branding.agencyName}</p>
-          </div>
-          <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}><LogOut className="h-5 w-5" /> Sign Out</button>
-        </div>
-      </aside>
-
-      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
-
-      {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
-      <SupportWidget theme={theme} userType="client" />
-    </div>
-  );
 }
 
-export default function ClientLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isAuthPage = AUTH_PAGES.some(page => pathname?.startsWith(page));
-  if (isAuthPage) return <>{children}</>;
-  return (
-    <ClientProvider>
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
-      <ClientDashboardLayout>{children}</ClientDashboardLayout>
-    </ClientProvider>
-  );
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  return <ClientShell>{children}</ClientShell>;
 }

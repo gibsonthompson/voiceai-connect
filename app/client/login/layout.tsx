@@ -80,13 +80,14 @@ export async function generateMetadata(): Promise<Metadata> {
         description,
         // Defining openGraph here overrides the root segment's openGraph,
         // including the site-wide VoiceAI opengraph-image, for this route.
-        ...(logo ? { images: [{ url: logo }] } : {}),
+        // OG image is supplied by app/client/opengraph-image.tsx (shared by
+        // the whole /client group), so it is intentionally NOT set here to
+        // avoid emitting two competing og:image tags on the login route.
       },
       twitter: {
         card: 'summary',
         title,
         description,
-        ...(logo ? { images: [logo] } : {}),
       },
       // Agency logo as the link-preview icon (the small favicon slot iMessage
       // shows next to the card). Absolute URL, so no host-resolution problem.
