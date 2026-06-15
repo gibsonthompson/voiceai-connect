@@ -11,6 +11,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
+import { useClient } from '@/lib/client-context';
 
 interface Client {
   id: string; business_name: string; email: string; owner_phone: string; industry: string;
@@ -77,9 +78,27 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
-  const [userRole, setUserRole] = useState<string | null>(null);
-  useEffect(() => { try { const stored = localStorage.getItem('user'); if (stored) { const parsed = JSON.parse(stored); setUserRole(parsed.role || null); } } catch {} }, []);
-  const isOwner = userRole === 'client' || userRole === null;
+  const { user } = useClient();
+  const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
+
+  // The signed-in user's own login, fetched from the token-scoped endpoint so
+  // each person only ever sees their OWN credentials. visible_password is null
+  // when the user has set their own password (we then point them to Change
+  // Password instead of showing a value).
+  const [myCreds, setMyCreds] = useState<{ email: string; visible_password: string | null; has_custom_password: boolean } | null>(null);
+  const [showLoginPw, setShowLoginPw] = useState(false);
+  const [credCopied, setCredCopied] = useState<'user' | 'pass' | null>(null);
+  useEffect(() => {
+    const fetchCreds = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/client/${client.id}/my-credentials`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) { const d = await res.json(); setMyCreds({ email: d.email, visible_password: d.visible_password ?? null, has_custom_password: !!d.has_custom_password }); }
+      } catch {}
+    };
+    fetchCreds();
+  }, [client.id, backendUrl]);
+  const copyCred = async (text: string, which: 'user' | 'pass') => { try { await navigator.clipboard.writeText(text); setCredCopied(which); setTimeout(() => setCredCopied(null), 1500); } catch {} };
 
   useEffect(() => { const fetchCallMode = async () => { try { const response = await fetch(`${backendUrl}/api/client/${client.id}/call-mode`); if (response.ok) { const data = await response.json(); setCallMode(data.call_mode || 'primary'); setRingTimeout(data.ring_timeout || 20); } } catch (err) { console.error('Failed to fetch call mode:', err); } finally { setCallModeLoading(false); } }; fetchCallMode(); }, [client.id, backendUrl]);
 
@@ -149,6 +168,20 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
       <div className="max-w-3xl">
 
+        {/* Account identity — who you are and which account you're in */}
+        <section className="mb-4 sm:mb-6">
+          <div className="rounded-xl border p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.18 : 0.1), color: theme.primary }}>{(user?.first_name || user?.email || client.business_name || '?').charAt(0).toUpperCase()}</div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-semibold truncate" style={{ color: theme.text }}>{[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'Signed in'}</p>
+                <p className="text-[10px] sm:text-xs truncate" style={{ color: theme.textMuted4 }}>{user?.email}{client.business_name ? ` · ${client.business_name}` : ''}</p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: isOwner ? hexToRgba(theme.primary, 0.12) : (theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), color: isOwner ? theme.primary : theme.textMuted }}>{isOwner ? 'Account Owner' : 'Team Member'}</span>
+          </div>
+        </section>
+
         {client.agency?.allow_client_branding && (
           <ClientBrandingSection clientId={client.id} theme={theme} />
         )}
@@ -209,6 +242,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </div>
         </section>
 
+        {isOwner && (<>
         {/* Call Handling Mode */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><PhoneForwarded className="w-4 h-4" style={{ color: theme.primary }} />Call Handling</h2>
@@ -237,9 +271,48 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><User className="w-4 h-4" style={{ color: theme.primary }} />Contact Information</h2>
           <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>{callMode === 'fallback' ? '📞 Calls will ring this number first in Fallback mode. SMS notifications also sent here.' : '📱 SMS notifications sent here'}</p></div>
+            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>{callMode === 'fallback' ? '📞 Rings this number first in Fallback mode, and the owner SMS notifications are sent here. Team members get SMS on their own number, set under Users.' : '📱 Owner SMS notifications are sent here. Team members get SMS on their own number, set under Users.'}</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
             <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
+          </div>
+        </section>
+        </>)}
+
+        {/* Team-member SMS clarification (shown when the account-level sections are hidden) */}
+        {!isOwner && (
+          <section className="mb-4 sm:mb-6">
+            <div className="rounded-lg p-3 flex items-start gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
+              <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Account phone, call handling, and billing are managed by the account owner. To get SMS call alerts on your own number, ask the owner to add your phone and turn on notifications for you under Users.</p>
+            </div>
+          </section>
+        )}
+
+        {/* Your Login — the signed-in user's own credentials */}
+        <section className="mb-4 sm:mb-6">
+          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Lock className="w-4 h-4" style={{ color: theme.primary }} />Your Login</h2>
+          <div className="rounded-xl border p-3 sm:p-4 space-y-2.5 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>The email and password you use to sign in to this dashboard.</p>
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
+              <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
+              <div className="min-w-0 flex-1"><p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Username</p><p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{myCreds?.email || user?.email || '—'}</p></div>
+              <button onClick={() => copyCred(myCreds?.email || user?.email || '', 'user')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'user' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
+              <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Password</p>
+                {myCreds && myCreds.visible_password
+                  ? (<p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{showLoginPw ? myCreds.visible_password : '\u2022'.repeat(10)}</p>)
+                  : (<p className="text-[10px] sm:text-xs italic" style={{ color: theme.textMuted4 }}>You set your own password. Use Change Password below to update it.</p>)}
+              </div>
+              {myCreds && myCreds.visible_password && (
+                <>
+                  <button onClick={() => setShowLoginPw(v => !v)} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{showLoginPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
+                  <button onClick={() => copyCred(myCreds.visible_password || '', 'pass')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'pass' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
+                </>
+              )}
+            </div>
           </div>
         </section>
 
