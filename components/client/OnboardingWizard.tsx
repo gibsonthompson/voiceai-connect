@@ -205,6 +205,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const [saving, setSaving] = useState(false);
   const [skippedSteps, setSkippedSteps] = useState<string[]>([]);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // ── Step 1: Business Hours ──────────────────────────────────────────
@@ -369,34 +370,50 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // SAVE FUNCTIONS
   // ====================================================================
 
-  const saveHours = async () => {
+  const saveHours = async (): Promise<boolean> => {
     setSaving(true);
+    setSaveError(null);
     try {
-      // Save structured JSONB to client.business_hours (for checkBusinessHours in config builder)
-      await fetch(`${backendUrl}/api/client/${client.id}/business-hours`, {
+      // Primary: structured JSONB to client.business_hours (for checkBusinessHours).
+      // This is the source of truth, so a non-2xx here is a real failure.
+      const hoursRes = await fetch(`${backendUrl}/api/client/${client.id}/business-hours`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ business_hours: formatHoursJSON(hours) }),
       });
-      // Save text to knowledge_base_data.businessHours (for KB query tool)
-      await fetch(`${backendUrl}/api/knowledge-base/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ clientId: client.id, businessHours: formatHoursText(hours) }),
-      });
+      if (!hoursRes.ok) throw new Error(`business-hours save failed (${hoursRes.status})`);
+
+      // Secondary: text mirror to knowledge_base_data.businessHours for the KB tool.
+      // Non-fatal: the hours themselves are already saved above, so a hiccup here
+      // should not block the step or lose the user's input.
+      try {
+        await fetch(`${backendUrl}/api/knowledge-base/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ clientId: client.id, businessHours: formatHoursText(hours) }),
+        });
+      } catch (kbErr) {
+        console.error('Hours KB mirror failed (non-fatal):', kbErr);
+      }
+
       setCompletedSteps(prev => [...prev.filter(s => s !== 'hours'), 'hours']);
-    } catch (e) { console.error('Save hours failed:', e); }
-    finally { setSaving(false); }
+      return true;
+    } catch (e) {
+      console.error('Save hours failed:', e);
+      setSaveError("We couldn't save your business hours. Check your connection and try again.");
+      return false;
+    } finally { setSaving(false); }
   };
 
-  const saveKB = async () => {
+  const saveKB = async (): Promise<boolean> => {
     setSaving(true);
+    setSaveError(null);
     try {
       const faqText = faqs
         .filter(f => f.question.trim() && f.answer.trim())
         .map(f => `Q: ${f.question}\nA: ${f.answer}`)
         .join('\n\n');
-      await fetch(`${backendUrl}/api/knowledge-base/update`, {
+      const res = await fetch(`${backendUrl}/api/knowledge-base/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({
@@ -406,33 +423,45 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           additionalInfo: additionalInfo,
         }),
       });
+      if (!res.ok) throw new Error(`knowledge-base save failed (${res.status})`);
       setCompletedSteps(prev => [...prev.filter(s => s !== 'faqs'), 'faqs']);
-    } catch (e) { console.error('Save KB failed:', e); }
-    finally { setSaving(false); }
+      return true;
+    } catch (e) {
+      console.error('Save KB failed:', e);
+      setSaveError("We couldn't save your knowledge base. Check your connection and try again.");
+      return false;
+    } finally { setSaving(false); }
   };
 
-  const saveVoiceAndGreeting = async () => {
+  const saveVoiceAndGreeting = async (): Promise<boolean> => {
     setSaving(true);
+    setSaveError(null);
     try {
       if (selectedVoiceId && selectedVoiceId !== currentVoiceId) {
-        await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
+        const vRes = await fetch(`${backendUrl}/api/client/${client.id}/voice`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
           body: JSON.stringify({ voice_id: selectedVoiceId }),
         });
+        if (!vRes.ok) throw new Error(`voice save failed (${vRes.status})`);
         setCurrentVoiceId(selectedVoiceId);
       }
       if (greeting && greeting !== originalGreeting) {
-        await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
+        const gRes = await fetch(`${backendUrl}/api/client/${client.id}/greeting`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
           body: JSON.stringify({ greeting_message: greeting }),
         });
+        if (!gRes.ok) throw new Error(`greeting save failed (${gRes.status})`);
         setOriginalGreeting(greeting);
       }
       setCompletedSteps(prev => [...prev.filter(s => s !== 'voice'), 'voice']);
-    } catch (e) { console.error('Save voice/greeting failed:', e); }
-    finally { setSaving(false); }
+      return true;
+    } catch (e) {
+      console.error('Save voice/greeting failed:', e);
+      setSaveError("We couldn't save your voice and greeting. Check your connection and try again.");
+      return false;
+    } finally { setSaving(false); }
   };
 
   const completeOnboarding = async () => {
@@ -463,10 +492,11 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ====================================================================
 
   const handleNext = async () => {
-    // Save current step data before advancing
-    if (step === 1) await saveHours();
-    else if (step === 3) await saveKB();
-    else if (step === 5) await saveVoiceAndGreeting();
+    // Save current step data before advancing. If a save fails, stay on the
+    // step so the user can fix it, the inline error is already shown.
+    if (step === 1) { if (!(await saveHours())) return; }
+    else if (step === 3) { if (!(await saveKB())) return; }
+    else if (step === 5) { if (!(await saveVoiceAndGreeting())) return; }
     // Steps 2 (services) and 4 (staff) save via their own components
     if (step === 2) setCompletedSteps(prev => [...prev.filter(s => s !== 'services'), 'services']);
     if (step === 4) setCompletedSteps(prev => [...prev.filter(s => s !== 'staff'), 'staff']);
@@ -474,9 +504,10 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     if (step < totalSteps - 1) setStep(step + 1);
   };
 
-  const handleBack = () => { if (step > 0) setStep(step - 1); };
+  const handleBack = () => { setSaveError(null); if (step > 0) setStep(step - 1); };
 
   const handleSkip = () => {
+    setSaveError(null);
     const key = STEP_META[step]?.key;
     if (key) setSkippedSteps(prev => [...prev.filter(s => s !== key), key]);
     if (step < totalSteps - 1) setStep(step + 1);
@@ -946,7 +977,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
       {/* ── Progress Bar ──────────────────────────────────────────────── */}
-      {step > 0 && (
+      {step > 0 && step < totalSteps - 1 && (
         <div className="flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3"
           style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
           <div className="max-w-2xl mx-auto">
@@ -984,28 +1015,37 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
             borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
             paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)',
           }}>
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
-            <button onClick={handleBack}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition"
-              style={{ color: theme.textMuted }}>
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-
-            <div className="flex items-center gap-2">
-              {canSkip && (
-                <button onClick={handleSkip}
-                  className="px-4 py-2.5 rounded-xl text-sm font-medium transition"
-                  style={{ color: theme.textMuted }}>
-                  Skip for now
-                </button>
-              )}
-              <button onClick={handleNext} disabled={saving}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
-                style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {saving ? 'Saving...' : 'Next'}
-                {!saving && <ChevronRight className="w-4 h-4" />}
+          <div className="max-w-2xl mx-auto">
+            {saveError && (
+              <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+                style={{ backgroundColor: hexToRgba('#ef4444', 0.1), color: '#ef4444', border: `1px solid ${hexToRgba('#ef4444', 0.2)}` }}>
+                <X className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{saveError}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <button onClick={handleBack}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition"
+                style={{ color: theme.textMuted }}>
+                <ChevronLeft className="w-4 h-4" /> Back
               </button>
+
+              <div className="flex items-center gap-2">
+                {canSkip && (
+                  <button onClick={handleSkip}
+                    className="px-4 py-2.5 rounded-xl text-sm font-medium transition"
+                    style={{ color: theme.textMuted }}>
+                    Skip for now
+                  </button>
+                )}
+                <button onClick={handleNext} disabled={saving}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {saving ? 'Saving...' : 'Next'}
+                  {!saving && <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
