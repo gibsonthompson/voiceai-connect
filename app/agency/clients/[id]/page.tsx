@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown
+  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown, Users, Shield
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -78,6 +78,102 @@ function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: {
             <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.textMuted }}>Logo</label><div className="flex items-center gap-3">{clientLogo ? (<img src={clientLogo} alt="Logo" className="h-10 w-10 rounded-lg object-contain" style={{ backgroundColor: theme.hover }} />) : (<div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.hover }}><Building2 className="h-5 w-5" style={{ color: theme.textMuted }} /></div>)}<label className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Upload Logo<input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /></label>{clientLogo && (<button onClick={() => { setClientLogo(null); setBrandingSaved(false); }} className="p-2 rounded-lg" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>)}</div></div>
             <div className="grid grid-cols-3 gap-2">{[{ label: 'Primary', value: clientPrimary, set: setClientPrimary }, { label: 'Secondary', value: clientSecondary, set: setClientSecondary }, { label: 'Accent', value: clientAccent, set: setClientAccent }].map(({ label, value, set }) => (<div key={label}><label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>{label}</label><div className="flex items-center gap-1.5"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: value || theme.primary, borderColor: theme.border }} /><input type="color" value={value || theme.primary} onChange={e => { set(e.target.value); setBrandingSaved(false); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><input type="text" value={value} onChange={e => { set(e.target.value); setBrandingSaved(false); }} placeholder="#hex" className="flex-1 px-2 py-1.5 text-[10px] font-mono rounded-lg focus:outline-none min-w-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} maxLength={7} /></div></div>))}</div>
             <div className="flex gap-2">{hasCustomBranding && (<button onClick={handleClearBranding} disabled={savingBranding} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="h-3.5 w-3.5" /> Clear</button>)}<button onClick={handleSaveBranding} disabled={savingBranding} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{savingBranding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}{savingBranding ? 'Saving...' : 'Save Branding'}</button></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// CLIENT USERS CARD (read-only)
+// Agency-side view of the client's own dashboard logins (client_staff). The
+// client owner manages these in their settings; here the agency can SEE how
+// many there are, each one's username, status, last login, and which pages
+// they can access. Data comes from the existing GET /api/client/:id/team.
+// Editing client team members is owner-only on the backend, so this is view-only.
+// ============================================================================
+const CLIENT_USER_PERMS: Record<string, string> = {
+  dashboard: 'Dashboard', calls: 'Calls', contacts: 'Contacts', messages: 'Messages',
+  my_business: 'My Business', ai_agent: 'AI Agent', settings: 'Settings', billing: 'Billing',
+};
+
+function ClientUsersCard({ clientId, theme, backendUrl }: { clientId: string; theme: any; backendUrl: string; }) {
+  const [members, setMembers] = useState<any[]>([]);
+  const [limits, setLimits] = useState<{ current: number; max: number }>({ current: 0, max: 0 });
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Failed to load users');
+        const data = await res.json();
+        if (!active) return;
+        setMembers(data.members || []);
+        setLimits(data.limits || { current: 0, max: 0 });
+      } catch {
+        if (active) setErr('Could not load client users');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [clientId, backendUrl]);
+
+  const isUnlimited = limits.max === -1;
+  const countText = limits.max === 0
+    ? 'Not in plan'
+    : isUnlimited
+      ? `${limits.current} (Unlimited)`
+      : `${limits.current} of ${limits.max}`;
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2"><Users className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Client Users</h2></div>
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{countText}</span>
+        </div>
+        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>Additional dashboard logins this client created, beyond the owner above. View-only.</p>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+        ) : err ? (
+          <div className="rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{err}</p></div>
+        ) : members.length === 0 ? (
+          <div className="rounded-lg px-3 py-4 text-center text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>No additional users. Only the account owner can sign in.</div>
+        ) : (
+          <div className="space-y-2.5">
+            {members.map((m) => {
+              const enabled = Object.keys(CLIENT_USER_PERMS).filter(k => m.permissions?.[k]);
+              return (
+                <div key={m.id} className="rounded-lg p-3" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, opacity: m.status === 'disabled' ? 0.6 : 1 }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{m.display_name}</p>
+                        {m.status === 'disabled' && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>Disabled</span>}
+                      </div>
+                      <p className="text-xs truncate" style={{ color: theme.textMuted }}>{m.email}</p>
+                    </div>
+                    {m.last_login && <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: theme.textMuted }}>Last login {new Date(m.last_login).toLocaleDateString()}</span>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {enabled.length === 0 ? (
+                      <span className="text-[10px] italic" style={{ color: theme.textMuted }}>No page access</span>
+                    ) : enabled.map(k => (
+                      <span key={k} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+                        <Shield className="h-2.5 w-2.5" />{CLIENT_USER_PERMS[k]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -450,6 +546,9 @@ export default function AgencyClientDetailPage() {
               <button onClick={handleResetClientPassword} disabled={credResetting} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{credResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}{credResetting ? 'Resetting...' : 'Reset Password'}</button>
             </div>
           </div>
+
+          {/* Client Users — read-only view of the client's additional dashboard logins */}
+          <ClientUsersCard clientId={clientId} theme={theme} backendUrl={backendUrl} />
 
           {/* Client Branding */}
           <div>
