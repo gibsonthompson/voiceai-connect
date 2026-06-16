@@ -23,6 +23,38 @@ function hexToRgba(hex: string, alpha: number): string {
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
 
+// Defined at module scope (NOT inside the page component) so their identity is
+// stable across renders. Defining them inside the component recreates them on
+// every keystroke, which remounts their children (e.g. the greeting textarea)
+// and drops focus after each character typed.
+const SectionCard = ({ icon: Icon, title, subtitle, live, children, theme, primaryColor, glass }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass: any }) => (
+  <section className="mb-4 sm:mb-5">
+    <div className="rounded-2xl overflow-hidden" style={glass}>
+      <div className="p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
+            <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
+              {live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>Live</span>}
+            </div>
+            <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{subtitle}</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </div>
+  </section>
+);
+
+const SaveButton = ({ onClick, disabled, loading: btnLoading, label, primaryColor, theme }: { onClick: () => void; disabled: boolean; loading: boolean; label: string; primaryColor: string; theme: any }) => (
+  <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+    {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
+  </button>
+);
+
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
   const theme = useClientTheme();
@@ -200,34 +232,6 @@ export default function ClientAIAgentPage() {
 
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
 
-  const SectionCard = ({ icon: Icon, title, subtitle, live, children }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode }) => (
-    <section className="mb-4 sm:mb-5">
-      <div className="rounded-2xl overflow-hidden" style={glass}>
-        <div className="p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
-              <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
-                {live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>Live</span>}
-              </div>
-              <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{subtitle}</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 sm:p-5">{children}</div>
-      </div>
-    </section>
-  );
-
-  const SaveButton = ({ onClick, disabled, loading: btnLoading, label }: { onClick: () => void; disabled: boolean; loading: boolean; label: string }) => (
-    <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-      {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
-    </button>
-  );
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
@@ -263,7 +267,7 @@ export default function ClientAIAgentPage() {
 
         {/* Google Calendar Integration */}
         <div className="fu fu2">
-          <SectionCard icon={Calendar} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected}>
+          <SectionCard icon={Calendar} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {calendarLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
             ) : !isCalendarPlanAllowed ? (
@@ -306,9 +310,9 @@ export default function ClientAIAgentPage() {
         {/* Voice Selection */}
         <div className="fu fu2">
           {!isFeatureEnabled('custom_voice') ? (
-            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice"><UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
           ) : (
-            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" live>
+            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" live theme={theme} primaryColor={primaryColor} glass={glass}>
               {voicesLoading && <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /><span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading voices...</span></div>}
               {voicesError && !voicesLoading && (
                 <div className="rounded-xl p-4 text-center" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
@@ -372,7 +376,7 @@ export default function ClientAIAgentPage() {
                     <button onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }} className="mt-2 text-xs font-medium" style={{ color: primaryColor }}>Clear filters</button>
                   </div>
                 )}
-                {hasVoiceChanges && <SaveButton onClick={handleSaveVoice} disabled={savingVoice} loading={savingVoice} label="Save Voice" />}
+                {hasVoiceChanges && <SaveButton onClick={handleSaveVoice} disabled={savingVoice} loading={savingVoice} label="Save Voice" primaryColor={primaryColor} theme={theme} />}
               </>)}
             </SectionCard>
           )}
@@ -381,9 +385,9 @@ export default function ClientAIAgentPage() {
         {/* Greeting */}
         <div className="fu fu3">
           {!isFeatureEnabled('custom_greeting') ? (
-            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first"><UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
           ) : (
-            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" live>
+            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" live theme={theme} primaryColor={primaryColor} glass={glass}>
               {greetingLoading ? <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /></div> : (<>
                 <textarea value={greetingMessage} onChange={(e) => setGreetingMessage(e.target.value)} rows={3} maxLength={500}
                   className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none transition" style={inputStyle} placeholder="Hi, you've reached [Business Name]..." />
@@ -391,7 +395,7 @@ export default function ClientAIAgentPage() {
                   <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[11px]" style={{ color: theme.textMuted4 }}><RotateCcw className="w-3 h-3" /> Reset</button>
                   <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
                 </div>
-                {hasGreetingChanges && <SaveButton onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} loading={savingGreeting} label="Save Greeting" />}
+                {hasGreetingChanges && <SaveButton onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} loading={savingGreeting} label="Save Greeting" primaryColor={primaryColor} theme={theme} />}
               </>)}
             </SectionCard>
           )}
