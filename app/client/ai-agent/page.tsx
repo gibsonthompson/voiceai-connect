@@ -158,9 +158,9 @@ export default function ClientAIAgentPage() {
 
     setPreviewLoadingId(voice.id);
     try {
-      const r = await fetch(`${getBackendUrl()}/api/voices/preview`, {
+      const r = await fetch(`/api/voice-preview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voice_id: voice.id, text }),
       });
       if (!r.ok) throw new Error('preview failed');
