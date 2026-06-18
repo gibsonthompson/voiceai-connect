@@ -35,19 +35,12 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
-  new: { label: 'New', dot: '#3b82f6' },
-  active: { label: 'Active', dot: '#10b981' },
-  converted: { label: 'Converted', dot: '#8b5cf6' },
-  inactive: { label: 'Inactive', dot: '#6b7280' },
-};
-
 const TAG_COLORS: Record<string, string> = {
   emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981',
 };
 
-interface Contact { id: string; name: string; phone: string; email: string | null; status: string; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; source: string; created_at: string; }
-interface Stats { total: number; new: number; active: number; converted: number; inactive: number; }
+interface Contact { id: string; name: string; phone: string; email: string | null; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; source: string; created_at: string; }
+interface Stats { total: number; }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
 
@@ -55,10 +48,9 @@ export default function ClientContactsPage() {
   const { client, loading } = useClient();
   const theme = useClientTheme();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, new: 0, active: 0, converted: 0, inactive: 0 });
+  const [stats, setStats] = useState<Stats>({ total: 0 });
   const [contactsLoading, setContactsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', phone: '', email: '' });
@@ -74,13 +66,12 @@ export default function ClientContactsPage() {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
       const params = new URLSearchParams({ sort: sortBy, limit: '100', offset: '0' });
-      if (statusFilter !== 'all') params.set('status', statusFilter);
       if (searchQuery) params.set('search', searchQuery);
       const response = await fetch(`${backendUrl}/api/client/${client.id}/contacts?${params}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (response.ok) { const data = await response.json(); setContacts(data.contacts || []); setStats(data.stats || { total: 0, new: 0, active: 0, converted: 0, inactive: 0 }); }
+      if (response.ok) { const data = await response.json(); setContacts(data.contacts || []); setStats(data.stats || { total: 0 }); }
     } catch (e) { console.error('Failed to fetch contacts:', e); }
     finally { setContactsLoading(false); }
-  }, [client, sortBy, statusFilter, searchQuery]);
+  }, [client, sortBy, searchQuery]);
 
   useEffect(() => { if (client) { setContactsLoading(true); fetchContacts(); } }, [client, fetchContacts]);
 
@@ -164,32 +155,6 @@ export default function ClientContactsPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      {stats.total > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 sm:mb-7 fu fu1">
-          {[
-            { label: 'New', value: stats.new, color: '#3b82f6', key: 'new' },
-            { label: 'Active', value: stats.active, color: '#10b981', key: 'active' },
-            { label: 'Converted', value: stats.converted, color: '#8b5cf6', key: 'converted' },
-            { label: 'Inactive', value: stats.inactive, color: '#6b7280', key: 'inactive' },
-          ].map(s => (
-            <button key={s.key} onClick={() => setStatusFilter(statusFilter === s.key ? 'all' : s.key)}
-              className="rounded-2xl p-3.5 sm:p-4 text-left transition-all"
-              style={{
-                ...glass,
-                borderColor: statusFilter === s.key ? s.color : (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'),
-                backgroundColor: statusFilter === s.key ? hexToRgba(s.color, theme.isDark ? 0.12 : 0.06) : glass.backgroundColor,
-              }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>{s.label}</span>
-              </div>
-              <p className="text-xl sm:text-2xl font-bold" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Search + Sort */}
       <div className="flex items-center gap-3 mb-5 sm:mb-7 fu fu2">
         <div className="relative flex-1">
@@ -220,67 +185,58 @@ export default function ClientContactsPage() {
               style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.05) }}>
               <Users className="h-7 w-7" style={{ color: theme.textMuted4 }} />
             </div>
-            <p className="font-medium text-sm" style={{ color: theme.textMuted }}>{searchQuery || statusFilter !== 'all' ? 'No matching contacts' : 'No contacts yet'}</p>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted4 }}>{searchQuery || statusFilter !== 'all' ? 'Try adjusting your search' : 'Contacts are created automatically from calls'}</p>
+            <p className="font-medium text-sm" style={{ color: theme.textMuted }}>{searchQuery ? 'No matching contacts' : 'No contacts yet'}</p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted4 }}>{searchQuery ? 'Try adjusting your search' : 'Contacts are created automatically from calls'}</p>
           </div>
         ) : (
           <div>
-            {contacts.map((contact, idx) => {
-              const sc = STATUS_CONFIG[contact.status] || STATUS_CONFIG.new;
-              return (
-                <a key={contact.id} href={`/client/contacts/${contact.id}`}
-                  className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 sm:py-4 cr"
-                  style={{ borderBottom: idx < contacts.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
+            {contacts.map((contact, idx) => (
+              <a key={contact.id} href={`/client/contacts/${contact.id}`}
+                className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 sm:py-4 cr"
+                style={{ borderBottom: idx < contacts.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
 
-                  {/* Avatar */}
-                  <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full flex-shrink-0 text-sm font-semibold"
-                    style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}>
-                    {(contact.name || '?').charAt(0).toUpperCase()}
+                {/* Avatar */}
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full flex-shrink-0 text-sm font-semibold"
+                  style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}>
+                  {(contact.name || '?').charAt(0).toUpperCase()}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[13px] sm:text-sm truncate mb-0.5" style={{ color: theme.text }}>{contact.name || 'Unknown'}</p>
+                  <p className="text-[11px] sm:text-xs truncate" style={{ color: theme.textMuted }}>{formatPhone(contact.phone)}</p>
+                  <div className="flex items-center gap-2 mt-1 sm:hidden">
+                    <span className="text-[10px]" style={{ color: theme.textMuted4 }}>{contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}</span>
+                    {contact.tags?.length > 0 && contact.tags.slice(0, 1).map(tag => (
+                      <span key={tag} className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+                        style={{ backgroundColor: hexToRgba(TAG_COLORS[tag] || theme.primary, 0.12), color: TAG_COLORS[tag] || theme.primary }}>
+                        {tag.replace(/_/g, ' ')}
+                      </span>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-medium text-[13px] sm:text-sm truncate" style={{ color: theme.text }}>{contact.name || 'Unknown'}</p>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: sc.dot }} />
-                        <span className="text-[10px] font-medium hidden sm:inline" style={{ color: theme.textMuted4 }}>{sc.label}</span>
-                      </div>
-                    </div>
-                    <p className="text-[11px] sm:text-xs truncate" style={{ color: theme.textMuted }}>{formatPhone(contact.phone)}</p>
-                    <div className="flex items-center gap-2 mt-1 sm:hidden">
-                      <span className="text-[10px]" style={{ color: theme.textMuted4 }}>{contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}</span>
-                      {contact.tags?.length > 0 && contact.tags.slice(0, 1).map(tag => (
-                        <span key={tag} className="rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+                {/* Desktop: tags + calls + time */}
+                <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+                  {contact.tags?.length > 0 && (
+                    <div className="hidden lg:flex gap-1.5">
+                      {contact.tags.slice(0, 2).map(tag => (
+                        <span key={tag} className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                           style={{ backgroundColor: hexToRgba(TAG_COLORS[tag] || theme.primary, 0.12), color: TAG_COLORS[tag] || theme.primary }}>
                           {tag.replace(/_/g, ' ')}
                         </span>
                       ))}
                     </div>
+                  )}
+                  <div className="text-right min-w-[60px]">
+                    <p className="text-sm font-medium" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{contact.total_calls}</p>
+                    <p className="text-[10px]" style={{ color: theme.textMuted4 }}>{contact.last_call_at ? timeAgo(contact.last_call_at) : '—'}</p>
                   </div>
+                </div>
 
-                  {/* Desktop: tags + calls + time */}
-                  <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-                    {contact.tags?.length > 0 && (
-                      <div className="hidden lg:flex gap-1.5">
-                        {contact.tags.slice(0, 2).map(tag => (
-                          <span key={tag} className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                            style={{ backgroundColor: hexToRgba(TAG_COLORS[tag] || theme.primary, 0.12), color: TAG_COLORS[tag] || theme.primary }}>
-                            {tag.replace(/_/g, ' ')}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="text-right min-w-[60px]">
-                      <p className="text-sm font-medium" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>{contact.total_calls}</p>
-                      <p className="text-[10px]" style={{ color: theme.textMuted4 }}>{contact.last_call_at ? timeAgo(contact.last_call_at) : '—'}</p>
-                    </div>
-                  </div>
-
-                  <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-                </a>
-              );
-            })}
+                <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />
+              </a>
+            ))}
           </div>
         )}
       </div>

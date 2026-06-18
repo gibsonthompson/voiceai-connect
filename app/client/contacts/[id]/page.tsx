@@ -27,16 +27,9 @@ function formatPhone(phone: string): string {
 
 function formatDuration(s: number): string { return `${Math.floor(s / 60)}m ${s % 60}s`; }
 
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New', color: '#3b82f6' },
-  { value: 'active', label: 'Active', color: '#10b981' },
-  { value: 'converted', label: 'Converted', color: '#8b5cf6' },
-  { value: 'inactive', label: 'Inactive', color: '#6b7280' },
-];
-
 const TAG_COLORS: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981' };
 
-interface Contact { id: string; name: string; phone: string; email: string | null; address: string | null; status: string; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; notes: string | null; source: string; created_at: string; }
+interface Contact { id: string; name: string; phone: string; email: string | null; address: string | null; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; notes: string | null; source: string; created_at: string; }
 interface Call { id: string; customer_name: string | null; customer_phone: string | null; caller_phone: string | null; service_requested: string | null; urgency_level: string | null; ai_summary: string | null; duration_seconds: number | null; created_at: string; }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
@@ -109,8 +102,6 @@ export default function ContactDetailPage() {
   if (pageLoading) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /><span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading contact...</span></div>;
   if (!contact) return <div className="p-6 text-center min-h-screen" style={{ backgroundColor: theme.bg }}><p style={{ color: theme.textMuted }}>Contact not found</p><a href="/client/contacts" className="text-sm mt-2 inline-block" style={{ color: theme.primary }}>← Back</a></div>;
 
-  const currentStatus = STATUS_OPTIONS.find(s => s.value === contact.status) || STATUS_OPTIONS[0];
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `.cr{transition:background .15s ease}.cr:hover{background:${theme.hover} !important}` }} />
@@ -121,44 +112,27 @@ export default function ContactDetailPage() {
 
       {/* Header */}
       <div className="mb-5 sm:mb-7 fu fu1">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full flex-shrink-0 text-lg sm:text-xl font-bold"
-              style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}>
-              {(contact.name || '?').charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              {editingName ? (
-                <div className="flex items-center gap-2">
-                  <input type="text" value={nameValue} onChange={(e) => setNameValue(e.target.value)} autoFocus
-                    onKeyDown={(e) => { if (e.key === 'Enter') { updateContact({ name: nameValue.trim() }); setEditingName(false); } if (e.key === 'Escape') setEditingName(false); }}
-                    className="rounded-xl px-3 py-1.5 text-lg font-semibold focus:outline-none" style={{ ...glass, color: theme.text }} />
-                  <button onClick={() => { updateContact({ name: nameValue.trim() }); setEditingName(false); }} className="p-1" style={{ color: theme.success }}><Check className="h-4 w-4" /></button>
-                  <button onClick={() => setEditingName(false)} className="p-1" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{contact.name || 'Unknown'}</h1>
-                  <button onClick={() => { setNameValue(contact.name || ''); setEditingName(true); }} className="p-1 rounded" style={{ color: theme.textMuted4 }}><Edit3 className="h-3.5 w-3.5" /></button>
-                </div>
-              )}
-              <p className="text-[13px]" style={{ color: theme.textMuted }}>{formatPhone(contact.phone)} · {contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}</p>
-            </div>
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full flex-shrink-0 text-lg sm:text-xl font-bold"
+            style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}>
+            {(contact.name || '?').charAt(0).toUpperCase()}
           </div>
-
-          {/* Status Pills */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {STATUS_OPTIONS.map(opt => (
-              <button key={opt.value} onClick={() => updateContact({ status: opt.value })}
-                className="rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all"
-                style={{
-                  backgroundColor: contact.status === opt.value ? hexToRgba(opt.color, theme.isDark ? 0.15 : 0.1) : 'transparent',
-                  color: contact.status === opt.value ? opt.color : theme.textMuted4,
-                  border: `1px solid ${contact.status === opt.value ? hexToRgba(opt.color, 0.3) : theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-                }}>
-                {opt.label}
-              </button>
-            ))}
+          <div className="min-w-0">
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input type="text" value={nameValue} onChange={(e) => setNameValue(e.target.value)} autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') { updateContact({ name: nameValue.trim() }); setEditingName(false); } if (e.key === 'Escape') setEditingName(false); }}
+                  className="rounded-xl px-3 py-1.5 text-lg font-semibold focus:outline-none" style={{ ...glass, color: theme.text }} />
+                <button onClick={() => { updateContact({ name: nameValue.trim() }); setEditingName(false); }} className="p-1" style={{ color: theme.success }}><Check className="h-4 w-4" /></button>
+                <button onClick={() => setEditingName(false)} className="p-1" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{contact.name || 'Unknown'}</h1>
+                <button onClick={() => { setNameValue(contact.name || ''); setEditingName(true); }} className="p-1 rounded" style={{ color: theme.textMuted4 }}><Edit3 className="h-3.5 w-3.5" /></button>
+              </div>
+            )}
+            <p className="text-[13px]" style={{ color: theme.textMuted }}>{formatPhone(contact.phone)} · {contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}</p>
           </div>
         </div>
       </div>

@@ -252,7 +252,18 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } .va-rotate-lock{display:none} @media (orientation: landscape) and (max-height: 600px){ .va-rotate-lock{display:flex} }` }} />
+
+      {/* Portrait lock for mobile browser tabs. Installed PWAs are locked via
+          the client manifest's "orientation":"portrait-primary"; this covers
+          phones in a browser tab (where the manifest does not apply) by showing
+          a rotate prompt only on short landscape viewports (phones, not tablets
+          or desktop). */}
+      <div className="va-rotate-lock" style={{ position: 'fixed', inset: 0, zIndex: 9999, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '0.75rem', padding: '2rem', backgroundColor: theme.bg, color: theme.text }}>
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={theme.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" /><line x1="11" y1="18" x2="13" y2="18" /></svg>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>Please rotate your device</p>
+        <p style={{ fontSize: 13, color: theme.textMuted }}>This works best in portrait mode.</p>
+      </div>
 
       {/* Preview Mode Banner */}
       {isPreviewMode && (
@@ -345,7 +356,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg, paddingBottom: 'calc(env(safe-area-inset-bottom) + 6rem)' }}>{children}</main>
 
       {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
       <SupportWidget theme={theme} userType="client" />

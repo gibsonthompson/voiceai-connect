@@ -7,6 +7,7 @@ import {
   PhoneForwarded, ShieldX, Sparkles, ArrowRight
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import { CallForwardingCard } from './forwarding-card';
 
 interface Branding {
   primaryColor: string;
@@ -163,6 +164,12 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </div>
       )}
 
+      {/* CALL FORWARDING — primary activation step.
+          Self-hides when not provisioned, and once a call has come in this month. */}
+      {isProvisioned && (
+        <CallForwardingCard callsThisMonth={stats.callsThisMonth} />
+      )}
+
       {/* PHONE NUMBER + STATS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 mb-5 sm:mb-7">
 
@@ -224,14 +231,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           {isProvisioned && (
             <div className="pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
               <p className="text-xs sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
-                Forward your business calls to this number.
-                <span className="hidden sm:inline"> Dial </span>
-                <span className="sm:hidden block mt-1">Dial </span>
-                <span className="font-mono font-semibold px-1.5 py-0.5 rounded-md text-[11px]"
-                  style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text }}>
-                  *72
-                </span>
-                {' '}+ this number from your office phone.
+                {client.forwarding_confirmed || stats.callsThisMonth > 0
+                  ? 'Call forwarding is on. Customers who call your business number reach your AI.'
+                  : 'Forward your business calls to this number using the steps above.'}
               </p>
             </div>
           )}

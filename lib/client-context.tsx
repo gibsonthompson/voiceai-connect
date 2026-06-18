@@ -28,6 +28,8 @@ interface Client {
   call_mode?: string;
   hipaa_mode?: boolean;
   onboarding_completed?: boolean;
+  forwarding_confirmed?: boolean;
+  forwarding_confirmed_at?: string | null;
   ring_timeout?: number;
   created_at: string;
 
