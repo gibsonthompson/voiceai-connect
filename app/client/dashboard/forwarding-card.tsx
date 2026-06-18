@@ -26,7 +26,9 @@ function formatPhoneNumber(phone: string): string {
 }
 
 interface CallForwardingCardProps {
-  /** Hide the card entirely once any call has come in — forwarding is clearly working. */
+  /** Accepted for backward compatibility with the dashboard; no longer used.
+   *  The card's state is driven solely by clients.forwarding_confirmed, not by
+   *  call volume. */
   callsThisMonth?: number;
 }
 
@@ -41,13 +43,18 @@ interface CallForwardingCardProps {
  *    the forwarding code + AI number, so the owner just presses call.
  *  - Persists "done" to clients.forwarding_confirmed via the backend, then
  *    refreshClient() so the state survives reloads and across devices.
- *  - Auto-hides once a call has been received this month (implicit confirmation).
+ *  - The ONLY thing that moves it out of setup mode is the explicit
+ *    "I've turned on forwarding" button. It never hides itself based on call
+ *    volume (a single test or spam call should not make it vanish). Once
+ *    confirmed it becomes a small, persistent, collapsible "You're live" bar so
+ *    the client can re-check the steps or re-run setup anytime.
  */
 export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardProps) {
   const { client, refreshClient } = useClient();
   const theme = useClientTheme();
 
   const [confirmed, setConfirmed] = useState<boolean>(!!client?.forwarding_confirmed);
+  const [liveOpen, setLiveOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,9 +65,6 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   }, [client?.forwarding_confirmed]);
 
   if (!client || !client.vapi_phone_number) return null;
-
-  // Once calls are flowing, forwarding obviously works — don't clutter the home screen.
-  if (callsThisMonth > 0) return null;
 
   const formatted = formatPhoneNumber(client.vapi_phone_number);
   const digits = digitsFor(client.vapi_phone_number);
@@ -76,6 +80,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   async function save(next: boolean) {
     setSaving(true);
     setConfirmed(next); // optimistic
+    if (next) setLiveOpen(true); // expand the live bar right after confirming
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
@@ -102,58 +107,67 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   };
 
   // ---------------------------------------------------------------------------
-  // LIVE STATE — forwarding confirmed (shown until first call arrives)
+  // LIVE STATE: forwarding confirmed. Persistent and collapsible: it never
+  // auto-hides, and it only reaches this state from the explicit confirm button.
+  // Collapsed by default on load; expands to show the test call + controls.
   // ---------------------------------------------------------------------------
   if (confirmed) {
     return (
-      <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu2"
+      <div className="rounded-2xl mb-5 sm:mb-7 fu fu2 overflow-hidden"
         style={{ ...card, borderColor: theme.successBorder }}>
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl"
+        <button onClick={() => setLiveOpen((v) => !v)}
+          className="flex w-full items-center gap-3 px-5 sm:px-6 py-4 text-left transition hover:opacity-90">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
             style={{ backgroundColor: theme.successBg }}>
-            <CheckCircle className="h-6 w-6" style={{ color: theme.success }} />
+            <CheckCircle className="h-5 w-5" style={{ color: theme.success }} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: theme.success }}>
               You&apos;re live
             </p>
-            <h3 className="mt-0.5 text-lg sm:text-xl font-bold leading-tight" style={{ color: theme.text }}>
+            <p className="text-[13px] sm:text-sm font-medium truncate" style={{ color: theme.text }}>
               Your AI is answering calls
-            </h3>
+            </p>
           </div>
-        </div>
-
-        <p className="mt-4 text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-          Forwarded calls now go straight to your receptionist, 24/7. Hear it for yourself —
-          give your AI number a call and say hello.
-        </p>
-
-        <a href={telTest}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm sm:text-base font-semibold transition-all hover:scale-[1.01] active:scale-[0.99]"
-          style={{ backgroundColor: theme.primary, color: theme.buttonText }}>
-          <PhoneCall className="h-5 w-5" />
-          Call {formatted} to test
-        </a>
-
-        <div className="mt-4 rounded-xl px-4 py-3" style={{ backgroundColor: theme.hover }}>
-          <p className="text-[13px] sm:text-sm" style={{ color: theme.textMuted }}>
-            Need to turn forwarding off? Dial{' '}
-            <span className="font-semibold" style={{ color: theme.text }}>{DISABLE_CODE}</span>{' '}
-            from your business phone.
-          </p>
-        </div>
-
-        <button onClick={() => save(false)} disabled={saving}
-          className="mt-3 text-[13px] font-medium transition hover:opacity-80 disabled:opacity-50"
-          style={{ color: theme.textMuted4 }}>
-          {saving ? 'Saving…' : 'Calls not coming through? Set up forwarding again'}
+          <ChevronDown className={`h-5 w-5 flex-shrink-0 transition-transform ${liveOpen ? 'rotate-180' : ''}`}
+            style={{ color: theme.textMuted4 }} />
         </button>
+
+        {liveOpen && (
+          <div className="px-5 sm:px-6 pb-5 sm:pb-6">
+            <p className="text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+              Forwarded calls now go straight to your receptionist, 24/7. Want to hear it?
+              Give your AI number a call and say hello.
+            </p>
+
+            <a href={telTest}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm sm:text-base font-semibold transition-all hover:scale-[1.01] active:scale-[0.99]"
+              style={{ backgroundColor: theme.primary, color: theme.buttonText }}>
+              <PhoneCall className="h-5 w-5" />
+              Call {formatted} to test
+            </a>
+
+            <div className="mt-4 rounded-xl px-4 py-3" style={{ backgroundColor: theme.hover }}>
+              <p className="text-[13px] sm:text-sm" style={{ color: theme.textMuted }}>
+                Need to turn forwarding off? Dial{' '}
+                <span className="font-semibold" style={{ color: theme.text }}>{DISABLE_CODE}</span>{' '}
+                from your business phone.
+              </p>
+            </div>
+
+            <button onClick={() => save(false)} disabled={saving}
+              className="mt-3 text-[13px] font-medium transition hover:opacity-80 disabled:opacity-50"
+              style={{ color: theme.textMuted4 }}>
+              {saving ? 'Saving…' : 'Calls not coming through? Set up forwarding again'}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
   // ---------------------------------------------------------------------------
-  // SETUP STATE — not yet forwarded (the activation hero)
+  // SETUP STATE: not yet forwarded (the activation hero)
   // ---------------------------------------------------------------------------
   return (
     <div className="rounded-2xl overflow-hidden mb-5 sm:mb-7 fu fu2" style={card}>
@@ -179,7 +193,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
             </h3>
             <p className="mt-1 text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
               This sends your calls to your AI. Customers keep calling your same business
-              number — we answer the ones you&apos;d miss.
+              number, and we answer the ones you&apos;d miss.
             </p>
           </div>
         </div>
@@ -199,7 +213,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
           Turn on forwarding
         </a>
         <p className="mt-2 text-center text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>
-          Opens your dialer from this phone — then just press call.
+          Opens your dialer from this phone, then just press call.
         </p>
 
         {/* Dial sequence as one unbreakable, copyable unit */}
@@ -261,7 +275,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
               <p>
                 <span className="font-semibold" style={{ color: theme.text }}>{FORWARD_CODE}</span>{' '}
                 works on most U.S. carriers. If it doesn&apos;t take, your carrier may use a
-                different code — search &quot;[your carrier] call forwarding.&quot;
+                different code. Search &quot;[your carrier] call forwarding.&quot;
               </p>
               <p>
                 To switch forwarding off later, dial{' '}
