@@ -99,6 +99,11 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const hasAssistant = !!client.vapi_assistant_id;
   const isProvisioned = hasPhoneNumber && hasAssistant;
   const isProvisioningPending = !isProvisioned && client.subscription_status !== 'cancelled';
+  // The forwarding card shows its full setup hero only when provisioned and not
+  // yet confirmed. While that is up it owns the screen (no forwarding = no calls,
+  // so an upgrade prompt is premature), so the trial/upgrade banner is hidden
+  // until forwarding is confirmed.
+  const forwardingSetupActive = isProvisioned && !client.forwarding_confirmed;
   const formattedPhone = formatPhoneNumber(client.vapi_phone_number);
   const isUnlimited = stats.callLimit === -1;
   const firstName = getFirstName(client.owner_name);
@@ -131,8 +136,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </p>
       </div>
 
-      {/* TRIAL BANNER */}
-      {client.subscription_status === 'trial' && stats.trialDaysLeft !== null && (
+      {/* TRIAL BANNER — hidden while the forwarding setup card is up, so the
+          two CTAs don't compete; returns once forwarding is confirmed. */}
+      {client.subscription_status === 'trial' && stats.trialDaysLeft !== null && !forwardingSetupActive && (
         <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
           style={{
             ...glass,
