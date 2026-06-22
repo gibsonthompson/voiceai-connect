@@ -130,16 +130,8 @@ export default function AgencySupportWidget({
     }
   }, [open, view]);
 
-  // Show teaser after scrolling past 1000px, unless already dismissed in this session
-  useEffect(() => {
-    const handleScroll = () => {
-      // Check dismissal on EVERY scroll event so once dismissed, teaser stays gone
-      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('agency-w-t')) return;
-      if (window.scrollY > 1000 && !open) setTeaser(true);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [open]);
+  // Teaser is never auto-shown. The bubble stays a clean icon until the user
+  // taps it, which opens the full panel. (Auto-popup on scroll removed.)
 
   // Contrast-correct text/icon color for surfaces filled with the brand color.
   const onPrimary = isLightHex(primaryColor) ? '#111827' : '#ffffff';

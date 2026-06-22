@@ -128,7 +128,6 @@ function AnalyticsScripts({ analytics }: { analytics?: MarketingConfig['analytic
 // ============================================================================
 function Navigation({ config }: { config: MarketingConfig }) {
   const { branding } = config;
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const homeUrl = config.homepageUrl || '/';
   return (
     <nav className="navbar">
@@ -143,24 +142,20 @@ function Navigation({ config }: { config: MarketingConfig }) {
               <span className="logo-text">{branding.name}</span>
             )}
           </a>
-          <ul className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-            <li><a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a></li>
-            <li><a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How It Works</a></li>
-            <li><a href="/demo" onClick={() => setMobileMenuOpen(false)}>Demo</a></li>
-            <li><a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a></li>
-            <li><a href="/faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a></li>
+          <ul className="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="/demo">Demo</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="/faq">FAQ</a></li>
           </ul>
           <div className="nav-actions">
             {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
             {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
             <a href="/get-started" className="btn-primary">Start Free Trial</a>
           </div>
-          <button className={`mobile-menu-toggle ${mobileMenuOpen ? 'active' : ''}`} aria-label="Toggle menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <span></span><span></span><span></span>
-          </button>
         </div>
       </div>
-      {mobileMenuOpen && <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />}
     </nav>
   );
 }
@@ -759,16 +754,14 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  if (!hero.demoPhone) return null;
   return (
     <div className={`sticky-cta ${visible ? 'visible' : ''}`}>
       <span className="sticky-cta-text">Ready to try {branding.name}?</span>
       <div className="sticky-cta-actions">
-        <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
-        {hero.demoPhone && (
-          <a href="/demo" className="btn-ghost btn-small">
-            <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>Try Demo
-          </a>
-        )}
+        <a href="/demo" className="btn-ghost btn-small">
+          <span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.phone}</span>Try Demo
+        </a>
       </div>
     </div>
   );

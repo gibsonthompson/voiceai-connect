@@ -126,6 +126,25 @@ function resolveHomepageUrl(agency: Agency): string {
 }
 
 // ============================================================================
+// Resolve the client login URL.
+// Priority: verified custom domain first, then the agency subdomain.
+// Always absolute so the client lands on a stable host for auth, regardless
+// of which host the marketing page was viewed on.
+// ============================================================================
+function resolveLoginUrl(agency: Agency): string {
+  const path = '/client/login';
+  const domain = agency.marketing_domain?.trim();
+  if (domain && agency.domain_verified === true) {
+    const clean = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    return `https://${clean}${path}`;
+  }
+  if (agency.slug) {
+    return `https://${agency.slug}.myvoiceaiconnect.com${path}`;
+  }
+  return path;
+}
+
+// ============================================================================
 // TEMPLATE ROUTING
 // Import additional templates here as they're built:
 //   import MarketingPageModern from '@/components/MarketingPageModern';
@@ -159,6 +178,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
 
   // Homepage URL (custom domain if verified, otherwise /)
   const homepageUrl = resolveHomepageUrl(agency);
+
+  // Client login URL (custom domain first, then subdomain)
+  const loginUrl = resolveLoginUrl(agency);
 
   // Build pricing from agency price columns
   const agencyPricing = [];
@@ -221,7 +243,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
         { label: 'Terms & Conditions', href: '/terms' },
       ],
     },
-    clientLoginPath: '/client/login',
     analytics: {
       gtmId: agency.gtm_id || undefined,
       fbPixelId: agency.fb_pixel_id || undefined,
@@ -232,6 +253,8 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // Merge any advanced config the agency has set via marketing_config JSONB
     // This is where unique generated copy lives
     ...(agency.marketing_config || {}),
+    // Login URL last so the custom-domain/subdomain resolution always wins
+    clientLoginPath: loginUrl,
   };
 
   // Resolve theme
