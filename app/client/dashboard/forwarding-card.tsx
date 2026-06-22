@@ -128,6 +128,9 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
               <PhoneCall className="h-5 w-5" />
               Call {formatted} to test
             </a>
+            <p className="mt-2 text-center text-[12px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+              Call from a different phone, not the one you forwarded.
+            </p>
 
             <button onClick={() => save(false)} disabled={saving}
               className="mt-3 w-full text-center text-[13px] font-medium transition hover:opacity-80 disabled:opacity-50"
@@ -155,9 +158,23 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
             Turn on call forwarding
           </h3>
           <p className="mt-1 text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-            One quick step sends missed calls to your AI. Your customers keep dialing the same number.
+            Your customers keep calling your usual business number. This sends those calls to your AI line so it can answer them. Your number never changes.
           </p>
         </div>
+      </div>
+
+      {/* How to do it, in three short steps */}
+      <div className="mt-4 space-y-2.5">
+        {[
+          `Tap the button below. Your phone dials ${FORWARD_CODE} then your AI number, ${formatted}.`,
+          'Wait for the confirmation tone or message, then hang up.',
+          'Tap the confirm button below so your dashboard shows you as live.',
+        ].map((step, i) => (
+          <div key={i} className="flex items-start gap-2.5">
+            <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{i + 1}</div>
+            <p className="text-[12px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>{step}</p>
+          </div>
+        ))}
       </div>
 
       {/* Primary action */}
@@ -168,7 +185,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
         Turn on forwarding
       </a>
       <p className="mt-2 text-center text-[12px] sm:text-[13px]" style={{ color: theme.textMuted }}>
-        Dials {FORWARD_CODE} {formatted} from this phone. Just press call.
+        Just press call when your dialer opens.
       </p>
 
       {/* Secondary: copy for another phone */}
@@ -178,6 +195,9 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
         {copied ? <Check className="h-4 w-4" style={{ color: theme.success }} /> : <Copy className="h-4 w-4" />}
         {copied ? 'Copied' : 'Copy the code for another phone'}
       </button>
+      <p className="mt-1.5 text-center text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+        Setting up a landline or a different phone? Copy the code and dial it on that phone instead.
+      </p>
 
       {/* Confirm */}
       <button onClick={() => save(true)} disabled={saving}
