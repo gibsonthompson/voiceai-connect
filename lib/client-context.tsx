@@ -30,6 +30,8 @@ interface Client {
   onboarding_completed?: boolean;
   forwarding_confirmed?: boolean;
   forwarding_confirmed_at?: string | null;
+  forwarding_carrier?: 'verizon' | 'gsm' | 'other' | null;
+  forwarding_mode?: 'all' | 'missed';
   ring_timeout?: number;
   created_at: string;
 
