@@ -39,6 +39,45 @@ function formatIndustry(raw: string | null | undefined): string {
   return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Parses the structured "BUSINESS DETAILS (Extracted from Website)" summary out
+// of the assembled KB document the AI uses. Returns null when the document has
+// no website-extracted summary (e.g. an industry-default KB). The scraper
+// writes this block in a fixed format (formatStructuredSection), so we parse by
+// its headers: top-level **Label:** facts, then "## Section" groups of "- item".
+interface AiKnowledge { facts: { label: string; value: string }[]; sections: { title: string; items: string[] }[]; }
+function parseAiKnowledge(content: string | null): AiKnowledge | null {
+  if (!content) return null;
+  const marker = '# BUSINESS DETAILS (Extracted from Website)';
+  const start = content.indexOf(marker);
+  if (start === -1) return null;
+
+  const rest = content.slice(start + marker.length);
+  const nextTop = rest.search(/\n#\s+/); // the "# {business} — Website Content" header
+  const block = nextTop === -1 ? rest : rest.slice(0, nextTop);
+
+  const facts: { label: string; value: string }[] = [];
+  const sections: { title: string; items: string[] }[] = [];
+  let current: { title: string; items: string[] } | null = null;
+
+  for (const raw of block.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith('## ')) {
+      current = { title: line.slice(3).trim(), items: [] };
+      sections.push(current);
+    } else if (line.startsWith('- ')) {
+      if (current) current.items.push(line.slice(2).trim());
+    } else {
+      const m = line.match(/^\*\*(.+?):\*\*\s*(.*)$/);
+      if (m && !current) facts.push({ label: m[1].trim(), value: m[2].trim() });
+    }
+  }
+
+  const filled = sections.filter(s => s.items.length > 0);
+  if (facts.length === 0 && filled.length === 0) return null;
+  return { facts, sections: filled };
+}
+
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
 
 export default function MyBusinessPage() {
@@ -80,6 +119,14 @@ export default function MyBusinessPage() {
   const [newArea, setNewArea] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
 
+  // Read-only "What Your AI Knows" view — the assembled KB document the AI
+  // actually uses on calls (from the website scrape), fetched separately from
+  // the editable jsonb fields above.
+  const [aiKnowsContent, setAiKnowsContent] = useState<string | null>(null);
+  const [aiKnowsLoading, setAiKnowsLoading] = useState(false);
+  const [aiKnowsUpdated, setAiKnowsUpdated] = useState<string | null>(null);
+  const [aiKnowsOpen, setAiKnowsOpen] = useState(false);
+
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -88,8 +135,21 @@ export default function MyBusinessPage() {
       setNameValue(client.business_name || '');
       fetchKnowledgeBase();
       fetchServiceAreas();
+      fetchAiKnowledge();
     }
   }, [client]);
+
+  const fetchAiKnowledge = async () => {
+    if (!client) return;
+    setAiKnowsLoading(true);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/kb-document`, { headers: { Authorization: `Bearer ${getAuthToken()}` } });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.success) { setAiKnowsContent(d.content || null); setAiKnowsUpdated(d.updated_at || null); }
+      }
+    } catch {} finally { setAiKnowsLoading(false); }
+  };
 
   const fetchKnowledgeBase = async () => {
     if (!client) return;
@@ -230,6 +290,8 @@ export default function MyBusinessPage() {
 
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
 
+  const aiKnowledge = parseAiKnowledge(aiKnowsContent);
+
   const SectionCard = ({ icon: Icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle: string; children: React.ReactNode; className?: string }) => (
     <section className={`mb-4 sm:mb-5 ${className}`}>
       <div className="rounded-2xl overflow-hidden" style={glass}>
@@ -313,6 +375,79 @@ export default function MyBusinessPage() {
                 <span className="font-medium text-xs sm:text-sm" style={{ color: theme.text }}>{new Date(client.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
               </div>
             </div>
+          </SectionCard>
+        </div>
+
+        {/* What Your AI Knows — read-only view of the live KB the AI uses */}
+        <div className="fu fu2">
+          <SectionCard icon={Sparkles} title="What Your AI Knows" subtitle="Pulled from your website, this is what your receptionist already knows about you">
+            {aiKnowsLoading ? (
+              <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+            ) : aiKnowledge ? (
+              <div className="space-y-4">
+                {aiKnowledge.facts.length > 0 && (
+                  <div className="space-y-1">
+                    {aiKnowledge.facts.map((f, i) => (
+                      <div key={i} className="flex gap-2 text-[13px]">
+                        <span style={{ color: theme.textMuted4 }}>{f.label}:</span>
+                        <span className="font-medium" style={{ color: theme.text }}>{f.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {aiKnowledge.sections.map((s, i) => {
+                  const chips = /service|insurance|payment/i.test(s.title);
+                  return (
+                    <div key={i}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted4 }}>{s.title}</p>
+                      {chips ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {s.items.map((it, j) => (
+                            <span key={j} className="px-2 py-1 rounded-lg text-[12px] font-medium" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}>{it}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <ul className="space-y-0.5">
+                          {s.items.map((it, j) => (
+                            <li key={j} className="text-[13px] flex gap-2" style={{ color: theme.textMuted }}>
+                              <span style={{ color: primaryColor }}>•</span><span>{it}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div>
+                  <button onClick={() => setAiKnowsOpen(v => !v)} className="flex items-center gap-1 text-[12px] font-medium" style={{ color: primaryColor }}>
+                    {aiKnowsOpen ? 'Hide' : 'View'} the full document your AI reads
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiKnowsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {aiKnowsOpen && aiKnowsContent && (
+                    <pre className="mt-2 max-h-80 overflow-auto rounded-xl p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', color: theme.textMuted, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{aiKnowsContent}</pre>
+                  )}
+                </div>
+
+                {aiKnowsUpdated && (
+                  <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Last refreshed from your website on {new Date(aiKnowsUpdated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.</p>
+                )}
+              </div>
+            ) : aiKnowsContent ? (
+              <div className="space-y-3">
+                <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI is set up with a starter knowledge base for your industry. Add your website in the Knowledge Base section below and save to personalize what it knows about your business.</p>
+                <button onClick={() => setAiKnowsOpen(v => !v)} className="flex items-center gap-1 text-[12px] font-medium" style={{ color: primaryColor }}>
+                  {aiKnowsOpen ? 'Hide' : 'View'} the full document your AI reads
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiKnowsOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {aiKnowsOpen && (
+                  <pre className="mt-2 max-h-80 overflow-auto rounded-xl p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', color: theme.textMuted, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{aiKnowsContent}</pre>
+                )}
+              </div>
+            ) : (
+              <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI does not have a website-based knowledge base yet. Add your website in the Knowledge Base section below and save, and it will learn your hours, services, and more.</p>
+            )}
           </SectionCard>
         </div>
 
