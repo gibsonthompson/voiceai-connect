@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Ph
 import { useAgency } from '../../context';
 import { countries as SUPPORTED_COUNTRIES } from '@/lib/currency';
 import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
+import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -65,22 +66,6 @@ const COUNTRY_PHONE_CODES: Record<string, { code: string; placeholder: string; m
 };
 
 const DEFAULT_PHONE_CONFIG = { code: '', placeholder: 'Phone number', minDigits: 7, maxDigits: 15 };
-
-const INDUSTRIES = [
-  { value: 'home_services', label: 'Home Services' },
-  { value: 'medical', label: 'Medical' },
-  { value: 'dental', label: 'Dental & Orthodontics' },
-  { value: 'legal', label: 'Legal' },
-  { value: 'real_estate', label: 'Real Estate' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'restaurant', label: 'Restaurant & Food Service' },
-  { value: 'professional_services', label: 'Professional Services' },
-  { value: 'automotive', label: 'Automotive' },
-  { value: 'beauty_wellness', label: 'Beauty & Wellness' },
-  { value: 'financial_services', label: 'Financial Services' },
-  { value: 'fitness', label: 'Fitness & Recreation' },
-  { value: 'other', label: 'Other' }
-];
 
 const PLAN_TYPES = [
   { value: 'starter', label: 'Starter' },
@@ -568,7 +553,7 @@ export default function AddClientPage() {
                   disabled={submitting}
                 >
                   <option value="">Select industry...</option>
-                  {INDUSTRIES.map(i => (
+                  {SELECTABLE_INDUSTRIES.map(i => (
                     <option key={i.value} value={i.value}>{i.label}</option>
                   ))}
                 </select>
@@ -586,7 +571,7 @@ export default function AddClientPage() {
                 >
                   {PLAN_TYPES.map(p => (
                     <option key={p.value} value={p.value}>
-                      {p.label} — ${(getPlanPrice(p.value) / 100).toFixed(0)}/mo
+                      {p.label} - ${(getPlanPrice(p.value) / 100).toFixed(0)}/mo
                     </option>
                   ))}
                 </select>
@@ -675,7 +660,7 @@ export default function AddClientPage() {
 
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
-                Website URL <span className="font-normal" style={{ color: mutedTextColor }}>(optional — used to build AI knowledge base)</span>
+                Website URL <span className="font-normal" style={{ color: mutedTextColor }}>(optional, used to build AI knowledge base)</span>
               </label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />

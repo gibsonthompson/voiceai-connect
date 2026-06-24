@@ -6,8 +6,7 @@ import {
   Bot, User, AlertCircle, Terminal, Code2, FlaskConical, Save,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, Building, Search, CircleDot,
   Radio, AlertTriangle, Undo2, Pencil, Sparkles, Building2, Package,
-  Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
-  UtensilsCrossed, Dumbbell, ShoppingBag, Car, X, Copy, Info,
+  Briefcase, X, Copy, Info,
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
   BookOpen, Plus, Trash2, Globe, HelpCircle, FileText
 } from 'lucide-react';
@@ -20,16 +19,12 @@ import AISettingsSection from '@/components/client/AISettingsSection';
 import DashboardAccessSelector from '@/components/agency/DashboardAccessSelector';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Wrench, Stethoscope, Scale, Home, Calculator, Briefcase,
-  UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag, Car, Building2,
-};
+import { INDUSTRY_ICON_MAP as ICON_MAP, INDUSTRIES } from '@/lib/industries';
 
 const MODEL_OPTIONS = [
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost — best for real-time voice conversations', tag: 'Default' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest model, better instruction following — same speed tier as 4o Mini', tag: 'Latest' },
-  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower — use for complex industries like legal or medical', tag: 'Premium' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost - best for real-time voice conversations', tag: 'Default' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest model, better instruction following - same speed tier as 4o Mini', tag: 'Latest' },
+  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower - use for complex industries like legal or medical', tag: 'Premium' },
 ];
 
 const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes.';
@@ -70,7 +65,7 @@ type CallState = 'idle' | 'connecting' | 'connected' | 'ended';
 function uid(): string { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
 
 function fmtPhone(phone: string | null): string {
-  if (!phone) return '—';
+  if (!phone) return '-';
   const d = phone.replace(/\D/g, '');
   const t = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
   if (t.length === 10) return `(${t.slice(0, 3)}) ${t.slice(3, 6)}-${t.slice(6)}`;
@@ -372,17 +367,9 @@ export default function AILabPage() {
   if (ctxLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
 
   if (!canUseAiLab) {
-    const PREVIEW_INDUSTRIES = [
-      { key: 'home_services', label: 'Home Services', desc: 'HVAC, plumbing, electrical, roofing', icon: 'Home' },
-      { key: 'medical', label: 'Medical & Dental', desc: 'Clinics, dental offices, specialists', icon: 'Stethoscope' },
-      { key: 'legal', label: 'Legal', desc: 'Law firms, attorneys, paralegals', icon: 'Scale' },
-      { key: 'salon', label: 'Salons & Spas', desc: 'Hair salons, barbershops, day spas', icon: 'Sparkles' },
-      { key: 'real_estate', label: 'Real Estate', desc: 'Agents, brokers, property management', icon: 'Building2' },
-      { key: 'automotive', label: 'Automotive', desc: 'Auto repair, dealerships, detailing', icon: 'Car' },
-      { key: 'restaurant', label: 'Restaurants', desc: 'Restaurants, catering, food service', icon: 'UtensilsCrossed' },
-      { key: 'fitness', label: 'Fitness & Wellness', desc: 'Gyms, yoga studios, personal training', icon: 'Dumbbell' },
-      { key: 'accounting', label: 'Accounting', desc: 'CPAs, bookkeepers, tax prep', icon: 'Calculator' },
-    ];
+    const PREVIEW_INDUSTRIES = INDUSTRIES
+      .filter(i => i.value !== 'general' && i.value !== 'other')
+      .map(i => ({ key: i.value, label: i.label, desc: i.description, icon: i.icon }));
     return (
       <LockedFeature title="AI Lab" description="Configure, test, and ship AI receptionists with industry templates, voice selection, and live browser calls." requiredPlan="Pro"
         features={['Industry-specific AI templates', 'Voice selection & live test calls', 'Knowledge base editor', 'System prompt customization']}>
@@ -444,7 +431,7 @@ export default function AILabPage() {
                 <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-2"><Pencil className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Configuration</span></div><div className="flex items-center gap-2">{configSaved && <span className="text-xs font-medium" style={{ color: '#22c55e' }}>Saved!</span>}{configError && <span className="text-xs" style={{ color: '#ef4444' }}>{configError}</span>}<button onClick={saveConfig} disabled={configSaving || !hasChanges} className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{configSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save Changes</button></div></div>
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div><label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Call Mode</label><select value={editCallMode} onChange={e => setEditCallMode(e.target.value as any)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}><option value="primary">Primary — AI answers all</option><option value="secondary">Secondary — Overflow only</option></select></div>
+                    <div><label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Call Mode</label><select value={editCallMode} onChange={e => setEditCallMode(e.target.value as any)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}><option value="primary">Primary - AI answers all</option><option value="secondary">Secondary - Overflow only</option></select></div>
                     <div><label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Model</label><select value={editModel} onChange={e => setEditModel(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle}>{MODEL_OPTIONS.map(m => <option key={m.id} value={m.id}>{m.name}{m.tag ? ` (${m.tag})` : ''}</option>)}{!MODEL_OPTIONS.find(m => m.id === editModel) && <option value={editModel}>{editModel}</option>}</select>{selectedModelObj && <p className="text-[10px] mt-1.5" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}</div>
                     <div><label className="block text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>Temperature: {editTemp}</label><input type="range" min="0" max="1" step="0.1" value={editTemp} onChange={e => setEditTemp(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[9px] mt-1" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div></div>
                   </div>

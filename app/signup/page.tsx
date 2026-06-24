@@ -10,6 +10,7 @@ import {
 import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
 import { useEmbedMessaging } from '@/lib/embed-messaging';
+import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 
 // ============================================================================
 // TYPES
@@ -124,7 +125,7 @@ function setFavicon(url: string) {
 // Build a same-origin URL while carrying forward the embed flag (and any
 // other query params the host attached when constructing the iframe src).
 // Always go through this helper before navigating between wizard steps in
-// embed mode — otherwise the parent iframe loses track and reloads without
+// embed mode - otherwise the parent iframe loses track and reloads without
 // embed styling on the next step.
 function buildNextUrl(path: string, isEmbed: boolean, extras?: Record<string, string>): string {
   const url = new URL(path, window.location.origin);
@@ -264,25 +265,6 @@ function ThemedSelect({
 }
 
 // ============================================================================
-// INDUSTRY OPTIONS
-// ============================================================================
-const INDUSTRY_OPTIONS = [
-  { value: 'general', label: 'General Business' },
-  { value: 'home_services', label: 'Home Services' },
-  { value: 'medical', label: 'Medical' },
-  { value: 'dental', label: 'Dental & Orthodontics' },
-  { value: 'legal', label: 'Legal Services' },
-  { value: 'real_estate', label: 'Real Estate' },
-  { value: 'financial', label: 'Financial Services' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'salon_spa', label: 'Salon / Spa' },
-  { value: 'automotive', label: 'Automotive' },
-  { value: 'fitness', label: 'Fitness / Gym' },
-  { value: 'retail', label: 'Retail / E-commerce' },
-  { value: 'other', label: 'Other' },
-];
-
-// ============================================================================
 // CLIENT SIGNUP FORM (for agency subdomains) - WITH INTERNATIONAL SUPPORT
 // ============================================================================
 function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolean }) {
@@ -325,7 +307,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   }, [agency, isEmbed]);
 
   // Fix: override globals.css dark body background to match page theme.
-  // Skip in embed mode — the host page is the visible background.
+  // Skip in embed mode - the host page is the visible background.
   useEffect(() => {
     if (isEmbed) {
       document.documentElement.style.backgroundColor = 'transparent';
@@ -377,16 +359,16 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
       return (
         <ThemedSelect label="Province" name="state" value={formData.state} onChange={handleChange} required isDark={isDark} primaryColor={primaryColor}>
           <option value="">Select province</option>
-          {CA_PROVINCES.map(p => (<option key={p.code} value={p.code}>{p.code} — {p.name}</option>))}
+          {CA_PROVINCES.map(p => (<option key={p.code} value={p.code}>{p.code} - {p.name}</option>))}
         </ThemedSelect>
       );
     }
     return <ThemedFormInput label="State / Region" name="state" placeholder="Region" value={formData.state} onChange={handleChange} required isDark={isDark} primaryColor={primaryColor} />;
   };
 
-  // ── Embed mode skips the fullscreen chrome (header, zoom, ambient blobs)
-  //    and renders just the form card. Padding is collapsed so the iframe
-  //    only needs to be as tall as the form itself.
+  // Embed mode skips the fullscreen chrome (header, zoom, ambient blobs)
+  // and renders just the form card. Padding is collapsed so the iframe
+  // only needs to be as tall as the form itself.
   const wrapperStyle: React.CSSProperties = isEmbed
     ? { backgroundColor: bgColor, color: textColor }
     : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
@@ -477,7 +459,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
               </div>
 
               <ThemedSelect label="Industry" name="industry" value={formData.industry} onChange={handleChange} isDark={isDark} primaryColor={primaryColor}>
-                {INDUSTRY_OPTIONS.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                {SELECTABLE_INDUSTRIES.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
               </ThemedSelect>
 
               {error && (
@@ -508,11 +490,11 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
 }
 
 // ============================================================================
-// AGENCY SIGNUP FORM — Country auto-detected, no selector shown
+// AGENCY SIGNUP FORM - Country auto-detected, no selector shown
 // ============================================================================
 function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
-  // Embed mode is unusual on platform domain — agencies typically sign up
-  // directly — but support it for consistency in case anyone embeds the
+  // Embed mode is unusual on platform domain - agencies typically sign up
+  // directly - but support it for consistency in case anyone embeds the
   // platform-side flow on a marketing partner site.
   useEmbedMessaging(isEmbed, 1);
 
@@ -741,7 +723,7 @@ function SignupContent() {
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
   // Set when an embed lookup explicitly fails (suspended/missing agency)
   // so we render a tasteful unavailable state instead of falling through
-  // to AgencySignupForm — which would be the wrong form entirely.
+  // to AgencySignupForm - which would be the wrong form entirely.
   const [embedError, setEmbedError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -752,11 +734,11 @@ function SignupContent() {
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-        // ── Path A: embed mode on the platform domain.
+        // Path A: embed mode on the platform domain.
         // No host-based agency context (we're on myvoiceaiconnect.com), so
         // look the agency up by UUID baked into the embed snippet. If the
         // agency lookup fails we set embedError instead of falling through
-        // to AgencySignupForm — the user is in an iframe expecting a
+        // to AgencySignupForm - the user is in an iframe expecting a
         // client signup form, not a "become an agency" form.
         if (platformDomains.includes(host) && isEmbed && agencyParam) {
           const res = await fetch(`${backendUrl}/api/agency/by-id?id=${encodeURIComponent(agencyParam)}`);
@@ -807,7 +789,7 @@ function SignupContent() {
   }
 
   // Embed-mode lookup failure: tasteful unavailable state inside the iframe.
-  // Plain text, no chrome — the host page provides the surrounding bg.
+  // Plain text, no chrome - the host page provides the surrounding bg.
   if (embedError) {
     return (
       <div className="flex items-center justify-center py-12 px-4 text-center">

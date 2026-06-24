@@ -12,38 +12,7 @@ import {
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
 import { getDemoClientDetail } from '../../demoData';
-
-const INDUSTRY_INTELLIGENCE: Record<string, { label: string; services: number; faqs: number; terms: number; features: string[]; }> = {
-  home_services: { label: 'Home Services', services: 47, faqs: 10, terms: 9, features: ['Emergency Triage', 'Seasonal Awareness', 'Urgency Detection'] },
-  medical: { label: 'Medical & Dental', services: 38, faqs: 11, terms: 8, features: ['HIPAA Compliant', 'Emergency Triage', 'Insurance Terminology'] },
-  professional_services: { label: 'Professional Services', services: 32, faqs: 8, terms: 7, features: ['Engagement Flow', 'NDA Awareness', 'Retainer Handling'] },
-  restaurants: { label: 'Restaurants', services: 12, faqs: 12, terms: 7, features: ['Allergen Awareness', 'Reservation Logic', 'Peak Hour Handling'] },
-  salon_spa: { label: 'Salon & Spa', services: 42, faqs: 11, terms: 6, features: ['Duration Estimates', 'Upsell Suggestions', 'Cancellation Policy'] },
-  retail: { label: 'Retail', services: 10, faqs: 11, terms: 5, features: ['Inventory Checks', 'Return Policy', 'Order Status Handling'] },
-  fitness: { label: 'Fitness', services: 28, faqs: 12, terms: 9, features: ['Trial Offers', 'Class Schedules', 'Membership Freeze'] },
-  legal: { label: 'Legal Services', services: 35, faqs: 8, terms: 10, features: ['Privilege Compliant', 'No Legal Advice', 'Intake Flow'] },
-  real_estate: { label: 'Real Estate', services: 24, faqs: 10, terms: 12, features: ['Buyer/Seller Routing', 'Seasonal Market', 'Mortgage Referrals'] },
-  financial: { label: 'Financial Services', services: 30, faqs: 10, terms: 10, features: ['Compliance Safe', 'Tax Season Aware', 'No Financial Advice'] },
-  automotive: { label: 'Automotive', services: 40, faqs: 12, terms: 10, features: ['Safety Priority', 'Maintenance Schedules', 'OEM/Aftermarket'] },
-};
-
-const INDUSTRY_KEY_MAP: Record<string, string> = {
-  'Home Services (plumbing, HVAC, contractors)': 'home_services', 'Medical/Dental': 'medical', 'Retail/E-commerce': 'retail', 'Professional Services (legal, accounting)': 'professional_services', 'Restaurants/Food Service': 'restaurants', 'Salon/Spa (hair, nails, skincare)': 'salon_spa', 'home_services': 'home_services', 'medical': 'medical', 'medical_dental': 'medical', 'retail': 'retail', 'professional_services': 'professional_services', 'restaurants': 'restaurants', 'restaurant': 'restaurants', 'salon_spa': 'salon_spa', 'beauty_wellness': 'salon_spa', 'fitness': 'fitness', 'legal': 'legal', 'real_estate': 'real_estate', 'financial_services': 'financial', 'financial': 'financial', 'automotive': 'automotive', 'general': 'professional_services', 'other': 'professional_services',
-};
-
-const INDUSTRY_OPTIONS = [
-  { value: 'home_services', label: 'Home Services (Plumbing, HVAC, Contractors)' },
-  { value: 'medical', label: 'Medical & Dental' },
-  { value: 'professional_services', label: 'Professional Services' },
-  { value: 'restaurants', label: 'Restaurants & Food Service' },
-  { value: 'salon_spa', label: 'Salon & Spa' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'fitness', label: 'Fitness' },
-  { value: 'legal', label: 'Legal Services' },
-  { value: 'real_estate', label: 'Real Estate' },
-  { value: 'financial', label: 'Financial Services' },
-  { value: 'automotive', label: 'Automotive' },
-];
+import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/industries';
 
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
@@ -187,7 +156,7 @@ export default function AgencyClientDetailPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
 
-  // ── FIX: Derive dark mode for colorScheme on native <select> popups ──
+  // FIX: Derive dark mode for colorScheme on native <select> popups
   const isDark = agency?.website_theme !== 'light';
 
   const [client, setClient] = useState<Client | null>(null);
@@ -216,13 +185,13 @@ export default function AgencyClientDetailPage() {
   const [industrySaved, setIndustrySaved] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  // ── Client login credentials (view + agency-initiated reset) ───────
+  // Client login credentials (view + agency-initiated reset)
   const [credPwVisible, setCredPwVisible] = useState(false);
   const [credResetting, setCredResetting] = useState(false);
   const [credError, setCredError] = useState<string | null>(null);
   const [credCopied, setCredCopied] = useState<'user' | 'pass' | 'url' | null>(null);
 
-  // ── Inline-editable fields in Business Details ─────────────────────
+  // Inline-editable fields in Business Details
   const [businessName, setBusinessName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [savingField, setSavingField] = useState<string | null>(null);
@@ -331,20 +300,20 @@ export default function AgencyClientDetailPage() {
     }
   };
 
-  const formatPhone = (phone: string) => { if (!phone) return '—'; const digits = phone.replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`; if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`; return phone; };
+  const formatPhone = (phone: string) => { if (!phone) return '-'; const digits = phone.replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`; if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`; return phone; };
   const getPlanLabel = (plan: string) => { switch (plan) { case 'starter': return 'Starter'; case 'pro': return 'Professional'; case 'growth': return 'Growth'; default: return plan || 'Starter'; } };
   const getPlanPrice = (planType: string) => { if (!agency) return 0; switch (planType) { case 'starter': return agency.price_starter || 9900; case 'pro': return agency.price_pro || 14900; case 'growth': return agency.price_growth || 29900; default: return 0; } };
   const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'suspended': case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
 
-  const industryKey = client?.industry ? (INDUSTRY_KEY_MAP[client.industry] || 'professional_services') : null;
-  const intelligence = industryKey ? INDUSTRY_INTELLIGENCE[industryKey] : null;
+  const industryEntry = client?.industry ? getIndustry(client.industry) : null;
+  const intelligence = industryEntry ? { label: industryEntry.label, ...industryEntry.intelligence } : null;
 
   if (contextLoading || loading) { return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>; }
   if (error || !client) { return (<div className="p-4 sm:p-6 lg:p-8"><Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link><div className="text-center py-20"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.errorBg }}><Building2 className="h-8 w-8" style={{ color: theme.errorText, opacity: 0.5 }} /></div><p className="mt-4 font-medium" style={{ color: theme.textMuted }}>{error || 'Client not found'}</p><Link href="/agency/clients" className="mt-4 inline-flex items-center gap-2 text-sm hover:opacity-80" style={{ color: theme.primary }}><ArrowLeft className="h-4 w-4" /> Return to clients</Link></div></div>); }
 
-  // ── Agency-specific client login URL (verified custom domain, else
-  //    {slug}.myvoiceaiconnect.com), matching the backend's agencyUrl logic.
-  //    Path /client/login is the white-labeled client login route. ──
+  // Agency-specific client login URL (verified custom domain, else
+  // {slug}.myvoiceaiconnect.com), matching the backend's agencyUrl logic.
+  // Path /client/login is the white-labeled client login route.
   const agencyHost: any = agency || {};
   const agencyBaseHost = agencyHost.marketing_domain && agencyHost.domain_verified
     ? agencyHost.marketing_domain
@@ -356,7 +325,7 @@ export default function AgencyClientDetailPage() {
   const callLimit = client.monthly_call_limit;
   const callPercent = callLimit ? Math.min(100, (callsUsed / callLimit) * 100) : 0;
 
-  // ── Reusable status indicator for the inline-editable rows ────────
+  // Reusable status indicator for the inline-editable rows
   const FieldStatus = ({ field }: { field: string }) => {
     if (savingField === field) return <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />;
     if (savedField === field) return <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />;
@@ -367,14 +336,14 @@ export default function AgencyClientDetailPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
 
-      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{client.subscription_status || client.status}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} — ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div></div></div></div></div>
+      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{client.subscription_status || client.status}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div></div></div></div></div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* AI Phone Number */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: theme.primary }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p></div>{client.vapi_phone_number && (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>)}</div></div></div>
 
-          {/* Business Details — Name & Phone inline-editable, matches Industry pattern */}
+          {/* Business Details - Name & Phone inline-editable, matches Industry pattern */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -383,7 +352,7 @@ export default function AgencyClientDetailPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Business Name — editable */}
+                {/* Business Name - editable */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
                     <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -407,7 +376,7 @@ export default function AgencyClientDetailPage() {
                   </div>
                 </div>
 
-                {/* Owner Phone — editable */}
+                {/* Owner Phone - editable */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
                     <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -448,12 +417,12 @@ export default function AgencyClientDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
-                      <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '—'}</p>
+                      <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '-'}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Industry — existing dropdown */}
+                {/* Industry - existing dropdown */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
                     <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -462,9 +431,9 @@ export default function AgencyClientDetailPage() {
                     <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Industry</p>
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
-                        <select value={industryValue || client.industry || ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }}>
+                        <select value={(industryValue || client.industry) ? normalizeIndustry(industryValue || client.industry) : ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }}>
                           <option value="">Select industry...</option>
-                          {INDUSTRY_OPTIONS.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                          {SELECTABLE_INDUSTRIES.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                         </select>
                         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: theme.textMuted }} />
                       </div>
@@ -475,7 +444,7 @@ export default function AgencyClientDetailPage() {
                   </div>
                 </div>
 
-                {/* Website — conditional read-only */}
+                {/* Website - conditional read-only */}
                 {client.business_website && (
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
@@ -492,7 +461,7 @@ export default function AgencyClientDetailPage() {
           </div>
 
           {/* AI Prompt */}
-          {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><Bot className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Receptionist Prompt</h2></div>{promptHasChanges && <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}>Unsaved changes</span>}</div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>This is the system prompt that controls how this client&apos;s AI receptionist behaves on calls. Changes take effect immediately on the next call.</p>{promptError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{promptError}</p></div>}{promptSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Prompt updated — changes are live on the next call.</p></div>}{promptLoading ? (<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>) : (<><textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={14} className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '200px' }} placeholder="Enter system prompt..." /><div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"><button onClick={handleResetPrompt} disabled={promptResetting || promptSaving} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{promptResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><button onClick={handleSavePrompt} disabled={promptSaving || promptResetting || !promptHasChanges} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{promptSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Prompt</>}</button></div></>)}</div></div>)}
+          {client.vapi_assistant_id && (<div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2"><Bot className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Receptionist Prompt</h2></div>{promptHasChanges && <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}>Unsaved changes</span>}</div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>This is the system prompt that controls how this client&apos;s AI receptionist behaves on calls. Changes take effect immediately on the next call.</p>{promptError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{promptError}</p></div>}{promptSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Prompt updated - changes are live on the next call.</p></div>}{promptLoading ? (<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>) : (<><textarea value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} rows={14} className="w-full rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '200px' }} placeholder="Enter system prompt..." /><div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"><button onClick={handleResetPrompt} disabled={promptResetting || promptSaving} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{promptResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><button onClick={handleSavePrompt} disabled={promptSaving || promptResetting || !promptHasChanges} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{promptSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Prompt</>}</button></div></>)}</div></div>)}
 
           {/* Recent Calls */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6 flex items-center justify-between"><div className="flex items-center gap-2"><PhoneCall className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Recent Calls</h2></div><Link href={`/agency/clients/${clientId}/calls`} className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80 transition-colors" style={{ color: theme.primary }}>View All<ChevronRight className="h-4 w-4" /></Link></div>{recentCalls.length === 0 ? (<div className="px-4 sm:px-6 pb-6 text-center py-8"><PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>) : (<div>{recentCalls.map((call) => (<Link key={call.id} href={`/agency/clients/${clientId}/calls/${call.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 transition-colors" style={{ borderTop: `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}><div className="flex items-center gap-3 min-w-0"><PhoneCall className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} /><div className="min-w-0"><p className="text-sm font-medium truncate">{call.customer_name || 'Unknown Caller'}</p><p className="text-xs" style={{ color: theme.textMuted }}>{call.service_requested || 'General inquiry'}</p></div></div><div className="flex items-center gap-3 flex-shrink-0"><span className="text-xs" style={{ color: theme.textMuted }}>{new Date(call.created_at).toLocaleDateString()}</span><ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} /></div></Link>))}</div>)}</div>
@@ -525,7 +494,7 @@ export default function AgencyClientDetailPage() {
               <div className="mb-3">
                 <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Username</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{client.login_email || client.email || '—'}</div>
+                  <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{client.login_email || client.email || '-'}</div>
                   <button onClick={() => copyCred(client.login_email || client.email || '', 'user')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'user' ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}</button>
                 </div>
               </div>
@@ -547,7 +516,7 @@ export default function AgencyClientDetailPage() {
             </div>
           </div>
 
-          {/* Client Users — read-only view of the client's additional dashboard logins */}
+          {/* Client Users - read-only view of the client's additional dashboard logins */}
           <ClientUsersCard clientId={clientId} theme={theme} backendUrl={backendUrl} />
 
           {/* Client Branding */}
@@ -582,7 +551,7 @@ export default function AgencyClientDetailPage() {
       </div>
 
       {/* Knowledge Base Modal */}
-      {kbModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={(e) => { if (e.target === e.currentTarget && !kbHasChanges) setKbModalOpen(false); }}><div className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}` }}><div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}><div><div className="flex items-center gap-2"><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /><h2 className="text-lg font-semibold">Knowledge Base</h2></div><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{client.business_name} — {intelligence?.label || 'Custom'}</p></div><div className="flex items-center gap-2">{!kbEditing && !kbLoading && <button onClick={() => setKbEditing(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text }}><Brain className="h-4 w-4" />Edit</button>}<button onClick={() => { if (kbHasChanges) { if (confirm('You have unsaved changes. Close anyway?')) { setKbModalOpen(false); setKbEditing(false); } } else { setKbModalOpen(false); setKbEditing(false); } }} className="flex items-center justify-center h-9 w-9 rounded-lg transition-colors" style={{ backgroundColor: theme.hover }}><X className="h-5 w-5" style={{ color: theme.textMuted }} /></button></div></div><div className="flex-1 overflow-y-auto p-6">{kbError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{kbError}</p></div>}{kbSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Knowledge base updated — changes are live on the next call.</p></div>}{kbLoading ? (<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>) : kbEditing ? (<textarea value={kbContent} onChange={(e) => setKbContent(e.target.value)} className="w-full h-full min-h-[50vh] rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />) : (<div className="rounded-xl px-5 py-4 text-sm font-mono whitespace-pre-wrap leading-relaxed overflow-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '50vh' }}>{kbContent || 'No knowledge base content found.'}</div>)}</div>{kbEditing && !kbLoading && (<div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleResetKb} disabled={kbResetting || kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{kbResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><div className="flex items-center gap-2"><button onClick={() => { setKbContent(kbOriginalContent); setKbEditing(false); }} disabled={kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>Cancel</button><button onClick={handleSaveKb} disabled={kbSaving || kbResetting || !kbHasChanges} className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{kbSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Changes</>}</button></div></div>)}</div></div>)}
+      {kbModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={(e) => { if (e.target === e.currentTarget && !kbHasChanges) setKbModalOpen(false); }}><div className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}` }}><div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}><div><div className="flex items-center gap-2"><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /><h2 className="text-lg font-semibold">Knowledge Base</h2></div><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{client.business_name} - {intelligence?.label || 'Custom'}</p></div><div className="flex items-center gap-2">{!kbEditing && !kbLoading && <button onClick={() => setKbEditing(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text }}><Brain className="h-4 w-4" />Edit</button>}<button onClick={() => { if (kbHasChanges) { if (confirm('You have unsaved changes. Close anyway?')) { setKbModalOpen(false); setKbEditing(false); } } else { setKbModalOpen(false); setKbEditing(false); } }} className="flex items-center justify-center h-9 w-9 rounded-lg transition-colors" style={{ backgroundColor: theme.hover }}><X className="h-5 w-5" style={{ color: theme.textMuted }} /></button></div></div><div className="flex-1 overflow-y-auto p-6">{kbError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{kbError}</p></div>}{kbSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Knowledge base updated - changes are live on the next call.</p></div>}{kbLoading ? (<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>) : kbEditing ? (<textarea value={kbContent} onChange={(e) => setKbContent(e.target.value)} className="w-full h-full min-h-[50vh] rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />) : (<div className="rounded-xl px-5 py-4 text-sm font-mono whitespace-pre-wrap leading-relaxed overflow-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '50vh' }}>{kbContent || 'No knowledge base content found.'}</div>)}</div>{kbEditing && !kbLoading && (<div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleResetKb} disabled={kbResetting || kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{kbResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><div className="flex items-center gap-2"><button onClick={() => { setKbContent(kbOriginalContent); setKbEditing(false); }} disabled={kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>Cancel</button><button onClick={handleSaveKb} disabled={kbSaving || kbResetting || !kbHasChanges} className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{kbSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Changes</>}</button></div></div>)}</div></div>)}
     </div>
   );
 }
