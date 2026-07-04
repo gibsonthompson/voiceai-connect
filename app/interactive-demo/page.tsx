@@ -886,6 +886,7 @@ interface TourStep {
   view: 'agency' | 'client';
   tab: string;
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  pin?: 'top';
   title: string;
   body: string;
 }
@@ -989,7 +990,9 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
     const tooltipH = Math.max(measuredH, 340);
     const gap = 12;
     const margin = 12;
-    const headerH = fw < 1024 ? 56 : 0;
+    // Both the mobile header and the desktop top bar are h-14 (56px), so always
+    // reserve that space to keep top-placed tooltips clear of the bar.
+    const headerH = 56;
     const spaceAbove = relRect.top; const spaceBelow = fh - relRect.bottom;
     const spaceRight = fw - relRect.right; const spaceLeft = relRect.left;
 
@@ -1005,15 +1008,18 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
     const style: React.CSSProperties = { position: 'absolute', maxWidth: maxW, zIndex: 60 };
     const clampX = (x: number) => Math.max(margin, Math.min(x, fw - maxW - margin));
     const clampY = (y: number) => Math.max(headerH + margin, Math.min(y, fh - tooltipH - margin));
+    // Pinned steps ignore the target and sit centered at the top of the frame.
+    if (step.pin === 'top') return { position: 'absolute', maxWidth: maxW, zIndex: 60, top: clampY(headerH + margin + dy), left: clampX((fw - maxW) / 2 + dx) };
     const visTop = Math.max(relRect.top, 0); const visBottom = Math.min(relRect.bottom, fh);
     const visMidY = (visTop + visBottom) / 2;
     const visMidX = Math.max(relRect.left, 0) + Math.min(relRect.width, fw) / 2;
 
+    // Drag offsets go inside the clamps so a dragged tooltip stays within the frame.
     switch (pos) {
-      case 'bottom': style.top = clampY(Math.min(relRect.bottom, fh - 56) + gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'top': style.top = clampY(Math.max(relRect.top, 56) - tooltipH - gap) + dy; style.left = clampX(visMidX - maxW / 2) + dx; break;
-      case 'right': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = Math.min(relRect.right + gap, fw - maxW - margin) + dx; break;
-      case 'left': style.top = clampY(visMidY - tooltipH / 2) + dy; style.left = clampX(relRect.left - maxW - gap) + dx; break;
+      case 'bottom': style.top = clampY(Math.min(relRect.bottom, fh - 56) + gap + dy); style.left = clampX(visMidX - maxW / 2 + dx); break;
+      case 'top': style.top = clampY(Math.max(relRect.top, 56) - tooltipH - gap + dy); style.left = clampX(visMidX - maxW / 2 + dx); break;
+      case 'right': style.top = clampY(visMidY - tooltipH / 2 + dy); style.left = clampX(Math.min(relRect.right + gap, fw - maxW - margin) + dx); break;
+      case 'left': style.top = clampY(visMidY - tooltipH / 2 + dy); style.left = clampX(relRect.left - maxW - gap + dx); break;
     }
     return style;
   };
@@ -1186,7 +1192,7 @@ export default function DemoPage() {
   const clientNav = [{ id: 'dashboard', label: 'Dashboard', icon: TrendingUp }, { id: 'calls', label: 'Calls', icon: PhoneCall }, { id: 'contacts', label: 'Contacts', icon: Users }, { id: 'ai-agent', label: 'AI Agent', icon: Bot }, { id: 'settings', label: 'Settings', icon: Settings }];
 
   const TOUR_STEPS = [
-    { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const,
+    { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const, pin: 'top' as const,
       title: 'Your monthly recurring revenue',
       body: 'Forty-seven local businesses paying $99/month each \u2014 $4,653 in MRR running on autopilot.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you scale, so this number compounds while costs don\u2019t.' },
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
