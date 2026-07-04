@@ -24,6 +24,16 @@ const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.N
 // and we write that cache below once the agency resolves. After the first
 // visit, the root blocking script and this loader both paint the correct color
 // with no flash. (First-ever install still relies on the manifest splash.)
+//
+// IMPORTANT: this reads localStorage, so it must NOT run in a useState
+// initializer. Doing that made the client's first paint diverge from the
+// server's ('dark' on the server where window is undefined, but 'light' on a
+// returning visitor to a light agency), which is a server/client hydration
+// mismatch and is what surfaced as the React #419 Suspense-boundary bail on
+// branded hosts. themeHint now starts at the constant the server also renders
+// ('dark') and is updated from cache in an effect, so the first render is
+// identical on both sides. The root blocking script still handles real flash
+// prevention.
 function getThemeHint(): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'dark';
   try { return localStorage.getItem('voiceai_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
@@ -31,14 +41,18 @@ function getThemeHint(): 'light' | 'dark' {
 
 function ClientLoginContent() {
   const searchParams = useSearchParams();
-  const signupSuccess = searchParams.get('signup') === 'success';
+  const signupSuccess = searchParams?.get('signup') === 'success';
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agency, setAgency] = useState<Agency | null>(null);
-  const [themeHint] = useState<'light' | 'dark'>(getThemeHint);
+  const [themeHint, setThemeHint] = useState<'light' | 'dark'>('dark');
   const [formData, setFormData] = useState({ email: '', password: '' });
+
+  // Read the cached theme AFTER mount so the server render ('dark') and the
+  // client's first render match. See getThemeHint comment above (#419 fix).
+  useEffect(() => { setThemeHint(getThemeHint()); }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');

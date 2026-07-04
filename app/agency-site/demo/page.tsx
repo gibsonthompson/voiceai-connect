@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AgencySupportWidget from '@/components/AgencySupportWidget';
 import '@/styles/marketing.css';
 
 // ============================================================================
@@ -153,6 +154,7 @@ export default function DemoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [callStarted, setCallStarted] = useState(false);
+  const [stickyVisible, setStickyVisible] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -187,6 +189,12 @@ export default function DemoPage() {
     document.documentElement.style.backgroundColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
     return () => { document.documentElement.style.backgroundColor = ''; };
   }, [agency]);
+
+  useEffect(() => {
+    const handleScroll = () => setStickyVisible(window.scrollY > 500);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (loading) {
     const t = getCachedTheme();
@@ -412,7 +420,7 @@ export default function DemoPage() {
                       <Icon size="1.5rem"><HeadphonesIcon /></Icon>
                       Try It Right Now
                     </h3>
-                    <a href={demoHref} onClick={() => setCallStarted(true)} className="cta-phone-large" style={{ color: pc }}>
+                    <a href={demoHref} onClick={() => setCallStarted(true)} className="cta-phone-large" style={{ color: pcLight ? '#1f2937' : pc }}>
                       <Icon size="1.5rem"><PhoneIcon /></Icon>
                       {demoPhone}
                     </a>
@@ -464,6 +472,24 @@ export default function DemoPage() {
           </div>
         </div>
       </footer>
+
+      {/* ── STICKY CTA — appears on scroll ── */}
+      <div className={`sticky-cta ${stickyVisible ? 'visible' : ''}`}>
+        <span className="sticky-cta-text">Ready to try {agency.name}?</span>
+        <div className="sticky-cta-actions">
+          <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
+        </div>
+      </div>
+
+      {/* ── SUPPORT WIDGET ── */}
+      <AgencySupportWidget
+        agencyName={agency.name}
+        agencyLogo={agency.logo_url}
+        primaryColor={pc}
+        supportEmail={agency.support_email}
+        isDark={isDark}
+        currencySymbol={cs}
+      />
     </div>
   );
 }
