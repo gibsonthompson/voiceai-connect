@@ -838,7 +838,7 @@ function AgencySettingsContent() {
             )}
 
             {activeTab === 'twilio' && (
-              <BYOTSettings agencyId={agency?.id || ''} backendUrl={backendUrl} theme={theme} />
+              <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || ''} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
             )}
 
             {activeTab === 'embed' && (
@@ -856,7 +856,7 @@ function AgencySettingsContent() {
             )}
 
             {activeTab === 'team' && (
-              <AgencyTeamTab agencyId={agency?.id || ''} backendUrl={backendUrl} theme={theme} />
+              <AgencyTeamTab agencyId={agency?.id || ''} theme={theme} />
             )}
 
             {activeTab === 'demo' && (
