@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code } from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { PLAN_NAMES, deriveAgencyTeamLimit, formatTeamLimit } from '@/lib/plan-limits';
@@ -140,6 +140,18 @@ function AgencySettingsContent() {
 
   const [feedbackMessage, setFeedbackMessage] = useState(''); const [sendingFeedback, setSendingFeedback] = useState(false); const [feedbackSent, setFeedbackSent] = useState(false); const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]); const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  // Change password (self-service, logged-in agency user). Posts to
+  // /api/auth/change-password, which reads the caller from the Bearer JWT and
+  // verifies currentPassword server-side before writing the new hash.
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const [embedCopied, setEmbedCopied] = useState(false);
   const [usageData, setUsageData] = useState<any>(null); const [usageLoading, setUsageLoading] = useState(false); const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [clientHeaderMode, setClientHeaderMode] = useState<'agency_name' | 'business_name'>('agency_name');
@@ -169,6 +181,50 @@ function AgencySettingsContent() {
   const fetchUsageData = async () => { if (!agency) return; setUsageLoading(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/usage`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) { const data = await response.json(); setUsageData(data.usage); } } catch (err) { console.error('Failed to fetch usage:', err); } finally { setUsageLoading(false); } };
   const handleUpgrade = async (targetPlan: string) => { if (!agency) return; setUpgradeLoading(targetPlan); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, plan: targetPlan }) }); const data = await response.json(); if (data.url) window.location.href = data.url; else setError(data.error || 'Failed to start upgrade'); } catch (err) { setError('Failed to connect to billing'); } finally { setUpgradeLoading(null); } };
   const handleSendFeedback = async () => { if (!agency || !feedbackMessage.trim()) return; setSendingFeedback(true); setFeedbackError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: feedbackMessage.trim() }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); } const data = await response.json(); setFeedbackSent(true); setFeedbackMessage(''); if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]); setTimeout(() => setFeedbackSent(false), 3000); } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); } finally { setSendingFeedback(false); } };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordChanged(false);
+
+    if (!currentPassword || !newPassword) {
+      setPasswordError('Enter your current and new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError('New password must be different from your current one.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to change password');
+
+      setPasswordChanged(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setTimeout(() => setPasswordChanged(false), 3000);
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
 
@@ -432,7 +488,93 @@ function AgencySettingsContent() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
 
-            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><ProFeatureGate isFreePlan={isFreePlan} theme={theme} description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted, saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/get-started</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></ProFeatureGate></div>)}
+            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><ProFeatureGate isFreePlan={isFreePlan} theme={theme} description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted, saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/get-started</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></ProFeatureGate>
+
+              {/* Change Password — self-service, available on every plan (account
+                  security, not a Pro feature, so it sits OUTSIDE ProFeatureGate).
+                  POST /api/auth/change-password reads the caller from the Bearer
+                  JWT and verifies currentPassword server-side, so this is safe
+                  from an unlocked screen. Backend minimum is 6 characters. */}
+              <div className="pt-4 sm:pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Lock className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h3 className="text-base sm:text-lg font-medium">Change Password</h3>
+                </div>
+                <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Update the password you use to sign in to your agency dashboard.</p>
+
+                {passwordError && (
+                  <div className="mb-4 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
+                    <p className="text-sm" style={{ color: theme.errorText }}>{passwordError}</p>
+                  </div>
+                )}
+                {passwordChanged && (
+                  <div className="mb-4 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <Check className="h-4 w-4" style={{ color: theme.primary }} />
+                    <p className="text-sm" style={{ color: theme.primary }}>Password changed.</p>
+                  </div>
+                )}
+
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPasswords ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        autoComplete="current-password"
+                        className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 pr-11 text-sm transition-colors"
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords(!showPasswords)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                        style={{ color: theme.textMuted }}
+                        aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
+                      >
+                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">New Password</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
+                      style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                    />
+                    <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>At least 6 characters.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Confirm New Password</label>
+                    <input
+                      type={showPasswords ? 'text' : 'password'}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
+                      style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
+                    className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                  >
+                    {changingPassword ? <><Loader2 className="h-4 w-4 animate-spin" />Changing...</> : <><Lock className="h-4 w-4" />Change Password</>}
+                  </button>
+                </div>
+              </div>
+            </div>)}
 
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
@@ -616,96 +758,153 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {activeTab === 'payments' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments.</p></div><div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-start justify-between gap-3 sm:gap-4"><div className="flex items-center gap-3 sm:gap-4"><div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" /></div><div className="min-w-0"><p className="font-medium text-sm sm:text-base">Stripe Connect</p><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{loadingStripeStatus ? 'Loading...' : stripeDisplay.label}</p></div></div>{stripeDisplay.status === 'active' && <Check className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />}{stripeDisplay.status === 'restricted' && <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-400 flex-shrink-0" />}</div>{(stripeStatus?.connected || agency?.stripe_account_id) && (<div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${theme.border}` }}><div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm"><div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}><span style={{ color: theme.textMuted }}>Charges</span>{stripeStatus?.charges_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}</div><div className="flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2" style={{ backgroundColor: theme.hover }}><span style={{ color: theme.textMuted }}>Payouts</span>{stripeStatus?.payouts_enabled ? <span className="flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-3 w-3" /> OK</span> : <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="h-3 w-3" /> No</span>}</div></div><p className="text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>ID: {agency?.stripe_account_id}</p>{stripeDisplay.status === 'restricted' && (<div className="rounded-lg p-2 sm:p-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><p className="text-xs sm:text-sm" style={{ color: theme.warningText }}>Complete setup to receive payments.</p></div>)}<div className="flex flex-wrap items-center gap-2 pt-2">{stripeDisplay.status === 'restricted' && (<button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Complete</button>)}<a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}><ExternalLink className="h-4 w-4" />Dashboard</a><button onClick={fetchStripeStatus} disabled={loadingStripeStatus} className={`inline-flex items-center justify-center rounded-xl p-2 transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }} title="Refresh"><RefreshCw className={`h-4 w-4 ${loadingStripeStatus ? 'animate-spin' : ''}`} /></button></div></div>)}{stripeDisplay.status === 'not_connected' && (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white transition-colors bg-[#635BFF] hover:bg-[#5851e6] disabled:opacity-50">{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Connect Stripe</button><p className="mt-2 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>You&apos;ll be redirected to Stripe.</p></div>)}</div>{(stripeStatus?.connected || agency?.stripe_account_id) && (<div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Disconnect Stripe</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You won&apos;t receive payments until reconnected.</p></div><button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button></div></div>)}</div>)}
-
-            {activeTab === 'billing' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div><div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><div className="flex items-start justify-between gap-4 mb-4"><div><p className="text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold capitalize mt-1">{PLAN_NAMES[agency?.plan_type as keyof typeof PLAN_NAMES] || 'Free'}</p></div><span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span></div>{isOnTrial && trialDaysLeft !== null && (<div className="rounded-lg p-3 mb-4" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><div className="flex items-center gap-2"><Receipt className="h-4 w-4" style={{ color: theme.infoText }} /><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days left in trial</p></div><p className="text-xs mt-1" style={{ color: theme.textMuted }}>{agency?.stripe_subscription_id ? `Your card will be charged on ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'}.` : `Subscribe before ${agency?.trial_ends_at ? new Date(agency.trial_ends_at).toLocaleDateString() : 'trial end'} to keep access.`}</p></div>)}<div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Platform Fee</p><p className="font-medium">{planPrice === 0 ? 'Free' : `$${planPrice}/mo`}</p></div><div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}><p className="text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium capitalize">{agency?.subscription_status || 'Unknown'}</p></div></div>{usageLoading ? (<div className="mt-4 pt-4 flex items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /><span className="text-sm" style={{ color: theme.textMuted }}>Loading usage...</span></div>) : usageData ? (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-3" style={{ color: theme.textMuted }}>Current Period Usage</p><div className="space-y-2"><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Billable clients</span><span className="font-medium">{usageData.billableClients ?? 0} × ${usageData.perClientRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm"><span style={{ color: theme.textMuted }}>Voice minutes</span><span className="font-medium">{usageData.totalMinutes ?? 0} × ${usageData.perMinuteRate ?? '0.00'}</span></div><div className="flex items-center justify-between text-sm pt-2" style={{ borderTop: `1px solid ${theme.border}` }}><span className="font-medium">Estimated total</span><span className="font-semibold" style={{ color: theme.primary }}>${((usageData.estimatedTotal ?? 0) / 100).toFixed(2)}/mo</span></div></div></div>) : null}{!isFreePlan && (<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription</button><p className="mt-2 text-xs" style={{ color: theme.textMuted }}>Update payment method, view invoices, or change plan.</p></div>)}</div>{(agency?.plan_type === 'free' || agency?.plan_type === 'starter') && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade your plan</p></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onClick={() => handleUpgrade('pro')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Pro, $99/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>White-label, marketing site, AI Lab, demo phone, $9.99/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'pro' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro →'}</div></button><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="rounded-xl p-4 text-left transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="font-semibold text-sm" style={{ color: theme.text }}>Scale, $499/mo</p><p className="text-xs mt-1" style={{ color: theme.textMuted }}>Everything in Pro, unlimited team, BYOT, $0/client</p><div className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.primary }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3 w-3 animate-spin" /> : null}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale →'}</div></button></div></div>)}{agency?.plan_type === 'pro' && (<div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}20` }}><div className="flex items-center gap-2 mb-2"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Upgrade to Scale</p></div><p className="text-xs mb-3" style={{ color: theme.textMuted }}>$499/mo, $0/client, $0.05/min, AI Lab, unlimited team</p><button onClick={() => handleUpgrade('scale')} disabled={!!upgradeLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'scale' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{upgradeLoading === 'scale' ? 'Redirecting...' : 'Upgrade to Scale'}</button></div>)}{isOnTrial && (<div className="rounded-xl p-4" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Cancel Trial</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>You&apos;ll lose access immediately and won&apos;t be charged.</p></div><button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel Trial</button></div></div>)}</div>)}
-
-            {activeTab === 'twilio' && (<div className="space-y-4 sm:space-y-6"><div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Globe className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>International Phone Numbers</p><p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Phone numbers for the US and Canada are provisioned automatically. Connect your own Twilio account for international numbers.</p></div></div><BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || 'starter'} subscriptionStatus={agency?.subscription_status || ''} theme={theme} /></div>)}
-
-            {activeTab === 'embed' && agency?.id && (() => {
-              const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-              const snippet = `<div data-voiceai-signup data-agency="${agency.id}"></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
-              const handleCopy = async () => { try { await navigator.clipboard.writeText(snippet); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); } catch (e) { console.error('Copy failed:', e); } };
-              return (
-                <div className="space-y-4 sm:space-y-6">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-medium mb-1">Embed Signup Widget</h3>
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Paste this snippet on your marketing site to let visitors sign up for your AI receptionist without leaving your page. The form auto-adopts your brand colors, theme, and pricing.</p>
-                  </div>
-
-                  <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <div>
-                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Where to paste it</p>
-                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Drop both lines anywhere in the HTML of your marketing site, typically inside a section where you want the form to appear. The widget will auto-resize to fit its content.</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-xs font-medium" style={{ color: theme.textMuted }}>Snippet</label>
-                      <button onClick={handleCopy} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors" style={{ backgroundColor: embedCopied ? theme.primary15 : theme.input, border: `1px solid ${embedCopied ? theme.primary30 : theme.inputBorder}`, color: embedCopied ? theme.primary : theme.text }}>
-                        {embedCopied ? <><Check className="h-3 w-3" />Copied</> : <><Code className="h-3 w-3" />Copy</>}
-                      </button>
-                    </div>
-                    <pre className="rounded-xl p-3 sm:p-4 text-xs overflow-x-auto font-mono leading-relaxed whitespace-pre" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{snippet}</pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-sm mb-3">Optional attributes</h4>
-                    <div className="space-y-2.5 text-xs sm:text-sm">
-                      <div className="flex items-start gap-3">
-                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-theme</code>
-                        <p style={{ color: theme.textMuted }}><span style={{ color: theme.text }}>{`"light"`}</span> or <span style={{ color: theme.text }}>{`"dark"`}</span>, overrides the agency&apos;s default theme for this widget.</p>
+            {activeTab === 'payments' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+                {loadingStripeStatus ? (
+                  <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>
+                ) : (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#635BFF' }}><CreditCard className="h-6 w-6 text-white" /></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
+                        <div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stripeDisplay.color }} /><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{stripeDisplay.label}</p></div>
                       </div>
-                      <div className="flex items-start gap-3">
-                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-default-plan</code>
-                        <p style={{ color: theme.textMuted }}><span style={{ color: theme.text }}>{`"starter"`}</span>, <span style={{ color: theme.text }}>{`"pro"`}</span>, or <span style={{ color: theme.text }}>{`"growth"`}</span>, pre-selects a plan on the pricing step.</p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <code className="rounded px-1.5 py-0.5 font-mono text-xs flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}>data-redirect-on-success</code>
-                        <p style={{ color: theme.textMuted }}>A URL to send the parent page to after the signup completes (e.g. a thank-you page).</p>
-                      </div>
+                      {stripeDisplay.status === 'active' ? (
+                        <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button>
+                      ) : (
+                        <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{stripeDisplay.status === 'restricted' ? 'Complete Setup' : 'Connect'}</button>
+                      )}
                     </div>
+                    {stripeDisplay.status === 'active' && (
+                      <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                        <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Charges</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
+                        <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Payouts</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
+                      </div>
+                    )}
                   </div>
+                )}
+                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
+              </div>
+            )}
 
-                  <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-                    <h4 className="font-medium text-sm mb-2">Analytics</h4>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>The widget pushes events to <code className="rounded px-1 py-0.5 font-mono text-xs" style={{ backgroundColor: theme.input, color: theme.text }}>window.dataLayer</code> if Google Tag Manager is on your page:</p>
-                    <ul className="space-y-1 text-xs font-mono" style={{ color: theme.textMuted }}>
-                      <li><span style={{ color: theme.text }}>voiceai_ready</span>, widget loaded</li>
-                      <li><span style={{ color: theme.text }}>voiceai_signup_step</span>, user advanced a step</li>
-                      <li><span style={{ color: theme.text }}>voiceai_signup_complete</span>, new client signed up</li>
-                      <li><span style={{ color: theme.text }}>voiceai_signup_error</span>, something went wrong</li>
-                    </ul>
+            {activeTab === 'billing' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div>
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold mt-1 capitalize">{PLAN_NAMES[agency?.plan_type || ''] || agency?.plan_type || 'Free'}</p></div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
+                  </div>
+                  {isOnTrial && trialDaysLeft !== null && (
+                    <div className="mt-4 rounded-lg px-3 py-2" style={{ backgroundColor: 'rgba(59,130,246,0.1)' }}><p className="text-xs sm:text-sm" style={{ color: '#3b82f6' }}>{trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} left in your trial</p></div>
+                  )}
+                  <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Price</p><p className="font-medium text-sm sm:text-base">${planPrice}/mo</p></div>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium text-sm sm:text-base capitalize">{agency?.subscription_status || 'Active'}</p></div>
                   </div>
                 </div>
-              );
-            })()}
 
-            {activeTab === 'team' && agency?.id && (
-              <ProFeatureGate
-                isFreePlan={isFreePlan}
-                theme={theme}
-                description="Stop being the bottleneck. Invite up to 3 agency team members on Pro, or unlimited on Scale. Each member gets their own login with granular page-level permissions and per-member notification preferences."
-              >
-                <AgencyTeamTab agencyId={agency.id} theme={theme} />
-              </ProFeatureGate>
+                {usageLoading ? (
+                  <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+                ) : usageData ? (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                    <p className="text-sm font-medium mb-3">Current Usage</p>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between text-xs sm:text-sm mb-1"><span style={{ color: theme.textMuted }}>Clients</span><span>{usageData.clients?.current ?? 0}{usageData.clients?.limit === -1 ? '' : ` / ${usageData.clients?.limit ?? 0}`}</span></div>
+                        {usageData.clients?.limit !== -1 && (<div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}><div className="h-full rounded-full" style={{ width: `${Math.min(100, ((usageData.clients?.current ?? 0) / (usageData.clients?.limit || 1)) * 100)}%`, backgroundColor: theme.primary }} /></div>)}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription</button>
+                  {(isOnTrial || agency?.subscription_status === 'active') && (
+                    <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel {isOnTrial ? 'Trial' : 'Subscription'}</button>
+                  )}
+                </div>
+
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="font-medium text-sm" style={{ color: theme.primary }}>Upgrade to Pro</p></div>
+                    <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Unlock white-label branding, custom domains, and full client customization.</p>
+                    <button onClick={() => handleUpgrade('pro')} disabled={upgradeLoading === 'pro'} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'pro' ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Upgrade to Pro</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'twilio' && (
+              <BYOTSettings agencyId={agency?.id || ''} backendUrl={backendUrl} theme={theme} />
+            )}
+
+            {activeTab === 'embed' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Embed Widget</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a signup widget to your existing website. Clients sign up without leaving your site.</p></div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Embed Code</label>
+                  <div className="relative">
+                    <pre className="rounded-xl p-3 sm:p-4 text-[10px] sm:text-xs overflow-x-auto" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{`<script src="https://${platformDomain}/embed.js" data-agency="${agency?.slug}"></script>`}</pre>
+                    <button onClick={() => { navigator.clipboard.writeText(`<script src="https://${platformDomain}/embed.js" data-agency="${agency?.slug}"></script>`); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); }} className="absolute top-2 right-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: embedCopied ? theme.primary : theme.text }}>{embedCopied ? <><Check className="h-3.5 w-3.5" />Copied</> : 'Copy'}</button>
+                  </div>
+                </div>
+                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Paste this snippet into your website&apos;s HTML, just before the closing body tag.</p></div>
+              </div>
+            )}
+
+            {activeTab === 'team' && (
+              <AgencyTeamTab agencyId={agency?.id || ''} backendUrl={backendUrl} theme={theme} />
             )}
 
             {activeTab === 'demo' && (
-              <ProFeatureGate
-                isFreePlan={isFreePlan}
-                theme={theme}
-                description="Sell with confidence. Demo Mode swaps your dashboard for a fully populated preview, 32 clients, $3,200 MRR, 2,417 calls, complete with call history, leads, analytics, and referrals. Perfect for sales calls, screen recordings, and referral pitches."
-              >
-                <div className="space-y-4 sm:space-y-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: demoMode ? theme.primary15 : theme.hover }}><Eye className="h-5 w-5" style={{ color: demoMode ? theme.primary : theme.textMuted }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data</p></div></div><button onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div><div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: demoMode ? `${theme.primary}10` : theme.hover, border: `1px solid ${demoMode ? theme.primary30 : theme.border}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: demoMode ? theme.primary : theme.textMuted }} /><span className="text-sm font-medium" style={{ color: demoMode ? theme.primary : theme.textMuted }}>{demoMode ? 'Demo mode is active, all pages show sample data' : 'Demo mode is off, showing your real data'}</span></div><div><h4 className="font-medium text-sm mb-3">What demo mode shows</h4><div className="space-y-2.5">{demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-3"><div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: theme.primary }} /><div><span className="text-sm font-medium">{f.label}</span><span className="text-sm ml-2" style={{ color: theme.textMuted }}>{f.desc}</span></div></div>))}</div></div><div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Display only</p><p className="text-sm" style={{ color: theme.textMuted }}>Demo mode only changes what you see. It doesn&apos;t affect your real data, clients, or billing.</p></div></div></div>
-              </ProFeatureGate>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3"><div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Eye className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data.</p></div></div>
+                  <button type="button" onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button>
+                </div>
+                {demoMode && (<div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Demo mode is active, all pages show sample data</span></div>)}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <p className="text-sm font-medium mb-3">What demo mode shows:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-2"><Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} /><div><p className="text-xs sm:text-sm font-medium">{f.label}</p><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>{f.desc}</p></div></div>))}
+                  </div>
+                </div>
+              </div>
             )}
 
-            {activeTab === 'feedback' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests, we read every message.</p></div>{feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent, thanks for sharing.</p></div>)}{feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}<div><textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><div className="flex items-center justify-between mt-2"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span><button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}</button></div></div>{loadingFeedback ? (<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>) : feedbackHistory.length > 0 ? (<div><h4 className="font-medium text-sm mb-3" style={{ color: theme.textMuted }}>Previous feedback</h4><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm whitespace-pre-wrap" style={{ color: theme.text }}>{item.message}</p><p className="text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p></div>))}</div></div>) : null}</div>)}
+            {activeTab === 'feedback' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests, we read every message.</p></div>
+                {feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}
+                {feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent, thank you!</p></div>)}
+                <div>
+                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span>
+                    <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? <><Loader2 className="h-4 w-4 animate-spin" />Sending...</> : <><Send className="h-4 w-4" />Send</>}</button>
+                  </div>
+                </div>
+                {loadingFeedback ? (
+                  <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+                ) : feedbackHistory.length > 0 ? (
+                  <div><p className="text-sm font-medium mb-3">Previous Feedback</p><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm">{item.message}</p><p className="text-[10px] sm:text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</p></div>))}</div></div>
+                ) : null}
+              </div>
+            )}
 
-            {(activeTab === 'profile' || activeTab === 'pricing') && (<div className="mt-6 sm:mt-8 pt-4 sm:pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}</button></div>)}
+            {/* Save button — profile & pricing tabs only. Password change,
+                cancel, feedback, Stripe, and demo toggle each have their own
+                action and do not go through handleSave. */}
+            {(activeTab === 'profile' || activeTab === 'pricing') && (
+              <div className="mt-6 pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -713,6 +912,10 @@ function AgencySettingsContent() {
   );
 }
 
-function SettingsLoading() { return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-emerald-500" /></div>); }
-
-export default function AgencySettingsPage() { return (<Suspense fallback={<SettingsLoading />}><AgencySettingsContent /></Suspense>); }
+export default function AgencySettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div>}>
+      <AgencySettingsContent />
+    </Suspense>
+  );
+}
