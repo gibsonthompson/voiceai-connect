@@ -794,7 +794,7 @@ function AgencySettingsContent() {
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div>
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-4">
-                    <div><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold mt-1 capitalize">{PLAN_NAMES[agency?.plan_type || ''] || agency?.plan_type || 'Free'}</p></div>
+                    <div><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold mt-1 capitalize">{PLAN_NAMES[(agency?.plan_type || '') as keyof typeof PLAN_NAMES] || agency?.plan_type || 'Free'}</p></div>
                     <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
                   </div>
                   {isOnTrial && trialDaysLeft !== null && (
