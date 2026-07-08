@@ -59,6 +59,9 @@ const DAY_LABELS: Record<string, string> = {
 
 // ============================================================================
 // INDUSTRY FAQ TEMPLATES — reduces blank-page paralysis
+// NOTE: keyed off client.industry with an exact-string match. If the stored
+// industry value is not one of these keys, the client falls back to
+// DEFAULT_FAQ_TEMPLATE below, so keep the default strong and generic.
 // ============================================================================
 const INDUSTRY_FAQ_TEMPLATES: Record<string, { q: string; a: string }[]> = {
   dental: [
@@ -112,10 +115,14 @@ const INDUSTRY_FAQ_TEMPLATES: Record<string, { q: string; a: string }[]> = {
     { q: 'Are you a fiduciary?', a: '' },
   ],
 };
+// Generic fallback. Hours are captured in step 1, so they are intentionally
+// not asked here. These are the highest-value questions a caller asks that
+// are not already collected elsewhere in onboarding.
 const DEFAULT_FAQ_TEMPLATE = [
-  { q: 'What are your hours?', a: '' },
-  { q: 'What services do you offer?', a: '' },
-  { q: 'How much do you charge?', a: '' },
+  { q: 'How much does it cost?', a: '' },
+  { q: 'What areas do you serve?', a: '' },
+  { q: 'How soon can you help me?', a: '' },
+  { q: 'What payment methods do you accept?', a: '' },
 ];
 
 // ============================================================================
@@ -211,6 +218,10 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── Step 1: Business Hours ──────────────────────────────────────────
   const [hours, setHours] = useState<BusinessHours>(DEFAULT_HOURS);
   const [hoursLoaded, setHoursLoaded] = useState(false);
+  // When true, one shared open/close range applies to every open day, so the
+  // user sets their hours once instead of 7 times. Auto-flipped off if
+  // existing data already has days with different ranges (see effect below).
+  const [sameHours, setSameHours] = useState(true);
 
   // ── Step 3: Knowledge Base ──────────────────────────────────────────
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -227,6 +238,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Voice previews speak the client's actual greeting (synthesized via
+  // /api/voice-preview) instead of the stock ElevenLabs sample. Cache the
+  // audio per voice+text for the session so re-tapping doesn't re-bill, and
+  // track which voice is mid-synthesis to show a spinner.
+  const previewCacheRef = useRef<Map<string, string>>(new Map());
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
 
   // ── Step 5 continued ─────────────────────────────────────────────────
   const [showAllVoices, setShowAllVoices] = useState(false);
@@ -245,13 +262,29 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
   // ── Cleanup audio on unmount ────────────────────────────────────────
   useEffect(() => {
-    return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } };
+    return () => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      previewCacheRef.current.forEach(url => { try { URL.revokeObjectURL(url); } catch {} });
+      previewCacheRef.current.clear();
+    };
   }, []);
 
   // ── Load existing data on mount ─────────────────────────────────────
   useEffect(() => { loadExistingHours(); }, []);
   useEffect(() => { loadExistingKB(); }, []);
   useEffect(() => { loadVoicesAndGreeting(); }, []);
+
+  // Once existing hours load, default the "same hours every day" toggle based
+  // on whether the open days already share one range. Fresh signups start
+  // uniform (true), imported/edited ones with varying days start expanded so
+  // nothing gets silently flattened.
+  useEffect(() => {
+    if (!hoursLoaded) return;
+    const open = DAY_NAMES.filter(d => !hours[d].closed);
+    if (open.length <= 1) { setSameHours(true); return; }
+    const first = hours[open[0]];
+    setSameHours(open.every(d => hours[d].open === first.open && hours[d].close === first.close));
+  }, [hoursLoaded]);
 
   // ====================================================================
   // DATA LOADING
@@ -517,17 +550,55 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // VOICE PLAYBACK
   // ====================================================================
 
-  const handlePlayVoice = (voice: VoiceOption) => {
-    if (playingVoiceId === voice.id && audioRef.current) {
-      audioRef.current.pause(); setPlayingVoiceId(null); return;
-    }
+  // Text the preview speaks: the greeting exactly as currently typed (so it
+  // reflects unsaved edits), falling back to a generic line if it's basically
+  // empty. Mirrors the AI Agent page so both previews sound identical.
+  const buildPreviewText = (): string => {
+    const g = greeting.trim();
+    if (g.length >= 5) return g.slice(0, 500);
+    const bn = client?.business_name || 'our office';
+    return `Hi, thanks for calling ${bn}. How can I help you today?`;
+  };
+
+  const playFromUrl = (voiceId: string, url: string) => {
     if (audioRef.current) audioRef.current.pause();
-    const audio = new Audio(voice.previewUrl);
+    const audio = new Audio(url);
     audioRef.current = audio;
     audio.onended = () => setPlayingVoiceId(null);
     audio.onerror = () => setPlayingVoiceId(null);
-    audio.play();
-    setPlayingVoiceId(voice.id);
+    audio.play().catch(() => setPlayingVoiceId(null));
+    setPlayingVoiceId(voiceId);
+  };
+
+  const handlePlayVoice = async (voice: VoiceOption) => {
+    // Tapping the playing voice again stops it.
+    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+
+    const text = buildPreviewText();
+    const cacheKey = `${voice.id}::${text}`;
+    const cachedUrl = previewCacheRef.current.get(cacheKey);
+    if (cachedUrl) { playFromUrl(voice.id, cachedUrl); return; }
+
+    setPreviewLoadingId(voice.id);
+    try {
+      const r = await fetch(`/api/voice-preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: voice.id, text }),
+      });
+      if (!r.ok) throw new Error('preview failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      previewCacheRef.current.set(cacheKey, url);
+      setPreviewLoadingId(null);
+      playFromUrl(voice.id, url);
+    } catch {
+      // Fall back to the stock ElevenLabs sample so the button still does
+      // something (e.g. before the preview route/key is configured).
+      setPreviewLoadingId(null);
+      if (voice.previewUrl) playFromUrl(voice.id, voice.previewUrl);
+    }
   };
 
   // ====================================================================
@@ -590,13 +661,54 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   );
 
   // ── STEP 1: BUSINESS HOURS ──────────────────────────────────────────
+  // Redesigned for speed: presets set the whole week in one tap, day pills
+  // toggle open/closed, and a "same hours every day" switch collapses the 14
+  // time selectors down to a single shared range. Only businesses with
+  // varying hours ever expand to per-day rows. The underlying `hours` state
+  // keeps its original {open, close, closed} shape so saveHours,
+  // formatHoursJSON, and parseHoursFromText are untouched.
   const renderHours = () => {
-    const applyWeekdays = () => {
-      const mon = hours.monday;
-      setHours(prev => ({
-        ...prev,
-        tuesday: { ...mon }, wednesday: { ...mon }, thursday: { ...mon }, friday: { ...mon },
-      }));
+    const openDays = DAY_NAMES.filter(d => !hours[d].closed);
+    const shared = openDays.length ? hours[openDays[0]] : { open: '9:00 AM', close: '5:00 PM' };
+
+    // Toggle a day open/closed. Reopening inherits the current shared range so
+    // a newly added day starts consistent with the rest of the week.
+    const toggleDay = (day: string) => {
+      setHours(prev => {
+        if (!prev[day].closed) return { ...prev, [day]: { ...prev[day], closed: true } };
+        return { ...prev, [day]: { open: shared.open, close: shared.close, closed: false } };
+      });
+    };
+
+    // Same-hours mode: write one value to every open day at once.
+    const setSharedTime = (field: 'open' | 'close', value: string) => {
+      setHours(prev => {
+        const next: BusinessHours = { ...prev };
+        DAY_NAMES.forEach(d => { if (!next[d].closed) next[d] = { ...next[d], [field]: value }; });
+        return next;
+      });
+    };
+
+    // Per-day mode: write to a single day.
+    const setDayTime = (day: string, field: 'open' | 'close', value: string) => {
+      setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
+    };
+
+    const applyPreset = (preset: 'weekdays' | 'everyday') => {
+      const nine = () => ({ open: '9:00 AM', close: '5:00 PM', closed: false });
+      if (preset === 'weekdays') {
+        setHours({
+          monday: nine(), tuesday: nine(), wednesday: nine(), thursday: nine(), friday: nine(),
+          saturday: { open: '9:00 AM', close: '5:00 PM', closed: true },
+          sunday: { open: '9:00 AM', close: '5:00 PM', closed: true },
+        });
+      } else {
+        setHours({
+          monday: nine(), tuesday: nine(), wednesday: nine(), thursday: nine(),
+          friday: nine(), saturday: nine(), sunday: nine(),
+        });
+      }
+      setSameHours(true);
     };
 
     return (
@@ -605,45 +717,104 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           When are you open?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
-          Your AI uses this to know when to take messages vs offer appointments.
+          Tap the days you are open, then set your hours. Your AI uses this to tell callers when you are open.
         </p>
 
-        <div className="space-y-2 mb-4">
-          {DAY_NAMES.map(day => (
-            <div key={day} className="flex items-center gap-2 p-2.5 rounded-xl ob-fu" style={glass}>
-              <span className="w-10 text-xs font-semibold" style={{ color: theme.textMuted }}>
-                {DAY_LABELS[day]}
-              </span>
-              <label className="flex items-center gap-1.5 flex-shrink-0">
-                <input type="checkbox" checked={hours[day].closed}
-                  onChange={e => setHours(prev => ({ ...prev, [day]: { ...prev[day], closed: e.target.checked } }))}
-                  className="w-3.5 h-3.5 rounded" />
-                <span className="text-[11px]" style={{ color: theme.textMuted }}>Closed</span>
-              </label>
-              {!hours[day].closed && (
-                <div className="flex items-center gap-1.5 ml-auto">
-                  <select value={hours[day].open}
-                    onChange={e => setHours(prev => ({ ...prev, [day]: { ...prev[day], open: e.target.value } }))}
-                    className="px-2 py-1.5 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <span className="text-[10px]" style={{ color: theme.textMuted }}>–</span>
-                  <select value={hours[day].close}
-                    onChange={e => setHours(prev => ({ ...prev, [day]: { ...prev[day], close: e.target.value } }))}
-                    className="px-2 py-1.5 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
+        {/* Presets — one tap fills a typical week */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { key: 'weekdays' as const, label: 'Weekdays 9 to 5' },
+            { key: 'everyday' as const, label: 'Every day 9 to 5' },
+          ].map(p => (
+            <button key={p.key} onClick={() => applyPreset(p.key)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition hover:scale-[1.02] active:scale-[0.98]"
+              style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04) }}>
+              {p.label}
+            </button>
           ))}
         </div>
 
-        <button onClick={applyWeekdays}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg transition"
-          style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04) }}>
-          Apply Monday&apos;s hours to all weekdays
-        </button>
+        {/* Day pills — visual open/closed toggle */}
+        <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: theme.textMuted }}>
+          Days open
+        </label>
+        <div className="flex gap-1.5 mb-6">
+          {DAY_NAMES.map(day => {
+            const open = !hours[day].closed;
+            return (
+              <button key={day} onClick={() => toggleDay(day)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-[1.03] active:scale-[0.97]"
+                style={open
+                  ? { backgroundColor: theme.primary, color: theme.primaryText }
+                  : { ...glass, color: theme.textMuted }}>
+                {DAY_LABELS[day].slice(0, 2)}
+              </button>
+            );
+          })}
+        </div>
+
+        {openDays.length === 0 ? (
+          <div className="rounded-xl p-4 text-center text-sm ob-fi" style={{ ...glass, color: theme.textMuted }}>
+            Select the days you are open above to set your hours.
+          </div>
+        ) : (
+          <>
+            {/* Same hours every day switch */}
+            <div className="flex items-center justify-between p-3 rounded-xl mb-3" style={glass}>
+              <div>
+                <p className="text-sm font-medium" style={{ color: theme.text }}>Same hours every day</p>
+                <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                  {sameHours ? 'One range for all open days' : 'Set each day individually'}
+                </p>
+              </div>
+              <button onClick={() => setSameHours(v => !v)}
+                className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                style={{ backgroundColor: sameHours ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.12)' : '#d1d5db') }}
+                aria-pressed={sameHours} aria-label="Same hours every day">
+                <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform"
+                  style={{ transform: sameHours ? 'translateX(20px)' : 'translateX(0)' }} />
+              </button>
+            </div>
+
+            {sameHours ? (
+              <div className="flex items-center gap-2 p-3 rounded-xl ob-fi" style={glass}>
+                <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>Hours</span>
+                <div className="flex items-center gap-2 ml-auto">
+                  <select value={shared.open} onChange={e => setSharedTime('open', e.target.value)}
+                    className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
+                  <select value={shared.close} onChange={e => setSharedTime('close', e.target.value)}
+                    className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 ob-fi">
+                {openDays.map(day => (
+                  <div key={day} className="flex items-center gap-2 p-2.5 rounded-xl" style={glass}>
+                    <span className="w-10 text-xs font-semibold flex-shrink-0" style={{ color: theme.text }}>
+                      {DAY_LABELS[day]}
+                    </span>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <select value={hours[day].open} onChange={e => setDayTime(day, 'open', e.target.value)}
+                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
+                      <select value={hours[day].close} onChange={e => setDayTime(day, 'close', e.target.value)}
+                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   };
@@ -773,9 +944,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         </p>
 
         {/* Voice Selection */}
-        <label className="text-xs font-semibold uppercase tracking-wider mb-3 block" style={{ color: theme.textMuted }}>
+        <label className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: theme.textMuted }}>
           Voice
         </label>
+        <p className="text-[11px] mb-3" style={{ color: theme.textMuted }}>
+          Tap play to hear each voice read your greeting.
+        </p>
         {!voicesLoaded ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted }} />
@@ -796,10 +970,11 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                     }}>
                     <div className="flex items-start gap-2">
                       <button onClick={e => { e.stopPropagation(); handlePlayVoice(voice); }}
+                        disabled={previewLoadingId === voice.id}
                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition"
                         style={{ backgroundColor: playing ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'),
                           color: playing ? theme.primaryText : theme.textMuted }}>
-                        {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                        {previewLoadingId === voice.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
@@ -905,21 +1080,8 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           </div>
         )}
 
-        {/* Forwarding */}
-        <div className="rounded-xl p-4 mb-6 text-left ob-fu ob-d2" style={glass}>
-          <p className="text-xs font-semibold mb-2" style={{ color: theme.text }}>Forward your business calls</p>
-          <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
-            From your office phone, dial{' '}
-            <span className="font-mono font-semibold px-1.5 py-0.5 rounded text-[11px]"
-              style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text }}>
-              *72
-            </span>
-            {' '}followed by your AI number. All calls will now be answered by your AI receptionist.
-          </p>
-        </div>
-
         {/* Setup summary */}
-        <div className="rounded-xl p-4 mb-6 text-left ob-fu ob-d3" style={glass}>
+        <div className="rounded-xl p-4 mb-6 text-left ob-fu ob-d2" style={glass}>
           <p className="text-xs font-semibold mb-3" style={{ color: theme.text }}>Setup Summary</p>
           <div className="space-y-2">
             {setupItems.map(item => (
@@ -948,7 +1110,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
         {/* Complete */}
         <button onClick={completeOnboarding} disabled={saving}
-          className="w-full py-4 rounded-2xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 ob-fu ob-d4"
+          className="w-full py-4 rounded-2xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 ob-fu ob-d3"
           style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
           {saving ? 'Finishing...' : 'Go to Dashboard'}
