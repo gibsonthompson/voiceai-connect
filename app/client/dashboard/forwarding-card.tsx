@@ -7,6 +7,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 
 type Carrier = 'verizon' | 'gsm' | 'other';
 type Mode = 'all' | 'missed';
+type Handoff = 'my_number' | 'other_number' | 'message';
 
 function digitsFor(phone: string): string {
   const d = (phone || '').replace(/\D/g, '');
@@ -20,6 +21,17 @@ function formatPhoneNumber(phone: string): string {
   if (d.length === 11 && d.startsWith('1')) return `(${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 11)}`;
   if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
   return phone;
+}
+
+// Progressive formatter for the "different number" input. Keeps the last 10 US
+// digits (drops a leading 1 for display) and formats as the user types.
+function formatAsTyped(value: string): string {
+  const d = value.replace(/\D/g, '').slice(0, 11);
+  const local = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+  const p = local.slice(0, 10);
+  if (p.length <= 3) return p;
+  if (p.length <= 6) return `(${p.slice(0, 3)}) ${p.slice(3)}`;
+  return `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}`;
 }
 
 interface CallForwardingCardProps {
@@ -65,6 +77,10 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   const [saving, setSaving] = useState(false);
   const [carrier, setCarrier] = useState<Carrier | null>(null);
   const [mode, setMode] = useState<Mode>('all');
+  const [handoffChoice, setHandoffChoice] = useState<Handoff>('my_number');
+  const [transferInput, setTransferInput] = useState('');
+  const [handoffSaving, setHandoffSaving] = useState(false);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
 
   useEffect(() => {
     setConfirmed(!!client?.forwarding_confirmed);
@@ -103,12 +119,43 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     setMode(nextMode);
   }, [client?.id, client?.forwarding_carrier, client?.forwarding_mode]);
 
+  // Load the saved "needs a person" choice from the client record (the source of
+  // truth). Message wins, then an explicit different number, otherwise the
+  // default of the owner's own number. Keyed on the two relevant fields so an
+  // unrelated refresh (like a carrier change) never resets a choice in progress.
+  useEffect(() => {
+    if (!client?.id) return;
+    const ext = client as typeof client & {
+      human_handoff?: 'transfer' | 'message' | null;
+      transfer_phone?: string | null;
+    };
+    if (ext.human_handoff === 'message') {
+      setHandoffChoice('message');
+    } else if (ext.transfer_phone) {
+      setHandoffChoice('other_number');
+      setTransferInput(formatPhoneNumber(ext.transfer_phone));
+    } else {
+      setHandoffChoice('my_number');
+    }
+  }, [
+    client?.id,
+    (client as typeof client & { human_handoff?: string | null })?.human_handoff,
+    (client as typeof client & { transfer_phone?: string | null })?.transfer_phone,
+  ]);
+
   if (!client || !client.vapi_phone_number) return null;
 
   const formatted = formatPhoneNumber(client.vapi_phone_number);
   const digits = digitsFor(client.vapi_phone_number);
   const telTest = `tel:${digits}`;
   const isMissed = mode === 'missed';
+
+  // Where "My number" transfers to. Confirmed present on the loaded client row
+  // (getClientByVapiPhoneNumber selects *). Cast keeps this compiling whether or
+  // not owner_phone is on the Client type yet.
+  const ownerPhoneRaw =
+    (client as typeof client & { owner_phone?: string | null }).owner_phone || '';
+  const ownerFormatted = ownerPhoneRaw ? formatPhoneNumber(ownerPhoneRaw) : '';
 
   // Per-carrier, per-mode codes (verified June 2026)
   const vzCode = isMissed ? `*71${digits}` : `*72${digits}`;   // Verizon / US Cellular, dialable
@@ -140,6 +187,71 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     } catch (e) {
       console.error('Failed to persist forwarding choice:', e);
     }
+  }
+
+  // "When a caller needs a person" persistence. Writes human_handoff and
+  // transfer_phone through the same forwarding endpoint (partial update), and
+  // surfaces validation errors inline (the backend 400s on a bad number).
+  async function saveHandoff(body: Record<string, unknown>): Promise<boolean> {
+    setHandoffError(null);
+    setHandoffSaving(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/client/${client!.id}/forwarding`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        let msg = 'Could not save that. Please try again.';
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+          else if (data?.message) msg = data.message;
+        } catch {}
+        setHandoffError(msg);
+        return false;
+      }
+      await refreshClient();
+      return true;
+    } catch (e) {
+      console.error('Failed to save handoff choice:', e);
+      setHandoffError('Something went wrong. Please try again.');
+      return false;
+    } finally {
+      setHandoffSaving(false);
+    }
+  }
+
+  function chooseMyNumber() {
+    setHandoffChoice('my_number');
+    setHandoffError(null);
+    // null clears transfer_phone so the config builder falls back to owner_phone.
+    saveHandoff({ human_handoff: 'transfer', transfer_phone: null });
+  }
+
+  function chooseOtherNumber() {
+    // Reveal the input. Nothing persists until a valid number is entered and saved.
+    setHandoffChoice('other_number');
+    setHandoffError(null);
+  }
+
+  function chooseTakeMessage() {
+    setHandoffChoice('message');
+    setHandoffError(null);
+    // Leave transfer_phone as-is; it is ignored in message mode.
+    saveHandoff({ human_handoff: 'message' });
+  }
+
+  async function saveOtherNumber() {
+    const raw = transferInput.replace(/\D/g, '');
+    const valid = raw.length === 10 || (raw.length === 11 && raw.startsWith('1'));
+    if (!valid) {
+      setHandoffError('Enter a 10 digit US phone number.');
+      return;
+    }
+    await saveHandoff({ human_handoff: 'transfer', transfer_phone: transferInput });
   }
 
   function chooseCarrier(c: Carrier | null) {
@@ -328,6 +440,83 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     </div>
   );
 
+  // "When a caller needs a person" choice. Only meaningful in "all" mode; in
+  // "missed" mode the config builder always takes a message (transferring would
+  // ring back to the line that just missed the call), so we show one line.
+  const handoffPicker = isMissed ? (
+    <div className="mt-4 rounded-xl px-4 py-3" style={{ backgroundColor: theme.hover }}>
+      <p className="text-[12px] sm:text-[13px] font-semibold mb-1" style={{ color: theme.text }}>When a caller needs a person</p>
+      <p className="text-[11px] sm:text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>
+        Calls you miss are answered by your AI, which takes a message. It will not transfer, since that would ring back to the line that just missed the call.
+      </p>
+    </div>
+  ) : (
+    <div className="mt-4">
+      <p className="text-[12px] sm:text-[13px] font-semibold mb-2" style={{ color: theme.text }}>When a caller needs a person</p>
+      <div className="space-y-2">
+        {/* My number (default) */}
+        <button onClick={chooseMyNumber} disabled={handoffSaving}
+          className="w-full text-left rounded-xl border-2 px-3.5 py-3 transition disabled:opacity-60"
+          style={{ borderColor: handoffChoice === 'my_number' ? theme.primary : theme.border, backgroundColor: handoffChoice === 'my_number' ? theme.primary15 : theme.card }}>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[13px] sm:text-sm" style={{ color: handoffChoice === 'my_number' ? theme.primary : theme.text }}>My number</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Default</span>
+          </div>
+          <p className="mt-1 text-[11px] sm:text-[12px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+            {ownerFormatted
+              ? `The AI offers to connect callers to you at ${ownerFormatted}.`
+              : 'The AI offers to connect callers to the number on your account.'}
+          </p>
+        </button>
+
+        {/* A different number */}
+        <button onClick={chooseOtherNumber} disabled={handoffSaving}
+          className="w-full text-left rounded-xl border-2 px-3.5 py-3 transition disabled:opacity-60"
+          style={{ borderColor: handoffChoice === 'other_number' ? theme.primary : theme.border, backgroundColor: handoffChoice === 'other_number' ? theme.primary15 : theme.card }}>
+          <span className="font-semibold text-[13px] sm:text-sm" style={{ color: handoffChoice === 'other_number' ? theme.primary : theme.text }}>A different number</span>
+          <p className="mt-1 text-[11px] sm:text-[12px] leading-relaxed" style={{ color: theme.textMuted4 }}>Send callers who need a person to another line, like an office phone or a colleague.</p>
+        </button>
+
+        {handoffChoice === 'other_number' && (
+          <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.hover }}>
+            <label className="block text-[11px] font-semibold mb-1.5" style={{ color: theme.text }}>Transfer calls to</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={transferInput}
+                onChange={(e) => { setTransferInput(formatAsTyped(e.target.value)); if (handoffError) setHandoffError(null); }}
+                placeholder="(555) 123-4567"
+                className="flex-1 min-w-0 rounded-lg px-3 py-2 text-[13px] sm:text-sm outline-none"
+                style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}
+              />
+              <button onClick={saveOtherNumber} disabled={handoffSaving}
+                className="flex-shrink-0 flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-[13px] font-semibold transition hover:opacity-90 disabled:opacity-60"
+                style={{ backgroundColor: theme.primary, color: theme.buttonText }}>
+                {handoffSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+              Use a line that is not forwarded to your AI, or calls will loop back to it.
+            </p>
+          </div>
+        )}
+
+        {/* Take a message */}
+        <button onClick={chooseTakeMessage} disabled={handoffSaving}
+          className="w-full text-left rounded-xl border-2 px-3.5 py-3 transition disabled:opacity-60"
+          style={{ borderColor: handoffChoice === 'message' ? theme.primary : theme.border, backgroundColor: handoffChoice === 'message' ? theme.primary15 : theme.card }}>
+          <span className="font-semibold text-[13px] sm:text-sm" style={{ color: handoffChoice === 'message' ? theme.primary : theme.text }}>Take a message</span>
+          <p className="mt-1 text-[11px] sm:text-[12px] leading-relaxed" style={{ color: theme.textMuted4 }}>The AI never transfers. It collects the caller&apos;s details and sends them to you.</p>
+        </button>
+
+        {handoffError && (
+          <p className="text-[12px] leading-relaxed" style={{ color: '#dc2626' }}>{handoffError}</p>
+        )}
+      </div>
+    </div>
+  );
+
   // ---------------------------------------------------------------------------
   // SETUP STATE: carrier chosen. Show the matching code + method for the mode.
   // ---------------------------------------------------------------------------
@@ -343,6 +532,9 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
 
       {/* Who answers first */}
       {modePicker}
+
+      {/* When a caller needs a person */}
+      {handoffPicker}
 
       {/* VERIZON / US CELLULAR: tap-to-dial (*72 all / *71 missed) */}
       {carrier === 'verizon' && (

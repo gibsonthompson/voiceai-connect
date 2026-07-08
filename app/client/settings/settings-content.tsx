@@ -67,27 +67,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  const [callMode, setCallMode] = useState<'primary' | 'fallback'>((client.call_mode as 'primary' | 'fallback') || 'primary');
-  const [ringTimeout, setRingTimeout] = useState(client.ring_timeout || 20);
-  const [callModeLoading, setCallModeLoading] = useState(true);
-  const [savingCallMode, setSavingCallMode] = useState(false);
-  const [callModeMessage, setCallModeMessage] = useState('');
-
   const [hipaaMode, setHipaaMode] = useState(client.hipaa_mode || false);
   const [savingHipaa, setSavingHipaa] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
 
-  const { user, client: ctxClient } = useClient();
+  const { user } = useClient();
   const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
-
-  // Loop guard: if the business line is forwarded to the AI number, the AI is
-  // already the first point of answer. Fallback (AI rings the owner back) would
-  // dial a number that may itself be forwarded to the AI, causing a call loop.
-  // So whenever forwarding is confirmed, Call Handling is locked to Primary.
-  // Fallback is only valid when NOT forwarding (the AI number is published directly).
-  const forwardingOn = !!((ctxClient as any)?.forwarding_confirmed ?? (client as any)?.forwarding_confirmed);
 
   // The signed-in user's own login, fetched from the token-scoped endpoint so
   // each person only ever sees their OWN credentials. visible_password is null
@@ -108,11 +95,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   }, [client.id, backendUrl]);
   const copyCred = async (text: string, which: 'user' | 'pass') => { try { await navigator.clipboard.writeText(text); setCredCopied(which); setTimeout(() => setCredCopied(null), 1500); } catch {} };
 
-  useEffect(() => { const fetchCallMode = async () => { try { const response = await fetch(`${backendUrl}/api/client/${client.id}/call-mode`); if (response.ok) { const data = await response.json(); setCallMode(data.call_mode || 'primary'); setRingTimeout(data.ring_timeout || 20); } } catch (err) { console.error('Failed to fetch call mode:', err); } finally { setCallModeLoading(false); } }; fetchCallMode(); }, [client.id, backendUrl]);
-
   const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
-
-  const handleCallModeChange = async (newMode: 'primary' | 'fallback') => { if (newMode === 'fallback' && forwardingOn) { setCallModeMessage('Turn off call forwarding first. With forwarding on, the AI answers first to avoid a calling loop.'); setTimeout(() => setCallModeMessage(''), 5000); return; } const currentOwnerPhone = client.owner_phone || ownerPhone; if (newMode === 'fallback' && !currentOwnerPhone) { setCallModeMessage('Please add your phone number in Contact Information first.'); setTimeout(() => setCallModeMessage(''), 4000); return; } setSavingCallMode(true); setCallModeMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/call-mode`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ call_mode: newMode, ring_timeout: ringTimeout }) }); const data = await response.json(); if (data.success) { setCallMode(newMode); setCallModeMessage(newMode === 'fallback' ? 'Fallback mode enabled! Calls will ring your phone first.' : 'Primary mode enabled! AI will answer all calls directly.'); setTimeout(() => setCallModeMessage(''), 4000); } else { setCallModeMessage(data.error || 'Failed to update call mode'); setTimeout(() => setCallModeMessage(''), 5000); } } catch (error) { setCallModeMessage('Error updating call mode'); setTimeout(() => setCallModeMessage(''), 5000); } finally { setSavingCallMode(false); } };
 
   const handleChangePassword = async () => { setPasswordMessage(''); if (!currentPassword) { setPasswordMessage('Current password is required'); return; } if (!newPassword || newPassword.length < 6) { setPasswordMessage('New password must be at least 6 characters'); return; } if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; } setChangingPassword(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ currentPassword, newPassword }) }); const data = await response.json(); if (data.success) { setPasswordMessage('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setTimeout(() => setPasswordMessage(''), 3000); } else { setPasswordMessage(data.error || 'Failed to change password'); } } catch (error) { setPasswordMessage('Error changing password'); } finally { setChangingPassword(false); } };
 
@@ -251,37 +234,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </section>
 
         {isOwner && (<>
-        {/* Call Handling Mode */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><PhoneForwarded className="w-4 h-4" style={{ color: theme.primary }} />Call Handling</h2>
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            {callModeMessage && (<div className="mb-3 p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(callModeMessage)}>{callModeMessage}</div>)}
-            {callModeLoading ? (
-              <div className="flex items-center justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Choose how incoming calls are handled</p>
-                <button onClick={() => handleCallModeChange('primary')} disabled={savingCallMode || callMode === 'primary'} className="w-full text-left p-3 sm:p-4 rounded-xl border-2 transition" style={{ borderColor: callMode === 'primary' ? theme.primary : theme.border, backgroundColor: callMode === 'primary' ? hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.04) : theme.card, opacity: savingCallMode ? 0.7 : 1 }}>
-                  <div className="flex items-start gap-3"><div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ borderColor: callMode === 'primary' ? theme.primary : theme.border }}>{callMode === 'primary' && (<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />)}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><PhoneIncoming className="w-3.5 h-3.5" style={{ color: callMode === 'primary' ? theme.primary : theme.textMuted4 }} /><span className="font-semibold text-xs sm:text-sm" style={{ color: callMode === 'primary' ? theme.primary : theme.text }}>Primary — AI Answers First</span></div><p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted4 }}>AI receptionist answers every call immediately. Best for businesses that want 24/7 coverage.</p></div></div>
-                </button>
-                <button onClick={() => handleCallModeChange('fallback')} disabled={savingCallMode || callMode === 'fallback' || forwardingOn} className="w-full text-left p-3 sm:p-4 rounded-xl border-2 transition" style={{ borderColor: callMode === 'fallback' ? theme.primary : theme.border, backgroundColor: callMode === 'fallback' ? hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.04) : theme.card, opacity: forwardingOn ? 0.55 : (savingCallMode ? 0.7 : 1), cursor: forwardingOn ? 'not-allowed' : 'pointer' }}>
-                  <div className="flex items-start gap-3"><div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ borderColor: callMode === 'fallback' ? theme.primary : theme.border }}>{callMode === 'fallback' && (<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary }} />)}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><PhoneForwarded className="w-3.5 h-3.5" style={{ color: callMode === 'fallback' ? theme.primary : theme.textMuted4 }} /><span className="font-semibold text-xs sm:text-sm" style={{ color: callMode === 'fallback' ? theme.primary : theme.text }}>Fallback — Rings You First</span>{forwardingOn && (<span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: theme.textMuted4 }}><Lock className="w-2.5 h-2.5" />Off</span>)}</div><p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted4 }}>{forwardingOn ? 'Unavailable while call forwarding is on. Forwarding already sends calls to your AI, so the AI answers first.' : 'Your phone rings first. If you don\u2019t answer, the AI picks up automatically.'}</p></div></div>
-                </button>
-                {forwardingOn && callMode === 'fallback' && (<div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.error }} /><p className="text-[10px] sm:text-xs" style={{ color: theme.errorText }}><span className="font-semibold">Conflict:</span> you have call forwarding on and your phone set to ring first. That can cause a calling loop. Tap &quot;AI Answers First&quot; above to fix it.</p></div>)}
-                {forwardingOn && callMode !== 'fallback' && (<div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}><Lock className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} /><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Your business line is forwarded to your AI number, so the AI answers first. To answer calls yourself first instead, use the &quot;I answer first&quot; option on the call forwarding card, not this setting.</p></div>)}
-                {callMode === 'fallback' && !forwardingOn && (<div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}><span className="font-semibold" style={{ color: theme.text }}>How it works:</span> The AI transfers to your phone ({client.owner_phone ? formatPhoneNumber(client.owner_phone) : 'not set'}). If you don&apos;t pick up, the AI takes over. Use this only if you publish your AI number directly, not if you forward your business line to it.</p></div>)}
-                {callMode === 'primary' && !client.owner_phone && (<div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} /><p className="text-[10px] sm:text-xs" style={{ color: theme.warningText }}>Add your phone number in Contact Information below to enable Fallback mode.</p></div>)}
-                {savingCallMode && (<div className="flex items-center justify-center gap-2 py-1"><Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: theme.primary }} /><span className="text-xs" style={{ color: theme.textMuted }}>Updating your AI assistant...</span></div>)}
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* Contact Information */}
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><User className="w-4 h-4" style={{ color: theme.primary }} />Contact Information</h2>
           <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>{callMode === 'fallback' ? 'Rings this number first in Fallback mode, and the owner SMS notifications are sent here. Team members get SMS on their own number, set under Users.' : 'Owner SMS notifications are sent here. Team members get SMS on their own number, set under Users.'}</p></div>
+            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Owner SMS notifications are sent here, and this is the default number the AI transfers to when a caller needs a person. Team members get SMS on their own number, set under Users.</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
             <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
           </div>
