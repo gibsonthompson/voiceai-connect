@@ -29,13 +29,15 @@ const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
 // by typing its URL when their toggles don't include it. Routes not listed
 // here (demo-phone, templates, branding, referrals) are plan-gated, not
 // permission-gated. /agency/settings is handled separately (settings OR
-// billing, since Billing is a sub-tab inside Settings).
+// billing, since Billing is a sub-tab inside Settings). /agency/payments is
+// gated under 'billing' since it exposes the agency's live Stripe balance.
 const PATH_PERMISSIONS: Record<string, string> = {
   '/agency/dashboard': 'dashboard',
   '/agency/clients': 'clients',
   '/agency/leads': 'leads',
   '/agency/outreach': 'outreach',
   '/agency/analytics': 'analytics',
+  '/agency/payments': 'billing',
   '/agency/marketing': 'marketing',
 };
 
@@ -84,6 +86,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
     { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
+    { href: '/agency/payments', label: 'Payments', icon: CreditCard, permissionKey: 'billing' },
     { href: '/agency/marketing', label: 'Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
     { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
