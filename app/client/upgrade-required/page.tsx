@@ -44,21 +44,7 @@ interface Agency {
   plan_growth_description?: string | null;
   plan_features?: Record<string, Record<string, boolean | number>> | null;
 }
-interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; }
-
-// Phase 1: formatPrice accepts currency. Falls back to USD. Uppercases the
-// code because Intl.NumberFormat requires the ISO 4217 form and the DB stores
-// lowercase ('usd', 'eur').
-function formatPrice(cents: number | undefined | null, currency?: string | null): string {
-  const value = cents ?? 0;
-  if (isNaN(value)) return '$--';
-  const code = (currency || 'USD').toUpperCase();
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 }).format(value / 100);
-  } catch {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
-  }
-}
+interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; stripe_connected_subscription_id?: string | null; }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
 
@@ -71,13 +57,21 @@ function ClientUpgradeContent() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Plan tile pending confirmation for an in-app plan change (active clients).
+  const [confirmPlan, setConfirmPlan] = useState<ClientPlanTile | null>(null);
+  // True while /api/client/change-plan is in flight for the confirmed plan.
+  const [changing, setChanging] = useState(false);
+
+  // An active client already has a live connected subscription, so selecting a
+  // plan here modifies that subscription (proration) rather than creating a new
+  // one. Everyone else (expired trial, canceled, no sub) goes to checkout.
+  const isActive =
+    client?.subscription_status === 'active' ||
+    !!client?.stripe_connected_subscription_id;
 
   const isDark = agency?.website_theme === 'dark';
   const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
-
-  // Phase 1: resolved currency used by every formatPrice call below.
-  const currencyCode = agency?.display_currency || agency?.currency || 'USD';
 
   // Phase 3: single source of truth for plan tiles. buildClientPlans handles
   // pricing defaults, the rebranded name/description, the call-limit display,
@@ -105,7 +99,7 @@ function ClientUpgradeContent() {
   useEffect(() => { fetchClientData(); }, []);
 
   useEffect(() => {
-    if (agency?.name) document.title = `${agency.name} — Upgrade Your Plan`;
+    if (agency?.name) document.title = `${agency.name} - ${isActive ? 'Change Your Plan' : 'Upgrade Your Plan'}`;
     if (agency?.logo_url) {
       const existingLinks = document.querySelectorAll("link[rel*='icon']");
       existingLinks.forEach(link => link.remove());
@@ -140,19 +134,13 @@ function ClientUpgradeContent() {
       const cd = await cr.json();
       const clientData: Client | undefined = cd.client || cd;
 
-      // ──────────────────────────────────────────────────────────────
-      // Phase 1: Active-subscription guard — frontend half.
-      // If the client already has an active sub (webhook fired, status flipped
-      // to 'active'), bounce them to the dashboard before rendering the plan
-      // tiles. Without this, a user who came back here after Stripe checkout
-      // (state lost, refresh, back-button) could pick a DIFFERENT plan and
-      // create a second sub. Backend has a matching 409 guard as a backstop.
-      // To change plans, they go through the billing portal from the dashboard.
-      // ──────────────────────────────────────────────────────────────
-      if (clientData?.subscription_status === 'active') {
-        window.location.href = '/client/dashboard';
-        return;
-      }
+      // Active clients are NOT bounced anymore. Previously an active sub sent
+      // the user to the dashboard to avoid creating a duplicate subscription on
+      // the checkout path. Now selecting a plan while active routes to
+      // /api/client/change-plan (see handleSelectPlan), which modifies the
+      // existing subscription in place, so there is no duplicate-sub risk and
+      // this page doubles as the in-app plan switcher. The backend 409 guard on
+      // checkout still stands as a backstop if state is stale.
 
       setClient(clientData || null);
       setAgency(cd.agency || (cd.client as any)?.agency);
@@ -162,7 +150,20 @@ function ClientUpgradeContent() {
 
   const handleSelectPlan = async (planTier: 'starter' | 'pro' | 'growth') => {
     if (!client) { setError('Account not loaded. Please refresh.'); return; }
-    setCheckoutLoading(planTier); setError(null);
+    setError(null);
+
+    // Active client: this is a plan CHANGE, not a new checkout. Open the
+    // confirm dialog for the selected tile; the actual swap runs in
+    // confirmChangePlan against /api/client/change-plan.
+    if (isActive) {
+      if (planTier === client.plan_type) return; // already on this plan
+      setConfirmPlan(plans.find(p => p.id === planTier) || null);
+      return;
+    }
+
+    // No live subscription (expired trial / canceled / never subscribed):
+    // create one via Stripe checkout.
+    setCheckoutLoading(planTier);
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -173,24 +174,13 @@ function ClientUpgradeContent() {
         let errData: any = {};
         try { errData = await r.json(); } catch {}
 
-        // ─────────────────────────────────────────────────────────────
-        // Phase 1: backend says we already have an active subscription.
-        // Open the billing portal so the user can change plans there
-        // instead of creating a duplicate sub.
-        // ─────────────────────────────────────────────────────────────
+        // Stale local state: the backend says a subscription is already active.
+        // The billing portal has no plan switch configured, so instead of that
+        // dead end, drop the user into the in-app change-plan confirm for the
+        // tile they picked.
         if (r.status === 409 && errData.error === 'active_subscription_exists') {
-          setError('You already have an active subscription. Opening your billing portal…');
-          const portalRes = await fetch(`${backendUrl}/api/client/portal`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_id: client.id }),
-          });
-          if (portalRes.ok) {
-            const portalData = await portalRes.json();
-            if (portalData.url) { window.location.href = portalData.url; return; }
-          }
-          setError("You already have an active subscription, but we couldn't open the billing portal. Please contact support.");
           setCheckoutLoading(null);
+          setConfirmPlan(plans.find(p => p.id === planTier) || null);
           return;
         }
 
@@ -199,6 +189,34 @@ function ClientUpgradeContent() {
 
       const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No checkout URL returned');
     } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
+  };
+
+  // Confirmed in-app plan change for an active subscription. The backend swaps
+  // the subscription item with proration and writes plan_type +
+  // monthly_call_limit together, so those never desync from Stripe. On success
+  // we send the client back to the dashboard.
+  const confirmChangePlan = async () => {
+    if (!client || !confirmPlan) return;
+    setChanging(true); setError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/change-plan`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: client.id, plan: confirmPlan.id }),
+      });
+      if (!r.ok) {
+        let errData: any = {};
+        try { errData = await r.json(); } catch {}
+        throw new Error(errData.error || 'Could not change your plan. Please contact support.');
+      }
+      window.location.href = '/client/dashboard?plan_changed=true';
+    } catch (err: any) {
+      setError(err.message || 'Could not change your plan. Please contact support.');
+      setChanging(false);
+      setConfirmPlan(null);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
@@ -216,7 +234,7 @@ function ClientUpgradeContent() {
           {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-4 object-contain" />}
           {expired && <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}><Clock className="h-4 w-4" /><span className="text-sm font-medium">Your trial has ended</span></div>}
           {canceled && <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}><AlertTriangle className="h-4 w-4" /><span className="text-sm font-medium">Checkout was canceled</span></div>}
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2" style={{ color: theme.text }}>{expired ? 'Choose a Plan to Continue' : 'Upgrade Your Plan'}</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2" style={{ color: theme.text }}>{expired ? 'Choose a Plan to Continue' : isActive ? 'Change Your Plan' : 'Upgrade Your Plan'}</h1>
           <p className="text-[15px]" style={{ color: theme.textMuted }}>Keep your AI receptionist answering calls 24/7</p>
         </div>
 
@@ -239,10 +257,11 @@ function ClientUpgradeContent() {
                 {plan.description && (
                   <p className="text-[12px] mb-3" style={{ color: theme.textMuted }}>{plan.description}</p>
                 )}
-                <div className="flex items-baseline justify-center gap-1 mt-2">
-                  <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price, currencyCode)}</span>
-                  <span className="text-sm" style={{ color: theme.textMuted4 }}>/mo</span>
-                </div>
+                {isActive && client?.plan_type === plan.id && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>
+                    <Check className="h-3 w-3" />Current plan
+                  </div>
+                )}
               </div>
 
               {/* Included features — sourced from buildClientPlans so it reflects
@@ -273,10 +292,14 @@ function ClientUpgradeContent() {
               )}
               {plan.excluded.length === 0 && <div className="mb-6" />}
 
-              <button onClick={() => handleSelectPlan(plan.id)} disabled={checkoutLoading !== null}
-                className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              <button onClick={() => handleSelectPlan(plan.id)} disabled={(isActive && client?.plan_type === plan.id) || checkoutLoading !== null || changing}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
                 style={{ backgroundColor: plan.popular ? primaryColor : 'transparent', color: plan.popular ? primaryText : primaryColor, border: plan.popular ? 'none' : `2px solid ${primaryColor}` }}>
-                {checkoutLoading === plan.id ? <><Loader2 className="h-4 w-4 animate-spin" />Processing...</> : <><Zap className="h-4 w-4" />Select {plan.name}</>}
+                {checkoutLoading === plan.id
+                  ? <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+                  : (isActive && client?.plan_type === plan.id)
+                    ? <>Current Plan</>
+                    : <><Zap className="h-4 w-4" />{isActive ? `Switch to ${plan.name}` : `Select ${plan.name}`}</>}
               </button>
             </div>
           ))}
@@ -292,6 +315,27 @@ function ClientUpgradeContent() {
 
         <div className="mt-8 text-center"><a href="/client/dashboard" className="text-sm hover:underline" style={{ color: theme.textMuted4 }}>← Back to Dashboard</a></div>
       </div>
+
+      {confirmPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!changing) setConfirmPlan(null); }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ ...glass, backgroundColor: isDark ? '#0c0c0c' : '#ffffff' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: theme.text }}>Switch to {confirmPlan.name}?</h3>
+            <p className="text-sm mb-5" style={{ color: theme.textMuted }}>Your plan changes right away and your AI receptionist keeps running. Your next invoice is adjusted automatically for the part of the cycle you have already used.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmPlan(null)} disabled={changing}
+                className="flex-1 py-2.5 rounded-xl font-medium text-sm disabled:opacity-50"
+                style={{ backgroundColor: 'transparent', color: theme.textSubtle, border: `1px solid ${theme.border}` }}>
+                Cancel
+              </button>
+              <button onClick={confirmChangePlan} disabled={changing}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ backgroundColor: primaryColor, color: primaryText }}>
+                {changing ? <><Loader2 className="h-4 w-4 animate-spin" />Switching...</> : <>Confirm switch</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

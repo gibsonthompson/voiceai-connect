@@ -40,6 +40,12 @@ interface Agency {
   plan_starter_description?: string | null;
   plan_pro_description?: string | null;
   plan_growth_description?: string | null;
+  // Trial billing. When require_card_for_trial is true AND Stripe charges are
+  // enabled, the client signup runs the card-required flow (a card is taken and
+  // auto-charged after the 7-day trial), so the consent checkbox must include
+  // the auto-renew disclosure. Both come from the public agency shape.
+  stripe_charges_enabled?: boolean;
+  require_card_for_trial?: boolean;
 }
 
 interface SignupData {
@@ -222,6 +228,10 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [redirecting, setRedirecting] = useState(false);
+  // Affirmative consent (required). Gates plan selection: the client must agree
+  // to Terms/Privacy + SMS consent, and for card-required trials to the
+  // auto-renew disclosure, before any signup POST fires.
+  const [consentAgreed, setConsentAgreed] = useState(false);
   
   const isMountedRef = React.useRef(true);
   
@@ -244,6 +254,18 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const cardBg = isDark ? '#0a0a0a' : '#ffffff';
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+
+  // Card-required trial => the auto-renew disclosure must be part of the consent
+  // text. Mirrors the backend gate in handleClientSignup (require_card_for_trial
+  // AND stripe_charges_enabled) so the checkbox shown matches the flow that runs.
+  const isCardRequired = agency.require_card_for_trial === true && agency.stripe_charges_enabled === true;
+
+  // The exact string recorded as consent (stored verbatim server-side via
+  // consent_text). The rendered label below shows the same wording with
+  // Terms/Privacy as links; the stored copy is plain text.
+  const consentText = isCardRequired
+    ? `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out). I understand that after my 7-day free trial, ${agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
+    : `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).`;
 
   // Override body background to match — but go transparent in embed mode.
   useEffect(() => {
@@ -287,6 +309,14 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
   const handleSelectPlan = async (planType: string) => {
     if (loading || redirecting) return;
+
+    // Consent is required before any signup POST. Belt-and-suspenders: the plan
+    // buttons are also disabled until the box is checked, so this guard only
+    // fires if something bypasses the disabled state.
+    if (!consentAgreed) {
+      setError('Please agree to the terms to continue.');
+      return;
+    }
     
     setSelectedPlan(planType);
     setLoading(true);
@@ -309,6 +339,11 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         industry: signupData.industry,
         agencyId: agency.id,
         planType: planType,
+        // Affirmative consent captured on this step. consent_text is stored
+        // verbatim server-side (client_consents); consent_agreed hard-gates the
+        // card-required flow in handleClientSignup.
+        consent_agreed: consentAgreed,
+        consent_text: consentText,
       };
       
       const response = await fetch(`${backendUrl}/api/client/signup`, {
@@ -465,6 +500,30 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
+          {/* CONSENT (required). Gates plan selection. Always shown so TCPA/SMS
+              consent is captured for every signup; for card-required agencies
+              the text also carries the auto-renew disclosure. The stored
+              consent_text mirrors this wording (links rendered as plain text). */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>
+              <input type="checkbox" checked={consentAgreed}
+                onChange={(e) => { setConsentAgreed(e.target.checked); if (e.target.checked) setError(''); }}
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                style={{ accentColor: primaryColor }} />
+              <span className="text-sm leading-relaxed" style={{ color: mutedTextColor }}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Privacy Policy</a>
+                {' '}and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).
+                {isCardRequired && (
+                  <> I understand that after my 7-day free trial, {agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.</>
+                )}
+              </span>
+            </label>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {plans.map((plan) => (
               <div key={plan.id} className="relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300"
@@ -522,7 +581,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                   </ul>
                 )}
                 {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-6" />}
-                <button onClick={() => handleSelectPlan(plan.id)} disabled={loading}
+                <button onClick={() => handleSelectPlan(plan.id)} disabled={loading || !consentAgreed}
                   className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 sm:py-4 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={plan.popular ? { backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 30px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` } : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textColor, border: `1px solid ${cardBorder}` }}>
                   {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<>Get Started<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></>)}

@@ -22,6 +22,12 @@ interface Client {
   subscription_status: string;
   plan_type: string;
   trial_ends_at: string | null;
+  // Set when the client is on a Stripe Connect subscription (card-required
+  // trial or paid). Null for no-card DB trials, which simply expire with no
+  // charge. The dashboard uses this to tell the two trial types apart so it
+  // only shows the "your card will be charged" banner to clients who actually
+  // have a card on file.
+  stripe_connected_subscription_id?: string | null;
   monthly_call_limit: number;
   calls_this_month: number;
   google_calendar_connected: boolean;
@@ -35,7 +41,7 @@ interface Client {
   ring_timeout?: number;
   created_at: string;
 
-  // Branding — flat columns, no JSONB
+  // Branding. Flat columns, no JSONB
   logo_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
@@ -64,6 +70,14 @@ interface Client {
     allow_client_branding?: boolean;
     marketing_domain?: string | null;
     domain_verified?: boolean;
+    // Per-plan client prices (cents) + currency, returned by GET /api/client/:id
+    // in the nested agency row. The dashboard reads the price for the client's
+    // plan to show the charge amount on the card-required trial banner.
+    price_starter?: number | null;
+    price_pro?: number | null;
+    price_growth?: number | null;
+    currency?: string | null;
+    display_currency?: string | null;
   } | null;
 }
 
@@ -223,7 +237,7 @@ export function useClient() {
 export function ClientProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
-  // Instant load from localStorage cache — no loading flash
+  // Instant load from localStorage cache, no loading flash
   const [client, setClient] = useState<Client | null>(() => {
     try {
       const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;

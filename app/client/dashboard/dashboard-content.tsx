@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Phone, PhoneCall, Copy, ChevronRight, CheckCircle,
   Loader2, PhoneOff, TrendingUp,
-  PhoneForwarded, ShieldX, Sparkles, ArrowRight
+  PhoneForwarded, ShieldX, Sparkles, ArrowRight, CreditCard
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import { CallForwardingCard } from './forwarding-card';
@@ -66,6 +66,39 @@ function formatRelativeDate(dateStr: string): string {
   return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
 }
 
+// Format the charge date for the card-required trial banner. Shows the
+// calendar date the stored card is first charged (client.trial_ends_at).
+function formatChargeDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+// Currency symbol for the plan price shown in the card-required banner. The
+// client dashboard has no full currency library; agencies transacting in a
+// non-USD currency are the exception, so map the common ones and fall back to
+// the ISO code with a trailing space for anything unmapped (never a wrong
+// symbol). display_currency is an ISO code like 'usd' / 'gbp' when the agency
+// set one; otherwise this returns '$'.
+function currencySymbol(code: string | null | undefined): string {
+  if (!code) return '$';
+  const c = String(code).toUpperCase();
+  const map: Record<string, string> = {
+    USD: '$', CAD: '$', AUD: '$', NZD: '$', SGD: '$', HKD: '$', MXN: '$',
+    GBP: '£', EUR: '€', JPY: '¥', INR: '₹', BRL: 'R$',
+  };
+  return map[c] || `${c} `;
+}
+
+// Whole-number price from a cents amount. Client plan prices are whole-dollar
+// in practice (9900 / 14900 / 29900), so no decimals are shown; this matches
+// how the signup plan tiles render price.
+function formatPlanPrice(cents: number, code: string | null | undefined): string {
+  const sym = currencySymbol(code);
+  const amount = Math.round(cents / 100).toLocaleString();
+  return sym.length === 1 ? `${sym}${amount}` : `${sym}${amount}`;
+}
+
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -108,6 +141,41 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const isUnlimited = stats.callLimit === -1;
   const firstName = getFirstName(client.owner_name);
 
+  // ── Trial type discrimination ─────────────────────────────────────────────
+  // Two different trials share subscription_status === 'trial':
+  //   - No-card DB trial: stripe_connected_subscription_id is null. It simply
+  //     expires with NO charge. The generic "upgrade to keep your AI active"
+  //     banner is correct for these, and its CTA (/client/upgrade-required)
+  //     is the right next step.
+  //   - Card-required Stripe trial: stripe_connected_subscription_id is set and
+  //     trial_ends_at exists. The stored card is auto-charged at trial end, so
+  //     the honest message is "your card will be charged $X on <date>", and the
+  //     CTA must go to Billing to cancel, NOT to /upgrade-required, which runs
+  //     createClientCheckout and 409s an already-subscribed client.
+  // Showing the wrong banner to either group is a false statement, so the
+  // discriminator is the presence of a connected subscription id.
+  const isTrial = client.subscription_status === 'trial';
+  const hasConnectedSub = !!client.stripe_connected_subscription_id;
+  const isCardRequiredTrial =
+    isTrial && hasConnectedSub && !!client.trial_ends_at;
+  const isNoCardTrial = isTrial && !hasConnectedSub;
+
+  // Plan price for the card-required banner. The fetched client carries the
+  // nested agency row with per-plan prices in cents (price_starter/pro/growth)
+  // and an optional display_currency. Read the price for THIS client's plan;
+  // if it's missing for any reason, the banner omits the amount rather than
+  // guessing a number.
+  const planKey = `price_${client.plan_type}`;
+  const planPriceCents: number | null =
+    client.agency && typeof client.agency[planKey] === 'number'
+      ? client.agency[planKey]
+      : null;
+  const chargeDateLabel = client.trial_ends_at ? formatChargeDate(client.trial_ends_at) : '';
+  const priceLabel =
+    planPriceCents !== null
+      ? formatPlanPrice(planPriceCents, client.agency?.display_currency || client.agency?.currency)
+      : null;
+
   const usagePercent = isUnlimited ? 0 : stats.callLimit > 0 ? Math.min(100, (stats.callsThisMonth / stats.callLimit) * 100) : 0;
   const circ = 2 * Math.PI * 34;
   const offset = circ - (usagePercent / 100) * circ;
@@ -136,9 +204,11 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </p>
       </div>
 
-      {/* TRIAL BANNER — hidden while the forwarding setup card is up, so the
-          two CTAs don't compete; returns once forwarding is confirmed. */}
-      {client.subscription_status === 'trial' && stats.trialDaysLeft !== null && !forwardingSetupActive && (
+      {/* NO-CARD TRIAL BANNER. Only for DB trials that simply expire with no
+          charge (no connected Stripe subscription). Card-required trials get
+          the billing banner below instead, so the two never show together.
+          Hidden while the forwarding setup card is up so the CTAs don't compete. */}
+      {isNoCardTrial && stats.trialDaysLeft !== null && !forwardingSetupActive && (
         <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
           style={{
             ...glass,
@@ -160,7 +230,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 <p className="text-xs" style={{ color: theme.textMuted }}>Upgrade to keep your AI receptionist active.</p>
               </div>
             </div>
-            {/* FIXED: was /client/upgrade (404) → /client/upgrade-required */}
+            {/* FIXED: was /client/upgrade (404), now /client/upgrade-required */}
             <a href="/client/upgrade-required"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
@@ -170,7 +240,53 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </div>
       )}
 
-      {/* CALL FORWARDING — primary activation step.
+      {/* CARD-REQUIRED TRIAL BANNER. Shown only when the client is on a Stripe
+          trial with a card already on file (stripe_connected_subscription_id
+          set + trial_ends_at present). States plainly that the card is charged
+          at trial end, with the date and (when available) the plan price. The
+          CTA goes to Billing to cancel before then, NOT to /upgrade-required
+          (which would 409 an already-subscribed client). Hidden while the
+          forwarding setup card is up, matching the no-card banner. */}
+      {isCardRequiredTrial && !forwardingSetupActive && (
+        <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
+          style={{
+            ...glass,
+            background: theme.isDark
+              ? `linear-gradient(135deg, ${hexToRgba(theme.primary, 0.1)}, ${hexToRgba(theme.primary, 0.03)})`
+              : `linear-gradient(135deg, ${hexToRgba(theme.primary, 0.06)}, ${hexToRgba(theme.primary, 0.01)})`,
+            border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}`,
+          }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
+                style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
+                <CreditCard className="h-5 w-5" style={{ color: theme.primary }} />
+              </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: theme.text }}>
+                  {stats.trialDaysLeft !== null && stats.trialDaysLeft > 0
+                    ? `${stats.trialDaysLeft} day${stats.trialDaysLeft !== 1 ? 's' : ''} left in your free trial`
+                    : 'Your free trial is ending'}
+                </p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>
+                  {priceLabel && chargeDateLabel
+                    ? `Your card will be charged ${priceLabel}/month on ${chargeDateLabel}. Cancel before then to avoid the charge.`
+                    : chargeDateLabel
+                    ? `Your card will be charged on ${chargeDateLabel}. Cancel before then to avoid the charge.`
+                    : 'Your card will be charged when your trial ends. Cancel before then to avoid the charge.'}
+                </p>
+              </div>
+            </div>
+            <a href="/client/billing"
+              className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              Manage Billing
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* CALL FORWARDING. Primary activation step.
           Self-hides when not provisioned, and once a call has come in this month. */}
       {isProvisioned && (
         <CallForwardingCard callsThisMonth={stats.callsThisMonth} />

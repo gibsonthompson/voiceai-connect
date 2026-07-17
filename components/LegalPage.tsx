@@ -115,7 +115,12 @@ function replacePlaceholders(content: string, agency: Agency): string {
 function markdownToHtml(md: string): string {
   const lines = md.split('\n');
   const html: string[] = [];
-  let inList = false;
+  // Track the OPEN list type so ordered and unordered lists close with the
+  // correct tag and consecutive same-type items stay in ONE list. The old code
+  // shared a single inList boolean and always closed with </ul>, then tried to
+  // patch ordered lists with a regex afterward, which split every numbered item
+  // into its own single-item <ol>. Tracking the type fixes that at the source.
+  let listType: 'ul' | 'ol' | null = null;
   let inTable = false;
   let tableHeaderDone = false;
   let inParagraph = false;
@@ -124,7 +129,7 @@ function markdownToHtml(md: string): string {
     if (inParagraph) { html.push('</p>'); inParagraph = false; }
   }
   function closeList() {
-    if (inList) { html.push('</ul>'); inList = false; }
+    if (listType) { html.push(`</${listType}>`); listType = null; }
   }
   function closeTable() {
     if (inTable) { html.push('</tbody></table></div>'); inTable = false; tableHeaderDone = false; }
@@ -200,7 +205,9 @@ function markdownToHtml(md: string): string {
     // Unordered list
     if (/^[-*]\s+/.test(trimmed)) {
       closeParagraph(); closeTable();
-      if (!inList) { html.push('<ul>'); inList = true; }
+      // If a different list type is open (ordered), close it before starting
+      // the unordered one; otherwise keep appending to the open <ul>.
+      if (listType !== 'ul') { closeList(); html.push('<ul>'); listType = 'ul'; }
       const text = inlineFormat(trimmed.replace(/^[-*]\s+/, ''));
       html.push(`<li>${text}</li>`);
       continue;
@@ -209,12 +216,9 @@ function markdownToHtml(md: string): string {
     // Ordered list
     if (/^\d+\.\s+/.test(trimmed)) {
       closeParagraph(); closeTable();
-      // Switch to ordered list if not in list
-      if (inList) { closeList(); }
-      if (!inList) {
-        html.push('<ol>');
-        inList = true;
-      }
+      // Same rule as above, mirrored: only open a new <ol> when one is not
+      // already open, so 1./2./3. stay in a single ordered list.
+      if (listType !== 'ol') { closeList(); html.push('<ol>'); listType = 'ol'; }
       const text = inlineFormat(trimmed.replace(/^\d+\.\s+/, ''));
       html.push(`<li>${text}</li>`);
       continue;
@@ -235,12 +239,7 @@ function markdownToHtml(md: string): string {
   closeList();
   closeTable();
 
-  // Fix: ordered lists used <ul> close, replace
-  let result = html.join('\n');
-  // Replace <ol>...</ul> with <ol>...</ol>
-  result = result.replace(/<ol>([\s\S]*?)<\/ul>/g, '<ol>$1</ol>');
-
-  return result;
+  return html.join('\n');
 }
 
 // ============================================================================
