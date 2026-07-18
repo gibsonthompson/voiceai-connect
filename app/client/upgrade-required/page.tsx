@@ -46,6 +46,20 @@ interface Agency {
 }
 interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; stripe_connected_subscription_id?: string | null; }
 
+// formatPrice accepts currency. Falls back to USD. Uppercases the code because
+// Intl.NumberFormat requires the ISO 4217 form and the DB stores lowercase
+// ('usd', 'eur').
+function formatPrice(cents: number | undefined | null, currency?: string | null): string {
+  const value = cents ?? 0;
+  if (isNaN(value)) return '$--';
+  const code = (currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 }).format(value / 100);
+  } catch {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
+  }
+}
+
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
 
 function ClientUpgradeContent() {
@@ -72,6 +86,10 @@ function ClientUpgradeContent() {
   const isDark = agency?.website_theme === 'dark';
   const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
+
+  // Resolved currency used by formatPrice below (agency display currency, then
+  // the raw currency column, then USD).
+  const currencyCode = agency?.display_currency || agency?.currency || 'USD';
 
   // Phase 3: single source of truth for plan tiles. buildClientPlans handles
   // pricing defaults, the rebranded name/description, the call-limit display,
@@ -257,6 +275,13 @@ function ClientUpgradeContent() {
                 {plan.description && (
                   <p className="text-[12px] mb-3" style={{ color: theme.textMuted }}>{plan.description}</p>
                 )}
+                {/* Price pulled from the agency's per-tier pricing via
+                    buildClientPlans (plan.price), formatted in the agency's
+                    currency. */}
+                <div className="flex items-baseline justify-center gap-1 mt-2">
+                  <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price, currencyCode)}</span>
+                  <span className="text-sm" style={{ color: theme.textMuted4 }}>/mo</span>
+                </div>
                 {isActive && client?.plan_type === plan.id && (
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>
                     <Check className="h-3 w-3" />Current plan
