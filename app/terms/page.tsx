@@ -121,17 +121,34 @@ export default function TermsOfService() {
 
             <h2>4. Subscriptions and Payment</h2>
 
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 my-6">
+              <p className="text-amber-900 font-semibold mb-2">Free Trial, Automatic Charge, and Renewal</p>
+              <p className="text-black/72 text-sm mb-3">
+                A paid plan may begin with a free trial. A valid payment method is required to start a free trial on a
+                paid plan. You will not be charged during the trial period. <strong>At the end of the free trial, the
+                payment method you provided will be automatically charged</strong> the then-current price for the plan
+                you selected, and your Subscription will begin, unless you cancel before the trial ends.
+              </p>
+              <p className="text-black/72 text-sm mb-0">
+                Subscriptions renew automatically at the then-current price for each successive billing period until you
+                cancel. You may cancel at any time before your next billing date to avoid further charges. Cancellation
+                takes effect at the end of your current billing period, and you keep access until then. Our free plan
+                does not require a payment method and does not automatically convert into a paid Subscription.
+              </p>
+            </div>
+
             <h3>4.1 Subscription Plans</h3>
             <p>
-              Access to the Service requires a paid Subscription. Subscription details, including features, pricing, 
-              and usage limits, are described on our pricing page and in your account dashboard. We reserve the right 
-              to modify pricing with 30 days&apos; notice.
+              The Service is available through a free plan and through paid Subscription plans. Subscription details, 
+              including features, pricing, and usage limits, are described on our pricing page and in your account 
+              dashboard. We reserve the right to modify pricing with 30 days&apos; notice.
             </p>
 
             <h3>4.2 Payment Terms</h3>
             <ul>
               <li>Subscriptions are billed monthly or annually in advance, as selected at signup.</li>
-              <li>All payments are processed securely through Stripe. By providing payment information, you authorize us to charge your payment method for all fees owed.</li>
+              <li>Subscriptions renew automatically for successive billing periods until you cancel. A free trial on a paid plan converts into a paid Subscription at the end of the trial, and your payment method is charged automatically, unless you cancel before the trial ends.</li>
+              <li>All payments are processed securely through Stripe. By providing payment information, you authorize us to charge your payment method for all fees owed, including recurring Subscription fees and any charge that follows a free trial.</li>
               <li>All fees are stated in U.S. dollars unless otherwise specified.</li>
               <li>Fees are non-refundable except as expressly provided in these Terms or required by law.</li>
             </ul>
