@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Wallet, Clock, ArrowDownToLine, Calendar, Loader2, ExternalLink,
-  CreditCard, RefreshCw, AlertCircle, CheckCircle2, Receipt, Info,
+  CreditCard, RefreshCw, AlertCircle, CheckCircle2, Receipt, Info, LogIn,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -129,6 +129,13 @@ export default function AgencyPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when the financials call comes back 401. The backend guard
+  // (requireAgencyAccess in src/routes/auth.js) only returns 401 for a missing,
+  // invalid, or expired token, never for a Stripe or ownership problem, so this
+  // means the session is dead. It is tracked separately because without it a
+  // failed fetch leaves data null and the page renders the "not connected"
+  // state, telling a fully-connected agency to go set up Stripe again.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -143,11 +150,19 @@ export default function AgencyPaymentsPage() {
     if (!agency) return;
     if (isRefresh) setRefreshing(true); else setLoading(true);
     setError(null);
+    setSessionExpired(false);
     try {
       const token = localStorage.getItem('auth_token');
       const res = await fetch(`${backendUrl}/api/agency/connect/financials/${agency.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        // Dead session, not a payments problem. Show the sign-in state instead
+        // of falling through to the not-connected empty state.
+        setSessionExpired(true);
+        setData(null);
+        return;
+      }
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || 'Failed to load payment data');
@@ -170,7 +185,52 @@ export default function AgencyPaymentsPage() {
   }
 
   // ---------------------------------------------------------------------------
+  // SESSION EXPIRED: the request was rejected for auth, so we know nothing about
+  // the Stripe account either way. Never show the Connect CTA here.
+  // ---------------------------------------------------------------------------
+  if (sessionExpired) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
+          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+        </div>
+
+        <div className="rounded-2xl p-6 sm:p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4" style={{ backgroundColor: theme.warningBg }}>
+            <AlertCircle className="h-7 w-7" style={{ color: theme.warningText }} />
+          </div>
+          <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Your session expired</h2>
+          <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.textMuted }}>
+            Sign in again to see your balance and payouts. Your Stripe account and your payments are unaffected.
+          </p>
+          <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/agency/login"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in again
+            </a>
+            <button
+              onClick={() => fetchFinancials(true)}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}
+            >
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // NOT CONNECTED: send them to Settings to onboard Stripe Connect.
+  // Only reached when the backend actually answered and said connected=false.
   // ---------------------------------------------------------------------------
   if (!data?.connected) {
     return (

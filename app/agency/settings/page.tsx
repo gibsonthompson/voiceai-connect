@@ -785,6 +785,27 @@ function AgencySettingsContent() {
                     )}
                   </div>
                 )}
+
+                {/* No-LLC reassurance. Shown until Stripe is fully active, since
+                    "I don't have an LLC yet" is the usual reason an agency owner
+                    stalls here. Sole proprietors can onboard as an individual
+                    with an SSN and a personal checking account. The account must
+                    be in their own name, which is the detail that actually
+                    causes failed payouts when it's wrong. */}
+                {stripeDisplay.status !== 'active' && !loadingStripeStatus && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <div className="flex items-start gap-3">
+                      <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.infoText }}>No LLC needed to start</p>
+                        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                          You can connect as an individual and use your personal checking account, as long as the account is in your own name. Stripe asks for a US address and your SSN, or your EIN if you already have one. If you form an LLC later, you can update your business details in Stripe then.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
               </div>
             )}
