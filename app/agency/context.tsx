@@ -204,6 +204,17 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   //      old removeItem-of-three-specific-keys approach left behind every
   //      other per-session value any component had ever written, which is
   //      how the leftover Pro-plan state survived into a new Free session.
+  //
+  // TOKEN VALIDITY (added 2026-07-19)
+  //   The settings endpoint below is intentionally NOT token-protected on
+  //   the backend, because the onboarding page and the white-label branding
+  //   context both call it anonymously. That meant an expired token still
+  //   got a 200 here, the dashboard rendered as if logged in, and the dead
+  //   session only surfaced when some other guarded route returned 401 (the
+  //   Payments page then showed "Connect Stripe" to a connected agency).
+  //   So validity is now proven separately against /api/auth/verify, which
+  //   401s on a missing, invalid, or expired token. Both requests are fired
+  //   together so this costs no extra wall time.
   // ────────────────────────────────────────────────────────────────────
   const fetchAgencyData = async () => {
     let cacheMatchesSession = false;
@@ -260,11 +271,29 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       // Always pull fresh data so plan changes, status changes, and
       // post-checkout webhook updates are reflected on this render —
       // never let the dashboard live on cached billing state.
+      //
+      // Fired alongside the token check so a dead session is caught even
+      // though the settings route itself accepts anonymous callers.
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(
-        `${backendUrl}/api/agency/${storedUser.agency_id}/settings`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const [verifyResponse, response] = await Promise.all([
+        fetch(`${backendUrl}/api/auth/verify`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${backendUrl}/api/agency/${storedUser.agency_id}/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      // Token is missing, invalid, or expired. Nothing rendered from cache
+      // can be trusted to stay in sync, and every guarded endpoint the
+      // dashboard calls will reject, so end the session cleanly here rather
+      // than letting individual pages fail one at a time.
+      if (!verifyResponse.ok) {
+        wipeSession();
+        window.location.href = '/agency/login?expired=true';
+        return;
+      }
 
       if (!response.ok) {
         // Token rejected, agency missing, or anything else server-side.
