@@ -128,6 +128,7 @@ export default function AgencyPaymentsPage() {
   const [data, setData] = useState<Financials | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set when the financials call comes back 401. The backend guard
   // (requireAgencyAccess in src/routes/auth.js) only returns 401 for a missing,
@@ -173,6 +174,33 @@ export default function AgencyPaymentsPage() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  // Open the agency's Express Stripe dashboard. The backend mints a one-time
+  // login link (createLoginLink); Express accounts have no standalone Stripe
+  // login, so a plain dashboard.stripe.com URL would be a dead end. Opens in a
+  // new tab so the agency doesn't lose their place here.
+  const openStripeDashboard = async () => {
+    if (!agency || dashboardLoading) return;
+    setDashboardLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/login-link`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.url) {
+        window.open(d.url, '_blank', 'noopener,noreferrer');
+      } else {
+        setError(d.message || d.error || 'Could not open the Stripe dashboard.');
+      }
+    } catch {
+      setError('Could not open the Stripe dashboard.');
+    } finally {
+      setDashboardLoading(false);
     }
   };
 
@@ -288,15 +316,26 @@ export default function AgencyPaymentsPage() {
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
           <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
         </div>
-        <button
-          onClick={() => fetchFinancials(true)}
-          disabled={refreshing || demoMode}
-          className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex-shrink-0 disabled:opacity-50"
-          style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}
-        >
-          {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={openStripeDashboard}
+            disabled={dashboardLoading || demoMode}
+            className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ backgroundColor: '#635BFF', color: '#ffffff' }}
+          >
+            {dashboardLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+            <span className="hidden sm:inline">Stripe dashboard</span>
+          </button>
+          <button
+            onClick={() => fetchFinancials(true)}
+            disabled={refreshing || demoMode}
+            className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}
+          >
+            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
       </div>
 
       {error && (
