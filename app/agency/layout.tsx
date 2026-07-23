@@ -276,7 +276,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/manifest.json" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; }` }} />
+      {/*
+        Dashboard tab switches are same-document navigations, so the global
+        @view-transition rule in globals.css runs its default cross-fade on
+        every one. Mid-fade the outgoing and incoming snapshots are both
+        partially transparent, letting the hardcoded html/body base (#050505)
+        bleed through as a black flash (obvious in light mode). Disabling the
+        transition animations makes the swap instant with no bleed window.
+        This style only exists while the dashboard is mounted, so it is scoped
+        to the dashboard and leaves the marketing site's transitions intact.
+      */}
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }` }} />
       {theme.isDark && (<div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />)}
 
       {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<a href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</a>)}</div>)}
