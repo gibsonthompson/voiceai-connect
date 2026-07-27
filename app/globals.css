@@ -36,6 +36,19 @@ html.app-shell::view-transition-new(*) {
   animation: none !important;
 }
 
+/* App-shell themed base. The root layout head script adds .theme-dark or
+   .theme-light to <html> before first paint (resolved from the agency's real
+   website_theme). These rules paint the base under the dashboard to match, so
+   the strip the zoomed layout leaves uncovered, and any navigation/transition
+   gap, is the agency's color instead of the marketing #050505. This is what
+   stops the black region flashing on tab navigation in light mode. The head
+   script also sets an inline html/body background that wins over these; they
+   are the reliable fallback for the frame before that inline style applies. */
+html.app-shell.theme-dark,
+html.app-shell.theme-dark body { background: #050505; }
+html.app-shell.theme-light,
+html.app-shell.theme-light body { background: #f9fafb; }
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;

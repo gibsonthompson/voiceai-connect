@@ -995,7 +995,16 @@ function AgencySettingsContent() {
             )}
 
             {activeTab === 'twilio' && (
-              <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || ''} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
+              <div className="space-y-4 sm:space-y-6">
+                <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                  <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: theme.infoText }}>For international numbers only</p>
+                    <p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.75 }}>Connect Twilio only if your clients are outside the US and need local numbers from another country. US numbers are provisioned automatically, so if you serve US clients you can skip this.</p>
+                  </div>
+                </div>
+                <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || ''} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
+              </div>
             )}
 
             {activeTab === 'embed' && (

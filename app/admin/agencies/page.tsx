@@ -79,6 +79,21 @@ export default function AdminAgenciesPage() {
     return labels[type] || { label: type.replace(/_/g, ' ').slice(0, 15), color: 'rgba(255,255,255,0.4)' };
   };
 
+  // ── Onboarding funnel ──────────────────────────────────────────────
+  // Where signups drop off before finishing password + card. Computed over
+  // the loaded set (respects the status filter above). onboarding_step is
+  // bumped to 2 the moment agency details save, so step>=2 means "named their
+  // agency"; onboarding_completed flips true only once they finish the
+  // password step (free) or the Stripe card checkout (paid). So the gap
+  // between "named" and "completed" is exactly the pre-password/card bounce.
+  const fnlTotal = agencies.length;
+  const fnlCompleted = agencies.filter(a => a.onboarding_completed).length;
+  const fnlNamed = agencies.filter(a => a.onboarding_completed || (a.onboarding_step ?? 0) >= 2).length;
+  const fnlPreName = agencies.filter(a => !a.onboarding_completed && (a.onboarding_step ?? 0) < 2).length;
+  const fnlPreFinish = agencies.filter(a => !a.onboarding_completed && (a.onboarding_step ?? 0) >= 2).length;
+  const fnlBounced = fnlPreName + fnlPreFinish;
+  const fnlPct = (n: number) => (fnlTotal > 0 ? Math.round((n / fnlTotal) * 100) : 0);
+
   return (
     <div className="p-5 lg:p-8 max-w-[1400px]">
       <div className="mb-6"><h1 className="text-[22px] font-semibold text-white tracking-tight">Agencies</h1><p className="mt-1 text-sm text-white/40">Manage all platform agencies</p></div>
@@ -91,6 +106,56 @@ export default function AdminAgenciesPage() {
         <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4"><p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Revenue</p><p className="mt-1.5 text-xl font-semibold text-emerald-400">{formatCurrency(summary.total_revenue)}</p><p className="mt-1 text-[11px] text-white/30">collected</p></div>
         <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4"><p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Stripe</p><p className="mt-1.5 text-xl font-semibold text-white/90">{summary.stripe_connected}</p><p className="mt-1 text-[11px] text-white/30">connected</p></div>
       </div>)}
+
+      {!loading && fnlTotal > 0 && (
+        <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-[13px] font-semibold text-white/90">Onboarding Funnel</h2>
+              <p className="text-[11px] text-white/35 mt-0.5">Where signups drop off before finishing password &amp; card{statusFilter ? ` · filtered: ${statusFilter}` : ''}</p>
+            </div>
+            <span className="text-[11px] text-white/30">{fnlTotal} loaded</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3.5">
+              <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Signed up</p>
+              <p className="mt-1.5 text-2xl font-semibold text-white/90 tabular-nums">{fnlTotal}</p>
+              <p className="mt-1 text-[11px] text-white/30">100%</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3.5">
+              <p className="text-[10px] text-white/40 uppercase tracking-[0.1em]">Named agency</p>
+              <p className="mt-1.5 text-2xl font-semibold text-cyan-400 tabular-nums">{fnlNamed}</p>
+              <p className="mt-1 text-[11px] text-white/30">{fnlPct(fnlNamed)}% · reached plan/password</p>
+            </div>
+            <div className="rounded-xl bg-emerald-500/[0.06] border border-emerald-500/20 p-3.5">
+              <p className="text-[10px] text-emerald-400/80 uppercase tracking-[0.1em]">Completed</p>
+              <p className="mt-1.5 text-2xl font-semibold text-emerald-400 tabular-nums">{fnlCompleted}</p>
+              <p className="mt-1 text-[11px] text-emerald-400/50">{fnlPct(fnlCompleted)}% · password + card done</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-amber-500/[0.05] border border-amber-500/20 p-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-amber-400/70" />
+                <p className="text-[12px] font-medium text-amber-300/90">Bounced before password &amp; card</p>
+              </div>
+              <p className="text-lg font-semibold text-amber-300 tabular-nums">{fnlBounced}<span className="text-[12px] font-normal text-amber-300/50 ml-1.5">{fnlPct(fnlBounced)}%</span></p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                <span className="text-[11px] text-white/50">Named, never finished</span>
+                <span className="text-[13px] font-semibold text-amber-300/90 tabular-nums">{fnlPreFinish}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2">
+                <span className="text-[11px] text-white/50">Never named agency</span>
+                <span className="text-[13px] font-semibold text-white/60 tabular-nums">{fnlPreName}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <form onSubmit={handleSearch} className="flex-1"><div className="relative"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" /><input type="text" placeholder="Search agencies..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors" /></div></form>

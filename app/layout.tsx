@@ -123,16 +123,24 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         {/*
           Render-blocking init for authenticated app routes. Runs before first
-          paint. (1) Tags /agency, /client, /admin, /platform with the app-shell
-          class so globals.css can disable the cross-document view-transition
-          cross-fade on tab navigations (the mid-fade window is what flashes the
-          dark base). (2) For /agency and /client, injects a <style> with
-          !important that overrides the globals.css dark base with the themed
-          background before paint. A style tag is required to beat CSS specificity.
+          paint so there is no wrong-colored frame on hard tab navigations.
+
+          (1) Tags /agency, /client, /admin, /platform with the app-shell class
+              so globals.css can disable the cross-document view-transition
+              cross-fade on tab navigations.
+          (2) For /agency and /client, resolves the agency's REAL theme before
+              paint: cached agency.website_theme is authoritative (the theme
+              toggle keeps that cache in sync), then the voiceai_ui_theme hint,
+              then dark. It tags <html> with theme-dark/theme-light (globals.css
+              paints the matching base), writes the resolved value back to
+              voiceai_ui_theme so the loading skeleton and useTheme agree with
+              it (this is what stops a light agency painting a dark region), and
+              also sets an inline html/body background as a belt-and-suspenders
+              override before the React tree mounts.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=window.location.pathname;var isDash=(p.indexOf('/client')===0||p.indexOf('/agency')===0);if(isDash||p.indexOf('/admin')===0||p.indexOf('/platform')===0){document.documentElement.classList.add('app-shell');}if(isDash){var t=localStorage.getItem('voiceai_ui_theme');var isDark=t!=='light';var bg=isDark?'#0a0a0a':'#f9fafb';var fg=isDark?'#fafaf9':'#111827';var s=document.createElement('style');s.id='theme-init';s.textContent='html,body{background:'+bg+' !important;color:'+fg+' !important}';document.head.appendChild(s);}}catch(e){}})();`,
+            __html: `(function(){try{var p=window.location.pathname;var isDash=(p.indexOf('/client')===0||p.indexOf('/agency')===0);var isApp=isDash||p.indexOf('/admin')===0||p.indexOf('/platform')===0;if(isApp){document.documentElement.classList.add('app-shell');}if(isDash){var mode=null;try{var a=localStorage.getItem('agency');if(a){var pa=JSON.parse(a);if(pa&&(pa.website_theme==='light'||pa.website_theme==='dark')){mode=pa.website_theme;}}}catch(e){}if(!mode){var t=localStorage.getItem('voiceai_ui_theme');mode=(t==='light')?'light':'dark';}var isDark=mode!=='light';document.documentElement.classList.add(isDark?'theme-dark':'theme-light');try{localStorage.setItem('voiceai_ui_theme',isDark?'dark':'light');}catch(e){}var bg=isDark?'#050505':'#f9fafb';var fg=isDark?'#fafaf9':'#111827';var s=document.createElement('style');s.id='theme-init';s.textContent='html.app-shell,html.app-shell body{background:'+bg+' !important;color:'+fg+' !important}';document.head.appendChild(s);}}catch(e){}})();`,
           }}
         />
         <Script
