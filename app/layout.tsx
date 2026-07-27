@@ -122,13 +122,17 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         {/*
-          Blocking script: injects a <style> with !important that overrides
-          globals.css dark background for dashboard pages. Must use a style
-          tag (not just inline styles) to beat CSS specificity before paint.
+          Render-blocking init for authenticated app routes. Runs before first
+          paint. (1) Tags /agency, /client, /admin, /platform with the app-shell
+          class so globals.css can disable the cross-document view-transition
+          cross-fade on tab navigations (the mid-fade window is what flashes the
+          dark base). (2) For /agency and /client, injects a <style> with
+          !important that overrides the globals.css dark base with the themed
+          background before paint. A style tag is required to beat CSS specificity.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=window.location.pathname;if(p.indexOf('/client')===0||p.indexOf('/agency')===0){var t=localStorage.getItem('voiceai_ui_theme');var isDark=t!=='light';var bg=isDark?'#0a0a0a':'#f9fafb';var fg=isDark?'#fafaf9':'#111827';var s=document.createElement('style');s.id='theme-init';s.textContent='html,body{background:'+bg+' !important;color:'+fg+' !important}';document.head.appendChild(s);}}catch(e){}})();`,
+            __html: `(function(){try{var p=window.location.pathname;var isDash=(p.indexOf('/client')===0||p.indexOf('/agency')===0);if(isDash||p.indexOf('/admin')===0||p.indexOf('/platform')===0){document.documentElement.classList.add('app-shell');}if(isDash){var t=localStorage.getItem('voiceai_ui_theme');var isDark=t!=='light';var bg=isDark?'#0a0a0a':'#f9fafb';var fg=isDark?'#fafaf9':'#111827';var s=document.createElement('style');s.id='theme-init';s.textContent='html,body{background:'+bg+' !important;color:'+fg+' !important}';document.head.appendChild(s);}}catch(e){}})();`,
           }}
         />
         <Script

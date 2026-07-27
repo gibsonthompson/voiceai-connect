@@ -23,6 +23,19 @@
   navigation: auto;
 }
 
+/* Authenticated app shells (/agency, /client, /admin, /platform) navigate via
+   full-document <a> loads, so @view-transition navigation:auto plays a
+   cross-document cross-fade on every tab switch. Mid-fade, neither snapshot is
+   opaque and the dark base below shows through as a black flash. The root
+   layout head script tags these routes with html.app-shell before first paint,
+   so disable the transition animation there for an instant, flash-free swap.
+   Marketing pages stay unmarked and keep their cross-fade. */
+html.app-shell::view-transition-group(*),
+html.app-shell::view-transition-old(*),
+html.app-shell::view-transition-new(*) {
+  animation: none !important;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
