@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code } from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { PLAN_NAMES, deriveAgencyTeamLimit, formatTeamLimit } from '@/lib/plan-limits';
@@ -28,6 +28,28 @@ const PLAN_NAME_DEFAULTS: Record<string, string> = {
   growth: 'Growth',
 };
 
+// Countries the platform's Stripe Connect supports (mirrors the backend's
+// countryCurrencyMap in routes/stripe-connect.js). The agency picks one before
+// connecting; it is sent to /api/agency/connect/onboard and fixes the Stripe
+// account's country and currency. Sorted by name.
+const CONNECT_COUNTRIES: Array<{ code: string; name: string }> = [
+  { code: 'AU', name: 'Australia' }, { code: 'AT', name: 'Austria' }, { code: 'BE', name: 'Belgium' },
+  { code: 'BR', name: 'Brazil' }, { code: 'BG', name: 'Bulgaria' }, { code: 'CA', name: 'Canada' },
+  { code: 'HR', name: 'Croatia' }, { code: 'CY', name: 'Cyprus' }, { code: 'CZ', name: 'Czechia' },
+  { code: 'DK', name: 'Denmark' }, { code: 'EE', name: 'Estonia' }, { code: 'FI', name: 'Finland' },
+  { code: 'FR', name: 'France' }, { code: 'DE', name: 'Germany' }, { code: 'GR', name: 'Greece' },
+  { code: 'HK', name: 'Hong Kong' }, { code: 'HU', name: 'Hungary' }, { code: 'IN', name: 'India' },
+  { code: 'IE', name: 'Ireland' }, { code: 'IT', name: 'Italy' }, { code: 'JP', name: 'Japan' },
+  { code: 'LV', name: 'Latvia' }, { code: 'LT', name: 'Lithuania' }, { code: 'LU', name: 'Luxembourg' },
+  { code: 'MY', name: 'Malaysia' }, { code: 'MT', name: 'Malta' }, { code: 'MX', name: 'Mexico' },
+  { code: 'NL', name: 'Netherlands' }, { code: 'NZ', name: 'New Zealand' }, { code: 'NO', name: 'Norway' },
+  { code: 'PL', name: 'Poland' }, { code: 'PT', name: 'Portugal' }, { code: 'RO', name: 'Romania' },
+  { code: 'SG', name: 'Singapore' }, { code: 'SK', name: 'Slovakia' }, { code: 'SI', name: 'Slovenia' },
+  { code: 'ES', name: 'Spain' }, { code: 'SE', name: 'Sweden' }, { code: 'CH', name: 'Switzerland' },
+  { code: 'TH', name: 'Thailand' }, { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'GB', name: 'United Kingdom' }, { code: 'US', name: 'United States' },
+];
+
 // Cancellation reasons match Stripe's cancellation_details.feedback enum
 // so the in-app cancel path and the Stripe portal cancel path produce the
 // same vocabulary in the backend subscription_cancellations table.
@@ -48,6 +70,87 @@ function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingCon
 async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> { const fallback = { primary: '#10b981', secondary: '#059669', accent: '#34d399', logoBgColor: '#000000', suggestedTheme: 'dark' as const }; return new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); if (!ctx) { resolve(fallback); return; } const size = 150; canvas.width = size; canvas.height = size; ctx.drawImage(img, 0, 0, size, size); const bg = detectLogoBackground(canvas, ctx); const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b); let suggestedTheme: 'light' | 'dark' = 'dark'; if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; } const pixels = ctx.getImageData(0, 0, size, size).data; const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {}; for (let i = 0; i < pixels.length; i += 4) { const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]; if (a < 128) continue; const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)); if (bgDist < 50) continue; const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25; const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255; const lightness = (max + min) / 2; const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min); if (lightness < 0.15 || lightness > 0.65) continue; if (saturation < 0.25) continue; const key = `${br},${bg2},${bb}`; if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness }; colorData[key].count++; } const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b)); if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; } const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30); resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme }); }; img.onerror = () => resolve(fallback); img.src = imageUrl; }); }
 
 function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) { const info = FEATURE_LABELS[featureKey]; if (!info) return null; return (<div className="flex items-center justify-between py-2.5 px-1 group"><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p></div><button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div>); }
+
+// Searchable country picker. A plain native <select> with 40+ options is a
+// poor mobile experience (the iOS wheel especially), so this is a button that
+// opens a type-to-filter list. Used once, before Stripe Connect onboarding, to
+// choose the account country. Closes on outside click or selection.
+function CountrySelect({ value, onChange, theme }: { value: string; onChange: (code: string) => void; theme: any }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const selected = CONNECT_COUNTRIES.find((c) => c.code === value) || null;
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? CONNECT_COUNTRIES.filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase() === q)
+    : CONNECT_COUNTRIES;
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) { setOpen(false); setQuery(''); }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-colors"
+        style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: selected ? theme.text : theme.textMuted }}
+      >
+        <span>{selected ? selected.name : 'Select your country'}</span>
+        <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute z-30 mt-1.5 w-full rounded-xl overflow-hidden"
+          style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.inputBorder}`, boxShadow: '0 16px 40px rgba(0,0,0,0.30)' }}
+        >
+          <div className="p-2" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <div className="flex items-center gap-2 rounded-lg px-2.5 py-2" style={{ backgroundColor: theme.input }}>
+              <Search className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search countries"
+                className="w-full bg-transparent text-sm focus:outline-none"
+                style={{ color: theme.text }}
+              />
+            </div>
+          </div>
+          <div className="max-h-56 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <p className="px-3 py-3 text-xs" style={{ color: theme.textMuted }}>No matches</p>
+            ) : (
+              filtered.map((c) => {
+                const active = c.code === value;
+                return (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => { onChange(c.code); setOpen(false); setQuery(''); }}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors"
+                    style={{ color: theme.text, backgroundColor: active ? theme.primary15 : 'transparent' }}
+                    onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; }}
+                    onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                  >
+                    <span>{c.name}</span>
+                    {active && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ProUpgradeCard({ title, description, theme }: { title?: string; description: string; theme: any }) {
   return (
@@ -114,6 +217,10 @@ function AgencySettingsContent() {
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false); const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  // Country for a NEW Stripe Connect account. A connected account's country is
+  // immutable, so it is chosen before connecting and posted to the onboard
+  // endpoint. Initialized from the agency's stored country, else US.
+  const [connectCountry, setConnectCountry] = useState('US');
   const [showCancelModal, setShowCancelModal] = useState(false); const [cancelLoading, setCancelLoading] = useState(false); const [portalLoading, setPortalLoading] = useState(false);
   const [cancelReason, setCancelReason] = useState<string>(''); const [cancelFeedback, setCancelFeedback] = useState<string>('');
   const [agencyName, setAgencyName] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -172,6 +279,7 @@ function AgencySettingsContent() {
 
   useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
+  useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
   useEffect(() => { if (activeTab === 'billing' && agency?.id) fetchUsageData(); }, [activeTab, agency?.id]);
 
@@ -302,7 +410,7 @@ function AgencySettingsContent() {
     }
   };
 
-  const handleStripeConnect = async () => { if (!agency) return; setConnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to start Stripe onboarding'); } const data = await response.json(); window.location.href = data.url; } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); } };
+  const handleStripeConnect = async () => { if (!agency) return; setConnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, country: connectCountry }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.message || data.error || 'Failed to start Stripe onboarding'); } const data = await response.json(); window.location.href = data.url; } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); } };
   const handleStripeDisconnect = async () => { if (!agency) return; if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return; setDisconnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); } await refreshAgency(); setStripeStatus(null); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); } finally { setDisconnectingStripe(false); } };
   const handleManageSubscription = async () => { if (!agency) return; setPortalLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); } const data = await response.json(); if (data.url) window.location.href = data.url; else if (data.needs_payment_method) setError('Add a payment method first. Use the upgrade options below.'); else setError('Failed to open billing portal'); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); } finally { setPortalLoading(false); } };
 
@@ -786,20 +894,48 @@ function AgencySettingsContent() {
                   </div>
                 )}
 
+                {/* Country selector. A connected account's country is fixed at
+                    creation and cannot be changed later, so the agency picks it
+                    BEFORE connecting. Posted to /api/agency/connect/onboard,
+                    which creates the Stripe account in this country. Shown only
+                    before an account exists; once connected the country locks. */}
+                {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Globe className="h-4 w-4" style={{ color: theme.primary }} />
+                      <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
+                    </div>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                      Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
+                    </p>
+                    <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
+                    <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
+                      <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
+                      This cannot be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
+                    </p>
+                  </div>
+                )}
+
                 {/* No-LLC reassurance. Shown until Stripe is fully active, since
                     "I don't have an LLC yet" is the usual reason an agency owner
                     stalls here. Sole proprietors can onboard as an individual
                     with an SSN and a personal checking account. The account must
                     be in their own name, which is the detail that actually
-                    causes failed payouts when it's wrong. */}
+                    causes failed payouts when it's wrong. Copy is country-aware:
+                    US agencies see SSN/EIN wording, everyone else sees generic
+                    individual/sole-trader wording. */}
                 {stripeDisplay.status !== 'active' && !loadingStripeStatus && (
                   <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <div className="flex items-start gap-3">
                       <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.infoText }}>No LLC needed to start</p>
+                        <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.infoText }}>No company registration needed to start</p>
                         <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                          You can connect as an individual and use your personal checking account, as long as the account is in your own name. Stripe asks for a US address and your SSN, or your EIN if you already have one. If you form an LLC later, you can update your business details in Stripe then.
+                          {connectCountry === 'US' ? (
+                            <>You can connect as an individual and use your personal checking account, as long as the account is in your own name. Stripe asks for a US address and your SSN, or your EIN if you already have one. If you form an LLC later, you can update your business details in Stripe then.</>
+                          ) : (
+                            <>You can connect as an individual or sole trader with a bank account in your selected country, as long as the account is in your own name. Stripe asks for that country's standard identity and address details, not US details like an SSN. If you register a company later, you can update your business details in Stripe then.</>
+                          )}
                         </p>
                       </div>
                     </div>
