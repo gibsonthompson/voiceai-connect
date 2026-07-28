@@ -104,6 +104,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Agency activated on Free plan: ${agency.name} (${agencyId})`);
 
+    // Notify the platform owner that a real agency just activated (Free plan),
+    // with the plan shown in the SMS. notifications.js lives in the Express
+    // backend, so we POST to it rather than import it here. Best-effort: a
+    // failed notification must not fail activation.
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || '';
+      if (backendUrl) {
+        await fetch(`${backendUrl}/api/agency/${agencyId}/notify-activated`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: 'start-trial' }),
+        });
+      }
+    } catch (notifyErr) {
+      console.error('notify-activated call failed (non-blocking):', notifyErr);
+    }
+
     return NextResponse.json({
       success: true,
       trialEndsAt: null,

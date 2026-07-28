@@ -5,7 +5,7 @@ import {
   Phone, Loader2, Trash2, Plus, PhoneCall, MessageSquare,
   Headphones, Sparkles, Lock, Check, AlertCircle, Copy,
   Bot, Users, Clock, Mic, ArrowRight, ChevronRight, X,
-  Play, Pause, Building2, MapPin, Zap, ArrowLeft
+  Play, Pause, Building2, MapPin, Zap, ArrowLeft, Globe, ExternalLink
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -483,6 +483,14 @@ export default function DemoPhonePage() {
   const isPaid = isActive && !isTrialing;
   const hasDemo = !!agency?.demo_phone_number;
 
+  // Country decides how a demo number is provisioned. US uses the platform
+  // number pool; every other country uses the agency's own connected Twilio
+  // (BYOT), so the UI drops the US-style area code and, if Twilio is not
+  // connected, points them to Settings, Twilio instead of a dead Create button.
+  const agencyCountry = (((agency as any)?.country as string) || 'US').toUpperCase();
+  const isUS = agencyCountry === 'US';
+  const byotEnabled = !!(agency as any)?.byot_enabled;
+
   // Pre-fill area code from agency phone
   useEffect(() => {
     if (agency?.phone && !areaCode) {
@@ -506,7 +514,10 @@ export default function DemoPhonePage() {
       return;
     }
 
-    if (!areaCode || !/^\d{3}$/.test(areaCode)) {
+    // US: require a 3-digit area code (platform provisions a US number).
+    // International: no area code; the number is bought on the agency's own
+    // Twilio in their country, so we POST without area_code.
+    if (isUS && (!areaCode || !/^\d{3}$/.test(areaCode))) {
       setError('Please enter a valid 3-digit area code');
       return;
     }
@@ -519,7 +530,7 @@ export default function DemoPhonePage() {
       const response = await fetch(`${backendUrl}/api/agency/${agency?.id}/demo-phone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ area_code: areaCode }),
+        body: JSON.stringify(isUS ? { area_code: areaCode } : {}),
       });
 
       const data = await response.json();
@@ -610,10 +621,15 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // DEMO MODE — simulated
+  // DEMO MODE - sample data only (no real demo yet)
+  // ----------------------------------------------------------------------------
+  // Demo Mode shows sample data. This is NOT a real, callable number, so it must
+  // not look live: no green "Active" dot, no Copy button, obviously-fake digits,
+  // and a clear warning. A prospect calling this sample reaches nothing, which
+  // is exactly the confusion this card previously caused.
   // ============================================================================
   if (demoMode && !hasDemo) {
-    const fakeDemoNumber = '(678) 555-0199';
+    const sampleDemoNumber = '(555) 555-0199';
 
     return (
       <div className="p-4 sm:p-6 lg:p-8">
@@ -625,32 +641,50 @@ export default function DemoPhonePage() {
         </div>
 
         <div
+          className="rounded-xl p-4 flex items-start gap-3 mb-6"
+          style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}
+        >
+          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.warningText }}>This is sample data (Demo Mode is on)</p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+              The number below is a placeholder for previewing the layout. It is not a real number and cannot be called. Turn off Demo Mode in Settings, then create a demo number to get a real, callable line.
+            </p>
+          </div>
+        </div>
+
+        <div
           className="rounded-xl p-5 sm:p-6 mb-6"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
         >
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
                 <Phone className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="font-semibold text-base sm:text-lg">Your Demo Number</h3>
-                <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#10b981' }}>
-                  <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#10b981' }} />
-                  Active
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full mt-0.5" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+                  Sample
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl p-4 mb-4" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}dd)` }}>
+          <div
+            className="flex items-center justify-between rounded-xl p-4 mb-4"
+            style={{ backgroundColor: theme.hover, border: `1px dashed ${theme.border}` }}
+          >
             <div className="flex items-center gap-3">
-              <PhoneCall className="h-6 w-6" style={{ color: theme.primaryText }} />
-              <span className="text-xl sm:text-2xl font-bold tracking-wide" style={{ color: theme.primaryText }}>{fakeDemoNumber}</span>
+              <PhoneCall className="h-6 w-6" style={{ color: theme.textMuted }} />
+              <span className="text-xl sm:text-2xl font-bold tracking-wide" style={{ color: theme.textMuted }}>{sampleDemoNumber}</span>
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.primaryText }}>
-              <Copy className="h-4 w-4" />Copy
-            </button>
+            <span
+              className="px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}
+            >
+              Sample only
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
@@ -658,14 +692,14 @@ export default function DemoPhonePage() {
               <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>Post-call SMS</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Callers automatically receive your signup link via text after hanging up</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>On a real demo line, callers get your signup link by text after they hang up</p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
               <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>On your marketing site</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>This number appears automatically in your "Experience It Live" section</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Your real demo number appears automatically in your "Experience It Live" section</p>
               </div>
             </div>
           </div>
@@ -832,41 +866,72 @@ export default function DemoPhonePage() {
           </div>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>Area Code</label>
-          <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
-            Choose an area code that matches your target market. We&apos;ll provision a local number.
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>(</span>
-              <input
-                type="text"
-                value={areaCode}
-                onChange={(e) => { setAreaCode(e.target.value.replace(/\D/g, '').slice(0, 3)); setError(''); }}
-                placeholder="404"
-                maxLength={3}
-                className="w-24 rounded-lg pl-6 pr-6 py-2.5 text-center text-lg font-mono font-bold tracking-widest transition-colors focus:outline-none"
-                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>)</span>
+        {isUS ? (
+          /* US: platform provisions a local US number by area code */
+          <div className="mb-5">
+            <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>Area Code</label>
+            <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+              Choose an area code that matches your target market. We&apos;ll provision a local number.
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>(</span>
+                <input
+                  type="text"
+                  value={areaCode}
+                  onChange={(e) => { setAreaCode(e.target.value.replace(/\D/g, '').slice(0, 3)); setError(''); }}
+                  placeholder="404"
+                  maxLength={3}
+                  className="w-24 rounded-lg pl-6 pr-6 py-2.5 text-center text-lg font-mono font-bold tracking-widest transition-colors focus:outline-none"
+                  style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>)</span>
+              </div>
+              <span className="text-sm" style={{ color: theme.textMuted }}>XXX-XXXX</span>
             </div>
-            <span className="text-sm" style={{ color: theme.textMuted }}>XXX-XXXX</span>
           </div>
-        </div>
+        ) : !byotEnabled ? (
+          /* International, no Twilio connected: numbers outside the US come from
+             the agency's own Twilio, so point them there instead of a dead button. */
+          <div className="mb-5 rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+            <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: theme.warningText }}>Connect Twilio to enable your {agencyCountry} demo line</p>
+              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                Your agency is set to {agencyCountry}. Demo numbers outside the US are provisioned on your own Twilio account. Connect Twilio (and complete your {agencyCountry} regulatory bundle) in Settings, then come back here to create your demo line.
+              </p>
+              <a href="/agency/settings?tab=twilio" className="inline-flex items-center gap-1 text-xs font-medium mt-2 underline" style={{ color: theme.primary }}>
+                Go to Twilio settings <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+        ) : (
+          /* International, Twilio connected: buy a local number in agency.country */
+          <div className="mb-5 rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+            <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: theme.infoText }}>We&apos;ll provision a local {agencyCountry} number</p>
+              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                Your demo line is created on your connected Twilio account in {agencyCountry} and pointed at your AI demo. This needs an approved Twilio regulatory bundle for {agencyCountry}; if it is not complete, Twilio refuses the number and we&apos;ll tell you.
+              </p>
+            </div>
+          </div>
+        )}
 
-        <button
-          onClick={handleCreate}
-          disabled={creating || !areaCode || areaCode.length < 3}
-          className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium disabled:opacity-50 transition-all hover:scale-[1.01] active:scale-[0.99]"
-          style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-        >
-          {creating ? (
-            <><Loader2 className="h-4 w-4 animate-spin" />Creating demo number...</>
-          ) : (
-            <><Phone className="h-4 w-4" />Create Demo Number</>
-          )}
-        </button>
+        {(isUS || byotEnabled) && (
+          <button
+            onClick={handleCreate}
+            disabled={creating || (isUS && (!areaCode || areaCode.length < 3))}
+            className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium disabled:opacity-50 transition-all hover:scale-[1.01] active:scale-[0.99]"
+            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+          >
+            {creating ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Creating demo number...</>
+            ) : (
+              <><Phone className="h-4 w-4" />Create Demo Number</>
+            )}
+          </button>
+        )}
 
         {creating && (
           <p className="mt-3 text-xs" style={{ color: theme.textMuted }}>
