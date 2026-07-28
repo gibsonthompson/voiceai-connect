@@ -192,9 +192,9 @@ function CallModal({ callState, callDuration, isMuted, transcript, eventLog, the
 }
 
 export default function AILabPage() {
-  const { agency, loading: ctxLoading, effectivePlan } = useAgency();
+  const { agency, loading: ctxLoading } = useAgency();
   const theme = useTheme();
-  const { canUseAiLab } = usePlanFeatures();
+  const { canUseAiLab, canUseIndustryTemplates } = usePlanFeatures();
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 
@@ -285,7 +285,7 @@ export default function AILabPage() {
 
   useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); }).catch(() => {}); }, [api]);
   useEffect(() => { if (!agency) return; setClientsLoading(true); fetch(`${api}/api/agency/${agency.id}/ai-playground/clients`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.json()).then(d => setClients(d.clients || [])).catch(() => {}).finally(() => setClientsLoading(false)); }, [agency, api]);
-  useEffect(() => { if (!agency || effectivePlan !== 'enterprise') return; fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {}); }, [agency, effectivePlan, api]);
+  useEffect(() => { if (!agency || !canUseIndustryTemplates) return; fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {}); }, [agency, canUseIndustryTemplates, api]);
 
   const playPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const a = new Audio(voice.previewUrl); audioRef.current = a; a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null); a.play(); setPlayingVoiceId(voice.id); };
   const filteredVoices = (voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter)).sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
@@ -403,12 +403,12 @@ export default function AILabPage() {
         )}
 
         {clientsLoading && (<div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>)}
-        {!clientsLoading && clients.length === 0 && !selectedClient && (<div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No clients yet.</p></div>)}
+        {!clientsLoading && clients.length === 0 && !selectedClient && !canUseIndustryTemplates && (<div className="text-center py-16"><Building className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted, opacity: 0.3 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No clients yet. Add a client to configure and test their AI receptionist.</p><div className="mt-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}><Package className="h-3.5 w-3.5" style={{ color: theme.primary }} /> Industry AI templates are a Scale feature</div></div>)}
 
         {!selectedClient && !clientsLoading && (
           <div>
-            {effectivePlan === 'enterprise' && industries.length > 0 && (
-              <div className="mb-8"><div className="flex items-center gap-2 mb-2"><Package className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Packaged Receptionists</span><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Enterprise</span></div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>Configure the default AI receptionist for each industry. When a new client signs up, they inherit your voice, greeting, prompt, model, and knowledge base.</p>
+            {canUseIndustryTemplates && industries.length > 0 && (
+              <div className="mb-8"><div className="flex items-center gap-2 mb-2"><Package className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Packaged Receptionists</span><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Scale</span></div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>Configure the default AI receptionist for each industry. When a new client signs up, they inherit your voice, greeting, prompt, model, and knowledge base.</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (<Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div>{ind.hasCustomTemplate ? (<span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Check className="h-2.5 w-2.5" /> Custom</span>) : (<span className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Default</span>)}</div><p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p><p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>Configure package <ArrowUpRight className="h-2.5 w-2.5" /></p></Link>); })}</div></div>
             )}
             {!clientsLoading && clients.length > 0 && (<p className="text-xs text-center" style={{ color: theme.textMuted }}>Select a client above to configure their AI receptionist</p>)}
