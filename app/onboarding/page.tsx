@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  Phone, CheckCircle2, Loader2, ArrowRight, Lock,
-  Building, ChevronDown, Zap, Shield, Crown, Check, ArrowLeft
+  CheckCircle2, Loader2, ArrowRight, Lock,
+  Building, ChevronDown, Zap, Shield, Crown, Check, ArrowLeft, Search
 } from 'lucide-react';
 import { PLAN_PRICES, PLAN_RATES } from '@/lib/plan-limits';
 import { AGENCY_PLAN_TIERS } from '@/lib/plan-features';
@@ -29,6 +29,176 @@ const steps = [
   { id: 2, name: 'Plan', icon: Zap, description: 'Choose your plan' },
   { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
 ];
+
+// Countries the platform can actually format and route SMS/voice for. This is
+// the display-side mirror of COUNTRY_CALLING_CODES in the backend notifications
+// lib; keep the two in sync when adding support for a new country. A curated
+// list (not a raw 200-country dump) is both better UX and matches what the
+// system can deliver to.
+type Country = { iso: string; name: string; dial: string; flag: string; example?: string };
+
+const SUPPORTED_COUNTRIES: Country[] = [
+  { iso: 'US', name: 'United States', dial: '+1', flag: '🇺🇸', example: '(555) 123-4567' },
+  { iso: 'CA', name: 'Canada', dial: '+1', flag: '🇨🇦', example: '(555) 123-4567' },
+  { iso: 'GB', name: 'United Kingdom', dial: '+44', flag: '🇬🇧', example: '07911 123456' },
+  { iso: 'AU', name: 'Australia', dial: '+61', flag: '🇦🇺', example: '0412 345 678' },
+  { iso: 'NZ', name: 'New Zealand', dial: '+64', flag: '🇳🇿', example: '021 123 4567' },
+  { iso: 'IE', name: 'Ireland', dial: '+353', flag: '🇮🇪', example: '085 123 4567' },
+  { iso: 'AE', name: 'United Arab Emirates', dial: '+971', flag: '🇦🇪' },
+  { iso: 'AT', name: 'Austria', dial: '+43', flag: '🇦🇹' },
+  { iso: 'BE', name: 'Belgium', dial: '+32', flag: '🇧🇪' },
+  { iso: 'BG', name: 'Bulgaria', dial: '+359', flag: '🇧🇬' },
+  { iso: 'BR', name: 'Brazil', dial: '+55', flag: '🇧🇷' },
+  { iso: 'CH', name: 'Switzerland', dial: '+41', flag: '🇨🇭' },
+  { iso: 'CY', name: 'Cyprus', dial: '+357', flag: '🇨🇾' },
+  { iso: 'CZ', name: 'Czechia', dial: '+420', flag: '🇨🇿' },
+  { iso: 'DE', name: 'Germany', dial: '+49', flag: '🇩🇪' },
+  { iso: 'DK', name: 'Denmark', dial: '+45', flag: '🇩🇰' },
+  { iso: 'EE', name: 'Estonia', dial: '+372', flag: '🇪🇪' },
+  { iso: 'ES', name: 'Spain', dial: '+34', flag: '🇪🇸' },
+  { iso: 'FI', name: 'Finland', dial: '+358', flag: '🇫🇮' },
+  { iso: 'FR', name: 'France', dial: '+33', flag: '🇫🇷' },
+  { iso: 'GR', name: 'Greece', dial: '+30', flag: '🇬🇷' },
+  { iso: 'HK', name: 'Hong Kong', dial: '+852', flag: '🇭🇰' },
+  { iso: 'HR', name: 'Croatia', dial: '+385', flag: '🇭🇷' },
+  { iso: 'HU', name: 'Hungary', dial: '+36', flag: '🇭🇺' },
+  { iso: 'IN', name: 'India', dial: '+91', flag: '🇮🇳' },
+  { iso: 'IT', name: 'Italy', dial: '+39', flag: '🇮🇹' },
+  { iso: 'JP', name: 'Japan', dial: '+81', flag: '🇯🇵' },
+  { iso: 'LT', name: 'Lithuania', dial: '+370', flag: '🇱🇹' },
+  { iso: 'LU', name: 'Luxembourg', dial: '+352', flag: '🇱🇺' },
+  { iso: 'LV', name: 'Latvia', dial: '+371', flag: '🇱🇻' },
+  { iso: 'MT', name: 'Malta', dial: '+356', flag: '🇲🇹' },
+  { iso: 'MX', name: 'Mexico', dial: '+52', flag: '🇲🇽' },
+  { iso: 'MY', name: 'Malaysia', dial: '+60', flag: '🇲🇾' },
+  { iso: 'NL', name: 'Netherlands', dial: '+31', flag: '🇳🇱' },
+  { iso: 'NO', name: 'Norway', dial: '+47', flag: '🇳🇴' },
+  { iso: 'PL', name: 'Poland', dial: '+48', flag: '🇵🇱' },
+  { iso: 'PT', name: 'Portugal', dial: '+351', flag: '🇵🇹' },
+  { iso: 'RO', name: 'Romania', dial: '+40', flag: '🇷🇴' },
+  { iso: 'SE', name: 'Sweden', dial: '+46', flag: '🇸🇪' },
+  { iso: 'SG', name: 'Singapore', dial: '+65', flag: '🇸🇬' },
+  { iso: 'SI', name: 'Slovenia', dial: '+386', flag: '🇸🇮' },
+  { iso: 'SK', name: 'Slovakia', dial: '+421', flag: '🇸🇰' },
+  { iso: 'TH', name: 'Thailand', dial: '+66', flag: '🇹🇭' },
+];
+
+function getCountry(iso: string): Country {
+  return SUPPORTED_COUNTRIES.find((c) => c.iso === iso) || SUPPORTED_COUNTRIES[0];
+}
+
+// Custom, searchable country picker. Deliberately NOT a native <select>: a
+// 40-plus row native dropdown is unstyleable and reads as an afterthought.
+// This is keyboard-navigable (up/down/enter/escape), type-to-filter, closes on
+// outside click, and fuses to the left of the phone input as a flag + dial code
+// control, matching the intl-tel pattern people already know.
+function CountrySelect({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const selected = getCountry(value);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? SUPPORTED_COUNTRIES.filter((c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.iso.toLowerCase().includes(q) ||
+        c.dial.replace('+', '').includes(q.replace('+', ''))
+      )
+    : SUPPORTED_COUNTRIES;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery('');
+    const idx = SUPPORTED_COUNTRIES.findIndex((c) => c.iso === value);
+    setActiveIndex(idx < 0 ? 0 : idx);
+    const t = setTimeout(() => searchRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [open, value]);
+
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(`[data-idx="${activeIndex}"]`);
+    if (el) el.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, open]);
+
+  const choose = (iso: string) => { onChange(iso); setOpen(false); };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(filtered.length - 1, i + 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex((i) => Math.max(0, i - 1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); const c = filtered[activeIndex]; if (c) choose(c.iso); }
+    else if (e.key === 'Escape') { e.preventDefault(); setOpen(false); }
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex items-center gap-2 h-full pl-4 pr-3 border-r border-white/[0.08] rounded-l-xl text-[#fafaf9] hover:bg-white/[0.04] transition-colors focus:outline-none focus:bg-white/[0.04]"
+      >
+        <span className="text-xl leading-none" aria-hidden="true">{selected.flag}</span>
+        <span className="text-[15px] text-[#fafaf9]/70 tabular-nums">{selected.dial}</span>
+        <ChevronDown className={`h-4 w-4 text-[#fafaf9]/40 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-[360px] max-w-[calc(100vw-3rem)] rounded-xl border border-white/[0.08] bg-[#0e0e0e] shadow-2xl shadow-black/70 overflow-hidden">
+          <div className="p-2 border-b border-white/[0.06]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
+                onKeyDown={onKeyDown}
+                placeholder="Search countries"
+                className="w-full rounded-lg bg-white/[0.04] border border-white/[0.06] pl-9 pr-3 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20"
+              />
+            </div>
+          </div>
+          <ul ref={listRef} role="listbox" className="max-h-64 overflow-y-auto py-1">
+            {filtered.map((c, i) => (
+              <li
+                key={c.iso}
+                data-idx={i}
+                role="option"
+                aria-selected={c.iso === value}
+                onMouseEnter={() => setActiveIndex(i)}
+                onClick={() => choose(c.iso)}
+                className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${i === activeIndex ? 'bg-emerald-500/10' : ''}`}
+              >
+                <span className="text-xl leading-none" aria-hidden="true">{c.flag}</span>
+                <span className="flex-1 text-[15px] text-[#fafaf9]/85 leading-snug">{c.name}</span>
+                <span className="text-[13px] text-[#fafaf9]/40 tabular-nums">{c.dial}</span>
+                {c.iso === value && <Check className="h-4 w-4 text-emerald-400" />}
+              </li>
+            ))}
+            {filtered.length === 0 && (
+              <li className="px-3 py-8 text-center text-sm text-[#fafaf9]/40">No countries match that search</li>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
@@ -71,7 +241,8 @@ function OnboardingContent() {
   const [agencyId, setAgencyId] = useState<string | null>(null);
   const [agencyData, setAgencyData] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [agencyDetails, setAgencyDetails] = useState({ name: '', phone: '', referralSource: '' });
+  const [agencyDetails, setAgencyDetails] = useState({ name: '', phone: '', referralSource: '', country: 'US' });
+  const selectedCountry = getCountry(agencyDetails.country);
 
   useEffect(() => {
     const fetchAgency = async () => {
@@ -107,7 +278,7 @@ function OnboardingContent() {
         const data = await response.json();
         setAgencyData(data.agency);
         if (data.agency.name && !data.agency.name.includes("'s Agency") && data.agency.name !== 'My Agency') {
-          setAgencyDetails({ name: data.agency.name || '', phone: data.agency.phone || '', referralSource: data.agency.referral_source || '' });
+          setAgencyDetails({ name: data.agency.name || '', phone: data.agency.phone || '', referralSource: data.agency.referral_source || '', country: data.agency.country || 'US' });
           setCurrentStep(2);
         } else { setCurrentStep(1); }
       }
@@ -136,7 +307,7 @@ function OnboardingContent() {
     if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
     if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
     if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
-    const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource });
+    const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource, country: agencyDetails.country });
     if (result?.success) {
       // NOTE: The test client is no longer auto-provisioned here. It is now an
       // on-demand "activate when you're ready" tool — just like the demo phone —
@@ -246,14 +417,17 @@ function OnboardingContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30" />
+                <div className="flex items-stretch rounded-xl border border-white/[0.08] bg-white/[0.03] focus-within:border-white/20 focus-within:bg-white/[0.05] transition-all">
+                  <CountrySelect
+                    value={agencyDetails.country}
+                    onChange={(iso) => { setAgencyDetails({ ...agencyDetails, country: iso }); setError(''); }}
+                  />
                   <input type="tel" value={agencyDetails.phone}
                     onChange={(e) => { setAgencyDetails({ ...agencyDetails, phone: e.target.value }); setError(''); }}
-                    placeholder="(555) 123-4567" required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-12 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all" />
+                    placeholder={selectedCountry.example || 'Phone number'} required
+                    className="flex-1 min-w-0 bg-transparent rounded-r-xl pl-3 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none" />
                 </div>
-                <p className="mt-2 text-xs text-[#fafaf9]/40">For support, account updates, and important notifications</p>
+                <p className="mt-2 text-xs text-[#fafaf9]/40">We use your country to route your calls and texts correctly, and for support and account notifications.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
