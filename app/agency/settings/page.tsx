@@ -708,7 +708,7 @@ function AgencySettingsContent() {
                   </div>
                   <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
                     Control whether new clients need to enter a credit card to start their 7-day trial.
-                    {' '}<strong style={{ color: theme.text }}>Affects only signups from your embed widget</strong>, not clients you add manually from the dashboard.
+                    {' '}<strong style={{ color: theme.text }}>Affects only signups from your embed widget or marketing site</strong>, not clients you add manually from the dashboard.
                   </p>
 
                   <div className="flex items-start justify-between rounded-xl px-4 py-3 mb-3" style={{ backgroundColor: requireCardForTrial && canEnableCardRequired ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${requireCardForTrial && canEnableCardRequired ? theme.primary30 : theme.border}`, opacity: canEnableCardRequired ? 1 : 0.6 }}>

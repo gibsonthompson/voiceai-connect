@@ -184,16 +184,20 @@ export function deriveAgencyTeamLimit(opts: {
   subscriptionStatus?: string | null;
   planType?: string | null;
 }): number {
-  const { maxTeamMembersAgency, planType } = opts;
-  // Explicit DB value wins. Strict null/undefined check so an explicit 0
+  const { maxTeamMembersAgency, subscriptionStatus, planType } = opts;
+  // During an active trial the agency gets unlimited seats (trial unlocks
+  // everything). Checked first so it wins even over the plan-derived cap and
+  // even when the backend has coerced a NULL override to 0. On conversion to
+  // paid, reconcileAgencyTeamSeats() in stripe-platform.js disables any newest
+  // over-cap members. Keep in sync with checkTeamLimit() in src/routes/team.js.
+  const isTrial = subscriptionStatus === 'trial' || subscriptionStatus === 'trialing';
+  if (isTrial) return -1;
+  // Explicit DB value wins next. Strict null/undefined check so an explicit 0
   // (Free cap) or -1 (Scale unlimited) is respected, matching the backend.
   if (maxTeamMembersAgency !== null && maxTeamMembersAgency !== undefined) {
     return maxTeamMembersAgency;
   }
-  // Seat caps follow the SELECTED plan, including during the trial, so this
-  // matches checkTeamLimit() in src/routes/team.js exactly: Scale unlimited,
-  // Pro 3, Free 0. subscriptionStatus is accepted for call-site compatibility
-  // but intentionally no longer grants trial-unlimited.
+  // Otherwise seat caps follow the SELECTED plan: Scale unlimited, Pro 3, Free 0.
   const plan = (planType || 'free').toLowerCase();
   if (plan === 'scale' || plan === 'enterprise') return -1;
   if (plan === 'pro' || plan === 'professional') return 3;
