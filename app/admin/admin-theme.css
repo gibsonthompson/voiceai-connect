@@ -1,0 +1,136 @@
+/* ==========================================================================
+   ADMIN THEME TOKENS (emerald on white)
+   The single source of truth for the admin color system. Scoped to .admin-scope
+   so it never leaks into the marketing site or agency dashboards. The admin
+   layout adds className="admin-scope" on its root wrapper. Components reference
+   these with Tailwind arbitrary values, e.g. bg-[var(--a-card)] text-[var(--a-ink)].
+   ========================================================================== */
+
+.admin-scope {
+  /* surfaces */
+  --a-bg: #F4FAF7;
+  --a-card: #FFFFFF;
+  --a-sidebar: #0C3B2C;
+  --a-sidebar-2: #0F4835;
+
+  /* text */
+  --a-ink: #0C2018;
+  --a-muted: #5A6E62;
+  --a-dim: #93A69B;
+
+  /* lines */
+  --a-line: #E3EFE8;
+  --a-line-2: #D2E4DA;
+
+  /* emerald (primary) */
+  --a-em: #10b981;
+  --a-em-deep: #0B9668;
+  --a-em-2: #34d399;
+  --a-em-soft: #E7F8F0;
+  --a-em-line: #BEEAD6;
+
+  /* semantic accents, tuned for a white background */
+  --a-cyan: #0E9BB5; --a-cyan-soft: #DBF1F6;
+  --a-amber: #B8790A; --a-amber-soft: #FBF0D6;
+  --a-red: #D33A3F; --a-red-soft: #FBE3E3;
+  --a-violet: #7C4DEF; --a-violet-soft: #EEE7FB;
+
+  --a-radius: 18px;
+  --a-shadow: 0 1px 2px rgba(12,32,24,.04), 0 10px 26px rgba(12,32,24,.06);
+
+  background: var(--a-bg);
+  color: var(--a-ink);
+}
+
+/* ==========================================================================
+   SHARED PRIMITIVES
+   The handful of element styles repeated on every page. Everything else stays
+   in Tailwind on the components themselves.
+   ========================================================================== */
+
+.admin-scope .a-card {
+  background: var(--a-card);
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius);
+  box-shadow: var(--a-shadow);
+}
+
+.admin-scope .a-panel {
+  background: var(--a-card);
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius);
+  box-shadow: var(--a-shadow);
+  overflow: hidden;
+}
+
+/* buttons */
+.admin-scope .a-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 13px; font-weight: 600; line-height: 1;
+  padding: 9px 14px; border-radius: 10px; border: 1px solid transparent;
+  background: var(--a-em); color: #04140D; cursor: pointer;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+.admin-scope .a-btn:hover { background: var(--a-em-2); }
+.admin-scope .a-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.admin-scope .a-btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 13px; font-weight: 600; line-height: 1;
+  padding: 9px 14px; border-radius: 10px;
+  background: var(--a-card); color: var(--a-em-deep);
+  border: 1px solid var(--a-line-2); cursor: pointer;
+  transition: border-color .15s;
+}
+.admin-scope .a-btn-ghost:hover { border-color: var(--a-em-line); }
+
+/* inputs */
+.admin-scope .a-input {
+  width: 100%; height: 40px;
+  background: var(--a-card); color: var(--a-ink);
+  border: 1px solid var(--a-line-2); border-radius: 11px;
+  padding: 0 14px; font-size: 13.5px;
+}
+.admin-scope .a-input::placeholder { color: var(--a-dim); }
+.admin-scope .a-input:focus { outline: 2px solid var(--a-em-line); outline-offset: 0; border-color: transparent; }
+
+/* filter chips */
+.admin-scope .a-chip {
+  font-size: 12px; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px;
+  background: var(--a-card); color: var(--a-muted);
+  border: 1px solid var(--a-line-2); cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.admin-scope .a-chip:hover { color: var(--a-em-deep); border-color: var(--a-em-line); }
+.admin-scope .a-chip[data-on="true"] { background: var(--a-em); color: #04140D; border-color: var(--a-em); }
+.admin-scope .a-chip[data-tone="danger"][data-on="true"] { background: var(--a-red); border-color: var(--a-red); color: #fff; }
+
+/* section label */
+.admin-scope .a-eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--a-em-deep); display: flex; align-items: center; gap: 10px;
+}
+.admin-scope .a-eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--a-line); }
+
+/* table shell */
+.admin-scope .a-table { width: 100%; border-collapse: collapse; }
+.admin-scope .a-table thead th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--a-dim); font-weight: 600; text-align: left;
+  padding: 10px 20px; background: #F8FCFA;
+}
+.admin-scope .a-table thead th.r { text-align: right; }
+.admin-scope .a-table tbody td {
+  padding: 13px 20px; font-size: 13px; font-weight: 500;
+  color: var(--a-muted); border-top: 1px solid var(--a-line); vertical-align: middle;
+}
+.admin-scope .a-table tbody td.r { text-align: right; color: var(--a-ink); }
+.admin-scope .a-table tbody tr { transition: background .12s; }
+.admin-scope .a-table tbody tr:hover { background: #F6FCF9; }
+
+/* number styling helper, pair with the Space Grotesk font class on the element */
+.admin-scope .a-num { font-feature-settings: "tnum"; letter-spacing: -.02em; }
+
+/* tiny status dot */
+.admin-scope .a-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }

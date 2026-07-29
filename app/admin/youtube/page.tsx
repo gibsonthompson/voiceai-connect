@@ -1,5 +1,13 @@
 'use client';
 
+// ============================================================================
+// CONTENT (YouTube): reskinned to the emerald-on-white admin system.
+// The console surface (stats, generate panel, filters, idea list, inline edit)
+// uses the shared admin tokens. The teleprompter overlay is deliberately left
+// dark: it is a fullscreen recording surface where a white screen would glare
+// on camera, and it already reads on the emerald accent.
+// ============================================================================
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Sparkles, ChevronDown, ChevronRight, Trash2, Check, Archive,
@@ -10,21 +18,34 @@ import {
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
+// Accent hues tuned for a white background (mirrors the admin palette).
 const PILLAR_META: Record<string, { label: string; color: string; icon: any }> = {
-  opportunity:  { label: 'Opportunity',  color: '#10b981', icon: Lightbulb },
-  proof:        { label: 'Proof',        color: '#3b82f6', icon: Target },
-  howto:        { label: 'How-To',       color: '#8b5cf6', icon: BookOpen },
-  industry:     { label: 'Industry',     color: '#f59e0b', icon: Building2 },
-  objection:    { label: 'Objection',    color: '#ef4444', icon: ShieldQuestion },
-  comparison:   { label: 'Comparison',   color: '#06b6d4', icon: ArrowLeftRight },
+  opportunity:  { label: 'Opportunity',  color: '#0B9668', icon: Lightbulb },
+  proof:        { label: 'Proof',        color: '#0E9BB5', icon: Target },
+  howto:        { label: 'How-To',       color: '#7C4DEF', icon: BookOpen },
+  industry:     { label: 'Industry',     color: '#B8790A', icon: Building2 },
+  objection:    { label: 'Objection',    color: '#D33A3F', icon: ShieldQuestion },
+  comparison:   { label: 'Comparison',   color: '#5A6E62', icon: ArrowLeftRight },
 };
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  idea:     { label: 'Idea',     color: '#6b7280' },
-  approved: { label: 'Approved', color: '#10b981' },
-  scripted: { label: 'Scripted', color: '#8b5cf6' },
-  recorded: { label: 'Recorded', color: '#3b82f6' },
-  archived: { label: 'Archived', color: '#374151' },
+  idea:     { label: 'Idea',     color: '#5A6E62' },
+  approved: { label: 'Approved', color: '#0B9668' },
+  scripted: { label: 'Scripted', color: '#7C4DEF' },
+  recorded: { label: 'Recorded', color: '#0E9BB5' },
+  archived: { label: 'Archived', color: '#93A69B' },
+};
+
+// Soft button style (deep text on a faint tint) for the emerald-on-white surface.
+const soft = (color: string, bg: string, line: string): React.CSSProperties => ({
+  color, background: bg, border: `1px solid ${line}`,
+});
+const SOFT = {
+  em: soft('#0B9668', '#E7F8F0', '#BEEAD6'),
+  violet: soft('#7C4DEF', '#EEE7FB', '#DBCCF6'),
+  cyan: soft('#0E9BB5', '#DBF1F6', '#BFE7F0'),
+  red: soft('#D33A3F', '#FBE3E3', '#F3C9C9'),
+  slate: soft('#5A6E62', '#EEF3EF', '#DDE7E0'),
 };
 
 interface Idea {
@@ -55,8 +76,8 @@ function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to 
 
   if (!editing) {
     return (
-      <div onClick={() => setEditing(true)} className={`cursor-text rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-white/[0.04] ${className}`} style={style}>
-        {value || <span className="text-white/20 italic">{placeholder}</span>}
+      <div onClick={() => setEditing(true)} className={`cursor-text rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-[#F3F9F6] ${className}`} style={style}>
+        {value || <span className="text-[var(--a-dim)] italic">{placeholder}</span>}
       </div>
     );
   }
@@ -65,21 +86,21 @@ function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to 
     return (
       <textarea ref={ref as any} value={draft} onChange={e => setDraft(e.target.value)}
         onBlur={save} onKeyDown={e => { if (e.key === 'Escape') { setDraft(value); setEditing(false); } }}
-        className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 bg-white/[0.04] border border-emerald-500/30 text-white focus:outline-none resize-none ${className}`}
-        style={{ ...style, minHeight: '80px' }} />
+        className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 text-[var(--a-ink)] focus:outline-none resize-none ${className}`}
+        style={{ ...style, minHeight: '80px', background: 'var(--a-card)', border: '1px solid var(--a-em-line)' }} />
     );
   }
 
   return (
     <input ref={ref as any} value={draft} onChange={e => setDraft(e.target.value)}
       onBlur={save} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }}
-      className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 bg-white/[0.04] border border-emerald-500/30 text-white focus:outline-none ${className}`}
-      style={style} />
+      className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 text-[var(--a-ink)] focus:outline-none ${className}`}
+      style={{ ...style, background: 'var(--a-card)', border: '1px solid var(--a-em-line)' }} />
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// TELEPROMPTER OVERLAY
+// TELEPROMPTER OVERLAY (kept dark on purpose: recording surface)
 // ═══════════════════════════════════════════════════════════════════
 function Teleprompter({ script, title, onClose }: { script: string; title: string; onClose: () => void }) {
   const [playing, setPlaying] = useState(false);
@@ -339,21 +360,21 @@ function parseScript(text: string): { type: string; label: string; words: { text
 // BADGES
 // ═══════════════════════════════════════════════════════════════════
 function PillarBadge({ pillar }: { pillar: string }) {
-  const meta = PILLAR_META[pillar] || { label: pillar, color: '#6b7280', icon: Lightbulb };
+  const meta = PILLAR_META[pillar] || { label: pillar, color: '#5A6E62', icon: Lightbulb };
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
-      style={{ backgroundColor: `${meta.color}15`, color: meta.color, border: `1px solid ${meta.color}25` }}>
+      style={{ backgroundColor: `${meta.color}14`, color: meta.color, border: `1px solid ${meta.color}30` }}>
       <meta.icon className="w-2.5 h-2.5" />{meta.label}
     </span>
   );
 }
 
 function StatusBadge({ status, onClick }: { status: string; onClick?: () => void }) {
-  const meta = STATUS_META[status] || { label: status, color: '#6b7280' };
+  const meta = STATUS_META[status] || { label: status, color: '#5A6E62' };
   return (
     <span onClick={onClick}
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider ${onClick ? 'cursor-pointer hover:brightness-125' : ''}`}
-      style={{ backgroundColor: `${meta.color}20`, color: meta.color }}>
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider ${onClick ? 'cursor-pointer hover:brightness-95' : ''}`}
+      style={{ backgroundColor: `${meta.color}18`, color: meta.color, border: `1px solid ${meta.color}30` }}>
       {meta.label}
     </span>
   );
@@ -451,7 +472,7 @@ export default function AdminYouTubePage() {
   };
 
   return (
-    <div className="min-h-screen p-5 lg:p-8" style={{ backgroundColor: '#050505', color: '#e5e7eb' }}>
+    <div className="admin-scope min-h-screen p-5 lg:p-8">
 
       {/* Teleprompter overlay */}
       {teleprompterIdea?.script && (
@@ -460,74 +481,70 @@ export default function AdminYouTubePage() {
 
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">YouTube Content</h1>
-          <p className="text-sm text-white/40 mt-1">Generate ideas, write scripts, record with the teleprompter</p>
+          <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Content</h1>
+          <p className="text-sm text-[var(--a-muted)] mt-1">Generate ideas, write scripts, record with the teleprompter</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
-          <div className="rounded-xl p-3.5" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[10px] font-mono uppercase tracking-wider text-white/35">Total</p>
-            <p className="text-xl font-bold text-white mt-1">{stats.total}</p>
+          <div className="a-card p-3.5">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Total</p>
+            <p className="text-xl font-bold text-[var(--a-ink)] mt-1">{stats.total}</p>
           </div>
           {Object.entries(STATUS_META).filter(([k]) => k !== 'archived').map(([key, meta]) => (
-            <div key={key} className="rounded-xl p-3.5 cursor-pointer hover:brightness-110 transition-all"
+            <div key={key} className="a-card p-3.5 cursor-pointer hover:brightness-[0.99] transition-all"
               onClick={() => { setFilterStatus(filterStatus === key ? '' : key); setTimeout(fetchIdeas, 0); }}
-              style={{ backgroundColor: filterStatus === key ? `${meta.color}15` : 'rgba(255,255,255,0.03)', border: `1px solid ${filterStatus === key ? `${meta.color}30` : 'rgba(255,255,255,0.06)'}` }}>
-              <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: `${meta.color}90` }}>{meta.label}</p>
-              <p className="text-xl font-bold text-white mt-1">{stats.byStatus[key] || 0}</p>
+              style={filterStatus === key ? { background: `${meta.color}12`, borderColor: `${meta.color}40` } : undefined}>
+              <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: meta.color }}>{meta.label}</p>
+              <p className="text-xl font-bold text-[var(--a-ink)] mt-1">{stats.byStatus[key] || 0}</p>
             </div>
           ))}
         </div>
 
         {/* Generate Panel */}
-        <div className="rounded-2xl p-5 mb-6" style={{ backgroundColor: 'rgba(16, 185, 129, 0.04)', border: '1px solid rgba(16, 185, 129, 0.12)' }}>
+        <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-white">Generate Ideas</h2>
+            <Sparkles className="w-4 h-4" style={{ color: 'var(--a-em-deep)' }} />
+            <h2 className="text-sm font-semibold text-[var(--a-ink)]">Generate Ideas</h2>
           </div>
           <div className="grid sm:grid-cols-3 gap-3 mb-3">
-            <select value={genPillar} onChange={e => setGenPillar(e.target.value)}
-              className="rounded-lg px-3 py-2 text-sm bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-emerald-500/50">
+            <select value={genPillar} onChange={e => setGenPillar(e.target.value)} className="a-input">
               <option value="mixed">Mixed (all pillars)</option>
               {Object.entries(PILLAR_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
-            <select value={genCount} onChange={e => setGenCount(Number(e.target.value))}
-              className="rounded-lg px-3 py-2 text-sm bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-emerald-500/50">
+            <select value={genCount} onChange={e => setGenCount(Number(e.target.value))} className="a-input">
               {[3, 5, 8, 10].map(n => <option key={n} value={n}>{n} ideas</option>)}
             </select>
-            <button onClick={handleGenerate} disabled={generating}
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ backgroundColor: '#10b981', color: '#000' }}>
+            <button onClick={handleGenerate} disabled={generating} className="a-btn">
               {generating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating...</> : <><Sparkles className="w-3.5 h-3.5" />Generate</>}
             </button>
           </div>
           <input type="text" value={genContext} onChange={e => setGenContext(e.target.value)}
-            placeholder="Optional context — trends, angles, specific topics..."
-            className="w-full rounded-lg px-3 py-2 text-sm bg-white/[0.04] border border-white/[0.08] text-white placeholder-white/20 focus:outline-none focus:border-emerald-500/50" />
+            placeholder="Optional context (trends, angles, specific topics)..."
+            className="a-input" />
         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="w-3.5 h-3.5 text-white/30" />
+          <Filter className="w-3.5 h-3.5 text-[var(--a-dim)]" />
           <select value={filterPillar} onChange={e => { setFilterPillar(e.target.value); setTimeout(fetchIdeas, 0); }}
-            className="rounded-lg px-3 py-1.5 text-xs bg-white/[0.04] border border-white/[0.08] text-white/70 focus:outline-none">
+            className="a-input" style={{ maxWidth: 220, height: 36 }}>
             <option value="">All pillars</option>
             {Object.entries(PILLAR_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <button onClick={() => { fetchIdeas(); fetchStats(); }} className="ml-auto rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors">
+          <button onClick={() => { fetchIdeas(); fetchStats(); }} className="ml-auto rounded-lg p-1.5 text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[11px] font-mono text-white/30">{ideas.length}</span>
+          <span className="text-[11px] font-mono text-[var(--a-dim)]">{ideas.length}</span>
         </div>
 
         {/* Ideas */}
         {loading ? (
-          <div className="text-center py-20"><Loader2 className="w-6 h-6 animate-spin mx-auto text-white/30" /></div>
+          <div className="text-center py-20"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--a-em)]" /></div>
         ) : ideas.length === 0 ? (
-          <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <Lightbulb className="w-8 h-8 mx-auto text-white/15 mb-3" />
-            <p className="text-sm text-white/40">No ideas yet. Generate your first batch above.</p>
+          <div className="text-center py-20 a-card">
+            <Lightbulb className="w-8 h-8 mx-auto text-[var(--a-dim)] mb-3" />
+            <p className="text-sm text-[var(--a-muted)]">No ideas yet. Generate your first batch above.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -536,81 +553,82 @@ export default function AdminYouTubePage() {
               const isScripting = scriptingId === idea.id;
 
               return (
-                <div key={idea.id} className="rounded-xl overflow-hidden transition-all"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}` }}>
+                <div key={idea.id} className="a-card overflow-hidden transition-all"
+                  style={isExpanded ? { borderColor: 'var(--a-line-2)' } : undefined}>
 
                   {/* Header row */}
                   <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : idea.id)}>
-                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-white/30 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />}
+                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" />}
                     <PillarBadge pillar={idea.pillar} />
-                    <p className="text-sm text-white font-medium flex-1 truncate">{idea.title}</p>
-                    <span className="text-[11px] font-mono text-white/20 hidden sm:block">{idea.target_length}</span>
+                    <p className="text-sm text-[var(--a-ink)] font-medium flex-1 truncate">{idea.title}</p>
+                    <span className="text-[11px] font-mono text-[var(--a-dim)] hidden sm:block">{idea.target_length}</span>
                     <StatusBadge status={idea.status} />
                   </div>
 
                   {/* Expanded */}
                   {isExpanded && (
-                    <div className="px-4 pb-5 pt-2 border-t border-white/[0.04] space-y-5">
+                    <div className="px-4 pb-5 pt-2 border-t border-[var(--a-line)] space-y-5">
 
-                      {/* Title — inline editable */}
+                      {/* Title (inline editable) */}
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-white/30 mb-1">Title</p>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Title</p>
                         <InlineEdit value={idea.title} onSave={v => updateIdea(idea.id, { title: v })}
-                          className="text-base font-semibold text-white" />
+                          className="text-base font-semibold text-[var(--a-ink)]" />
                       </div>
 
-                      {/* Hook — inline editable */}
+                      {/* Hook (inline editable) */}
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-white/30 mb-1">Hook</p>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Hook</p>
                         <InlineEdit value={idea.hook} onSave={v => updateIdea(idea.id, { hook: v })}
-                          multiline className="text-sm text-white/70 italic" />
+                          multiline className="text-sm text-[var(--a-muted)] italic" />
                       </div>
 
-                      {/* Talking points — inline editable */}
+                      {/* Talking points (inline editable) */}
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-white/30 mb-2">Talking Points</p>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-2">Talking Points</p>
                         <div className="space-y-1">
                           {(idea.talking_points || []).map((tp, i) => (
                             <div key={i} className="flex items-start gap-2">
-                              <span className="font-mono text-[10px] text-white/20 mt-2 w-5 flex-shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                              <span className="font-mono text-[10px] text-[var(--a-dim)] mt-2 w-5 flex-shrink-0">{String(i + 1).padStart(2, '0')}</span>
                               <InlineEdit value={tp}
                                 onSave={v => {
                                   const updated = [...idea.talking_points];
                                   updated[i] = v;
                                   updateIdea(idea.id, { talking_points: updated } as any);
                                 }}
-                                className="text-sm text-white/60 flex-1" />
+                                className="text-sm text-[var(--a-muted)] flex-1" />
                             </div>
                           ))}
                         </div>
                       </div>
 
                       {/* Meta row */}
-                      <div className="flex flex-wrap gap-4 text-[11px] text-white/30">
+                      <div className="flex flex-wrap gap-4 text-[11px] text-[var(--a-dim)]">
                         <span>{modeLabels[idea.recording_mode] || idea.recording_mode}</span>
                         <span>{idea.target_length}</span>
                         <span>{new Date(idea.created_at).toLocaleDateString()}</span>
                       </div>
 
-                      {/* Notes — inline editable */}
+                      {/* Notes (inline editable) */}
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-white/30 mb-1">Notes</p>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Notes</p>
                         <InlineEdit value={idea.notes || ''} onSave={v => updateIdea(idea.id, { notes: v || null })}
-                          multiline placeholder="Add notes..." className="text-sm text-white/50" />
+                          multiline placeholder="Add notes..." className="text-sm text-[var(--a-muted)]" />
                       </div>
 
-                      {/* Script — inline editable */}
+                      {/* Script (inline editable) */}
                       {idea.script && (
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-[10px] font-mono uppercase tracking-wider text-white/30">Script</p>
+                            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Script</p>
                             <button onClick={() => setTeleprompterIdea(idea)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                              style={SOFT.em}>
                               <Maximize2 className="w-3 h-3" />Teleprompter
                             </button>
                           </div>
                           <InlineEdit value={idea.script} onSave={v => updateIdea(idea.id, { script: v })}
-                            multiline className="text-[13px] text-white/55 font-mono leading-relaxed"
+                            multiline className="text-[13px] text-[var(--a-muted)] font-mono leading-relaxed"
                             style={{ whiteSpace: 'pre-wrap' }} />
                         </div>
                       )}
@@ -619,35 +637,35 @@ export default function AdminYouTubePage() {
                       <div className="flex flex-wrap gap-2 pt-1">
                         {idea.status === 'idea' && (
                           <button onClick={() => updateIdea(idea.id, { status: 'approved' })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.em}>
                             <Check className="w-3 h-3" />Approve
                           </button>
                         )}
                         {!idea.script && (
                           <button onClick={() => generateScript(idea.id)} disabled={isScripting}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-500/15 text-violet-400 border border-violet-500/20 hover:bg-violet-500/25 transition-colors disabled:opacity-40">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40" style={SOFT.violet}>
                             {isScripting ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                             {isScripting ? 'Writing...' : 'Generate Script'}
                           </button>
                         )}
                         {idea.script && !teleprompterIdea && (
                           <button onClick={() => setTeleprompterIdea(idea)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.em}>
                             <Play className="w-3 h-3" />Record Mode
                           </button>
                         )}
                         {idea.status === 'scripted' && (
                           <button onClick={() => updateIdea(idea.id, { status: 'recorded' })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20 hover:bg-blue-500/25 transition-colors">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.cyan}>
                             <Check className="w-3 h-3" />Mark Recorded
                           </button>
                         )}
                         <button onClick={() => updateIdea(idea.id, { status: 'archived' })}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] text-white/30 border border-white/[0.06] hover:bg-white/[0.08] transition-colors">
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.slate}>
                           <Archive className="w-3 h-3" />Archive
                         </button>
                         <button onClick={() => deleteIdea(idea.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400/60 border border-red-500/10 hover:bg-red-500/20 transition-colors ml-auto">
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ml-auto" style={SOFT.red}>
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
