@@ -12,22 +12,22 @@ interface FAQItem { question: string; answer: string; category: string; }
 
 const FAQ_DATA: FAQItem[] = [
   { category: 'Platform', question: 'What is VoiceAI Connect?', answer: "VoiceAI Connect is a white-label AI receptionist platform built for agencies and resellers. Agencies use the platform to brand and resell AI receptionist subscriptions to local service businesses for $99 to $299 per month. The platform automatically provisions the AI voice agent, dedicated phone number, and client-facing dashboard at signup. Subscription payments flow directly to the agency through Stripe Connect. Fifteen enterprise vendors are integrated and shipped as a single agency-ready application." },
-  { category: 'Platform', question: 'How does the white-label experience work?', answer: "Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency's brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle — from signup through ongoing usage to billing." },
-  { category: 'Platform', question: 'Do my clients get their own dashboard?', answer: "Yes. Every business you onboard receives their own fully branded dashboard — call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, contact management, and configurable SMS and email alerts. They never see your other clients or your agency backend. You get a separate agency dashboard where you manage all clients, revenue, branding, and operations from one interface." },
-  { category: 'Pricing', question: 'What does it cost to start an AI receptionist agency?', answer: "Three tiers. The Free tier has no platform fee — agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial — you add a card to start it and aren't charged until the trial ends." },
-  { category: 'Pricing', question: 'How do free trials work?', answer: "Two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial — you add a card to start it and aren't charged until day 14, and you can cancel anytime before then at no cost. That gives you full access to white-label branding, marketing site, CRM, and all platform features. The Free plan has no trial because there is no platform fee, and it starts with no card. At the client level, every plan includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins." },
-  { category: 'Pricing', question: 'Why is a credit card required to start a Pro or Scale trial?', answer: "It keeps the 14-day trial reserved for operators who are seriously building an agency. Trials cost real money to run — phone numbers, voice minutes, and infrastructure — so requiring a card lets us avoid subsidizing tire-kickers and keep platform pricing low for everyone who is actually building. You are never charged during the trial and can cancel anytime before it ends at no cost; if you continue, billing simply begins at day 14. The Free plan always needs no card." },
-  { category: 'Features', question: 'Does the AI book appointments?', answer: "Yes — Google Calendar integration is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner's Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller's name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly." },
-  { category: 'Features', question: 'Does the AI filter spam and robocalls?', answer: "Yes — automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against the client's monthly limit. The business owner receives a notification when spam is blocked. No configuration required — it works out of the box." },
-  { category: 'Features', question: 'Can the AI handle multiple calls at once?', answer: "Unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed — no busy signals, no hold music, no missed calls during peak hours. This is one of the strongest selling points to local businesses." },
-  { category: 'Features', question: 'Does the AI work in Spanish?', answer: "Yes — automatic English and Spanish on every plan, no configuration required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends the business owner a summary in English." },
+  { category: 'Platform', question: 'How does the white-label experience work?', answer: "Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency's brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle, from signup through ongoing usage to billing." },
+  { category: 'Platform', question: 'Do my clients get their own dashboard?', answer: "Yes. Every business you onboard receives their own fully branded dashboard: call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, contact management, and configurable SMS and email alerts. They never see your other clients or your agency backend. You get a separate agency dashboard where you manage all clients, revenue, branding, and operations from one interface." },
+  { category: 'Pricing', question: 'What does it cost to start an AI receptionist agency?', answer: "Three tiers. The Free tier has no platform fee, agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial (you add a card to start it and aren't charged until the trial ends)." },
+  { category: 'Pricing', question: 'How do free trials work?', answer: "Two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial (you add a card to start it and aren't charged until day 14, and you can cancel anytime before then at no cost). That gives you full access to white-label branding, marketing site, CRM, and all platform features. The Free plan has no trial because there is no platform fee, and it starts with no card. At the client level, every plan includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins." },
+  { category: 'Pricing', question: 'Why is a credit card required to start a Pro or Scale trial?', answer: "It keeps the 14-day trial reserved for operators who are seriously building an agency. Trials cost real money to run (phone numbers, voice minutes, and infrastructure), so requiring a card lets us avoid subsidizing tire-kickers and keep platform pricing low for everyone who is actually building. You are never charged during the trial and can cancel anytime before it ends at no cost; if you continue, billing simply begins at day 14. The Free plan always needs no card." },
+  { category: 'Features', question: 'Does the AI book appointments?', answer: "Yes. Google Calendar integration is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner's Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller's name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly." },
+  { category: 'Features', question: 'Does the AI filter spam and robocalls?', answer: "Yes, automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against the client's monthly limit. The business owner receives a notification when spam is blocked. No configuration required, it works out of the box." },
+  { category: 'Features', question: 'Can the AI handle multiple calls at once?', answer: "Unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed: no busy signals, no hold music, no missed calls during peak hours. This is one of the strongest selling points to local businesses." },
+  { category: 'Features', question: 'Does the AI work in Spanish?', answer: "Yes, automatic English and Spanish on every plan, no configuration required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends the business owner a summary in English." },
   { category: 'Setup', question: 'What do I need from each client to get them set up?', answer: "Just the basics: business name, industry, phone number, and some information about their services, hours, and common questions. Everything is entered through the branded signup flow. If the client has a website, the AI scans it automatically. The entire client onboarding completes in under sixty seconds." },
-  { category: 'Comparison', question: 'How is this different from GoHighLevel?', answer: "GoHighLevel is a multi-purpose marketing platform — CRM, funnels, email, SMS, websites. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound)." },
-  { category: 'Compliance', question: 'Does it support HIPAA clients?', answer: "Yes. HIPAA mode is available as a per-client toggle. When enabled, call recordings are not stored, data collection is limited to the caller's name and reason for visit, and appointment booking can be disabled. We provide a BAA template for healthcare clients. VoiceAI Connect never uses call data for AI model training — on any plan, for any client." },
-  { category: 'Billing', question: 'How does Stripe Connect billing work?', answer: "Stripe Connect routes every client subscription directly into your bank account at the price tier you set. Zero revenue share, zero holdbacks, zero middleman. The platform never sees the money — your clients pay you. Automated invoicing on every client signup." },
+  { category: 'Comparison', question: 'How is this different from GoHighLevel?', answer: "GoHighLevel is a multi-purpose marketing platform: CRM, funnels, email, SMS, websites. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound)." },
+  { category: 'Compliance', question: 'Does it support HIPAA clients?', answer: "Yes. HIPAA mode is available as a per-client toggle. When enabled, call recordings are not stored, data collection is limited to the caller's name and reason for visit, and appointment booking can be disabled. We provide a BAA template for healthcare clients. VoiceAI Connect never uses call data for AI model training, on any plan, for any client." },
+  { category: 'Billing', question: 'How does Stripe Connect billing work?', answer: "Stripe Connect routes every client subscription directly into your bank account at the price tier you set. Zero revenue share, zero holdbacks, zero middleman. The platform never sees the money, your clients pay you. Automated invoicing on every client signup." },
   { category: 'Data', question: 'Does VoiceAI Connect use call data for AI training?', answer: "No. VoiceAI Connect never uses call data, transcriptions, or recordings to train AI models. The underlying AI providers also do not train on API-submitted data per their terms of service. Your data and your clients' data is never used for model training." },
-  { category: 'Platform', question: 'Is this another make money with AI product?', answer: "No. VoiceAI Connect is software infrastructure, not a course or a coaching program. The platform functions as the operating system for an actual service business — comparable to how Shopify functions as the operating system for an e-commerce business. There are no upsells, community fees, or playbooks to purchase." },
-  { category: 'Support', question: 'Who handles client support?', answer: "You are the point of contact for your clients — that is the white-label model. Your clients interact with your brand through their dashboard and never contact VoiceAI Connect directly. On our side, we provide platform support to you as the agency operator. If you hit a technical issue, we resolve it." },
+  { category: 'Platform', question: 'Is this another make money with AI product?', answer: "No. VoiceAI Connect is software infrastructure, not a course or a coaching program. The platform functions as the operating system for an actual service business, comparable to how Shopify functions as the operating system for an e-commerce business. There are no upsells, community fees, or playbooks to purchase." },
+  { category: 'Support', question: 'Who handles client support?', answer: "You are the point of contact for your clients. That is the white-label model. Your clients interact with your brand through their dashboard and never contact VoiceAI Connect directly. On our side, we provide platform support to you as the agency operator. If you hit a technical issue, we resolve it." },
 ];
 
 const QUICK_ACTIONS = [
@@ -40,7 +40,7 @@ const QUICK_ACTIONS = [
 interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SVG ICONS — defined OUTSIDE component to prevent re-creation
+   SVG ICONS, defined OUTSIDE component to prevent re-creation
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const font = "'Geist', system-ui, sans-serif";
@@ -61,7 +61,7 @@ function WIcon({ type }: { type: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS — defined OUTSIDE to prevent focus loss on re-render
+   SUB-COMPONENTS, defined OUTSIDE to prevent focus loss on re-render
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function WidgetLogoMark() {
@@ -129,6 +129,7 @@ export default function SupportWidget() {
   const [escDone, setEscDone] = useState(false);
   const [escErr, setEscErr] = useState('');
   const [isAllowedDomain, setIsAllowedDomain] = useState(false);
+  const [hideForClientSurface, setHideForClientSurface] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +137,25 @@ export default function SupportWidget() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
   useEffect(() => { if (sessionStorage.getItem('w-t')) return; const t = setTimeout(() => setTeaser(true), 5000); return () => clearTimeout(t); }, []);
   useEffect(() => { const h = window.location.hostname; if (h === 'myvoiceaiconnect.com' || h === 'www.myvoiceaiconnect.com' || h === 'localhost') setIsAllowedDomain(true); }, []);
+
+  // Never render inside the embedded signup widget or on any client-scoped
+  // signup/auth surface. The embed iframe loads /signup on the platform origin,
+  // so the domain check above passes, and /signup is not a dashboard route, so
+  // without this gate the widget leaks the VoiceAI Connect brand into an
+  // agency's white-label form. Gate on embed mode (the iframe) and on
+  // agency-scoped signup/auth routes (a direct client-signup link). Agency
+  // self-signup to the platform (no agency param, not embed) still shows it.
+  // Recomputed on pathname change so in-iframe step navigation stays gated.
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const isEmbed = sp.get('embed') === 'true';
+      const path = window.location.pathname;
+      const isSignupFlow = path.startsWith('/signup') || path.startsWith('/auth');
+      const isClientScoped = !!sp.get('agency');
+      setHideForClientSurface(isEmbed || (isSignupFlow && isClientScoped));
+    } catch { /* noop */ }
+  }, [pathname]);
 
   const open = useCallback(() => { setIsOpen(true); setTeaser(false); sessionStorage.setItem('w-t', '1'); }, []);
   const close = useCallback(() => setIsOpen(false), []);
@@ -197,14 +217,17 @@ export default function SupportWidget() {
   // Hide on dashboard routes
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
 
-  // Only show on VoiceAI Connect domains — not on agency marketing sites
+  // Never leak into the embedded widget or a client-scoped signup/auth surface
+  if (hideForClientSurface) return null;
+
+  // Only show on VoiceAI Connect domains, not on agency marketing sites
   if (!isAllowedDomain) return null;
 
   return (
     <>
       <style>{css}</style>
 
-      {/* Teaser — solid dark so it stays legible over the page's light sections */}
+      {/* Teaser: solid dark so it stays legible over the page's light sections */}
       {teaser && !isOpen && (
         <div style={{ position: 'fixed', bottom: 86, right: 20, maxWidth: 210, zIndex: 9998 }}>
           <div style={{ background: 'linear-gradient(180deg, #161616, #0c0c0c)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '11px 14px', fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, fontFamily: font, boxShadow: '0 16px 40px -10px rgba(0,0,0,0.6)' }}>
@@ -214,7 +237,7 @@ export default function SupportWidget() {
         </div>
       )}
 
-      {/* FAB — solid dark base so the button is clearly visible on both dark and light sections */}
+      {/* FAB: solid dark base so the button is clearly visible on both dark and light sections */}
       <button onClick={open} aria-label="Open support"
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 54, height: 54, borderRadius: 16,
@@ -367,7 +390,7 @@ export default function SupportWidget() {
             </div>
           )}
 
-          {/* Input bar — hidden on escalation */}
+          {/* Input bar: hidden on escalation */}
           {view !== 'escalation' && (
             <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}

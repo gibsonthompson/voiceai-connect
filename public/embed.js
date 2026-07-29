@@ -1,5 +1,5 @@
 /* ============================================================================
- * VoiceAI Connect — Embeddable Signup Widget Loader
+ * VoiceAI Connect - Embeddable Signup Widget Loader
  *
  * Agencies paste this on their marketing site:
  *
@@ -13,20 +13,20 @@
  *
  * What this does:
  *   1. Finds every [data-voiceai-signup] container on the host page
- *   2. Injects an <iframe> into it, pointed at our /get-started page with
+ *   2. Injects an <iframe> into it, pointed at our /signup page with
  *      ?embed=true&agency=<uuid> (plus optional theme / default_plan params)
  *   3. Listens for postMessage events from the iframe (origin-locked) and:
- *        - voiceai:ready          — initial paint complete
- *        - voiceai:resize         — adjust iframe height to match content
- *        - voiceai:step_change    — push GTM dataLayer event
- *        - voiceai:signup_complete — push GTM dataLayer event, optional redirect
- *        - voiceai:auth_complete  — optional top-frame redirect to dashboard
+ *        - voiceai:ready           initial paint complete
+ *        - voiceai:resize          adjust iframe height to match content
+ *        - voiceai:step_change     push GTM dataLayer event
+ *        - voiceai:signup_complete push GTM dataLayer event, optional redirect
+ *        - voiceai:auth_complete   optional top-frame redirect to dashboard
  *
  * Security:
- *   - Origin verification on every inbound message
+ *   - Origin verification on every inbound message (apex and www both allowed)
  *   - referrerpolicy="no-referrer-when-downgrade" on the iframe
  *   - No auth tokens are passed via postMessage; they flow inside the iframe
- *     via the password-reset → set-password JWT path
+ *     via the password-reset to set-password JWT path
  *
  * Cache-Control: public, max-age=300, s-maxage=3600 (set at the Vercel layer)
  * ============================================================================ */
@@ -34,12 +34,12 @@
 (function () {
   'use strict';
 
-  // ── PLATFORM_ORIGIN auto-detect ────────────────────────────────────────────
+  // PLATFORM_ORIGIN auto-detect.
   // The script's own src tells us which platform we belong to. Lets the same
   // embed.js work whether agencies load it from myvoiceaiconnect.com (Path A,
   // recommended) or from an agency subdomain like callbird.myvoiceaiconnect.com
   // (Path B, also works since slug subdomains are auto-mapped by middleware).
-  // Falls back to the platform domain if detection fails — covers the case
+  // Falls back to the platform domain if detection fails, covering the case
   // where some bundler strips script[src] or the script was injected by a
   // non-standard loader.
   function detectPlatformOrigin() {
@@ -58,6 +58,28 @@
 
   var PLATFORM_ORIGIN = detectPlatformOrigin();
 
+  // Origin allowlist. myvoiceaiconnect.com (apex) 307-redirects to
+  // www.myvoiceaiconnect.com, so the iframe's real origin can end up as the
+  // www variant even though the script was loaded from the apex (or vice
+  // versa). If we only trusted PLATFORM_ORIGIN, every inbound postMessage from
+  // the redirected iframe would be dropped: no resize (form clips at 600px),
+  // no signup_complete / auth_complete (no dashboard handoff, no GTM events).
+  // So trust both the www and non-www form of our own origin.
+  function toggleWww(origin) {
+    try {
+      var u = new URL(origin);
+      if (u.host.indexOf('www.') === 0) u.host = u.host.slice(4);
+      else u.host = 'www.' + u.host;
+      return u.protocol + '//' + u.host;
+    } catch (_) {
+      return origin;
+    }
+  }
+
+  var ALLOWED_ORIGINS = [PLATFORM_ORIGIN];
+  var altOrigin = toggleWww(PLATFORM_ORIGIN);
+  if (ALLOWED_ORIGINS.indexOf(altOrigin) === -1) ALLOWED_ORIGINS.push(altOrigin);
+
   // Iframe target: /signup is the canonical signup wizard. Older embed.js
   // loads on the internet still reference /get-started, which now resolves
   // via a permanent redirect in next.config.ts (carries embed=true, agency,
@@ -68,7 +90,7 @@
 
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-  // Idempotency — multiple <script> tags on the same page shouldn't double-inject.
+  // Idempotency: multiple <script> tags on the same page shouldn't double-inject.
   if (window.__voiceaiEmbedLoaded) return;
   window.__voiceaiEmbedLoaded = true;
 
@@ -91,7 +113,7 @@
     if (defaultPlan) params.set('default_plan', defaultPlan);
 
     // Pass the host page's origin so the iframe can target postMessage at it
-    // specifically instead of broadcasting to '*'. Defense-in-depth — the
+    // specifically instead of broadcasting to '*'. Defense-in-depth: the
     // parent still validates e.origin on the receiving side either way.
     if (window.location && window.location.origin) {
       params.set('parent_origin', window.location.origin);
@@ -135,11 +157,9 @@
 
     container.appendChild(iframe);
 
-    // ────────────────────────────────────────────────────────────────────
-    // postMessage handler — origin-locked to PLATFORM_ORIGIN.
-    // ────────────────────────────────────────────────────────────────────
+    // postMessage handler, origin-locked to ALLOWED_ORIGINS (apex + www).
     function onMessage(e) {
-      if (e.origin !== PLATFORM_ORIGIN) return;
+      if (ALLOWED_ORIGINS.indexOf(e.origin) === -1) return;
       if (e.source !== iframe.contentWindow) return; // only THIS iframe's events
       if (!e.data || typeof e.data !== 'object') return;
       if (typeof e.data.type !== 'string') return;
@@ -178,7 +198,7 @@
           //   1. Agency's data-redirect-on-success (their white-label thank-you page)
           //   2. The iframe's suggested default_url (platform dashboard, where
           //      the user is already logged-in via platform-origin localStorage)
-          //   3. Nothing — leave user on iframe success state
+          //   3. Nothing, leave user on iframe success state
           // Both URLs are sanity-checked for the https:// prefix to block
           // javascript: / data: URL shenanigans.
           var navTarget = null;
