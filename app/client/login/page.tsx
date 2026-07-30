@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
@@ -42,6 +42,10 @@ function getThemeHint(): 'light' | 'dark' {
 function ClientLoginContent() {
   const searchParams = useSearchParams();
   const signupSuccess = searchParams?.get('signup') === 'success';
+  // Handoff from the embedded signup: welcome=1 shows a "you're all set" banner
+  // and we prefill the email so the client only types their new password.
+  const welcome = searchParams?.get('welcome') === '1';
+  const prefillEmail = searchParams?.get('email') || '';
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,10 +53,22 @@ function ClientLoginContent() {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [themeHint, setThemeHint] = useState<'light' | 'dark'>('dark');
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   // Read the cached theme AFTER mount so the server render ('dark') and the
   // client's first render match. See getThemeHint comment above (#419 fix).
   useEffect(() => { setThemeHint(getThemeHint()); }, []);
+
+  // Prefill the email from the signup handoff, once, after mount (keeps the
+  // first render identical on server and client). The client's own email in
+  // the query string is not sensitive.
+  useEffect(() => { if (prefillEmail) setFormData(f => ({ ...f, email: prefillEmail })); }, [prefillEmail]);
+
+  // Drop focus on the password field when the client arrives from signup, so
+  // they can type the password they just created and submit without a click.
+  useEffect(() => {
+    if (!pageLoading && (welcome || prefillEmail)) passwordRef.current?.focus();
+  }, [pageLoading, welcome, prefillEmail]);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -207,12 +223,17 @@ function ClientLoginContent() {
         </div>
 
         <div className="relative w-full max-w-md fu">
-          {signupSuccess && (
+          {welcome ? (
+            <div className="mb-6 rounded-2xl p-4 flex items-center gap-3" style={{ backgroundColor: t.successBg, border: `1px solid ${t.successBorder}` }}>
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
+              <p className="text-sm" style={{ color: t.successText }}>You are all set. Sign in with your new password to finish setting up your dashboard.</p>
+            </div>
+          ) : signupSuccess ? (
             <div className="mb-6 rounded-2xl p-4 flex items-center gap-3" style={{ backgroundColor: t.successBg, border: `1px solid ${t.successBorder}` }}>
               <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
               <p className="text-sm" style={{ color: t.successText }}>Account created! Check your email or SMS for password setup instructions.</p>
             </div>
-          )}
+          ) : null}
 
           <div className="rounded-2xl p-8" style={{
             backgroundColor: t.card, border: `1px solid ${t.cardBorder}`,
@@ -237,7 +258,7 @@ function ClientLoginContent() {
                 <label className="block text-sm font-medium mb-2" style={{ color: t.label }}>Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: t.textSubtle }} />
-                  <input name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} required autoComplete="current-password"
+                  <input ref={passwordRef} name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} required autoComplete="current-password"
                     className="w-full rounded-xl pl-11 pr-12 py-3 transition-colors text-sm" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: t.helpText }}>
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

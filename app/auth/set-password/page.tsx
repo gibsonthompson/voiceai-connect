@@ -207,7 +207,7 @@ function SetPasswordContent() {
 
         // Store the new session. auth_token was previously missing here,
         // which is why the redirect to /agency/dashboard bounced straight
-        // to /agency/login — the agency context reads auth_token from
+        // to /agency/login, the agency context reads auth_token from
         // localStorage to authenticate the settings fetch.
         try { localStorage.setItem('auth_token', data.token); } catch {}
         if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
@@ -228,26 +228,35 @@ function SetPasswordContent() {
       setRedirectTarget(target);
       setSuccess(true);
 
-      // Embed mode: emit voiceai:signup_complete (the canonical "user
-      // finished signup" event). Host can:
-      //   - Configure data-redirect-on-success on the embed container →
-      //     parent navigates top frame to that URL (typical white-label
-      //     pattern: send user to a thank-you page on their own marketing
-      //     site, away from our platform domain).
-      //   - Leave it unset → parent falls back to default_url which we
-      //     supply here (platform dashboard, where localStorage auth_token
-      //     is valid and the user lands logged-in).
+      // Embed mode: send the client to the agency's OWN branded login page,
+      // never to the platform domain. We do not auto-login across origins.
+      // The session just minted lives in this iframe's platform-origin
+      // localStorage and is intentionally left behind; the client signs in
+      // once on the agency origin, which mints a session on that origin.
       //
-      // Cross-origin auth handoff (so the user can land on the agency's
-      // own dashboard subdomain already logged-in) is a future enhancement.
-      // The auth_complete event is reserved for that flow.
+      // Login origin resolution (never parent_origin, which may be a Wix or
+      // WordPress marketing host with no /client/login route):
+      //   1. verified custom domain, if the agency record has one
+      //   2. otherwise the agency slug subdomain
+      // Both are origins this app serves and can authenticate on.
+      //
+      // welcome=1 shows a "you're all set, sign in to finish" banner and
+      // autofocuses the password field. email is passed so it prefills.
+      // Neither is sensitive: the client's own email plus a UI flag, carried
+      // in the query string, cross-origin safe. If data-redirect-on-success
+      // is set on the embed, embed.js uses that instead (agency's choice).
       if (isEmbed) {
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-        const absoluteTarget = target.startsWith('http') ? target : `https://${platformDomain}${target.startsWith('/') ? target : '/' + target}`;
+        const useCustomDomain = agency?.domain_verified === true && !!agency?.marketing_domain;
+        const agencyOrigin = useCustomDomain
+          ? `https://${agency!.marketing_domain}`
+          : (agency?.slug ? `https://${agency.slug}.${platformDomain}` : `https://${platformDomain}`);
+        const clientEmail = (data.client?.email || data.user?.email || '').trim();
+        const agencyLoginUrl = `${agencyOrigin}/client/login?welcome=1${clientEmail ? `&email=${encodeURIComponent(clientEmail)}` : ''}`;
         postToParent({
           type: 'voiceai:signup_complete',
           tier: 'client',
-          default_url: absoluteTarget,
+          default_url: agencyLoginUrl,
         });
         return;
       }
@@ -288,7 +297,7 @@ function SetPasswordContent() {
     : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
 
   // ============================================================================
-  // SUCCESS STATE — honest message, link to sign in
+  // SUCCESS STATE: honest message, link to sign in
   // ============================================================================
   if (success) {
     return (
@@ -306,7 +315,7 @@ function SetPasswordContent() {
             <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Set Successfully!</h1>
             <p className="mb-6" style={{ color: mutedTextColor }}>
               {isEmbed
-                ? 'Your account is ready. Check your email for next steps.'
+                ? 'Your account is ready. Taking you to sign in...'
                 : 'Taking you to your dashboard. If you\u2019re not redirected, you may need to sign in.'}
             </p>
             {!isEmbed && (
@@ -337,7 +346,7 @@ function SetPasswordContent() {
         </div>
       )}
 
-      {/* Header — only outside of embed mode */}
+      {/* Header, only outside of embed mode */}
       {!isEmbed && (
         <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
           style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
