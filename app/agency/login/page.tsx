@@ -67,6 +67,37 @@ export default function AgencyLoginPage() {
         body: JSON.stringify(formData),
       });
       const data = await response.json();
+
+      // Account was created but a password was never set (the set-password tab
+      // was closed/lost, so the one-time token is gone). agencyLogin returns
+      // "Password not set" here. Instead of showing that dead end, mint a fresh
+      // set-password token via recover-setup and send them straight to
+      // /auth/set-password with returnTo=/agency/dashboard. The dashboard layout
+      // handles a still-pending agency from there.
+      if (!response.ok && data.error === 'Password not set') {
+        try {
+          const recoverRes = await fetch(`${backendUrl}/api/auth/recover-setup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email, scope: 'agency' }),
+          });
+          const recoverData = await recoverRes.json();
+          if (recoverRes.ok && recoverData.needsSetup && recoverData.token) {
+            const returnTo = encodeURIComponent('/agency/dashboard');
+            window.location.href = `/auth/set-password?token=${encodeURIComponent(recoverData.token)}&returnTo=${returnTo}`;
+            return;
+          }
+        } catch (recoverErr) {
+          console.error('Setup recovery failed:', recoverErr);
+        }
+        // Recovery did not apply (account already has a password, or no such
+        // account). Fall back to the normal invalid-credentials message rather
+        // than the dead "Password not set" text.
+        setError('Invalid email or password');
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) throw new Error(data.error || data.message || 'Invalid credentials');
       if (!data.token) throw new Error('No token received from server');
 

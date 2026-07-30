@@ -502,6 +502,10 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  // Set when an email signup hits an account that already exists AND already
+  // has a password (recover-setup returned needsSetup:false). We then surface
+  // a "Sign in instead" link next to the error rather than a dead message.
+  const [existingAccount, setExistingAccount] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -560,7 +564,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
+    setError(''); setExistingAccount(false);
   };
 
   const handleGoogleSignup = () => {
@@ -574,7 +578,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true); setError('');
+    e.preventDefault(); setLoading(true); setError(''); setExistingAccount(false);
     if (!formData.firstName.trim()) { setError('Please enter your first name'); setLoading(false); return; }
     if (!formData.lastName.trim()) { setError('Please enter your last name'); setLoading(false); return; }
     if (!formData.email.trim() || !formData.email.includes('@')) { setError('Please enter a valid email address'); setLoading(false); return; }
@@ -592,6 +596,36 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
       });
 
       const data = await response.json();
+
+      // Re-signup recovery: the account already exists (409). If it was created
+      // but never had a password set (a stalled signup that closed the
+      // set-password tab), mint a fresh set-password token via recover-setup and
+      // send them straight to /auth/set-password to finish, instead of a dead
+      // "account already exists" error. If the account already HAS a password,
+      // recover-setup returns needsSetup:false and we surface a sign-in prompt.
+      if (response.status === 409) {
+        try {
+          const recoverRes = await fetch(`${backendUrl}/api/auth/recover-setup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email, scope: 'agency' }),
+          });
+          const recoverData = await recoverRes.json();
+          if (recoverRes.ok && recoverData.needsSetup && recoverData.token) {
+            const returnTo = encodeURIComponent('/agency/dashboard');
+            window.location.href = `/auth/set-password?token=${encodeURIComponent(recoverData.token)}&returnTo=${returnTo}`;
+            return;
+          }
+        } catch (recoverErr) {
+          console.error('Setup recovery failed:', recoverErr);
+        }
+        // Account exists and already has a password: point them to sign in.
+        setExistingAccount(true);
+        setError('An account with this email already exists.');
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) throw new Error(data.error || 'Something went wrong');
 
       clearReferralCode();
@@ -686,7 +720,12 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
               <ThemedFormInput label="Email Address" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required icon={Mail} isDark={true} />
 
               {error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+                  {error}
+                  {existingAccount && (
+                    <>{' '}<a href="/agency/login" className="underline underline-offset-2 hover:text-red-300">Sign in instead</a></>
+                  )}
+                </div>
               )}
 
               <button type="submit" disabled={loading || googleLoading}
