@@ -202,18 +202,28 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // ── NEEDS PLAN SELECTION ────────────────────────────────────────────
+  // Renders at the app's zoom: 0.8 so this gate matches the dashboard scale
+  // (without it the card renders 25% larger than the rest of the app). One
+  // icon only: the agency's logo when set, otherwise a single Zap. The old
+  // layout stacked a waveform fallback tile AND a separate Zap circle, which
+  // read as two generic icons when no logo was uploaded yet.
   if (agencyNeedsPlan) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg, zoom: 0.8 }}>
         <link rel="manifest" href="/manifest.json" />
-        <div className="max-w-lg w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)' }}>
-          <div className="mb-6">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '48px', width: 'auto' }} className="object-contain mx-auto" />) : (<div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ backgroundColor: theme.primary15 }}><WaveformIcon className="h-8 w-8" color={theme.primary} /></div>)}</div>
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: `${theme.primary}12` }}><Zap className="h-7 w-7" style={{ color: theme.primary }} /></div>
+        <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)' }}>
+          <div className="mb-6">
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.name} style={{ height: '44px', width: 'auto' }} className="object-contain mx-auto" />
+            ) : (
+              <img src="/icon-512x512.png" alt="VoiceAI Connect" style={{ height: '56px', width: '56px' }} className="rounded-2xl mx-auto" />
+            )}
+          </div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Finish Setting Up Your Agency</h1>
-          <p className="mb-2 text-base" style={{ color: theme.textMuted }}>You&apos;re almost there! Complete your setup to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your agency dashboard.</p>
-          <p className="mb-8 text-sm" style={{ color: theme.textMuted }}>No credit card required. Cancel anytime.</p>
-          <a href={`/onboarding?agency=${agency?.id}`} className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Zap className="h-5 w-5" />Continue Setup &amp; Start Free Trial</a>
-          <button onClick={handleSignOut} className="block w-full mt-5 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+          <p className="mb-2 text-sm leading-relaxed" style={{ color: theme.textMuted }}>You&apos;re almost there. Complete your setup to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your dashboard.</p>
+          <p className="mb-7 text-xs" style={{ color: theme.textMuted }}>No credit card required. Cancel anytime.</p>
+          <a href={`/onboarding?agency=${agency?.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Zap className="h-5 w-5" />Continue Setup</a>
+          <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
         </div>
       </div>
     );
@@ -246,7 +256,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                   {plan.features.map((feature) => (<li key={feature} className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.primary }} /></div><span style={{ color: theme.textMuted }}>{feature}</span></li>))}
                   <li className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.primary }} /></div><span style={{ color: theme.textMuted }}>{plan.rate}</span></li>
                 </ul>
-                <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>{isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : isFree ? (<>Continue on Free</>) : (<><CreditCard className="h-4 w-4" />Subscribe — ${plan.price}/mo</>)}</button>
+                <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>{isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : isFree ? (<>Continue on Free</>) : (<><CreditCard className="h-4 w-4" />Subscribe - ${plan.price}/mo</>)}</button>
               </div>); })}
           </div>
           <div className="text-center"><p className="text-sm mb-4" style={{ color: theme.textMuted }}>Pro and Scale include a 14-day money-back guarantee. Cancel anytime.</p><button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button></div>
