@@ -238,6 +238,22 @@ function AgencySettingsContent() {
   // no-card trial so signups don't break).
   const [requireCardForTrial, setRequireCardForTrial] = useState(false);
 
+  // Client per-minute billing (Payments tab). Rate is collected in dollars and
+  // converted to cents on save. Included minutes are per-plan integers. The
+  // master switch (minutePassThrough) is NOT saved via the settings PUT: it
+  // goes through POST /api/agency/:id/minute-pass-through, which validates,
+  // creates the connected-account meter, and sweeps existing clients.
+  const [minutePassThrough, setMinutePassThrough] = useState(false);
+  const [clientMinuteRate, setClientMinuteRate] = useState('');
+  const [includedStarter, setIncludedStarter] = useState('0');
+  const [includedPro, setIncludedPro] = useState('0');
+  const [includedGrowth, setIncludedGrowth] = useState('0');
+  const [minuteSaving, setMinuteSaving] = useState(false);
+  const [minuteSaved, setMinuteSaved] = useState(false);
+  const [minuteToggleLoading, setMinuteToggleLoading] = useState(false);
+  const [minuteError, setMinuteError] = useState<string | null>(null);
+  const [minuteSweepMsg, setMinuteSweepMsg] = useState<string | null>(null);
+
   const [planStarterName, setPlanStarterName] = useState('Starter');
   const [planProName, setPlanProName] = useState('Professional');
   const [planGrowthName, setPlanGrowthName] = useState('Growth');
@@ -277,7 +293,15 @@ function AgencySettingsContent() {
   // and shows a link to the Payments tab.
   const canEnableCardRequired = !!(agency?.stripe_account_id && (agency as any)?.stripe_charges_enabled);
 
-  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); } }, [agency?.branding_overrides]);
+  // Per-minute pass-through gating. The toggle can only be turned ON when
+  // Stripe Connect can accept charges AND a rate is already SAVED (> 0). It can
+  // always be turned OFF. savedRateCents reads the persisted agency value (not
+  // the local input), so a rate typed but not yet saved does not unlock it.
+  const connectChargesReady = !!(stripeStatus?.charges_enabled || (agency as any)?.stripe_charges_enabled);
+  const savedRateCents = Number((agency as any)?.client_minute_rate_cents) || 0;
+  const canEnableMinutePassThrough = connectChargesReady && savedRateCents > 0;
+
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -407,6 +431,76 @@ function AgencySettingsContent() {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Save the rate + per-plan included minutes via the settings PUT. The column
+  // is cents, so dollars are multiplied by 100 before sending. Empty rate saves
+  // as null (clears it). refreshAgency() pulls the persisted values back so
+  // savedRateCents (which gates the toggle) reflects the new rate immediately.
+  const handleSaveMinuteBilling = async () => {
+    if (!agency) return;
+    setMinuteSaving(true); setMinuteError(null); setMinuteSaved(false); setMinuteSweepMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const dollars = parseFloat(clientMinuteRate);
+      const rateCents = (clientMinuteRate.trim() === '' || Number.isNaN(dollars))
+        ? null
+        : Math.round(dollars * 1000000) / 10000;
+      const payload = {
+        client_minute_rate_cents: rateCents,
+        included_minutes_starter: parseInt(includedStarter) || 0,
+        included_minutes_pro: parseInt(includedPro) || 0,
+        included_minutes_growth: parseInt(includedGrowth) || 0,
+      };
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save'); }
+      await refreshAgency();
+      setMinuteSaved(true);
+      setTimeout(() => setMinuteSaved(false), 3000);
+    } catch (err) {
+      setMinuteError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setMinuteSaving(false);
+    }
+  };
+
+  // Flip the master switch. The toggle does NOT change visually until the POST
+  // succeeds, so a 400 (rate_required / stripe_not_ready) leaves it where it
+  // was. On enable success the backend returns a sweep result (how many
+  // existing clients got the metered item); surface it.
+  const handleToggleMinutePassThrough = async () => {
+    if (!agency) return;
+    const next = !minutePassThrough;
+    setMinuteToggleLoading(true); setMinuteError(null); setMinuteSaved(false); setMinuteSweepMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/minute-pass-through`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ enabled: next }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.error === 'rate_required') setMinuteError('Set and save a per-minute rate above 0 before turning this on.');
+        else if (data.error === 'stripe_not_ready') setMinuteError('Finish Stripe Connect setup before turning this on.');
+        else setMinuteError(data.error || 'Failed to update');
+        return; // leave the toggle where it was
+      }
+      setMinutePassThrough(next);
+      if (next && data.sweep) {
+        const n = data.sweep.attached || 0;
+        setMinuteSweepMsg(`Enabled. Applied to ${n} existing ${n === 1 ? 'client' : 'clients'}.`);
+      }
+      await refreshAgency();
+    } catch (err) {
+      setMinuteError(err instanceof Error ? err.message : 'Failed to update');
+    } finally {
+      setMinuteToggleLoading(false);
     }
   };
 
@@ -598,7 +692,7 @@ function AgencySettingsContent() {
 
             {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><ProFeatureGate isFreePlan={isFreePlan} theme={theme} description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button><p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted, saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Slug</label><div className="rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{agency?.slug}</div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>URL: https://{agency?.slug}.{platformDomain}/get-started</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Dashboard Header</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>What name appears in your clients&apos; dashboard sidebar and header.</p><div className="flex gap-2">{([{ value: 'agency_name' as const, label: 'Agency Name', desc: 'Shows your agency brand' }, { value: 'business_name' as const, label: 'Business Name', desc: "Shows each client's own name" }]).map((option) => (<button key={option.value} type="button" onClick={() => setClientHeaderMode(option.value)} className="flex-1 rounded-xl p-3 text-left transition-all" style={{ backgroundColor: clientHeaderMode === option.value ? theme.primary15 : theme.input, border: `2px solid ${clientHeaderMode === option.value ? theme.primary : theme.inputBorder}` }}><p className="text-sm font-medium" style={{ color: clientHeaderMode === option.value ? theme.primary : theme.text }}>{option.label}</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{option.desc}</p></button>))}</div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></ProFeatureGate>
 
-              {/* Change Password — self-service, available on every plan (account
+              {/* Change Password - self-service, available on every plan (account
                   security, not a Pro feature, so it sits OUTSIDE ProFeatureGate).
                   POST /api/auth/change-password reads the caller from the Bearer
                   JWT and verifies currentPassword server-side, so this is safe
@@ -696,7 +790,7 @@ function AgencySettingsContent() {
                 </div>
 
                 {/* ─────────────────────────────────────────────────────────
-                    Trial Setup — require_card_for_trial toggle.
+                    Trial Setup - require_card_for_trial toggle.
                     Controls whether new embed-widget signups must enter a
                     card to start their 7-day trial. Toggle is gated on
                     Stripe Connect being set up (canEnableCardRequired).
@@ -943,6 +1037,131 @@ function AgencySettingsContent() {
                 )}
 
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
+
+                {/* Client Per-Minute Billing. Optional: charge your OWN clients
+                    per voice minute on top of their flat plan, billed on your
+                    connected Stripe account (you keep 100 percent). Rate + the
+                    per-plan included minutes save via the settings PUT. The
+                    master switch goes through the dedicated toggle endpoint,
+                    which validates, creates the connected meter, and applies to
+                    existing clients. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <DollarSign className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h4 className="font-medium text-sm sm:text-base">Client Per-Minute Billing</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                    Charge your clients per voice minute on top of their monthly plan. Charges run on your connected Stripe account, so you keep 100 percent of what you bill. Leave this off to absorb minutes yourself and bill only the flat plan.
+                  </p>
+
+                  {minuteError && (
+                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
+                      <p className="text-sm" style={{ color: theme.errorText }}>{minuteError}</p>
+                    </div>
+                  )}
+                  {minuteSaved && (
+                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                      <Check className="h-4 w-4" style={{ color: theme.primary }} />
+                      <p className="text-sm" style={{ color: theme.primary }}>Saved.</p>
+                    </div>
+                  )}
+
+                  {/* Rate (dollars) */}
+                  <div className="mb-4">
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Rate per minute ($)</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={clientMinuteRate}
+                      onChange={(e) => setClientMinuteRate(e.target.value)}
+                      placeholder="0.35"
+                      className="w-full sm:w-40 rounded-xl px-3 py-2 text-sm"
+                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                    />
+                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>What each client pays per voice minute beyond their included minutes.</p>
+                  </div>
+
+                  {/* Included minutes per plan */}
+                  <div className="mb-4">
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Included minutes per plan</label>
+                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Free minutes each plan includes before per-minute charges apply. Set 0 for pure per-minute.</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {([
+                        { label: planStarterName || 'Starter', value: includedStarter, set: setIncludedStarter },
+                        { label: planProName || 'Professional', value: includedPro, set: setIncludedPro },
+                        { label: planGrowthName || 'Growth', value: includedGrowth, set: setIncludedGrowth },
+                      ]).map((p) => (
+                        <div key={p.label}>
+                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>{p.label}</label>
+                          <input type="number" min="0" step="1" value={p.value} onChange={(e) => p.set(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveMinuteBilling}
+                    disabled={minuteSaving}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                  >
+                    {minuteSaving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save rate and minutes</>}
+                  </button>
+
+                  {/* Master toggle */}
+                  <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: minutePassThrough ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${minutePassThrough ? theme.primary30 : theme.border}`, opacity: (!minutePassThrough && !canEnableMinutePassThrough) ? 0.6 : 1 }}>
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="text-sm font-medium" style={{ color: minutePassThrough ? theme.primary : theme.text }}>Charge clients per minute</p>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                        {minutePassThrough
+                          ? 'On. New and existing clients are billed per minute above their included minutes.'
+                          : 'Off. You absorb minutes and bill clients only their flat plan.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleMinutePassThrough}
+                      disabled={minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)}
+                      className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                      style={{ backgroundColor: minutePassThrough ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'), cursor: (minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)) ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: minutePassThrough ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+
+                  {minuteToggleLoading && (
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
+                  )}
+                  {minuteSweepMsg && !minuteToggleLoading && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+                      <p className="text-xs sm:text-sm" style={{ color: theme.primary }}>{minuteSweepMsg}</p>
+                    </div>
+                  )}
+
+                  {!connectChargesReady && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+                      <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
+                        <p className="font-medium mb-0.5">Connect Stripe first</p>
+                        <p style={{ color: theme.textMuted }}>Finish Stripe Connect setup above before you can charge clients per minute.</p>
+                      </div>
+                    </div>
+                  )}
+                  {connectChargesReady && savedRateCents <= 0 && !minutePassThrough && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                      <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Set a rate above 0 and save it before turning this on.</p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                      Turning this off stops new per-minute charges right away. Minutes already used this cycle still bill, and the per-minute line item drops off at each client's next renewal.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1061,7 +1280,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {/* Save button — profile & pricing tabs only. Password change,
+            {/* Save button - profile & pricing tabs only. Password change,
                 cancel, feedback, Stripe, and demo toggle each have their own
                 action and do not go through handleSave. */}
             {(activeTab === 'profile' || activeTab === 'pricing') && (

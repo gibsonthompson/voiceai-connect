@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { 
   Phone, PhoneCall, Copy, ChevronRight, CheckCircle,
-  Loader2, PhoneOff, TrendingUp,
+  Loader2, PhoneOff, TrendingUp, Clock,
   PhoneForwarded, ShieldX, Sparkles, ArrowRight, CreditCard
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -99,6 +99,15 @@ function formatPlanPrice(cents: number, code: string | null | undefined): string
   return sym.length === 1 ? `${sym}${amount}` : `${sym}${amount}`;
 }
 
+// Per-minute cost from a cents amount, WITH two decimals. Unlike plan prices,
+// a minute charge is rarely a whole dollar (e.g. 35 cents/min over 12 min =
+// $4.20), so this keeps the cents. Uses the same currency symbol resolver.
+function formatMinutesCost(cents: number, code: string | null | undefined): string {
+  const sym = currencySymbol(code);
+  const amount = (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${sym}${amount}`;
+}
+
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -175,6 +184,26 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
     planPriceCents !== null
       ? formatPlanPrice(planPriceCents, client.agency?.display_currency || client.agency?.currency)
       : null;
+
+  // ── Per-minute billing display ─────────────────────────────────────────────
+  // Shown only when the agency charges THIS client per voice minute. Reads the
+  // agency's rate and this plan's included minutes off the nested agency row,
+  // and this period's used minutes off the client row. Every read is defensive:
+  // if pass-through is off or the fields are absent (e.g. the dashboard loader
+  // hasn't been updated to pass them yet), minutePassThroughOn is false and the
+  // card simply does not render, so nothing breaks either way. Trial minutes are
+  // free (the per-minute meter is skipped during any trial), so the projected
+  // cost reads as free while isTrial is true.
+  const minuteRateCents = Number(client.agency?.client_minute_rate_cents) || 0;
+  const minutePassThroughOn = client.agency?.minute_pass_through === true && minuteRateCents > 0;
+  const includedMinutesKey = `included_minutes_${client.plan_type}`;
+  const includedMinutes = Number(client.agency?.[includedMinutesKey]) || 0;
+  const usedMinutes = Number(client.minutes_this_period) || 0;
+  const overageMinutes = Math.max(0, usedMinutes - includedMinutes);
+  const overageCostCents = overageMinutes * minuteRateCents;
+  const minuteCurrency = client.agency?.display_currency || client.agency?.currency;
+  const minutesFreeInTrial = isTrial;
+  const minutePct = includedMinutes > 0 ? Math.min(100, (usedMinutes / includedMinutes) * 100) : 0;
 
   const usagePercent = isUnlimited ? 0 : stats.callLimit > 0 ? Math.min(100, (stats.callsThisMonth / stats.callLimit) * 100) : 0;
   const circ = 2 * Math.PI * 34;
@@ -410,6 +439,58 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           </div>
         </div>
       </div>
+
+      {/* VOICE MINUTES. Rendered only when the agency bills this client per
+          minute (minutePassThroughOn). Shows minutes used this period, the
+          plan's included minutes (or "billed per minute" when there is no free
+          tier), and the projected per-minute cost. During a trial, per-minute
+          billing is skipped, so it reads as free. */}
+      {minutePassThroughOn && (
+        <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu5" style={glass}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" style={{ color: theme.primary }} />
+              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: theme.textMuted }}>Voice Minutes</p>
+            </div>
+            <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>this billing period</span>
+          </div>
+
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-3xl sm:text-4xl font-bold" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>
+                {usedMinutes.toLocaleString()}
+              </p>
+              <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>
+                {includedMinutes > 0 ? `of ${includedMinutes.toLocaleString()} included minutes` : 'billed per minute'}
+              </p>
+            </div>
+            <div className="text-right">
+              {minutesFreeInTrial ? (
+                <>
+                  <p className="text-sm font-semibold" style={{ color: theme.success }}>Free during trial</p>
+                  <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>No per-minute charges yet</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xl sm:text-2xl font-bold" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatMinutesCost(overageCostCents, minuteCurrency)}
+                  </p>
+                  <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>
+                    {overageMinutes > 0 ? `${overageMinutes.toLocaleString()} min over included` : 'projected this period'}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {includedMinutes > 0 && (
+            <div className="mt-4 h-1.5 rounded-full overflow-hidden"
+              style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}>
+              <div className="h-full rounded-full" style={{ width: `${minutePct}%`, backgroundColor: theme.primary, transition: 'width .6s ease' }} />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* RECENT CALLS */}
       <div className="rounded-2xl overflow-hidden fu fu5" style={glass}>
