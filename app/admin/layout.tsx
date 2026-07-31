@@ -10,6 +10,9 @@
 // Nav links all point at pages that exist today, grouped under section headers
 // that preview the target consolidation (Money, Growth, Messaging, Content).
 // As each merged page is built, its section collapses to a single entry.
+//
+// UPDATED: 2026-07-31: Added Support link (support_requests queue) next to
+//          Messaging.
 // ============================================================================
 
 import './admin-theme.css';
@@ -19,6 +22,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
+  LifeBuoy,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
@@ -55,6 +59,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
   ]},
   { section: null, items: [
     { href: '/admin/messaging', label: 'Messaging', icon: MessageSquare },
+    { href: '/admin/support', label: 'Support', icon: LifeBuoy },
   ]},
   { section: 'Content', items: [
     { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
