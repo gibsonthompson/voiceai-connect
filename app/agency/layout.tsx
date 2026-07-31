@@ -220,8 +220,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             )}
           </div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Finish Setting Up Your Agency</h1>
-          <p className="mb-2 text-sm leading-relaxed" style={{ color: theme.textMuted }}>You&apos;re almost there. Complete your setup to start your <strong style={{ color: theme.text }}>14-day free trial</strong> and unlock your dashboard.</p>
-          <p className="mb-7 text-xs" style={{ color: theme.textMuted }}>No credit card required. Cancel anytime.</p>
+          <p className="mb-7 text-sm leading-relaxed" style={{ color: theme.textMuted }}>You&apos;re almost there. Complete your setup to start your <strong style={{ color: theme.text, whiteSpace: 'nowrap' }}>14-day free trial</strong> and unlock your dashboard.</p>
           <a href={`/onboarding?agency=${agency?.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Zap className="h-5 w-5" />Continue Setup</a>
           <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
         </div>
