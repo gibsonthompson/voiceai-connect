@@ -9,6 +9,7 @@ import { PLAN_NAMES, deriveAgencyTeamLimit, formatTeamLimit } from '@/lib/plan-l
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
+import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'feedback';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
@@ -48,20 +49,6 @@ const CONNECT_COUNTRIES: Array<{ code: string; name: string }> = [
   { code: 'ES', name: 'Spain' }, { code: 'SE', name: 'Sweden' }, { code: 'CH', name: 'Switzerland' },
   { code: 'TH', name: 'Thailand' }, { code: 'AE', name: 'United Arab Emirates' },
   { code: 'GB', name: 'United Kingdom' }, { code: 'US', name: 'United States' },
-];
-
-// Cancellation reasons match Stripe's cancellation_details.feedback enum
-// so the in-app cancel path and the Stripe portal cancel path produce the
-// same vocabulary in the backend subscription_cancellations table.
-const CANCEL_REASONS: Array<{ value: string; label: string }> = [
-  { value: 'too_expensive',    label: 'Too expensive' },
-  { value: 'missing_features', label: 'Missing features I need' },
-  { value: 'switched_service', label: 'Switching to another service' },
-  { value: 'unused',           label: "I'm not using it enough" },
-  { value: 'too_complex',      label: 'Too complex to use' },
-  { value: 'customer_service', label: 'Customer service issues' },
-  { value: 'low_quality',      label: 'Quality issues' },
-  { value: 'other',            label: 'Other' },
 ];
 
 function rgbToHex(r: number, g: number, b: number): string { return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join(''); }
@@ -221,8 +208,7 @@ function AgencySettingsContent() {
   // immutable, so it is chosen before connecting and posted to the onboard
   // endpoint. Initialized from the agency's stored country, else US.
   const [connectCountry, setConnectCountry] = useState('US');
-  const [showCancelModal, setShowCancelModal] = useState(false); const [cancelLoading, setCancelLoading] = useState(false); const [portalLoading, setPortalLoading] = useState(false);
-  const [cancelReason, setCancelReason] = useState<string>(''); const [cancelFeedback, setCancelFeedback] = useState<string>('');
+  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false);
   const [agencyName, setAgencyName] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [extractingColors, setExtractingColors] = useState(false); const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
   const [brandColors, setBrandColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
@@ -508,43 +494,6 @@ function AgencySettingsContent() {
   const handleStripeDisconnect = async () => { if (!agency) return; if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return; setDisconnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); } await refreshAgency(); setStripeStatus(null); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); } finally { setDisconnectingStripe(false); } };
   const handleManageSubscription = async () => { if (!agency) return; setPortalLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); } const data = await response.json(); if (data.url) window.location.href = data.url; else if (data.needs_payment_method) setError('Add a payment method first. Use the upgrade options below.'); else setError('Failed to open billing portal'); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); } finally { setPortalLoading(false); } };
 
-  // Send the chosen reason and free-text feedback to /api/agency/cancel.
-  // Backend writes a row in subscription_cancellations and SMS's the
-  // platform owner. On success, clear local session and redirect.
-  const handleCancelTrial = async () => {
-    if (!agency) return;
-    if (!cancelReason) {
-      setError('Please select a reason for canceling.');
-      return;
-    }
-    setCancelLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/agency/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          agency_id: agency.id,
-          reason: cancelReason,
-          feedback: cancelFeedback.trim() || null,
-        })
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to cancel subscription');
-      }
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('agency');
-      localStorage.removeItem('user');
-      window.location.href = '/agency/login?canceled=true';
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel');
-      setCancelLoading(false);
-      setShowCancelModal(false);
-    }
-  };
-
   if (contextLoading) return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
 
   const getStripeStatusDisplay = () => { if (!stripeStatus?.connected && !agency?.stripe_account_id) return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted }; if (stripeStatus?.charges_enabled && stripeStatus?.payouts_enabled) return { status: 'active', label: 'Active', color: '#34d399' }; if (stripeStatus?.connected || agency?.stripe_account_id) return { status: 'restricted', label: 'Setup Incomplete', color: '#fbbf24' }; return { status: 'not_connected', label: 'Not Connected', color: theme.textMuted }; };
@@ -565,118 +514,20 @@ function AgencySettingsContent() {
     <div className="agency-settings p-4 sm:p-6 lg:p-8">
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
 
-      {/* Cancel Subscription modal. Reason is required (dropdown), feedback
-          is optional (textarea). Both are sent to /api/agency/cancel and
-          recorded server-side + SMS'd to the platform owner. */}
+      {/* Cancel Subscription modal. Self-contained component: step 1 is confirm
+          with an optional free-text note (POST /api/agency/cancel), step 2 is
+          the post-cancel screen with optional reason chips
+          (POST /api/agency/cancel-category). It owns its own state, API calls,
+          and session teardown on finish. */}
       {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => !cancelLoading && setShowCancelModal(false)}
-          />
-          <div
-            className="relative w-full max-w-md rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
-            style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.border}` }}
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div
-                className="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: theme.errorBg }}
-              >
-                <AlertTriangle className="h-6 w-6" style={{ color: theme.errorText }} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>
-                  Cancel {isOnTrial ? 'Trial' : 'Subscription'}?
-                </h3>
-                <p className="text-sm" style={{ color: theme.textMuted }}>
-                  We're sorry to see you go.
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-xl p-4 mb-5" style={{ backgroundColor: theme.errorBg }}>
-              <p className="text-sm" style={{ color: theme.errorText }}>If you cancel now:</p>
-              <ul className="mt-2 space-y-1 text-sm" style={{ color: theme.errorText }}>
-                <li>• You&apos;ll lose access to your agency dashboard immediately</li>
-                <li>• All client AI receptionists will be disabled</li>
-                <li>• You won&apos;t be charged</li>
-              </ul>
-            </div>
-
-            {/* Reason dropdown (required) */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
-                Why are you canceling? <span style={{ color: theme.errorText }}>*</span>
-              </label>
-              <select
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                disabled={cancelLoading}
-                className="w-full rounded-xl px-3 py-2.5 text-sm transition-colors"
-                style={{
-                  backgroundColor: theme.input,
-                  border: `1px solid ${theme.inputBorder}`,
-                  color: theme.text,
-                }}
-              >
-                <option value="">Select a reason...</option>
-                {CANCEL_REASONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Feedback textarea (optional, free-form) */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
-                Anything specific we could improve? <span style={{ color: theme.textMuted }}>(optional)</span>
-              </label>
-              <textarea
-                value={cancelFeedback}
-                onChange={(e) => setCancelFeedback(e.target.value)}
-                disabled={cancelLoading}
-                placeholder="Tell us what didn't work, what was missing, or what would have made you stay."
-                rows={4}
-                maxLength={1000}
-                className="w-full rounded-xl px-3 py-2.5 text-sm resize-none transition-colors"
-                style={{
-                  backgroundColor: theme.input,
-                  border: `1px solid ${theme.inputBorder}`,
-                  color: theme.text,
-                }}
-              />
-              <p className="mt-1 text-xs text-right" style={{ color: theme.textMuted }}>
-                {cancelFeedback.length}/1000
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                disabled={cancelLoading}
-                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-              >
-                Keep My {isOnTrial ? 'Trial' : 'Subscription'}
-              </button>
-              <button
-                onClick={handleCancelTrial}
-                disabled={cancelLoading || !cancelReason}
-                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {cancelLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Canceling...
-                  </>
-                ) : (
-                  'Confirm Cancellation'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CancelSubscriptionModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          agencyId={agency?.id || ''}
+          isOnTrial={isOnTrial}
+          theme={theme}
+          backendUrl={backendUrl}
+        />
       )}
 
       <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p></div>
