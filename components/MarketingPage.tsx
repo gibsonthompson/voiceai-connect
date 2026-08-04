@@ -175,7 +175,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
           </h1>
           <p className="hero-subtitle">{hero.description}</p>
           <div className="hero-ctas">
-            <a href="/get-started" className="btn-large btn-primary">Start Free Trial — 7 Days Free</a>
+            <a href="/get-started" className="btn-large btn-primary">Start Free Trial, 7 Days Free</a>
             {hero.demoPhone ? (
               <a href="/demo" className="btn-large btn-ghost">
                 <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
@@ -419,7 +419,7 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
               <div className="industry-icon">{industryIcons[industry.icon] || Icons.briefcase}</div>
               <h3>{industry.title}</h3>
               <p className="industry-subtitle">{industry.subtitle}</p>
-              <p>&quot;{industry.description}&quot;</p>
+              <p>{industry.description}</p>
               <div className="industry-result"><strong>{industry.result}</strong></div>
             </div>
           ))}
@@ -487,7 +487,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
           <ol>
             <li><strong>Hire staff:</strong> Professional, but $36,000-54,000/year + benefits</li>
             <li><strong>Traditional service:</strong> 24/7 but generic, no appointments, $300-600/month</li>
-            <li><strong>{branding.name}:</strong> Custom AI, books appointments, text summaries, mobile app—{cs}{lowestPrice}/month</li>
+            <li><strong>{branding.name}:</strong> Custom AI, books appointments, text summaries, mobile app, {cs}{lowestPrice}/month</li>
           </ol>
           <p className="comparison-conclusion">The choice is obvious.</p>
         </div>
@@ -548,7 +548,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
             </div>
-            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month — Start Free Trial</a>
+            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month, Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -630,7 +630,7 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
         <div className="final-cta-content">
           <h2 style={{ color: contrastColors.text }}>Stop Losing Customers to Voicemail</h2>
           <p className="final-cta-text" style={{ color: contrastColors.textMuted }}>
-            Every missed call is money out the door. While you&apos;re on the job, in a meeting, or closed for the night—<strong style={{ color: contrastColors.text }}>your competitors are answering their phones.</strong>
+            Every missed call is money out the door. While you&apos;re on the job, in a meeting, or closed for the night, <strong style={{ color: contrastColors.text }}>your competitors are answering their phones.</strong>
           </p>
           <div className="final-cta-boxes">
             {hero.demoPhone && (
@@ -677,8 +677,8 @@ function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose
       <div className="exit-modal" style={{ textAlign: 'center' }}>
         <button className="exit-modal-close" onClick={onClose} aria-label="Close"><span style={{ width: '1.5rem', height: '1.5rem' }}>{Icons.close}</span></button>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}><span style={{ width: '3rem', height: '3rem', color: branding.primaryColor }}>{Icons.headphones}</span></div>
-        <h3>Wait — Hear It Before You Leave!</h3>
-        <p>Call our AI receptionist right now. No signup, no commitment — just see how it handles a real call for your business.</p>
+        <h3>Wait, Hear It Before You Leave!</h3>
+        <p>Call our AI receptionist right now. No signup, no commitment, just see how it handles a real call for your business.</p>
         {demoPhone ? (
           <>
             <a href={`tel:+1${demoPhone.replace(/\D/g, '')}`} className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
@@ -711,7 +711,7 @@ function Footer({ config }: { config: MarketingConfig }) {
                 </div>
               ) : (<span>{branding.name}</span>)}
             </div>
-            <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.</p>
+            <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7.</p>
             <div className="footer-contact">
               {footer.address && <p>{footer.address}</p>}
               {footer.phone && <p><a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a></p>}

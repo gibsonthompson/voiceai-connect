@@ -146,7 +146,7 @@ export interface MarketingConfig {
 
 // ============================================================================
 // DEFAULT CONFIG
-// UPDATED: 2026-05-14 — Multilingual (English & Spanish auto-detect) on all plans
+// UPDATED: 2026-05-14 - Multilingual (English & Spanish auto-detect) on all plans
 // ============================================================================
 export const defaultMarketingConfig: MarketingConfig = {
   theme: 'light',
@@ -162,7 +162,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     badge: 'AI-Powered Phone Answering',
     headline: ['Never Miss', 'Another Call'],
     subtitle: 'AI Receptionist Starting at $49/month',
-    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries—24/7. Setup takes just 10 minutes.',
+    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7. Setup takes just 10 minutes.',
     demoPhone: '',
     demoInstructions: 'Call now to hear our AI in action.',
     trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
@@ -243,7 +243,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     {
       icon: 'calendar',
       title: 'Appointment Booking',
-      description: 'AI checks your Google Calendar in real time, offers available slots to callers, and books appointments automatically — no back-and-forth.',
+      description: 'AI checks your Google Calendar in real time, offers available slots to callers, and books appointments automatically, no back-and-forth.',
       integrations: ['Google Calendar', 'Outlook', 'Calendly'],
     },
     {
@@ -267,12 +267,11 @@ export const defaultMarketingConfig: MarketingConfig = {
       icon: 'moon',
       title: '24/7 Coverage',
       description: '3am on a Sunday? Holiday weekend? Your AI never sleeps, never takes vacation.',
-      stat: 'Real stat: 34% of our calls come outside business hours.',
     },
     {
       icon: 'mic',
       title: 'Natural Conversations',
-      description: 'Our AI sounds human, not robotic. Callers often don\'t realize they\'re talking to an AI. Speaks English and Spanish — automatically detects the caller\'s language and responds naturally.',
+      description: 'Our AI sounds human, not robotic. Callers often don\'t realize they\'re talking to an AI. Speaks English and Spanish, automatically detects the caller\'s language and responds naturally.',
     },
   ],
   industries: [
@@ -280,71 +279,46 @@ export const defaultMarketingConfig: MarketingConfig = {
       icon: 'wrench',
       title: 'Home Services',
       subtitle: 'Plumbers, HVAC, Electricians, Roofers',
-      description: "I was losing 3-4 calls a day while on jobs. Now I get a text summary after each call and can call back qualified leads on my lunch break.",
-      result: "→ Captured 47 new leads in first month",
+      description: "Answer every call while you're out on a job, and get a text summary so you can call qualified leads back on your own time.",
+      result: "→ Never miss a job while you're on-site",
     },
     {
       icon: 'medical',
       title: 'Medical & Dental',
       subtitle: 'Clinics, Dentists, Therapists',
-      description: "Patients can book appointments 24/7 now. Our no-show rate dropped because people book when they're thinking about it, not when we're open.",
-      result: "→ 23% increase in appointments booked",
+      description: "Let patients book appointments around the clock, so they schedule when it is on their mind instead of waiting for office hours.",
+      result: "→ Appointments can be booked around the clock",
     },
     {
       icon: 'restaurant',
       title: 'Restaurants',
       subtitle: 'Restaurants, Catering, Food Services',
-      description: "During the dinner rush, we'd miss 10+ calls. Now every reservation request is captured, and catering inquiries get handled professionally.",
-      result: "→ $8,400 in catering orders from after-hours calls",
+      description: "Capture reservation requests during the dinner rush and handle catering inquiries professionally, even when every line is busy.",
+      result: "→ Reservations and catering inquiries captured after hours",
     },
     {
       icon: 'briefcase',
       title: 'Professional Services',
       subtitle: 'Lawyers, Accountants, Consultants',
-      description: "First impressions matter in my business. Having a professional AI answer instead of voicemail has elevated how clients perceive my firm.",
-      result: "→ Client satisfaction up 31%",
+      description: "Give callers a professional answer instead of voicemail, so every first impression reflects well on your firm.",
+      result: "→ A professional first impression on every call",
     },
     {
       icon: 'store',
       title: 'Retail & Local Business',
       subtitle: 'Shops, Salons, Gyms, Studios',
-      description: "People call about hours, availability, pricing—all day long. AI handles the routine stuff so my staff can focus on customers in the store.",
-      result: "→ Staff now focused 100% on in-person customers",
+      description: "Handle routine questions about hours, availability, and pricing so your staff can focus on customers in the store.",
+      result: "→ Staff freed up for in-store customers",
     },
     {
       icon: 'pet',
       title: 'Pet Services',
       subtitle: 'Vets, Groomers, Pet Sitters',
-      description: "Pet owners call at all hours—emergencies don't wait. Our AI triages calls and knows when to wake me up vs. book a morning appointment.",
-      result: "→ Emergency response time down 65%",
+      description: "Triage calls at any hour, so urgent situations reach you and routine requests get booked for the morning.",
+      result: "→ Urgent calls triaged day or night",
     },
   ],
-  testimonials: [
-    {
-      rating: 5,
-      headline: 'Paid for itself in the first week',
-      quote: "First call my AI handled was a $3,200 HVAC replacement. Customer said he almost hung up when it went to voicemail, but the AI caught him. That one call paid for a year of service.",
-      authorName: 'Mike R.',
-      authorTitle: 'HVAC Contractor, Phoenix AZ',
-      stats: 'Using since March 2024 • 847 calls handled',
-    },
-    {
-      rating: 5,
-      headline: 'Finally have work-life balance',
-      quote: "I used to answer my phone during dinner, on weekends, even on vacation. Now I actually disconnect knowing every call is handled professionally. The text summaries mean I never miss anything important.",
-      authorName: 'Jennifer L.',
-      authorTitle: 'Family Law Attorney, Denver CO',
-      stats: 'Using since January 2024 • 1,200+ calls handled',
-    },
-    {
-      rating: 5,
-      headline: 'Better than my old receptionist',
-      quote: "I hate to say it, but my AI handles calls better than the part-time receptionist I had before. Never sick, never distracted, and costs a fraction of the price.",
-      authorName: 'David K.',
-      authorTitle: 'Dental Practice Owner, Austin TX',
-      stats: 'Using since February 2024 • 2,100+ calls handled',
-    },
-  ],
+  testimonials: [],
   pricing: [
     {
       name: 'Starter',
@@ -400,7 +374,7 @@ export const defaultMarketingConfig: MarketingConfig = {
   faqs: [
     {
       question: 'Do callers know they\'re talking to an AI?',
-      answer: '<p>Most don\'t. Our AI uses natural conversation patterns and voice that sounds human. We\'ve had business owners tell us customers complimented their "new receptionist." That said, if someone directly asks, the AI will be honest—we believe in transparency.</p>',
+      answer: '<p>Most don\'t. Our AI uses natural conversation patterns and voice that sounds human. We\'ve had business owners tell us customers complimented their "new receptionist." That said, if someone directly asks, the AI will be honest, because we believe in transparency.</p>',
     },
     {
       question: 'What if I want the AI to transfer certain calls to me?',
@@ -416,11 +390,11 @@ export const defaultMarketingConfig: MarketingConfig = {
     },
     {
       question: 'Does it block spam and robocalls?',
-      answer: '<p>Yes — automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against your monthly call limit, and you get a notification when one is blocked so you know it\'s working.</p>',
+      answer: '<p>Yes, automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against your monthly call limit, and you get a notification when one is blocked so you know it\'s working.</p>',
     },
     {
       question: 'Can it handle multiple calls at the same time?',
-      answer: '<p>Yes — unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.</p>',
+      answer: '<p>Yes, unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.</p>',
     },
     {
       question: 'Do I need a website for this to work?',
@@ -428,11 +402,11 @@ export const defaultMarketingConfig: MarketingConfig = {
     },
     {
       question: 'What happens if the AI transfers a call and nobody picks up?',
-      answer: '<p>The AI stays on the line. Instead of sending the caller to voicemail or dropping the call, it says something like "It looks like the team isn\'t available right now — I can take a message for you." It collects their name, number, and what they need, then sends you the summary by text. The caller never hits a dead end.</p>',
+      answer: '<p>The AI stays on the line. Instead of sending the caller to voicemail or dropping the call, it says something like "It looks like the team isn\'t available right now, I can take a message for you." It collects their name, number, and what they need, then sends you the summary by text. The caller never hits a dead end.</p>',
     },
     {
       question: 'Does it work in Spanish?',
-      answer: '<p>Yes — on every plan, no setup required. The AI automatically detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends you the summary in English so you always know what happened.</p><p>This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.</p>',
+      answer: '<p>Yes, on every plan, no setup required. The AI automatically detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends you the summary in English so you always know what happened.</p><p>This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.</p>',
     },
     {
       question: 'Do I get a dashboard or app?',
@@ -440,23 +414,23 @@ export const defaultMarketingConfig: MarketingConfig = {
     },
     {
       question: 'What information do you need from me to get started?',
-      answer: '<p>Just the basics: your business name, industry, phone number, and some information about your services, hours, and common questions. Everything is entered through the dashboard — no files to send back and forth. If you have a website, the AI can scan it automatically to learn about your business. Setup takes about 10 minutes total.</p>',
+      answer: '<p>Just the basics: your business name, industry, phone number, and some information about your services, hours, and common questions. Everything is entered through the dashboard, no files to send back and forth. If you have a website, the AI can scan it automatically to learn about your business. Setup takes about 10 minutes total.</p>',
     },
     {
       question: 'Can I try it before signing up?',
-      answer: '<p>Absolutely. Call our demo line to experience exactly how it works. Then start your 7-day free trial — no credit card required. If it\'s not for you, just don\'t continue. No commitments, no hassle.</p>',
+      answer: '<p>Absolutely. Call our demo line to experience exactly how it works. Then start your 7-day free trial, no credit card required. If it\'s not for you, just don\'t continue. No commitments, no hassle.</p>',
     },
     {
       question: 'How is this different from a regular answering service?',
-      answer: '<p><strong>Traditional answering services:</strong> Generic scripts, operators handling dozens of businesses, limited hours, no calendar access, $300-600/month.</p><p><strong>Us:</strong> AI trained on YOUR specific business, available 24/7, books directly to your calendar, instant text summaries, full call recordings, and a mobile app — starting at $49/month.</p>',
+      answer: '<p><strong>Traditional answering services:</strong> Generic scripts, operators handling dozens of businesses, limited hours, no calendar access, $300-600/month.</p><p><strong>Us:</strong> AI trained on YOUR specific business, available 24/7, books directly to your calendar, instant text summaries, full call recordings, and a mobile app, starting at $49/month.</p>',
     },
     {
       question: 'What if I go over my call limit?',
-      answer: '<p>We\'ll let you know when you\'re approaching your limit. You can upgrade mid-cycle, or we\'ll charge a small per-call fee (typically $1-2 per call) for overages. No surprise bills — you\'ll always know before it happens.</p>',
+      answer: '<p>We\'ll let you know when you\'re approaching your limit. You can upgrade mid-cycle, or we\'ll charge a small per-call fee (typically $1-2 per call) for overages. No surprise bills, you\'ll always know before it happens.</p>',
     },
     {
       question: 'Is my data secure?',
-      answer: '<p>Yes. All calls are encrypted. Recordings and transcripts are stored securely. We follow healthcare-grade privacy practices and never sell or share your call data.</p>',
+      answer: '<p>Yes. All calls are encrypted, and recordings and transcripts are stored securely. We never sell or share your call data.</p>',
     },
   ],
   footer: {
@@ -484,5 +458,5 @@ export const defaultMarketingConfig: MarketingConfig = {
   clientLoginPath: '/client/login',
   showIndustries: true,
   showComparison: true,
-  showTestimonials: true,
+  showTestimonials: false,
 };

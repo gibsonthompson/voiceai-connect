@@ -33,7 +33,7 @@ interface Agency {
 }
 
 // ============================================================================
-// FAQ DATA — uses agency pricing
+// FAQ DATA - uses agency pricing
 // ============================================================================
 function buildFaqCategories(agency: Agency) {
   const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
@@ -44,10 +44,10 @@ function buildFaqCategories(agency: Agency) {
   {
     name: 'Getting Started',
     faqs: [
-      { q: 'What is an AI receptionist?', a: 'An AI receptionist is a virtual phone agent that answers your business calls 24/7. It sounds natural, can answer questions about your business, take messages, book appointments to your Google Calendar, and send you a text summary after every call. It works just like a human receptionist—except it never misses a call, handles unlimited simultaneous calls, and costs a fraction of the price.' },
+      { q: 'What is an AI receptionist?', a: 'An AI receptionist is a virtual phone agent that answers your business calls 24/7. It sounds natural, can answer questions about your business, take messages, book appointments to your Google Calendar, and send you a text summary after every call. It works just like a human receptionist, except it never misses a call, handles unlimited simultaneous calls, and costs a fraction of the price.' },
       { q: 'How do I get set up?', a: 'Setup takes about 10 minutes. You\'ll enter your business name, industry, phone number, and some details about your services and hours. If you have a website, the AI can scan it automatically to learn about your business. Once you\'re set up, you just forward your existing phone number to your new AI number and you\'re live.' },
-      { q: 'Do I need a website for this to work?', a: 'No. All you need is a phone number. You can forward your existing business line to your AI number, or use the AI number directly on your website, business cards, and ads. If you do have a website, the AI can scan it to learn about your business—but it\'s completely optional.' },
-      { q: 'What information do I need to provide?', a: 'Just the basics: your business name, industry, phone number, and information about your services, hours, and common questions. Everything is entered through your dashboard—no files to send. The more detail you provide about your services and FAQs, the better the AI handles calls.' },
+      { q: 'Do I need a website for this to work?', a: 'No. All you need is a phone number. You can forward your existing business line to your AI number, or use the AI number directly on your website, business cards, and ads. If you do have a website, the AI can scan it to learn about your business, but it\'s completely optional.' },
+      { q: 'What information do I need to provide?', a: 'Just the basics: your business name, industry, phone number, and information about your services, hours, and common questions. Everything is entered through your dashboard, no files to send. The more detail you provide about your services and FAQs, the better the AI handles calls.' },
     ],
   },
   {
@@ -55,17 +55,17 @@ function buildFaqCategories(agency: Agency) {
     faqs: [
       { q: 'How does the AI answer my calls?', a: 'When someone calls your AI number, the system answers within milliseconds. The AI greets them with your custom message, has a natural conversation, answers questions using your knowledge base, captures their information, and can book appointments. After the call, you get a text with the summary.' },
       { q: 'How natural does the AI sound?', a: 'Very natural. We use premium voice technology that sounds virtually indistinguishable from a human. The AI uses natural speech patterns, appropriate pauses, and handles interruptions gracefully. Most callers don\'t realize they\'re talking to an AI.' },
-      { q: 'Does the AI work in Spanish?', a: 'Yes—automatically, with no setup required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects all information in Spanish and sends you the summary in English. This works out of the box on every plan.' },
-      { q: 'Can the AI handle multiple calls at the same time?', a: 'Yes—unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.' },
-      { q: 'Is the AI available 24/7?', a: 'Yes. The AI answers calls 24 hours a day, 7 days a week, 365 days a year—nights, weekends, and holidays. You can also set different behaviors for after-hours, like a different greeting or message-only mode.' },
-      { q: 'Does the AI block spam and robocalls?', a: 'Yes—automatically. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls don\'t count against your monthly limit, and you get a notification when one is blocked.' },
+      { q: 'Does the AI work in Spanish?', a: 'Yes, automatically, with no setup required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects all information in Spanish and sends you the summary in English. This works out of the box on every plan.' },
+      { q: 'Can the AI handle multiple calls at the same time?', a: 'Yes, unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed. No busy signals, no hold music, no missed calls during your busiest hours.' },
+      { q: 'Is the AI available 24/7?', a: 'Yes. The AI answers calls 24 hours a day, 7 days a week, 365 days a year, including nights, weekends, and holidays. You can also set different behaviors for after-hours, like a different greeting or message-only mode.' },
+      { q: 'Does the AI block spam and robocalls?', a: 'Yes, automatically. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls don\'t count against your monthly limit, and you get a notification when one is blocked.' },
     ],
   },
   {
     name: 'Call Forwarding & Setup',
     faqs: [
       { q: 'How do I forward my calls to the AI?', a: 'The simplest method: on your phone, dial *72 followed by your AI phone number and press call. You\'ll hear a confirmation tone. To turn it off later, dial *73. This works on AT&T, Verizon, T-Mobile, and most landline providers.' },
-      { q: 'Can I forward calls only when I don\'t answer?', a: 'Yes. You can set up conditional forwarding so your phone rings first, and if you don\'t pick up, the call goes to the AI. We also offer a built-in "Fallback" mode where the AI tries your phone first, and if you don\'t answer, the AI takes over—no carrier settings needed.' },
+      { q: 'Can I forward calls only when I don\'t answer?', a: 'Yes. You can set up conditional forwarding so your phone rings first, and if you don\'t pick up, the call goes to the AI. We also offer a built-in "Fallback" mode where the AI tries your phone first, and if you don\'t answer, the AI takes over, with no carrier settings needed.' },
       { q: 'What are the forwarding codes for my carrier?', a: 'AT&T: *72 to activate, *73 to deactivate. Verizon: *72 to activate, *73 to deactivate. T-Mobile: *72 to activate, *73 to deactivate (or use the T-Mobile app). Spectrum/landline: *72 to activate, *73 to deactivate. For any other carrier, call their support and ask to set up call forwarding to your AI number.' },
       { q: 'Can I turn forwarding on and off?', a: 'Yes. Dial *73 to stop forwarding and answer calls yourself. Dial *72 + your AI number to start forwarding again. Many business owners forward when they\'re on a job or busy, and answer directly when they\'re available.' },
     ],
@@ -76,7 +76,7 @@ function buildFaqCategories(agency: Agency) {
       { q: 'How does appointment booking work?', a: 'The AI connects to your Google Calendar. When a caller wants to book, it checks your real-time availability, offers open time slots, collects the caller\'s information, and creates the event automatically. The appointment shows up in your calendar instantly with the caller\'s name, phone, and reason for the visit.' },
       { q: 'Can I set different rules for different services?', a: 'Yes. From your dashboard, you can define services with individual durations (e.g., 30 minutes for a cleaning, 60 minutes for a deep clean), buffer time between appointments, and booking rules per service. Some services can be booked directly by the AI, others can require office confirmation first.' },
       { q: 'Can callers request a specific staff member?', a: 'Yes. You can add staff members with names and roles in your dashboard. When booking, the AI asks if the caller has a preferred provider and includes their name in the appointment details.' },
-      { q: 'What if I don\'t want the AI to book directly?', a: 'You can set booking mode to "collect request." The AI gathers the caller\'s name, phone, preferred time, and what they need—then lets them know your office will call to confirm. No calendar events are created until you approve. This is popular for medical, legal, and high-touch businesses.' },
+      { q: 'What if I don\'t want the AI to book directly?', a: 'You can set booking mode to "collect request." The AI gathers the caller\'s name, phone, preferred time, and what they need, then lets them know your office will call to confirm. No calendar events are created until you approve. This is popular for medical, legal, and high-touch businesses.' },
       { q: 'Does it work with calendars other than Google?', a: 'Google Calendar is the primary integration. Since Google Calendar syncs with most CRMs and scheduling tools (HubSpot, Calendly, etc.), appointments flow through automatically to your connected systems.' },
     ],
   },
@@ -87,26 +87,26 @@ function buildFaqCategories(agency: Agency) {
       { q: 'How do text notifications work?', a: 'Immediately after each call, you get a text with who called, why they called, and how urgent it is. You can see at a glance whether you need to call back now or if it can wait.' },
       { q: 'Can I customize what the AI knows about my business?', a: 'Yes. Your dashboard has a "My Business" section where you manage services and pricing, staff members, business hours, and a knowledge base with FAQs and additional info. You also have an "AI Agent" section to change the voice, greeting, conversation tone, and call-handling rules.' },
       { q: 'Is there a mobile app?', a: 'The dashboard works on your phone and desktop. You can add it to your home screen for an app-like experience. Text and email notifications work on all devices, so you\'re always in the loop even without opening the dashboard.' },
-      { q: 'Can I add team members to my account?', a: 'Yes. You can invite team members so employees, partners, or anyone else can access your dashboard with their own login. Each member has configurable permissions — you control which sections they can view and use (calls, contacts, AI agent settings, billing, and more), so you can give a manager full access while restricting a receptionist to just calls and contacts. The number of team members included depends on your plan; higher tiers include more seats, and you can see the exact limit for your tier in your account settings or on the pricing page.' },
+      { q: 'Can I add team members to my account?', a: 'Yes. You can invite team members so employees, partners, or anyone else can access your dashboard with their own login. Each member has configurable permissions, so you control which sections they can view and use (calls, contacts, AI agent settings, billing, and more). You can give a manager full access while restricting a receptionist to just calls and contacts. The number of team members included depends on your plan; higher tiers include more seats, and you can see the exact limit for your tier in your account settings or on the pricing page.' },
       { q: 'Can I export my call data?', a: 'Yes. You can export call logs, contacts, and analytics as CSV files directly from your dashboard.' },
     ],
   },
   {
     name: 'Call Handling',
     faqs: [
-      { q: 'Can the AI transfer urgent calls to me?', a: 'Yes. You configure transfer rules—for example, transfer immediately if someone mentions an emergency or a specific keyword. If you don\'t answer the transfer, the AI stays on the line and takes a message instead of sending the caller to voicemail.' },
+      { q: 'Can the AI transfer urgent calls to me?', a: 'Yes. You configure transfer rules, for example, transfer immediately if someone mentions an emergency or a specific keyword. If you don\'t answer the transfer, the AI stays on the line and takes a message instead of sending the caller to voicemail.' },
       { q: 'What happens if the AI can\'t answer a question?', a: 'It handles it gracefully: "I don\'t have that specific information, but I\'d be happy to have someone call you back with the details." Then you get a text summary so you know exactly what to address. The AI never makes up answers.' },
       { q: 'Can the AI recognize returning callers?', a: 'Yes. With caller recognition enabled, the AI identifies returning callers by their phone number and greets them by name. It also references their previous interactions so the conversation feels personal.' },
       { q: 'What happens after hours?', a: 'You can configure after-hours behavior separately. The AI can use a different greeting, let callers know you\'re closed and when you reopen, take messages, and still handle urgent transfers if needed.' },
     ],
   },
   {
-    name: 'Medical & HIPAA',
+    name: 'Medical & Healthcare',
     faqs: [
-      { q: 'Is this HIPAA compliant for medical practices?', a: 'Yes. A HIPAA mode can be enabled that disables call recording storage, forces all appointments into "collect request" mode (the AI gathers name, phone, and general reason for the visit only), and prevents storage of clinical details. The AI is trained to redirect any specific medical questions to the provider.' },
-      { q: 'What information does the AI collect on patient calls?', a: 'In HIPAA mode, only scheduling information: the caller\'s name, phone number, whether they\'re a new or existing patient, and a general reason for the visit (e.g., "checkup," "follow-up"). If a caller shares medical details, the AI redirects: "Our provider will discuss that at your appointment."' },
+      { q: 'Can I use this for a medical, dental, or other healthcare practice?', a: 'Yes. Healthcare offices use the AI to answer calls, take messages, and handle scheduling. It is set up to collect only scheduling information (the caller\'s name, phone number, whether they are a new or existing patient, and a general reason for the visit) and is instructed not to ask about or discuss specific medical details. If a caller starts sharing medical information, the AI redirects them: "Our provider can go over that at your appointment."' },
+      { q: 'What information does the AI collect on patient calls?', a: 'Only scheduling information: the caller\'s name, phone number, whether they are a new or existing patient, and a general reason for the visit (for example "checkup" or "follow-up"). If a caller shares medical details, the AI redirects: "Our provider will discuss that at your appointment."' },
       { q: 'How does the AI handle medical emergencies?', a: 'The AI recognizes emergency language and immediately directs callers to call 911 or go to the nearest emergency room. It does not provide medical advice. For urgent but non-emergency situations, it takes the caller\'s information and notifies you immediately by text.' },
-      { q: 'Can the AI handle insurance questions?', a: 'Yes, if you add your accepted carriers to the knowledge base. The AI can answer "Do you accept Blue Cross?" but redirects specific coverage questions: "Coverage varies by plan—our billing team can verify your benefits before your visit."' },
+      { q: 'Can the AI handle insurance questions?', a: 'Yes, if you add your accepted carriers to the knowledge base. The AI can answer "Do you accept Blue Cross?" but redirects specific coverage questions: "Coverage varies by plan. Our billing team can verify your benefits before your visit."' },
     ],
   },
   {
@@ -114,15 +114,15 @@ function buildFaqCategories(agency: Agency) {
     faqs: [
       { q: 'How much does this cost?', a: `Plans range from ${cs}${lowestPrice} to ${cs}${highestPrice}/month for 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking. Visit our pricing page for current plan details.` },
       { q: 'Is there a free trial?', a: 'Yes! New accounts include a free trial period so you can experience the AI receptionist with real calls before committing. No credit card is required to start.' },
-      { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified when you\'re approaching your limit. Depending on your plan, you can upgrade mid-cycle or pay a small per-call overage fee. No surprise bills—you\'ll always know before it happens.' },
+      { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified when you\'re approaching your limit. Depending on your plan, you can upgrade mid-cycle or pay a small per-call overage fee. No surprise bills, you\'ll always know before it happens.' },
       { q: 'Can I cancel anytime?', a: 'Yes. There are no long-term contracts or cancellation fees. You can cancel from your dashboard settings at any time.' },
     ],
   },
   {
     name: 'Security & Privacy',
     faqs: [
-      { q: 'Is my data secure?', a: 'Yes. All data is encrypted at rest and in transit. Call recordings and transcripts are stored securely and only accessible to you. We follow healthcare-grade privacy practices and never sell or share your call data.' },
-      { q: 'Are calls recorded?', a: 'Yes, by default every call is recorded and available in your dashboard. If you need recordings disabled (for HIPAA or other compliance reasons), that can be configured per account.' },
+      { q: 'Is my data secure?', a: 'Yes. All data is encrypted at rest and in transit. Call recordings and transcripts are stored securely and only accessible to you. We never sell or share your call data.' },
+      { q: 'Are calls recorded?', a: 'Yes, by default every call is recorded and available in your dashboard. If you need recordings turned off, that can be configured per account.' },
       { q: 'Is my call data used to train AI?', a: 'No. Your call recordings, transcripts, and conversation data are never used to train AI models. Your data stays private.' },
     ],
   },
@@ -215,7 +215,7 @@ export default function AgencyFAQPage() {
   return (
     <div className={`marketing-page theme-${theme}`} style={{ ...themeStyle, background: bg, minHeight: '100vh', fontFamily: 'var(--font-primary, system-ui, sans-serif)' }}>
 
-      {/* NAV — matches MarketingPage Navigation */}
+      {/* NAV - matches MarketingPage Navigation */}
       <nav className="navbar">
         <div className="container">
           <div className="nav-content">
@@ -305,7 +305,7 @@ export default function AgencyFAQPage() {
         </div>
       </section>
 
-      {/* FOOTER — matches MarketingPage Footer */}
+      {/* FOOTER - matches MarketingPage Footer */}
       <footer className="footer">
         <div className="container">
           <div className="footer-grid">
@@ -313,7 +313,7 @@ export default function AgencyFAQPage() {
               <div className="footer-logo">
                 {agency.logo_url ? (<div className="logo-wrapper" style={{ display: 'inline-block' }}><img src={agency.logo_url} alt={agency.name} style={{ height: '40px' }} /></div>) : (<span>{agency.name}</span>)}
               </div>
-              <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.</p>
+              <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7.</p>
               <div className="footer-contact">
                 {agency.support_phone && <p><a href={`tel:${agency.support_phone.replace(/\D/g, '')}`}>{agency.support_phone}</a></p>}
                 {agency.support_email && <p><a href={`mailto:${agency.support_email}`}>{agency.support_email}</a></p>}
@@ -345,7 +345,7 @@ export default function AgencyFAQPage() {
         </div>
       </footer>
 
-      {/* STICKY CTA — matches MarketingPage StickyCTA */}
+      {/* STICKY CTA - matches MarketingPage StickyCTA */}
       <div className={`sticky-cta ${stickyCTAVisible ? 'visible' : ''}`}>
         <span className="sticky-cta-text">Ready to try {agency.name}?</span>
         <div className="sticky-cta-actions">
