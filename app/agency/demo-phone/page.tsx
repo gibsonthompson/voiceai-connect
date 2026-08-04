@@ -26,7 +26,7 @@ function formatPhoneDisplay(phone: string): string {
 }
 
 function formatDuration(seconds: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) return '-';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
@@ -78,7 +78,7 @@ function InterestBadge({ level, theme }: { level: string | null; theme: any }) {
     high: { emoji: '🔥', label: 'Hot', bg: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.2)' },
     medium: { emoji: '👀', label: 'Warm', bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)' },
     low: { emoji: '❄️', label: 'Cold', bg: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', border: 'rgba(107, 114, 128, 0.2)' },
-  }[level || 'medium'] || { emoji: '—', label: level || 'Unknown', bg: theme.hover, color: theme.textMuted, border: theme.border };
+  }[level || 'medium'] || { emoji: '-', label: level || 'Unknown', bg: theme.hover, color: theme.textMuted, border: theme.border };
 
   return (
     <span
@@ -148,7 +148,7 @@ function AudioPlayer({ url, theme }: { url: string; theme: any }) {
         </div>
         <div className="flex justify-between mt-1">
           <span className="text-[10px]" style={{ color: theme.textMuted }}>{fmt(progress)}</span>
-          <span className="text-[10px]" style={{ color: theme.textMuted }}>{duration > 0 ? fmt(duration) : '—'}</span>
+          <span className="text-[10px]" style={{ color: theme.textMuted }}>{duration > 0 ? fmt(duration) : '-'}</span>
         </div>
       </div>
     </div>
@@ -508,6 +508,46 @@ export default function DemoPhonePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Poll the async provisioning status until the number is live, an error is
+  // reported, or we hit a hard timeout. Provisioning a non-US number does a real
+  // Twilio purchase + VAPI import in the background, so we wait on the status
+  // endpoint instead of on the create request itself (which now returns 202
+  // immediately). Keeps creating true so the button stays in its working state
+  // the whole time.
+  const pollDemoStatus = async () => {
+    const token = localStorage.getItem('auth_token');
+    const startedAt = Date.now();
+    const MAX_WAIT_MS = 120000;   // 2 minutes
+    const INTERVAL_MS = 3000;
+
+    while (Date.now() - startedAt < MAX_WAIT_MS) {
+      await new Promise((r) => setTimeout(r, INTERVAL_MS));
+      try {
+        const res = await fetch(`${backendUrl}/api/agency/${agency?.id}/demo-phone/status`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.status === 'done') {
+          await refreshAgency();
+          setCreating(false);
+          return;
+        }
+        if (data.status === 'error') {
+          setError(data.message || 'Failed to create demo phone. Please try again.');
+          setCreating(false);
+          return;
+        }
+        // 'provisioning' or 'idle' -> keep waiting
+      } catch (err) {
+        // transient network blip; keep polling
+      }
+    }
+
+    setError('This is taking longer than expected. Refresh the page in a moment to check if your demo number is ready.');
+    setCreating(false);
+  };
+
   const handleCreate = async () => {
     if (demoMode) {
       await refreshAgency();
@@ -533,17 +573,28 @@ export default function DemoPhonePage() {
         body: JSON.stringify(isUS ? { area_code: areaCode } : {}),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
+      // The create endpoint answers 202 with { status: 'provisioning' } and does
+      // the real work in the background. Treat any non-ok that is NOT 202 as a
+      // hard failure. A 409 (already exists) surfaces as its message.
+      if (!response.ok && response.status !== 202) {
         setError(data.message || data.error || 'Failed to create demo phone');
+        setCreating(false);
         return;
       }
 
-      await refreshAgency();
+      // If a number came back inline (legacy synchronous response), we're done.
+      if (data.demo_phone_number) {
+        await refreshAgency();
+        setCreating(false);
+        return;
+      }
+
+      // Otherwise wait on the status endpoint.
+      await pollDemoStatus();
     } catch (err) {
       setError('Failed to connect to server. Please try again.');
-    } finally {
       setCreating(false);
     }
   };
@@ -711,7 +762,7 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // ACTIVE STATE — Demo exists
+  // ACTIVE STATE - Demo exists
   // ============================================================================
   if (hasDemo) {
     const demoNumber = formatPhoneDisplay(agency!.demo_phone_number!);
@@ -807,7 +858,7 @@ export default function DemoPhonePage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════
-            DEMO CALLS SECTION — Shows call history with full detail access
+            DEMO CALLS SECTION - Shows call history with full detail access
            ══════════════════════════════════════════════════════════════════ */}
         <div
           className="rounded-xl overflow-hidden mb-6"
@@ -935,7 +986,9 @@ export default function DemoPhonePage() {
 
         {creating && (
           <p className="mt-3 text-xs" style={{ color: theme.textMuted }}>
-            Setting up your AI assistant and provisioning a phone number. This usually takes 10-15 seconds...
+            {isUS
+              ? 'Setting up your AI assistant and provisioning a phone number. This usually takes 10-20 seconds...'
+              : `Purchasing a ${agencyCountry} number on your Twilio and linking it to your AI. International numbers can take up to a minute, hang tight...`}
           </p>
         )}
 
@@ -969,9 +1022,9 @@ function HowItWorksCard({ theme }: { theme: any }) {
       <div className="space-y-4 mb-6">
         {[
           { step: '1', icon: Mic, title: 'AI greets the caller', desc: 'A warm, professional voice answers and explains this is a live demo of your AI receptionist service.' },
-          { step: '2', icon: Users, title: 'Gathers business context', desc: 'The AI asks "What type of business do you run?" — plumber, dentist, lawyer, restaurant, anything.' },
-          { step: '3', icon: Bot, title: 'Roleplays as their receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry — taking a service request, scheduling an appointment, handling an intake call, etc.' },
-          { step: '4', icon: Sparkles, title: 'Showcases key features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes — all within the conversation.' },
+          { step: '2', icon: Users, title: 'Gathers business context', desc: 'The AI asks "What type of business do you run?" - plumber, dentist, lawyer, restaurant, anything.' },
+          { step: '3', icon: Bot, title: 'Roleplays as their receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry - taking a service request, scheduling an appointment, handling an intake call, etc.' },
+          { step: '4', icon: Sparkles, title: 'Showcases key features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes - all within the conversation.' },
           { step: '5', icon: MessageSquare, title: 'Follow-up SMS with signup link', desc: 'After the call ends, the caller automatically receives a text with your signup link so they can start their free trial.' },
         ].map((item) => (
           <div key={item.step} className="flex items-start gap-3">
@@ -993,7 +1046,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
         <p className="text-xs font-medium mb-2" style={{ color: theme.text }}>💡 Why this converts</p>
         <p className="text-[10px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
           Instead of explaining what an AI receptionist does, prospects <strong style={{ color: theme.text }}>experience it firsthand</strong>.
-          They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry —
+          They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry -
           all in a 60-second phone call. The follow-up text makes it effortless to convert from &quot;that was cool&quot; to &quot;I want this for my business.&quot;
         </p>
       </div>
