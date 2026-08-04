@@ -1,753 +1,267 @@
 'use client';
 
-// ============================================================================
-// ADMIN SUPPORT + FEEDBACK PAGE
-// Destination: app/admin/support/page.tsx
-// Two tabs:
-//   Support Requests - inbound help-widget escalations (support_requests),
-//                      status open / in_progress / resolved + notes.
-//   Feedback         - Settings > Feedback submissions (agency_feedback),
-//                      status new / reviewed / archived + notes.
-// Reads/writes:
-//   GET  /api/admin/support-requests   PATCH /api/admin/support-requests/:id
-//   GET  /api/admin/feedback           PATCH /api/admin/feedback/:id
-// Auth: admin_token.
-//
-// UPDATED: 2026-08-03 - Recolored onto the admin theme tokens (admin-theme.css,
-//          --a-*). The page had shipped in the old dark-theme convention
-//          (text-white, text-white/NN, bg-white/[0.0N], bright accent hexes),
-//          which rendered white-on-cream and invisible on the emerald-on-white
-//          admin background. Only the color/surface layer changed; all data
-//          logic, state, and structure are identical. Status chips use the
-//          white-background accents (--a-amber/--a-cyan/--a-em-deep/--a-violet).
-// ============================================================================
-
-import { useState, useEffect, useCallback } from 'react';
-import {
-  LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check,
+import { useState, useRef, useEffect } from 'react';
+import { 
+  Loader2, Send, Bot, User, Phone, MessageCircle,
+  HelpCircle, Zap, AlertCircle, Wrench, CreditCard, ArrowRight
 } from 'lucide-react';
+import { useAgency } from '@/app/agency/context';
+import { useTheme } from '@/hooks/useTheme';
 
-const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
-const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '');
-
-function timeAgo(date: string): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
 }
 
-function formatDateTime(date: string): string {
-  return new Date(date).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit',
-  });
+const QUICK_PROMPTS = [
+  { label: 'Add a client', prompt: 'How do I add a new client to my agency?', icon: Zap },
+  { label: 'AI not answering', prompt: 'My client\'s AI receptionist isn\'t answering calls. How do I troubleshoot this?', icon: AlertCircle },
+  { label: 'Set up billing', prompt: 'How do I set up Stripe Connect so I can charge my clients?', icon: CreditCard },
+  { label: 'Custom domain', prompt: 'How do I connect a custom domain to my agency?', icon: Wrench },
+];
+
+const SUPPORT_PHONE = '(678) 316-1454';
+const PHONE_REVEAL_THRESHOLD = 2;
+
+function hexToRgba(hex: string, alpha: number): string {
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch { return `rgba(0,0,0,${alpha})`; }
 }
 
-// ============================================================================
-// PAGE (tab shell + badge counts)
-// ============================================================================
-export default function AdminSupportPage() {
-  const [tab, setTab] = useState<'support' | 'feedback'>('support');
-  const [supportOpen, setSupportOpen] = useState<number | null>(null);
-  const [feedbackNew, setFeedbackNew] = useState<number | null>(null);
+function formatMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:4px;font-size:0.85em">$1</code>')
+    .replace(/\n/g, '<br/>');
+}
 
-  const reloadBadges = useCallback(async () => {
+export default function SupportPage() {
+  const { agency, effectivePlan } = useAgency();
+  const theme = useTheme();
+  const api = process.env.NEXT_PUBLIC_API_URL || '';
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [userMessageCount, setUserMessageCount] = useState(0);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const showPhone = userMessageCount >= PHONE_REVEAL_THRESHOLD;
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || sending || !agency) return;
+
+    const userMsg: Message = { id: `u-${Date.now()}`, role: 'user', content: content.trim(), timestamp: Date.now() };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setUserMessageCount(prev => prev + 1);
+    setInput('');
+    setSending(true);
+
     try {
-      const token = getToken();
-      const backendUrl = getBackendUrl();
-      const [s, f] = await Promise.all([
-        fetch(`${backendUrl}/api/admin/support-requests?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${backendUrl}/api/admin/feedback?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (s.ok) { const d = await s.json(); setSupportOpen(d.counts?.open ?? 0); }
-      if (f.ok) { const d = await f.json(); setFeedbackNew(d.counts?.new ?? 0); }
-    } catch (e) {
-      // Badges are non-critical; leave them as-is on error.
+      const token = localStorage.getItem('auth_token') || '';
+      const r = await fetch(`${api}/api/agency/${agency.id}/support/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          agencyName: agency.name,
+          agencyPlan: effectivePlan,
+        }),
+      });
+
+      if (r.ok) {
+        const d = await r.json();
+        setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: d.reply, timestamp: Date.now() }]);
+      } else {
+        setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: 'Sorry, I\'m having trouble connecting. Please try again in a moment.', timestamp: Date.now() }]);
+      }
+    } catch {
+      setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: 'Connection error. Please check your internet and try again.', timestamp: Date.now() }]);
+    } finally {
+      setSending(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, []);
+  };
 
-  useEffect(() => { reloadBadges(); }, [reloadBadges]);
-
-  const tabBtn = (id: 'support' | 'feedback', label: string, Icon: any, badge: number | null) => {
-    const active = tab === id;
-    return (
-      <button
-        onClick={() => setTab(id)}
-        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-        style={active
-          ? { background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }
-          : { background: 'var(--a-card)', border: '1px solid var(--a-line-2)', color: 'var(--a-muted)' }}
-      >
-        <Icon className="h-4 w-4" />
-        {label}
-        {badge != null && badge > 0 && (
-          <span
-            className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-semibold"
-            style={active
-              ? { background: 'var(--a-em)', color: '#04140D' }
-              : { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}
-          >
-            {badge}
-          </span>
-        )}
-      </button>
-    );
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input);
+    }
   };
 
   return (
-    <div className="p-5 lg:p-8 max-w-[1400px]">
-      <div className="mb-5">
-        <h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Support &amp; Feedback</h1>
-        <p className="mt-1 text-sm text-[var(--a-muted)]">Inbound help-widget escalations and feedback submissions</p>
+    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen" style={{ backgroundColor: theme.bg }}>
+      {/* Header */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-b" style={{ borderColor: theme.border }}>
+        <div className="flex items-center justify-between max-w-3xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
+              <MessageCircle className="h-5 w-5" style={{ color: theme.primary }} />
+            </div>
+            <div>
+              <h1 className="text-base sm:text-lg font-semibold" style={{ color: theme.text }}>Support</h1>
+              <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>AI-powered help for your agency</p>
+            </div>
+          </div>
+
+          {/* Phone — fades in after threshold */}
+          <div className={`transition-all duration-500 ${showPhone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+            <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80"
+              style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06), color: theme.primary, border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
+              <Phone className="h-3.5 w-3.5" />
+              {SUPPORT_PHONE}
+            </a>
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-6">
-        {tabBtn('support', 'Support Requests', LifeBuoy, supportOpen)}
-        {tabBtn('feedback', 'Feedback', MessageSquare, feedbackNew)}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 sm:py-20">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: theme.primary15 }}>
+                <Bot className="h-8 w-8" style={{ color: theme.primary }} />
+              </div>
+              <h2 className="text-lg font-semibold mb-1" style={{ color: theme.text }}>How can I help?</h2>
+              <p className="text-sm mb-8 text-center max-w-sm" style={{ color: theme.textMuted }}>
+                Ask me anything about VoiceAI Connect — setup, troubleshooting, features, billing, or best practices.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                {QUICK_PROMPTS.map(qp => (
+                  <button key={qp.label} onClick={() => sendMessage(qp.prompt)}
+                    className="flex items-center gap-3 rounded-xl p-3 text-left text-sm transition-all group"
+                    style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f5f5f5' }}>
+                      <qp.icon className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    </div>
+                    <span style={{ color: theme.text }}>{qp.label}</span>
+                    <ArrowRight className="h-3.5 w-3.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map(m => (
+                <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {m.role === 'assistant' && (
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"
+                      style={{ backgroundColor: theme.primary15 }}>
+                      <Bot className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                    </div>
+                  )}
+                  <div className="max-w-[85%] sm:max-w-[75%]">
+                    <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                      style={{
+                        backgroundColor: m.role === 'user' ? theme.primary : theme.card,
+                        color: m.role === 'user' ? theme.primaryText : theme.text,
+                        border: m.role === 'assistant' ? `1px solid ${theme.border}` : 'none',
+                        borderBottomRightRadius: m.role === 'user' ? '4px' : undefined,
+                        borderBottomLeftRadius: m.role === 'assistant' ? '4px' : undefined,
+                      }}
+                      dangerouslySetInnerHTML={{ __html: m.role === 'assistant' ? formatMarkdown(m.content) : m.content.replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                  {m.role === 'user' && (
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"
+                      style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6' }}>
+                      <User className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {sending && (
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1"
+                    style={{ backgroundColor: theme.primary15 }}>
+                    <Bot className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                  </div>
+                  <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, borderBottomLeftRadius: '4px' }}>
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: theme.textMuted, animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: theme.textMuted, animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: theme.textMuted, animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phone reveal card — appears inline after threshold */}
+              {showPhone && messages.length >= PHONE_REVEAL_THRESHOLD * 2 && (
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 flex-shrink-0" />
+                  <div className="rounded-xl p-3 flex items-center gap-3 max-w-xs"
+                    style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
+                    <Phone className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                    <div>
+                      <p className="text-[10px]" style={{ color: theme.textMuted }}>Still need help?</p>
+                      <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`} className="text-sm font-semibold hover:underline" style={{ color: theme.primary }}>
+                        Call {SUPPORT_PHONE}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
 
-      {tab === 'support' ? <SupportTab onChanged={reloadBadges} /> : <FeedbackTab onChanged={reloadBadges} />}
+      {/* Input */}
+      <div className="flex-shrink-0 border-t px-4 sm:px-6 py-3" style={{ borderColor: theme.border, backgroundColor: theme.bg }}>
+        <div className="max-w-3xl mx-auto flex gap-2">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask a question..."
+            rows={1}
+            className="flex-1 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+            style={{
+              backgroundColor: theme.input,
+              border: `1px solid ${theme.inputBorder}`,
+              color: theme.text,
+              maxHeight: '120px',
+            }}
+            onFocus={e => { e.currentTarget.style.border = `1px solid ${theme.primary}`; e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.primary}30`; }}
+            onBlur={e => { e.currentTarget.style.border = `1px solid ${theme.inputBorder}`; e.currentTarget.style.boxShadow = 'none'; }}
+            onInput={e => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+            }}
+          />
+          <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending}
+            className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0 self-end"
+            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
     </div>
-  );
-}
-
-// ============================================================================
-// SUPPORT REQUESTS TAB
-// ============================================================================
-interface SupportRequest {
-  id: string;
-  agency_id: string | null;
-  client_id: string | null;
-  user_type: string | null;
-  user_email: string | null;
-  display_name: string | null;
-  message: string;
-  source: string | null;
-  status: string;
-  admin_notes: string | null;
-  created_at: string;
-  resolved_at: string | null;
-}
-
-const SUPPORT_STATUS_OPTIONS = [
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-];
-
-function supportStatusStyle(status: string) {
-  switch (status) {
-    case 'open': return { color: 'var(--a-amber)', bg: 'var(--a-amber-soft)', border: 'var(--a-amber)', label: 'Open' };
-    case 'in_progress': return { color: 'var(--a-cyan)', bg: 'var(--a-cyan-soft)', border: 'var(--a-cyan)', label: 'In Progress' };
-    case 'resolved': return { color: 'var(--a-em-deep)', bg: 'var(--a-em-soft)', border: 'var(--a-em-line)', label: 'Resolved' };
-    default: return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: status };
-  }
-}
-
-function typeStyle(userType: string | null) {
-  if (userType === 'client') return { color: 'var(--a-violet)', bg: 'var(--a-violet-soft)', border: 'var(--a-violet)', label: 'Client' };
-  return { color: 'var(--a-em-deep)', bg: 'var(--a-em-soft)', border: 'var(--a-em-line)', label: 'Agency' };
-}
-
-function SupportTab({ onChanged }: { onChanged: () => void }) {
-  const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState<SupportRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState({ open: 0, in_progress: 0, resolved: 0, total: 0 });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [userTypeFilter, setUserTypeFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const limit = 30;
-
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('limit', limit.toString());
-      params.set('offset', (page * limit).toString());
-      if (statusFilter) params.set('status', statusFilter);
-      if (userTypeFilter) params.set('user_type', userTypeFilter);
-      if (search) params.set('search', search);
-      const res = await fetch(`${getBackendUrl()}/api/admin/support-requests?${params}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch support requests');
-      const data = await res.json();
-      setRequests(data.requests || []);
-      setTotal(data.total || 0);
-      if (data.counts) setCounts(data.counts);
-    } catch (e) {
-      console.error('Support requests error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, userTypeFilter, search]);
-
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
-  useEffect(() => { setPage(0); }, [statusFilter, userTypeFilter, search]);
-
-  const totalPages = Math.ceil(total / limit);
-
-  const toggleRow = (req: SupportRequest) => {
-    if (expandedId === req.id) setExpandedId(null);
-    else { setExpandedId(req.id); setNoteDraft(req.admin_notes || ''); }
-  };
-
-  const patchRequest = async (id: string, body: { status?: string; admin_notes?: string }) => {
-    setSavingId(id);
-    try {
-      const res = await fetch(`${getBackendUrl()}/api/admin/support-requests/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      const data = await res.json();
-      setRequests(prev => prev.map(r => (r.id === id ? data.request : r)));
-      await fetchRequests();
-      onChanged();
-    } catch (e) {
-      console.error('Update support request error:', e);
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  return (
-    <>
-      <div className="mb-5 text-sm text-[var(--a-muted)]">
-        {counts.total} request{counts.total !== 1 ? 's' : ''}
-        {counts.open > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.open} open</span></span>}
-        {counts.in_progress > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.in_progress} in progress</span></span>}
-        {counts.resolved > 0 && <span> · <span className="text-[var(--a-em-deep)]">{counts.resolved} resolved</span></span>}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
-          <input
-            type="text"
-            placeholder="Search message, email, name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
-          <option value="">All Statuses</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-        </select>
-        <select
-          value={userTypeFilter}
-          onChange={(e) => setUserTypeFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
-          <option value="">All Users</option>
-          <option value="agency">Agency</option>
-          <option value="client">Client</option>
-        </select>
-      </div>
-
-      <div className="a-panel">
-        {loading ? (
-          <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
-          </div>
-        ) : requests.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
-                <LifeBuoy className="h-7 w-7 text-[var(--a-dim)]" />
-              </div>
-            </div>
-            <p className="text-sm text-[var(--a-muted)]">No support requests found</p>
-            <p className="text-xs text-[var(--a-dim)] mt-1">Escalations from the help widget will appear here</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">User</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
-                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--a-line)]">
-                {requests.map((req) => {
-                  const ss = supportStatusStyle(req.status);
-                  const ts = typeStyle(req.user_type);
-                  const isExpanded = expandedId === req.id;
-                  const isSaving = savingId === req.id;
-                  return (
-                    <>
-                      <tr
-                        key={req.id}
-                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
-                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
-                        onClick={() => toggleRow(req)}
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(req.created_at)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            {req.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
-                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{req.display_name || 'Unknown'}</span>
-                          </div>
-                          {req.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{req.user_email}</span>}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: ts.bg, borderColor: ts.border, color: ts.color }}>
-                            {ts.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[280px]">
-                            {req.message?.slice(0, 90)}{req.message?.length > 90 ? '...' : ''}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>
-                            {ss.label}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {isExpanded && (
-                        <tr key={`${req.id}-detail`} style={{ background: '#F6FCF9' }}>
-                          <td colSpan={5} className="px-5 py-0">
-                            <div className="py-4 border-t border-[var(--a-line)]">
-                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <div className="lg:col-span-2 space-y-4">
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Message</h4>
-                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
-                                      {req.message}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {SUPPORT_STATUS_OPTIONS.map(opt => {
-                                        const s = supportStatusStyle(opt.value);
-                                        const active = req.status === opt.value;
-                                        return (
-                                          <button
-                                            key={opt.value}
-                                            onClick={(e) => { e.stopPropagation(); if (!active) patchRequest(req.id, { status: opt.value }); }}
-                                            disabled={isSaving || active}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
-                                            style={{
-                                              backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'var(--a-line-2)',
-                                              color: active ? s.color : 'var(--a-muted)',
-                                            }}
-                                          >
-                                            {active && <Check className="h-3 w-3" />}
-                                            {opt.label}
-                                          </button>
-                                        );
-                                      })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
-                                    <textarea
-                                      value={noteDraft}
-                                      onChange={(e) => setNoteDraft(e.target.value)}
-                                      onClick={(e) => e.stopPropagation()}
-                                      rows={3}
-                                      placeholder="Notes for your own reference (not shown to the user)..."
-                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
-                                    />
-                                    <div className="mt-2 flex justify-end">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); patchRequest(req.id, { admin_notes: noteDraft }); }}
-                                        disabled={isSaving || noteDraft === (req.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
-                                      >
-                                        {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                        Save Notes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
-                                  <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.created_at)}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User type</span><span className="text-[var(--a-ink)] capitalize">{req.user_type || 'unknown'}</span></div>
-                                    {req.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{req.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.display_name}</span></div>}
-                                    {req.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.user_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Source</span><span className="text-[var(--a-ink)]">{req.source || 'widget'}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
-                                    {req.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Resolved</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.resolved_at)}</span></div>}
-                                  </div>
-                                  {req.user_email && (
-                                    <a href={`mailto:${req.user_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                      <Mail className="h-3 w-3" /> Reply by email
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              <ArrowLeft className="h-3 w-3" /> Prev
-            </button>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              Next <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-// ============================================================================
-// FEEDBACK TAB
-// ============================================================================
-interface Feedback {
-  id: string;
-  agency_id: string | null;
-  message: string;
-  status: string | null;
-  admin_notes: string | null;
-  created_at: string;
-  reviewed_at: string | null;
-  agency_name: string | null;
-  agency_email: string | null;
-}
-
-const FEEDBACK_STATUS_OPTIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'reviewed', label: 'Reviewed' },
-  { value: 'archived', label: 'Archived' },
-];
-
-function feedbackStatusStyle(status: string | null) {
-  switch (status || 'new') {
-    case 'new': return { color: 'var(--a-amber)', bg: 'var(--a-amber-soft)', border: 'var(--a-amber)', label: 'New' };
-    case 'reviewed': return { color: 'var(--a-cyan)', bg: 'var(--a-cyan-soft)', border: 'var(--a-cyan)', label: 'Reviewed' };
-    case 'archived': return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: 'Archived' };
-    default: return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: status || 'new' };
-  }
-}
-
-function FeedbackTab({ onChanged }: { onChanged: () => void }) {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<Feedback[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState({ new: 0, reviewed: 0, archived: 0, total: 0 });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const limit = 30;
-
-  const fetchFeedback = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('limit', limit.toString());
-      params.set('offset', (page * limit).toString());
-      if (statusFilter) params.set('status', statusFilter);
-      if (search) params.set('search', search);
-      const res = await fetch(`${getBackendUrl()}/api/admin/feedback?${params}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch feedback');
-      const data = await res.json();
-      setItems(data.feedback || []);
-      setTotal(data.total || 0);
-      if (data.counts) setCounts(data.counts);
-    } catch (e) {
-      console.error('Feedback error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, search]);
-
-  useEffect(() => { fetchFeedback(); }, [fetchFeedback]);
-  useEffect(() => { setPage(0); }, [statusFilter, search]);
-
-  const totalPages = Math.ceil(total / limit);
-
-  const toggleRow = (fb: Feedback) => {
-    if (expandedId === fb.id) setExpandedId(null);
-    else { setExpandedId(fb.id); setNoteDraft(fb.admin_notes || ''); }
-  };
-
-  const patchFeedback = async (id: string, body: { status?: string; admin_notes?: string }) => {
-    setSavingId(id);
-    try {
-      const res = await fetch(`${getBackendUrl()}/api/admin/feedback/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      const data = await res.json();
-      setItems(prev => prev.map(f => (f.id === id ? { ...f, ...data.feedback } : f)));
-      await fetchFeedback();
-      onChanged();
-    } catch (e) {
-      console.error('Update feedback error:', e);
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  return (
-    <>
-      <div className="mb-5 text-sm text-[var(--a-muted)]">
-        {counts.total} submission{counts.total !== 1 ? 's' : ''}
-        {counts.new > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.new} new</span></span>}
-        {counts.reviewed > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.reviewed} reviewed</span></span>}
-        {counts.archived > 0 && <span> · <span className="text-[var(--a-muted)]">{counts.archived} archived</span></span>}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
-          <input
-            type="text"
-            placeholder="Search feedback message..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
-          <option value="">All Statuses</option>
-          <option value="new">New</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div className="a-panel">
-        {loading ? (
-          <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
-                <MessageSquare className="h-7 w-7 text-[var(--a-dim)]" />
-              </div>
-            </div>
-            <p className="text-sm text-[var(--a-muted)]">No feedback found</p>
-            <p className="text-xs text-[var(--a-dim)] mt-1">Submissions from Settings &gt; Feedback will appear here</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Agency</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Feedback</th>
-                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--a-line)]">
-                {items.map((fb) => {
-                  const fs = feedbackStatusStyle(fb.status);
-                  const isExpanded = expandedId === fb.id;
-                  const isSaving = savingId === fb.id;
-                  return (
-                    <>
-                      <tr
-                        key={fb.id}
-                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
-                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
-                        onClick={() => toggleRow(fb)}
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(fb.created_at)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{fb.agency_name || 'Unknown'}</span>
-                          </div>
-                          {fb.agency_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{fb.agency_email}</span>}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[320px]">
-                            {fb.message?.slice(0, 100)}{fb.message?.length > 100 ? '...' : ''}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: fs.bg, borderColor: fs.border, color: fs.color }}>
-                            {fs.label}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {isExpanded && (
-                        <tr key={`${fb.id}-detail`} style={{ background: '#F6FCF9' }}>
-                          <td colSpan={4} className="px-5 py-0">
-                            <div className="py-4 border-t border-[var(--a-line)]">
-                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <div className="lg:col-span-2 space-y-4">
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Feedback</h4>
-                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
-                                      {fb.message}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {FEEDBACK_STATUS_OPTIONS.map(opt => {
-                                        const s = feedbackStatusStyle(opt.value);
-                                        const active = (fb.status || 'new') === opt.value;
-                                        return (
-                                          <button
-                                            key={opt.value}
-                                            onClick={(e) => { e.stopPropagation(); if (!active) patchFeedback(fb.id, { status: opt.value }); }}
-                                            disabled={isSaving || active}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
-                                            style={{
-                                              backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'var(--a-line-2)',
-                                              color: active ? s.color : 'var(--a-muted)',
-                                            }}
-                                          >
-                                            {active && <Check className="h-3 w-3" />}
-                                            {opt.label}
-                                          </button>
-                                        );
-                                      })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
-                                    <textarea
-                                      value={noteDraft}
-                                      onChange={(e) => setNoteDraft(e.target.value)}
-                                      onClick={(e) => e.stopPropagation()}
-                                      rows={3}
-                                      placeholder="Notes for your own reference..."
-                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
-                                    />
-                                    <div className="mt-2 flex justify-end">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); patchFeedback(fb.id, { admin_notes: noteDraft }); }}
-                                        disabled={isSaving || noteDraft === (fb.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
-                                      >
-                                        {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                        Save Notes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
-                                  <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.created_at)}</span></div>
-                                    {fb.agency_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Agency</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_name}</span></div>}
-                                    {fb.agency_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: fs.color }}>{fs.label}</span></div>
-                                    {fb.reviewed_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Reviewed</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.reviewed_at)}</span></div>}
-                                  </div>
-                                  {fb.agency_email && (
-                                    <a href={`mailto:${fb.agency_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                      <Mail className="h-3 w-3" /> Reply by email
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              <ArrowLeft className="h-3 w-3" /> Prev
-            </button>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              Next <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-      )}
-    </>
   );
 }

@@ -12,6 +12,14 @@
 //   GET  /api/admin/support-requests   PATCH /api/admin/support-requests/:id
 //   GET  /api/admin/feedback           PATCH /api/admin/feedback/:id
 // Auth: admin_token.
+//
+// UPDATED: 2026-08-03 - Recolored onto the admin theme tokens (admin-theme.css,
+//          --a-*). The page had shipped in the old dark-theme convention
+//          (text-white, text-white/NN, bg-white/[0.0N], bright accent hexes),
+//          which rendered white-on-cream and invisible on the emerald-on-white
+//          admin background. Only the color/surface layer changed; all data
+//          logic, state, and structure are identical. Status chips use the
+//          white-background accents (--a-amber/--a-cyan/--a-em-deep/--a-violet).
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -71,8 +79,8 @@ export default function AdminSupportPage() {
         onClick={() => setTab(id)}
         className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors"
         style={active
-          ? { background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399' }
-          : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}
+          ? { background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }
+          : { background: 'var(--a-card)', border: '1px solid var(--a-line-2)', color: 'var(--a-muted)' }}
       >
         <Icon className="h-4 w-4" />
         {label}
@@ -80,8 +88,8 @@ export default function AdminSupportPage() {
           <span
             className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-semibold"
             style={active
-              ? { background: 'rgba(52,211,153,0.20)', color: '#34d399' }
-              : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
+              ? { background: 'var(--a-em)', color: '#04140D' }
+              : { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}
           >
             {badge}
           </span>
@@ -93,8 +101,8 @@ export default function AdminSupportPage() {
   return (
     <div className="p-5 lg:p-8 max-w-[1400px]">
       <div className="mb-5">
-        <h1 className="text-[22px] font-semibold text-white tracking-tight">Support &amp; Feedback</h1>
-        <p className="mt-1 text-sm text-white/40">Inbound help-widget escalations and feedback submissions</p>
+        <h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Support &amp; Feedback</h1>
+        <p className="mt-1 text-sm text-[var(--a-muted)]">Inbound help-widget escalations and feedback submissions</p>
       </div>
 
       <div className="flex items-center gap-2 mb-6">
@@ -133,16 +141,16 @@ const SUPPORT_STATUS_OPTIONS = [
 
 function supportStatusStyle(status: string) {
   switch (status) {
-    case 'open': return { color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.20)', label: 'Open' };
-    case 'in_progress': return { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.20)', label: 'In Progress' };
-    case 'resolved': return { color: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.20)', label: 'Resolved' };
-    default: return { color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', label: status };
+    case 'open': return { color: 'var(--a-amber)', bg: 'var(--a-amber-soft)', border: 'var(--a-amber)', label: 'Open' };
+    case 'in_progress': return { color: 'var(--a-cyan)', bg: 'var(--a-cyan-soft)', border: 'var(--a-cyan)', label: 'In Progress' };
+    case 'resolved': return { color: 'var(--a-em-deep)', bg: 'var(--a-em-soft)', border: 'var(--a-em-line)', label: 'Resolved' };
+    default: return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: status };
   }
 }
 
 function typeStyle(userType: string | null) {
-  if (userType === 'client') return { color: '#a78bfa', bg: 'rgba(167,139,250,0.08)', label: 'Client' };
-  return { color: '#34d399', bg: 'rgba(52,211,153,0.08)', label: 'Agency' };
+  if (userType === 'client') return { color: 'var(--a-violet)', bg: 'var(--a-violet-soft)', border: 'var(--a-violet)', label: 'Client' };
+  return { color: 'var(--a-em-deep)', bg: 'var(--a-em-soft)', border: 'var(--a-em-line)', label: 'Agency' };
 }
 
 function SupportTab({ onChanged }: { onChanged: () => void }) {
@@ -215,28 +223,28 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
 
   return (
     <>
-      <div className="mb-5 text-sm text-white/40">
+      <div className="mb-5 text-sm text-[var(--a-muted)]">
         {counts.total} request{counts.total !== 1 ? 's' : ''}
-        {counts.open > 0 && <span> · <span className="text-amber-400">{counts.open} open</span></span>}
-        {counts.in_progress > 0 && <span> · <span className="text-blue-400">{counts.in_progress} in progress</span></span>}
-        {counts.resolved > 0 && <span> · <span className="text-emerald-400">{counts.resolved} resolved</span></span>}
+        {counts.open > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.open} open</span></span>}
+        {counts.in_progress > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.in_progress} in progress</span></span>}
+        {counts.resolved > 0 && <span> · <span className="text-[var(--a-em-deep)]">{counts.resolved} resolved</span></span>}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
           <input
             type="text"
             placeholder="Search message, email, name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
+            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
+          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
         >
           <option value="">All Statuses</option>
           <option value="open">Open</option>
@@ -246,7 +254,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
         <select
           value={userTypeFilter}
           onChange={(e) => setUserTypeFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
+          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
         >
           <option value="">All Users</option>
           <option value="agency">Agency</option>
@@ -254,35 +262,35 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
         </select>
       </div>
 
-      <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+      <div className="a-panel">
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-emerald-500/50" />
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
           </div>
         ) : requests.length === 0 ? (
           <div className="p-16 text-center">
             <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-                <LifeBuoy className="h-7 w-7 text-white/20" />
+              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
+                <LifeBuoy className="h-7 w-7 text-[var(--a-dim)]" />
               </div>
             </div>
-            <p className="text-sm text-white/50">No support requests found</p>
-            <p className="text-xs text-white/30 mt-1">Escalations from the help widget will appear here</p>
+            <p className="text-sm text-[var(--a-muted)]">No support requests found</p>
+            <p className="text-xs text-[var(--a-dim)] mt-1">Escalations from the help widget will appear here</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">User</th>
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
-                  <th className="text-center text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
+                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">User</th>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
+                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.03]">
+              <tbody className="divide-y divide-[var(--a-line)]">
                 {requests.map((req) => {
                   const ss = supportStatusStyle(req.status);
                   const ts = typeStyle(req.user_type);
@@ -292,30 +300,31 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                     <>
                       <tr
                         key={req.id}
-                        className={`hover:bg-white/[0.02] transition-colors cursor-pointer ${isExpanded ? 'bg-white/[0.02]' : ''}`}
+                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
+                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
                         onClick={() => toggleRow(req)}
                       >
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-white/20" />
-                            <span className="text-xs text-white/50">{timeAgo(req.created_at)}</span>
+                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
+                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(req.created_at)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            {req.user_type === 'client' ? <User className="h-3 w-3 text-white/25" /> : <Building2 className="h-3 w-3 text-white/25" />}
-                            <span className="text-xs text-white/60 truncate max-w-[160px]">{req.display_name || 'Unknown'}</span>
+                            {req.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
+                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{req.display_name || 'Unknown'}</span>
                           </div>
-                          {req.user_email && <span className="text-[10px] text-white/25 truncate block max-w-[180px]">{req.user_email}</span>}
+                          {req.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{req.user_email}</span>}
                         </td>
                         <td className="px-4 py-3.5">
                           <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: ts.bg, borderColor: `${ts.color}20`, color: ts.color }}>
+                            style={{ backgroundColor: ts.bg, borderColor: ts.border, color: ts.color }}>
                             {ts.label}
                           </span>
                         </td>
                         <td className="px-4 py-3.5">
-                          <p className="text-xs text-white/40 truncate max-w-[280px]">
+                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[280px]">
                             {req.message?.slice(0, 90)}{req.message?.length > 90 ? '...' : ''}
                           </p>
                         </td>
@@ -328,19 +337,19 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                       </tr>
 
                       {isExpanded && (
-                        <tr key={`${req.id}-detail`}>
+                        <tr key={`${req.id}-detail`} style={{ background: '#F6FCF9' }}>
                           <td colSpan={5} className="px-5 py-0">
-                            <div className="py-4 border-t border-white/[0.03]">
+                            <div className="py-4 border-t border-[var(--a-line)]">
                               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 <div className="lg:col-span-2 space-y-4">
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Message</h4>
-                                    <pre className="text-[12px] text-white/70 font-sans leading-relaxed whitespace-pre-wrap bg-white/[0.02] rounded-xl px-4 py-3 border border-white/[0.03] max-h-[300px] overflow-y-auto">
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Message</h4>
+                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
                                       {req.message}
                                     </pre>
                                   </div>
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Set Status</h4>
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
                                     <div className="flex flex-wrap items-center gap-2">
                                       {SUPPORT_STATUS_OPTIONS.map(opt => {
                                         const s = supportStatusStyle(opt.value);
@@ -353,8 +362,8 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
                                             style={{
                                               backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'rgba(255,255,255,0.08)',
-                                              color: active ? s.color : 'rgba(255,255,255,0.55)',
+                                              borderColor: active ? s.border : 'var(--a-line-2)',
+                                              color: active ? s.color : 'var(--a-muted)',
                                             }}
                                           >
                                             {active && <Check className="h-3 w-3" />}
@@ -362,24 +371,24 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                           </button>
                                         );
                                       })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-white/30" />}
+                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
                                     </div>
                                   </div>
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
                                     <textarea
                                       value={noteDraft}
                                       onChange={(e) => setNoteDraft(e.target.value)}
                                       onClick={(e) => e.stopPropagation()}
                                       rows={3}
                                       placeholder="Notes for your own reference (not shown to the user)..."
-                                      className="w-full rounded-xl bg-white/[0.02] border border-white/[0.06] px-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 resize-none"
+                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
                                     />
                                     <div className="mt-2 flex justify-end">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); patchRequest(req.id, { admin_notes: noteDraft }); }}
                                         disabled={isSaving || noteDraft === (req.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/15 disabled:opacity-40 disabled:cursor-default"
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
                                       >
                                         {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                         Save Notes
@@ -389,19 +398,19 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                 </div>
 
                                 <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Details</h4>
+                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
                                   <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">Received</span><span className="text-white/60 text-right">{formatDateTime(req.created_at)}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">User type</span><span className="text-white/60 capitalize">{req.user_type || 'unknown'}</span></div>
-                                    {req.display_name && <div className="flex items-center justify-between gap-3"><span className="text-white/35">{req.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-white/60 text-right truncate max-w-[150px]">{req.display_name}</span></div>}
-                                    {req.user_email && <div className="flex items-center justify-between gap-3"><span className="text-white/35">Email</span><span className="text-white/60 text-right truncate max-w-[150px]">{req.user_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">Source</span><span className="text-white/60">{req.source || 'widget'}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
-                                    {req.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-white/35">Resolved</span><span className="text-white/60 text-right">{formatDateTime(req.resolved_at)}</span></div>}
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.created_at)}</span></div>
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User type</span><span className="text-[var(--a-ink)] capitalize">{req.user_type || 'unknown'}</span></div>
+                                    {req.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{req.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.display_name}</span></div>}
+                                    {req.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.user_email}</span></div>}
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Source</span><span className="text-[var(--a-ink)]">{req.source || 'widget'}</span></div>
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
+                                    {req.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Resolved</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.resolved_at)}</span></div>}
                                   </div>
                                   {req.user_email && (
                                     <a href={`mailto:${req.user_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.06]">
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
                                       <Mail className="h-3 w-3" /> Reply by email
                                     </a>
                                   )}
@@ -422,14 +431,14 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-white/30">Page {page + 1} of {totalPages} · {total} total</p>
+          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ArrowLeft className="h-3 w-3" /> Prev
             </button>
             <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               Next <ArrowRight className="h-3 w-3" />
             </button>
           </div>
@@ -462,10 +471,10 @@ const FEEDBACK_STATUS_OPTIONS = [
 
 function feedbackStatusStyle(status: string | null) {
   switch (status || 'new') {
-    case 'new': return { color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.20)', label: 'New' };
-    case 'reviewed': return { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.20)', label: 'Reviewed' };
-    case 'archived': return { color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.12)', label: 'Archived' };
-    default: return { color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', label: status || 'new' };
+    case 'new': return { color: 'var(--a-amber)', bg: 'var(--a-amber-soft)', border: 'var(--a-amber)', label: 'New' };
+    case 'reviewed': return { color: 'var(--a-cyan)', bg: 'var(--a-cyan-soft)', border: 'var(--a-cyan)', label: 'Reviewed' };
+    case 'archived': return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: 'Archived' };
+    default: return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: status || 'new' };
   }
 }
 
@@ -537,28 +546,28 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
 
   return (
     <>
-      <div className="mb-5 text-sm text-white/40">
+      <div className="mb-5 text-sm text-[var(--a-muted)]">
         {counts.total} submission{counts.total !== 1 ? 's' : ''}
-        {counts.new > 0 && <span> · <span className="text-amber-400">{counts.new} new</span></span>}
-        {counts.reviewed > 0 && <span> · <span className="text-blue-400">{counts.reviewed} reviewed</span></span>}
-        {counts.archived > 0 && <span> · <span className="text-white/50">{counts.archived} archived</span></span>}
+        {counts.new > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.new} new</span></span>}
+        {counts.reviewed > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.reviewed} reviewed</span></span>}
+        {counts.archived > 0 && <span> · <span className="text-[var(--a-muted)]">{counts.archived} archived</span></span>}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
           <input
             type="text"
             placeholder="Search feedback message..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-white/[0.04] border border-white/[0.06] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 transition-colors"
+            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/30"
+          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
         >
           <option value="">All Statuses</option>
           <option value="new">New</option>
@@ -567,34 +576,34 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
         </select>
       </div>
 
-      <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+      <div className="a-panel">
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-emerald-500/50" />
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
           </div>
         ) : items.length === 0 ? (
           <div className="p-16 text-center">
             <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-emerald-500/10 rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.06]">
-                <MessageSquare className="h-7 w-7 text-white/20" />
+              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
+                <MessageSquare className="h-7 w-7 text-[var(--a-dim)]" />
               </div>
             </div>
-            <p className="text-sm text-white/50">No feedback found</p>
-            <p className="text-xs text-white/30 mt-1">Submissions from Settings &gt; Feedback will appear here</p>
+            <p className="text-sm text-[var(--a-muted)]">No feedback found</p>
+            <p className="text-xs text-[var(--a-dim)] mt-1">Submissions from Settings &gt; Feedback will appear here</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Agency</th>
-                  <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Feedback</th>
-                  <th className="text-center text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
+                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Agency</th>
+                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Feedback</th>
+                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.03]">
+              <tbody className="divide-y divide-[var(--a-line)]">
                 {items.map((fb) => {
                   const fs = feedbackStatusStyle(fb.status);
                   const isExpanded = expandedId === fb.id;
@@ -603,24 +612,25 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                     <>
                       <tr
                         key={fb.id}
-                        className={`hover:bg-white/[0.02] transition-colors cursor-pointer ${isExpanded ? 'bg-white/[0.02]' : ''}`}
+                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
+                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
                         onClick={() => toggleRow(fb)}
                       >
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-white/20" />
-                            <span className="text-xs text-white/50">{timeAgo(fb.created_at)}</span>
+                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
+                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(fb.created_at)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            <Building2 className="h-3 w-3 text-white/25" />
-                            <span className="text-xs text-white/60 truncate max-w-[160px]">{fb.agency_name || 'Unknown'}</span>
+                            <Building2 className="h-3 w-3 text-[var(--a-dim)]" />
+                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{fb.agency_name || 'Unknown'}</span>
                           </div>
-                          {fb.agency_email && <span className="text-[10px] text-white/25 truncate block max-w-[180px]">{fb.agency_email}</span>}
+                          {fb.agency_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{fb.agency_email}</span>}
                         </td>
                         <td className="px-4 py-3.5">
-                          <p className="text-xs text-white/40 truncate max-w-[320px]">
+                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[320px]">
                             {fb.message?.slice(0, 100)}{fb.message?.length > 100 ? '...' : ''}
                           </p>
                         </td>
@@ -633,19 +643,19 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                       </tr>
 
                       {isExpanded && (
-                        <tr key={`${fb.id}-detail`}>
+                        <tr key={`${fb.id}-detail`} style={{ background: '#F6FCF9' }}>
                           <td colSpan={4} className="px-5 py-0">
-                            <div className="py-4 border-t border-white/[0.03]">
+                            <div className="py-4 border-t border-[var(--a-line)]">
                               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 <div className="lg:col-span-2 space-y-4">
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Feedback</h4>
-                                    <pre className="text-[12px] text-white/70 font-sans leading-relaxed whitespace-pre-wrap bg-white/[0.02] rounded-xl px-4 py-3 border border-white/[0.03] max-h-[300px] overflow-y-auto">
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Feedback</h4>
+                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
                                       {fb.message}
                                     </pre>
                                   </div>
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Set Status</h4>
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
                                     <div className="flex flex-wrap items-center gap-2">
                                       {FEEDBACK_STATUS_OPTIONS.map(opt => {
                                         const s = feedbackStatusStyle(opt.value);
@@ -658,8 +668,8 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
                                             style={{
                                               backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'rgba(255,255,255,0.08)',
-                                              color: active ? s.color : 'rgba(255,255,255,0.55)',
+                                              borderColor: active ? s.border : 'var(--a-line-2)',
+                                              color: active ? s.color : 'var(--a-muted)',
                                             }}
                                           >
                                             {active && <Check className="h-3 w-3" />}
@@ -667,24 +677,24 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                           </button>
                                         );
                                       })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-white/30" />}
+                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
                                     </div>
                                   </div>
                                   <div>
-                                    <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
+                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
                                     <textarea
                                       value={noteDraft}
                                       onChange={(e) => setNoteDraft(e.target.value)}
                                       onClick={(e) => e.stopPropagation()}
                                       rows={3}
                                       placeholder="Notes for your own reference..."
-                                      className="w-full rounded-xl bg-white/[0.02] border border-white/[0.06] px-3 py-2.5 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-emerald-500/30 resize-none"
+                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
                                     />
                                     <div className="mt-2 flex justify-end">
                                       <button
                                         onClick={(e) => { e.stopPropagation(); patchFeedback(fb.id, { admin_notes: noteDraft }); }}
                                         disabled={isSaving || noteDraft === (fb.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/15 disabled:opacity-40 disabled:cursor-default"
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
                                       >
                                         {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                         Save Notes
@@ -694,17 +704,17 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                 </div>
 
                                 <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] mb-2">Details</h4>
+                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
                                   <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">Received</span><span className="text-white/60 text-right">{formatDateTime(fb.created_at)}</span></div>
-                                    {fb.agency_name && <div className="flex items-center justify-between gap-3"><span className="text-white/35">Agency</span><span className="text-white/60 text-right truncate max-w-[150px]">{fb.agency_name}</span></div>}
-                                    {fb.agency_email && <div className="flex items-center justify-between gap-3"><span className="text-white/35">Email</span><span className="text-white/60 text-right truncate max-w-[150px]">{fb.agency_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-white/35">Status</span><span style={{ color: fs.color }}>{fs.label}</span></div>
-                                    {fb.reviewed_at && <div className="flex items-center justify-between gap-3"><span className="text-white/35">Reviewed</span><span className="text-white/60 text-right">{formatDateTime(fb.reviewed_at)}</span></div>}
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.created_at)}</span></div>
+                                    {fb.agency_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Agency</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_name}</span></div>}
+                                    {fb.agency_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_email}</span></div>}
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: fs.color }}>{fs.label}</span></div>
+                                    {fb.reviewed_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Reviewed</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.reviewed_at)}</span></div>}
                                   </div>
                                   {fb.agency_email && (
                                     <a href={`mailto:${fb.agency_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.06]">
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
                                       <Mail className="h-3 w-3" /> Reply by email
                                     </a>
                                   )}
@@ -725,14 +735,14 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-white/30">Page {page + 1} of {totalPages} · {total} total</p>
+          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ArrowLeft className="h-3 w-3" /> Prev
             </button>
             <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-white/50 hover:bg-white/[0.04] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               Next <ArrowRight className="h-3 w-3" />
             </button>
           </div>
