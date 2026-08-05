@@ -9,6 +9,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { DEMO_CLIENTS } from '../demoData';
+import PaidFeatureNotice from '@/components/agency/PaidFeatureNotice';
 
 interface Client {
   id: string;
@@ -100,7 +101,7 @@ export default function AgencyClientsPage() {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to provision test client');
+        throw new Error(data.message || data.error || 'Failed to provision test client');
       }
       // Refresh clients list so the new test client appears in the table
       await fetchClients();
@@ -186,6 +187,11 @@ export default function AgencyClientsPage() {
   const billableClients = clients.filter(c => !c.is_test_client);
   const testClients = clients.filter(c => c.is_test_client);
   const testClient = testClients[0] || null;
+
+  // Test AI provisions a real phone number, so it is a paid-plan feature. Free
+  // agencies see an upgrade prompt instead of the setup button (backend enforces
+  // the same gate with a 403).
+  const isFreePlan = String(agency?.plan_type || '').toLowerCase() === 'free';
 
   // Filter clients — test client always shows but at the bottom
   const filteredClients = clients.filter(client => {
@@ -356,8 +362,21 @@ export default function AgencyClientsPage() {
         </div>
       </div>
 
+      {/* Free-plan agencies: Test AI is a paid feature */}
+      {!testClient && !demoMode && !loading && isFreePlan && (
+        <div className="mb-6">
+          <PaidFeatureNotice
+            theme={theme}
+            title="Test AI is a paid feature"
+            message="Activate a working AI receptionist with its own phone number so you can call it and hear exactly what your clients get. Upgrade to Pro or Scale to unlock your test line."
+            cta="Upgrade to unlock Test AI"
+            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />}
+          />
+        </div>
+      )}
+
       {/* Test Client Setup CTA — shows when the agency hasn't provisioned a test client yet */}
-      {!testClient && !demoMode && !loading && (
+      {!testClient && !demoMode && !loading && !isFreePlan && (
         <div 
           className="mb-6 rounded-xl p-4 sm:p-5 overflow-hidden"
           style={{ 

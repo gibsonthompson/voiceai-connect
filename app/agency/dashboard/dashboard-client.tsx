@@ -10,6 +10,7 @@ import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import { DEMO_DASHBOARD } from '../demoData';
 import SetupChecklist from '@/components/agency/SetupChecklist';
+import PaidFeatureNotice from '@/components/agency/PaidFeatureNotice';
 
 interface RecentClient {
   id: string;
@@ -103,7 +104,7 @@ export default function AgencyDashboardPage() {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to provision test client');
+        throw new Error(data.message || data.error || 'Failed to provision test client');
       }
       const data = await response.json();
       setTestClient(data.client);
@@ -163,6 +164,11 @@ export default function AgencyDashboardPage() {
 
   // Exclude test client from billable count
   const billableClientCount = Math.max(0, (stats?.clientCount || 0) - (testClient ? 1 : 0));
+
+  // Test AI provisions a real phone number, so it is a paid-plan feature. Free
+  // agencies see an upgrade prompt instead of the setup button (backend enforces
+  // the same gate with a 403).
+  const isFreePlan = String(agency?.plan_type || '').toLowerCase() === 'free';
 
   if (contextLoading || loading) {
     return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
@@ -253,8 +259,21 @@ export default function AgencyDashboardPage() {
         </div>
       )}
 
+      {/* YOUR TEST AI — free plan: paid feature upgrade prompt */}
+      {!testClient && !demoMode && isFreePlan && (
+        <div className="mb-6 sm:mb-8">
+          <PaidFeatureNotice
+            theme={theme}
+            title="Test AI is a paid feature"
+            message="Set up a fully working AI receptionist with its own phone number that you can call right now, and hear exactly what your clients get. Upgrade to Pro or Scale to unlock it."
+            cta="Upgrade to unlock Test AI"
+            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />}
+          />
+        </div>
+      )}
+
       {/* YOUR TEST AI — not yet provisioned CTA */}
-      {!testClient && !demoMode && (
+      {!testClient && !demoMode && !isFreePlan && (
         <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1">
