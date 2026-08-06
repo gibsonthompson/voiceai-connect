@@ -122,6 +122,13 @@ export interface OGConfig {
 export interface MarketingConfig {
   theme?: 'auto' | 'light' | 'dark';
   currencySymbol?: string;
+  // ISO 4217 code (e.g. 'GBP'). Used for Schema.org priceCurrency.
+  currencyCode?: string;
+  // Exchange rate vs USD, used to convert hard-coded USD benchmark figures
+  // (the competitor columns in the comparison table) into the agency currency.
+  currencyRate?: number;
+  // Whether the symbol sits before or after the amount (e.g. 'kr' sits after).
+  currencySymbolPosition?: 'before' | 'after';
   homepageUrl?: string;
   branding: MarketingBranding;
   hero: HeroConfig;

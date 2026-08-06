@@ -10,7 +10,23 @@ import { isRateLimited } from '@/lib/rate-limit';
    Two modes:
    1. Default (no agencyName) — VoiceAI Connect platform support
    2. Agency (agencyName + agencyFaqs) — agency marketing site support
+
+   Error-fallback rule: on an agency-branded site (agencyName present) the
+   failure messages must NEVER print the platform support address. With an
+   agency support email we point to it; without one we stay generic. Only the
+   platform's own widget (no agencyName) shows the platform address.
    ═══════════════════════════════════════════════════════════════════════════ */
+
+const PLATFORM_SUPPORT_EMAIL = 'support@myvoiceaiconnect.com';
+
+// Build the trailing sentence for a fallback/error message without leaking the
+// platform brand on an agency site. Priority: agency support email -> generic
+// (agency site, no email) -> platform address (platform widget only).
+function fallbackContactLine(agencyName?: string, supportEmail?: string): string {
+  if (supportEmail) return `Please email ${supportEmail} for assistance.`;
+  if (agencyName) return `Please try again in a moment.`;
+  return `Please email ${PLATFORM_SUPPORT_EMAIL} for assistance.`;
+}
 
 const VOICEAI_SYSTEM_PROMPT = `You are the support assistant for VoiceAI Connect, a white-label AI receptionist platform built for marketing agencies. You help visitors and prospective agency operators understand the platform.
 
@@ -140,10 +156,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Fallback contact line, computed once. Never leaks the platform address on
+    // an agency-branded site (see fallbackContactLine).
+    const contactLine = fallbackContactLine(agencyName, supportEmail);
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      const fallbackEmail = supportEmail || 'support@myvoiceaiconnect.com';
-      return new Response(`I'm having trouble connecting right now. Please email ${fallbackEmail} and a team member will respond within one business day.`, {
+      return new Response(`I'm having trouble connecting right now. ${contactLine}`, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });
@@ -191,8 +210,7 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Anthropic API error:', errorText);
-      const fallbackEmail = supportEmail || 'support@myvoiceaiconnect.com';
-      return new Response(`I'm having trouble right now. Please email ${fallbackEmail} for assistance.`, {
+      return new Response(`I'm having trouble right now. ${contactLine}`, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' },
       });

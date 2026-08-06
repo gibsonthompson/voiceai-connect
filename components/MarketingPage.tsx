@@ -106,8 +106,9 @@ function SafeFAQContent({ html }: { html: string }) {
 // SCHEMA.ORG STRUCTURED DATA
 // ============================================================================
 function SchemaOrg({ config }: { config: MarketingConfig }) {
+  const priceCurrency = config.currencyCode || 'USD';
   const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: config.faqs.map(faq => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer.replace(/<[^>]*>/g, '') } })) };
-  const productSchema = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: config.branding.name, applicationCategory: 'BusinessApplication', operatingSystem: 'Web', offers: config.pricing.map(tier => ({ '@type': 'Offer', name: tier.name, price: tier.price, priceCurrency: 'USD', description: tier.subtitle })) };
+  const productSchema = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: config.branding.name, applicationCategory: 'BusinessApplication', operatingSystem: 'Web', offers: config.pricing.map(tier => ({ '@type': 'Offer', name: tier.name, price: tier.price, priceCurrency, description: tier.subtitle })) };
   return (<><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} /></>);
 }
 
@@ -435,10 +436,27 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
 function ComparisonSection({ config }: { config: MarketingConfig }) {
   const { branding, pricing } = config;
   const cs = config.currencySymbol || '$';
+  const rate = config.currencyRate || 1;
+  const pos = config.currencySymbolPosition || 'before';
+  // The competitor columns below are USD benchmarks. Convert them into the
+  // agency's currency so a non-USD site doesn't render a literal "$" right next
+  // to its own symbol. The agency's own price (lowestPrice/highestPrice) is
+  // already stored in its local currency, so it is not rate-converted.
+  const money = (usd: number) => {
+    const v = Math.round(usd * rate).toLocaleString();
+    return pos === 'after' ? `${v} ${cs}` : `${cs}${v}`;
+  };
+  const moneyRange = (lo: number, hi: number) => {
+    const l = Math.round(lo * rate).toLocaleString();
+    const h = Math.round(hi * rate).toLocaleString();
+    return pos === 'after' ? `${l}-${h} ${cs}` : `${cs}${l}-${h}`;
+  };
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const highestPrice = pricing.length > 0 ? pricing[pricing.length - 1].price : 197;
+  const oursMonthly = pos === 'after' ? `${lowestPrice}-${highestPrice} ${cs}` : `${cs}${lowestPrice}-${highestPrice}`;
+  const oursLowest = pos === 'after' ? `${lowestPrice} ${cs}` : `${cs}${lowestPrice}`;
   const comparisonData = [
-    { label: 'Monthly Cost', ours: `${cs}${lowestPrice}-${highestPrice}`, human: '$3,000-4,500', ruby: '$299-600', vm: '$0' },
+    { label: 'Monthly Cost', ours: oursMonthly, human: moneyRange(3000, 4500), ruby: moneyRange(299, 600), vm: money(0) },
     { label: 'Setup Time', ours: '10 min', human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant' },
     { label: 'Available', ours: '24/7/365', human: 'Business hours', ruby: '24/7', vm: '24/7' },
     { label: 'Books to Google Calendar', ours: '✓', human: '✓', ruby: '✓', vm: '✗' },
@@ -485,9 +503,9 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
           <h3>The Bottom Line</h3>
           <p><strong>You have three choices:</strong></p>
           <ol>
-            <li><strong>Hire staff:</strong> Professional, but $36,000-54,000/year + benefits</li>
-            <li><strong>Traditional service:</strong> 24/7 but generic, no appointments, $300-600/month</li>
-            <li><strong>{branding.name}:</strong> Custom AI, books appointments, text summaries, mobile app, {cs}{lowestPrice}/month</li>
+            <li><strong>Hire staff:</strong> Professional, but {moneyRange(36000, 54000)}/year + benefits</li>
+            <li><strong>Traditional service:</strong> 24/7 but generic, no appointments, {moneyRange(300, 600)}/month</li>
+            <li><strong>{branding.name}:</strong> Custom AI, books appointments, text summaries, mobile app, {oursLowest}/month</li>
           </ol>
           <p className="comparison-conclusion">The choice is obvious.</p>
         </div>

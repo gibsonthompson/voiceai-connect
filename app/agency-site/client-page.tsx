@@ -6,6 +6,7 @@ import MarketingPage from '@/components/MarketingPage';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
+import { getCurrencyForCountry, currencies } from '@/lib/currency';
 
 // ============================================================================
 // TYPES
@@ -28,6 +29,7 @@ interface Agency {
   price_starter: number | null;
   price_pro: number | null;
   price_growth: number | null;
+  country: string | null;
   display_currency: string | null;
   marketing_config: Partial<MarketingConfig> | null;
   marketing_template: string | null;
@@ -173,8 +175,15 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || PLATFORM_DEMO_PHONE;
   const demoPhone = formatPhoneDisplay(rawDemoPhone);
 
-  // Currency symbol
-  const currencySymbol = getCurrencySymbol(agency.display_currency || 'USD');
+  // Currency resolution.
+  // Priority: the currency the agency explicitly picked in Settings, then the
+  // currency implied by the agency's country (so a GB agency shows GBP without
+  // ever opening Settings), then USD as a last resort. The old code fell straight
+  // to 'USD', which is why UK/EU agencies that never touched the dropdown showed "$".
+  const currencyCode = agency.display_currency || getCurrencyForCountry(agency.country || 'US').code || 'USD';
+  const currencySymbol = getCurrencySymbol(currencyCode);
+  const currencyRate = currencies[currencyCode]?.rate ?? 1;
+  const currencySymbolPosition = currencies[currencyCode]?.symbolPosition ?? 'before';
 
   // Homepage URL (custom domain if verified, otherwise /)
   const homepageUrl = resolveHomepageUrl(agency);
@@ -212,6 +221,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const marketingConfig: Partial<MarketingConfig> = {
     theme: agency.website_theme || 'light',
     currencySymbol,
+    currencyCode,
+    currencyRate,
+    currencySymbolPosition,
     homepageUrl,
     branding: {
       name: agency.name,
