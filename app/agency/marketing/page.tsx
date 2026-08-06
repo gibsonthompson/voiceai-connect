@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
-  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code
+  Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code,
+  ChevronUp, ChevronDown, Trash2, Plus
 } from 'lucide-react';
 import LockedFeature from '@/components/LockedFeature';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
-type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo';
+type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -83,6 +84,10 @@ export default function MarketingWebsitePage() {
   const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
+  // Custom nav links (external header/footer links)
+  const [customNavLinks, setCustomNavLinks] = useState<{ label: string; url: string }[]>([]);
+  const [savingNavLinks, setSavingNavLinks] = useState(false);
+  const [navLinksSaved, setNavLinksSaved] = useState(false);
   // DNS
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean; isSubdomain?: boolean; subdomainPrefix?: string | null } | null>(null);
 
@@ -124,8 +129,8 @@ export default function MarketingWebsitePage() {
   }, [agency?.id, domainStatus, demoMode]);
 
   useEffect(() => {
-    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#10b981'); setSecondaryColor(agency?.secondary_color || '#059669'); setAccentColor(agency?.accent_color || '#34d399'); setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency?.marketing_template || 'classic'); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); return; }
-    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setPrimaryColor(agency.primary_color || '#10b981'); setSecondaryColor(agency.secondary_color || '#059669'); setAccentColor(agency.accent_color || '#34d399'); setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency.marketing_template || 'classic'); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); }
+    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#10b981'); setSecondaryColor(agency?.secondary_color || '#059669'); setAccentColor(agency?.accent_color || '#34d399'); setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); return; }
+    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setPrimaryColor(agency.primary_color || '#10b981'); setSecondaryColor(agency.secondary_color || '#059669'); setAccentColor(agency.accent_color || '#34d399'); setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); }
   }, [agency, demoMode]);
 
   const copyToClipboard = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000); };
@@ -136,6 +141,13 @@ export default function MarketingWebsitePage() {
   const handleSaveSeo = async () => { if (demoMode) { setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); return; } if (!agency) return; setSavingSeo(true); setSeoSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ og_title: ogTitle || null, og_description: ogDescription || null, og_image_url: ogImageUrl || null }) }); if (response.ok) { await refreshAgency(); setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save SEO settings'); } } catch (error) { console.error('Failed to save SEO:', error); } finally { setSavingSeo(false); } };
   const handleSaveTemplate = async () => { if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; } if (!agency) return; setSavingTemplate(true); setTemplateSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: selectedTemplate }) }); if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save template'); } } catch (error) { console.error('Failed to save template:', error); } finally { setSavingTemplate(false); } };
 
+  // ── Custom nav links (external header/footer links) ──
+  const addNavLink = () => { if (customNavLinks.length >= 5) return; setCustomNavLinks([...customNavLinks, { label: '', url: '' }]); };
+  const removeNavLink = (i: number) => setCustomNavLinks(customNavLinks.filter((_, idx) => idx !== i));
+  const updateNavLink = (i: number, field: 'label' | 'url', value: string) => setCustomNavLinks(customNavLinks.map((l, idx) => idx === i ? { ...l, [field]: value } : l));
+  const moveNavLink = (i: number, dir: -1 | 1) => { const j = i + dir; if (j < 0 || j >= customNavLinks.length) return; const next = [...customNavLinks]; [next[i], next[j]] = [next[j], next[i]]; setCustomNavLinks(next); };
+  const handleSaveNavLinks = async () => { if (demoMode) { setNavLinksSaved(true); setTimeout(() => setNavLinksSaved(false), 3000); return; } if (!agency) return; const cleaned = customNavLinks.map(l => ({ label: (l.label || '').trim(), url: (l.url || '').trim() })).filter(l => l.label && l.url); setSavingNavLinks(true); setNavLinksSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ custom_nav_links: cleaned }) }); if (response.ok) { await refreshAgency(); setCustomNavLinks(cleaned); setNavLinksSaved(true); setTimeout(() => setNavLinksSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save navigation links'); } } catch (error) { console.error('Failed to save nav links:', error); } finally { setSavingNavLinks(false); } };
+
   const handleSaveCustomDomain = async () => { if (demoMode) { setDomainStatus('pending'); return; } if (!customDomain.trim() || !agency) return; setSavingDomain(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`/api/agency/${agency.id}/domain`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ domain: customDomain.trim() }) }); const data = await response.json(); if (response.ok && data.success) { setDomainStatus('pending'); if (data.dns_config) setDnsConfig({ aRecord: data.dns_config.a_record, cname: data.dns_config.cname_record, isSubdomain: data.dns_config.is_subdomain || false, subdomainPrefix: data.dns_config.subdomain_prefix || null }); if (data.verification_records?.length) setVerificationRecords(data.verification_records); await refreshAgency(); } else { alert(data.error || 'Failed to save domain'); } } catch (error) { console.error('Failed to add domain:', error); alert('Failed to connect to server.'); } finally { setSavingDomain(false); } };
   const handleVerifyDomain = async () => { if (demoMode) { setDomainStatus('verified'); return; } if (!agency) return; setVerifyingDomain(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`/api/agency/${agency.id}/domain/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); const data = await response.json(); if (data.verified) { setDomainStatus('verified'); setVerificationRecords([]); } else { setDomainStatus('pending'); if (data.verification_records?.length) setVerificationRecords(data.verification_records); alert(data.message || 'DNS records not found. Please check your configuration and try again.'); } await refreshAgency(); } catch (error) { console.error('Failed to verify domain:', error); } finally { setVerifyingDomain(false); } };
   const handleRemoveDomain = async () => { if (demoMode) { setCustomDomain(''); setDomainStatus('none'); setVerificationRecords([]); return; } if (!agency || !confirm('Remove this custom domain? Your site will only be accessible via the subdomain.')) return; setSavingDomain(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`/api/agency/${agency.id}/domain`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); const data = await response.json(); if (response.ok && data.success) { setCustomDomain(''); setDomainStatus('none'); setVerificationRecords([]); await refreshAgency(); } else { alert(data.error || 'Failed to remove domain'); } } catch (error) { console.error('Failed to remove domain:', error); alert('Failed to remove domain.'); } finally { setSavingDomain(false); } };
@@ -144,6 +156,7 @@ export default function MarketingWebsitePage() {
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
     { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
+    { id: 'navigation' as ActiveTab, label: 'Navigation', icon: ExternalLink },
     { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
     { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
     { id: 'tracking' as ActiveTab, label: 'Tracking', icon: BarChart3 },
@@ -251,6 +264,33 @@ export default function MarketingWebsitePage() {
 
       {/* ══════════════ CONTENT ══════════════ */}
       {activeTab === 'content' && (<MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} />)}
+
+      {/* ══════════════ NAVIGATION ══════════════ */}
+      {activeTab === 'navigation' && (<div className="space-y-4 sm:space-y-6">
+        <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-center gap-2 mb-1"><ExternalLink className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base">Custom Navigation Links</h3></div>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Add links to your marketing site header and footer that point to your own website, for example a Home link back to your main site. Up to 5 links. They open in a new tab. On phones these show in the footer.</p>
+          <div className="space-y-3">
+            {customNavLinks.length === 0 && (<p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>No custom links yet. Add one below.</p>)}
+            {customNavLinks.map((link, i) => (
+              <div key={i} className="flex flex-col sm:flex-row gap-2 sm:items-center rounded-lg p-3" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <input type="text" value={link.label} onChange={(e) => updateNavLink(i, 'label', e.target.value)} placeholder="Label (e.g. Home)" maxLength={30} className="rounded-lg px-3 py-2 text-sm focus:outline-none sm:w-40" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+                <input type="url" value={link.url} onChange={(e) => updateNavLink(i, 'url', e.target.value)} placeholder="https://yourmainsite.com" maxLength={500} className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+                <div className="flex items-center gap-1">
+                  <button onClick={() => moveNavLink(i, -1)} disabled={i === 0} className="p-2 rounded-lg disabled:opacity-30" style={{ color: mutedTextColor }} aria-label="Move up"><ChevronUp className="h-4 w-4" /></button>
+                  <button onClick={() => moveNavLink(i, 1)} disabled={i === customNavLinks.length - 1} className="p-2 rounded-lg disabled:opacity-30" style={{ color: mutedTextColor }} aria-label="Move down"><ChevronDown className="h-4 w-4" /></button>
+                  <button onClick={() => removeNavLink(i)} className="p-2 rounded-lg" style={{ color: isDark ? '#f87171' : '#dc2626' }} aria-label="Remove"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={addNavLink} disabled={customNavLinks.length >= 5} className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50 transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}><Plus className="h-4 w-4" />Add Link{customNavLinks.length >= 5 ? ' (max 5)' : ''}</button>
+        </div>
+        <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Links appear in your marketing site header and footer.</p>
+          <div className="flex items-center gap-3 w-full sm:w-auto">{navLinksSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveNavLinks} disabled={savingNavLinks} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingNavLinks ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Links</button></div>
+        </div>
+      </div>)}
 
       {/* ══════════════ COLORS ══════════════ */}
       {activeTab === 'colors' && (<div className="space-y-4 sm:space-y-6">

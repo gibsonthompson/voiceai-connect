@@ -39,6 +39,8 @@ interface Agency {
   // Custom domain
   marketing_domain: string | null;
   domain_verified: boolean | null;
+  // Custom marketing nav links (external header/footer links)
+  custom_nav_links: { label: string; url: string }[] | null;
   // Analytics fields
   gtm_id: string | null;
   fb_pixel_id: string | null;
@@ -267,6 +269,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ...(agency.marketing_config || {}),
     // Login URL last so the custom-domain/subdomain resolution always wins
     clientLoginPath: loginUrl,
+    // After the marketing_config spread so the dedicated column always wins
+    // over any stale value living in that JSONB.
+    customNavLinks: Array.isArray(agency.custom_nav_links) ? agency.custom_nav_links : [],
   };
 
   // Resolve theme

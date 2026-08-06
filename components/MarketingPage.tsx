@@ -144,6 +144,9 @@ function Navigation({ config }: { config: MarketingConfig }) {
             )}
           </a>
           <ul className="nav-links">
+            {(config.customNavLinks || []).map((link, i) => (
+              <li key={`custom-nav-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
+            ))}
             <li><a href="#features">Features</a></li>
             <li><a href="#how-it-works">How It Works</a></li>
             <li><a href="/demo">Demo</a></li>
@@ -747,6 +750,7 @@ function Footer({ config }: { config: MarketingConfig }) {
           <div className="footer-col">
             <h4>Company</h4>
             <ul className="footer-links">
+              {(config.customNavLinks || []).map((link, i) => (<li key={`custom-footer-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>))}
               {footer.companyLinks.map((link, i) => (<li key={i}><a href={link.href}>{link.label}</a></li>))}
               {config.clientLoginPath && <li><a href={config.clientLoginPath}>Client Login</a></li>}
             </ul>

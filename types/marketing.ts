@@ -96,6 +96,11 @@ export interface FooterLink {
   href: string;
 }
 
+export interface CustomNavLink {
+  label: string;
+  url: string;
+}
+
 export interface FooterConfig {
   address: string;
   phone: string;
@@ -149,6 +154,8 @@ export interface MarketingConfig {
   showComparison?: boolean;
   showTestimonials?: boolean;
   clientLoginPath?: string;
+  // Agency-defined external links rendered in the marketing header + footer.
+  customNavLinks?: CustomNavLink[];
 }
 
 // ============================================================================
@@ -463,6 +470,7 @@ export const defaultMarketingConfig: MarketingConfig = {
     ],
   },
   clientLoginPath: '/client/login',
+  customNavLinks: [],
   showIndustries: true,
   showComparison: true,
   showTestimonials: false,
