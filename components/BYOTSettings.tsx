@@ -8,6 +8,8 @@ interface BYOTStatus {
   has_credentials: boolean;
   twilio_account_sid: string | null;
   verified_at: string | null;
+  twilio_bundle_sid?: string | null;
+  twilio_address_sid?: string | null;
 }
 
 interface TestResult {
@@ -88,6 +90,15 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
   const [apiSecret, setApiSecret] = useState('');
   const [testCountry, setTestCountry] = useState('CA');
 
+  // Regulatory SIDs for international (GB and other regulated) purchases. These
+  // are passed as BundleSid / AddressSid on the number buy. Prefilled from
+  // status; saved via POST /byot/regulatory (separate from credentials so the
+  // agency does not have to re-enter their API secret to add these later).
+  const [bundleSid, setBundleSid] = useState('');
+  const [addressSid, setAddressSid] = useState('');
+  const [savingReg, setSavingReg] = useState(false);
+  const [regMessage, setRegMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Check if plan qualifies (pro, enterprise/scale, or trialing)
   const isTrialing = ['trialing', 'trial'].includes(subscriptionStatus);
   const effectivePlan = isTrialing ? 'enterprise' : planType;
@@ -107,6 +118,8 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
         if (data.twilio_account_sid) {
           setAccountSid(data.twilio_account_sid);
         }
+        if (data.twilio_bundle_sid) setBundleSid(data.twilio_bundle_sid);
+        if (data.twilio_address_sid) setAddressSid(data.twilio_address_sid);
       }
     } catch (err) {
       console.error('Failed to fetch BYOT status:', err);
@@ -152,6 +165,41 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Save (or clear) the regulatory Bundle SID + Address SID. Sending an empty
+  // string for a field clears it on the backend. On success we re-read the
+  // persisted values so the fields reflect exactly what was stored.
+  const handleSaveRegulatory = async () => {
+    setSavingReg(true);
+    setRegMessage(null);
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE}/api/agency/${agencyId}/byot/regulatory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          twilio_bundle_sid: bundleSid.trim(),
+          twilio_address_sid: addressSid.trim(),
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setRegMessage({ type: 'success', text: 'Saved. GB and other regulated purchases will use these.' });
+        setBundleSid(data.twilio_bundle_sid || '');
+        setAddressSid(data.twilio_address_sid || '');
+        fetchStatus();
+      } else {
+        setRegMessage({ type: 'error', text: data.error || 'Failed to save regulatory SIDs' });
+      }
+    } catch (err) {
+      setRegMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setSavingReg(false);
     }
   };
 
@@ -328,6 +376,44 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
             <a href="https://console.twilio.com/us1/develop/phone-numbers/regulatory-compliance/bundles" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium mt-2" style={{ color: theme.infoText }}>
               Complete Regulatory Bundle <ExternalLink className="h-3 w-3" />
             </a>
+          </div>
+        </div>
+
+        {/* Regulatory SIDs. Countries like the UK reject a purchase unless it
+            references an approved Bundle and a validated Address. A validated
+            address existing on the account is NOT enough on its own; the buy
+            has to point at its SID, which is what these fields provide. Passed
+            as BundleSid / AddressSid on provisionBYOTNumber's purchase. Left
+            blank for US and Canada, which need neither. */}
+        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+          <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
+            <Globe className="h-4 w-4" style={{ color: theme.textMuted }} />
+            Regulatory SIDs (GB and other regulated countries)
+          </h4>
+          <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+            Countries like the UK will not sell a number unless the purchase references your approved Regulatory Bundle and a validated Address. Paste those SIDs here. Find them in the Twilio Console under Phone Numbers, Regulatory Compliance. Leave blank for US and Canada.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5">Regulatory Bundle SID</label>
+              <input type="text" value={bundleSid} onChange={(e) => setBundleSid(e.target.value.trim())} placeholder="BU..." className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              <p className="mt-1 text-[10px]" style={{ color: theme.textMuted }}>From Regulatory Compliance, Bundles. Must be Approved. Starts with BU.</p>
+            </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium mb-1.5">Address SID</label>
+              <input type="text" value={addressSid} onChange={(e) => setAddressSid(e.target.value.trim())} placeholder="AD..." className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono transition-colors" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              <p className="mt-1 text-[10px]" style={{ color: theme.textMuted }}>From Regulatory Compliance, Addresses. A validated address in the number's country. Starts with AD.</p>
+            </div>
+            <button type="button" onClick={handleSaveRegulatory} disabled={savingReg} className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              {savingReg ? (<span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Saving...</span>) : 'Save regulatory SIDs'}
+            </button>
+            {regMessage && (
+              <div className="rounded-xl p-3 flex items-center gap-2 text-xs" style={{ backgroundColor: regMessage.type === 'success' ? theme.primary + '08' : theme.errorBg, border: `1px solid ${regMessage.type === 'success' ? theme.primary + '30' : theme.errorBorder}`, color: regMessage.type === 'success' ? theme.primary : theme.errorText }}>
+                {regMessage.type === 'success' ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                {regMessage.text}
+              </div>
+            )}
           </div>
         </div>
 
