@@ -114,6 +114,7 @@ export default function AgencySupportWidget({
   const [escSending, setEscSending] = useState(false);
   const [escDone, setEscDone] = useState(false);
   const [escError, setEscError] = useState('');
+  const [escMessage, setEscMessage] = useState('');
   const [teaser, setTeaser] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -212,7 +213,7 @@ export default function AgencySupportWidget({
     if (msg) handleChatSubmit(msg);
     else setTimeout(() => chatInputRef.current?.focus(), 200);
   };
-  const openEscalation = () => { setView('escalation'); setEscDone(false); setEscError(''); setEscName(''); setEscContact(''); };
+  const openEscalation = () => { setView('escalation'); setEscDone(false); setEscError(''); setEscName(''); setEscContact(''); setEscMessage(''); };
 
   // Build FAQ text for AI context, then fold in the agency's pricing.
   const faqContext = PROSPECT_FAQS.map(f => `Q: ${f.question}\nA: ${f.answer.replace(/<[^>]*>/g, '')}`).join('\n\n');
@@ -287,6 +288,7 @@ export default function AgencySupportWidget({
         body: JSON.stringify({
           name: escName.trim(),
           contact: escContact.trim(),
+          message: escMessage.trim() || undefined,
           conversationSummary: summary || undefined,
           agencyEmail: supportEmail || undefined,
           agencyName,
@@ -648,6 +650,17 @@ export default function AgencySupportWidget({
                       onChange={e => setEscContact(e.target.value)}
                       placeholder="you@business.com"
                       className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                      style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: t.textMuted2 }}>How can we help?</label>
+                    <textarea
+                      value={escMessage}
+                      onChange={e => setEscMessage(e.target.value)}
+                      placeholder="Tell us what you need..."
+                      rows={3}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors resize-none"
                       style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
                     />
                   </div>

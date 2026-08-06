@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import { CallForwardingCard } from './forwarding-card';
+import { ContactAgencyButton } from '@/components/ContactAgencyModal';
 
 interface Branding {
   primaryColor: string;
@@ -224,13 +225,16 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
       `}} />
 
       {/* HEADER */}
-      <div className="mb-5 sm:mb-7 fu fu1">
-        <h1 className="text-xl sm:text-2xl lg:text-[28px] font-semibold tracking-tight" style={{ color: theme.text }}>
-          {getGreeting()}{firstName ? `, ${firstName}` : ''}
-        </h1>
-        <p className="mt-0.5 text-[13px] sm:text-sm" style={{ color: theme.textMuted }}>
-          Here&apos;s how {client.business_name || 'your business'} is doing today.
-        </p>
+      <div className="mb-5 sm:mb-7 fu fu1 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl lg:text-[28px] font-semibold tracking-tight" style={{ color: theme.text }}>
+            {getGreeting()}{firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p className="mt-0.5 text-[13px] sm:text-sm" style={{ color: theme.textMuted }}>
+            Here&apos;s how {client.business_name || 'your business'} is doing today.
+          </p>
+        </div>
+        <ContactAgencyButton client={client} agencyName={branding.agencyName} />
       </div>
 
       {/* NO-CARD TRIAL BANNER. Only for DB trials that simply expire with no
