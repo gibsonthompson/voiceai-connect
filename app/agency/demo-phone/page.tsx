@@ -516,6 +516,68 @@ export default function DemoPhonePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ==========================================================================
+  // POLL ASYNC DEMO PROVISIONING STATUS
+  // --------------------------------------------------------------------------
+  // The create POST returns 202 immediately with status 'provisioning' while
+  // the real Twilio purchase and VAPI import run in the background on the
+  // server. The demo number is NOT ready when the POST returns, so we must poll
+  // GET /:agencyId/demo-phone/status until it is live (done), fails (error), or
+  // we time out. Without this the page would refresh once, find no number yet,
+  // and fall straight back to the Create screen, which looks exactly like
+  // "nothing happens" when the button is clicked.
+  //
+  // Status contract from the backend:
+  //   { status: 'done', demo_phone_number }  -> number is live
+  //   { status: 'error', message }           -> provisioning failed (friendly)
+  //   { status: 'provisioning' }             -> still running
+  //   { status: 'idle' }                     -> nothing in flight (e.g. the
+  //                                             server restarted and lost the
+  //                                             in-memory job); keep polling in
+  //                                             case the number lands, then time
+  //                                             out and tell them to refresh.
+  // ==========================================================================
+  const pollDemoStatus = async (token: string | null) => {
+    const statusUrl = `${backendUrl}/api/agency/${agency?.id}/demo-phone/status`;
+    const maxAttempts = 40; // ~2 minutes at 3s intervals; international buys are slow
+    const intervalMs = 3000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((r) => setTimeout(r, intervalMs));
+
+      let statusData: any = null;
+      try {
+        const res = await fetch(statusUrl, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        statusData = await res.json();
+      } catch {
+        // Transient network blip mid-poll: keep trying until the timeout.
+        continue;
+      }
+
+      if (statusData?.status === 'done') {
+        await refreshAgency();
+        setCreating(false);
+        return;
+      }
+
+      if (statusData?.status === 'error') {
+        setError(statusData.message || 'Failed to create demo phone. Please try again.');
+        setCreating(false);
+        return;
+      }
+
+      // 'provisioning' or 'idle': keep polling until the number appears or we
+      // hit the timeout below.
+    }
+
+    // Timed out waiting. The number may still finish provisioning server-side,
+    // so tell them to refresh rather than implying it failed outright.
+    setError('Your demo number is taking longer than expected to set up. Refresh this page in a minute to see it. If it does not appear, try creating it again.');
+    setCreating(false);
+  };
+
   const handleCreate = async () => {
     if (demoMode) {
       await refreshAgency();
@@ -545,13 +607,30 @@ export default function DemoPhonePage() {
 
       if (!response.ok) {
         setError(data.message || data.error || 'Failed to create demo phone');
+        setCreating(false);
         return;
       }
 
+      // The backend now provisions in the BACKGROUND and answers 202 with
+      // status 'provisioning' before the number exists. Poll until it is live.
+      // A synchronous response that already carries the number is honored
+      // directly, so this stays correct if the backend ever answers inline.
+      if (data.demo_phone_number) {
+        await refreshAgency();
+        setCreating(false);
+        return;
+      }
+
+      if (data.status === 'provisioning' || data.success) {
+        await pollDemoStatus(token);
+        return;
+      }
+
+      // Unexpected response shape: refresh and stop rather than spin forever.
       await refreshAgency();
+      setCreating(false);
     } catch (err) {
       setError('Failed to connect to server. Please try again.');
-    } finally {
       setCreating(false);
     }
   };
@@ -945,7 +1024,7 @@ export default function DemoPhonePage() {
 
         {creating && (
           <p className="mt-3 text-xs" style={{ color: theme.textMuted }}>
-            Setting up your AI assistant and provisioning a phone number. This usually takes 10-15 seconds...
+            Setting up your AI assistant and provisioning a phone number. This can take up to a minute, especially for international numbers. Keep this page open...
           </p>
         )}
 

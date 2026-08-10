@@ -13,6 +13,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import type { JSX } from 'react';
 import Link from 'next/link';
 import {
   DollarSign, TrendingDown, TrendingUp, AlertTriangle, Loader2, Settings2,
