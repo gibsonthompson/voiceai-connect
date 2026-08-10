@@ -26,7 +26,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink,
+  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X,
 } from 'lucide-react';
 
 const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -162,6 +162,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -224,12 +225,24 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
 
   return (
     <>
-      <div className="mb-5 text-sm text-[var(--a-muted)]">
-        {counts.total} request{counts.total !== 1 ? 's' : ''}
-        {counts.open > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.open} open</span></span>}
-        {counts.in_progress > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.in_progress} in progress</span></span>}
-        {counts.resolved > 0 && <span> · <span className="text-[var(--a-em-deep)]">{counts.resolved} resolved</span></span>}
+      <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-sm text-[var(--a-muted)]">
+          {counts.total} request{counts.total !== 1 ? 's' : ''}
+          {counts.open > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.open} open</span></span>}
+          {counts.in_progress > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.in_progress} in progress</span></span>}
+          {counts.resolved > 0 && <span> · <span className="text-[var(--a-em-deep)]">{counts.resolved} resolved</span></span>}
+        </div>
+        <button onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }}>
+          <Plus className="h-4 w-4" /> New ticket
+        </button>
       </div>
+
+      {createOpen && (
+        <CreateTicketModal
+          onClose={() => setCreateOpen(false)}
+          onCreated={async () => { setCreateOpen(false); setPage(0); await fetchRequests(); onChanged(); }}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -315,6 +328,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                           <div className="flex items-center gap-1.5">
                             {req.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
                             <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{req.display_name || 'Unknown'}</span>
+                            {req.source === 'admin' && <span className="text-[8.5px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Manual</span>}
                           </div>
                           {req.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{req.user_email}</span>}
                         </td>
@@ -766,5 +780,165 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
         </div>
       )}
     </>
+  );
+}
+
+// ============================================================================
+// CREATE TICKET MODAL (admin-authored support request)
+// Writes to the same support_requests table via POST /api/admin/support-requests
+// (source='admin'). Optionally attaches an agency so the ticket files under it
+// and the "Open agency" deep-link works. Uses the shared status styles.
+// ============================================================================
+interface MiniAgency { id: string; name: string; email: string | null; }
+
+function CreateTicketModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState('open');
+  const [displayName, setDisplayName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [agencies, setAgencies] = useState<MiniAgency[]>([]);
+  const [agencyQuery, setAgencyQuery] = useState('');
+  const [selectedAgency, setSelectedAgency] = useState<MiniAgency | null>(null);
+  const [agencyFocused, setAgencyFocused] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${getBackendUrl()}/api/admin/agencies?limit=1000`, { headers: { Authorization: `Bearer ${getToken()}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        setAgencies((data.agencies || []).map((a: any) => ({ id: a.id, name: a.name, email: a.email })));
+      } catch (e) { /* agency attach is optional */ }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const q = agencyQuery.trim().toLowerCase();
+  const matches = q ? agencies.filter(a => (a.name || '').toLowerCase().includes(q) || (a.email || '').toLowerCase().includes(q)).slice(0, 6) : [];
+  const showMatches = agencyFocused && q.length > 0 && !selectedAgency && matches.length > 0;
+
+  const pickAgency = (a: MiniAgency) => {
+    setSelectedAgency(a);
+    setAgencyQuery('');
+    setAgencyFocused(false);
+    if (!displayName) setDisplayName(a.name || '');
+    if (!userEmail && a.email) setUserEmail(a.email);
+  };
+
+  const submit = async () => {
+    if (!message.trim()) { setError('Message is required.'); return; }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/admin/support-requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          message: message.trim(),
+          agency_id: selectedAgency?.id || null,
+          user_type: selectedAgency ? 'agency' : null,
+          display_name: displayName.trim() || (selectedAgency?.name ?? null),
+          user_email: userEmail.trim() || null,
+          status,
+        }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to create ticket'); }
+      onCreated();
+    } catch (e: any) {
+      setError(e.message || 'Failed to create ticket');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" style={{ background: 'rgba(6,20,14,0.45)' }} onClick={onClose}>
+      <div className="admin-scope w-full max-w-[520px] rounded-2xl bg-[var(--a-card)] border border-[var(--a-line-2)] shadow-xl mt-8" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--a-line)]">
+          <div className="flex items-center gap-2">
+            <LifeBuoy className="h-4 w-4 text-[var(--a-em-deep)]" />
+            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">New support ticket</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--a-dim)] hover:bg-[var(--a-em-soft)] transition-colors"><X className="h-4 w-4" /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Message</label>
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} autoFocus placeholder="What is this ticket about?" className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none" />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Attach to agency (optional)</label>
+            {selectedAgency ? (
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--a-em-line)] bg-[var(--a-em-soft)] px-3 py-2">
+                <Building2 className="h-3.5 w-3.5 text-[var(--a-em-deep)]" />
+                <span className="text-sm text-[var(--a-ink)] truncate flex-1">{selectedAgency.name}</span>
+                <button onClick={() => setSelectedAgency(null)} className="text-[var(--a-dim)] hover:text-[var(--a-muted)]"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--a-dim)]" />
+                <input value={agencyQuery} onChange={(e) => setAgencyQuery(e.target.value)} onFocus={() => setAgencyFocused(true)} onBlur={() => setTimeout(() => setAgencyFocused(false), 120)} placeholder="Search agencies..." autoComplete="off" className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-9 pr-3 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)]" />
+                {showMatches && (
+                  <div className="absolute left-0 right-0 top-full mt-1.5 z-10 rounded-xl bg-white border border-[var(--a-line-2)] shadow-xl overflow-hidden max-h-[240px] overflow-y-auto">
+                    {matches.map(a => (
+                      <button key={a.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pickAgency(a)} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-[#F6FCF9] transition-colors">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0" style={{ background: 'var(--a-em-soft)' }}><Building2 className="h-3.5 w-3.5 text-[var(--a-em-deep)]" /></span>
+                        <span className="min-w-0">
+                          <span className="block text-[13px] font-semibold text-[var(--a-ink)] truncate">{a.name}</span>
+                          {a.email && <span className="block text-[11px] text-[var(--a-dim)] truncate">{a.email}</span>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Reporter name (optional)</label>
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Name or business" className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)]" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Reporter email (optional)</label>
+              <input value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder="name@example.com" className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)]" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Status</label>
+            <div className="flex flex-wrap gap-2">
+              {SUPPORT_STATUS_OPTIONS.map(opt => {
+                const s = supportStatusStyle(opt.value);
+                const active = status === opt.value;
+                return (
+                  <button key={opt.value} type="button" onClick={() => setStatus(opt.value)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: active ? s.bg : 'transparent', borderColor: active ? s.border : 'var(--a-line-2)', color: active ? s.color : 'var(--a-muted)' }}>
+                    {active && <Check className="h-3 w-3" />}{opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-[var(--a-red)]">{error}</p>}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--a-line)]">
+          <button onClick={onClose} className="rounded-lg px-3.5 py-2 text-sm font-medium text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">Cancel</button>
+          <button onClick={submit} disabled={submitting || !message.trim()} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:brightness-95 disabled:opacity-40 disabled:cursor-default" style={{ background: 'var(--a-em)', color: '#04140D' }}>
+            {submitting ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}Create ticket
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
