@@ -54,9 +54,10 @@ export default function AdminClientsPage() {
     try {
       const token = localStorage.getItem('admin_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      let url = `${backendUrl}/api/admin/clients?limit=100`;
+      // Load the full client set so the list and header counts reflect every
+      // client, not just the first page, and search runs over all of them.
+      let url = `${backendUrl}/api/admin/clients?limit=1000`;
       if (statusFilter) url += `&status=${statusFilter}`;
-      if (search) url += `&search=${encodeURIComponent(search)}`;
       const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
       if (!response.ok) throw new Error('Failed to load clients');
       const data = await response.json();
@@ -148,7 +149,7 @@ export default function AdminClientsPage() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
               onKeyDown={onSearchKeyDown}
-              className="a-input pl-10 pr-9"
+              className="a-input !pl-10 !pr-9"
               autoComplete="off"
             />
             {search && (
@@ -201,7 +202,7 @@ export default function AdminClientsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="a-input pl-10 pr-9 appearance-none cursor-pointer"
+            className="a-input !pl-10 !pr-9 appearance-none cursor-pointer"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>

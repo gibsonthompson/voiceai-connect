@@ -50,7 +50,48 @@ export default function AdminAgenciesPage() {
   useEffect(() => { if (!loading && expandedRow && rowRefs.current[expandedRow]) { setTimeout(() => { rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); } }, [loading, expandedRow, agencies]);
   useEffect(() => { fetchAgencies(); }, [statusFilter]);
 
-  const fetchAgencies = async () => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; let url = `${backendUrl}/api/admin/agencies?limit=100`; if (statusFilter) url += `&status=${statusFilter}`; if (search) url += `&search=${encodeURIComponent(search)}`; const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } }); if (!response.ok) throw new Error('Failed to load agencies'); const data = await response.json(); setAgencies(data.agencies || []); setSummary(data.summary || null); } catch (error) { console.error('Agencies error:', error); } finally { setLoading(false); } };
+  const fetchAgencies = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      // Load every agency, page by page, so the table shows all of them and
+      // the summary tiles below count the whole table (the API's own summary is
+      // scoped to the page it returns, which is why the tiles used to cap at 100).
+      const pageSize = 1000;
+      let offset = 0;
+      const all: Agency[] = [];
+      while (true) {
+        let url = `${backendUrl}/api/admin/agencies?limit=${pageSize}&offset=${offset}`;
+        if (statusFilter) url += `&status=${statusFilter}`;
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!response.ok) throw new Error('Failed to load agencies');
+        const data = await response.json();
+        const batch: Agency[] = data.agencies || [];
+        all.push(...batch);
+        if (batch.length < pageSize || all.length >= 20000) break;
+        offset += pageSize;
+      }
+      setAgencies(all);
+      // Summary computed over the full set, not a single page.
+      setSummary({
+        total_agencies: all.length,
+        active: all.filter(a => a.subscription_status === 'active').length,
+        trialing: all.filter(a => ['trialing', 'trial'].includes(a.subscription_status)).length,
+        past_due: all.filter(a => a.subscription_status === 'past_due').length,
+        canceled: all.filter(a => ['canceled', 'suspended'].includes(a.subscription_status || a.status)).length,
+        pending: all.filter(a => a.subscription_status === 'pending' || a.status === 'pending_payment').length,
+        total_clients: all.reduce((s, a) => s + (a.client_count || 0), 0),
+        total_calls: all.reduce((s, a) => s + (a.call_count || 0), 0),
+        total_leads: all.reduce((s, a) => s + (a.lead_count || 0), 0),
+        total_revenue: all.reduce((s, a) => s + (a.total_revenue || 0), 0),
+        stripe_connected: all.filter(a => a.stripe_charges_enabled).length,
+      });
+    } catch (error) {
+      console.error('Agencies error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchExpandedData = async (agencyId: string) => {
     if (expandedData[agencyId]) return;
@@ -200,7 +241,7 @@ export default function AdminAgenciesPage() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
               onKeyDown={onSearchKeyDown}
-              className="a-input pl-10 pr-9"
+              className="a-input !pl-10 !pr-9"
               autoComplete="off"
             />
             {search && (
@@ -252,7 +293,7 @@ export default function AdminAgenciesPage() {
         <div className="relative">
           <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }} className="a-input pl-10 pr-9 appearance-none cursor-pointer">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }} className="a-input !pl-10 !pr-9 appearance-none cursor-pointer">
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="trialing">Trial</option>
