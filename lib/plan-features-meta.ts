@@ -125,13 +125,21 @@ export const FEATURE_ORDER: string[] = [
 
 // ============================================================================
 // CORE_CLIENT_FEATURES
-// Universal bullets that every client plan gets. These aren't toggleable —
+// Universal bullets that every client plan gets. These aren't toggleable -
 // they're always on. Rendered above the per-plan feature list.
+//
+// Two-way text messaging is core, not a per-plan toggle: US clients can text
+// from every tier today (their number is SMS-enabled at provisioning), and
+// non-US texting is gated at provisioning by the agency's BYOT mobile setup,
+// not by plan. Presenting it as a toggle would either mislabel US plans or
+// force turning off texting some US clients already have. See routes/sms.js
+// and routes/client-signup.js.
 // ============================================================================
 
 export const CORE_CLIENT_FEATURES: string[] = [
   'AI receptionist available 24/7',
   'Dedicated business phone number',
+  'Two-way text messaging',
   'Call recordings & transcripts',
   'AI-powered call summaries',
   'Call history dashboard',
@@ -161,10 +169,10 @@ const DEFAULT_PLAN_LIMITS: Record<ClientPlanId, number> = {
 };
 
 // ============================================================================
-// ClientPlanTile — the rendered shape every consumer uses.
+// ClientPlanTile - the rendered shape every consumer uses.
 //
 // NOTE: `price` is in CENTS (DB convention). lib/plan-features.ts uses
-// dollars for AGENCY tiers — different convention, intentional. Format at
+// dollars for AGENCY tiers - different convention, intentional. Format at
 // render time with Intl.NumberFormat.
 // ============================================================================
 
@@ -242,7 +250,7 @@ export function buildClientPlans(agency: Record<string, any> | null | undefined)
       }
     }
 
-    // team_members is a number, not a boolean — render specially.
+    // team_members is a number, not a boolean - render specially.
     const teamMembersRaw = featuresForTier.team_members;
     const teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
     if (teamMembers > 0) {

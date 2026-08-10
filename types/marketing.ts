@@ -345,6 +345,7 @@ export const defaultMarketingConfig: MarketingConfig = {
         'Google Calendar integration',
         'Emergency call transfer',
         'Text summaries after each call',
+        'Two-way text messaging',
         'Mobile app access',
         'Call recordings & transcripts',
         'Email support',

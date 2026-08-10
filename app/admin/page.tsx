@@ -74,6 +74,19 @@ export default function AdminOverviewPage() {
 
   // drawer (shared component owns fetch + escape handling)
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openAgencyId, setOpenAgencyId] = useState<string | null>(null);
+
+  // Resolve a call's agency to an id from the loaded agency list so the drawer
+  // can deep-link to the agency without the calls feed returning agency_id.
+  const agencyIdByName = useMemo(() => {
+    const m: Record<string, string> = {};
+    agencies.forEach((a) => { if (a.name) m[a.name.toLowerCase()] = a.id; });
+    return m;
+  }, [agencies]);
+  const openCall = (c: CallRow) => {
+    setOpenId(c.id);
+    setOpenAgencyId(c.agency_name ? agencyIdByName[c.agency_name.toLowerCase()] || null : null);
+  };
 
   const fetchCalls = useCallback(async (f: string) => {
     setFeedLoading(true);
@@ -136,6 +149,7 @@ export default function AdminOverviewPage() {
         items.push({
           id: `pd-${a.id}`, icon: DollarSign, tone: 'danger',
           title: `${a.name} payment past due`, detail: 'Billing needs attention',
+          href: `/admin/agencies?expand=${a.id}`,
         });
       }
     });
@@ -147,6 +161,7 @@ export default function AdminOverviewPage() {
           items.push({
             id: `trial-${a.id}`, icon: Clock, tone: 'warn',
             title: `${a.name} trial ends in ${days}d`, detail: `${a.client_count} client${a.client_count === 1 ? '' : 's'} live, worth converting`,
+            href: `/admin/agencies?expand=${a.id}`,
           });
         }
       }
@@ -158,6 +173,7 @@ export default function AdminOverviewPage() {
         items.push({
           id: `zero-${a.id}`, icon: UserPlus, tone: 'info',
           title: `${a.name} has 0 clients`, detail: `Signed up ${Math.round(ageDays)}d ago, never activated`,
+          href: `/admin/agencies?expand=${a.id}`,
         });
       }
     });
@@ -230,7 +246,7 @@ export default function AdminOverviewPage() {
                 calls.map((c) => {
                   const o = deriveCallOutcome(c);
                   return (
-                    <tr key={c.id} onClick={() => setOpenId(c.id)} className="cursor-pointer">
+                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
                       <td>
                         {timeAgo(c.created_at)}
                         {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
@@ -301,17 +317,24 @@ export default function AdminOverviewPage() {
           <div className="p-1.5">
             {actions.length === 0 ? (
               <div className="py-8 text-center text-[13px] text-[var(--a-dim)]">Nothing needs action. Clear.</div>
-            ) : actions.map((a) => (
-              <div key={a.id} className="flex gap-3 p-3 rounded-xl hover:bg-[#F6FCF9] items-start">
-                <span className="h-8.5 w-8.5 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: flagBg(a.tone), width: 34, height: 34 }}>
-                  <a.icon className="h-4 w-4" style={{ color: flagColor(a.tone) }} />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-[var(--a-ink)]">{a.title}</div>
-                  <div className="text-[11.5px] text-[var(--a-dim)]">{a.detail}</div>
-                </div>
-              </div>
-            ))}
+            ) : actions.map((a) => {
+              const inner = (
+                <>
+                  <span className="rounded-[10px] flex items-center justify-center shrink-0" style={{ background: flagBg(a.tone), width: 34, height: 34 }}>
+                    <a.icon className="h-4 w-4" style={{ color: flagColor(a.tone) }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-[var(--a-ink)]">{a.title}</div>
+                    <div className="text-[11.5px] text-[var(--a-dim)]">{a.detail}</div>
+                  </div>
+                  {a.href && <ArrowRight className="h-3.5 w-3.5 text-[var(--a-dim)] mt-1 shrink-0" />}
+                </>
+              );
+              const cls = "flex gap-3 p-3 rounded-xl hover:bg-[#F6FCF9] items-start w-full text-left";
+              if (a.href && a.href.startsWith('/')) return <Link key={a.id} href={a.href} className={cls}>{inner}</Link>;
+              if (a.href === '#call-feed') return <button key={a.id} onClick={() => changeFilter('attention')} className={cls}>{inner}</button>;
+              return <div key={a.id} className={cls}>{inner}</div>;
+            })}
           </div>
         </div>
 
@@ -346,7 +369,7 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* DRAWER (shared component) */}
-      <CallDrawer callId={openId} onClose={() => setOpenId(null)} />
+      <CallDrawer callId={openId} agencyId={openAgencyId} onClose={() => { setOpenId(null); setOpenAgencyId(null); }} />
     </div>
   );
 }

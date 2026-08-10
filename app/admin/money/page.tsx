@@ -13,12 +13,14 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   DollarSign, TrendingDown, TrendingUp, AlertTriangle, Loader2, Settings2,
   Check, X, PhoneCall, ShieldCheck, ShieldOff, Pencil, ChevronDown, ChevronRight, Phone,
+  Users, Clock, ExternalLink, Layers, Building2, CreditCard, Gift, Ban,
 } from 'lucide-react';
-import { formatUSD, formatNumber } from '@/lib/admin/format';
-import { getPlanBadge, getPlanDisplayName } from '@/lib/admin/status';
+import { formatUSD, formatNumber, formatCurrencyCents, formatDate } from '@/lib/admin/format';
+import { getPlanBadge, getPlanDisplayName, getStatusBadge } from '@/lib/admin/status';
 
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const authHeaders = (): Record<string, string> => ({ Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('admin_token') : ''}` });
@@ -41,9 +43,56 @@ const marginColor = (pct: number | null) => {
   return 'var(--a-em-deep)';
 };
 
+// ── Overview (plan + billing status master roster) types ────────────────────
+// Reads /api/admin/agencies (the same enriched shape the Agencies page uses).
+// total_revenue is integer cents here, so format it with formatCurrencyCents.
+interface RosterAgency {
+  id: string; name: string; email: string; plan_type: string;
+  subscription_status: string; status: string;
+  trial_ends_at: string | null; current_period_end: string | null;
+  total_revenue: number; client_count: number; created_at: string;
+  primary_color: string | null;
+}
+
+type StatusBucketKey = 'active' | 'trialing' | 'past_due' | 'canceled' | 'pending' | 'other';
+
+function statusBucket(a: RosterAgency): StatusBucketKey {
+  const s = a.subscription_status || a.status || '';
+  if (s === 'active') return 'active';
+  if (s === 'trial' || s === 'trialing') return 'trialing';
+  if (s === 'past_due') return 'past_due';
+  if (s === 'canceled' || s === 'suspended') return 'canceled';
+  if (s === 'pending' || s === 'pending_payment') return 'pending';
+  return 'other';
+}
+
+// A paying agency is on an active paid plan (Free active is counted as Free,
+// not paying, since Free has no platform fee).
+function isPaying(a: RosterAgency) {
+  return statusBucket(a) === 'active' && getPlanDisplayName(a.plan_type) !== 'Free';
+}
+
+function trialDaysLeft(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 864e5);
+}
+
+const ROSTER_FILTERS: { key: string; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'paying', label: 'Paying' },
+  { key: 'trialing', label: 'On trial' },
+  { key: 'free', label: 'Free plan' },
+  { key: 'past_due', label: 'Past due' },
+  { key: 'canceled', label: 'Canceled' },
+];
+
 export default function AdminMoneyPage() {
-  const [view, setView] = useState<'estimate' | 'actual'>('estimate');
+  const [view, setView] = useState<'overview' | 'estimate' | 'actual'>('overview');
   const [loading, setLoading] = useState(true);
+
+  // overview (plan + billing status roster)
+  const [roster, setRoster] = useState<RosterAgency[]>([]);
+  const [rosterFilter, setRosterFilter] = useState('all');
 
   // estimate
   const [expAgencies, setExpAgencies] = useState<ExpAgency[]>([]);
@@ -84,9 +133,18 @@ export default function AdminMoneyPage() {
     } catch (e) { console.error(e); }
   }, []);
 
+  const fetchRoster = useCallback(async () => {
+    try {
+      const res = await fetch(`${backendUrl()}/api/admin/agencies?limit=200`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('agencies failed');
+      const data = await res.json();
+      setRoster(data.agencies || []);
+    } catch (e) { console.error(e); }
+  }, []);
+
   useEffect(() => {
-    (async () => { await Promise.all([fetchExpenses(), fetchMargin()]); setLoading(false); })();
-  }, [fetchExpenses, fetchMargin]);
+    (async () => { await Promise.all([fetchExpenses(), fetchMargin(), fetchRoster()]); setLoading(false); })();
+  }, [fetchExpenses, fetchMargin, fetchRoster]);
 
   const saveBlended = async () => {
     const n = parseFloat(blendedInput);
@@ -133,10 +191,10 @@ export default function AdminMoneyPage() {
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Money</h1>
-          <p className="mt-1 text-sm text-[var(--a-dim)]">{view === 'estimate' ? 'Modeled voice cost vs what you bill, and what you are eating.' : `Actual margin from VAPI reported cost. Billing month ${margin?.billing_month || ''}.`}</p>
+          <p className="mt-1 text-sm text-[var(--a-dim)]">{view === 'overview' ? 'Who is paying, who is on trial, and who is on Free, at a glance.' : view === 'estimate' ? 'Modeled voice cost vs what you bill, and what you are eating.' : `Actual margin from VAPI reported cost. Billing month ${margin?.billing_month || ''}.`}</p>
         </div>
 
-        {view === 'estimate' ? (
+        {view === 'overview' ? null : view === 'estimate' ? (
           <div className="a-card px-4 py-3 flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'var(--a-amber-soft)' }}><Settings2 className="h-4 w-4" style={{ color: 'var(--a-amber)' }} /></div>
             <div>
@@ -175,10 +233,15 @@ export default function AdminMoneyPage() {
       </div>
 
       {/* view toggle */}
-      <div className="flex gap-1.5 mb-6">
+      <div className="flex gap-1.5 mb-6 flex-wrap">
+        <button className="a-chip" data-on={view === 'overview'} onClick={() => setView('overview')}>Overview (plans &amp; status)</button>
         <button className="a-chip" data-on={view === 'estimate'} onClick={() => setView('estimate')}>Estimate (cost model)</button>
         <button className="a-chip" data-on={view === 'actual'} onClick={() => setView('actual')}>Actual (VAPI cost)</button>
       </div>
+
+      {view === 'overview' && (
+        <MoneyOverview roster={roster} filter={rosterFilter} setFilter={setRosterFilter} planBadge={planBadge} />
+      )}
 
       {view === 'estimate' && expTotals && (
         <>
@@ -200,7 +263,7 @@ export default function AdminMoneyPage() {
                 <tbody>
                   {expAgencies.map((a) => (
                     <tr key={a.agency_id}>
-                      <td><p className="text-[13px] font-semibold text-[var(--a-ink)] truncate max-w-[200px]">{a.name}</p><p className="text-[11px] text-[var(--a-dim)]">{a.billable_clients} billable client{a.billable_clients !== 1 ? 's' : ''}</p></td>
+                      <td><Link href={`/admin/agencies?expand=${a.agency_id}`} className="inline-block max-w-[200px] truncate text-[13px] font-semibold text-[var(--a-ink)] hover:text-[var(--a-em-deep)] hover:underline">{a.name}</Link><p className="text-[11px] text-[var(--a-dim)]">{a.billable_clients} billable client{a.billable_clients !== 1 ? 's' : ''}</p></td>
                       <td>{planBadge(a.plan_type)}</td>
                       <td className="r a-num">{formatNumber(a.this_month.minutes)}</td>
                       <td className="r a-num" style={{ color: 'var(--a-dim)' }}>{formatNumber(a.all_time.minutes)}</td>
@@ -244,10 +307,10 @@ export default function AdminMoneyPage() {
                 const isOpen = expanded === a.agency_id;
                 return (
                   <div key={a.agency_id}>
-                    <button onClick={() => toggleAgency(a.agency_id)} className="w-full grid grid-cols-2 md:grid-cols-[1.6fr_0.7fr_0.7fr_0.8fr_0.9fr_0.9fr_0.9fr_0.7fr] gap-2 px-5 py-3 text-left hover:bg-[#F6FCF9] transition-colors items-center">
+                    <div role="button" tabIndex={0} onClick={() => toggleAgency(a.agency_id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAgency(a.agency_id); } }} className="w-full grid grid-cols-2 md:grid-cols-[1.6fr_0.7fr_0.7fr_0.8fr_0.9fr_0.9fr_0.9fr_0.7fr] gap-2 px-5 py-3 text-left hover:bg-[#F6FCF9] transition-colors items-center cursor-pointer">
                       <div className="flex items-center gap-2 min-w-0">
                         {isOpen ? <ChevronDown className="h-3.5 w-3.5 text-[var(--a-dim)] flex-shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 text-[var(--a-dim)] flex-shrink-0" />}
-                        <span className="text-sm text-[var(--a-ink)] truncate">{a.agency_name}</span>
+                        <Link href={`/admin/agencies?expand=${a.agency_id}`} onClick={(e) => e.stopPropagation()} className="text-sm text-[var(--a-ink)] truncate hover:text-[var(--a-em-deep)] hover:underline">{a.agency_name}</Link>
                         {!a.cost_capture_complete && <span className="flex-shrink-0 rounded-full text-[9px] px-1.5 py-0.5" style={{ background: 'var(--a-amber-soft)', color: 'var(--a-amber)' }}>partial</span>}
                       </div>
                       <div className="text-xs text-[var(--a-muted)] capitalize hidden md:block">{getPlanDisplayName(a.plan_type)}</div>
@@ -258,7 +321,7 @@ export default function AdminMoneyPage() {
                       <div className="text-sm a-num text-right font-medium hidden md:block" style={{ color: marginColor(a.margin_pct) }}>{formatUSD(a.margin)}</div>
                       <div className="text-sm a-num text-right hidden md:block" style={{ color: marginColor(a.margin_pct) }}>{a.margin_pct === null ? 'n/a' : `${a.margin_pct}%`}</div>
                       <div className="md:hidden text-right"><div className="text-sm font-medium" style={{ color: marginColor(a.margin_pct) }}>{formatUSD(a.margin)}</div><div className="text-[11px] text-[var(--a-dim)]">{a.minutes} min &middot; {formatUSD(a.revenue)}</div></div>
-                    </button>
+                    </div>
                     {isOpen && (
                       <div className="px-5 py-3 border-t border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
                         {clientLoading === a.agency_id ? (
@@ -317,5 +380,180 @@ function MarginTotal({ label, value, icon: Icon, tone, sub }: { label: string; v
         <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: bg }}><Icon className="h-5 w-5" style={{ color }} /></div>
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// MONEY OVERVIEW (master roster)
+// The billing-status answer: who is Paying, who is on Trial, who is on Free,
+// who is Past due, and who is Canceled. Built entirely from real agency fields
+// (plan_type, subscription_status, trial_ends_at, total_revenue in cents), so
+// every number maps to a row you can click straight into.
+// ============================================================================
+function MoneyOverview({
+  roster, filter, setFilter, planBadge,
+}: {
+  roster: RosterAgency[];
+  filter: string;
+  setFilter: (f: string) => void;
+  planBadge: (p: string) => JSX.Element;
+}) {
+  const total = roster.length;
+  const paying = roster.filter(isPaying).length;
+  const trialing = roster.filter(a => statusBucket(a) === 'trialing').length;
+  const free = roster.filter(a => getPlanDisplayName(a.plan_type) === 'Free').length;
+  const pastDue = roster.filter(a => statusBucket(a) === 'past_due').length;
+  const canceled = roster.filter(a => statusBucket(a) === 'canceled').length;
+  const collected = roster.reduce((s, a) => s + (a.total_revenue || 0), 0);
+
+  // plan x status matrix
+  const planOrder = ['Free', 'Pro', 'Scale'];
+  const present = Array.from(new Set(roster.map(a => getPlanDisplayName(a.plan_type))));
+  const plans = [...planOrder.filter(p => present.includes(p)), ...present.filter(p => !planOrder.includes(p))];
+  const cols: { key: StatusBucketKey; label: string }[] = [
+    { key: 'active', label: 'Active' },
+    { key: 'trialing', label: 'Trial' },
+    { key: 'past_due', label: 'Past due' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'canceled', label: 'Canceled' },
+  ];
+  const cell = (plan: string, key: StatusBucketKey) => roster.filter(a => getPlanDisplayName(a.plan_type) === plan && statusBucket(a) === key).length;
+  const planTotal = (plan: string) => roster.filter(a => getPlanDisplayName(a.plan_type) === plan).length;
+  const planRevenue = (plan: string) => roster.filter(a => getPlanDisplayName(a.plan_type) === plan).reduce((s, a) => s + (a.total_revenue || 0), 0);
+
+  // roster list (filtered)
+  const filtered = roster.filter(a => {
+    if (filter === 'all') return true;
+    if (filter === 'paying') return isPaying(a);
+    if (filter === 'free') return getPlanDisplayName(a.plan_type) === 'Free';
+    return statusBucket(a) === filter;
+  });
+  const sorted = filter === 'trialing'
+    ? [...filtered].sort((a, b) => (trialDaysLeft(a.trial_ends_at) ?? 9999) - (trialDaysLeft(b.trial_ends_at) ?? 9999))
+    : [...filtered].sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0) || (a.name || '').localeCompare(b.name || ''));
+
+  if (total === 0) {
+    return <div className="a-panel p-16 text-center text-sm text-[var(--a-dim)]">No agencies yet.</div>;
+  }
+
+  return (
+    <>
+      {/* status tiles */}
+      <div className="grid gap-3.5 grid-cols-2 lg:grid-cols-6 mb-8">
+        <OverviewTile label="Total agencies" value={String(total)} sub="on the platform" icon={Building2} tint="slate" />
+        <OverviewTile label="Paying" value={String(paying)} sub="active paid plan" icon={CreditCard} tint="em" onClick={() => setFilter('paying')} active={filter === 'paying'} />
+        <OverviewTile label="On trial" value={String(trialing)} sub="worth converting" icon={Clock} tint="cyan" onClick={() => setFilter('trialing')} active={filter === 'trialing'} />
+        <OverviewTile label="Free plan" value={String(free)} sub="no platform fee" icon={Gift} tint="slate" onClick={() => setFilter('free')} active={filter === 'free'} />
+        <OverviewTile label="Past due" value={String(pastDue)} sub="billing needs action" icon={AlertTriangle} tint="red" onClick={() => setFilter('past_due')} active={filter === 'past_due'} />
+        <OverviewTile label="Collected" value={formatCurrencyCents(collected)} sub="all time" icon={DollarSign} tint="em" />
+      </div>
+
+      {/* plan x status matrix */}
+      <div className="a-panel mb-8">
+        <div className="px-5 lg:px-6 py-4 border-b border-[var(--a-line)] flex items-center gap-2.5">
+          <Layers className="h-4 w-4 text-[var(--a-dim)]" />
+          <h2 className="text-sm font-semibold text-[var(--a-ink)]">Plan and status breakdown</h2>
+          <span className="text-[11px] text-[var(--a-dim)]">counts by plan, collected revenue at right</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="a-table">
+            <thead>
+              <tr>
+                <th>Plan</th>
+                {cols.map(c => <th key={c.key} className="r">{c.label}</th>)}
+                <th className="r">Total</th>
+                <th className="r">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plans.map(plan => (
+                <tr key={plan}>
+                  <td>{planBadge(plan.toLowerCase())}</td>
+                  {cols.map(c => {
+                    const n = cell(plan, c.key);
+                    return <td key={c.key} className="r a-num" style={{ color: n === 0 ? 'var(--a-dim)' : c.key === 'past_due' ? 'var(--a-amber)' : c.key === 'canceled' ? 'var(--a-red)' : 'var(--a-ink)' }}>{n || '\u2013'}</td>;
+                  })}
+                  <td className="r a-num font-semibold text-[var(--a-ink)]">{planTotal(plan)}</td>
+                  <td className="r a-num" style={{ color: planRevenue(plan) > 0 ? 'var(--a-em-deep)' : 'var(--a-dim)' }}>{planRevenue(plan) > 0 ? formatCurrencyCents(planRevenue(plan)) : '\u2013'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* roster */}
+      <div className="a-panel">
+        <div className="px-5 py-4 border-b border-[var(--a-line)] flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5"><Users className="h-4 w-4 text-[var(--a-dim)]" /><h2 className="text-sm font-semibold text-[var(--a-ink)]">Roster</h2></div>
+          <div className="flex gap-1.5 flex-wrap ml-auto">
+            {ROSTER_FILTERS.map(f => (
+              <button key={f.key} className="a-chip" data-on={filter === f.key} data-tone={f.key === 'past_due' ? 'danger' : undefined} onClick={() => setFilter(f.key)}>{f.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="p-1.5">
+          {sorted.length === 0 ? (
+            <div className="py-12 text-center text-[13px] text-[var(--a-dim)]">No agencies in this bucket.</div>
+          ) : sorted.map(a => {
+            const b = getStatusBadge(a.subscription_status || a.status);
+            const days = trialDaysLeft(a.trial_ends_at);
+            const isTrial = statusBucket(a) === 'trialing';
+            return (
+              <Link key={a.id} href={`/admin/agencies?expand=${a.id}`} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F6FCF9] transition-colors">
+                <span className="flex h-9 w-9 items-center justify-center rounded-[10px] shrink-0 border border-[var(--a-line)] bg-white">
+                  {a.primary_color ? <span className="h-3.5 w-3.5 rounded" style={{ backgroundColor: a.primary_color }} /> : <Building2 className="h-3.5 w-3.5 text-[var(--a-dim)]" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{a.name || 'Unnamed'}</span>
+                    {planBadge(a.plan_type)}
+                  </div>
+                  <div className="text-[11.5px] text-[var(--a-dim)] truncate">
+                    {[a.email, `${a.client_count} client${a.client_count === 1 ? '' : 's'}`].filter(Boolean).join(' \u00b7 ')}
+                  </div>
+                </div>
+                <div className="hidden sm:flex flex-col items-end shrink-0">
+                  <span className="a-num text-[13px] font-semibold" style={{ color: a.total_revenue > 0 ? 'var(--a-em-deep)' : 'var(--a-dim)' }}>{a.total_revenue > 0 ? formatCurrencyCents(a.total_revenue) : '\u2013'}</span>
+                  {isTrial && days != null ? (
+                    <span className="text-[11px]" style={{ color: days <= 3 ? 'var(--a-red)' : 'var(--a-cyan)' }}>{days < 0 ? 'trial expired' : days === 0 ? 'ends today' : `${days}d left`}</span>
+                  ) : a.current_period_end ? (
+                    <span className="text-[11px] text-[var(--a-dim)]">renews {formatDate(a.current_period_end)}</span>
+                  ) : null}
+                </div>
+                <span className="rounded-md border px-2 py-0.5 text-[10px] font-medium shrink-0" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{b.label}</span>
+                <ExternalLink className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-[var(--a-dim)]">Paying counts agencies on an active paid plan. Free active agencies are counted under Free, not Paying. Revenue is collected payments to date, not projected MRR.</p>
+    </>
+  );
+}
+
+function OverviewTile({
+  label, value, sub, icon: Icon, tint, onClick, active,
+}: {
+  label: string; value: string; sub: string; icon: any;
+  tint: 'em' | 'cyan' | 'red' | 'slate'; onClick?: () => void; active?: boolean;
+}) {
+  const tints: Record<string, { bg: string; color: string }> = {
+    em: { bg: 'var(--a-em-soft)', color: 'var(--a-em-deep)' },
+    cyan: { bg: 'var(--a-cyan-soft)', color: 'var(--a-cyan)' },
+    red: { bg: 'var(--a-red-soft)', color: 'var(--a-red)' },
+    slate: { bg: '#EEF3EF', color: 'var(--a-muted)' },
+  };
+  const Comp: any = onClick ? 'button' : 'div';
+  return (
+    <Comp onClick={onClick} className="a-card p-4 text-left transition-transform hover:-translate-y-px" style={active ? { borderColor: tints[tint].color } : undefined}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] font-medium text-[var(--a-muted)] uppercase tracking-[0.1em]">{label}</p>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0" style={{ background: tints[tint].bg }}><Icon className="h-3.5 w-3.5" style={{ color: tints[tint].color }} /></div>
+      </div>
+      <p className="mt-2 text-2xl font-semibold tracking-tight a-num" style={{ color: tints[tint].color }}>{value}</p>
+      <p className="mt-1 text-[11px] text-[var(--a-dim)]">{sub}</p>
+    </Comp>
   );
 }

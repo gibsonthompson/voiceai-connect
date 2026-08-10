@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { X, Loader2, FileText, ShieldAlert } from 'lucide-react';
 import { formatPhone, timeAgo, formatDuration, formatUSD } from '@/lib/admin/format';
 import { deriveCallOutcome } from '@/lib/admin/status';
@@ -25,7 +26,7 @@ interface CallDetail {
   contact: any;
 }
 
-export default function CallDrawer({ callId, onClose }: { callId: string | null; onClose: () => void }) {
+export default function CallDrawer({ callId, onClose, agencyId }: { callId: string | null; onClose: () => void; agencyId?: string | null }) {
   const [detail, setDetail] = useState<CallDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -72,14 +73,14 @@ export default function CallDrawer({ callId, onClose }: { callId: string | null;
             <div className="pt-20 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>
           </div>
         ) : (
-          <DrawerBody detail={detail} onClose={onClose} />
+          <DrawerBody detail={detail} onClose={onClose} agencyId={agencyId} />
         )}
       </div>
     </>
   );
 }
 
-function DrawerBody({ detail, onClose }: { detail: CallDetail; onClose: () => void }) {
+function DrawerBody({ detail, onClose, agencyId }: { detail: CallDetail; onClose: () => void; agencyId?: string | null }) {
   const { call, client, agency, cost } = detail;
   const o = deriveCallOutcome(call);
   const hipaaHidden = client?.hipaa_mode === true;
@@ -101,7 +102,11 @@ function DrawerBody({ detail, onClose }: { detail: CallDetail; onClose: () => vo
         </div>
         <div className="mt-3 flex items-baseline gap-2.5">
           <span className="a-num text-[21px] font-bold text-[var(--a-ink)]">{formatPhone(call.customer_phone)}</span>
-          <span className="text-[12px] text-[var(--a-dim)]">{client?.business_name} via {agency?.name}</span>
+          <span className="text-[12px] text-[var(--a-dim)]">
+            {client?.business_name} via {agencyId
+              ? <Link href={`/admin/agencies?expand=${agencyId}`} className="font-medium text-[var(--a-em-deep)] hover:underline">{agency?.name}</Link>
+              : agency?.name}
+          </span>
         </div>
         <div className="mt-1 text-[12.5px] text-[var(--a-dim)]">
           {timeAgo(call.created_at)} &nbsp;&middot;&nbsp; {formatDuration(call.duration_seconds)} &nbsp;&middot;&nbsp; {cost?.vapi_cost != null ? formatUSD(cost.vapi_cost) : 'cost not recorded'}

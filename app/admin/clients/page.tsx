@@ -7,11 +7,12 @@
 // favor of the shared lib/admin/format and lib/admin/status helpers.
 // ============================================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
-  Users, Search, Filter, Phone, Building2, Loader2, ChevronRight,
-  MoreVertical, UserCheck, Ban, PhoneCall, FlaskConical,
+  Users, Search, Filter, Phone, Building2, Loader2, ChevronRight, ChevronDown,
+  MoreVertical, UserCheck, Ban, PhoneCall, FlaskConical, X,
 } from 'lucide-react';
 import { formatPhone, formatDate } from '@/lib/admin/format';
 import { getStatusBadge } from '@/lib/admin/status';
@@ -37,11 +38,15 @@ interface Client {
 }
 
 export default function AdminClientsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [actionMenu, setActionMenu] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { fetchClients(); }, [statusFilter]);
 
@@ -63,8 +68,6 @@ export default function AdminClientsPage() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setLoading(true); fetchClients(); };
-
   const handleStatusUpdate = async (clientId: string, newStatus: string, newSubStatus: string) => {
     try {
       const token = localStorage.getItem('admin_token');
@@ -83,6 +86,36 @@ export default function AdminClientsPage() {
 
   const billableClients = clients.filter(c => !c.is_test_client);
   const testClients = clients.filter(c => c.is_test_client);
+
+  // Live matcher shared by the table and the search typeahead. Matches business
+  // name, email, owner, agency name, and the client / AI phone by digits.
+  const matchClient = (c: Client, q: string) => {
+    if (!q) return true;
+    const t = q.trim().toLowerCase();
+    const digits = t.replace(/\D/g, '');
+    const phones = `${(c.owner_phone || '').replace(/\D/g, '')} ${(c.vapi_phone_number || '').replace(/\D/g, '')}`;
+    return (
+      (c.business_name || '').toLowerCase().includes(t) ||
+      (c.email || '').toLowerCase().includes(t) ||
+      (c.owner_name || '').toLowerCase().includes(t) ||
+      (c.agencies?.name || '').toLowerCase().includes(t) ||
+      (digits.length >= 3 && phones.includes(digits))
+    );
+  };
+
+  const filteredClients = useMemo(() => clients.filter(c => matchClient(c, search)), [clients, search]);
+  const suggestions = search.trim() ? filteredClients.slice(0, 7) : [];
+  const showSuggestions = searchFocused && search.trim().length > 0 && suggestions.length > 0;
+
+  const openClient = (id: string) => { setSearchFocused(false); setHighlightIndex(-1); router.push(`/admin/clients/${id}`); };
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlightIndex(i => Math.min(i + 1, suggestions.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlightIndex(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { if (highlightIndex >= 0 && suggestions[highlightIndex]) { e.preventDefault(); openClient(suggestions[highlightIndex].id); } }
+    else if (e.key === 'Escape') { setSearchFocused(false); setHighlightIndex(-1); }
+  };
 
   const badge = (status: string) => {
     const b = getStatusBadge(status);
@@ -104,24 +137,71 @@ export default function AdminClientsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <form onSubmit={handleSearch} className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
+        <div ref={searchBoxRef} className="relative flex-1">
+          <form onSubmit={(e) => { e.preventDefault(); setSearchFocused(false); setHighlightIndex(-1); setLoading(true); fetchClients(); }}>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="Search by business, email, phone, or agency"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="a-input pl-10"
+              onChange={(e) => { setSearch(e.target.value); setHighlightIndex(-1); }}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+              onKeyDown={onSearchKeyDown}
+              className="a-input pl-10 pr-9"
+              autoComplete="off"
             />
-          </div>
-        </form>
+            {search && (
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSearch(''); setHighlightIndex(-1); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-[var(--a-dim)] hover:text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </form>
+
+          {showSuggestions && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 z-30 rounded-xl bg-white border border-[var(--a-line-2)] shadow-xl overflow-hidden max-h-[360px] overflow-y-auto">
+              <div className="px-3 py-2 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--a-dim)] border-b border-[var(--a-line)]">
+                {suggestions.length} match{suggestions.length === 1 ? '' : 'es'}
+              </div>
+              {suggestions.map((c, i) => {
+                const highlighted = i === highlightIndex;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setHighlightIndex(i)}
+                    onClick={() => openClient(c.id)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors"
+                    style={{ background: highlighted ? 'var(--a-em-soft)' : 'transparent' }}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0" style={{ background: c.is_test_client ? 'var(--a-violet-soft)' : 'var(--a-em-soft)' }}>
+                      {c.is_test_client ? <FlaskConical className="h-3.5 w-3.5 text-[var(--a-violet)]" /> : <Users className="h-3.5 w-3.5 text-[var(--a-em-deep)]" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{c.business_name || 'Unnamed'}</span>
+                        {c.is_test_client && <span className="text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-violet)', background: 'var(--a-violet-soft)', borderColor: 'var(--a-violet-soft)' }}>Test</span>}
+                      </span>
+                      <span className="block text-[11px] text-[var(--a-dim)] truncate">
+                        {[c.agencies?.name, c.email, c.vapi_phone_number ? formatPhone(c.vapi_phone_number) : null].filter(Boolean).join(' \u00b7 ')}
+                      </span>
+                    </span>
+                    {badge(c.subscription_status)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="a-input pl-10 pr-8 appearance-none"
+            className="a-input pl-10 pr-9 appearance-none cursor-pointer"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -136,12 +216,12 @@ export default function AdminClientsPage() {
       <div className="a-panel">
         {loading ? (
           <div className="p-12 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>
-        ) : clients.length === 0 ? (
+        ) : filteredClients.length === 0 ? (
           <div className="p-16 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl mx-auto mb-4" style={{ background: 'var(--a-em-soft)' }}>
               <Users className="h-7 w-7 text-[var(--a-em-deep)]" />
             </div>
-            <p className="text-sm text-[var(--a-muted)]">No clients found</p>
+            <p className="text-sm text-[var(--a-muted)]">{search ? 'No clients match your search' : 'No clients found'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -153,7 +233,7 @@ export default function AdminClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {clients.map((client) => {
+                {filteredClients.map((client) => {
                   const isTest = client.is_test_client;
                   return (
                     <tr key={client.id}>
@@ -230,7 +310,7 @@ export default function AdminClientsPage() {
           </div>
         )}
       </div>
-      {!loading && clients.length > 0 && (<p className="mt-4 text-xs text-[var(--a-dim)]">Showing {clients.length} clients</p>)}
+      {!loading && filteredClients.length > 0 && (<p className="mt-4 text-xs text-[var(--a-dim)]">Showing {filteredClients.length} client{filteredClients.length === 1 ? '' : 's'}</p>)}
     </div>
   );
 }

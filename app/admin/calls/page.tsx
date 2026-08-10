@@ -7,8 +7,9 @@
 // deriveCallOutcome so they match the Overview and the SQL feed exactly.
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, PhoneCall, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { Search, Loader2, PhoneCall, ArrowLeft, ArrowRight, Building2 } from 'lucide-react';
 import { formatPhone, timeAgo, formatDuration, formatUSD } from '@/lib/admin/format';
 import { deriveCallOutcome, CALL_FILTERS } from '@/lib/admin/status';
 import CallDrawer from '@/components/admin/CallDrawer';
@@ -42,6 +43,20 @@ export default function AdminCallsPage() {
   const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openAgencyId, setOpenAgencyId] = useState<string | null>(null);
+
+  // Resolve a call's agency to an id from the agency list already loaded for
+  // the filter dropdown, so a call can deep-link to its agency without the
+  // feed needing to return agency_id. (Swap to a real agency_id if the calls
+  // RPC starts selecting one.)
+  const agencyIdByName = useMemo(() => {
+    const m: Record<string, string> = {};
+    agencies.forEach((a) => { if (a.name) m[a.name.toLowerCase()] = a.id; });
+    return m;
+  }, [agencies]);
+  const resolveAgencyId = (name: string | null) => (name ? agencyIdByName[name.toLowerCase()] || null : null);
+
+  const openCall = (c: CallRow) => { setOpenId(c.id); setOpenAgencyId(resolveAgencyId(c.agency_name)); };
 
   const fetchCalls = useCallback(async () => {
     setLoading(true);
@@ -144,8 +159,9 @@ export default function AdminCallsPage() {
               ) : (
                 calls.map((c) => {
                   const o = deriveCallOutcome(c);
+                  const aid = resolveAgencyId(c.agency_name);
                   return (
-                    <tr key={c.id} onClick={() => setOpenId(c.id)} className="cursor-pointer">
+                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
                       <td>
                         {timeAgo(c.created_at)}
                         {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
@@ -153,7 +169,13 @@ export default function AdminCallsPage() {
                       <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
                       <td>
                         <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
-                        <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
+                        {aid ? (
+                          <Link href={`/admin/agencies?expand=${aid}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-[11.5px] text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors">
+                            <Building2 className="h-3 w-3" />{c.agency_name}
+                          </Link>
+                        ) : (
+                          <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
+                        )}
                       </td>
                       <td>
                         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: o.color }}>
@@ -186,7 +208,7 @@ export default function AdminCallsPage() {
         </div>
       )}
 
-      <CallDrawer callId={openId} onClose={() => setOpenId(null)} />
+      <CallDrawer callId={openId} agencyId={openAgencyId} onClose={() => { setOpenId(null); setOpenAgencyId(null); }} />
     </div>
   );
 }

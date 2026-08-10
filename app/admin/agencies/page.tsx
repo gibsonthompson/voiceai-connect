@@ -15,7 +15,7 @@ import {
   Building2, Search, Filter, Users, ExternalLink, Loader2, ChevronDown, MoreVertical,
   UserCheck, Ban, Phone, DollarSign, Target, PhoneCall, Globe, Clock, CreditCard, Mail,
   Shield, TrendingUp, Calendar, Zap, Copy, Check, FlaskConical, MessageSquare,
-  CheckCircle2, Circle,
+  CheckCircle2, Circle, X,
 } from 'lucide-react';
 import {
   formatPhone, formatDate, formatDateTime, timeAgo, formatCurrencyCents,
@@ -41,7 +41,10 @@ export default function AdminAgenciesPage() {
   const [expandedData, setExpandedData] = useState<Record<string, ExpandedData>>({});
   const [expandedLoading, setExpandedLoading] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { const expandId = searchParams.get('expand'); if (expandId) { setExpandedRow(expandId); fetchExpandedData(expandId); } }, [searchParams]);
   useEffect(() => { if (!loading && expandedRow && rowRefs.current[expandedRow]) { setTimeout(() => { rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); } }, [loading, expandedRow, agencies]);
@@ -62,13 +65,48 @@ export default function AdminAgenciesPage() {
   };
 
   const handleExpand = (agencyId: string) => { if (expandedRow === agencyId) { setExpandedRow(null); } else { setExpandedRow(agencyId); fetchExpandedData(agencyId); } };
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setLoading(true); fetchAgencies(); };
+  // Force-open an agency's detail row (used by the search typeahead) and scroll to it.
+  const openAgency = (agencyId: string) => {
+    setExpandedRow(agencyId);
+    fetchExpandedData(agencyId);
+    setSearchFocused(false);
+    setHighlightIndex(-1);
+    setTimeout(() => { rowRefs.current[agencyId]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 80);
+  };
   const handleStatusUpdate = async (agencyId: string, newStatus: string, newSubStatus: string) => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus, subscription_status: newSubStatus }) }); fetchAgencies(); setActionMenu(null); } catch (error) { console.error('Status update error:', error); } };
   const handleImpersonate = async (agencyId: string) => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; const response = await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/impersonate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); const data = await response.json(); if (data.loginUrl) window.open(data.loginUrl, '_blank'); setActionMenu(null); } catch (error) { console.error('Impersonate error:', error); } };
   const copyToClipboard = (text: string, id: string) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
 
   const getOnboardingLabel = (step: number | null) => { const labels: Record<number, string> = { 0: 'Not Started', 1: 'Agency Name', 2: 'Plan Selection', 3: 'Password Setup' }; return labels[step ?? 0] || `Step ${step}`; };
-  const filteredAgencies = agencies.filter(a => { if (!search) return true; const q = search.toLowerCase(); return a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q) || a.phone?.includes(q); });
+
+  // Single matcher used by both the table filter and the search typeahead so
+  // they always agree. Matches name, email, slug, marketing domain, and the
+  // phone by digits (so a formatted or raw query both work).
+  const matchAgency = (a: Agency, q: string) => {
+    if (!q) return true;
+    const t = q.trim().toLowerCase();
+    const digits = t.replace(/\D/g, '');
+    const phoneDigits = (a.phone || '').replace(/\D/g, '');
+    return (
+      (a.name || '').toLowerCase().includes(t) ||
+      (a.email || '').toLowerCase().includes(t) ||
+      (a.slug || '').toLowerCase().includes(t) ||
+      (a.marketing_domain || '').toLowerCase().includes(t) ||
+      (digits.length >= 3 && phoneDigits.includes(digits))
+    );
+  };
+
+  const filteredAgencies = agencies.filter(a => matchAgency(a, search));
+  const suggestions = search.trim() ? filteredAgencies.slice(0, 7) : [];
+  const showSuggestions = searchFocused && search.trim().length > 0 && suggestions.length > 0;
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlightIndex(i => Math.min(i + 1, suggestions.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlightIndex(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { if (highlightIndex >= 0 && suggestions[highlightIndex]) { e.preventDefault(); openAgency(suggestions[highlightIndex].id); } }
+    else if (e.key === 'Escape') { setSearchFocused(false); setHighlightIndex(-1); }
+  };
 
   // ── Onboarding funnel (unchanged logic) ────────────────────────────────────
   const fnlTotal = agencies.length;
@@ -150,8 +188,79 @@ export default function AdminAgenciesPage() {
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <form onSubmit={handleSearch} className="flex-1"><div className="relative"><Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" /><input type="text" placeholder="Search agencies..." value={search} onChange={(e) => setSearch(e.target.value)} className="a-input pl-10" /></div></form>
-        <div className="relative"><Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" /><select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }} className="a-input pl-10 pr-8 appearance-none"><option value="">All Status</option><option value="active">Active</option><option value="trialing">Trial</option><option value="past_due">Past Due</option><option value="pending">Pending</option><option value="canceled">Canceled</option></select></div>
+        {/* Search with live typeahead: matches name, email, phone, slug, and domain */}
+        <div ref={searchBoxRef} className="relative flex-1">
+          <form onSubmit={(e) => { e.preventDefault(); setSearchFocused(false); setHighlightIndex(-1); setLoading(true); fetchAgencies(); }}>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
+            <input
+              type="text"
+              placeholder="Search by name, email, phone, or domain"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setHighlightIndex(-1); }}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+              onKeyDown={onSearchKeyDown}
+              className="a-input pl-10 pr-9"
+              autoComplete="off"
+            />
+            {search && (
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSearch(''); setHighlightIndex(-1); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-[var(--a-dim)] hover:text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </form>
+
+          {showSuggestions && (
+            <div className="absolute left-0 right-0 top-full mt-1.5 z-30 rounded-xl bg-white border border-[var(--a-line-2)] shadow-xl overflow-hidden max-h-[360px] overflow-y-auto">
+              <div className="px-3 py-2 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--a-dim)] border-b border-[var(--a-line)]">
+                {suggestions.length} match{suggestions.length === 1 ? '' : 'es'}
+              </div>
+              {suggestions.map((a, i) => {
+                const loc = getPhoneLocation(a.phone, a.country);
+                const highlighted = i === highlightIndex;
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setHighlightIndex(i)}
+                    onClick={() => openAgency(a.id)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors"
+                    style={{ background: highlighted ? 'var(--a-em-soft)' : 'transparent' }}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border border-[var(--a-line)] bg-white">
+                      {a.primary_color ? <span className="h-3.5 w-3.5 rounded" style={{ backgroundColor: a.primary_color }} /> : <Building2 className="h-3.5 w-3.5 text-[var(--a-dim)]" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{a.name || 'Unnamed'}</span>
+                        {planBadge(a.plan_type)}
+                      </span>
+                      <span className="block text-[11px] text-[var(--a-dim)] truncate">
+                        {[a.email, a.phone ? formatPhone(a.phone) : null, loc].filter(Boolean).join(' \u00b7 ')}
+                      </span>
+                    </span>
+                    {statusBadge(a.subscription_status || a.status)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Status filter: leading filter icon + trailing chevron (native arrow is hidden) */}
+        <div className="relative">
+          <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }} className="a-input pl-10 pr-9 appearance-none cursor-pointer">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="trialing">Trial</option>
+            <option value="past_due">Past Due</option>
+            <option value="pending">Pending</option>
+            <option value="canceled">Canceled</option>
+          </select>
+        </div>
       </div>
 
       <div className="a-panel">

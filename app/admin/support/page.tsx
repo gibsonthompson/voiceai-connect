@@ -23,9 +23,10 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check,
+  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink,
 } from 'lucide-react';
 
 const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -408,12 +409,20 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                     <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
                                     {req.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Resolved</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.resolved_at)}</span></div>}
                                   </div>
-                                  {req.user_email && (
-                                    <a href={`mailto:${req.user_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                      <Mail className="h-3 w-3" /> Reply by email
-                                    </a>
-                                  )}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {req.agency_id && (
+                                      <Link href={`/admin/agencies?expand=${req.agency_id}`} onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
+                                        <Building2 className="h-3 w-3" /> Open agency <ExternalLink className="h-3 w-3" />
+                                      </Link>
+                                    )}
+                                    {req.user_email && (
+                                      <a href={`mailto:${req.user_email}`} onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
+                                        <Mail className="h-3 w-3" /> Reply by email
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -712,12 +721,20 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                     <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: fs.color }}>{fs.label}</span></div>
                                     {fb.reviewed_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Reviewed</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.reviewed_at)}</span></div>}
                                   </div>
-                                  {fb.agency_email && (
-                                    <a href={`mailto:${fb.agency_email}`} onClick={(e) => e.stopPropagation()}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                      <Mail className="h-3 w-3" /> Reply by email
-                                    </a>
-                                  )}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {fb.agency_id && (
+                                      <Link href={`/admin/agencies?expand=${fb.agency_id}`} onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
+                                        <Building2 className="h-3 w-3" /> Open agency <ExternalLink className="h-3 w-3" />
+                                      </Link>
+                                    )}
+                                    {fb.agency_email && (
+                                      <a href={`mailto:${fb.agency_email}`} onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
+                                        <Mail className="h-3 w-3" /> Reply by email
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
