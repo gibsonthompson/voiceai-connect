@@ -14,7 +14,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Building2, Mail, Phone, PhoneCall, User, Loader2, LogIn,
-  CreditCard, Calendar, FlaskConical, Clock, Hash, Copy, Check,
+  CreditCard, Calendar, FlaskConical, Clock, Copy, Check, ChevronDown,
+  MapPin, MessageSquare, AlertCircle,
 } from 'lucide-react';
 import { formatPhone, formatDate, formatDateTime, timeAgo } from '@/lib/admin/format';
 import { getStatusBadge, getPlanBadge, getPlanDisplayName } from '@/lib/admin/status';
@@ -58,6 +59,7 @@ export default function AdminClientDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [expandedCall, setExpandedCall] = useState<string | null>(null);
 
   useEffect(() => { if (clientId) fetchClient(); }, [clientId]);
 
@@ -107,19 +109,19 @@ export default function AdminClientDetailPage() {
   };
 
   // Defensive accessors: the calls table columns are not guaranteed, so read a
-  // few likely names and fall back cleanly rather than render undefined.
-  const callerOf = (c: CallRow) => c.caller_number || c.from_number || c.customer_number || c.caller || c.phone_number || 'Unknown';
-  const durationOf = (c: CallRow): number | null => {
-    const v = c.duration_seconds ?? c.duration ?? c.call_duration ?? null;
-    return typeof v === 'number' ? v : null;
-  };
+  // Field names match the real calls table schema.
+  const nameOf = (c: CallRow): string => c.customer_name || 'Unknown caller';
+  const phoneOf = (c: CallRow): string | null => c.customer_phone || c.caller_phone || null;
+  const durationOf = (c: CallRow): number | null =>
+    typeof c.duration_seconds === 'number' ? c.duration_seconds : null;
   const fmtDuration = (secs: number | null) => {
     if (secs === null) return null;
     const m = Math.floor(secs / 60);
     const s = Math.round(secs % 60);
     return `${m}:${String(s).padStart(2, '0')}`;
   };
-  const summaryOf = (c: CallRow): string | null => c.ai_summary || c.summary || c.transcript_summary || null;
+  const summaryOf = (c: CallRow): string | null => c.ai_summary || c.summary || null;
+  const isSpamCall = (c: CallRow): boolean => c.is_spam === true || c.call_status === 'spam';
 
   const label = 'text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]';
 
@@ -252,16 +254,66 @@ export default function AdminClientDetailPage() {
             {calls.map((c) => {
               const dur = fmtDuration(durationOf(c));
               const summary = summaryOf(c);
+              const phone = phoneOf(c);
+              const spam = isSpamCall(c);
+              const urgency = c.urgency_level;
+              const highUrgency = urgency === 'high' || urgency === 'emergency';
+              const open = expandedCall === c.id;
               return (
-                <div key={c.id} className="px-5 py-3.5 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-[var(--a-muted)] a-num">{formatPhone(String(callerOf(c)))}</span>
-                      {dur && <span className="text-[11px] text-[var(--a-dim)]">{dur}</span>}
+                <div key={c.id}>
+                  <button
+                    onClick={() => setExpandedCall(open ? null : c.id)}
+                    className="w-full text-left px-5 py-3.5 flex items-start justify-between gap-4 hover:bg-[#F6FCF9] transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[13px] font-medium text-[var(--a-ink)]">{nameOf(c)}</span>
+                        {phone && <span className="text-[11px] text-[var(--a-dim)] a-num">{formatPhone(phone)}</span>}
+                        {dur && <span className="text-[11px] text-[var(--a-dim)]">{dur}</span>}
+                        {spam && <span className="rounded-md border px-1.5 py-0.5 text-[9px] font-medium" style={{ color: 'var(--a-red)', background: 'var(--a-red-soft)', borderColor: 'var(--a-red-soft)' }}>spam</span>}
+                        {!spam && highUrgency && <span className="rounded-md border px-1.5 py-0.5 text-[9px] font-medium capitalize" style={{ color: 'var(--a-red)', background: 'var(--a-red-soft)', borderColor: 'var(--a-red-soft)' }}>{urgency}</span>}
+                      </div>
+                      {summary && !open && <p className="mt-0.5 text-[11px] text-[var(--a-dim)] line-clamp-1">{summary}</p>}
                     </div>
-                    {summary && <p className="mt-0.5 text-[11px] text-[var(--a-dim)] line-clamp-2">{summary}</p>}
-                  </div>
-                  <span className="text-[11px] text-[var(--a-dim)] shrink-0 a-num">{timeAgo(c.created_at)}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] text-[var(--a-dim)] a-num">{timeAgo(c.created_at)}</span>
+                      <ChevronDown className={`h-3.5 w-3.5 text-[var(--a-dim)] transition-transform ${open ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {open && (
+                    <div className="px-5 pb-4 pt-1 space-y-3">
+                      {summary && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1"><MessageSquare className="h-3 w-3 text-[var(--a-em-deep)]" /><span className={label}>Summary</span></div>
+                          <p className="text-[12px] leading-relaxed text-[var(--a-muted)] whitespace-pre-wrap">{summary}</p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+                        {phone && (<div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><a href={`tel:${phone}`} className="a-num hover:underline" style={{ color: 'var(--a-em-deep)' }}>{formatPhone(phone)}</a></div>)}
+                        {c.customer_email && (<div className="flex items-center gap-2 min-w-0"><Mail className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)] truncate">{c.customer_email}</span></div>)}
+                        {c.customer_address && (<div className="flex items-center gap-2 min-w-0 col-span-2"><MapPin className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)]">{c.customer_address}</span></div>)}
+                        {c.service_requested && (<div className="flex items-center gap-2 min-w-0 col-span-2"><CreditCard className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)]">{c.service_requested}</span></div>)}
+                        {dur && (<div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)]">{dur}</span></div>)}
+                        {urgency && !spam && (<div className="flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)] capitalize">{urgency}</span></div>)}
+                        <div className="flex items-center gap-2 col-span-2"><Calendar className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-dim)]">{formatDateTime(c.created_at)}</span></div>
+                      </div>
+
+                      {spam && c.spam_reason && (
+                        <p className="text-[11px]" style={{ color: 'var(--a-red)' }}>Spam type: {c.spam_reason}</p>
+                      )}
+
+                      {c.transcript && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1"><span className={label}>Transcript</span></div>
+                          <div className="rounded-lg p-3 max-h-72 overflow-y-auto" style={{ background: 'var(--a-em-soft)' }}>
+                            <p className="text-[12px] leading-relaxed text-[var(--a-muted)] whitespace-pre-wrap">{c.transcript}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
