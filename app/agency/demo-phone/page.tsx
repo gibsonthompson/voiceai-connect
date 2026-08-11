@@ -5,7 +5,8 @@ import {
   Phone, Loader2, Trash2, Plus, PhoneCall, MessageSquare,
   Headphones, Sparkles, Lock, Check, AlertCircle, Copy,
   Bot, Users, Clock, Mic, ArrowRight, ChevronRight, X,
-  Play, Pause, Building2, MapPin, Zap, ArrowLeft, Globe, ExternalLink
+  Play, Pause, Building2, MapPin, Zap, ArrowLeft, Globe, ExternalLink,
+  PhoneOutgoing
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -801,6 +802,12 @@ export default function DemoPhonePage() {
 
   // ============================================================================
   // ACTIVE STATE — Demo exists
+  // ----------------------------------------------------------------------------
+  // Card reworked 2026-08-11: the number is a normal-height chip (not an
+  // oversized gradient bar), the live status is a pill next to the icon, the two
+  // info items are an equal-width grid, and delete sits behind a divider. Only
+  // the visual layout changed; the demo number, copy handler, delete flow, calls
+  // list, and everything else are unchanged.
   // ============================================================================
   if (hasDemo) {
     const demoNumber = formatPhoneDisplay(agency!.demo_phone_number!);
@@ -819,37 +826,47 @@ export default function DemoPhonePage() {
           className="rounded-xl p-5 sm:p-6 mb-6"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+          {/* Header row: icon + title + live status pill */}
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
                 <Phone className="h-5 w-5" />
               </div>
-              <div>
-                <h3 className="font-semibold text-base sm:text-lg">Your Demo Number</h3>
-                <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#10b981' }}>
-                  <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#10b981' }} />
-                  Active
-                </span>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-base sm:text-lg truncate">Your Demo Number</h3>
+                <p className="text-xs" style={{ color: theme.textMuted }}>Dedicated line for showcasing your AI receptionist</p>
               </div>
             </div>
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
+              style={{ backgroundColor: '#10b98118', color: '#10b981' }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#10b981' }} />
+              Active
+            </span>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl p-4 mb-4" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primary}dd)` }}>
-            <div className="flex items-center gap-3">
-              <PhoneCall className="h-6 w-6" style={{ color: theme.primaryText }} />
-              <span className="text-xl sm:text-2xl font-bold tracking-wide" style={{ color: theme.primaryText }}>{demoNumber}</span>
+          {/* Number chip */}
+          <div
+            className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 mb-4"
+            style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <PhoneOutgoing className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+              <span className="text-lg sm:text-xl font-semibold tracking-wide truncate" style={{ color: theme.text }}>{demoNumber}</span>
             </div>
             <button
               onClick={() => copyToClipboard(agency!.demo_phone_number!)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.primaryText }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium flex-shrink-0 transition-colors"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+          {/* Info tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
               <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
               <div>
@@ -866,33 +883,37 @@ export default function DemoPhonePage() {
             </div>
           </div>
 
-          {/* Delete */}
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 text-xs sm:text-sm transition-colors"
-              style={{ color: theme.errorText }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete demo number
-            </button>
-          ) : (
-            <div
-              className="flex items-center justify-between rounded-lg p-3"
-              style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}
-            >
-              <p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>
-                This will release the phone number permanently. Are you sure?
-              </p>
-              <div className="flex gap-2 flex-shrink-0 ml-3">
-                <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Cancel</button>
-                <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-50" style={{ backgroundColor: '#dc2626' }}>
-                  {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                  Delete
+          {/* Delete, behind a divider */}
+          <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+            {!showDeleteConfirm ? (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 text-xs sm:text-sm transition-colors"
+                  style={{ color: theme.errorText }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete demo number
                 </button>
               </div>
-            </div>
-          )}
+            ) : (
+              <div
+                className="flex items-center justify-between rounded-lg p-3"
+                style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}
+              >
+                <p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>
+                  This will release the phone number permanently. Are you sure?
+                </p>
+                <div className="flex gap-2 flex-shrink-0 ml-3">
+                  <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Cancel</button>
+                  <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-50" style={{ backgroundColor: '#dc2626' }}>
+                    {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════
