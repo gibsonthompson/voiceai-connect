@@ -7,15 +7,19 @@
 // checklist / test client / clients / SMS history / referral chain sections.
 // The inline US_AREA_CODES map, formatters, and status/plan maps were removed
 // in favor of lib/admin/format and lib/admin/status.
+// UPDATED: 2026-08-11: Expanded-panel client rows are now tappable, routing to
+// /admin/clients/:id for full detail, and each carries a "Log in as client"
+// action that opens the client's own dashboard via /client/preview.
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Building2, Search, Filter, Users, ExternalLink, Loader2, ChevronDown, MoreVertical,
   UserCheck, Ban, Phone, DollarSign, Target, PhoneCall, Globe, Clock, CreditCard, Mail,
   Shield, TrendingUp, Calendar, Zap, Copy, Check, FlaskConical, MessageSquare,
-  CheckCircle2, Circle, X,
+  CheckCircle2, Circle, X, LogIn,
 } from 'lucide-react';
 import {
   formatPhone, formatDate, formatDateTime, timeAgo, formatCurrencyCents,
@@ -41,6 +45,7 @@ export default function AdminAgenciesPage() {
   const [expandedData, setExpandedData] = useState<Record<string, ExpandedData>>({});
   const [expandedLoading, setExpandedLoading] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [clientImpersonating, setClientImpersonating] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
@@ -115,7 +120,25 @@ export default function AdminAgenciesPage() {
     setTimeout(() => { rowRefs.current[agencyId]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 80);
   };
   const handleStatusUpdate = async (agencyId: string, newStatus: string, newSubStatus: string) => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus, subscription_status: newSubStatus }) }); fetchAgencies(); setActionMenu(null); } catch (error) { console.error('Status update error:', error); } };
-  const handleImpersonate = async (agencyId: string) => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; const response = await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/impersonate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); const data = await response.json(); if (data.loginUrl) window.open(data.loginUrl, '_blank'); setActionMenu(null); } catch (error) { console.error('Impersonate error:', error); } };
+  const handleImpersonate = async (agencyId: string) => { try { const token = localStorage.getItem('admin_token'); const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ''; const response = await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/login-as`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); const data = await response.json(); if (data.loginUrl) window.open(data.loginUrl, '_blank'); setActionMenu(null); } catch (error) { console.error('Impersonate error:', error); } };
+  // Log in as a specific client: mint an impersonation token and open the
+  // client's own dashboard through /client/preview (same ingestion path the
+  // agency preview uses). Admin session lives under admin_token, so it is safe.
+  const handleImpersonateClient = async (clientId: string) => {
+    try {
+      setClientImpersonating(clientId);
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/admin/clients/${clientId}/impersonate`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!response.ok) throw new Error('Failed to log in as client');
+      const data = await response.json();
+      if (data.token) window.open(`/client/preview?token=${data.token}`, '_blank');
+    } catch (error) {
+      console.error('Client impersonate error:', error);
+    } finally {
+      setClientImpersonating(null);
+    }
+  };
   const copyToClipboard = (text: string, id: string) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
 
   const getOnboardingLabel = (step: number | null) => { const labels: Record<number, string> = { 0: 'Not Started', 1: 'Agency Name', 2: 'Plan Selection', 3: 'Password Setup' }; return labels[step ?? 0] || `Step ${step}`; };
@@ -401,23 +424,27 @@ export default function AdminAgenciesPage() {
                           </div>
                           <div className="space-y-1">
                             {expandedData[agency.id].clients.map((client: any) => (
-                              <div key={client.id} className="flex items-center justify-between rounded-lg px-3 py-2 bg-white border border-[var(--a-line)]">
-                                <div className="flex items-center gap-2.5">
+                              <div key={client.id} className="flex items-center justify-between rounded-lg px-3 py-2 bg-white border border-[var(--a-line)] hover:border-[var(--a-em-line)] transition-colors">
+                                <Link href={`/admin/clients/${client.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
                                   <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: client.is_test_client ? 'var(--a-violet-soft)' : 'var(--a-em-soft)' }}>
                                     {client.is_test_client ? <FlaskConical className="h-3 w-3" style={{ color: 'var(--a-violet)' }} /> : <span className="text-[9px] font-semibold" style={{ color: 'var(--a-em-deep)' }}>{client.business_name?.charAt(0)}</span>}
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-[11px] font-medium text-[var(--a-muted)]">{client.business_name}</span>
-                                      {client.is_test_client && <span className="text-[8px] px-1 py-0.5 rounded-full border" style={{ background: 'var(--a-violet-soft)', color: 'var(--a-violet)', borderColor: 'var(--a-violet-soft)' }}>Test</span>}
+                                      <span className="text-[11px] font-medium text-[var(--a-muted)] truncate">{client.business_name}</span>
+                                      {client.is_test_client && <span className="text-[8px] px-1 py-0.5 rounded-full border shrink-0" style={{ background: 'var(--a-violet-soft)', color: 'var(--a-violet)', borderColor: 'var(--a-violet-soft)' }}>Test</span>}
                                     </div>
                                     {client.industry && <span className="text-[10px] text-[var(--a-dim)] capitalize">{client.industry}</span>}
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3 text-[10px]">
-                                  {client.vapi_phone_number && <span className="text-[var(--a-dim)] a-num">{formatPhone(client.vapi_phone_number)}</span>}
+                                </Link>
+                                <div className="flex items-center gap-3 text-[10px] shrink-0">
+                                  {client.vapi_phone_number && <span className="text-[var(--a-dim)] a-num hidden sm:inline">{formatPhone(client.vapi_phone_number)}</span>}
                                   <span className="text-[var(--a-dim)] a-num">{client.calls_this_month || 0} calls</span>
                                   {(() => { const b = getStatusBadge(client.subscription_status); return (<span className="rounded-md border px-1.5 py-0.5 font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{client.subscription_status}</span>); })()}
+                                  <button onClick={() => handleImpersonateClient(client.id)} disabled={clientImpersonating === client.id} title="Log in as client" className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-50" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', border: '1px solid var(--a-em-line)' }}>
+                                    {clientImpersonating === client.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogIn className="h-3 w-3" />}
+                                    <span className="hidden sm:inline">Log in</span>
+                                  </button>
                                 </div>
                               </div>
                             ))}
