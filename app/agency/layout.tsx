@@ -137,6 +137,52 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       if (target && !pathname?.startsWith(target)) window.location.href = target;
     }
   }, [loading, pathname]);
+
+  // Agency "last active" ping. Fires at most once per throttle window on any
+  // navigation within /agency/*, so the admin Agencies list can show when an
+  // owner last opened/used their dashboard. Fire-and-forget and heavily
+  // client-throttled on purpose: the server does a blind timestamp update, so
+  // the guard against write amplification is simply NOT sending most of the
+  // time (one ping per window per browser session). Skipped while an admin is
+  // impersonating this agency (the JWT carries impersonated_by) so poking
+  // around as an agency does not mark that agency active.
+  useEffect(() => {
+    if (loading) return;
+    const agencyId = agency?.id;
+    if (!agencyId) return;
+
+    const token = localStorage.getItem('auth_token');
+
+    // Skip admin impersonation. Decode the JWT payload (base64url) defensively;
+    // any failure falls through to a normal ping.
+    try {
+      if (token) {
+        const seg = (token.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(seg));
+        if (payload && payload.impersonated_by) return;
+      }
+    } catch {}
+
+    const THROTTLE_MS = 4 * 60 * 1000; // 4 minutes
+    try {
+      const now = Date.now();
+      const last = parseInt(sessionStorage.getItem('voiceai_last_active_ping') || '0', 10);
+      if (now - last < THROTTLE_MS) return;
+      // Optimistic write BEFORE the request so rapid navigations in the same
+      // window cannot double-fire even if the request is slow.
+      sessionStorage.setItem('voiceai_last_active_ping', String(now));
+    } catch {
+      // sessionStorage unavailable (rare): fall through and ping unthrottled.
+    }
+
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${backendUrl}/api/agency/${agencyId}/ping`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      keepalive: true,
+    }).catch(() => {});
+  }, [pathname, agency?.id, loading]);
+
   useEffect(() => { document.documentElement.style.setProperty('background', theme.bg, 'important'); document.body.style.setProperty('background', theme.bg, 'important'); return () => { document.documentElement.style.removeProperty('background'); document.body.style.removeProperty('background'); }; }, [theme.bg]);
   useEffect(() => { if (!loading) { try { localStorage.setItem('voiceai_ui_theme', theme.isDark ? 'dark' : 'light'); } catch {} } }, [loading, theme.isDark]);
 

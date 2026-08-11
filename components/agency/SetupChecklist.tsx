@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Check, ChevronRight, Upload, Palette, DollarSign, 
+  Check, ChevronRight, Upload, DollarSign, 
   CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone, Loader2
 } from 'lucide-react';
 
@@ -115,14 +115,6 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       icon: Upload,
       completed: !!agency?.logo_url,
       href: '/agency/settings',
-    },
-    {
-      id: 'colors',
-      title: 'Set your brand colors',
-      description: 'Match your agency\'s visual identity',
-      icon: Palette,
-      completed: !!(agency?.primary_color && agency.primary_color !== '#10b981'),
-      href: '/agency/branding',
     },
     {
       id: 'pricing',
