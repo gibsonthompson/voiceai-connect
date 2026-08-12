@@ -21,7 +21,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
+const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}@keyframes toastIn{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}.toast-in{animation:toastIn .28s ease-out both}@keyframes savedIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}.saved-in{animation:savedIn .3s ease-out both}`;
 
 // Defined at module scope (NOT inside the page component) so their identity is
 // stable across renders. Defining them inside the component recreates them on
@@ -55,6 +55,19 @@ const SaveButton = ({ onClick, disabled, loading: btnLoading, label, primaryColo
   </button>
 );
 
+// Persistent inline confirmation that appears where the Save button was, so a
+// successful save is visible right where the user is looking (the Save button
+// disappears on success, which by itself reads as "nothing happened").
+const SavedInline = ({ text, theme }: { text: string; theme: any }) => (
+  <div className="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold saved-in" style={{ backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }}>
+    <Check className="w-4 h-4 flex-shrink-0" /> {text}
+  </div>
+);
+
+const UnsavedHint = ({ text, theme }: { text: string; theme: any }) => (
+  <p className="mt-3 text-[11px] text-center font-medium" style={{ color: theme.warning }}>{text}</p>
+);
+
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
   const theme = useClientTheme();
@@ -67,6 +80,7 @@ export default function ClientAIAgentPage() {
   const [currentVoiceId, setCurrentVoiceId] = useState('');
   const [selectedVoiceId, setSelectedVoiceId] = useState('');
   const [savingVoice, setSavingVoice] = useState(false);
+  const [voiceSaved, setVoiceSaved] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [accentFilter, setAccentFilter] = useState('all');
@@ -81,6 +95,7 @@ export default function ClientAIAgentPage() {
   const [originalGreeting, setOriginalGreeting] = useState('');
   const [greetingLoading, setGreetingLoading] = useState(true);
   const [savingGreeting, setSavingGreeting] = useState(false);
+  const [greetingSaved, setGreetingSaved] = useState(false);
 
   // Google Calendar state
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus | null>(null);
@@ -209,11 +224,11 @@ export default function ClientAIAgentPage() {
       else showMessage('Could not play preview', true);
     }
   };
-  const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); showMessage('Voice updated!'); } else { showMessage('Failed', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
-  const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); showMessage('Greeting updated!'); } else { showMessage(d.error || 'Failed', true); } } catch { showMessage('Error', true); } finally { setSavingGreeting(false); } };
+  const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); setVoiceSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 6000); showMessage('Voice saved. Callers will hear it on the next call.'); } else { showMessage('Failed to save voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error saving voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
+  const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); setGreetingSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); setGreetingSaved(true); setTimeout(() => setGreetingSaved(false), 6000); showMessage('Greeting saved. Callers will hear it on the next call.'); } else { showMessage(d.error || 'Failed to save greeting. Please try again.', true); } } catch { showMessage('Error saving greeting. Please try again.', true); } finally { setSavingGreeting(false); } };
   const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
   const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
-  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 4000); };
+  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 5000); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
   const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
@@ -236,8 +251,13 @@ export default function ClientAIAgentPage() {
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
+      {/* Fixed toast: pinned to the top of the viewport (position: fixed) so the
+          confirmation is visible no matter where the user has scrolled. The old
+          version rendered at the top of the page content, which put it off-screen
+          whenever the user saved a section lower down (voice, greeting), making
+          every save look like it did nothing. */}
       {message && (
-        <div className="mb-4 p-3 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto"
+        <div className="fixed top-4 left-1/2 z-[100] toast-in px-4 py-3 rounded-xl text-center font-semibold text-sm shadow-lg max-w-[90vw]"
           style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
           {message}
         </div>
@@ -376,7 +396,14 @@ export default function ClientAIAgentPage() {
                     <button onClick={() => { setVoiceFilter('all'); setAccentFilter('all'); }} className="mt-2 text-xs font-medium" style={{ color: primaryColor }}>Clear filters</button>
                   </div>
                 )}
-                {hasVoiceChanges && <SaveButton onClick={handleSaveVoice} disabled={savingVoice} loading={savingVoice} label="Save Voice" primaryColor={primaryColor} theme={theme} />}
+                {hasVoiceChanges ? (
+                  <>
+                    <UnsavedHint text="You have an unsaved voice change. Click Save Voice to apply it." theme={theme} />
+                    <SaveButton onClick={handleSaveVoice} disabled={savingVoice} loading={savingVoice} label="Save Voice" primaryColor={primaryColor} theme={theme} />
+                  </>
+                ) : voiceSaved ? (
+                  <SavedInline text="Voice saved. Callers hear it on the next call." theme={theme} />
+                ) : null}
               </>)}
             </SectionCard>
           )}
@@ -395,7 +422,16 @@ export default function ClientAIAgentPage() {
                   <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[11px]" style={{ color: theme.textMuted4 }}><RotateCcw className="w-3 h-3" /> Reset</button>
                   <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>
                 </div>
-                {hasGreetingChanges && <SaveButton onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} loading={savingGreeting} label="Save Greeting" primaryColor={primaryColor} theme={theme} />}
+                {hasGreetingChanges ? (
+                  <>
+                    {greetingMessage.length < 10
+                      ? <UnsavedHint text="Greeting must be at least 10 characters to save." theme={theme} />
+                      : <UnsavedHint text="You have unsaved changes. Click Save Greeting to apply them." theme={theme} />}
+                    <SaveButton onClick={handleSaveGreeting} disabled={savingGreeting || greetingMessage.length < 10} loading={savingGreeting} label="Save Greeting" primaryColor={primaryColor} theme={theme} />
+                  </>
+                ) : greetingSaved ? (
+                  <SavedInline text="Saved. Callers hear this greeting on the next call." theme={theme} />
+                ) : null}
               </>)}
             </SectionCard>
           )}
