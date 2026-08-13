@@ -4,19 +4,23 @@
 // AGENCY REACTIVATION PAGE  (app/agency/reactivate/page.tsx)
 // ----------------------------------------------------------------------------
 // A single, self-contained upgrade page for a suspended (lapsed-billing) agency.
-// Rendered OUTSIDE the dashboard shell: app/agency/layout.tsx returns children
-// directly for this path, so there is no AgencyProvider, no access gates, and
-// no session teardown to fight. That is deliberate: the dashboard shell is built
-// around active/trial agencies, and dropping a suspended agency into it is what
-// caused the payment-required flash and the log-me-back-out loop.
+// Rendered OUTSIDE the dashboard shell (app/agency/layout.tsx returns children
+// directly for this path), so there is no AgencyProvider, no access gates, and
+// no session teardown to fight. It brands itself from the agency JSON the login
+// page wrote to localStorage (logo, primary color, light/dark theme) and starts
+// a REAL Stripe Checkout via POST /api/agency/checkout with skipTrial:true (the
+// same working endpoint the trial-expired picker uses, now no repeat trial). It
+// deliberately does NOT call /api/agency/portal (that 400s with no live
+// subscription to manage).
 //
-// It brands itself from the agency JSON the login page wrote to localStorage
-// (logo, primary color, light/dark theme) and starts a REAL Stripe Checkout via
-// POST /api/agency/checkout with skipTrial:true. That is the same endpoint the
-// trial-expired plan picker uses and it works for an agency with no live
-// subscription. It intentionally does NOT call /api/agency/portal (the billing
-// portal 400s when there is no subscription to manage), which was the failure
-// the settings-tab route hit.
+// POST-PAYMENT RACE
+//   Stripe redirects back the instant payment succeeds, but the account is
+//   flipped off 'suspended' by the checkout.session.completed WEBHOOK, which
+//   lands a second or two later. If we sent them straight to /agency/dashboard,
+//   the shell would still read 'suspended' and bounce them right back here.
+//   So checkout success returns to THIS page with ?status=activating, which
+//   shows a short "Activating" screen and polls the agency until its status is
+//   no longer suspended, then forwards to the dashboard. No flash, no bounce.
 // ============================================================================
 
 import { useState, useEffect } from 'react';
@@ -39,14 +43,23 @@ function readableTextOn(hex: string): string {
   }
 }
 
+function isStillSuspended(status: string | null | undefined): boolean {
+  return status === 'suspended' || status === 'canceled' || status === 'cancelled';
+}
+
+type Mode = 'loading' | 'plans' | 'finalizing';
+
 export default function AgencyReactivatePage() {
   const [agency, setAgency] = useState<any>(null);
-  const [ready, setReady] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>('loading');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let parsedAgency: any = null;
+    let agencyId: string | null = null;
     try {
       const token = localStorage.getItem('auth_token');
       const rawAgency = localStorage.getItem('agency');
@@ -55,12 +68,67 @@ export default function AgencyReactivatePage() {
         window.location.href = '/agency/login';
         return;
       }
-      setAgency(JSON.parse(rawAgency));
-      setReady(true);
+      parsedAgency = JSON.parse(rawAgency);
+      setAgency(parsedAgency);
+      try {
+        const u = JSON.parse(rawUser);
+        setUserEmail(u?.email || null);
+        agencyId = parsedAgency?.id || u?.agency_id || null;
+      } catch {
+        agencyId = parsedAgency?.id || null;
+      }
     } catch {
       window.location.href = '/agency/login';
+      return;
     }
+
+    // Returned from a successful Stripe Checkout: wait for the webhook to flip
+    // the account active, then go to the dashboard.
+    const activating =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('status') === 'activating';
+
+    if (activating && agencyId) {
+      setMode('finalizing');
+      pollUntilActive(agencyId);
+      return;
+    }
+
+    setMode('plans');
   }, []);
+
+  // Poll the agency until its status is no longer suspended (the webhook has
+  // landed), refresh the cached agency, and forward to the dashboard. Times out
+  // to the dashboard after ~40s as a safety valve; the layout re-checks status
+  // there and, in the rare case the webhook is still not done, sends them back
+  // here to the plans.
+  const pollUntilActive = async (agencyId: string) => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const token = localStorage.getItem('auth_token');
+    const deadline = Date.now() + 40000;
+
+    while (Date.now() < deadline) {
+      try {
+        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/settings`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const fresh = data?.agency;
+          if (fresh && !isStillSuspended(fresh.status)) {
+            try { localStorage.setItem('agency', JSON.stringify(fresh)); } catch {}
+            window.location.href = '/agency/dashboard';
+            return;
+          }
+        }
+      } catch {
+        // keep polling
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+
+    window.location.href = '/agency/dashboard';
+  };
 
   const isDark = (agency?.website_theme || 'dark') !== 'light';
   const primary = agency?.primary_color || '#10b981';
@@ -68,13 +136,32 @@ export default function AgencyReactivatePage() {
   const logoUrl = agency?.logo_url || null;
   const agencyName = agency?.name || 'Your Agency';
 
-  const theme = {
+  const t = {
     bg: isDark ? '#050505' : '#f9fafb',
-    card: isDark ? 'rgba(255,255,255,0.02)' : '#ffffff',
+    card: isDark
+      ? 'linear-gradient(180deg, rgba(255,255,255,0.024), rgba(255,255,255,0.006))'
+      : '#ffffff',
     cardBorder: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
-    text: isDark ? '#fafaf9' : '#111827',
-    textMuted: isDark ? 'rgba(250,250,249,0.55)' : '#6b7280',
+    text: isDark ? '#fafaf9' : '#0a0a0a',
+    textMuted: isDark ? 'rgba(255,255,255,0.55)' : '#6b7280',
+    textFaint: isDark ? 'rgba(255,255,255,0.4)' : '#9ca3af',
+    logoTile: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+    logoTileBorder: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
+    ghostBtn: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
   };
+
+  const LogoTile = () => (
+    <div
+      className="flex items-center justify-center"
+      style={{ height: '52px', width: '52px', borderRadius: '14px', background: t.logoTile, border: `1px solid ${t.logoTileBorder}`, overflow: 'hidden' }}
+    >
+      {logoUrl ? (
+        <img src={logoUrl} alt={agencyName} style={{ height: '36px', width: 'auto' }} className="object-contain" />
+      ) : (
+        <img src="/icon-512x512.png" alt="VoiceAI Connect" style={{ height: '52px', width: '52px' }} className="object-cover" />
+      )}
+    </div>
+  );
 
   // Only paid tiers make sense on a reactivation screen; drop Free.
   const paidPlans = (AGENCY_PLAN_TIER_LIST as any[]).filter((p) => p.id !== 'free');
@@ -86,10 +173,17 @@ export default function AgencyReactivatePage() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('auth_token');
+      const origin = window.location.origin;
       const response = await fetch(`${backendUrl}/api/agency/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agency?.id, plan: planId, skipTrial: true }),
+        body: JSON.stringify({
+          agency_id: agency?.id,
+          plan: planId,
+          skipTrial: true,
+          successUrl: `${origin}/agency/reactivate?status=activating`,
+          cancelUrl: `${origin}/agency/reactivate`,
+        }),
       });
       const data = await response.json();
       if (data.url) {
@@ -111,104 +205,163 @@ export default function AgencyReactivatePage() {
     window.location.href = '/agency/login';
   };
 
-  if (!ready) {
+  // ── Loading ─────────────────────────────────────────────────────────
+  if (mode === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#10b981' }} />
+        <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#10b981' }} />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-8">
+  // ── Finalizing (post-payment) ───────────────────────────────────────
+  if (mode === 'finalizing') {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ backgroundColor: t.bg, zoom: 0.8 } as React.CSSProperties}
+      >
+        <div className="flex flex-col items-center text-center" style={{ maxWidth: '420px' }}>
+          <div className="mb-6"><LogoTile /></div>
           <div className="mb-6">
-            {logoUrl ? (
-              <img src={logoUrl} alt={agencyName} style={{ height: '48px', width: 'auto' }} className="object-contain mx-auto" />
-            ) : (
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" style={{ height: '56px', width: '56px' }} className="rounded-2xl mx-auto" />
-            )}
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: primary }} />
           </div>
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: `${primary}1a` }}>
-            <CreditCard className="h-7 w-7" style={{ color: primary }} />
-          </div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Reactivate your account</h1>
-          <p className="mb-2 text-base max-w-lg mx-auto" style={{ color: theme.textMuted }}>
-            Your account is paused. Choose a plan to restore your clients, phone numbers, and AI receptionists.
+          <h1 className="mb-3" style={{ fontSize: '1.6rem', lineHeight: 1.1, letterSpacing: '-0.03em', fontWeight: 600, color: t.text }}>
+            Activating {agencyName}
+          </h1>
+          <p className="text-[15px] leading-relaxed" style={{ color: t.textMuted }}>
+            Payment received. Restoring your dashboard, clients, and phone numbers. This takes just a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Plans ───────────────────────────────────────────────────────────
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-12"
+      style={{ backgroundColor: t.bg, zoom: 0.8 } as React.CSSProperties}
+    >
+      <div className="w-full" style={{ maxWidth: '820px' }}>
+
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div className="flex flex-col items-center text-center mb-10">
+          <div className="mb-6"><LogoTile /></div>
+
+          <span
+            className="inline-flex items-center gap-2 mb-5"
+            style={{ fontFamily: "'Geist Mono', ui-monospace, monospace", fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: t.textFaint, padding: '5px 12px', borderRadius: '999px', border: `1px solid ${t.cardBorder}` }}
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '999px', backgroundColor: '#fbbf24', display: 'inline-block' }} />
+            Account paused
+          </span>
+
+          <h1
+            className="mb-3"
+            style={{ fontSize: '2rem', lineHeight: 1.05, letterSpacing: '-0.03em', fontWeight: 600, color: t.text }}
+          >
+            Reactivate {agencyName}
+          </h1>
+          <p className="text-[15px] leading-relaxed" style={{ color: t.textMuted, maxWidth: '460px' }}>
+            Choose a plan to restore your clients, phone numbers, and AI receptionists. Everything is preserved exactly as you left it.
           </p>
         </div>
 
         {error && (
-          <div className="max-w-md mx-auto mb-6 rounded-xl p-3 text-sm text-center" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
+          <div
+            className="mx-auto mb-6 rounded-xl px-4 py-3 text-sm text-center"
+            style={{ maxWidth: '420px', backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171' }}
+          >
             {error}
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-4 mb-8 max-w-3xl mx-auto">
+        {/* ── Plans ──────────────────────────────────────────────── */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-8 items-stretch">
           {paidPlans.map((plan) => {
             const isSelected = selectedPlan === plan.id;
             const isLoading = loadingPlan && isSelected;
             const PlanIcon = plan.icon;
+            const popular = !!plan.popular;
+            const features = [...(plan.features || [])];
+            if (plan.rate) features.push(plan.rate);
             return (
               <div
                 key={plan.id}
-                className="relative rounded-2xl border p-5 sm:p-6"
-                style={{ backgroundColor: theme.card, borderColor: plan.popular ? primary : theme.cardBorder, transform: plan.popular ? 'scale(1.02)' : undefined }}
+                className="relative flex flex-col rounded-2xl p-6"
+                style={{
+                  background: t.card,
+                  border: `1px solid ${popular ? primary : t.cardBorder}`,
+                  boxShadow: popular ? (isDark ? `0 0 0 1px ${primary}26, 0 30px 70px -28px ${primary}40` : '0 20px 50px -24px rgba(0,0,0,0.18)') : 'none',
+                }}
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: primary, color: primaryText }}>Recommended</span>
+                {popular && (
+                  <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '-11px' }}>
+                    <span
+                      style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.01em', backgroundColor: primary, color: primaryText, padding: '4px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}
+                    >
+                      Recommended
+                    </span>
                   </div>
                 )}
-                <div className="text-center mb-5">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3" style={{ backgroundColor: `${primary}20` }}>
-                    {PlanIcon ? <PlanIcon className="h-5 w-5" style={{ color: primary }} /> : <CreditCard className="h-5 w-5" style={{ color: primary }} />}
+
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="inline-flex items-center justify-center shrink-0" style={{ height: '38px', width: '38px', borderRadius: '11px', backgroundColor: `${primary}1f` }}>
+                    {PlanIcon ? <PlanIcon className="h-[18px] w-[18px]" style={{ color: primary }} /> : <CreditCard className="h-[18px] w-[18px]" style={{ color: primary }} />}
                   </div>
-                  <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
-                  <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span>
-                    <span className="text-sm" style={{ color: theme.textMuted }}>/mo</span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold leading-tight" style={{ color: t.text }}>{plan.name}</h3>
+                    <p className="text-xs truncate" style={{ color: t.textFaint }}>{plan.description}</p>
                   </div>
                 </div>
-                <ul className="space-y-2.5 mb-5">
-                  {(plan.features || []).map((feature: string) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm">
-                      <div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${primary}26` }}>
-                        <Check className="h-3 w-3" style={{ color: primary }} />
-                      </div>
-                      <span style={{ color: theme.textMuted }}>{feature}</span>
+
+                <div className="flex items-baseline gap-1 mb-5">
+                  <span style={{ fontSize: '2.25rem', fontWeight: 600, letterSpacing: '-0.04em', color: t.text }}>${plan.price}</span>
+                  <span className="text-sm" style={{ color: t.textFaint }}>/mo</span>
+                </div>
+
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {features.map((feature: string) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-[13.5px]">
+                      <span className="flex items-center justify-center shrink-0 mt-[3px]" style={{ height: '16px', width: '16px', borderRadius: '999px', backgroundColor: `${primary}24` }}>
+                        <Check className="h-2.5 w-2.5" style={{ color: primary }} strokeWidth={3} />
+                      </span>
+                      <span style={{ color: t.textMuted }}>{feature}</span>
                     </li>
                   ))}
-                  {plan.rate && (
-                    <li className="flex items-start gap-2.5 text-sm">
-                      <div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${primary}26` }}>
-                        <Check className="h-3 w-3" style={{ color: primary }} />
-                      </div>
-                      <span style={{ color: theme.textMuted }}>{plan.rate}</span>
-                    </li>
-                  )}
                 </ul>
+
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
                   disabled={loadingPlan}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: primary, color: primaryText }}
+                  style={popular
+                    ? { backgroundColor: primary, color: primaryText }
+                    : { backgroundColor: t.ghostBtn, color: t.text, border: `1px solid ${t.cardBorder}` }}
                 >
-                  {isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : (<><CreditCard className="h-4 w-4" />Subscribe - ${plan.price}/mo</>)}
+                  {isLoading
+                    ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>)
+                    : (<><CreditCard className="h-4 w-4" />Subscribe ${plan.price}/mo</>)}
                 </button>
               </div>
             );
           })}
         </div>
 
-        <div className="text-center">
-          <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Cancel anytime. Your clients and settings are preserved.</p>
-          <button onClick={handleSignOut} className="inline-flex items-center gap-2 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>
-            <LogOut className="h-4 w-4" />Sign out
+        {/* ── Footer ─────────────────────────────────────────────── */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-[13px]" style={{ color: t.textFaint }}>Billed today. Cancel anytime. Your clients and settings stay intact.</p>
+          <button
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-2 text-[13px] transition-opacity hover:opacity-70"
+            style={{ color: t.textMuted }}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            {userEmail ? `Sign out (${userEmail})` : 'Sign out'}
           </button>
         </div>
+
       </div>
     </div>
   );
