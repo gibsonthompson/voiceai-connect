@@ -105,6 +105,17 @@ export default function AgencyLoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.agency) localStorage.setItem('agency', JSON.stringify(data.agency));
 
+      // Lapsed billing state (e.g. a suspended agency). The password verified
+      // and the account is now logged in with a normal token, but route straight
+      // to the Billing tab to reactivate instead of the dashboard, which the
+      // agency layout would otherwise wall behind a payment screen. The backend
+      // returns 200 for this case (not the old 403), so the red "suspended"
+      // error above never fires anymore.
+      if (data.requires_upgrade) {
+        window.location.href = data.redirect || '/agency/settings?tab=billing';
+        return;
+      }
+
       window.location.href = '/agency/dashboard';
     } catch (err) {
       console.error('Login error:', err);
