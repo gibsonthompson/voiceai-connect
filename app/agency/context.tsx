@@ -215,6 +215,18 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   //   So validity is now proven separately against /api/auth/verify, which
   //   401s on a missing, invalid, or expired token. Both requests are fired
   //   together so this costs no extra wall time.
+  //
+  //   /api/auth/verify is the AUTHORITATIVE session check. The settings
+  //   request is a DATA fetch, not an auth check. So a non-OK settings
+  //   response while verify passed does NOT mean the session is dead: the
+  //   token is valid, the user is logged in, but the settings route rejected
+  //   this specific agency for its own reasons (e.g. it independently gates a
+  //   suspended / lapsed-billing agency). In that case we must NOT wipe and
+  //   bounce to login (that was the "logs me straight back out" bug for a
+  //   suspended agency reaching the billing tab). We keep the session and,
+  //   when we have session-matched cache, render from it. Only a failed
+  //   verify (dead token) or a settings failure with no trustworthy cache
+  //   ends the session.
   // ────────────────────────────────────────────────────────────────────
   const fetchAgencyData = async () => {
     let cacheMatchesSession = false;
@@ -285,10 +297,9 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         }),
       ]);
 
-      // Token is missing, invalid, or expired. Nothing rendered from cache
-      // can be trusted to stay in sync, and every guarded endpoint the
-      // dashboard calls will reject, so end the session cleanly here rather
-      // than letting individual pages fail one at a time.
+      // Token is missing, invalid, or expired. This is the authoritative
+      // dead-session signal, so end the session cleanly here rather than
+      // letting individual pages fail one at a time.
       if (!verifyResponse.ok) {
         wipeSession();
         window.location.href = '/agency/login?expired=true';
@@ -296,9 +307,19 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       }
 
       if (!response.ok) {
-        // Token rejected, agency missing, or anything else server-side.
-        // Anything less than a full wipe risks leaving behind another
-        // user's JSON the next render can latch onto.
+        // The token is VALID (verify passed) but the settings DATA route
+        // returned non-OK for this agency. That is not a dead session, so do
+        // NOT wipe and bounce: the user is logged in, and a suspended /
+        // lapsed-billing agency reaching the billing tab must stay on it to
+        // reactivate. When we already rendered from session-matched cache,
+        // keep that view (the billing tab reads the cached agency; Manage
+        // Subscription / upgrade hit their own endpoints). Only when there is
+        // no trustworthy cache do we have nothing to render, and fall back to
+        // login.
+        if (cacheMatchesSession) {
+          setLoading(false);
+          return;
+        }
         wipeSession();
         window.location.href = '/agency/login';
         return;
