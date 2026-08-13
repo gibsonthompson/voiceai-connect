@@ -78,7 +78,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const agencyNeedsPlan = needsPlanSelection(agency);
   const agencyTrialExpiredNoCard = isTrialExpiredNoCard(agency);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
-  const shouldBlockAccess = (hasPaymentIssue || agencyIsSuspended) && !isAccessibleRoute;
+  // Suspended/canceled agencies are handled by a dedicated redirect to the
+  // standalone /agency/reactivate page (below), NOT the payment-required wall,
+  // so they are excluded here. Payment-failed (past_due/unpaid) agencies keep
+  // the existing in-shell wall.
+  const shouldBlockAccess = hasPaymentIssue && !isAccessibleRoute && !agencyIsSuspended;
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
@@ -126,6 +130,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { const checkMobile = () => setIsMobile(window.innerWidth < 768); checkMobile(); window.addEventListener('resize', checkMobile); return () => window.removeEventListener('resize', checkMobile); }, []);
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && isMobile) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile]);
+
+  // Suspended / canceled agencies go to the dedicated, branded reactivation
+  // page (a standalone Stripe Checkout flow that lives OUTSIDE this shell). The
+  // login page already routes them there; this covers direct navigation to any
+  // /agency/* route (bookmarks, refreshes). Runs before the payment-required
+  // wall so a suspended agency never sees it.
+  useEffect(() => {
+    if (loading) return;
+    if (agencyIsSuspended) { window.location.href = '/agency/reactivate'; }
+  }, [loading, agencyIsSuspended]);
+
   useEffect(() => { if (!loading && shouldBlockAccess) { window.location.href = '/agency/settings'; } }, [loading, shouldBlockAccess]);
   // Permission route guard: bounce agency_staff off any page their Page Access
   // permissions don't include (covers direct-URL navigation, which the sidebar
@@ -248,6 +263,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // ── SUSPENDED / CANCELED ────────────────────────────────────────────
+  // A suspended agency is being redirected (effect above) to the standalone,
+  // branded /agency/reactivate page. Render a plain branded backdrop in the
+  // meantime so the full dashboard never flashes behind the redirect.
+  if (agencyIsSuspended) {
+    return <div className="min-h-screen" style={{ backgroundColor: theme.bg }} />;
+  }
+
   // ── NEEDS PLAN SELECTION ────────────────────────────────────────────
   // Renders at the app's zoom: 0.8 so this gate matches the dashboard scale
   // (without it the card renders 25% larger than the rest of the app). One
@@ -319,7 +342,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}` }}>
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}><CreditCard className="h-8 w-8 text-red-500" /></div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Payment Required</h1>
-          <p className="mb-6" style={{ color: theme.textMuted }}>{agencyIsSuspended ? 'Your agency has been suspended. Please update your payment method to restore access.' : 'Your payment has failed. Please update your payment method to continue using your agency.'}</p>
+          <p className="mb-6" style={{ color: theme.textMuted }}>Your payment has failed. Please update your payment method to continue using your agency.</p>
           <a href="/agency/settings" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors" style={{ backgroundColor: '#ef4444' }}><CreditCard className="h-5 w-5" />Update Payment Method</a>
           <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors" style={{ color: theme.textMuted }}>Sign out</button>
         </div>
@@ -382,7 +405,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
 export default function AgencyLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (pathname === '/agency/login') return <>{children}</>;
+  // Both of these render OUTSIDE the dashboard shell (no AgencyProvider, no
+  // gates). /agency/login is the sign-in screen; /agency/reactivate is the
+  // standalone, self-branding reactivation page a suspended agency is sent to,
+  // which reads the account from localStorage and runs its own Stripe Checkout.
+  if (pathname === '/agency/login' || pathname === '/agency/reactivate') return <>{children}</>;
   return (
     <AgencyProvider>
       <AgencyFavicon />

@@ -223,10 +223,9 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   //   this specific agency for its own reasons (e.g. it independently gates a
   //   suspended / lapsed-billing agency). In that case we must NOT wipe and
   //   bounce to login (that was the "logs me straight back out" bug for a
-  //   suspended agency reaching the billing tab). We keep the session and,
-  //   when we have session-matched cache, render from it. Only a failed
-  //   verify (dead token) or a settings failure with no trustworthy cache
-  //   ends the session.
+  //   suspended agency). We keep the session and, when we have session-matched
+  //   cache, render from it. Only a failed verify (dead token) or a settings
+  //   failure with no trustworthy cache ends the session.
   // ────────────────────────────────────────────────────────────────────
   const fetchAgencyData = async () => {
     let cacheMatchesSession = false;
@@ -310,12 +309,10 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         // The token is VALID (verify passed) but the settings DATA route
         // returned non-OK for this agency. That is not a dead session, so do
         // NOT wipe and bounce: the user is logged in, and a suspended /
-        // lapsed-billing agency reaching the billing tab must stay on it to
-        // reactivate. When we already rendered from session-matched cache,
-        // keep that view (the billing tab reads the cached agency; Manage
-        // Subscription / upgrade hit their own endpoints). Only when there is
-        // no trustworthy cache do we have nothing to render, and fall back to
-        // login.
+        // lapsed-billing agency must not be kicked to the login screen. When
+        // we already rendered from session-matched cache, keep that view.
+        // Only when there is no trustworthy cache do we have nothing to
+        // render, and fall back to login.
         if (cacheMatchesSession) {
           setLoading(false);
           return;
