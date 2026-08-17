@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useEmbedMessaging, postToParent } from '@/lib/embed-messaging';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 // ============================================================================
 // TYPES
@@ -49,20 +50,6 @@ function setCachedTheme(theme: 'light' | 'dark' | 'auto' | null) {
     const resolved = theme === 'dark' ? 'dark' : 'light';
     sessionStorage.setItem('agency_theme', resolved);
   } catch (e) {}
-}
-
-function setFavicon(url: string) {
-  const existingLinks = document.querySelectorAll("link[rel*='icon']");
-  existingLinks.forEach(link => link.remove());
-  const link = document.createElement('link');
-  link.rel = 'icon';
-  link.type = 'image/png';
-  link.href = url;
-  document.head.appendChild(link);
-  const appleLink = document.createElement('link');
-  appleLink.rel = 'apple-touch-icon';
-  appleLink.href = url;
-  document.head.appendChild(appleLink);
 }
 
 function ThemedLoading({ theme }: { theme: 'light' | 'dark' }) {
@@ -111,7 +98,7 @@ function SetPasswordContent() {
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-        // ── Path A: embed mode on platform domain.
+        // Path A: embed mode on platform domain.
         // No host-based agency context, so look up by ID for branding.
         // We set isAgencySubdomain=true so downstream login redirect points
         // at /client/login (agency-themed) rather than /agency/login.
@@ -122,8 +109,9 @@ function SetPasswordContent() {
             setAgency(data.agency);
             setIsAgencySubdomain(true);
             setCachedTheme(data.agency.website_theme);
-            // Skip favicon side effects in embed mode (iframe favicon isn't
-            // visible to the user; would just pollute the iframe head).
+            // Favicon side effects are skipped in embed mode (the iframe favicon
+            // isn't visible to the user); DynamicFavicon is not rendered when
+            // isEmbed is true. See the render section below.
           }
           // Soft-fail: if the lookup fails, fall back to platform-default
           // branding. The user has a valid token and we still want them to
@@ -145,10 +133,10 @@ function SetPasswordContent() {
           setAgency(data.agency);
           setIsAgencySubdomain(true);
           setCachedTheme(data.agency.website_theme);
-          if (!isEmbed) {
-            const faviconUrl = data.agency.favicon_url || data.agency.logo_url;
-            if (faviconUrl) setFavicon(faviconUrl);
-          }
+          // Favicon is now handled declaratively by <DynamicFavicon> in the
+          // render tree (it modifies the existing icon links rather than
+          // removing and recreating them, which Next.js would otherwise clobber
+          // during hydration). No imperative favicon call here anymore.
         }
       } catch (err) {
         console.error('Failed to detect agency context:', err);
@@ -187,12 +175,12 @@ function SetPasswordContent() {
 
       // Try to set session
       if (data.token) {
-        // ── Wipe any prior session in this browser BEFORE installing the
-        // new one. Without this, leftover auth_token / agency JSON /
-        // theme prefs / demo flags / support-widget state from a previous
-        // account in the same browser contaminate the next render and can
-        // trip dashboard gates against the wrong row. This is the cause
-        // of the post-signup blackout we tracked down.
+        // Wipe any prior session in this browser BEFORE installing the new one.
+        // Without this, leftover auth_token / agency JSON / theme prefs / demo
+        // flags / support-widget state from a previous account in the same
+        // browser contaminate the next render and can trip dashboard gates
+        // against the wrong row. This is the cause of the post-signup blackout
+        // we tracked down.
         try { localStorage.clear(); } catch {}
 
         try {
@@ -205,10 +193,10 @@ function SetPasswordContent() {
           console.warn('Session set failed (non-blocking):', sessionErr);
         }
 
-        // Store the new session. auth_token was previously missing here,
-        // which is why the redirect to /agency/dashboard bounced straight
-        // to /agency/login, the agency context reads auth_token from
-        // localStorage to authenticate the settings fetch.
+        // Store the new session. auth_token was previously missing here, which
+        // is why the redirect to /agency/dashboard bounced straight to
+        // /agency/login; the agency context reads auth_token from localStorage
+        // to authenticate the settings fetch.
         try { localStorage.setItem('auth_token', data.token); } catch {}
         if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
         if (data.client) localStorage.setItem('client', JSON.stringify(data.client));
@@ -283,6 +271,15 @@ function SetPasswordContent() {
   const brandName = agency?.name || 'VoiceAI Connect';
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
 
+  // Favicon source. Agency context prefers the agency's favicon, then its logo,
+  // then (via DynamicFavicon) a brand-color generated icon. Platform context
+  // uses the real product icon so the favicon always resolves to something
+  // correct. Embed mode renders no DynamicFavicon at all (iframe favicon is not
+  // user-visible), which also preserves the prior "skip in embed" behavior.
+  const faviconLogo = isAgencySubdomain
+    ? (agency?.favicon_url || agency?.logo_url || undefined)
+    : '/icon-512x512.png';
+
   const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
@@ -302,6 +299,7 @@ function SetPasswordContent() {
   if (success) {
     return (
       <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6'} style={wrapperStyle}>
+        {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
         {isDark && !isEmbed && (
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -335,6 +333,8 @@ function SetPasswordContent() {
 
   return (
     <div className={isEmbed ? 'overflow-hidden' : 'min-h-screen overflow-hidden'} style={wrapperStyle}>
+      {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
+
       {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />

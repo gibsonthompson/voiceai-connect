@@ -13,6 +13,7 @@ interface Agency {
   name: string;
   slug: string;
   logo_url: string | null;
+  favicon_url: string | null;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -79,7 +80,7 @@ function EmailStep({
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Forgot Password</h1>
         <p className="mt-3 text-sm" style={{ color: textMuted }}>
-          Enter your email and we&apos;ll send a verification code to your phone
+          Enter your email and we&apos;ll send you a verification code
         </p>
       </div>
 
@@ -156,11 +157,15 @@ function EmailStep({
 function CodeStep({
   code, setCode, password, setPassword, confirmPassword, setConfirmPassword,
   showPassword, setShowPassword, onSubmit, onResend, onBack,
-  loading, resendLoading, resendCooldown, error, maskedPhone,
+  loading, resendLoading, resendCooldown, error, maskedContact, userType,
   isDark, primaryColor, primaryLight, textColor, textMuted, textSubtle,
   inputBg, inputBorder, cardBg, cardBorder
 }: any) {
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Fallback wording when the backend did not return a masked contact string.
+  // Agency resets go to email, client resets go to SMS.
+  const contactFallback = userType === 'agency' ? 'your email' : 'your phone';
 
   const handleCodeChange = (index: number, value: string) => {
     // Only allow digits
@@ -210,7 +215,7 @@ function CodeStep({
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Enter Verification Code</h1>
         <p className="mt-3 text-sm" style={{ color: textMuted }}>
-          We sent a 6-digit code to {maskedPhone || 'your phone'}
+          We sent a 6-digit code to {maskedContact || contactFallback}
         </p>
       </div>
 
@@ -420,6 +425,7 @@ function ForgotPasswordContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [userType, setUserType] = useState<'agency' | 'client'>('client');
 
@@ -486,8 +492,12 @@ function ForgotPasswordContent() {
         throw new Error(data.error || 'Failed to send verification code');
       }
 
-      // Backend returns masked phone and a token for the reset step
+      // The backend returns the masked destination for whichever channel it
+      // used: maskedEmail for agency resets (branded email), maskedPhone for
+      // client resets (SMS). Capture whichever is present, plus userType so the
+      // code step can show the right wording.
       if (data.maskedPhone) setMaskedPhone(data.maskedPhone);
+      if (data.maskedEmail) setMaskedEmail(data.maskedEmail);
       if (data.resetToken) setResetToken(data.resetToken);
       if (data.userType) setUserType(data.userType);
 
@@ -518,7 +528,11 @@ function ForgotPasswordContent() {
         throw new Error(data.error || 'Failed to resend code');
       }
 
+      // Keep the masked destination and userType in sync on resend too.
+      if (data.maskedPhone) setMaskedPhone(data.maskedPhone);
+      if (data.maskedEmail) setMaskedEmail(data.maskedEmail);
       if (data.resetToken) setResetToken(data.resetToken);
+      if (data.userType) setUserType(data.userType);
       setResendCooldown(60);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend code');
@@ -593,6 +607,19 @@ function ForgotPasswordContent() {
   const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
   const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
 
+  // Favicon source. Platform uses the real product icon so the favicon resolves
+  // to the VoiceAI Connect logo (not the brand-color SVG DynamicFavicon would
+  // otherwise generate when logoUrl is null). Agency subdomain prefers the
+  // agency's favicon, then its logo, then (via DynamicFavicon) a brand-color
+  // generated icon.
+  const faviconLogo = isAgencySubdomain
+    ? (agency?.favicon_url || agency?.logo_url || undefined)
+    : '/icon-512x512.png';
+
+  // Masked destination shown on the code step: email for agency resets, phone
+  // for client resets.
+  const maskedContact = userType === 'agency' ? maskedEmail : maskedPhone;
+
   // Determine correct login URL
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
 
@@ -642,7 +669,7 @@ function ForgotPasswordContent() {
     <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
 
-      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
+      <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />
 
       {/* Grain overlay - dark mode only */}
       {isDark && (
@@ -745,7 +772,8 @@ function ForgotPasswordContent() {
               resendLoading={resendLoading}
               resendCooldown={resendCooldown}
               error={error}
-              maskedPhone={maskedPhone}
+              maskedContact={maskedContact}
+              userType={userType}
               {...sharedStyleProps}
             />
           )}
