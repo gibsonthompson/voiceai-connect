@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign } from 'lucide-react';
 import { useAgency } from '../../context';
-import { countries as SUPPORTED_COUNTRIES } from '@/lib/currency';
+import { countries as SUPPORTED_COUNTRIES, getCurrencyForCountry, formatPrice } from '@/lib/currency';
 import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 
@@ -160,6 +160,33 @@ export default function AddClientPage() {
   // Per-client cost for the agency (from their platform plan)
   const agencyPlanRates = PLAN_RATES[normalizePlanType(agency?.plan_type)];
   const perClientCost = agencyPlanRates?.perClient ?? 0;
+
+  // Agency's own display currency, derived from its country. This labels the
+  // client-facing plan prices (price_starter / price_pro / price_growth), which
+  // are ALREADY stored in the agency's currency (not USD). So we only swap the
+  // symbol here and never convert; a GBP agency at 9900 shows as GBP 99, not a
+  // rate-converted amount. Unknown country falls back to USD, which matches the
+  // previous hard-coded "$" behavior. Handles symbolPosition (before/after) so
+  // trailing-symbol currencies (SEK, NOK, PLN, etc.) render correctly too.
+  const agencyCountryCode = (agency?.country || 'US').toUpperCase();
+  const agencyCurrency = getCurrencyForCountry(agencyCountryCode);
+  const formatAgencyPrice = (minorUnits: number): string => {
+    const amount = Math.round((minorUnits || 0) / 100);
+    const formatted = amount.toLocaleString();
+    return agencyCurrency.symbolPosition === 'before'
+      ? `${agencyCurrency.symbol}${formatted}`
+      : `${formatted} ${agencyCurrency.symbol}`;
+  };
+
+  // Platform fees (perClientCost) come from PLAN_RATES and are denominated in
+  // USD, unlike the client-plan prices above (which are already stored in the
+  // agency's currency). So these must be CONVERTED to the agency's currency at
+  // the current rate, not merely relabeled: a symbol-only swap would claim the
+  // GBP figure equals the USD figure, which is false. formatPrice applies the
+  // exchange rate and the correct symbol/position. Note this is an ESTIMATE at
+  // the rate table in lib/currency.ts; see the message accompanying this change
+  // about the actual charge currency.
+  const formatPlatformCost = (usdAmount: number): string => formatPrice(usdAmount || 0, agencyCountryCode);
 
   const handleSetupBilling = async () => {
     if (!agency) return;
@@ -424,7 +451,7 @@ export default function AddClientPage() {
     );
   }
 
-  // ── FIX: colorScheme tells the browser how to render native <select> popups ──
+  // FIX: colorScheme tells the browser how to render native <select> popups.
   // Without this, dark-mode users on Chrome+Windows get dark-on-dark option text.
   const inputStyle: React.CSSProperties = {
     backgroundColor: inputBg,
@@ -490,7 +517,7 @@ export default function AddClientPage() {
             Add a payment method to start adding clients. You&apos;ll be charged per client and per minute of voice usage.
           </p>
           <p className="text-sm mb-5" style={{ color: mutedTextColor }}>
-            <strong style={{ color: textColor }}>${perClientCost}/client/mo</strong> + voice minutes at your plan rate.
+            <strong style={{ color: textColor }}>{formatPlatformCost(perClientCost)}/client/mo</strong> + voice minutes at your plan rate.
           </p>
           <button
             onClick={handleSetupBilling}
@@ -571,7 +598,7 @@ export default function AddClientPage() {
                 >
                   {PLAN_TYPES.map(p => (
                     <option key={p.value} value={p.value}>
-                      {p.label} - ${(getPlanPrice(p.value) / 100).toFixed(0)}/mo
+                      {p.label} - {formatAgencyPrice(getPlanPrice(p.value))}/mo
                     </option>
                   ))}
                 </select>
@@ -839,7 +866,7 @@ export default function AddClientPage() {
             >
               <DollarSign className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
               <p className="text-xs leading-relaxed" style={{ color: mutedTextColor }}>
-                Adding this client adds <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>${perClientCost}/mo</strong> to your platform bill, plus voice usage at your plan rate.{' '}
+                Adding this client adds <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>{formatPlatformCost(perClientCost)}/mo</strong> to your platform bill, plus voice usage at your plan rate.{' '}
                 <a href="/agency/settings?tab=billing" className="underline" style={{ color: primaryColor }}>View billing</a>
               </p>
             </div>
