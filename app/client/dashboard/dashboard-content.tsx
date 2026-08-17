@@ -151,6 +151,18 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const isUnlimited = stats.callLimit === -1;
   const firstName = getFirstName(client.owner_name);
 
+  // ── Manual billing ─────────────────────────────────────────────────────────
+  // A manual-billing client is billed by its agency outside the platform
+  // (invoice / payment link) and has no Stripe Connect subscription, so it must
+  // never see platform payment UI. The trial banners below already exclude it
+  // (they require subscription_status === 'trial', and a manual client is
+  // 'manual'), but the Voice Minutes card is gated only on the agency-level
+  // pass-through toggle, so it would otherwise show a projected per-minute
+  // CHARGE to a client we do not actually bill. isManual hides that card. Read
+  // both fields so it holds whether the row carries billing_mode, the
+  // subscription_status, or both.
+  const isManual = client.billing_mode === 'manual' || client.subscription_status === 'manual';
+
   // ── Trial type discrimination ─────────────────────────────────────────────
   // Two different trials share subscription_status === 'trial':
   //   - No-card DB trial: stripe_connected_subscription_id is null. It simply
@@ -163,7 +175,8 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   //     CTA must go to Billing to cancel, NOT to /upgrade-required, which runs
   //     createClientCheckout and 409s an already-subscribed client.
   // Showing the wrong banner to either group is a false statement, so the
-  // discriminator is the presence of a connected subscription id.
+  // discriminator is the presence of a connected subscription id. A manual
+  // client is neither (its status is 'manual', not 'trial'), so both are false.
   const isTrial = client.subscription_status === 'trial';
   const hasConnectedSub = !!client.stripe_connected_subscription_id;
   const isCardRequiredTrial =
@@ -195,6 +208,10 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   // card simply does not render, so nothing breaks either way. Trial minutes are
   // free (the per-minute meter is skipped during any trial), so the projected
   // cost reads as free while isTrial is true.
+  //
+  // A manual client (isManual) never bills through the platform, so it is
+  // excluded from this card at the render site below, even if its agency has
+  // pass-through enabled for its connect clients.
   const minuteRateCents = Number(client.agency?.client_minute_rate_cents) || 0;
   const minutePassThroughOn = client.agency?.minute_pass_through === true && minuteRateCents > 0;
   const includedMinutesKey = `included_minutes_${client.plan_type}`;
@@ -445,11 +462,14 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
       </div>
 
       {/* VOICE MINUTES. Rendered only when the agency bills this client per
-          minute (minutePassThroughOn). Shows minutes used this period, the
-          plan's included minutes (or "billed per minute" when there is no free
-          tier), and the projected per-minute cost. During a trial, per-minute
-          billing is skipped, so it reads as free. */}
-      {minutePassThroughOn && (
+          minute (minutePassThroughOn) AND the client is not manual-billed.
+          Shows minutes used this period, the plan's included minutes (or
+          "billed per minute" when there is no free tier), and the projected
+          per-minute cost. During a trial, per-minute billing is skipped, so it
+          reads as free. A manual client is excluded because it is billed by its
+          agency outside the platform, so a platform per-minute charge projection
+          does not apply to it. */}
+      {minutePassThroughOn && !isManual && (
         <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu5" style={glass}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
