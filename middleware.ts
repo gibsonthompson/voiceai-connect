@@ -24,6 +24,15 @@ const ICON_PATHS = new Set([
   '/apple-touch-icon.png',
 ]);
 
+// Open Graph image path. Next serves the root file-convention OG image at
+// /opengraph-image, and the root layout pins metadataBase to the platform, so
+// on an agency host the emitted tag would point the crawler at the VoiceAI
+// sales card. The /signup and /auth layouts re-base metadataBase to the agency
+// host, which makes that URL resolve to THIS host; here we rewrite it to
+// /api/agency-og so the agency's own card is served instead. Platform hosts
+// pass through to the real VoiceAI card. Mirrors the ICON_PATHS rewrite above.
+const OG_PATHS = new Set(['/opengraph-image']);
+
 // Stripe-supported countries (for geo-detection validation)
 const SUPPORTED_COUNTRIES = new Set([
   'US','CA','MX','GB','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR',
@@ -51,6 +60,23 @@ export async function middleware(request: NextRequest) {
     iconUrl.pathname = '/api/agency-favicon';
     iconUrl.search = '';
     return NextResponse.rewrite(iconUrl);
+  }
+
+  // =========================================================================
+  // HOST-AWARE OPEN GRAPH IMAGE (must run BEFORE the static-file skip below,
+  // same as icons). Platform hosts pass through to the real VoiceAI OG card.
+  // Agency hosts get /opengraph-image rewritten to /api/agency-og, which reads
+  // the host and renders that agency's card. This is what stops an agency's
+  // shared link (e.g. /signup on their domain) from previewing VoiceAI branding.
+  // =========================================================================
+  if (OG_PATHS.has(pathname)) {
+    if (PLATFORM_DOMAINS.includes(hostname)) {
+      return NextResponse.next();
+    }
+    const ogUrl = request.nextUrl.clone();
+    ogUrl.pathname = '/api/agency-og';
+    ogUrl.search = '';
+    return NextResponse.rewrite(ogUrl);
   }
 
   // Skip static files, API routes, and Next.js internals
@@ -318,5 +344,7 @@ export const config = {
     '/favicon-16x16.png',
     '/favicon-32x32.png',
     '/apple-touch-icon.png',
+    // OG image, so the host-aware rewrite above is guaranteed to fire.
+    '/opengraph-image',
   ],
 };
