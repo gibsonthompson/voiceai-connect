@@ -1,4 +1,4 @@
-// app/terms/page.tsx — VoiceAI Connect Terms of Service
+// app/terms/page.tsx - VoiceAI Connect Terms of Service
 import Link from 'next/link';
 import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
@@ -14,7 +14,7 @@ export default function TermsOfService() {
     <main className="min-h-screen bg-ink">
       <MarketingNav />
 
-      {/* Header — dark hero */}
+      {/* Header - dark hero */}
       <section className="canvas-dot relative pt-32 lg:pt-40 pb-12 lg:pb-16 overflow-hidden">
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
@@ -28,7 +28,7 @@ export default function TermsOfService() {
         </div>
       </section>
 
-      {/* Body — light paper */}
+      {/* Body - light paper */}
       <section className="bg-paper py-14 lg:py-20">
         <article className="mx-auto max-w-3xl px-6 lg:px-10">
           <div className="prose prose-lg max-w-none
@@ -175,8 +175,8 @@ export default function TermsOfService() {
             <h2>5. Telecommunications and Call Recording Compliance</h2>
 
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5 my-6">
-              <p className="text-amber-200 font-semibold mb-2">Important Legal Notice</p>
-              <p className="text-[#fafaf9]/70 text-sm mb-0">
+              <p className="text-amber-700 font-semibold mb-2">Important Legal Notice</p>
+              <p className="text-black/72 text-sm mb-0">
                 The Service involves telecommunications and call recording. As an Agency User, YOU are responsible for 
                 ensuring your use of the Service complies with all applicable federal, state, and local laws, including 
                 but not limited to the Telephone Consumer Protection Act (TCPA), state call recording laws, and 
@@ -186,15 +186,25 @@ export default function TermsOfService() {
 
             <h3>5.1 AI Disclosure (TCPA Compliance)</h3>
             <p>
-              The Federal Communications Commission (FCC) requires disclosure when calls use AI-generated voices. 
               Our AI Receptionists are configured to identify themselves as AI assistants at the beginning of each call. 
-              You agree not to disable, circumvent, or modify this disclosure.
+              The Federal Communications Commission (FCC) has determined that AI-generated voices are &ldquo;artificial or 
+              prerecorded voices&rdquo; under the Telephone Consumer Protection Act (TCPA). Those consent requirements apply 
+              principally to outbound calls that are placed using an AI-generated voice; the Service operates as an inbound 
+              receptionist that answers calls initiated by callers, which the FCC has indicated are treated differently 
+              from outbound artificial-voice calls. Separately, a growing number of states require that callers be told 
+              they are interacting with AI at the start of a call, regardless of call direction. You agree not to disable, 
+              circumvent, or modify the AI self-identification or call-recording disclosures, and you agree not to use the 
+              Service to place outbound AI-voice calls except in full compliance with the TCPA and applicable state law 
+              (see Section 5.3).
             </p>
 
             <h3>5.2 Call Recording Consent</h3>
             <p>
               The Service records calls for quality assurance, training, and to provide transcripts. Our AI Receptionists 
-              are configured to inform callers that the call may be recorded. However, call recording laws vary by jurisdiction:
+              are configured to inform callers, at the start of the call, that they are speaking with an AI assistant and 
+              that the call is recorded. This disclosure is enabled by default, and you agree not to disable, suppress, or 
+              circumvent it. Because calls are processed by our third-party AI and telephony providers in order to deliver 
+              the Service, providing this disclosure is important to your compliance. Call recording laws vary by jurisdiction:
             </p>
             <ul>
               <li><strong>One-Party Consent States:</strong> Recording is permitted if one party (including the AI acting on your behalf) consents.</li>
@@ -277,7 +287,7 @@ export default function TermsOfService() {
             <p>
               &ldquo;VoiceAI Connect&rdquo; and our logo are trademarks of VoiceAI Connect. You may not use our trademarks 
               without prior written permission. Your use of our white-label features does not grant you rights to 
-              use our trademarks—you use your own branding.
+              use our trademarks-you use your own branding.
             </p>
 
             <h2>8. Data Processing and Privacy</h2>
@@ -327,8 +337,8 @@ export default function TermsOfService() {
             <h3>9.1 Google Calendar Integration</h3>
             
             <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-5 my-6">
-              <p className="text-purple-300 font-semibold mb-2">Google Calendar Terms</p>
-              <p className="text-[#fafaf9]/70 text-sm mb-0">
+              <p className="text-purple-700 font-semibold mb-2">Google Calendar Terms</p>
+              <p className="text-black/72 text-sm mb-0">
                 The following terms apply when End Clients connect their Google Calendar to the Service for appointment scheduling.
               </p>
             </div>
@@ -347,9 +357,9 @@ export default function TermsOfService() {
 
             <p><strong>Data Handling:</strong> Google Calendar data is accessed in real time and is not persistently stored or cached beyond what is necessary to complete the scheduling request. OAuth tokens used to maintain the calendar connection are stored securely in encrypted form. For complete details on how we handle Google Calendar data, see Section 2.3 of our <Link href="/privacy">Privacy Policy</Link>.</p>
 
-            <p><strong>Limited Use Compliance:</strong> VoiceAI Connect&apos;s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+            <p><strong>Limited Use Compliance:</strong> VoiceAI Connect&apos;s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-emerald-700 hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
 
-            <p><strong>Revoking Access:</strong> End Clients may disconnect Google Calendar at any time through their dashboard settings. This immediately revokes the Service&apos;s access to their calendar and deletes stored OAuth tokens. End Clients may also revoke access directly through their <a href="https://myaccount.google.com/permissions" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a>.</p>
+            <p><strong>Revoking Access:</strong> End Clients may disconnect Google Calendar at any time through their dashboard settings. This immediately revokes the Service&apos;s access to their calendar and deletes stored OAuth tokens. End Clients may also revoke access directly through their <a href="https://myaccount.google.com/permissions" className="text-emerald-700 hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a>.</p>
 
             <p><strong>Consent Screen Branding:</strong> When connecting Google Calendar, the Google authorization screen will display &ldquo;VoiceAI Connect&rdquo; as the application requesting access. VoiceAI Connect is the technology platform that powers the AI receptionist service, regardless of the agency brand under which the service is offered.</p>
 
@@ -359,8 +369,8 @@ export default function TermsOfService() {
 
             <h2>10. Disclaimer of Warranties</h2>
 
-            <div className="bg-white/[0.05] border border-white/[0.08] rounded-xl p-5 my-6">
-              <p className="text-[#fafaf9]/70 text-sm mb-0">
+            <div className="bg-black/[0.03] border border-black/[0.08] rounded-xl p-5 my-6">
+              <p className="text-black/72 text-sm mb-0">
                 THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS 
                 OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
                 PURPOSE, TITLE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, 
@@ -372,8 +382,8 @@ export default function TermsOfService() {
 
             <h2>11. Limitation of Liability</h2>
 
-            <div className="bg-white/[0.05] border border-white/[0.08] rounded-xl p-5 my-6">
-              <p className="text-[#fafaf9]/70 text-sm mb-4">
+            <div className="bg-black/[0.03] border border-black/[0.08] rounded-xl p-5 my-6">
+              <p className="text-black/72 text-sm mb-4">
                 TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL VOICEAI CONNECT, ITS AFFILIATES, DIRECTORS, 
                 EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, 
                 INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, BUSINESS, OR GOODWILL, ARISING OUT OF OR RELATED TO 
@@ -381,7 +391,7 @@ export default function TermsOfService() {
                 OF THE POSSIBILITY OF SUCH DAMAGES. THIS INCLUDES, WITHOUT LIMITATION, DAMAGES ARISING FROM SCHEDULING 
                 ERRORS, MISSED APPOINTMENTS, DOUBLE-BOOKINGS, OR ANY ISSUES RELATED TO THIRD-PARTY CALENDAR INTEGRATIONS.
               </p>
-              <p className="text-[#fafaf9]/70 text-sm mb-0">
+              <p className="text-black/72 text-sm mb-0">
                 OUR TOTAL LIABILITY TO YOU FOR ALL CLAIMS ARISING OUT OF OR RELATED TO THESE TERMS OR THE SERVICE SHALL 
                 NOT EXCEED THE AMOUNTS PAID BY YOU TO VOICEAI CONNECT IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.
               </p>
@@ -409,21 +419,112 @@ export default function TermsOfService() {
               <li>Any disputes arising from appointment scheduling, including missed or double-booked appointments</li>
             </ul>
 
-            <h2>13. Term and Termination</h2>
+            <h2>13. Reseller Responsibility and Liability Allocation</h2>
 
-            <h3>13.1 Term</h3>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5 my-6">
+              <p className="text-amber-700 font-semibold mb-2">Who Is Responsible</p>
+              <p className="text-black/72 text-sm mb-0">
+                VoiceAI Connect provides technology to the Agency and is not a party to the relationship between an Agency 
+                and its End Clients or Callers. Any dispute, claim, or liability arising between an Agency and its End 
+                Clients or Callers is solely the Agency&apos;s responsibility.
+              </p>
+            </div>
+
+            <h3>13.1 Independent Relationship</h3>
+            <p>
+              The Agency is an independent business and operates on its own account. VoiceAI Connect provides technology 
+              to the Agency and is not a party to, and has no role in, the relationship, contracts, communications, or 
+              dealings between the Agency and its End Clients or Callers. The Agency, and not VoiceAI Connect, is the party 
+              that contracts with, prices, invoices, supports, and is responsible to its End Clients and their Callers.
+            </p>
+
+            <h3>13.2 Allocation of Responsibility</h3>
+            <p>As between VoiceAI Connect and the Agency, the Agency is solely responsible for:</p>
+            <ul>
+              <li>(a) the configuration of its AI Receptionists, including all scripts, greetings, prompts, knowledge bases, FAQ responses, and instructions;</li>
+              <li>(b) the accuracy, completeness, lawfulness, and appropriateness of everything its AI Receptionists say or do, including any statement, quote, promise, confirmation, booking, or commitment made to a Caller;</li>
+              <li>(c) its call-recording, AI-disclosure, and consent settings, and its compliance with the TCPA, state call-recording and AI-disclosure laws, and all other applicable laws in every jurisdiction in which the Agency operates or from which its Callers call;</li>
+              <li>(d) its obligations as data controller for End Client and Caller personal data, including establishing a lawful basis and providing any required notices and obtaining any required consents (see Section 8.2);</li>
+              <li>(e) its own marketing, pricing, billing, cancellation, and business practices; and</li>
+              <li>(f) the selection, onboarding, and supervision of its End Clients.</li>
+            </ul>
+            <p>
+              Any dispute, claim, loss, or liability arising between the Agency and any of its End Clients or Callers is 
+              solely the Agency&apos;s responsibility. The Agency will resolve any such matter at its own expense and will 
+              not involve VoiceAI Connect.
+            </p>
+
+            <h3>13.3 Flow-Down Requirements</h3>
+            <p>
+              The Agency must include in its own agreements with its End Clients (and cause its End Clients to convey to 
+              Callers where applicable and legally required) terms that, at a minimum:
+            </p>
+            <ul>
+              <li>(a) disclose that calls are handled by an artificial-intelligence assistant and are recorded, and obtain any consent required by applicable law;</li>
+              <li>(b) disclaim warranties with respect to the AI receptionist service to at least the same extent as Section 10 of these Terms;</li>
+              <li>(c) limit the liability of the Agency and of VoiceAI Connect with respect to the Service, with VoiceAI Connect named as an express third-party beneficiary of that limitation, consistent with Section 11 of these Terms; and</li>
+              <li>(d) make clear that VoiceAI Connect is not a party to, and is not responsible for, the relationship between the Agency and its End Clients or Callers.</li>
+            </ul>
+            <p>
+              VoiceAI Connect is an intended third-party beneficiary of the terms described in this Section 13.3 and may 
+              enforce them directly. The Agency&apos;s failure to put these flow-down terms in place does not transfer to 
+              VoiceAI Connect any liability that would otherwise rest with the Agency, and does not relieve the Agency of 
+              any obligation under these Terms.
+            </p>
+
+            <h3>13.4 AI Output Disclaimer</h3>
+            <p>
+              AI Receptionist responses are generated automatically based on the Agency&apos;s configuration and on the 
+              Caller&apos;s input. VoiceAI Connect does not draft, review, approve, verify, monitor, or guarantee any AI 
+              Receptionist output, and does not warrant that any output is accurate, complete, current, or fit for any 
+              purpose. The Agency assumes all risk arising from the outputs of its AI Receptionists. The Agency will not 
+              configure any AI Receptionist to provide medical, legal, financial, or other regulated professional advice, 
+              or to make any statement or commitment that the Agency is not authorized and able to stand behind.
+            </p>
+
+            <h3>13.5 Insurance</h3>
+            <p>
+              The Agency will obtain and maintain, at its own expense, commercially reasonable insurance appropriate to 
+              its business and its use of the Service, which may include commercial general liability and, where applicable, 
+              professional liability or technology errors-and-omissions coverage. VoiceAI Connect may request written 
+              evidence of such coverage, and the Agency will provide it within a reasonable time.
+            </p>
+
+            <h3>13.6 Defense and Indemnification</h3>
+            <p>
+              In addition to and without limiting Section 12, the Agency will defend, indemnify, and hold harmless VoiceAI 
+              Connect and its affiliates, officers, directors, employees, and agents from and against any claim, demand, 
+              action, damage, loss, cost, or expense (including reasonable attorneys&apos; fees) that is brought by, or that 
+              arises out of a dispute with, any of the Agency&apos;s End Clients or Callers, including any claim relating to 
+              AI Receptionist output, call recording or monitoring, consent, appointment or scheduling errors, data handling, 
+              or the Agency&apos;s configuration, marketing, or business practices. At VoiceAI Connect&apos;s election, the 
+              Agency will assume control of the defense of any such claim with counsel reasonably acceptable to VoiceAI 
+              Connect, and VoiceAI Connect may participate in the defense at its own expense. This Section 13.6 survives 
+              termination of these Terms.
+            </p>
+
+            <h3>13.7 No Agency or Partnership</h3>
+            <p>
+              Nothing in these Terms creates a partnership, joint venture, franchise, agency, fiduciary, or employment 
+              relationship between VoiceAI Connect and the Agency. Neither party has authority to bind the other or to make 
+              any representation on the other&apos;s behalf.
+            </p>
+
+            <h2>14. Term and Termination</h2>
+
+            <h3>14.1 Term</h3>
             <p>
               These Terms commence when you create an account and continue until terminated by either party.
             </p>
 
-            <h3>13.2 Termination by You</h3>
+            <h3>14.2 Termination by You</h3>
             <p>
               You may terminate your account at any time through your account settings or by contacting support. 
               Termination takes effect at the end of your current billing period. No refunds will be provided for 
               unused portions of prepaid fees.
             </p>
 
-            <h3>13.3 Termination by Us</h3>
+            <h3>14.3 Termination by Us</h3>
             <p>We may terminate or suspend your account immediately if you:</p>
             <ul>
               <li>Violate these Terms</li>
@@ -435,7 +536,7 @@ export default function TermsOfService() {
               We may also terminate your account for any reason with 30 days&apos; notice.
             </p>
 
-            <h3>13.4 Effect of Termination</h3>
+            <h3>14.4 Effect of Termination</h3>
             <p>Upon termination:</p>
             <ul>
               <li>Your access to the Service will cease</li>
@@ -445,13 +546,13 @@ export default function TermsOfService() {
               <li>Provisions that by their nature should survive termination will survive (e.g., intellectual property, indemnification, limitation of liability)</li>
             </ul>
 
-            <h3>13.5 Data Export</h3>
+            <h3>14.5 Data Export</h3>
             <p>
               You may request an export of your data within 30 days of termination. After 30 days, we may delete 
               your data in accordance with our data retention practices.
             </p>
 
-            <h2>14. Modifications to Terms</h2>
+            <h2>15. Modifications to Terms</h2>
 
             <p>
               We may modify these Terms at any time. We will notify you of material changes by email (to the address 
@@ -461,15 +562,15 @@ export default function TermsOfService() {
               terminate your account.
             </p>
 
-            <h2>15. Dispute Resolution</h2>
+            <h2>16. Dispute Resolution</h2>
 
-            <h3>15.1 Informal Resolution</h3>
+            <h3>16.1 Informal Resolution</h3>
             <p>
               Before initiating any formal dispute proceeding, you agree to first contact us at support@myvoiceaiconnect.com 
               to attempt to resolve the dispute informally. We will attempt to resolve the dispute within 30 days.
             </p>
 
-            <h3>15.2 Arbitration</h3>
+            <h3>16.2 Arbitration</h3>
             <p>
               If the dispute is not resolved informally, any controversy or claim arising out of or relating to these 
               Terms or the Service shall be settled by binding arbitration administered by the American Arbitration 
@@ -477,79 +578,79 @@ export default function TermsOfService() {
               Georgia, and judgment on the award may be entered in any court having jurisdiction.
             </p>
 
-            <h3>15.3 Class Action Waiver</h3>
+            <h3>16.3 Class Action Waiver</h3>
             <p>
               YOU AGREE THAT ANY DISPUTE RESOLUTION PROCEEDINGS WILL BE CONDUCTED ONLY ON AN INDIVIDUAL BASIS AND NOT 
               IN A CLASS, CONSOLIDATED, OR REPRESENTATIVE ACTION. You waive any right to participate in a class action 
               lawsuit or class-wide arbitration.
             </p>
 
-            <h3>15.4 Exceptions</h3>
+            <h3>16.4 Exceptions</h3>
             <p>
               Notwithstanding the above, either party may seek injunctive or equitable relief in a court of competent 
               jurisdiction to protect intellectual property rights or prevent irreparable harm.
             </p>
 
-            <h2>16. General Provisions</h2>
+            <h2>17. General Provisions</h2>
 
-            <h3>16.1 Governing Law</h3>
+            <h3>17.1 Governing Law</h3>
             <p>
               These Terms are governed by the laws of the State of Georgia, without regard to its conflict of 
               laws principles.
             </p>
 
-            <h3>16.2 Entire Agreement</h3>
+            <h3>17.2 Entire Agreement</h3>
             <p>
               These Terms, together with our Privacy Policy and any other agreements expressly incorporated by 
               reference, constitute the entire agreement between you and VoiceAI Connect regarding the Service.
             </p>
 
-            <h3>16.3 Severability</h3>
+            <h3>17.3 Severability</h3>
             <p>
               If any provision of these Terms is found to be unenforceable, the remaining provisions will remain in 
               full force and effect.
             </p>
 
-            <h3>16.4 Waiver</h3>
+            <h3>17.4 Waiver</h3>
             <p>
               Our failure to enforce any right or provision of these Terms will not be considered a waiver of such 
               right or provision.
             </p>
 
-            <h3>16.5 Assignment</h3>
+            <h3>17.5 Assignment</h3>
             <p>
               You may not assign or transfer these Terms or your rights under them without our prior written consent. 
               We may assign these Terms without restriction.
             </p>
 
-            <h3>16.6 Notices</h3>
+            <h3>17.6 Notices</h3>
             <p>
               We may provide notices to you via email to the address associated with your account or through the Service. 
               You may provide notices to us at support@myvoiceaiconnect.com.
             </p>
 
-            <h3>16.7 Force Majeure</h3>
+            <h3>17.7 Force Majeure</h3>
             <p>
               We will not be liable for any failure or delay in performance due to circumstances beyond our reasonable 
               control, including natural disasters, war, terrorism, labor disputes, government actions, or internet 
               or telecommunications failures.
             </p>
 
-            <h2>17. Contact Information</h2>
+            <h2>18. Contact Information</h2>
 
             <p>If you have questions about these Terms, please contact us:</p>
             
-            <div className="bg-white/5 border border-white/10 rounded-xl p-5 my-6">
+            <div className="bg-black/[0.03] border border-black/10 rounded-xl p-5 my-6">
               <ul className="space-y-2 mb-0">
-                <li><strong>Email:</strong> <a href="mailto:support@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">support@myvoiceaiconnect.com</a></li>
-                <li><strong>Privacy Inquiries:</strong> <a href="mailto:privacy@myvoiceaiconnect.com" className="text-emerald-400 hover:underline">privacy@myvoiceaiconnect.com</a></li>
+                <li><strong>Email:</strong> <a href="mailto:support@myvoiceaiconnect.com" className="text-emerald-700 hover:underline">support@myvoiceaiconnect.com</a></li>
+                <li><strong>Privacy Inquiries:</strong> <a href="mailto:privacy@myvoiceaiconnect.com" className="text-emerald-700 hover:underline">privacy@myvoiceaiconnect.com</a></li>
                 <li><strong>Mailing Address:</strong> VoiceAI Connect, Attn: Legal Team, 2855 Broome Rd, Gainesville, GA 30507</li>
               </ul>
             </div>
 
-            <hr className="my-10 border-white/[0.08]" />
+            <hr className="my-10 border-black/[0.08]" />
 
-            <p className="text-sm text-[#fafaf9]/50">
+            <p className="text-sm text-black/60">
               By using VoiceAI Connect, you acknowledge that you have read, understood, and agree to be bound by 
               these Terms of Service.
             </p>
