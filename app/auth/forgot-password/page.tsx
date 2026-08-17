@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { Phone, Loader2, ArrowRight, ArrowLeft, Mail, Lock, Eye, EyeOff, Shield, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mail, Lock, Eye, EyeOff, Shield, CheckCircle2 } from 'lucide-react';
 import DynamicFavicon from '@/components/DynamicFavicon';
 
 // ============================================================================
@@ -32,12 +32,13 @@ const isLightColor = (hex: string): boolean => {
 };
 
 const getBackendUrl = () => {
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 
-         process.env.NEXT_PUBLIC_API_URL || 
+  return process.env.NEXT_PUBLIC_BACKEND_URL ||
+         process.env.NEXT_PUBLIC_API_URL ||
          'https://urchin-app-bqb4i.ondigitalocean.app';
 };
 
-// Waveform icon matching platform branding
+// Waveform fallback icon. Only used on an agency subdomain whose agency has no
+// uploaded logo. On the platform domain we render the real product icon.
 function WaveformIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -55,43 +56,43 @@ function WaveformIcon({ className }: { className?: string }) {
 // ============================================================================
 // STEP 1: Enter Email
 // ============================================================================
-function EmailStep({ 
-  email, setEmail, onSubmit, loading, error, 
+function EmailStep({
+  email, setEmail, onSubmit, loading, error,
   isDark, primaryColor, primaryLight, textColor, textMuted, textSubtle,
-  inputBg, inputBorder, cardBg, cardBorder 
+  inputBg, inputBorder, cardBg, cardBorder
 }: any) {
   return (
-    <div 
-      className="rounded-2xl p-8"
-      style={{ 
+    <div
+      className="rounded-2xl p-6 sm:p-8 backdrop-blur-sm"
+      style={{
         backgroundColor: cardBg,
         border: `1px solid ${cardBorder}`,
         boxShadow: isDark ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       }}
     >
       <div className="text-center mb-8">
-        <div 
+        <div
           className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
           <Mail className="h-6 w-6" style={{ color: primaryColor }} />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Forgot Password</h1>
-        <p className="mt-3" style={{ color: textMuted }}>
+        <p className="mt-3 text-sm" style={{ color: textMuted }}>
           Enter your email and we&apos;ll send a verification code to your phone
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-5">
         <div>
-          <label 
-            className="block text-sm font-medium mb-2" 
-            style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}
+          <label
+            className="block text-xs font-medium mb-2"
+            style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             Email Address
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: textSubtle }} />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: textSubtle }} />
             <input
               type="email"
               value={email}
@@ -100,7 +101,7 @@ function EmailStep({
               required
               autoComplete="email"
               autoFocus
-              className="w-full rounded-lg pl-11 pr-4 py-3 transition-colors focus:outline-none"
+              className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-colors focus:outline-none"
               style={{
                 backgroundColor: inputBg,
                 border: `1px solid ${inputBorder}`,
@@ -111,8 +112,8 @@ function EmailStep({
         </div>
 
         {error && (
-          <div 
-            className="rounded-lg p-3 text-sm"
+          <div
+            className="rounded-xl p-3 text-sm"
             style={{
               backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
               border: `1px solid ${isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}`,
@@ -126,10 +127,10 @@ function EmailStep({
         <button
           type="submit"
           disabled={loading}
-          className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ 
+          className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
             backgroundColor: primaryColor,
-            color: primaryLight ? '#0a0a0a' : '#f5f5f0',
+            color: primaryLight ? '#050505' : '#fafaf9',
           }}
         >
           {loading ? (
@@ -152,19 +153,19 @@ function EmailStep({
 // ============================================================================
 // STEP 2: Enter Code + New Password
 // ============================================================================
-function CodeStep({ 
+function CodeStep({
   code, setCode, password, setPassword, confirmPassword, setConfirmPassword,
   showPassword, setShowPassword, onSubmit, onResend, onBack,
   loading, resendLoading, resendCooldown, error, maskedPhone,
   isDark, primaryColor, primaryLight, textColor, textMuted, textSubtle,
-  inputBg, inputBorder, cardBg, cardBorder 
+  inputBg, inputBorder, cardBg, cardBorder
 }: any) {
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleCodeChange = (index: number, value: string) => {
     // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1);
-    
+
     const newCode = code.split('');
     newCode[index] = digit;
     setCode(newCode.join(''));
@@ -185,30 +186,30 @@ function CodeStep({
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     setCode(pasted.padEnd(6, ' ').slice(0, 6).replace(/ /g, ''));
-    
+
     // Focus last filled input or the next empty one
     const focusIndex = Math.min(pasted.length, 5);
     codeInputRefs.current[focusIndex]?.focus();
   };
 
   return (
-    <div 
-      className="rounded-2xl p-8"
-      style={{ 
+    <div
+      className="rounded-2xl p-6 sm:p-8 backdrop-blur-sm"
+      style={{
         backgroundColor: cardBg,
         border: `1px solid ${cardBorder}`,
         boxShadow: isDark ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       }}
     >
       <div className="text-center mb-8">
-        <div 
+        <div
           className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
           <Shield className="h-6 w-6" style={{ color: primaryColor }} />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Enter Verification Code</h1>
-        <p className="mt-3" style={{ color: textMuted }}>
+        <p className="mt-3 text-sm" style={{ color: textMuted }}>
           We sent a 6-digit code to {maskedPhone || 'your phone'}
         </p>
       </div>
@@ -216,9 +217,9 @@ function CodeStep({
       <form onSubmit={onSubmit} className="space-y-6">
         {/* 6-digit code input */}
         <div>
-          <label 
-            className="block text-sm font-medium mb-3" 
-            style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}
+          <label
+            className="block text-xs font-medium mb-3"
+            style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             Verification Code
           </label>
@@ -234,7 +235,7 @@ function CodeStep({
                 onChange={(e) => handleCodeChange(i, e.target.value)}
                 onKeyDown={(e) => handleCodeKeyDown(i, e)}
                 autoFocus={i === 0}
-                className="w-12 h-14 text-center text-xl font-semibold rounded-lg transition-colors focus:outline-none"
+                className="w-12 h-14 text-center text-xl font-semibold rounded-xl transition-colors focus:outline-none"
                 style={{
                   backgroundColor: inputBg,
                   border: `2px solid ${code[i] ? primaryColor : inputBorder}`,
@@ -258,14 +259,14 @@ function CodeStep({
 
         {/* New Password */}
         <div>
-          <label 
-            className="block text-sm font-medium mb-2" 
-            style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}
+          <label
+            className="block text-xs font-medium mb-2"
+            style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: textSubtle }} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: textSubtle }} />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -273,7 +274,7 @@ function CodeStep({
               placeholder="••••••••"
               required
               minLength={8}
-              className="w-full rounded-lg pl-11 pr-12 py-3 transition-colors focus:outline-none"
+              className="w-full rounded-xl pl-10 pr-11 py-3 text-sm transition-colors focus:outline-none"
               style={{
                 backgroundColor: inputBg,
                 border: `1px solid ${inputBorder}`,
@@ -284,9 +285,9 @@ function CodeStep({
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-              style={{ color: isDark ? 'rgba(245,245,240,0.4)' : '#9ca3af' }}
+              style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           <p className="mt-1.5 text-xs" style={{ color: textSubtle }}>At least 8 characters</p>
@@ -294,14 +295,14 @@ function CodeStep({
 
         {/* Confirm Password */}
         <div>
-          <label 
-            className="block text-sm font-medium mb-2" 
-            style={{ color: isDark ? 'rgba(245,245,240,0.7)' : '#374151' }}
+          <label
+            className="block text-xs font-medium mb-2"
+            style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
             Confirm New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: textSubtle }} />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: textSubtle }} />
             <input
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
@@ -309,7 +310,7 @@ function CodeStep({
               placeholder="••••••••"
               required
               minLength={8}
-              className="w-full rounded-lg pl-11 pr-4 py-3 transition-colors focus:outline-none"
+              className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-colors focus:outline-none"
               style={{
                 backgroundColor: inputBg,
                 border: `1px solid ${inputBorder}`,
@@ -320,8 +321,8 @@ function CodeStep({
         </div>
 
         {error && (
-          <div 
-            className="rounded-lg p-3 text-sm"
+          <div
+            className="rounded-xl p-3 text-sm"
             style={{
               backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
               border: `1px solid ${isDark ? 'rgba(239,68,68,0.2)' : '#fecaca'}`,
@@ -335,10 +336,10 @@ function CodeStep({
         <button
           type="submit"
           disabled={loading || code.replace(/ /g, '').length < 6}
-          className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ 
+          className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
             backgroundColor: primaryColor,
-            color: primaryLight ? '#0a0a0a' : '#f5f5f0',
+            color: primaryLight ? '#050505' : '#fafaf9',
           }}
         >
           {loading ? (
@@ -371,34 +372,34 @@ function CodeStep({
 // ============================================================================
 // STEP 3: Success
 // ============================================================================
-function SuccessStep({ 
+function SuccessStep({
   loginUrl, isDark, primaryColor, textColor, textMuted, cardBg, cardBorder, primaryLight
 }: any) {
   return (
-    <div 
-      className="rounded-2xl p-8 text-center"
-      style={{ 
+    <div
+      className="rounded-2xl p-6 sm:p-8 text-center backdrop-blur-sm"
+      style={{
         backgroundColor: cardBg,
         border: `1px solid ${cardBorder}`,
         boxShadow: isDark ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
       }}
     >
-      <div 
+      <div
         className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6"
         style={{ backgroundColor: `${primaryColor}1A` }}
       >
         <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
       </div>
       <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Reset!</h1>
-      <p className="mb-8" style={{ color: textMuted }}>
+      <p className="mb-8 text-sm" style={{ color: textMuted }}>
         Your password has been updated. You can now sign in.
       </p>
       <a
         href={loginUrl}
-        className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
-        style={{ 
+        className="group inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+        style={{
           backgroundColor: primaryColor,
-          color: primaryLight ? '#0a0a0a' : '#f5f5f0',
+          color: primaryLight ? '#050505' : '#fafaf9',
         }}
       >
         Sign In
@@ -438,7 +439,7 @@ function ForgotPasswordContent() {
         const host = window.location.host;
         const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
         const platformDomains = [platformDomain, `www.${platformDomain}`, 'localhost:3000', 'localhost'];
-        
+
         if (!platformDomains.includes(host)) {
           const backendUrl = getBackendUrl();
           const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
@@ -570,27 +571,33 @@ function ForgotPasswordContent() {
   };
 
   // ---- Theme ----
+  // Platform domain renders the product's dark theme (matching the agency login
+  // page: #050505 canvas, #fafaf9 ink, emerald accent). An agency subdomain
+  // respects that agency's own brand color and light/dark preference.
 
   const primaryColor = agency?.primary_color || (isAgencySubdomain ? '#2563eb' : '#10b981');
   const primaryLight = isLightColor(primaryColor);
 
-  // On platform domain → dark theme (agency login style)
-  // On agency subdomain → respect agency theme
+  // On platform domain -> dark theme (agency login style)
+  // On agency subdomain -> respect agency theme
   const isDark = isAgencySubdomain ? agency?.website_theme !== 'light' : true;
 
-  const bgColor = isDark ? '#0a0a0a' : '#ffffff';
-  const textColor = isDark ? '#f5f5f0' : '#111827';
-  const textMuted = isDark ? 'rgba(245,245,240,0.5)' : '#6b7280';
-  const textSubtle = isDark ? 'rgba(245,245,240,0.3)' : '#9ca3af';
-  const cardBg = isDark ? '#111111' : '#ffffff';
-  const cardBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const bgColor = isDark ? '#050505' : '#ffffff';
+  const textColor = isDark ? '#fafaf9' : '#111827';
+  const textMuted = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const textSubtle = isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af';
+  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
-  const headerBg = isDark ? 'rgba(10,10,10,0.8)' : 'rgba(255,255,255,0.8)';
-  const headerBorder = isDark ? 'rgba(255,255,255,0.05)' : '#e5e7eb';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
+  const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
 
   // Determine correct login URL
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
+
+  // Header brand name: agency name on a subdomain, product name on platform.
+  const brandName = isAgencySubdomain ? (agency?.name || 'VoiceAI Connect') : 'VoiceAI Connect';
 
   const sharedStyleProps = {
     isDark, primaryColor, primaryLight, textColor, textMuted, textSubtle,
@@ -599,15 +606,15 @@ function ForgotPasswordContent() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#34d399' }} />
       </div>
     );
   }
 
   // Dynamic autofill styles
-  const autofillBg = isDark ? '#1a1a1a' : '#f9fafb';
-  const autofillText = isDark ? '#f5f5f0' : '#111827';
+  const autofillBg = isDark ? '#141414' : '#f9fafb';
+  const autofillText = isDark ? '#fafaf9' : '#111827';
 
   const dynamicStyles = `
     input:-webkit-autofill,
@@ -632,56 +639,61 @@ function ForgotPasswordContent() {
   `;
 
   return (
-    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
+    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
-      
+
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
-      
+
       {/* Grain overlay - dark mode only */}
       {isDark && (
-        <div 
-          className="fixed inset-0 pointer-events-none opacity-[0.015] z-50"
+        <div
+          className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
       )}
 
       {/* Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl"
-        style={{ 
+      <header
+        className="fixed top-0 left-0 right-0 z-40 backdrop-blur-2xl"
+        style={{
           borderBottom: `1px solid ${headerBorder}`,
           backgroundColor: headerBg,
+          paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              {agency?.logo_url ? (
-                <div
-                  className="flex items-center justify-center rounded-lg overflow-hidden"
-                  style={{
-                    backgroundColor: agency.logo_background_color || 'transparent',
-                    padding: agency.logo_background_color ? '6px' : '0',
-                  }}
-                >
-                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 object-contain" />
-                </div>
+            <Link href="/" className="flex items-center gap-2.5">
+              {isAgencySubdomain ? (
+                agency?.logo_url ? (
+                  <div
+                    className="flex items-center justify-center rounded-lg overflow-hidden"
+                    style={{
+                      backgroundColor: agency.logo_background_color || 'transparent',
+                      padding: agency.logo_background_color ? '6px' : '0',
+                    }}
+                  >
+                    <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 object-contain" />
+                  </div>
+                ) : (
+                  <div
+                    className="relative h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center"
+                    style={{
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                      border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <WaveformIcon className="h-5 w-5" />
+                  </div>
+                )
               ) : (
-                <div 
-                  className="relative h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center"
-                  style={{
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                    border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                  }}
-                >
-                  <WaveformIcon className="h-5 w-5" />
-                </div>
+                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
               )}
-              <span className="text-base font-semibold tracking-tight">{agency?.name || 'VoiceAI Connect'}</span>
+              <span className="text-base font-semibold tracking-tight">{brandName}</span>
             </Link>
-            <Link 
+            <Link
               href={loginUrl}
               className="text-sm transition-colors"
               style={{ color: textMuted }}
@@ -693,13 +705,13 @@ function ForgotPasswordContent() {
       </header>
 
       {/* Main Content */}
-      <main className="relative min-h-screen flex items-center justify-center px-6 py-32">
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl"
-            style={{ 
+      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full blur-[100px]"
+            style={{
               backgroundColor: primaryColor,
-              opacity: isDark ? 0.07 : 0.1,
+              opacity: isDark ? 0.04 : 0.1,
             }}
           />
         </div>
@@ -746,7 +758,7 @@ function ForgotPasswordContent() {
           )}
 
           {step !== 'success' && (
-            <p className="mt-6 text-center text-sm" style={{ color: isDark ? 'rgba(245,245,240,0.4)' : '#9ca3af' }}>
+            <p className="mt-6 text-center text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
               Remember your password?{' '}
               <Link href={loginUrl} className="font-medium transition-colors hover:opacity-80" style={{ color: primaryColor }}>
                 Sign in
@@ -762,8 +774,8 @@ function ForgotPasswordContent() {
 export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#34d399' }} />
       </div>
     }>
       <ForgotPasswordContent />
