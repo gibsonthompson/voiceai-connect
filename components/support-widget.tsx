@@ -125,6 +125,7 @@ export default function SupportWidget() {
   const [teaser, setTeaser] = useState(false);
   const [escName, setEscName] = useState('');
   const [escContact, setEscContact] = useState('');
+  const [escMsg, setEscMsg] = useState('');
   const [escBusy, setEscBusy] = useState(false);
   const [escDone, setEscDone] = useState(false);
   const [escErr, setEscErr] = useState('');
@@ -161,7 +162,7 @@ export default function SupportWidget() {
   const close = useCallback(() => setIsOpen(false), []);
   const goLanding = useCallback(() => { setView('landing'); setActiveFAQ(null); }, []);
   const goFAQ = useCallback((f: FAQItem) => { setActiveFAQ(f); setView('faq'); }, []);
-  const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscErr(''); setEscName(''); setEscContact(''); }, []);
+  const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscErr(''); setEscName(''); setEscContact(''); setEscMsg(''); }, []);
 
   const send = useCallback(async (text?: string) => {
     const msg = text || input.trim();
@@ -198,7 +199,7 @@ export default function SupportWidget() {
     setEscErr('');
     const sum = messages.map(m => `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`).join('\n');
     try {
-      const res = await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), conversationSummary: sum || undefined }) });
+      const res = await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), message: escMsg.trim() || undefined, conversationSummary: sum || undefined }) });
       if (!res.ok) throw new Error('Failed to send');
       setEscDone(true);
     } catch {
@@ -206,7 +207,7 @@ export default function SupportWidget() {
     } finally {
       setEscBusy(false);
     }
-  }, [escName, escContact, escBusy, messages]);
+  }, [escName, escContact, escMsg, escBusy, messages]);
 
   const qa = useCallback((a: typeof QUICK_ACTIONS[0]) => {
     if (a.href) { window.location.href = a.href; return; }
@@ -374,6 +375,19 @@ export default function SupportWidget() {
                   <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <WidgetInput value={escName} onChange={setEscName} placeholder="Your name" label="Name" />
                     <WidgetInput value={escContact} onChange={setEscContact} placeholder="you@agency.com" label="Email or phone" />
+                    <div>
+                      <WidgetEyebrow>How can we help? (optional)</WidgetEyebrow>
+                      <textarea
+                        value={escMsg}
+                        onChange={e => setEscMsg(e.target.value)}
+                        placeholder="e.g. Please call me ASAP, or send a demo number I can try."
+                        rows={3}
+                        maxLength={1000}
+                        style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box', resize: 'none' }}
+                        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(74,234,188,0.25)'; }}
+                        onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                      />
+                    </div>
                     {escErr && (
                       <p style={{ fontSize: 12, lineHeight: 1.5, color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 12px', margin: 0, fontFamily: font }}>{escErr}</p>
                     )}

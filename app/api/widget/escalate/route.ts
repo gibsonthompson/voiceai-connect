@@ -1,62 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ===========================================================================
    POST /api/widget/escalate
    Destination: app/api/widget/escalate/route.ts  (FULL REPLACEMENT)
 
-   REWRITTEN: this route no longer sends email (Resend removed). It now forwards
-   the marketing-site support widget submission to the backend, which persists
-   it to the owning agency's dashboard Inbox (agency_support_requests). The
-   feature is UI + information exchange only; the agency reads the message in
-   their dashboard and reaches out on their own.
+   FIXED 2026-08-17: this route previously forwarded to the backend's agency
+   inbox intake (/api/agency/support-requests/intake), which resolves an agency
+   from the request host. On the PLATFORM marketing site (myvoiceaiconnect.com)
+   there is no agency, so that intake always 404'd and every "Talk to a person"
+   submit failed with the email-fallback error.
 
-   The agency is resolved server-side from the request host (subdomain or
-   verified custom domain) by the backend intake endpoint, so this route just
-   passes the host through. Same-origin from the widget's perspective, so no
-   CORS and no client-visible backend URL beyond the usual public API base.
+   It now forwards to the PLATFORM support path (/api/help/message), which
+   persists the request to support_requests (the admin Support queue) AND texts
+   the platform owner (SUPPORT_PHONE) so a prospect asking for a callback is
+   reachable fast. That backend endpoint accepts an anonymous prospect's
+   name / contact / message (no auth token required).
 
-   Still returns a non-2xx when the backend can't persist, so the widget shows
-   its error state (and the visitor can use the email fallback) instead of being
-   told the message was delivered when it wasn't.
-   ═══════════════════════════════════════════════════════════════════════════ */
+   Server-to-server call, so no CORS and no client-visible backend URL beyond
+   the usual public API base. Returns a non-2xx when the backend cannot capture
+   the request, so the widget shows its error state (and the email fallback)
+   instead of claiming delivery that did not happen.
+   =========================================================================== */
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, contact, message, conversationSummary, agencyId } = await req.json();
+    const { name, contact, message, conversationSummary } = await req.json();
 
-    if (!contact) {
+    if (!contact || !String(contact).trim()) {
       return NextResponse.json({ error: 'Contact info is required' }, { status: 400 });
     }
 
-    const host = req.headers.get('host') || req.headers.get('x-forwarded-host') || '';
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || '';
 
     if (!backendUrl) {
-      console.error('NEXT_PUBLIC_API_URL not set - support intake NOT forwarded. Undelivered:',
-        JSON.stringify({ host, name, contact, message: message || null }));
+      // Nothing to forward to. Log the full lead so it is recoverable from
+      // server logs, and tell the widget it failed (it shows the email fallback).
+      console.error(
+        'NEXT_PUBLIC_API_URL not set - escalation NOT forwarded. Undelivered:',
+        JSON.stringify({ name, contact, message: message || null })
+      );
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
 
-    const resp = await fetch(`${backendUrl}/api/agency/support-requests/intake`, {
+    const resp = await fetch(`${backendUrl}/api/help/message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      // No Authorization header: this is an anonymous marketing-site prospect.
+      // /api/help/message treats a token-less request with name/contact as a
+      // prospect and composes the record + SMS from these fields.
       body: JSON.stringify({
-        // agencyId is optional; the backend falls back to host resolution.
-        agencyId: agencyId || undefined,
-        host,
-        name,
+        name: name || undefined,
         contact,
-        message,
-        conversationSummary,
+        message: message || undefined,
+        conversationSummary: conversationSummary || undefined,
       }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      console.error('Support intake forward failed:', resp.status, errText);
-      // Log the full lead so it's recoverable from server logs.
-      console.error('Undelivered contact:',
-        JSON.stringify({ host, name, contact, message: message || null }));
+      console.error(
+        'Support escalation forward failed:',
+        resp.status,
+        errText,
+        JSON.stringify({ name, contact, message: message || null })
+      );
       return NextResponse.json({ error: 'Failed to send message' }, { status: 502 });
     }
 
