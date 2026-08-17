@@ -639,7 +639,7 @@ function ForgotPasswordContent() {
   `;
 
   return (
-    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.8 }}>
+    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
 
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
