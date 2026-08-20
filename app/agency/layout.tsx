@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Sun, Moon, Inbox, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
@@ -238,6 +239,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); return pathname?.startsWith(href); };
 
   // ── LOADING SKELETON ────────────────────────────────────────────────
+  // Only renders on the FIRST dashboard load (or hard refresh), when the
+  // AgencyProvider has no cached agency yet. On tab-to-tab navigation the
+  // provider stays mounted and loading is already false, so this never shows
+  // again, which is the whole point of the soft-nav rebuild below.
   if (loading) {
     let isDark = true;
     try { const saved = localStorage.getItem('voiceai_ui_theme'); if (saved === 'light') isDark = false; else if (saved === 'dark') isDark = true; else { const stored = localStorage.getItem('agency'); if (stored) { const parsed = JSON.parse(stored); isDark = parsed.website_theme !== 'light'; } } } catch {}
@@ -356,18 +361,19 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <link rel="manifest" href="/manifest.json" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
       {/*
-        Dashboard selection color (matches the marketing palette). The
-        view-transition black-flash fix is NOT here: dashboard tabs are
-        full-document <a> loads, so this React style mounts too late to catch
-        the cross-document transition (and only renders past the loading gate).
-        The fix is render-blocking, in the root layout head script (adds
-        html.app-shell) plus the html.app-shell ::view-transition rule in
-        globals.css, so it is in place before the transition runs.
+        Dashboard selection color + the page-enter transition.
+        The tabs below are Next <Link> (client-side soft navigation), so the
+        shell, the AgencyProvider, the agency data, and the theme all stay
+        mounted across tab switches. Only the keyed inner wrapper in <main>
+        remounts, and .agency-page-enter fades/rises it in over 260ms. That is
+        the whole flash fix: nothing tears the document down, so there is no
+        base color to flash, and the new page settles in instead of snapping.
+        (prefers-reduced-motion disables the animation.)
       */}
-      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } @keyframes agencyPageEnter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } } .agency-page-enter { animation: agencyPageEnter 260ms cubic-bezier(0.16, 1, 0.3, 1); } @media (prefers-reduced-motion: reduce) { .agency-page-enter { animation: none !important; } }` }} />
       {theme.isDark && (<div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />)}
 
-      {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<a href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</a>)}</div>)}
+      {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<Link href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</Link>)}</div>)}
 
       {/* Mobile header */}
       <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div>)}<span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
@@ -381,23 +387,28 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
         <nav className="p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
-            <a key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
+            <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
               <div className="flex items-center gap-3"><IconComponent className="h-5 w-5" /><span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
               {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
               {isLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
-            </a>); })}
+            </Link>); })}
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
           {isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
-          {hasPaymentIssue && (<a href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></a>)}
+          {hasPaymentIssue && (<Link href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></Link>)}
           {agency?.subscription_status === 'active' && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}><p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p><p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Free'}</p></div>)}
           <button onClick={handleToggleTheme} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>{theme.isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}{theme.isDark ? 'Light Mode' : 'Dark Mode'}</button>
           <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4" style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><LogOut className="h-5 w-5" />Sign Out</button>
         </div>
       </aside>
 
-      <main key={pathname} className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>{children}</main>
+      {/* Content. <main> stays mounted and painted with theme.bg the whole time,
+          so no base color is ever exposed during a tab switch. Only the keyed
+          inner wrapper remounts per route and fades in via .agency-page-enter. */}
+      <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
+        <div key={pathname} className="agency-page-enter">{children}</div>
+      </main>
       <SupportWidget theme={theme} userType="agency" />
     </div>
   );
