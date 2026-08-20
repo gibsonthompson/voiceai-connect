@@ -4,6 +4,8 @@ import { headers } from 'next/headers';
 
 // ============================================================================
 // SERVER-SIDE AGENCY FETCH (for metadata only)
+// Read fresh (no-store) so title / OG / favicon reflect dashboard edits right
+// away, matching page.tsx.
 // ============================================================================
 async function getAgencyByHost(host: string) {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -11,7 +13,7 @@ async function getAgencyByHost(host: string) {
 
   try {
     const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      cache: 'no-store',
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -23,7 +25,7 @@ async function getAgencyByHost(host: string) {
 }
 
 // ============================================================================
-// GENERATE METADATA (server-side — crawlers can read these)
+// GENERATE METADATA (server-side, crawlers can read these)
 // ============================================================================
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
@@ -117,7 +119,7 @@ export default function AgencySiteLayout({
           `,
         }}
       />
-      <div style={{ minHeight: '100vh',  }}>
+      <div style={{ minHeight: '100vh' }}>
         {children}
       </div>
     </>

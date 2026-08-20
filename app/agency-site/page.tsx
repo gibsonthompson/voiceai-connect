@@ -1,6 +1,6 @@
 // app/agency-site/page.tsx
 // ============================================================================
-// SERVER COMPONENT — Fetches agency data server-side for SEO/AEO
+// SERVER COMPONENT: Fetches agency data server-side for SEO/AEO
 // Crawlers (Google, ChatGPT, Perplexity, etc.) see full content on first load.
 // Previously this was a 'use client' component that fetched in useEffect,
 // meaning crawlers only saw a loading spinner.
@@ -9,12 +9,18 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import AgencySiteClient from './client-page';
 
-// Force dynamic rendering — this page depends on the hostname to resolve the agency
+// Force dynamic rendering: this page depends on the hostname to resolve the agency
 export const dynamic = 'force-dynamic';
 
 // ============================================================================
-// SERVER-SIDE AGENCY FETCH (cached 5 minutes via ISR)
-// Same pattern as layout.tsx generateMetadata
+// SERVER-SIDE AGENCY FETCH
+// Read fresh on every request (no-store). This site is edited from the agency
+// dashboard (template, colors, content, domain), so a cached agency payload
+// made a save look like it did nothing: the render kept serving the pre-save
+// copy until the cache window lapsed, and each host cached separately (the
+// subdomain could show the new template while the custom domain still showed
+// the old one). no-store means a save is reflected immediately on every host.
+// The agency payload is a single small request, so the cost is negligible.
 // ============================================================================
 async function getAgencyByHost(host: string) {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -22,7 +28,7 @@ async function getAgencyByHost(host: string) {
 
   try {
     const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      cache: 'no-store',
     });
     if (!response.ok) return null;
     const data = await response.json();
