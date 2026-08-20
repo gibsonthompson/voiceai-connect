@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react';
 import MarketingPage from '@/components/MarketingPage';
+import MarketingPageBeside from '@/components/MarketingPageBeside';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
@@ -150,14 +151,16 @@ function resolveLoginUrl(agency: Agency): string {
 
 // ============================================================================
 // TEMPLATE ROUTING
-// Import additional templates here as they're built:
+// Register additional templates here as they're built. Each template accepts
+// the same MarketingConfig contract, so signup, demo, login, pricing, currency,
+// custom nav links, analytics, and theming all flow in from config.
+// Keep this map in sync with the picker (app/agency/marketing/page.tsx) and the
+// backend validTemplates list (routes/agency-settings.js).
 //   import MarketingPageModern from '@/components/MarketingPageModern';
-//   import MarketingPageBold from '@/components/MarketingPageBold';
 // ============================================================================
 const TEMPLATES: Record<string, React.ComponentType<{ config: Partial<MarketingConfig> }>> = {
   classic: MarketingPage,
-  // modern: MarketingPageModern,
-  // bold: MarketingPageBold,
+  beside: MarketingPageBeside,
 };
 
 // ============================================================================
