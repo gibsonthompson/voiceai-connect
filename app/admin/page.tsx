@@ -210,70 +210,8 @@ export default function AdminOverviewPage() {
         <OpTile label="Active agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} />
       </div>
 
-      {/* CALL FEED */}
-      <div id="call-feed" className="a-eyebrow mt-8">Live call feed</div>
-      <div className="a-panel">
-        <div className="flex items-center gap-3 p-4 border-b border-[var(--a-line)] flex-wrap">
-          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All calls</h3>
-          <div className="flex gap-1.5 flex-wrap ml-auto">
-            {CALL_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                className="a-chip"
-                data-on={filter === f.key}
-                data-tone={f.key === 'attention' ? 'danger' : undefined}
-                onClick={() => changeFilter(f.key)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="a-table">
-            <thead>
-              <tr>
-                <th>Time</th><th>Caller</th><th>Client / Agency</th><th>Outcome</th>
-                <th className="r">Duration</th><th className="r">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {feedLoading ? (
-                <tr><td colSpan={6}><div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div></td></tr>
-              ) : calls.length === 0 ? (
-                <tr><td colSpan={6}><div className="py-12 text-center text-[var(--a-dim)]">No calls match this filter.</div></td></tr>
-              ) : (
-                calls.map((c) => {
-                  const o = deriveCallOutcome(c);
-                  return (
-                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
-                      <td>
-                        {timeAgo(c.created_at)}
-                        {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
-                      </td>
-                      <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
-                      <td>
-                        <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
-                        <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
-                      </td>
-                      <td>
-                        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: o.color }}>
-                          <span className="a-dot" style={{ background: o.color }} />{o.label}
-                        </span>
-                      </td>
-                      <td className="r a-num">{formatDuration(c.duration_seconds)}</td>
-                      <td className="r a-num">{c.vapi_cost != null ? formatUSD(c.vapi_cost) : '\u2013'}</td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* SIGNUPS / ACTIONS / HOT DEMOS */}
-      <div className="a-eyebrow mt-8">Grow &amp; act</div>
+      <div className="a-eyebrow mt-8">Pipeline &amp; actions</div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
         {/* recent signups */}
@@ -365,6 +303,68 @@ export default function AdminOverviewPage() {
               );
             })}
           </div>
+        </div>
+      </div>
+
+      {/* CALL FEED */}
+      <div id="call-feed" className="a-eyebrow mt-8">Live call feed</div>
+      <div className="a-panel">
+        <div className="flex items-center gap-3 p-4 border-b border-[var(--a-line)] flex-wrap">
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All calls</h3>
+          <div className="flex gap-1.5 flex-wrap ml-auto">
+            {CALL_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                className="a-chip"
+                data-on={filter === f.key}
+                data-tone={f.key === 'attention' ? 'danger' : undefined}
+                onClick={() => changeFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="a-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Caller</th><th>Client / Agency</th><th>Outcome</th>
+                <th className="r">Duration</th><th className="r">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feedLoading ? (
+                <tr><td colSpan={6}><div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div></td></tr>
+              ) : calls.length === 0 ? (
+                <tr><td colSpan={6}><div className="py-12 text-center text-[var(--a-dim)]">No calls match this filter.</div></td></tr>
+              ) : (
+                calls.map((c) => {
+                  const o = deriveCallOutcome(c);
+                  return (
+                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
+                      <td>
+                        {timeAgo(c.created_at)}
+                        {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
+                      </td>
+                      <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
+                      <td>
+                        <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
+                        <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
+                      </td>
+                      <td>
+                        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: o.color }}>
+                          <span className="a-dot" style={{ background: o.color }} />{o.label}
+                        </span>
+                      </td>
+                      <td className="r a-num">{formatDuration(c.duration_seconds)}</td>
+                      <td className="r a-num">{c.vapi_cost != null ? formatUSD(c.vapi_cost) : '\u2013'}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
