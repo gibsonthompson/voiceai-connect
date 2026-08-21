@@ -63,14 +63,19 @@ interface DemoRow {
 }
 
 export default function AdminOverviewPage() {
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [attentionCount, setAttentionCount] = useState(0);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [demos, setDemos] = useState<DemoRow[]>([]);
   const [filter, setFilter] = useState('all');
-  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(true);
+  // Per-section load flags so each panel paints the instant its OWN request
+  // lands, instead of the whole page blocking on the slowest one. Every request
+  // fires in parallel on mount (see the effect below).
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [agenciesLoading, setAgenciesLoading] = useState(true);
+  const [demosLoading, setDemosLoading] = useState(true);
 
   // drawer (shared component owns fetch + escape handling)
   const [openId, setOpenId] = useState<string | null>(null);
@@ -100,26 +105,31 @@ export default function AdminOverviewPage() {
     }
   }, []);
 
+  // Fire every request in parallel on mount and let each panel update the
+  // instant its own response lands (progressive paint). The call feed is no
+  // longer awaited after the others; it was a fifth request in series, one
+  // extra round-trip on the critical path, and now races with the rest.
   useEffect(() => {
-    (async () => {
-      try {
-        const [dash, attention, ag, dm] = await Promise.all([
-          adminGet('/api/admin/dashboard'),
-          adminGet('/api/admin/calls?filter=attention&limit=1'),
-          adminGet('/api/admin/agencies?limit=100'),
-          adminGet(`/api/admin/demos?interest=high&since=${new Date(Date.now() - 7 * 864e5).toISOString()}&limit=5`),
-        ]);
-        setStats(dash.stats || null);
-        setAttentionCount(attention.total || 0);
-        setAgencies(ag.agencies || []);
-        setDemos(dm.demos || []);
-        await fetchCalls('all');
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    adminGet('/api/admin/dashboard')
+      .then((d) => setStats(d.stats || null))
+      .catch((e) => console.error(e))
+      .finally(() => setStatsLoading(false));
+
+    adminGet('/api/admin/agencies?limit=100')
+      .then((d) => setAgencies(d.agencies || []))
+      .catch((e) => console.error(e))
+      .finally(() => setAgenciesLoading(false));
+
+    adminGet('/api/admin/calls?filter=attention&limit=1')
+      .then((d) => setAttentionCount(d.total || 0))
+      .catch((e) => console.error(e));
+
+    adminGet(`/api/admin/demos?interest=high&since=${new Date(Date.now() - 7 * 864e5).toISOString()}&limit=5`)
+      .then((d) => setDemos(d.demos || []))
+      .catch((e) => console.error(e))
+      .finally(() => setDemosLoading(false));
+
+    fetchCalls('all');
   }, [fetchCalls]);
 
   const changeFilter = (f: string) => { setFilter(f); fetchCalls(f); };
@@ -179,23 +189,17 @@ export default function AdminOverviewPage() {
     });
 
     demos.forEach((d) => {
+      const aid = d.agency_name ? agencyIdByName[d.agency_name.toLowerCase()] || null : null;
       items.push({
         id: `demo-${d.id}`, icon: Sparkles, tone: 'em',
         title: `Hot demo: ${d.business_name || d.business_type || 'unknown business'}`,
         detail: `${timeAgo(d.created_at)}, follow up fast`,
+        href: aid ? `/admin/agencies?expand=${aid}` : undefined,
       });
     });
 
     return items.slice(0, 8);
-  }, [agencies, attentionCount, demos]);
-
-  if (loading) {
-    return (
-      <div className="admin-scope min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
-      </div>
-    );
-  }
+  }, [agencies, attentionCount, demos, agencyIdByName]);
 
   return (
     <div className="admin-scope p-5 lg:p-8 max-w-[1400px]">
@@ -204,10 +208,10 @@ export default function AdminOverviewPage() {
 
       {/* OP STRIP */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
-        <OpTile label="Calls this month" value={formatNumber(stats?.callsThisMonth)} foot={`${stats?.totalClients || 0} clients answering`} tone="hero" />
+        <OpTile label="Calls this month" value={formatNumber(stats?.callsThisMonth)} foot={`${stats?.totalClients || 0} clients answering`} tone="hero" loading={statsLoading} />
         <OpTile label="Needs attention" value={String(attentionCount)} foot="Failed or no outcome" tone="alert" onClick={() => changeFilter('attention')} />
-        <OpTile label="New signups (7d)" value={String((stats?.recentAgencies || 0) + (stats?.recentClients || 0))} foot={`${stats?.recentAgencies || 0} agencies, ${stats?.recentClients || 0} clients`} tone="grow" />
-        <OpTile label="Active agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} />
+        <OpTile label="New signups (7d)" value={String((stats?.recentAgencies || 0) + (stats?.recentClients || 0))} foot={`${stats?.recentAgencies || 0} agencies, ${stats?.recentClients || 0} clients`} tone="grow" loading={statsLoading} />
+        <OpTile label="Active agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} loading={statsLoading} />
       </div>
 
       {/* SIGNUPS / ACTIONS / HOT DEMOS */}
@@ -221,7 +225,9 @@ export default function AdminOverviewPage() {
             <span className="text-[11px] text-[var(--a-dim)] ml-auto">last few</span>
           </div>
           <div className="p-1.5">
-            {signups.length === 0 ? (
+            {agenciesLoading ? (
+              <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
+            ) : signups.length === 0 ? (
               <div className="py-8 text-center text-[13px] text-[var(--a-dim)]">No agencies yet.</div>
             ) : signups.map((a) => {
               const loc = getPhoneLocation(a.phone, a.country);
@@ -248,12 +254,14 @@ export default function AdminOverviewPage() {
         <div className="a-panel">
           <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
             <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Action queue</h3>
-            {actions.length > 0 && (
+            {!agenciesLoading && actions.length > 0 && (
               <span className="ml-auto text-[11px] font-bold text-white rounded-full px-2 py-0.5 a-num" style={{ background: 'var(--a-red)' }}>{actions.length}</span>
             )}
           </div>
           <div className="p-1.5">
-            {actions.length === 0 ? (
+            {agenciesLoading ? (
+              <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
+            ) : actions.length === 0 ? (
               <div className="py-8 text-center text-[13px] text-[var(--a-dim)]">Nothing needs action. Clear.</div>
             ) : actions.map((a) => {
               const inner = (
@@ -283,7 +291,9 @@ export default function AdminOverviewPage() {
             <Link href="/admin/growth" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View all</Link>
           </div>
           <div className="p-1.5">
-            {demos.length === 0 ? (
+            {demosLoading ? (
+              <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
+            ) : demos.length === 0 ? (
               <div className="py-8 text-center text-[13px] text-[var(--a-dim)]">No high-interest demos in the last 7 days.</div>
             ) : demos.map((d) => {
               const interest = getDemoInterest(d.interest_level);
@@ -375,7 +385,7 @@ export default function AdminOverviewPage() {
 }
 
 // ── op tile ─────────────────────────────────────────────────────────────────
-function OpTile({ label, value, foot, tone, onClick }: { label: string; value: string; foot: string; tone?: string; onClick?: () => void }) {
+function OpTile({ label, value, foot, tone, onClick, loading }: { label: string; value: string; foot: string; tone?: string; onClick?: () => void; loading?: boolean }) {
   const isHero = tone === 'hero';
   const cls =
     tone === 'hero' ? 'text-white' :
@@ -389,7 +399,11 @@ function OpTile({ label, value, foot, tone, onClick }: { label: string; value: s
   return (
     <button onClick={onClick} className="a-card text-left p-4 transition-transform hover:-translate-y-px" style={bg}>
       <div className={`text-[12px] font-semibold ${isHero ? 'text-white/85' : 'text-[var(--a-muted)]'}`}>{label}</div>
-      <div className={`a-num mt-2 text-[33px] font-bold leading-none ${cls}`}>{value}</div>
+      {loading ? (
+        <div className="mt-2.5 h-[26px] w-16 rounded-md animate-pulse" style={{ background: isHero ? 'rgba(255,255,255,0.35)' : 'var(--a-line)' }} />
+      ) : (
+        <div className={`a-num mt-2 text-[33px] font-bold leading-none ${cls}`}>{value}</div>
+      )}
       <div className={`text-[11.5px] mt-1.5 font-medium ${isHero ? 'text-white/80' : 'text-[var(--a-dim)]'}`}>{foot}</div>
     </button>
   );
