@@ -230,19 +230,19 @@ export default function AdminOverviewPage() {
 
       {/* OP STRIP */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
-        <OpTile label="Calls this month" value={formatNumber(stats?.callsThisMonth)} foot={`${stats?.totalClients || 0} clients answering`} tone="hero" loading={statsLoading} />
-        <OpTile label="Needs attention" value={String(attentionCount)} foot="Failed or no outcome" tone="alert" onClick={() => changeFilter('attention')} />
-        <OpTile label="New signups (7d)" value={String((stats?.recentAgencies || 0) + (stats?.recentClients || 0))} foot={`${stats?.recentAgencies || 0} agencies, ${stats?.recentClients || 0} clients`} tone="grow" loading={statsLoading} />
-        <OpTile label="Active agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} loading={statsLoading} />
+        <OpTile label="Calls This Month" value={formatNumber(stats?.callsThisMonth)} foot={`${stats?.totalClients || 0} clients answering`} tone="hero" loading={statsLoading} />
+        <OpTile label="Needs Attention" value={String(attentionCount)} foot="Failed or no outcome" tone="alert" onClick={() => changeFilter('attention')} />
+        <OpTile label="New Signups (7d)" value={String((stats?.recentAgencies || 0) + (stats?.recentClients || 0))} foot={`${stats?.recentAgencies || 0} agencies, ${stats?.recentClients || 0} clients`} tone="grow" loading={statsLoading} />
+        <OpTile label="Active Agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} loading={statsLoading} />
       </div>
 
       {/* RECENT SIGNUPS (hero) */}
-      <div className="a-eyebrow mt-8">Who just signed up</div>
+      <div className="a-eyebrow mt-8">Who Just Signed Up</div>
       <div className="a-panel">
         <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
-          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Recent signups</h3>
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Recent Signups</h3>
           <span className="text-[11px] text-[var(--a-dim)]">reach out while they are warm</span>
-          <Link href="/admin/agencies" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View all</Link>
+          <Link href="/admin/agencies" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View All</Link>
         </div>
         <div className="p-1.5 grid grid-cols-1 lg:grid-cols-2 gap-0.5">
           {agenciesLoading ? (
@@ -273,7 +273,7 @@ export default function AdminOverviewPage() {
                   </div>
                 </Link>
                 <a href={buildSignupMailto(a)} onClick={(e) => e.stopPropagation()} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }} title={`Email ${a.email}`}>
-                  <Mail className="h-3.5 w-3.5" /> Reach out
+                  <Mail className="h-3.5 w-3.5" /> Reach Out
                 </a>
               </div>
             );
@@ -282,13 +282,13 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* ACTIONS / HOT DEMOS */}
-      <div className="a-eyebrow mt-8">Pipeline &amp; actions</div>
+      <div className="a-eyebrow mt-8">Pipeline &amp; Actions</div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
         {/* action queue */}
         <div className="a-panel">
           <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
-            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Action queue</h3>
+            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Action Queue</h3>
             {!agenciesLoading && actions.length > 0 && (
               <span className="ml-auto text-[11px] font-bold text-white rounded-full px-2 py-0.5 a-num" style={{ background: 'var(--a-red)' }}>{actions.length}</span>
             )}
@@ -322,8 +322,8 @@ export default function AdminOverviewPage() {
         {/* hot demos */}
         <div className="a-panel">
           <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
-            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Hot demos</h3>
-            <Link href="/admin/growth" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View all</Link>
+            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Hot Demos</h3>
+            <Link href="/admin/growth" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View All</Link>
           </div>
           <div className="p-1.5">
             {demosLoading ? (
@@ -352,10 +352,10 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* CALL FEED */}
-      <div id="call-feed" className="a-eyebrow mt-8">Live call feed</div>
+      <div id="call-feed" className="a-eyebrow mt-8">Live Call Feed</div>
       <div className="a-panel">
         <div className="flex items-center gap-3 p-4 border-b border-[var(--a-line)] flex-wrap">
-          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All calls</h3>
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All Calls</h3>
           <div className="flex gap-1.5 flex-wrap ml-auto">
             {CALL_FILTERS.map((f) => (
               <button

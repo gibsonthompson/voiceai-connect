@@ -416,7 +416,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                   <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
                                   <div className="space-y-1.5 text-xs">
                                     <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.created_at)}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User type</span><span className="text-[var(--a-ink)] capitalize">{req.user_type || 'unknown'}</span></div>
+                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User Type</span><span className="text-[var(--a-ink)] capitalize">{req.user_type || 'unknown'}</span></div>
                                     {req.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{req.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.display_name}</span></div>}
                                     {req.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.user_email}</span></div>}
                                     <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Source</span><span className="text-[var(--a-ink)]">{req.source || 'widget'}</span></div>
@@ -427,7 +427,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                     {req.agency_id && (
                                       <Link href={`/admin/agencies?expand=${req.agency_id}`} onClick={(e) => e.stopPropagation()}
                                         className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
-                                        <Building2 className="h-3 w-3" /> Open agency <ExternalLink className="h-3 w-3" />
+                                        <Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" />
                                       </Link>
                                     )}
                                     {req.user_email && (
@@ -739,7 +739,7 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                     {fb.agency_id && (
                                       <Link href={`/admin/agencies?expand=${fb.agency_id}`} onClick={(e) => e.stopPropagation()}
                                         className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
-                                        <Building2 className="h-3 w-3" /> Open agency <ExternalLink className="h-3 w-3" />
+                                        <Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" />
                                       </Link>
                                     )}
                                     {fb.agency_email && (
@@ -863,7 +863,7 @@ function CreateTicketModal({ onClose, onCreated }: { onClose: () => void; onCrea
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--a-line)]">
           <div className="flex items-center gap-2">
             <LifeBuoy className="h-4 w-4 text-[var(--a-em-deep)]" />
-            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">New support ticket</h3>
+            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">New Support Ticket</h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--a-dim)] hover:bg-[var(--a-em-soft)] transition-colors"><X className="h-4 w-4" /></button>
         </div>
@@ -935,7 +935,7 @@ function CreateTicketModal({ onClose, onCreated }: { onClose: () => void; onCrea
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--a-line)]">
           <button onClick={onClose} className="rounded-lg px-3.5 py-2 text-sm font-medium text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">Cancel</button>
           <button onClick={submit} disabled={submitting || !message.trim()} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:brightness-95 disabled:opacity-40 disabled:cursor-default" style={{ background: 'var(--a-em)', color: '#04140D' }}>
-            {submitting ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}Create ticket
+            {submitting ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}Create Ticket
           </button>
         </div>
       </div>
