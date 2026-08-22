@@ -162,11 +162,53 @@ export default function BlogPostLayout({
     product: 'Product Update',
   }[meta.category] || meta.category;
 
+  // Article + Organization JSON-LD. Server-rendered in the initial HTML (this is
+  // a client component, but Next SSRs it), so non-JS AI crawlers read it. The
+  // publisher references the same canonical Organization @id as the homepage and
+  // the dynamic blog route, and that node is defined here so the reference
+  // resolves on a standalone post page.
+  const SITE_URL = 'https://www.myvoiceaiconnect.com';
+  const toISO = (d: string): string | undefined => {
+    const t = new Date(d).getTime();
+    return Number.isNaN(t) ? undefined : new Date(t).toISOString();
+  };
+  const published = toISO(meta.publishedAt);
+  const modified = toISO(meta.updatedAt || meta.publishedAt) || published;
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        headline: meta.title,
+        description: meta.description,
+        ...(published ? { datePublished: published } : {}),
+        ...(modified ? { dateModified: modified } : {}),
+        author: {
+          '@type': 'Person',
+          name: meta.author.name,
+          ...(meta.author.role ? { jobTitle: meta.author.role } : {}),
+        },
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        ...(meta.tags && meta.tags.length ? { keywords: meta.tags.join(', ') } : {}),
+        inLanguage: 'en-US',
+      },
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: 'VoiceAI Connect',
+        url: SITE_URL,
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512x512.png`, width: 512, height: 512 },
+        sameAs: ['https://www.linkedin.com/company/voiceai-connect/'],
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-ink">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <MarketingNav />
 
-      {/* ════════ ARTICLE HEADER — DARK ════════ */}
+      {/* ════════ ARTICLE HEADER - DARK ════════ */}
       <section className="canvas-dot relative pt-32 lg:pt-40 pb-16 lg:pb-20 overflow-hidden">
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
@@ -216,7 +258,7 @@ export default function BlogPostLayout({
         </div>
       </section>
 
-      {/* ════════ ARTICLE BODY — LIGHT ════════ */}
+      {/* ════════ ARTICLE BODY - LIGHT ════════ */}
       <section className="bg-paper">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-14 lg:py-20">
           <div className="grid lg:grid-cols-[1fr_280px] gap-10 lg:gap-14 max-w-6xl mx-auto">
