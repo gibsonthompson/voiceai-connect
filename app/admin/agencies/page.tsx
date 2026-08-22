@@ -27,11 +27,12 @@ import {
 } from 'lucide-react';
 import {
   formatPhone, formatDate, formatDateTime, timeAgo, formatCurrencyCents,
-  getCountryName, getPhoneLocation,
+  getCountryName, getPhoneLocation, formatDuration,
 } from '@/lib/admin/format';
 import {
-  getStatusBadge, getPlanBadge, getPlanDisplayName, getSmsTypeLabel,
+  getStatusBadge, getPlanBadge, getPlanDisplayName, getSmsTypeLabel, deriveCallOutcome,
 } from '@/lib/admin/status';
+import CallDrawer from '@/components/admin/CallDrawer';
 
 interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
@@ -54,6 +55,12 @@ export default function AdminAgenciesPage() {
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  // Per-agency recent calls (fetched when a row expands) + the shared call
+  // drawer, reused from the overview so clicking a call here behaves identically.
+  const [agencyCalls, setAgencyCalls] = useState<Record<string, any[]>>({});
+  const [callsLoading, setCallsLoading] = useState<string | null>(null);
+  const [openCallId, setOpenCallId] = useState<string | null>(null);
+  const [openCallAgencyId, setOpenCallAgencyId] = useState<string | null>(null);
 
   useEffect(() => { const expandId = searchParams.get('expand'); if (expandId) { setExpandedRow(expandId); fetchExpandedData(expandId); ensureAgencyLoaded(expandId); } }, [searchParams]);
   useEffect(() => { if (!loading && expandedRow && rowRefs.current[expandedRow]) { setTimeout(() => { rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); } }, [loading, expandedRow, agencies]);
@@ -102,7 +109,20 @@ export default function AdminAgenciesPage() {
     }
   };
 
+  const fetchAgencyCalls = async (agencyId: string) => {
+    if (agencyCalls[agencyId]) return;
+    setCallsLoading(agencyId);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const response = await fetch(`${backendUrl}/api/admin/calls?agency_id=${agencyId}&limit=10`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (response.ok) { const data = await response.json(); setAgencyCalls(prev => ({ ...prev, [agencyId]: data.calls || [] })); }
+    } catch (error) { console.error('Agency calls error:', error); }
+    finally { setCallsLoading(null); }
+  };
+
   const fetchExpandedData = async (agencyId: string) => {
+    fetchAgencyCalls(agencyId);
     if (expandedData[agencyId]) return;
     setExpandedLoading(agencyId);
     try {
@@ -399,6 +419,36 @@ export default function AdminAgenciesPage() {
                     <div className="space-y-3"><h4 className={label}>Usage</h4><div className="space-y-1.5 text-[13px]"><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Users</span><span className="text-[var(--a-muted)] a-num">{agency.user_count}</span></div><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Clients</span><span className="text-[var(--a-muted)] a-num">{agency.client_count}</span></div><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Total Calls</span><span className="text-[var(--a-muted)] a-num">{agency.call_count}</span></div><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Leads</span><span className="text-[var(--a-muted)] a-num">{agency.lead_count}</span></div><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Revenue</span><span className="a-num" style={{ color: 'var(--a-em-deep)' }}>{formatCurrencyCents(agency.total_revenue)}</span></div><div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Payments</span><span className="text-[var(--a-muted)] a-num">{agency.payment_count}</span></div>{agency.referral_code && (<div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Referral</span><span className="text-[var(--a-dim)] text-[11px] font-mono">{agency.referral_code}</span></div>)}{agency.referral_code && agency.referral_earnings_cents != null && agency.referral_earnings_cents > 0 && (<div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Ref. Earnings</span><span className="a-num text-[11px]" style={{ color: 'var(--a-em-deep)' }}>{formatCurrencyCents(agency.referral_earnings_cents)}</span></div>)}{agency.referred_by && (<div className="flex items-center justify-between"><span className="text-[var(--a-dim)]">Referred By</span><span className="text-[var(--a-dim)] text-[11px] font-mono truncate max-w-[120px]">{agency.referred_by}</span></div>)}</div><div className="pt-2 border-t border-[var(--a-line)] text-[11px] text-[var(--a-dim)]">Created: {formatDateTime(agency.created_at)}{agency.last_login_at && (<> &middot; Last login: {timeAgo(agency.last_login_at)}</>)}{agency.last_active_at && (<> &middot; Last active: {timeAgo(agency.last_active_at)}</>)}</div></div>
                   </div>
 
+                  {/* Recent Calls */}
+                  {(callsLoading === agency.id || (agencyCalls[agency.id] && agencyCalls[agency.id].length > 0)) && (
+                    <div className="mt-5 pt-5 border-t border-[var(--a-line)]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <PhoneCall className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} />
+                        <h4 className={label}>Recent Calls</h4>
+                        {agencyCalls[agency.id] && agencyCalls[agency.id].length > 0 && <span className="text-[10px] text-[var(--a-dim)]">Last {agencyCalls[agency.id].length}</span>}
+                      </div>
+                      {callsLoading === agency.id && !agencyCalls[agency.id] ? (
+                        <div className="py-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-[var(--a-em)]" /></div>
+                      ) : (
+                        <div className="space-y-1">
+                          {agencyCalls[agency.id].map((c: any) => {
+                            const o = deriveCallOutcome(c);
+                            return (
+                              <button key={c.id} onClick={(e) => { e.stopPropagation(); setOpenCallId(c.id); setOpenCallAgencyId(agency.id); }} className="flex items-center gap-3 w-full text-left rounded-lg px-3 py-2 bg-white border border-[var(--a-line)] hover:bg-[#F6FCF9] transition-colors">
+                                <span className="text-[11px] text-[var(--a-dim)] shrink-0 a-num w-14">{timeAgo(c.created_at)}</span>
+                                <span className="text-[12px] font-semibold text-[var(--a-ink)] a-num shrink-0">{formatPhone(c.customer_phone)}</span>
+                                <span className="text-[11px] text-[var(--a-dim)] truncate flex-1">{c.business_name || 'Unknown client'}</span>
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold shrink-0" style={{ color: o.color }}><span className="a-dot" style={{ background: o.color }} />{o.label}</span>
+                                <span className="text-[11px] text-[var(--a-dim)] shrink-0 a-num w-12 text-right">{formatDuration(c.duration_seconds)}</span>
+                                {c.needs_attention && <span className="a-dot shrink-0" style={{ background: 'var(--a-red)' }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {expandedLoading === agency.id && (
                     <div className="mt-5 pt-5 border-t border-[var(--a-line)] flex items-center justify-center py-8">
                       <Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" />
@@ -545,6 +595,8 @@ export default function AdminAgenciesPage() {
         )}
       </div>
       {!loading && filteredAgencies.length > 0 && (<p className="mt-4 text-xs text-[var(--a-dim)]">Showing {filteredAgencies.length} agenc{filteredAgencies.length === 1 ? 'y' : 'ies'}</p>)}
+
+      <CallDrawer callId={openCallId} agencyId={openCallAgencyId} onClose={() => { setOpenCallId(null); setOpenCallAgencyId(null); }} />
     </div>
   );
 }
