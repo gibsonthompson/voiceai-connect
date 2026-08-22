@@ -20,6 +20,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle, Loader2, Clock, UserPlus, Sparkles, DollarSign, ArrowRight,
+  Mail, CheckCircle2, Circle,
 } from 'lucide-react';
 import {
   formatPhone, timeAgo, formatDuration, formatUSD, formatNumber, getPhoneLocation,
@@ -60,6 +61,27 @@ interface DemoRow {
   id: string; created_at: string; caller_phone: string; business_name: string | null;
   business_type: string | null; interest_level: string | null; agency_name: string | null;
   vapi_success_score: string | null;
+}
+
+// Founder-style first-touch email for a fresh signup. Prefilled and editable in
+// the admin's own mail client (opens via mailto), so a real person sends it, not
+// an automated blast. The automated branded sequence is separate (backend cron).
+function buildSignupMailto(a: Agency): string {
+  const subject = 'Welcome to VoiceAI Connect';
+  const body = [
+    'Hi there,',
+    '',
+    `Saw you just set up ${a.name || 'your agency'} on VoiceAI Connect. Quick note from me directly.`,
+    '',
+    'The fastest path to your first paying client is getting your demo receptionist in front of one prospect this week. They call, they hear the AI answer as their business, and the value sells itself.',
+    '',
+    'Tell me the kind of client you are going after (home services, medical, legal, and so on) and I will point you to the setup that converts best for them.',
+    '',
+    'What are you hoping to get out of it?',
+    '',
+    'Gibson',
+  ].join('\n');
+  return `mailto:${a.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export default function AdminOverviewPage() {
@@ -138,7 +160,7 @@ export default function AdminOverviewPage() {
   const signups = useMemo(() => {
     return [...agencies]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5);
+      .slice(0, 8);
   }, [agencies]);
 
   // ── action queue: derived from real agency fields + attention + demos ─────
@@ -214,41 +236,54 @@ export default function AdminOverviewPage() {
         <OpTile label="Active agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} loading={statsLoading} />
       </div>
 
-      {/* SIGNUPS / ACTIONS / HOT DEMOS */}
-      <div className="a-eyebrow mt-8">Pipeline &amp; actions</div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-
-        {/* recent signups */}
-        <div className="a-panel">
-          <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
-            <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Recent signups</h3>
-            <span className="text-[11px] text-[var(--a-dim)] ml-auto">last few</span>
-          </div>
-          <div className="p-1.5">
-            {agenciesLoading ? (
-              <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
-            ) : signups.length === 0 ? (
-              <div className="py-8 text-center text-[13px] text-[var(--a-dim)]">No agencies yet.</div>
-            ) : signups.map((a) => {
-              const loc = getPhoneLocation(a.phone, a.country);
-              return (
-                <Link key={a.id} href={`/admin/agencies?expand=${a.id}`} className="flex gap-3 p-3 rounded-xl hover:bg-[#F6FCF9] items-start">
+      {/* RECENT SIGNUPS (hero) */}
+      <div className="a-eyebrow mt-8">Who just signed up</div>
+      <div className="a-panel">
+        <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]">
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Recent signups</h3>
+          <span className="text-[11px] text-[var(--a-dim)]">reach out while they are warm</span>
+          <Link href="/admin/agencies" className="ml-auto text-[11px] font-semibold text-[var(--a-em-deep)]">View all</Link>
+        </div>
+        <div className="p-1.5 grid grid-cols-1 lg:grid-cols-2 gap-0.5">
+          {agenciesLoading ? (
+            <div className="py-10 flex justify-center lg:col-span-2"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
+          ) : signups.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-[var(--a-dim)] lg:col-span-2">No agencies yet.</div>
+          ) : signups.map((a) => {
+            const loc = getPhoneLocation(a.phone, a.country);
+            const activated = (a.client_count || 0) > 0;
+            return (
+              <div key={a.id} className="flex gap-3 p-3 rounded-xl hover:bg-[#F6FCF9] items-center">
+                <Link href={`/admin/agencies?expand=${a.id}`} className="flex gap-3 items-start min-w-0 flex-1">
                   <span className="h-9 w-9 rounded-[10px] flex items-center justify-center font-semibold text-[12px] shrink-0" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>
                     {(a.name || '?').charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{a.name}</div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{a.name}</span>
+                      <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={activated ? { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' } : { background: '#FBF0D6', color: 'var(--a-amber)' }}>
+                        {activated ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                        {activated ? `${a.client_count} client${a.client_count === 1 ? '' : 's'}` : 'No clients yet'}
+                      </span>
+                    </div>
                     <div className="text-[11.5px] text-[var(--a-em-deep)] font-semibold truncate">{a.email}</div>
                     <div className="text-[11.5px] text-[var(--a-dim)] truncate">
                       {[loc, getPlanDisplayName(a.plan_type), a.referral_source ? a.referral_source.replace(/_/g, ' ') : null, timeAgo(a.created_at)].filter(Boolean).join(' \u00b7 ')}
                     </div>
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-[var(--a-dim)] ml-auto mt-1 shrink-0" />
                 </Link>
-              );
-            })}
-          </div>
+                <a href={buildSignupMailto(a)} onClick={(e) => e.stopPropagation()} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }} title={`Email ${a.email}`}>
+                  <Mail className="h-3.5 w-3.5" /> Reach out
+                </a>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      {/* ACTIONS / HOT DEMOS */}
+      <div className="a-eyebrow mt-8">Pipeline &amp; actions</div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
         {/* action queue */}
         <div className="a-panel">
