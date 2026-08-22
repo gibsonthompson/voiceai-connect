@@ -55,7 +55,7 @@ export default function AdminAgenciesPage() {
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => { const expandId = searchParams.get('expand'); if (expandId) { setExpandedRow(expandId); fetchExpandedData(expandId); } }, [searchParams]);
+  useEffect(() => { const expandId = searchParams.get('expand'); if (expandId) { setExpandedRow(expandId); fetchExpandedData(expandId); ensureAgencyLoaded(expandId); } }, [searchParams]);
   useEffect(() => { if (!loading && expandedRow && rowRefs.current[expandedRow]) { setTimeout(() => { rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); } }, [loading, expandedRow, agencies]);
   useEffect(() => { fetchAgencies(); }, [statusFilter]);
 
@@ -112,6 +112,30 @@ export default function AdminAgenciesPage() {
       if (response.ok) { const data = await response.json(); setExpandedData(prev => ({ ...prev, [agencyId]: data })); }
     } catch (error) { console.error('Expanded data error:', error); }
     finally { setExpandedLoading(null); }
+  };
+
+  // Deep-link open (the support tab "Open agency" link routes here as ?expand=<id>).
+  // Load just that one agency and show it right away, rather than blocking the
+  // whole page on the full-roster fetch. That fetch runs the platform-wide
+  // admin_agencies_rollup aggregate and, as call/lead volume grows, can be slow
+  // enough to look like a timeout, which left the clicked agency never showing.
+  // The full list still loads in the background to fill the table and tiles.
+  const ensureAgencyLoaded = async (agencyId: string) => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/admin/agencies/${agencyId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const { agency } = await res.json();
+      if (!agency) return;
+      // Seed rollup counts to 0; the background roster load fills real numbers in.
+      const seeded: Agency = { client_count: 0, call_count: 0, lead_count: 0, total_revenue: 0, payment_count: 0, user_count: 0, ...agency };
+      setAgencies(prev => prev.some(a => a.id === seeded.id) ? prev : [seeded, ...prev]);
+      setLoading(false);
+      setTimeout(() => { rowRefs.current[agencyId]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 120);
+    } catch (error) {
+      console.error('Deep-link agency load error:', error);
+    }
   };
 
   const handleExpand = (agencyId: string) => { if (expandedRow === agencyId) { setExpandedRow(null); } else { setExpandedRow(agencyId); fetchExpandedData(agencyId); } };
