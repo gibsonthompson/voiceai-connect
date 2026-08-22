@@ -23,39 +23,29 @@ export default async function sitemap() {
         }));
       }
     }
-  } catch (e) { /* non-critical — return hardcoded entries only */ }
+  } catch (e) { /* non-critical, return hardcoded entries only */ }
 
   const blogSlugs = [
-    'white-label-ai-receptionist-pricing-breakdown', 'best-white-label-ai-receptionist-platforms-ranked',
-    'how-to-resell-ai-receptionist-services', 'white-label-ai-receptionist-lead-gen-agencies',
-    'set-up-white-label-ai-receptionist-business-24-hours', 'white-label-ai-receptionist-compliance-guide',
-    'how-to-choose-white-label-ai-receptionist-platform', 'white-label-ai-voice-agent-platform-agencies',
-    'voiceai-connect-vs-autocalls', 'voiceai-connect-vs-echowin', 'voiceai-connect-vs-voxtell',
-    'voiceai-connect-vs-callin-io', 'voiceai-connect-vs-insighto',
-    'missed-call-cost-small-business', 'ai-receptionist-vs-ivr-vs-answering-service',
-    'how-to-sell-ai-to-local-businesses', 'what-is-ai-receptionist-how-it-works',
-    'how-to-set-up-ai-receptionist', 'what-can-ai-receptionist-handle',
-    'ai-receptionist-prompt-templates', 'smma-profit-margins-2026', 'ai-agency-profit-margins-2026',
-    'how-to-find-leads-google-maps', 'ai-receptionist-agency-vs-smma', 'best-industries-ai-receptionist',
-    'best-recurring-revenue-business-ideas-2026', 'building-referral-program-agency',
-    'cold-outreach-templates-that-work', 'how-much-do-ai-receptionist-agencies-make',
-    'how-to-price-ai-receptionist-services', 'how-to-start-ai-receptionist-agency',
-    'my-ai-front-desk-alternative', 'phone-only-business-ai-agency',
-    'pitch-ai-receptionists-home-services', 'white-label-ai-receptionist-platform',
-    'white-label-vs-build-ai-receptionist', 'best-online-businesses-no-experience',
-    'ai-agency-vs-dropshipping', 'recurring-revenue-business-no-code',
-    'first-month-ai-receptionist-agency', 'can-you-start-ai-business-no-technical-skills',
-    'voiceai-connect-vs-trillet', 'voiceai-connect-vs-goodcall', 'voiceai-connect-vs-smith-ai',
-    'best-ai-receptionist-platforms-compared-2026', 'why-agencies-switch-answering-services-to-ai',
-    'sell-ai-receptionist-to-plumbers', 'sell-ai-receptionist-to-dental-offices',
-    'sell-ai-receptionist-to-law-firms', 'sell-ai-receptionist-to-restaurants',
-    'sell-ai-receptionist-to-auto-shops', 'complete-guide-white-label-ai-receptionist-business',
-    'ai-receptionist-agency-profit-calculator', 'ai-receptionist-vs-human-receptionist-cost',
-    'signs-ai-receptionist-agency-is-right-for-you', 'mistakes-new-ai-agency-owners-make',
-    'white-label-saas-business-model-explained', 'start-ai-receptionist-agency-from-india',
-    'start-ai-business-from-anywhere', 'ai-receptionist-for-plumbers',
-    'ai-receptionist-for-dentists', 'ai-receptionist-for-lawyers',
-    'ai-receptionist-for-hvac', 'ai-receptionist-for-real-estate',
+    'white-label-ai-receptionist-pricing-breakdown', 'best-white-label-ai-receptionist-platforms-ranked', 'how-to-resell-ai-receptionist-services',
+    'white-label-ai-receptionist-lead-gen-agencies', 'set-up-white-label-ai-receptionist-business-24-hours', 'white-label-ai-receptionist-compliance-guide',
+    'how-to-choose-white-label-ai-receptionist-platform', 'white-label-ai-voice-agent-platform-agencies', 'voiceai-connect-vs-autocalls',
+    'voiceai-connect-vs-echowin', 'voiceai-connect-vs-voxtell', 'voiceai-connect-vs-callin-io',
+    'voiceai-connect-vs-insighto', 'missed-call-cost-small-business', 'ai-receptionist-vs-ivr-vs-answering-service',
+    'how-to-sell-ai-to-local-businesses', 'what-is-ai-receptionist-how-it-works', 'how-to-set-up-ai-receptionist',
+    'what-can-ai-receptionist-handle', 'ai-receptionist-prompt-templates', 'smma-profit-margins-2026',
+    'ai-agency-profit-margins-2026', 'how-to-find-leads-google-maps', 'ai-receptionist-agency-vs-smma',
+    'best-industries-ai-receptionist', 'best-recurring-revenue-business-ideas-2026', 'building-referral-program-agency',
+    'cold-outreach-templates-that-work', 'how-much-do-ai-receptionist-agencies-make', 'how-to-price-ai-receptionist-services',
+    'how-to-start-ai-receptionist-agency', 'my-ai-front-desk-alternative', 'phone-only-business-ai-agency',
+    'pitch-ai-receptionists-home-services', 'white-label-ai-receptionist-platform', 'white-label-vs-build-ai-receptionist',
+    'best-online-businesses-no-experience', 'ai-agency-vs-dropshipping', 'recurring-revenue-business-no-code',
+    'first-month-ai-receptionist-agency', 'can-you-start-ai-business-no-technical-skills', 'voiceai-connect-vs-trillet',
+    'voiceai-connect-vs-goodcall', 'voiceai-connect-vs-smith-ai', 'why-agencies-switch-answering-services-to-ai',
+    'sell-ai-receptionist-to-plumbers', 'sell-ai-receptionist-to-dental-offices', 'sell-ai-receptionist-to-law-firms',
+    'sell-ai-receptionist-to-restaurants', 'sell-ai-receptionist-to-auto-shops', 'complete-guide-white-label-ai-receptionist-business',
+    'ai-receptionist-agency-profit-calculator', 'ai-receptionist-vs-human-receptionist-cost', 'signs-ai-receptionist-agency-is-right-for-you',
+    'mistakes-new-ai-agency-owners-make', 'white-label-saas-business-model-explained', 'start-ai-receptionist-agency-from-india',
+    'start-ai-business-from-anywhere',
   ];
 
   blogSlugs.forEach(s => hardcodedBlogSlugs.add(s));
@@ -88,7 +78,7 @@ export default async function sitemap() {
     // Blog Index
     { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
 
-    // Blog Posts — all existing hardcoded
+    // Blog Posts, all existing hardcoded
     ...blogSlugs.map(slug => ({
       url: `${baseUrl}/blog/${slug}`,
       lastModified: new Date(),
