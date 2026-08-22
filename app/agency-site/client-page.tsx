@@ -196,26 +196,21 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // Client login URL (custom domain first, then subdomain)
   const loginUrl = resolveLoginUrl(agency);
 
-  // Build pricing from agency price columns
-  const agencyPricing = [];
-  if (agency.price_starter) {
-    agencyPricing.push({
-      ...defaultMarketingConfig.pricing[0],
-      price: Math.round(agency.price_starter / 100),
-    });
-  }
-  if (agency.price_pro) {
-    agencyPricing.push({
-      ...defaultMarketingConfig.pricing[1],
-      price: Math.round(agency.price_pro / 100),
-    });
-  }
-  if (agency.price_growth) {
-    agencyPricing.push({
-      ...defaultMarketingConfig.pricing[2],
-      price: Math.round(agency.price_growth / 100),
-    });
-  }
+  // Pricing resolution.
+  // The dedicated price_* columns (written by Settings > Pricing) are the
+  // source of truth for PRICE. Tier copy (names/features/subtitle) comes from
+  // the agency's generated marketing_config when present, otherwise defaults.
+  // We overlay the column price onto that base by index. This resolved array is
+  // applied AFTER the marketing_config spread below so a stale `pricing` array
+  // baked into that JSONB can never override what the agency sets in Settings.
+  // (Same rule already used for customNavLinks and clientLoginPath.)
+  const basePricing = (agency.marketing_config?.pricing && agency.marketing_config.pricing.length > 0)
+    ? agency.marketing_config.pricing
+    : defaultMarketingConfig.pricing;
+  const priceCents = [agency.price_starter, agency.price_pro, agency.price_growth];
+  const resolvedPricing = basePricing.map((tier, i) =>
+    priceCents[i] != null ? { ...tier, price: Math.round((priceCents[i] as number) / 100) } : tier
+  );
 
   // Logo background color
   const logoBgColor = (agency.logo_background_color && agency.logo_background_color !== '#000000' && agency.logo_background_color !== '#000')
@@ -246,10 +241,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
           ? agency.website_headline.split('\n')
           : [agency.website_headline]
         : defaultMarketingConfig.hero.headline,
-      subtitle: `AI Receptionist Starting at ${currencySymbol}${agencyPricing.length > 0 ? agencyPricing[0].price : defaultMarketingConfig.pricing[0].price}/month`,
+      subtitle: `AI Receptionist Starting at ${currencySymbol}${resolvedPricing[0].price}/month`,
       demoPhone,
     },
-    ...(agencyPricing.length > 0 ? { pricing: agencyPricing } : {}),
     footer: {
       ...defaultMarketingConfig.footer,
       phone: agency.support_phone || '',
@@ -275,6 +269,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // After the marketing_config spread so the dedicated column always wins
     // over any stale value living in that JSONB.
     customNavLinks: Array.isArray(agency.custom_nav_links) ? agency.custom_nav_links : [],
+    // Same rule for pricing: the price_* columns (Settings > Pricing) always win
+    // over any stale `pricing` array baked into marketing_config by marketing-copy
+    // generation. Without this, editing prices in Settings does nothing on the site.
+    pricing: resolvedPricing,
   };
 
   // Resolve theme
