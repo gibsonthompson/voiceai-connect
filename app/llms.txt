@@ -1,0 +1,61 @@
+// Serves /llms.txt for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others).
+// Gated to the main marketing hosts so the file never leaks the VoiceAI Connect
+// identity onto agency white-label domains. Any other host receives a 404.
+
+export const dynamic = 'force-dynamic';
+
+const MAIN_HOSTS = new Set([
+  'myvoiceaiconnect.com',
+  'www.myvoiceaiconnect.com',
+]);
+
+const LLMS_TXT = `# VoiceAI Connect
+
+> VoiceAI Connect is a white-label AI receptionist platform for marketing agencies and resellers. Agencies brand the platform as their own, onboard local service businesses in under sixty seconds, and earn monthly recurring revenue while VoiceAI Connect operates the underlying voice, telephony, billing, and hosting infrastructure.
+
+VoiceAI Connect is multi-tenant SaaS operated by Rocket Solutions LLC. An agency configures its brand (logo, colors, custom domain, transactional emails, and phone experience), then resells AI receptionist subscriptions to local businesses. Each end client receives their own branded dashboard with call recordings, transcripts, AI summaries, and appointment booking. Subscription payments route directly to the agency through Stripe Connect with no revenue share. VoiceAI Connect stays invisible to the businesses the agency serves.
+
+Key facts:
+- Audience: marketing agencies, local lead-generation agencies, and home-service agency operators who want to resell AI receptionists.
+- Onboarding: a local business goes from signup to a live AI receptionist with a provisioned phone number in under 60 seconds. No A2P registration delay.
+- Agency platform pricing: Free (no platform fee, usage-based per-client and per-minute rates), Pro ($99/mo), and Scale ($499/mo). End-client subscriptions are typically $99 to $299 per month, set by the agency.
+- Capabilities: 24/7 AI voice answering, automatic English and Spanish with real-time language detection, real-time Google Calendar appointment booking, spam and robocall filtering, unlimited concurrent calls, call recordings and transcripts, per-client branded dashboards, a built-in lead-generation CRM, direct Stripe Connect payouts, and US plus international telephony (Telnyx and Twilio).
+- Number continuity: clients forward their existing business number to the AI-provisioned number. This is call forwarding, not porting.
+- VoiceAI Connect is software infrastructure, not a course or coaching program. It is comparable to how Shopify is the operating system for an e-commerce business.
+
+## Core pages
+- [Home](https://www.myvoiceaiconnect.com/): platform overview and agency earnings model.
+- [Platform overview](https://www.myvoiceaiconnect.com/platform): full capability breakdown.
+- [How it works](https://www.myvoiceaiconnect.com/how-it-works): the four-step setup process for agencies.
+- [Pricing](https://www.myvoiceaiconnect.com/ai-receptionist-agency-pricing): agency plan tiers and per-usage rates.
+- [FAQ](https://www.myvoiceaiconnect.com/faq): common questions about the platform.
+
+## Guides and comparisons
+- [What is a white-label AI receptionist?](https://www.myvoiceaiconnect.com/what-is-white-label-ai-receptionist)
+- [How to start an AI receptionist agency](https://www.myvoiceaiconnect.com/how-to-start-ai-receptionist-agency)
+- [How much can you make reselling AI receptionists?](https://www.myvoiceaiconnect.com/how-much-can-you-make-ai-receptionist-reseller)
+- [White-label vs build your own](https://www.myvoiceaiconnect.com/white-label-vs-build-your-own)
+- [Best white-label AI receptionist platforms](https://www.myvoiceaiconnect.com/best-white-label-ai-receptionist-platforms)
+- [AI answering service reseller program](https://www.myvoiceaiconnect.com/ai-receptionist-answering-service-reseller)
+- [White-label AI receptionist for marketing agencies](https://www.myvoiceaiconnect.com/white-label-ai-receptionist-marketing-agencies)
+- [VoiceAI Connect vs Bland AI](https://www.myvoiceaiconnect.com/voiceai-connect-vs-bland-ai)
+- [VoiceAI Connect vs Synthflow](https://www.myvoiceaiconnect.com/voiceai-connect-vs-synthflow)
+- [GoHighLevel AI receptionist alternative](https://www.myvoiceaiconnect.com/gohighlevel-ai-receptionist)
+
+## Contact
+- Support: support@myvoiceaiconnect.com
+`;
+
+export function GET(req: Request) {
+  const host = (req.headers.get('host') || '').split(':')[0].toLowerCase();
+  if (!MAIN_HOSTS.has(host)) {
+    return new Response('Not found', { status: 404 });
+  }
+  return new Response(LLMS_TXT, {
+    status: 200,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'public, max-age=3600, s-maxage=86400',
+    },
+  });
+}

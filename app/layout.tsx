@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Sora, Inter } from "next/font/google";
 import Script from "next/script";
 import ErrorReporter from "@/components/ErrorReporter";
 import SupportWidget from "@/components/support-widget";
+import AttributionCapture from "@/components/attribution-capture";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -36,11 +37,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
+    default: "VoiceAI Connect: White-Label AI Receptionist Platform for Agencies",
     template: "%s | VoiceAI Connect",
   },
   description:
-    "Launch your own AI voice receptionist agency. White-label platform purpose-built for agencies and resellers — your brand, your pricing, 100% of the revenue. Start free, no credit card required.",
+    "Launch your own AI voice receptionist agency. White-label platform purpose-built for agencies and resellers. Your brand, your pricing, 100% of the revenue. Start free, no credit card required.",
   keywords: [
     "white-label AI receptionist",
     "AI receptionist platform",
@@ -55,10 +56,10 @@ export const metadata: Metadata = {
   // (start_url /agency/dashboard) on the platform host and an agency-branded,
   // client-scoped manifest (start_url /client/dashboard) on agency hosts. This
   // is why installing to the home screen from a client subdomain no longer
-  // opens /agency/dashboard → /agency/login. (Plain string, so no page is
+  // opens /agency/dashboard -> /agency/login. (Plain string, so no page is
   // forced into dynamic rendering; only the API route itself is dynamic.)
   manifest: "/api/client-manifest",
-  // icons intentionally omitted — the DynamicFavicon handles dashboard pages,
+  // icons intentionally omitted -- the DynamicFavicon handles dashboard pages,
   // and static <link> tags in <head> handle the marketing site.
   // Removed to prevent conflict with app/icon.* file conventions.
   appleWebApp: {
@@ -77,13 +78,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://www.myvoiceaiconnect.com",
     siteName: "VoiceAI Connect",
-    title: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
+    title: "VoiceAI Connect: White-Label AI Receptionist Platform for Agencies",
     description:
       "Launch your own AI voice receptionist agency. White-label platform with branded dashboards, automated phone provisioning, and Stripe Connect billing. Start free, no credit card required.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "VoiceAI Connect — White-Label AI Receptionist Platform for Agencies",
+    title: "VoiceAI Connect: White-Label AI Receptionist Platform for Agencies",
     description:
       "Launch your own AI voice receptionist agency. White-label platform with your brand, your pricing, 100% of the revenue.",
   },
@@ -172,6 +173,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <ErrorReporter />
+        <AttributionCapture />
         {children}
         <SupportWidget />
       </body>

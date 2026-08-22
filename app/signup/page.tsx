@@ -11,6 +11,7 @@ import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
 import { useEmbedMessaging } from '@/lib/embed-messaging';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
+import HowDidYouHear from '@/components/how-did-you-hear';
 
 // ============================================================================
 // TYPES
@@ -718,6 +719,8 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
               </div>
               
               <ThemedFormInput label="Email Address" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required icon={Mail} isDark={true} />
+
+              <HowDidYouHear />
 
               {error && (
                 <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
