@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { 
-  Users, Search, Plus, ChevronRight, Loader2, ArrowUpRight,
-  Target, Phone, Mail, Calendar, DollarSign, TrendingUp,
-  ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock,
+  Users, Search, Plus, ChevronRight, ChevronDown, Loader2, ArrowUpRight,
+  Target, Phone, Mail, MessageSquare, Calendar, DollarSign, TrendingUp,
+  ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock, Clock,
   CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
 import { useAgency } from '../context';
@@ -14,6 +14,7 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
+import ComposerModal from '@/components/ComposerModal';
 
 interface Lead {
   id: string;
@@ -27,6 +28,12 @@ interface Lead {
   estimated_value: number;
   next_follow_up: string | null;
   created_at: string;
+  outreach?: {
+    last_contacted?: string | null;
+    email_count?: number;
+    sms_count?: number;
+    call_count?: number;
+  };
 }
 
 interface LeadStats {
@@ -97,7 +104,274 @@ function isOverdue(dateStr: string): boolean {
   return date < today;
 }
 
+function timeSince(dateStr: string): string {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
 type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active' | 'sequence-due';
+
+// ---------------------------------------------------------------------------
+// Presentational pieces for the leads page. These are theme-agnostic: every
+// colour comes from the --lp-* CSS variables set once on the page root, so
+// hover and active states are pure CSS. No per-element inline styles and no
+// JS onMouseEnter/onMouseLeave handlers.
+// ---------------------------------------------------------------------------
+
+type StatTone = 'default' | 'primary' | 'warning' | 'error' | 'info';
+
+const STAT_TONE: Record<StatTone, { icon: string; iconBg: string; activeBg: string; activeBorder: string }> = {
+  default: { icon: 'text-[var(--lp-muted)]',   iconBg: 'bg-[var(--lp-hover)]',       activeBg: 'bg-[var(--lp-card)]',       activeBorder: 'border-[var(--lp-border)]' },
+  primary: { icon: 'text-[var(--lp-primary)]', iconBg: 'bg-[var(--lp-primary-15)]',  activeBg: 'bg-[var(--lp-primary-15)]', activeBorder: 'border-[var(--lp-primary)]' },
+  warning: { icon: 'text-[var(--lp-warning)]', iconBg: 'bg-[var(--lp-warning-bg)]',  activeBg: 'bg-[var(--lp-warning-bg)]', activeBorder: 'border-[var(--lp-warning)]' },
+  error:   { icon: 'text-[var(--lp-error)]',   iconBg: 'bg-[var(--lp-error-bg)]',    activeBg: 'bg-[var(--lp-error-bg)]',   activeBorder: 'border-[var(--lp-error)]' },
+  info:    { icon: 'text-[var(--lp-info)]',    iconBg: 'bg-[var(--lp-info-bg)]',     activeBg: 'bg-[var(--lp-info-bg)]',    activeBorder: 'border-[var(--lp-info)]' },
+};
+
+function StatCard({ label, value, icon: Icon, tone = 'default', active = false, onClick }: {
+  label: string;
+  value: ReactNode;
+  icon: ComponentType<{ className?: string }>;
+  tone?: StatTone;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const t = STAT_TONE[tone];
+  const shell = active ? `${t.activeBg} border ${t.activeBorder}` : 'bg-[var(--lp-card)] border border-[var(--lp-border)]';
+  const inner = (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 ${t.iconBg}`}>
+        <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${t.icon}`} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] sm:text-sm text-[var(--lp-muted)]">{label}</p>
+        <p className="text-lg sm:text-xl font-semibold truncate text-[var(--lp-text)]">{value}</p>
+      </div>
+    </div>
+  );
+  if (!onClick) return <div className={`rounded-xl p-3 sm:p-5 ${shell}`}>{inner}</div>;
+  return (
+    <button onClick={onClick} className={`rounded-xl p-3 sm:p-5 text-left w-full transition-colors hover:brightness-[0.98] ${shell}`}>
+      {inner}
+    </button>
+  );
+}
+
+function OverdueBanner({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center justify-between text-left transition-colors bg-[var(--lp-warning-bg)] border border-[var(--lp-warning-border)] hover:brightness-[0.98]"
+    >
+      <div className="flex items-center gap-2 sm:gap-3">
+        <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[var(--lp-warning)]" />
+        <div>
+          <p className="font-medium text-sm text-[var(--lp-warning-text)]">{count} overdue follow-up{count > 1 ? 's' : ''}</p>
+          <p className="text-xs hidden sm:block text-[var(--lp-muted)]">Click to view leads that need attention</p>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[var(--lp-warning)]" />
+    </button>
+  );
+}
+
+function TipsPanel({ tips, onHide }: { tips: typeof LEAD_TIPS; onHide: () => void }) {
+  return (
+    <div className="mb-6 sm:mb-8 rounded-xl overflow-hidden bg-[var(--lp-primary-15)] border border-[var(--lp-border)]">
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--lp-border)]">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg flex-shrink-0 bg-[var(--lp-primary-15)]">
+            <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--lp-primary)]" />
+          </div>
+          <div>
+            <h3 className="font-medium text-sm text-[var(--lp-text)]">Lead Generation Tips</h3>
+            <p className="text-xs hidden sm:block text-[var(--lp-muted)]">Guides to grow your pipeline</p>
+          </div>
+        </div>
+        <button onClick={onHide} className="text-xs transition-colors text-[var(--lp-muted)] hover:text-[var(--lp-text)]">Hide</button>
+      </div>
+      <div className="grid gap-2 sm:gap-3 p-3 sm:p-5 sm:grid-cols-3">
+        {tips.map((tip, index) => (
+          <a
+            key={index}
+            href={tip.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-lg p-3 sm:p-4 transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] hover:bg-[var(--lp-hover)]"
+          >
+            <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
+              <span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded bg-[var(--lp-primary-15)] text-[var(--lp-primary)]">{tip.category}</span>
+              <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-[var(--lp-muted)]" />
+            </div>
+            <h4 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1 line-clamp-2 text-[var(--lp-text)]">{tip.title}</h4>
+            <p className="text-[10px] sm:text-xs line-clamp-2 hidden sm:block text-[var(--lp-muted)]">{tip.description}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InlineStatusSelect({ value, bg, text, options, onChange }: {
+  value: string;
+  bg: string;
+  text: string;
+  options: { value: string; label: string; color: string }[];
+  onChange: (status: string) => void;
+}) {
+  // Native <select> on purpose: the leads list uses overflow-hidden for its
+  // rounded corners, which would clip a custom dropdown. The browser renders a
+  // native select's menu in its own layer, so it never gets clipped, and it
+  // works on touch. The trigger is styled as a coloured status pill.
+  return (
+    <span className="relative inline-flex" onClick={(e) => e.stopPropagation()}>
+      <select
+        value={value}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none cursor-pointer rounded-full pl-3 pr-6 py-1 text-xs font-medium focus:outline-none"
+        style={{ backgroundColor: bg, color: text }}
+        aria-label="Change lead status"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value} style={{ background: '#ffffff', color: '#111827' }}>{o.label}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 opacity-70" style={{ color: text }} />
+    </span>
+  );
+}
+
+function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, onComposer, followUpToday, followUpOverdue, queueItem, isLast }: {
+  lead: Lead;
+  statusBg: string;
+  statusText: string;
+  statusOptions: { value: string; label: string; color: string }[];
+  onStatusChange: (leadId: string, status: string) => void;
+  onComposer: (lead: Lead, type: 'email' | 'sms') => void;
+  followUpToday: boolean;
+  followUpOverdue: boolean;
+  queueItem?: FollowUpItem;
+  isLast: boolean;
+}) {
+  const queueColor = queueItem && queueItem.urgency === 'overdue' ? 'text-[var(--lp-error)]' : 'text-[var(--lp-primary)]';
+  return (
+    <Link
+      href={`/agency/leads/${lead.id}`}
+      prefetch={false}
+      className={`group block px-4 sm:px-6 py-3 sm:py-4 transition-colors hover:bg-[var(--lp-hover)] ${isLast ? '' : 'border-b border-[var(--lp-border-subtle)]'}`}
+    >
+      {/* Mobile */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 bg-[var(--lp-info-bg)]">
+              <span className="text-xs sm:text-sm font-medium text-[var(--lp-info)]">{lead.business_name?.charAt(0) || '?'}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm truncate text-[var(--lp-text)]">{lead.business_name}</p>
+              <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || 'No contact'}</p>
+            </div>
+          </div>
+          <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-[var(--lp-muted)]" />
+        </div>
+        <div className="flex items-center justify-between text-xs sm:text-sm pl-11 sm:pl-[52px]">
+          <div className="flex items-center gap-2">
+            <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
+            {followUpOverdue && <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--lp-error)]" />}
+            {followUpToday && !followUpOverdue && <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--lp-warning)]" />}
+            {!followUpOverdue && !followUpToday && queueItem && <Mail className={`h-3 w-3 sm:h-4 sm:w-4 ${queueColor}`} />}
+            {!lead.next_follow_up && !queueItem && (
+              <span className="text-[10px] text-[var(--lp-muted)] truncate">{lead.outreach?.last_contacted ? `Contacted ${timeSince(lead.outreach.last_contacted)}` : 'Never contacted'}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {lead.email && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'email'); }} className="p-1 rounded-md transition-colors hover:bg-[var(--lp-hover)]" title="Send email" aria-label="Send email"><Mail className="h-4 w-4 text-[var(--lp-muted)]" /></button>
+            )}
+            {lead.phone && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'sms'); }} className="p-1 rounded-md transition-colors hover:bg-[var(--lp-hover)]" title="Send SMS" aria-label="Send SMS"><MessageSquare className="h-4 w-4 text-[var(--lp-muted)]" /></button>
+            )}
+            <span className="text-[var(--lp-muted)] ml-0.5">{lead.estimated_value ? formatCurrency(lead.estimated_value) : '\u2013'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop */}
+      <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
+        <div className="col-span-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--lp-info-bg)]">
+            <span className="text-sm font-medium text-[var(--lp-info)]">{lead.business_name?.charAt(0) || '?'}</span>
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium truncate text-[var(--lp-text)]">{lead.business_name}</p>
+            <p className="text-sm capitalize truncate text-[var(--lp-muted)]">{lead.industry || 'No industry'}</p>
+          </div>
+        </div>
+
+        <div className="col-span-2 min-w-0">
+          <p className="text-sm truncate text-[var(--lp-text)]">{lead.contact_name || '\u2013'}</p>
+          <p className="text-xs truncate text-[var(--lp-muted)]">{lead.email || '\u2013'}</p>
+        </div>
+
+        <div className="col-span-2">
+          <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
+        </div>
+
+        <div className="col-span-2">
+          <p className="text-sm text-[var(--lp-text)]">{lead.estimated_value ? formatCurrency(lead.estimated_value) : '\u2013'}</p>
+          {lead.estimated_value ? <p className="text-xs text-[var(--lp-muted)]">/month</p> : null}
+        </div>
+
+        <div className="col-span-2">
+          {lead.next_follow_up ? (
+            <div className="flex items-center gap-2">
+              {followUpOverdue && <AlertCircle className="h-4 w-4 flex-shrink-0 text-[var(--lp-error)]" />}
+              {followUpToday && !followUpOverdue && <Calendar className="h-4 w-4 flex-shrink-0 text-[var(--lp-warning)]" />}
+              <div>
+                <p className={`text-sm ${followUpOverdue ? 'text-[var(--lp-error)]' : followUpToday ? 'text-[var(--lp-warning)]' : 'text-[var(--lp-text)]'}`}>{new Date(lead.next_follow_up).toLocaleDateString()}</p>
+                {followUpOverdue && <p className="text-xs text-[var(--lp-error)]">Overdue</p>}
+                {followUpToday && !followUpOverdue && <p className="text-xs text-[var(--lp-warning)]">Today</p>}
+              </div>
+            </div>
+          ) : queueItem ? (
+            <div className="flex items-center gap-2">
+              <Mail className={`h-4 w-4 flex-shrink-0 ${queueColor}`} />
+              <div>
+                <p className={`text-sm truncate ${queueColor}`}>{queueItem.next_template_name}</p>
+                <p className={`text-xs ${queueItem.urgency === 'overdue' ? 'text-[var(--lp-error)]' : 'text-[var(--lp-muted)]'}`}>{queueItem.urgency === 'overdue' ? `${queueItem.days_overdue}d overdue` : queueItem.urgency === 'due_today' ? 'Due today' : 'Due soon'}</p>
+              </div>
+            </div>
+          ) : lead.outreach?.last_contacted ? (
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-[var(--lp-muted)]" />
+              <p className="text-sm text-[var(--lp-muted)]">Contacted {timeSince(lead.outreach.last_contacted)}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--lp-muted)]">Never contacted</p>
+          )}
+        </div>
+
+        <div className="col-span-1 flex justify-end items-center">
+          <ChevronRight className="h-4 w-4 text-[var(--lp-muted)] group-hover:hidden" />
+          <div className="hidden group-hover:flex items-center gap-0.5">
+            {lead.email && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'email'); }} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--lp-hover)]" title="Send email" aria-label="Send email"><Mail className="h-3.5 w-3.5 text-[var(--lp-muted)]" /></button>
+            )}
+            {lead.phone && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'sms'); }} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--lp-hover)]" title="Send SMS" aria-label="Send SMS"><MessageSquare className="h-3.5 w-3.5 text-[var(--lp-muted)]" /></button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function AgencyLeadsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
@@ -112,6 +386,9 @@ export default function AgencyLeadsPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [showTips, setShowTips] = useState(true);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
+  const [composerLead, setComposerLead] = useState<Lead | null>(null);
 
   // Follow-up queue (sequence-based)
   const [followUpQueue, setFollowUpQueue] = useState<FollowUpItem[]>([]);
@@ -267,6 +544,32 @@ export default function AgencyLeadsPage() {
     setStatusFilter(null);
   };
 
+  // Inline status change from the leads list. Optimistic local update, then
+  // PATCH the confirmed endpoint. In demo / free mode the leads are demo data,
+  // so we update locally only and skip the network call.
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    setLeads(prev => prev.map(l => (l.id === leadId ? { ...l, status: newStatus } : l)));
+    if (demoMode || isFreePlan || !agency) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      await fetch(`${backendUrl}/api/agency/${agency.id}/leads/${leadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      fetchLeads();
+    } catch (error) {
+      console.error('Failed to update lead status:', error);
+    }
+  };
+
+  const openComposer = (lead: Lead, type: 'email' | 'sms') => {
+    setComposerLead(lead);
+    setComposerType(type);
+    setComposerOpen(true);
+  };
+
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -280,60 +583,65 @@ export default function AgencyLeadsPage() {
   // Full Leads UI – used as the LockedFeatureOverlay children when Free
   // (populated with demo data via the useEffect above), AND as the direct
   // return for Pro/Scale agencies with real data.
+  // Theme tokens exposed once as CSS variables so the markup below (and the
+  // extracted components) can style with plain classes and CSS :hover instead
+  // of per-element inline styles and JS hover handlers.
+  const lpVars = {
+    '--lp-primary': theme.primary,
+    '--lp-primary-text': theme.primaryText,
+    '--lp-primary-15': theme.primary15,
+    '--lp-primary-30': theme.primary30,
+    '--lp-card': theme.card,
+    '--lp-border': theme.border,
+    '--lp-border-subtle': theme.borderSubtle,
+    '--lp-text': theme.text,
+    '--lp-muted': theme.textMuted,
+    '--lp-hover': theme.hover,
+    '--lp-input': theme.input,
+    '--lp-input-border': theme.inputBorder,
+    '--lp-warning': theme.warning,
+    '--lp-warning-bg': theme.warningBg,
+    '--lp-warning-border': theme.warningBorder,
+    '--lp-warning-text': theme.warningText,
+    '--lp-error': theme.error,
+    '--lp-error-bg': theme.errorBg,
+    '--lp-error-border': theme.errorBorder,
+    '--lp-info': theme.info,
+    '--lp-info-bg': theme.infoBg,
+  } as CSSProperties;
+
+  const statusOptions = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'].map((v) => ({
+    value: v,
+    label: getStatusLabel(v),
+    color: getStatusStyle(v).text,
+  }));
+
   const pageContent = (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" style={lpVars}>
 
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Leads</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--lp-text)]">Leads</h1>
+            <p className="mt-1 text-sm text-[var(--lp-muted)]">
               {stats?.total || 0} total leads
               {stats && stats.overdueFollowUps > 0 && (
-                <span className="ml-2" style={{ color: theme.warning }}>
-                  {stats.overdueFollowUps} overdue
-                </span>
+                <span className="ml-2 text-[var(--lp-warning)]">{stats.overdueFollowUps} overdue</span>
               )}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link
-              href="/agency/leads/finder"
-              prefetch={false}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-            >
+            <Link href="/agency/leads/finder" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
               <Search className="h-4 w-4" />
               Find Leads
             </Link>
-
-            <button
-              onClick={() => setShowCSVImport(true)}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
-                border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}
-            >
+            <button onClick={() => setShowCSVImport(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <FileSpreadsheet className="h-4 w-4" />
               Import CSV
             </button>
-
-            <Link
-              href="/agency/leads/new"
-              prefetch={false}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
-                border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151',
-              }}
-            >
+            <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <Plus className="h-4 w-4" />
               Add Lead
             </Link>
@@ -341,308 +649,65 @@ export default function AgencyLeadsPage() {
         </div>
       </div>
 
-      {/* Overdue Alert Banner */}
+      {/* Overdue banner */}
       {stats && stats.overdueFollowUps > 0 && filterMode !== 'overdue' && (
-        <button
-          onClick={() => handleStatClick('overdue')}
-          className="w-full mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center justify-between transition-colors text-left"
-          style={{
-            backgroundColor: theme.warningBg,
-            border: `1px solid ${theme.warningBorder}`,
-          }}
-        >
-          <div className="flex items-center gap-2 sm:gap-3">
-            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.warning }} />
-            <div>
-              <p className="font-medium text-sm" style={{ color: theme.warningText }}>
-                {stats.overdueFollowUps} overdue follow-up{stats.overdueFollowUps > 1 ? 's' : ''}
-              </p>
-              <p className="text-xs hidden sm:block" style={{ color: theme.textMuted }}>Click to view leads that need attention</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.warning }} />
-        </button>
+        <OverdueBanner count={stats.overdueFollowUps} onClick={() => handleStatClick('overdue')} />
       )}
 
-      {/* Tips Section */}
+      {/* Tips */}
       {showTips && !hasActiveFilters && (
-        <div 
-          className="mb-6 sm:mb-8 rounded-xl overflow-hidden"
-          style={{ 
-            backgroundColor: theme.isDark ? theme.primary15 : theme.primary15,
-            border: `1px solid ${theme.border}`,
-          }}
-        >
-          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: theme.primary30 }}
-              >
-                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
-              </div>
-              <div>
-                <h3 className="font-medium text-sm" style={{ color: theme.text }}>Lead Generation Tips</h3>
-                <p className="text-xs hidden sm:block" style={{ color: theme.textMuted }}>Guides to grow your pipeline</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowTips(false)}
-              className="text-xs transition-colors"
-              style={{ color: theme.textMuted }}
-            >
-              Hide
-            </button>
-          </div>
-          <div className="grid gap-2 sm:gap-3 p-3 sm:p-5 sm:grid-cols-3">
-            {LEAD_TIPS.map((tip, index) => (
-              <a
-                key={index}
-                href={tip.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group rounded-lg p-3 sm:p-4 transition-colors"
-                style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.card}
-              >
-                <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
-                  <span 
-                    className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded"
-                    style={{ backgroundColor: theme.primary15, color: theme.primary }}
-                  >
-                    {tip.category}
-                  </span>
-                  <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 transition-colors" style={{ color: theme.textMuted }} />
-                </div>
-                <h4 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1 line-clamp-2" style={{ color: theme.text }}>{tip.title}</h4>
-                <p className="text-[10px] sm:text-xs line-clamp-2 hidden sm:block" style={{ color: theme.textMuted }}>{tip.description}</p>
-              </a>
-            ))}
-          </div>
-        </div>
+        <TipsPanel tips={LEAD_TIPS} onHide={() => setShowTips(false)} />
       )}
 
-      {/* Stats Grid */}
+      {/* Stats */}
       {stats && stats.total > 0 && (
         <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-5 mb-4 sm:mb-8">
-          {/* Active Leads */}
-          <button
-            onClick={() => handleStatClick('active')}
-            className="rounded-xl p-3 sm:p-5 text-left transition-all"
-            style={filterMode === 'active' ? {
-              backgroundColor: theme.infoBg,
-              border: `1px solid ${theme.info}`,
-            } : {
-              backgroundColor: theme.card,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: theme.infoBg }}
-              >
-                <Target className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.info }} />
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Active</p>
-                <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>
-                  {stats.total - stats.won - stats.lost}
-                </p>
-              </div>
-            </div>
-          </button>
-          
-          {/* Qualified */}
-          <button
-            onClick={() => {
-              setFilterMode('all');
-              setStatusFilter(statusFilter === 'qualified' ? null : 'qualified');
-            }}
-            className="rounded-xl p-3 sm:p-5 text-left transition-all"
-            style={statusFilter === 'qualified' ? {
-              backgroundColor: theme.primary15,
-              border: `1px solid ${theme.primary}`,
-            } : {
-              backgroundColor: theme.card,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: theme.primary15 }}
-              >
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Qualified</p>
-                <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>{stats.qualified + stats.proposal}</p>
-              </div>
-            </div>
-          </button>
-          
-          {/* Pipeline Value */}
-          <div 
-            className="rounded-xl p-3 sm:p-5"
-            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: theme.primary15 }}
-              >
-                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Pipeline</p>
-                <p className="text-lg sm:text-xl font-semibold truncate" style={{ color: theme.text }}>
-                  {formatCurrency(stats.totalEstimatedValue)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Sequence Follow-ups Due */}
+          <StatCard label="Active" value={stats.total - stats.won - stats.lost} icon={Target} tone="info" active={filterMode === 'active'} onClick={() => handleStatClick('active')} />
+          <StatCard label="Qualified" value={stats.qualified + stats.proposal} icon={TrendingUp} tone="primary" active={statusFilter === 'qualified'} onClick={() => { setFilterMode('all'); setStatusFilter(statusFilter === 'qualified' ? null : 'qualified'); }} />
+          <StatCard label="Pipeline" value={formatCurrency(stats.totalEstimatedValue)} icon={DollarSign} tone="primary" />
           {followUpSummary && followUpSummary.total > 0 && (
-            <button
-              onClick={() => handleStatClick('sequence-due')}
-              className="rounded-xl p-3 sm:p-5 text-left transition-all"
-              style={filterMode === 'sequence-due' ? {
-                backgroundColor: theme.primary15,
-                border: `1px solid ${theme.primary}`,
-              } : {
-                backgroundColor: theme.card,
-                border: `1px solid ${theme.border}`,
-              }}
-            >
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div 
-                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: followUpSummary.overdue > 0 ? theme.errorBg : theme.primary15 }}
-                >
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: followUpSummary.overdue > 0 ? theme.error : (theme.primary) }} />
-                </div>
-                <div>
-                  <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Sequence Due</p>
-                  <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>{followUpSummary.total}</p>
-                </div>
-              </div>
-            </button>
+            <StatCard label="Sequence Due" value={followUpSummary.total} icon={Mail} tone={followUpSummary.overdue > 0 ? 'error' : 'primary'} active={filterMode === 'sequence-due'} onClick={() => handleStatClick('sequence-due')} />
           )}
-          
-          {/* Follow-ups Today */}
-          <button
-            onClick={() => handleStatClick('follow-up-today')}
-            className="rounded-xl p-3 sm:p-5 text-left transition-all"
-            style={filterMode === 'follow-up-today' ? {
-              backgroundColor: theme.warningBg,
-              border: `1px solid ${theme.warning}`,
-            } : {
-              backgroundColor: theme.card,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div 
-                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: theme.warningBg }}
-              >
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.warning }} />
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Today</p>
-                <p className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>{stats.followUpsToday}</p>
-              </div>
-            </div>
-          </button>
+          <StatCard label="Today" value={stats.followUpsToday} icon={Calendar} tone="warning" active={filterMode === 'follow-up-today'} onClick={() => handleStatClick('follow-up-today')} />
         </div>
       )}
 
-      {/* Active Filter Indicator */}
+      {/* Active filter chips */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
-          <span className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Filtering:</span>
-          
+          <span className="text-xs sm:text-sm text-[var(--lp-muted)]">Filtering:</span>
           {filterMode === 'follow-up-today' && (
-            <span 
-              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}`, color: theme.warning }}
-            >
-              <Calendar className="h-3 w-3" />
-              Today
-            </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-warning-bg)] border border-[var(--lp-warning-border)] text-[var(--lp-warning)]"><Calendar className="h-3 w-3" />Today</span>
           )}
-          
           {filterMode === 'overdue' && (
-            <span 
-              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}`, color: theme.error }}
-            >
-              <AlertCircle className="h-3 w-3" />
-              Overdue
-            </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-error-bg)] border border-[var(--lp-error-border)] text-[var(--lp-error)]"><AlertCircle className="h-3 w-3" />Overdue</span>
           )}
-          
           {filterMode === 'active' && (
-            <span 
-              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}`, color: theme.info }}
-            >
-              <Target className="h-3 w-3" />
-              Active
-            </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-info-bg)] border border-[var(--lp-info)] text-[var(--lp-info)]"><Target className="h-3 w-3" />Active</span>
           )}
-
           {filterMode === 'sequence-due' && (
-            <span 
-              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary }}
-            >
-              <Mail className="h-3 w-3" />
-              Sequence Due
-            </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-primary-15)] border border-[var(--lp-primary-30)] text-[var(--lp-primary)]"><Mail className="h-3 w-3" />Sequence Due</span>
           )}
-          
           {statusFilter && (
-            <span 
-              className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ 
-                backgroundColor: getStatusStyle(statusFilter).bg,
-                border: `1px solid ${getStatusStyle(statusFilter).border}`,
-                color: getStatusStyle(statusFilter).text,
-              }}
-            >
-              {getStatusLabel(statusFilter)}
-            </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: getStatusStyle(statusFilter).bg, border: `1px solid ${getStatusStyle(statusFilter).border}`, color: getStatusStyle(statusFilter).text }}>{getStatusLabel(statusFilter)}</span>
           )}
-          
-          <button
-            onClick={clearFilters}
-            className="inline-flex items-center gap-1 text-xs transition-colors ml-1"
-            style={{ color: theme.textMuted }}
-          >
-            <X className="h-3 w-3" />
-            Clear
-          </button>
+          <button onClick={clearFilters} className="inline-flex items-center gap-1 text-xs transition-colors ml-1 text-[var(--lp-muted)] hover:text-[var(--lp-text)]"><X className="h-3 w-3" />Clear</button>
         </div>
       )}
 
-      {/* Search & Filters */}
+      {/* Search & filters */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--lp-muted)]" />
           <input
             type="text"
             placeholder="Search leads..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-colors focus:outline-none"
-            style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+            className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-colors focus:outline-none bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-text)]"
           />
         </div>
-        
+
         <div className="flex gap-2">
           <select
             value={statusFilter || ''}
@@ -650,8 +715,7 @@ export default function AgencyLeadsPage() {
               setStatusFilter(e.target.value || null);
               if (e.target.value) setFilterMode('all');
             }}
-            className="flex-1 sm:flex-none rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none transition-colors"
-            style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
+            className="flex-1 sm:flex-none rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)]"
           >
             <option value="">All Status</option>
             <option value="new">New</option>
@@ -665,10 +729,7 @@ export default function AgencyLeadsPage() {
           {!showTips && (
             <button
               onClick={() => setShowTips(true)}
-              className="flex items-center justify-center rounded-xl px-3 py-2.5 transition-colors"
-              style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.input}
+              className="flex items-center justify-center rounded-xl px-3 py-2.5 transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]"
             >
               <BookOpen className="h-4 w-4" />
             </button>
@@ -676,69 +737,39 @@ export default function AgencyLeadsPage() {
         </div>
       </div>
 
-      {/* Leads List */}
-      <div 
-        className="rounded-xl overflow-hidden"
-        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-      >
+      {/* Leads list */}
+      <div className="rounded-xl overflow-hidden bg-[var(--lp-card)] border border-[var(--lp-border)]">
         {filteredLeads.length === 0 ? (
           <div className="py-12 sm:py-20 text-center px-4">
-            <div 
-              className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: theme.primary15 }}
-            >
+            <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--lp-primary-15)]">
               {hasActiveFilters ? (
-                <Filter className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.primary, opacity: 0.8 }} />
+                <Filter className="h-6 w-6 sm:h-8 sm:w-8 text-[var(--lp-primary)]" />
               ) : (
-                <Target className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.primary, opacity: 0.8 }} />
+                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-[var(--lp-primary)]" />
               )}
             </div>
-            <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>
+            <p className="mt-4 font-medium text-sm sm:text-base text-[var(--lp-text)]">
               {hasActiveFilters ? 'No leads match your filters' : 'No leads yet'}
             </p>
-            <p className="text-xs sm:text-sm mt-1 mb-4" style={{ color: theme.textMuted }}>
-              {hasActiveFilters 
-                ? 'Try adjusting your filters' 
-                : 'Start building your pipeline'}
+            <p className="text-xs sm:text-sm mt-1 mb-4 text-[var(--lp-muted)]">
+              {hasActiveFilters ? 'Try adjusting your filters' : 'Start building your pipeline'}
             </p>
             {hasActiveFilters ? (
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-                style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
+              <button onClick={clearFilters} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
                 <X className="h-4 w-4" />
                 Clear Filters
               </button>
             ) : (
               <div className="flex items-center justify-center gap-3 flex-wrap">
-                <Link
-                  href="/agency/leads/finder"
-                  prefetch={false}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-                >
+                <Link href="/agency/leads/finder" prefetch={false} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
                   <Search className="h-4 w-4" />
                   Find Leads
                 </Link>
-                <Link
-                  href="/agency/leads/new"
-                  prefetch={false}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-                  style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-                >
+                <Link href="/agency/leads/new" prefetch={false} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
                   <Plus className="h-4 w-4" />
                   Add Lead
                 </Link>
-                <button
-                  onClick={() => setShowCSVImport(true)}
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-                  style={{ border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
+                <button onClick={() => setShowCSVImport(true)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
                   <FileSpreadsheet className="h-4 w-4" />
                   Import CSV
                 </button>
@@ -747,11 +778,8 @@ export default function AgencyLeadsPage() {
           </div>
         ) : (
           <div>
-            {/* Table Header - Desktop */}
-            <div 
-              className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 text-xs font-medium uppercase tracking-wide"
-              style={{ color: theme.textMuted, borderBottom: `1px solid ${theme.border}` }}
-            >
+            {/* Desktop column header */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 text-xs font-medium uppercase tracking-wide text-[var(--lp-muted)] border-b border-[var(--lp-border)]">
               <div className="col-span-3">Business</div>
               <div className="col-span-2">Contact</div>
               <div className="col-span-2">Status</div>
@@ -759,157 +787,27 @@ export default function AgencyLeadsPage() {
               <div className="col-span-2">Follow-up</div>
               <div className="col-span-1"></div>
             </div>
-            
-            {/* Table Rows */}
+
             <div>
               {filteredLeads.map((lead, idx) => {
-                const followUpToday = lead.next_follow_up && isToday(lead.next_follow_up);
-                const followUpOverdue = lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status);
-                const statusStyle = getStatusStyle(lead.status);
+                const followUpToday = !!(lead.next_follow_up && isToday(lead.next_follow_up));
+                const followUpOverdue = !!(lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status));
+                const ss = getStatusStyle(lead.status);
                 const queueItem = followUpQueue.find(q => q.lead_id === lead.id);
-                
                 return (
-                  <Link
+                  <LeadRow
                     key={lead.id}
-                    href={`/agency/leads/${lead.id}`}
-                    prefetch={false}
-                    className="block px-4 sm:px-6 py-3 sm:py-4 transition-colors"
-                    style={{ 
-                      borderBottom: idx < filteredLeads.length - 1 ? `1px solid ${theme.borderSubtle}` : 'none',
-                      backgroundColor: followUpOverdue ? (theme.isDark ? 'rgba(239,68,68,0.03)' : 'rgba(239,68,68,0.02)') : 'transparent',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = followUpOverdue ? (theme.isDark ? 'rgba(239,68,68,0.06)' : 'rgba(239,68,68,0.04)') : theme.hover}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = followUpOverdue ? (theme.isDark ? 'rgba(239,68,68,0.03)' : 'rgba(239,68,68,0.02)') : 'transparent'}
-                  >
-                    {/* Mobile Layout */}
-                    <div className="lg:hidden">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div 
-                            className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                            style={{ backgroundColor: theme.infoBg }}
-                          >
-                            <span className="text-xs sm:text-sm font-medium" style={{ color: theme.info }}>
-                              {lead.business_name?.charAt(0) || '?'}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate" style={{ color: theme.text }}>{lead.business_name}</p>
-                            <p className="text-xs truncate" style={{ color: theme.textMuted }}>{lead.contact_name || 'No contact'}</p>
-                          </div>
-                        </div>
-                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
-                      </div>
-                      <div className="flex items-center justify-between text-xs sm:text-sm pl-11 sm:pl-[52px]">
-                        <div className="flex items-center gap-2">
-                          <span 
-                            className="rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium"
-                            style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
-                          >
-                            {getStatusLabel(lead.status)}
-                          </span>
-                          {followUpOverdue && (
-                            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: theme.error }} />
-                          )}
-                          {followUpToday && !followUpOverdue && (
-                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: theme.warning }} />
-                          )}
-                          {!followUpOverdue && !followUpToday && queueItem && (
-                            <Mail className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }} />
-                          )}
-                        </div>
-                        <span style={{ color: theme.textMuted }}>
-                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '–'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Desktop Layout */}
-                    <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
-                      <div className="col-span-3 flex items-center gap-3">
-                        <div 
-                          className="flex h-10 w-10 items-center justify-center rounded-lg"
-                          style={{ backgroundColor: theme.infoBg }}
-                        >
-                          <span className="text-sm font-medium" style={{ color: theme.info }}>
-                            {lead.business_name?.charAt(0) || '?'}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium truncate" style={{ color: theme.text }}>{lead.business_name}</p>
-                          <p className="text-sm capitalize truncate" style={{ color: theme.textMuted }}>{lead.industry || 'No industry'}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="col-span-2 min-w-0">
-                        <p className="text-sm truncate" style={{ color: theme.text }}>{lead.contact_name || '–'}</p>
-                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{lead.email || '–'}</p>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <span 
-                          className="inline-flex rounded-full px-3 py-1 text-xs font-medium"
-                          style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
-                        >
-                          {getStatusLabel(lead.status)}
-                        </span>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <p className="text-sm" style={{ color: theme.text }}>
-                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '–'}
-                        </p>
-                        {lead.estimated_value && (
-                          <p className="text-xs" style={{ color: theme.textMuted }}>/month</p>
-                        )}
-                      </div>
-                      
-                      <div className="col-span-2">
-                        {lead.next_follow_up ? (
-                          <div className="flex items-center gap-2">
-                            {followUpOverdue && (
-                              <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.error }} />
-                            )}
-                            {followUpToday && !followUpOverdue && (
-                              <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: theme.warning }} />
-                            )}
-                            <div>
-                              <p 
-                                className="text-sm"
-                                style={{ color: followUpOverdue ? theme.error : followUpToday ? theme.warning : theme.text }}
-                              >
-                                {new Date(lead.next_follow_up).toLocaleDateString()}
-                              </p>
-                              {followUpOverdue && (
-                                <p className="text-xs" style={{ color: theme.error }}>Overdue</p>
-                              )}
-                              {followUpToday && !followUpOverdue && (
-                                <p className="text-xs" style={{ color: theme.warning }}>Today</p>
-                              )}
-                            </div>
-                          </div>
-                        ) : queueItem ? (
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 flex-shrink-0" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }} />
-                            <div>
-                              <p className="text-sm truncate" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }}>
-                                {queueItem.next_template_name}
-                              </p>
-                              <p className="text-xs" style={{ color: queueItem.urgency === 'overdue' ? theme.error : theme.textMuted }}>
-                                {queueItem.urgency === 'overdue' ? `${queueItem.days_overdue}d overdue` : queueItem.urgency === 'due_today' ? 'Due today' : 'Due soon'}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm" style={{ color: theme.textMuted }}>Not set</p>
-                        )}
-                      </div>
-                      
-                      <div className="col-span-1 flex justify-end">
-                        <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
-                      </div>
-                    </div>
-                  </Link>
+                    lead={lead}
+                    statusBg={ss.bg}
+                    statusText={ss.text}
+                    statusOptions={statusOptions}
+                    onStatusChange={handleStatusChange}
+                    onComposer={openComposer}
+                    followUpToday={followUpToday}
+                    followUpOverdue={followUpOverdue}
+                    queueItem={queueItem}
+                    isLast={idx === filteredLeads.length - 1}
+                  />
                 );
               })}
             </div>
@@ -925,6 +823,18 @@ export default function AgencyLeadsPage() {
           agencyId={agency.id}
           onImportComplete={() => { fetchLeads(); fetchFollowUpQueue(); }}
           theme={theme}
+        />
+      )}
+
+      {/* Quick outreach (email / SMS) via the shared composer, agency mode */}
+      {agency && composerLead && (
+        <ComposerModal
+          isOpen={composerOpen}
+          onClose={() => { setComposerOpen(false); setComposerLead(null); }}
+          agencyId={agency.id}
+          lead={composerLead}
+          type={composerType}
+          onSent={() => { fetchLeads(); fetchFollowUpQueue(); }}
         />
       )}
     </div>
