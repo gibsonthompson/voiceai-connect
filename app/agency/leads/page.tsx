@@ -124,7 +124,7 @@ export default function AgencyLeadsPage() {
       case 'contacted':
         return { bg: theme.warningBg, text: theme.warning, border: theme.warningBorder };
       case 'qualified':
-        return { bg: 'rgba(168,85,247,0.1)', text: theme.isDark ? '#a78bfa' : '#7c3aed', border: 'rgba(168,85,247,0.2)' };
+        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
       case 'proposal':
         return { bg: 'rgba(6,182,212,0.1)', text: theme.isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
       case 'won':
@@ -277,7 +277,7 @@ export default function AgencyLeadsPage() {
 
   const hasActiveFilters = searchQuery || statusFilter || filterMode !== 'all';
 
-  // Full Leads UI — used as the LockedFeatureOverlay children when Free
+  // Full Leads UI – used as the LockedFeatureOverlay children when Free
   // (populated with demo data via the useEffect above), AND as the direct
   // return for Pro/Scale agencies with real data.
   const pageContent = (
@@ -369,7 +369,7 @@ export default function AgencyLeadsPage() {
         <div 
           className="mb-6 sm:mb-8 rounded-xl overflow-hidden"
           style={{ 
-            backgroundColor: theme.isDark ? 'rgba(168,85,247,0.08)' : 'rgba(168,85,247,0.05)',
+            backgroundColor: theme.isDark ? theme.primary15 : theme.primary15,
             border: `1px solid ${theme.border}`,
           }}
         >
@@ -377,9 +377,9 @@ export default function AgencyLeadsPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
                 className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: 'rgba(168,85,247,0.2)' }}
+                style={{ backgroundColor: theme.primary30 }}
               >
-                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
+                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
               </div>
               <div>
                 <h3 className="font-medium text-sm" style={{ color: theme.text }}>Lead Generation Tips</h3>
@@ -409,7 +409,7 @@ export default function AgencyLeadsPage() {
                 <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
                   <span 
                     className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded"
-                    style={{ backgroundColor: 'rgba(168,85,247,0.1)', color: theme.isDark ? '#a78bfa' : '#7c3aed' }}
+                    style={{ backgroundColor: theme.primary15, color: theme.primary }}
                   >
                     {tip.category}
                   </span>
@@ -462,8 +462,8 @@ export default function AgencyLeadsPage() {
             }}
             className="rounded-xl p-3 sm:p-5 text-left transition-all"
             style={statusFilter === 'qualified' ? {
-              backgroundColor: 'rgba(168,85,247,0.1)',
-              border: '1px solid rgba(168,85,247,0.5)',
+              backgroundColor: theme.primary15,
+              border: `1px solid ${theme.primary}`,
             } : {
               backgroundColor: theme.card,
               border: `1px solid ${theme.border}`,
@@ -472,9 +472,9 @@ export default function AgencyLeadsPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
                 className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                style={{ backgroundColor: 'rgba(168,85,247,0.1)' }}
+                style={{ backgroundColor: theme.primary15 }}
               >
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }} />
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
               </div>
               <div>
                 <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Qualified</p>
@@ -510,8 +510,8 @@ export default function AgencyLeadsPage() {
               onClick={() => handleStatClick('sequence-due')}
               className="rounded-xl p-3 sm:p-5 text-left transition-all"
               style={filterMode === 'sequence-due' ? {
-                backgroundColor: 'rgba(168,85,247,0.1)',
-                border: '1px solid rgba(168,85,247,0.5)',
+                backgroundColor: theme.primary15,
+                border: `1px solid ${theme.primary}`,
               } : {
                 backgroundColor: theme.card,
                 border: `1px solid ${theme.border}`,
@@ -520,9 +520,9 @@ export default function AgencyLeadsPage() {
               <div className="flex items-center gap-2 sm:gap-3">
                 <div 
                   className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: followUpSummary.overdue > 0 ? theme.errorBg : 'rgba(168,85,247,0.1)' }}
+                  style={{ backgroundColor: followUpSummary.overdue > 0 ? theme.errorBg : theme.primary15 }}
                 >
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: followUpSummary.overdue > 0 ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: followUpSummary.overdue > 0 ? theme.error : (theme.primary) }} />
                 </div>
                 <div>
                   <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Sequence Due</p>
@@ -598,7 +598,7 @@ export default function AgencyLeadsPage() {
           {filterMode === 'sequence-due' && (
             <span 
               className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium"
-              style={{ backgroundColor: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', color: theme.isDark ? '#a78bfa' : '#7c3aed' }}
+              style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary }}
             >
               <Mail className="h-3 w-3" />
               Sequence Due
@@ -815,11 +815,11 @@ export default function AgencyLeadsPage() {
                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: theme.warning }} />
                           )}
                           {!followUpOverdue && !followUpToday && queueItem && (
-                            <Mail className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                            <Mail className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }} />
                           )}
                         </div>
                         <span style={{ color: theme.textMuted }}>
-                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
+                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '–'}
                         </span>
                       </div>
                     </div>
@@ -842,8 +842,8 @@ export default function AgencyLeadsPage() {
                       </div>
                       
                       <div className="col-span-2 min-w-0">
-                        <p className="text-sm truncate" style={{ color: theme.text }}>{lead.contact_name || '—'}</p>
-                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{lead.email || '—'}</p>
+                        <p className="text-sm truncate" style={{ color: theme.text }}>{lead.contact_name || '–'}</p>
+                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{lead.email || '–'}</p>
                       </div>
                       
                       <div className="col-span-2">
@@ -857,7 +857,7 @@ export default function AgencyLeadsPage() {
                       
                       <div className="col-span-2">
                         <p className="text-sm" style={{ color: theme.text }}>
-                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '—'}
+                          {lead.estimated_value ? formatCurrency(lead.estimated_value) : '–'}
                         </p>
                         {lead.estimated_value && (
                           <p className="text-xs" style={{ color: theme.textMuted }}>/month</p>
@@ -890,9 +890,9 @@ export default function AgencyLeadsPage() {
                           </div>
                         ) : queueItem ? (
                           <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 flex-shrink-0" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }} />
+                            <Mail className="h-4 w-4 flex-shrink-0" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }} />
                             <div>
-                              <p className="text-sm truncate" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.isDark ? '#a78bfa' : '#7c3aed') }}>
+                              <p className="text-sm truncate" style={{ color: queueItem.urgency === 'overdue' ? theme.error : (theme.primary) }}>
                                 {queueItem.next_template_name}
                               </p>
                               <p className="text-xs" style={{ color: queueItem.urgency === 'overdue' ? theme.error : theme.textMuted }}>
