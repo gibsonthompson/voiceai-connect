@@ -36,7 +36,132 @@ import CallDrawer from '@/components/admin/CallDrawer';
 
 interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
-interface ExpandedData { clients: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null } }
+interface ExpandedData { clients: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null }; onboarding_email: { step: number; last_sent: string | null }; email_history?: any[] }
+
+// Onboarding email templates the admin sends manually via Gmail (as support@).
+// Plain text, no fabricated stats. The welcome email still auto-sends on signup;
+// these are the follow-ups. {name} is filled per agency at send time.
+const ONBOARDING_EMAILS: { step: number; title: string; subject: string; body: (name: string) => string }[] = [
+  {
+    step: 1,
+    title: 'Put your demo receptionist to work',
+    subject: 'Getting your first client with VoiceAI Connect',
+    body: (name) => `Hi ${name},\n\nQuick note now that you are set up. The fastest path to your first paying client is getting your demo receptionist in front of one prospect this week. They call, they hear the AI answer as their business, and the value sells itself.\n\nYou do not need a finished website or a full client list to do this. You need one phone call.\n\nTell me the kind of client you are going after and I will point you to the setup that converts best for them.\n\nGibson\nVoiceAI Connect`,
+  },
+  {
+    step: 2,
+    title: 'Get ready to charge',
+    subject: 'Get billing ready before your first yes',
+    body: (name) => `Hi ${name},\n\nWhen your first client says yes, you want billing ready so you are not scrambling. Two things make that happen:\n\n1. Set your client pricing in the dashboard. This is what your clients pay you.\n2. Connect Stripe so those payments land straight in your account.\n\nTen minutes now saves you a stalled deal later. Reply if you hit anything.\n\nGibson\nVoiceAI Connect`,
+  },
+  {
+    step: 3,
+    title: 'One move to your first client',
+    subject: 'Still no clients live? One move',
+    body: (name) => `Hi ${name},\n\nIf you have not onboarded a client yet, you are not behind. You are one conversation away.\n\nThe agencies that get traction all do the same first thing: they let a prospect hear the AI answer a real call. Everything else follows from that one demo.\n\nReply with the kind of client you are going after and I will tell you exactly how to set the demo up for them.\n\nGibson\nVoiceAI Connect`,
+  },
+];
+
+// Gmail compose deep link. authuser hints the support@ account so it composes
+// from the secondary inbox (switch the From dropdown if it is a send-as alias).
+function gmailComposeUrl(to: string, subject: string, body: string): string {
+  const params = new URLSearchParams({ view: 'cm', fs: '1', to: to || '', su: subject, body });
+  return `https://mail.google.com/mail/?${params.toString()}&authuser=support@myvoiceaiconnect.com`;
+}
+
+
+function EmailComposerModal({ agency, onClose, onLogged }: {
+  agency: { id: string; email: string; name: string };
+  onClose: () => void;
+  onLogged: (email: any) => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [subject, setSubject] = useState(ONBOARDING_EMAILS[0].subject);
+  const [body, setBody] = useState(ONBOARDING_EMAILS[0].body(agency.name || 'there'));
+  const [copied, setCopied] = useState<string | null>(null);
+  const [logging, setLogging] = useState(false);
+  const [logged, setLogged] = useState(false);
+
+  const pick = (i: number) => {
+    setIdx(i);
+    setSubject(ONBOARDING_EMAILS[i].subject);
+    setBody(ONBOARDING_EMAILS[i].body(agency.name || 'there'));
+    setLogged(false);
+  };
+
+  const copy = async (what: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      setTimeout(() => setCopied(null), 1500);
+    } catch (e) {
+      // clipboard unavailable
+    }
+  };
+
+  const logSent = async () => {
+    setLogging(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/admin/agencies/${agency.id}/log-email`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body, template_key: `onboarding_${ONBOARDING_EMAILS[idx]?.step ?? 0}`, recipient_email: agency.email }),
+      });
+      const data = await res.json();
+      if (data?.email) onLogged(data.email);
+      setLogged(true);
+    } catch (e) {
+      console.error('Log email error:', e);
+    } finally {
+      setLogging(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--a-line)]">
+          <Mail className="h-4 w-4" style={{ color: 'var(--a-em-deep)' }} />
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Email {agency.name}</h3>
+          <span className="text-[11px] text-[var(--a-dim)] truncate">{agency.email}</span>
+          <button onClick={onClose} className="ml-auto text-[var(--a-dim)] hover:text-[var(--a-ink)]"><X className="h-4 w-4" /></button>
+        </div>
+
+        <div className="p-5 space-y-3 overflow-y-auto">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {ONBOARDING_EMAILS.map((t, i) => (
+              <button key={t.step} onClick={() => pick(i)} className="rounded-lg px-2.5 py-1 text-[11px] font-semibold border transition-colors" style={i === idx ? { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' } : { background: 'white', color: 'var(--a-muted)', borderColor: 'var(--a-line)' }}>{t.title}</button>
+            ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--a-dim)]">Subject</span>
+              <button onClick={() => copy('subject', subject)} className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--a-em-deep)]"><Copy className="h-3 w-3" />{copied === 'subject' ? 'Copied' : 'Copy'}</button>
+            </div>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="a-input w-full text-[13px]" />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--a-dim)]">Body</span>
+              <button onClick={() => copy('body', body)} className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--a-em-deep)]"><Copy className="h-3 w-3" />{copied === 'body' ? 'Copied' : 'Copy'}</button>
+            </div>
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={9} className="a-input w-full text-[13px] leading-relaxed" style={{ resize: 'vertical' }} />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-5 py-4 border-t border-[var(--a-line)]">
+          <button onClick={() => copy('all', subject + '\n\n' + body)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><Copy className="h-3.5 w-3.5" />{copied === 'all' ? 'Copied' : 'Copy all'}</button>
+          <a href={gmailComposeUrl(agency.email, subject, body)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><ExternalLink className="h-3.5 w-3.5" />Open in Gmail</a>
+          <button onClick={logSent} disabled={logging || logged} className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em)', color: '#04140D', opacity: (logging || logged) ? 0.6 : 1 }}>{logged ? <><Check className="h-3.5 w-3.5" />Logged</> : logging ? 'Logging...' : 'Log as sent'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminAgenciesPage() {
   const searchParams = useSearchParams();
@@ -61,6 +186,8 @@ export default function AdminAgenciesPage() {
   const [callsLoading, setCallsLoading] = useState<string | null>(null);
   const [openCallId, setOpenCallId] = useState<string | null>(null);
   const [openCallAgencyId, setOpenCallAgencyId] = useState<string | null>(null);
+  const [openSms, setOpenSms] = useState<Record<string, boolean>>({});
+  const [composeAgency, setComposeAgency] = useState<{ id: string; email: string; name: string } | null>(null);
 
   useEffect(() => { const expandId = searchParams.get('expand'); if (expandId) { setExpandedRow(expandId); fetchExpandedData(expandId); ensureAgencyLoaded(expandId); } }, [searchParams]);
   useEffect(() => { if (!loading && expandedRow && rowRefs.current[expandedRow]) { setTimeout(() => { rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); } }, [loading, expandedRow, agencies]);
@@ -106,6 +233,27 @@ export default function AdminAgenciesPage() {
       console.error('Agencies error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const logOnboardingEmail = async (agencyId: string, step: number) => {
+    // Optimistic: mark progress locally so the UI updates immediately.
+    setExpandedData(prev => {
+      const cur = prev[agencyId];
+      if (!cur) return prev;
+      const curStep = cur.onboarding_email?.step || 0;
+      return { ...prev, [agencyId]: { ...cur, onboarding_email: { step: Math.max(curStep, step), last_sent: new Date().toISOString() } } };
+    });
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/onboarding-email-sent`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step }),
+      });
+    } catch (error) {
+      console.error('Onboarding email log error:', error);
     }
   };
 
@@ -457,6 +605,28 @@ export default function AdminAgenciesPage() {
 
                   {expandedData[agency.id] && (
                     <div className="mt-5 pt-5 border-t border-[var(--a-line)] space-y-5">
+                      {/* Emails (composed here, sent from Gmail as support@, logged) */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Mail className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} />
+                          <h4 className={label}>Emails</h4>
+                          <button onClick={() => setComposeAgency({ id: agency.id, email: agency.email || '', name: agency.name || 'there' })} className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }}><Mail className="h-3 w-3" />Compose Email</button>
+                        </div>
+                        {expandedData[agency.id].email_history && expandedData[agency.id].email_history!.length > 0 ? (
+                          <div className="space-y-1">
+                            {expandedData[agency.id].email_history!.map((em: any) => (
+                              <div key={em.id} className="flex items-center gap-3 rounded-lg px-3 py-2 bg-white border border-[var(--a-line)]">
+                                <Mail className="h-3 w-3 shrink-0 text-[var(--a-dim)]" />
+                                <span className="text-[11px] font-semibold text-[var(--a-ink)] truncate flex-1">{em.subject}</span>
+                                <span className="text-[10px] text-[var(--a-dim)] shrink-0 a-num">{timeAgo(em.created_at)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-[var(--a-dim)]">No emails logged yet. Compose one to copy the template, send it from Gmail as support@, and log it here.</p>
+                        )}
+                      </div>
+
                       {/* Setup Checklist */}
                       <div>
                         <div className="flex items-center gap-2 mb-3">
@@ -545,11 +715,11 @@ export default function AdminAgenciesPage() {
                               const del = getStatusBadge(sms.delivery_status === 'delivered' ? 'active' : sms.delivery_status);
                               const ok = sms.delivery_status === 'sent' || sms.delivery_status === 'delivered';
                               return (
-                                <div key={sms.id} className="flex items-center gap-3 rounded-lg px-3 py-2 bg-white border border-[var(--a-line)]">
-                                  <span className="inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-medium shrink-0" style={{ backgroundColor: typeInfo.bg, borderColor: typeInfo.border, color: typeInfo.color }}>{typeInfo.label}</span>
-                                  <span className="text-[10px] text-[var(--a-dim)] truncate flex-1">{sms.message_body?.slice(0, 80)}...</span>
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded-md" style={{ color: ok ? 'var(--a-em-deep)' : 'var(--a-red)', background: ok ? 'var(--a-em-soft)' : 'var(--a-red-soft)' }}>{sms.delivery_status}</span>
-                                  <span className="text-[10px] text-[var(--a-dim)] shrink-0 a-num">{timeAgo(sms.created_at)}</span>
+                                <div key={sms.id} onClick={() => setOpenSms(p => ({ ...p, [sms.id]: !p[sms.id] }))} className="flex items-start gap-3 rounded-lg px-3 py-2 bg-white border border-[var(--a-line)] cursor-pointer hover:bg-[#F6FCF9] transition-colors" title={openSms[sms.id] ? 'Click to collapse' : 'Click to read full message'}>
+                                  <span className="inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-medium shrink-0 mt-0.5" style={{ backgroundColor: typeInfo.bg, borderColor: typeInfo.border, color: typeInfo.color }}>{typeInfo.label}</span>
+                                  <span className={`text-[10px] text-[var(--a-muted)] flex-1 ${openSms[sms.id] ? 'whitespace-pre-wrap break-words' : 'truncate'}`}>{openSms[sms.id] ? sms.message_body : `${sms.message_body?.slice(0, 80) || ''}${(sms.message_body?.length || 0) > 80 ? '\u2026' : ''}`}</span>
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-md shrink-0 mt-0.5" style={{ color: ok ? 'var(--a-em-deep)' : 'var(--a-red)', background: ok ? 'var(--a-em-soft)' : 'var(--a-red-soft)' }}>{sms.delivery_status}</span>
+                                  <span className="text-[10px] text-[var(--a-dim)] shrink-0 a-num mt-0.5">{timeAgo(sms.created_at)}</span>
                                 </div>
                               );
                             })}
@@ -597,6 +767,14 @@ export default function AdminAgenciesPage() {
       {!loading && filteredAgencies.length > 0 && (<p className="mt-4 text-xs text-[var(--a-dim)]">Showing {filteredAgencies.length} agenc{filteredAgencies.length === 1 ? 'y' : 'ies'}</p>)}
 
       <CallDrawer callId={openCallId} agencyId={openCallAgencyId} onClose={() => { setOpenCallId(null); setOpenCallAgencyId(null); }} />
+
+      {composeAgency && (
+        <EmailComposerModal
+          agency={composeAgency}
+          onClose={() => setComposeAgency(null)}
+          onLogged={(email) => setExpandedData(prev => { const c = prev[composeAgency.id]; if (!c) return prev; return { ...prev, [composeAgency.id]: { ...c, email_history: [email, ...(c.email_history || [])] } }; })}
+        />
+      )}
     </div>
   );
 }
