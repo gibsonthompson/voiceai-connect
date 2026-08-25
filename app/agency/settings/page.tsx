@@ -68,6 +68,31 @@ async function extractColorsFromImage(imageUrl: string): Promise<{ primary: stri
 
 function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: string; enabled: boolean; onToggle: () => void; theme: any; }) { const info = FEATURE_LABELS[featureKey]; if (!info) return null; return (<div className="flex items-center justify-between py-2.5 px-1 group"><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: enabled ? theme.text : theme.textMuted }}>{info.label}</p></div><button type="button" onClick={onToggle} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: enabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div>); }
 
+// Official Stripe-branded connect button: Stripe blurple (#635BFF) + the Stripe
+// wordmark. Agency owners recognise it as Stripe's own secure flow, which lifts
+// trust and completion versus a generic themed button.
+function StripeConnectButton({ onClick, loading, disabled, label = 'Connect with', className = '' }: { onClick: () => void; loading?: boolean; disabled?: boolean; label?: string; className?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading || disabled}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 ${className}`}
+      style={{ backgroundColor: '#635BFF' }}
+    >
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <>
+          <span>{label}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 25" width="46" height="19" role="img" aria-label="Stripe">
+            <path fill="#fff" d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.01-1.41 3.58-1.21v3.79c-.54-.18-2.26-.44-3.26.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.02-13.17 4.02-.86v3.54h3.14V9.1h-3.15l.01 6.02z"/>
+          </svg>
+        </>
+      )}
+    </button>
+  );
+}
+
 // Searchable country picker. A plain native <select> with 40+ options is a
 // poor mobile experience (the iOS wheel especially), so this is a button that
 // opens a type-to-filter list. Used once, before Stripe Connect onboarding, to
@@ -980,9 +1005,9 @@ function AgencySettingsContent() {
                       </div>
                       {stripeDisplay.status === 'active' ? (
                         <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button>
-                      ) : (
-                        <button onClick={handleStripeConnect} disabled={connectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{connectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{stripeDisplay.status === 'restricted' ? 'Complete Setup' : 'Connect'}</button>
-                      )}
+                      ) : stripeDisplay.status === 'restricted' ? (
+                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Finish setup with" />
+                      ) : null}
                     </div>
                     {stripeDisplay.status === 'active' && (
                       <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
@@ -1075,6 +1100,10 @@ function AgencySettingsContent() {
                       <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
                       This cannot be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
                     </p>
+                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with" className="w-full sm:w-auto" />
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
+                    </div>
                   </div>
                 )}
 
