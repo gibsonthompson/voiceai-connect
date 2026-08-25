@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Users, Search, ChevronRight, Loader2, Phone, Mail,
+  Users, Search, ChevronRight, Loader2, Phone, Mail, MessageSquare,
   Plus, X, Download,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
@@ -114,6 +115,8 @@ export default function ClientContactsPage() {
     } catch (e) { console.error('Export failed:', e); }
     finally { setExporting(false); }
   };
+
+  const router = useRouter();
 
   const glass = {
     backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
@@ -233,6 +236,16 @@ export default function ClientContactsPage() {
                     <p className="text-[10px]" style={{ color: theme.textMuted4 }}>{contact.last_call_at ? timeAgo(contact.last_call_at) : '—'}</p>
                   </div>
                 </div>
+
+                {contact.phone && (
+                  <span role="button" tabIndex={0}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/client/messages?to=${encodeURIComponent(contact.phone || '')}&name=${encodeURIComponent(contact.name || '')}`); }}
+                    className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl transition hover:opacity-80"
+                    style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}
+                    title="Message this contact">
+                    <MessageSquare className="h-4 w-4" />
+                  </span>
+                )}
 
                 <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />
               </a>

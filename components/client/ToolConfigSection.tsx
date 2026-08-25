@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon, MessageSquare,
-  ChevronDown, Check
+  ChevronDown, Check, Send
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -20,6 +20,7 @@ interface ToolConfig {
   businessHoursRouting: boolean;
   afterHoursMessage: string;
   transferFallbackToMessage: boolean;
+  smsToCaller: boolean;
 }
 
 interface Props {
@@ -34,6 +35,7 @@ const DEFAULT_CONFIG: ToolConfig = {
   businessHoursRouting: false,
   afterHoursMessage: "We're currently closed, but I'd be happy to take a message and have someone call you back during business hours.",
   transferFallbackToMessage: true,
+  smsToCaller: false,
 };
 
 export default function ToolConfigSection({ clientId, theme }: Props) {
@@ -157,6 +159,13 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
       label: 'After-Hours Mode',
       description: 'Different behavior when your business is closed — message-taking only, no transfers',
       enabled: config.businessHoursRouting,
+    },
+    {
+      key: 'smsToCaller' as const,
+      icon: Send,
+      label: 'Text Callers',
+      description: 'Let the AI text the caller during a call (booking links, confirmations, addresses, reminders). Sends to the number they called from.',
+      enabled: config.smsToCaller,
     },
   ];
 
