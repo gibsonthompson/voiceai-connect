@@ -71,7 +71,17 @@ function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: s
 // Official Stripe-branded connect button: Stripe blurple (#635BFF) + the Stripe
 // wordmark. Agency owners recognise it as Stripe's own secure flow, which lifts
 // trust and completion versus a generic themed button.
-function StripeConnectButton({ onClick, loading, disabled, label = 'Connect with', className = '' }: { onClick: () => void; loading?: boolean; disabled?: boolean; label?: string; className?: string }) {
+// Verified Stripe mark (Bootstrap Icons path): the rounded-square "S". Renders
+// reliably at any size. `color` fills the square; the S is the cut-out.
+function StripeMark({ className = '', color = '#635BFF' }: { className?: string; color?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill={color} className={className} role="img" aria-label="Stripe">
+      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.226 5.385c-.584 0-.937.164-.937.593 0 .468.607.674 1.36.93 1.228.415 2.844.963 2.851 2.993C11.5 11.868 9.924 13 7.63 13a7.7 7.7 0 0 1-3.009-.626V9.758c.926.506 2.095.88 3.01.88.617 0 1.058-.165 1.058-.671 0-.518-.658-.755-1.453-1.041C6.026 8.49 4.5 7.94 4.5 6.11 4.5 4.165 5.988 3 8.226 3a7.3 7.3 0 0 1 2.734.505v2.583c-.838-.45-1.896-.703-2.734-.703"/>
+    </svg>
+  );
+}
+
+function StripeConnectButton({ onClick, loading, disabled, label = 'Connect with Stripe', className = '' }: { onClick: () => void; loading?: boolean; disabled?: boolean; label?: string; className?: string }) {
   return (
     <button
       onClick={onClick}
@@ -83,10 +93,8 @@ function StripeConnectButton({ onClick, loading, disabled, label = 'Connect with
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
         <>
+          <StripeMark color="#fff" className="h-4 w-4" />
           <span>{label}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 25" width="46" height="19" role="img" aria-label="Stripe">
-            <path fill="#fff" d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.01-1.41 3.58-1.21v3.79c-.54-.18-2.26-.44-3.26.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.02-13.17 4.02-.86v3.54h3.14V9.1h-3.15l.01 6.02z"/>
-          </svg>
         </>
       )}
     </button>
@@ -998,7 +1006,7 @@ function AgencySettingsContent() {
                 ) : (
                   <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#635BFF' }}><CreditCard className="h-6 w-6 text-white" /></div>
+                      <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
                         <div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stripeDisplay.color }} /><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{stripeDisplay.label}</p></div>
@@ -1006,7 +1014,7 @@ function AgencySettingsContent() {
                       {stripeDisplay.status === 'active' ? (
                         <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button>
                       ) : stripeDisplay.status === 'restricted' ? (
-                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Finish setup with" />
+                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Finish Stripe setup" />
                       ) : null}
                     </div>
                     {stripeDisplay.status === 'active' && (
@@ -1101,7 +1109,7 @@ function AgencySettingsContent() {
                       This cannot be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
                     </p>
                     <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                      <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with" className="w-full sm:w-auto" />
+                      <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
                       <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
                     </div>
                   </div>
