@@ -75,27 +75,73 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
   onClose: () => void;
   onLogged: (email: any) => void;
 }) {
+  // Templates carry a {name} placeholder. Start from the hardcoded set as a
+  // fallback (works before the email_templates table is seeded), then load the
+  // editable, persisted versions from the DB.
+  const [templates, setTemplates] = useState<{ key: string; name: string; subject: string; body: string }[]>(
+    () => ONBOARDING_EMAILS.map(t => ({ key: `onboarding_${t.step}`, name: t.title, subject: t.subject, body: t.body('{name}') }))
+  );
   const [idx, setIdx] = useState(0);
-  const [subject, setSubject] = useState(ONBOARDING_EMAILS[0].subject);
-  const [body, setBody] = useState(ONBOARDING_EMAILS[0].body(agency.name || 'there'));
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
   const [logged, setLogged] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const pick = (i: number) => {
-    setIdx(i);
-    setSubject(ONBOARDING_EMAILS[i].subject);
-    setBody(ONBOARDING_EMAILS[i].body(agency.name || 'there'));
-    setLogged(false);
-  };
+  const nm = agency.name && agency.name.trim() ? agency.name.trim() : '';
+  const render = (raw: string) => raw.split('{name}').join(nm || 'there');
+  const detokenize = (text: string) => (nm ? text.split(nm).join('{name}') : text);
+
+  const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+  // Load persisted templates from the DB (falls back to the hardcoded set on error).
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${backendUrl()}/api/admin/email-templates`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.templates) && data.templates.length > 0) setTemplates(data.templates);
+        }
+      } catch (e) {
+        // keep fallback templates
+      }
+    })();
+  }, []);
+
+  // Populate the editable fields whenever the selected template (or the loaded
+  // set) changes. Runs on template switch, not on every keystroke, so edits stick.
+  useEffect(() => {
+    const t = templates[idx];
+    if (t) { setSubject(t.subject); setBody(render(t.body)); setLogged(false); setSaved(false); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templates, idx]);
 
   const copy = async (what: string, text: string) => {
+    try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 1500); } catch (e) { /* clipboard unavailable */ }
+  };
+
+  const saveTemplate = async () => {
+    setSaving(true);
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(what);
-      setTimeout(() => setCopied(null), 1500);
+      const token = localStorage.getItem('admin_token');
+      const rawBody = detokenize(body);
+      const key = templates[idx].key;
+      await fetch(`${backendUrl()}/api/admin/email-templates/${key}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body: rawBody }),
+      });
+      setTemplates(prev => prev.map((t, i) => (i === idx ? { ...t, subject, body: rawBody } : t)));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      // clipboard unavailable
+      console.error('Save template error:', e);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -103,11 +149,10 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
     setLogging(true);
     try {
       const token = localStorage.getItem('admin_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const res = await fetch(`${backendUrl}/api/admin/agencies/${agency.id}/log-email`, {
+      const res = await fetch(`${backendUrl()}/api/admin/agencies/${agency.id}/log-email`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, body, template_key: `onboarding_${ONBOARDING_EMAILS[idx]?.step ?? 0}`, recipient_email: agency.email }),
+        body: JSON.stringify({ subject, body, template_key: templates[idx]?.key || null, recipient_email: agency.email }),
       });
       const data = await res.json();
       if (data?.email) onLogged(data.email);
@@ -121,7 +166,7 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--a-line)]">
           <Mail className="h-4 w-4" style={{ color: 'var(--a-em-deep)' }} />
           <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Email {agency.name}</h3>
@@ -129,33 +174,40 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
           <button onClick={onClose} className="ml-auto text-[var(--a-dim)] hover:text-[var(--a-ink)]"><X className="h-4 w-4" /></button>
         </div>
 
-        <div className="p-5 space-y-3 overflow-y-auto">
+        <div className="p-5 space-y-4 overflow-y-auto">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {ONBOARDING_EMAILS.map((t, i) => (
-              <button key={t.step} onClick={() => pick(i)} className="rounded-lg px-2.5 py-1 text-[11px] font-semibold border transition-colors" style={i === idx ? { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' } : { background: 'white', color: 'var(--a-muted)', borderColor: 'var(--a-line)' }}>{t.title}</button>
+            {templates.map((t, i) => (
+              <button key={t.key} onClick={() => setIdx(i)} className="rounded-lg px-2.5 py-1 text-[11px] font-semibold border transition-colors" style={i === idx ? { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' } : { background: 'white', color: 'var(--a-muted)', borderColor: 'var(--a-line)' }}>{t.name}</button>
             ))}
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] uppercase tracking-wide text-[var(--a-dim)]">Subject</span>
               <button onClick={() => copy('subject', subject)} className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--a-em-deep)]"><Copy className="h-3 w-3" />{copied === 'subject' ? 'Copied' : 'Copy'}</button>
             </div>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="a-input w-full text-[13px]" />
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded-xl border border-[var(--a-line)] bg-white px-3.5 py-2.5 text-[14px] text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em)]" />
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] uppercase tracking-wide text-[var(--a-dim)]">Body</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--a-dim)]">Message</span>
               <button onClick={() => copy('body', body)} className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--a-em-deep)]"><Copy className="h-3 w-3" />{copied === 'body' ? 'Copied' : 'Copy'}</button>
             </div>
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={9} className="a-input w-full text-[13px] leading-relaxed" style={{ resize: 'vertical' }} />
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={15}
+              className="w-full rounded-xl border border-[var(--a-line)] bg-white px-4 py-3.5 text-[14px] leading-[1.7] text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em)]"
+              style={{ resize: 'vertical', minHeight: '320px', whiteSpace: 'pre-wrap' }}
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-5 py-4 border-t border-[var(--a-line)]">
+        <div className="flex items-center gap-2 px-5 py-4 border-t border-[var(--a-line)] flex-wrap">
           <button onClick={() => copy('all', subject + '\n\n' + body)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><Copy className="h-3.5 w-3.5" />{copied === 'all' ? 'Copied' : 'Copy all'}</button>
           <a href={gmailComposeUrl(agency.email, subject, body)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><ExternalLink className="h-3.5 w-3.5" />Open in Gmail</a>
+          <button onClick={saveTemplate} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]" style={{ opacity: saving ? 0.6 : 1 }}>{saved ? <><Check className="h-3.5 w-3.5" />Saved</> : saving ? 'Saving...' : 'Save template'}</button>
           <button onClick={logSent} disabled={logging || logged} className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em)', color: '#04140D', opacity: (logging || logged) ? 0.6 : 1 }}>{logged ? <><Check className="h-3.5 w-3.5" />Logged</> : logging ? 'Logging...' : 'Log as sent'}</button>
         </div>
       </div>
