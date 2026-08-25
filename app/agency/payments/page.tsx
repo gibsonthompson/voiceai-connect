@@ -122,15 +122,6 @@ const DEMO_FINANCIALS: Financials = {
   ],
 };
 
-// Verified Stripe mark (Bootstrap Icons path): rounded-square "S".
-function StripeMark({ className = '', color = '#635BFF' }: { className?: string; color?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill={color} className={className} role="img" aria-label="Stripe">
-      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.226 5.385c-.584 0-.937.164-.937.593 0 .468.607.674 1.36.93 1.228.415 2.844.963 2.851 2.993C11.5 11.868 9.924 13 7.63 13a7.7 7.7 0 0 1-3.009-.626V9.758c.926.506 2.095.88 3.01.88.617 0 1.058-.165 1.058-.671 0-.518-.658-.755-1.453-1.041C6.026 8.49 4.5 7.94 4.5 6.11 4.5 4.165 5.988 3 8.226 3a7.3 7.3 0 0 1 2.734.505v2.583c-.838-.45-1.896-.703-2.734-.703"/>
-    </svg>
-  );
-}
-
 export default function AgencyPaymentsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
@@ -229,7 +220,7 @@ export default function AgencyPaymentsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2.5"><StripeMark className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0" color="#635BFF" /><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1></div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
           <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
         </div>
 
@@ -273,7 +264,7 @@ export default function AgencyPaymentsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2.5"><StripeMark className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0" color="#635BFF" /><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1></div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
           <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
         </div>
 
@@ -285,7 +276,9 @@ export default function AgencyPaymentsPage() {
         )}
 
         <div className="rounded-2xl p-6 sm:p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <StripeMark className="h-14 w-14 mx-auto mb-4" color="#635BFF" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4" style={{ backgroundColor: theme.primary15 }}>
+            <CreditCard className="h-7 w-7" style={{ color: theme.primary }} />
+          </div>
           <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Connect Stripe to see your money</h2>
           <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.textMuted }}>
             Once Stripe Connect is set up, your available balance, upcoming payouts, and every client payment show up here. Payments go straight to your own Stripe account.
@@ -320,7 +313,7 @@ export default function AgencyPaymentsPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8 flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2.5"><StripeMark className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0" color="#635BFF" /><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1></div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
           <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
