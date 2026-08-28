@@ -19,7 +19,7 @@ import type { ElementType } from 'react';
 import {
   Wrench, Droplets, Truck, Stethoscope, Smile, Scale, Home, Building2,
   Calculator, Briefcase, UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag,
-  Car, Package, HardHat, Hammer, Trash2,
+  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees,
 } from 'lucide-react';
 
 // String name -> lucide component. Backend endpoints return icon names as
@@ -28,7 +28,7 @@ import {
 export const INDUSTRY_ICON_MAP: Record<string, ElementType> = {
   Wrench, Droplets, Truck, Stethoscope, Smile, Scale, Home, Building2,
   Calculator, Briefcase, UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag,
-  Car, Package, HardHat, Hammer, Trash2,
+  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees,
 };
 
 export interface IndustryIntelligence {
@@ -80,6 +80,54 @@ export const INDUSTRIES: Industry[] = [
     description: 'Junk hauling and dumpster rental',
     intelligence: { services: 25, faqs: 10, terms: 7, features: ['Volume Estimating', 'Dumpster Sizing', 'Prohibited-Item Screening'] },
     aliases: ['junk_removal_dumpster', 'dumpster_rental', 'junk'],
+  },
+  {
+    value: 'hvac',
+    label: 'HVAC / Heating & Cooling',
+    icon: 'Wind',
+    description: 'Heating, cooling, and air quality',
+    intelligence: { services: 28, faqs: 12, terms: 10, features: ['No-Heat / No-Cool Triage', 'Service Visit Booking', 'Gas & CO Safety Routing'] },
+    aliases: ['heating_cooling', 'heating_air', 'air_conditioning', 'heating', 'cooling', 'ac'],
+  },
+  {
+    value: 'plumbing',
+    label: 'Plumbing',
+    icon: 'Wrench',
+    description: 'Leaks, drains, water heaters, and repairs',
+    intelligence: { services: 30, faqs: 12, terms: 10, features: ['Active-Water Triage', 'Service Visit Booking', 'Emergency Shutoff Guidance'] },
+    aliases: ['plumber'],
+  },
+  {
+    value: 'electrical',
+    label: 'Electrical',
+    icon: 'Zap',
+    description: 'Wiring, panels, outlets, and repairs',
+    intelligence: { services: 26, faqs: 11, terms: 10, features: ['Electrical Safety Triage', 'Service Visit Booking', 'Panel & Circuit Terms'] },
+    aliases: ['electrician'],
+  },
+  {
+    value: 'roofing',
+    label: 'Roofing',
+    icon: 'HardHat',
+    description: 'Leaks, storm damage, inspections, and replacement',
+    intelligence: { services: 24, faqs: 12, terms: 9, features: ['Active-Leak Triage', 'Free Inspection Booking', 'Insurance-Claim Aware'] },
+    aliases: ['roofer', 'roof_repair'],
+  },
+  {
+    value: 'pest_control',
+    label: 'Pest Control',
+    icon: 'Bug',
+    description: 'Extermination, prevention, and recurring service',
+    intelligence: { services: 22, faqs: 10, terms: 8, features: ['Pest Intake', 'Treatment Scheduling', 'Recurring-Plan Aware'] },
+    aliases: ['pest', 'exterminator'],
+  },
+  {
+    value: 'landscaping',
+    label: 'Landscaping & Lawn Care',
+    icon: 'Trees',
+    description: 'Maintenance, cleanups, design, and installs',
+    intelligence: { services: 26, faqs: 9, terms: 7, features: ['Estimate Booking', 'One-Time & Recurring', 'Seasonal Service Aware'] },
+    aliases: ['lawn_care', 'lawn'],
   },
   {
     value: 'medical',
