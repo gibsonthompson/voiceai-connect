@@ -13,6 +13,7 @@ import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
 import { getDemoClientDetail } from '../../demoData';
 import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/industries';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
@@ -431,11 +432,14 @@ export default function AgencyClientDetailPage() {
                     <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Industry</p>
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
-                        <select value={(industryValue || client.industry) ? normalizeIndustry(industryValue || client.industry) : ''} onChange={(e) => { setIndustryValue(e.target.value); handleSaveIndustry(e.target.value); }} disabled={industrySaving} className="w-full appearance-none rounded-lg px-3 py-2 pr-8 text-sm transition-colors focus:outline-none disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }}>
-                          <option value="">Select industry...</option>
-                          {SELECTABLE_INDUSTRIES.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-                        </select>
-                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: theme.textMuted }} />
+                        <CustomSelect
+                          value={(industryValue || client.industry) ? normalizeIndustry(industryValue || client.industry) : ''}
+                          onChange={(v) => { setIndustryValue(v); handleSaveIndustry(v); }}
+                          options={SELECTABLE_INDUSTRIES.map(opt => ({ value: opt.value, label: opt.label }))}
+                          placeholder="Select industry..."
+                          disabled={industrySaving}
+                          ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
+                        />
                       </div>
                       {industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}
                       {industrySaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}

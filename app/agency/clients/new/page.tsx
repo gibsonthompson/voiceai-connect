@@ -8,6 +8,7 @@ import { useAgency } from '../../context';
 import { countries as SUPPORTED_COUNTRIES, getCurrencyForCountry, formatPrice } from '@/lib/currency';
 import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
+import { CustomSelect, CountrySelect, type DropdownUI } from '@/components/ui/custom-select';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -460,6 +461,17 @@ export default function AddClientPage() {
     colorScheme: isDark ? 'dark' : 'light',
   };
 
+  const ui: DropdownUI = {
+    inputStyle,
+    text: textColor,
+    muted: mutedTextColor,
+    panelBg: isDark ? '#232321' : '#ffffff',
+    panelBorder: inputBorder,
+    hover: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+    accent: primaryColor,
+    isDark,
+  };
+
   const stateLabel = isUS ? 'State' : isCA ? 'Province' : 'State / Region';
 
   return (
@@ -572,36 +584,26 @@ export default function AddClientPage() {
                 <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
                   Industry <span style={{ color: errorText }}>*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={form.industry}
-                  onChange={(e) => updateForm('industry', e.target.value)}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                  style={inputStyle}
+                  onChange={(v) => updateForm('industry', v)}
+                  options={SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label }))}
+                  placeholder="Select industry..."
                   disabled={submitting}
-                >
-                  <option value="">Select industry...</option>
-                  {SELECTABLE_INDUSTRIES.map(i => (
-                    <option key={i.value} value={i.value}>{i.label}</option>
-                  ))}
-                </select>
+                  ui={ui}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
                   Plan
                 </label>
-                <select
+                <CustomSelect
                   value={form.planType}
-                  onChange={(e) => updateForm('planType', e.target.value)}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                  style={inputStyle}
+                  onChange={(v) => updateForm('planType', v)}
+                  options={PLAN_TYPES.map(p => ({ value: p.value, label: `${p.label} - ${formatAgencyPrice(getPlanPrice(p.value))}/mo` }))}
                   disabled={submitting}
-                >
-                  {PLAN_TYPES.map(p => (
-                    <option key={p.value} value={p.value}>
-                      {p.label} - {formatAgencyPrice(getPlanPrice(p.value))}/mo
-                    </option>
-                  ))}
-                </select>
+                  ui={ui}
+                />
               </div>
             </div>
 
@@ -610,19 +612,13 @@ export default function AddClientPage() {
               <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
                 Country <span style={{ color: errorText }}>*</span>
               </label>
-              <select
+              <CountrySelect
                 value={form.businessCountry}
-                onChange={(e) => updateForm('businessCountry', e.target.value)}
-                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                style={inputStyle}
+                onChange={(v) => updateForm('businessCountry', v)}
+                countries={SUPPORTED_COUNTRIES}
                 disabled={submitting}
-              >
-                {SUPPORTED_COUNTRIES.map(c => (
-                  <option key={c.code} value={c.code}>
-                    {c.flag} {c.name}
-                  </option>
-                ))}
-              </select>
+                ui={ui}
+              />
             </div>
 
             {/* City + State/Region */}
@@ -646,31 +642,23 @@ export default function AddClientPage() {
                   {stateLabel} <span style={{ color: errorText }}>*</span>
                 </label>
                 {isUS ? (
-                  <select
+                  <CustomSelect
                     value={form.businessState}
-                    onChange={(e) => updateForm('businessState', e.target.value)}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                    style={inputStyle}
+                    onChange={(v) => updateForm('businessState', v)}
+                    options={US_STATES}
+                    placeholder="Select state..."
                     disabled={submitting}
-                  >
-                    <option value="">Select state...</option>
-                    {US_STATES.map(s => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
+                    ui={ui}
+                  />
                 ) : isCA ? (
-                  <select
+                  <CustomSelect
                     value={form.businessState}
-                    onChange={(e) => updateForm('businessState', e.target.value)}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                    style={inputStyle}
+                    onChange={(v) => updateForm('businessState', v)}
+                    options={CA_PROVINCES}
+                    placeholder="Select province..."
                     disabled={submitting}
-                  >
-                    <option value="">Select province...</option>
-                    {CA_PROVINCES.map(p => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
+                    ui={ui}
+                  />
                 ) : (
                   <input
                     type="text"
