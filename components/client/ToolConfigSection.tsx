@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon, MessageSquare,
-  ChevronDown, Check, Send
+  ChevronDown, Check, Send, X
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -21,6 +21,8 @@ interface ToolConfig {
   afterHoursMessage: string;
   transferFallbackToMessage: boolean;
   smsToCaller: boolean;
+  smsInstructions: string;
+  smsSnippets: { label: string; value: string }[];
 }
 
 interface Props {
@@ -36,6 +38,8 @@ const DEFAULT_CONFIG: ToolConfig = {
   afterHoursMessage: "We're currently closed, but I'd be happy to take a message and have someone call you back during business hours.",
   transferFallbackToMessage: true,
   smsToCaller: false,
+  smsInstructions: '',
+  smsSnippets: [],
 };
 
 export default function ToolConfigSection({ clientId, theme }: Props) {
@@ -108,6 +112,27 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       console.error('Failed to save after-hours message:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const persistSms = async (snippets: { label: string; value: string }[], instructions: string) => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${backendUrl}/api/client/${clientId}/tool-config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          smsInstructions: instructions || '',
+          smsSnippets: (snippets || []).filter(s => (s.label || '').trim() || (s.value || '').trim()),
+        }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error('Failed to save SMS config:', e);
     } finally {
       setSaving(false);
     }
@@ -293,6 +318,28 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
               <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>
                 Your AI will say this when someone calls outside business hours. Make sure your business hours are set in settings.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* SMS to caller: what the AI can text and when — shown when Text Callers is on */}
+        {config.smsToCaller && (
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+            <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+              <label className="block text-[10px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Saved texts the AI can send</label>
+              <p className="text-[9px] mb-2" style={{ color: theme.textMuted4 }}>Add a label and the exact text or link. The AI sends these to the caller word-for-word, ideal for booking links and addresses.</p>
+              {(config.smsSnippets || []).map((snip, i) => (
+                <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                  <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} placeholder="Booking link" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} placeholder="https://cal.com/yourbiz" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); persistSms(s, config.smsInstructions); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                </div>
+              ))}
+              <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a saved text</button>
+
+              <label className="block text-[10px] sm:text-xs font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>When should the AI text?</label>
+              <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} rows={3} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="e.g. When a caller wants to schedule, text them the booking link. If they ask for our address, text it. Text a confirmation after booking an appointment." />
+              <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Tell the AI when to text and which saved text to send. It only ever texts the person on the call.</p>
             </div>
           </div>
         )}
