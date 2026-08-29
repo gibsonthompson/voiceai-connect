@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon, MessageSquare,
-  ChevronDown, Check, Send, X
+  ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -23,6 +23,7 @@ interface ToolConfig {
   smsToCaller: boolean;
   smsInstructions: string;
   smsSnippets: { label: string; value: string }[];
+  smsPresets: Record<string, { enabled: boolean; value: string }>;
 }
 
 interface Props {
@@ -40,7 +41,18 @@ const DEFAULT_CONFIG: ToolConfig = {
   smsToCaller: false,
   smsInstructions: '',
   smsSnippets: [],
+  smsPresets: {},
 };
+
+// Common, pre-built texts the AI can send. The client toggles one on and adds
+// the value; the trigger ("when a caller wants to book") is fixed server-side,
+// so it fires reliably without the client writing instructions.
+const SMS_PRESETS: { key: string; label: string; desc: string; placeholder: string; icon: any }[] = [
+  { key: 'address', label: 'Address', desc: 'When a caller asks where you are', placeholder: '123 Main St, City, ST', icon: MapPin },
+  { key: 'website', label: 'Website', desc: 'When a caller wants more info', placeholder: 'https://yourbiz.com', icon: Globe },
+  { key: 'review', label: 'Review link', desc: 'To ask for a review after a good call', placeholder: 'https://g.page/r/...', icon: Star },
+  { key: 'payment', label: 'Payment link', desc: 'When a caller needs to pay', placeholder: 'https://...', icon: DollarSign },
+];
 
 export default function ToolConfigSection({ clientId, theme }: Props) {
   const [config, setConfig] = useState<ToolConfig>(DEFAULT_CONFIG);
@@ -117,7 +129,13 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
     }
   };
 
-  const persistSms = async (snippets: { label: string; value: string }[], instructions: string) => {
+  const [smsAdvancedOpen, setSmsAdvancedOpen] = useState(false);
+
+  const persistSms = async (
+    presets: Record<string, { enabled: boolean; value: string }>,
+    snippets: { label: string; value: string }[],
+    instructions: string,
+  ) => {
     setSaving(true);
     try {
       const token = localStorage.getItem('auth_token');
@@ -125,6 +143,7 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
+          smsPresets: presets || {},
           smsInstructions: instructions || '',
           smsSnippets: (snippets || []).filter(s => (s.label || '').trim() || (s.value || '').trim()),
         }),
@@ -136,6 +155,18 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const persistAllSms = () => persistSms(config.smsPresets || {}, config.smsSnippets, config.smsInstructions);
+  const togglePreset = (key: string) => {
+    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: false, value: '' };
+    const next = { ...(config.smsPresets || {}), [key]: { ...cur, enabled: !cur.enabled } };
+    setConfig({ ...config, smsPresets: next });
+    persistSms(next, config.smsSnippets, config.smsInstructions);
+  };
+  const setPresetValue = (key: string, value: string) => {
+    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: true, value: '' };
+    setConfig({ ...config, smsPresets: { ...(config.smsPresets || {}), [key]: { ...cur, value } } });
   };
 
   if (loading) {
@@ -322,24 +353,58 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
           </div>
         )}
 
-        {/* SMS to caller: what the AI can text and when — shown when Text Callers is on */}
+        {/* SMS to caller: pick what the AI can text, shown when Text Callers is on */}
         {config.smsToCaller && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-              <label className="block text-[10px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Saved texts the AI can send</label>
-              <p className="text-[9px] mb-2" style={{ color: theme.textMuted4 }}>Add a label and the exact text or link. The AI sends these to the caller word-for-word, ideal for booking links and addresses.</p>
-              {(config.smsSnippets || []).map((snip, i) => (
-                <div key={i} className="flex items-center gap-1.5 mb-1.5">
-                  <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} placeholder="Booking link" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                  <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} placeholder="https://cal.com/yourbiz" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                  <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); persistSms(s, config.smsInstructions); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-              <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a saved text</button>
+              <p className="text-[10px] mb-2.5" style={{ color: theme.textMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
 
-              <label className="block text-[10px] sm:text-xs font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>When should the AI text?</label>
-              <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} onBlur={() => persistSms(config.smsSnippets, config.smsInstructions)} rows={3} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="e.g. When a caller wants to schedule, text them the booking link. If they ask for our address, text it. Text a confirmation after booking an appointment." />
-              <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Tell the AI when to text and which saved text to send. It only ever texts the person on the call.</p>
+              {SMS_PRESETS.map((preset) => {
+                const p = (config.smsPresets && config.smsPresets[preset.key]) || { enabled: false, value: '' };
+                const Icon = preset.icon;
+                return (
+                  <div key={preset.key} className="mb-2 rounded-lg overflow-hidden" style={{ border: `1px solid ${p.enabled ? theme.primary : theme.inputBorder}` }}>
+                    <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon className="h-4 w-4 flex-shrink-0" style={{ color: p.enabled ? theme.primary : theme.textMuted4 }} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium" style={{ color: theme.text }}>{preset.label}</p>
+                          <p className="text-[9px]" style={{ color: theme.textMuted4 }}>{preset.desc}</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => togglePreset(preset.key)} aria-pressed={p.enabled} className="relative flex-shrink-0 w-9 h-5 rounded-full transition-colors" style={{ backgroundColor: p.enabled ? theme.primary : theme.inputBorder }}>
+                        <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all" style={{ left: p.enabled ? '18px' : '2px' }} />
+                      </button>
+                    </div>
+                    {p.enabled && (
+                      <div className="px-2.5 pb-2">
+                        <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} onBlur={persistAllSms} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-1" style={{ color: theme.textMuted }}>
+                <ChevronDown className={`h-3 w-3 transition-transform ${smsAdvancedOpen ? 'rotate-180' : ''}`} /> Advanced
+              </button>
+              {smsAdvancedOpen && (
+                <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                  <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Custom texts</label>
+                  <p className="text-[9px] mb-1.5" style={{ color: theme.textMuted4 }}>For anything not above. A label and the exact text or link, sent word-for-word.</p>
+                  {(config.smsSnippets || []).map((snip, i) => (
+                    <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                      <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={persistAllSms} placeholder="Label" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={persistAllSms} placeholder="Exact text or link" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); persistSms(config.smsPresets || {}, s, config.smsInstructions); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                  <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a custom text</button>
+
+                  <label className="block text-[10px] font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
+                  <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} onBlur={persistAllSms} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
+                </div>
+              )}
             </div>
           </div>
         )}
