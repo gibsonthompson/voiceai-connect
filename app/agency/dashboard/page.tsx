@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, Copy, Check, UserPlus, BarChart3,
-  ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
+  ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X, LifeBuoy,
   Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Globe, Inbox
 } from 'lucide-react';
 import { useAgency } from '../context';
@@ -183,20 +183,20 @@ export default function AgencyDashboardPage() {
             {feedbackSent ? (
               <div className="text-center py-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3" style={{ backgroundColor: theme.primary15 }}><Check className="h-6 w-6" style={{ color: theme.primary }} /></div>
-                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Feedback Sent</h3>
-                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Thanks for sharing your thoughts.</p>
+                <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Message Sent</h3>
+                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Thanks, we'll get back to you soon.</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><MessageSquare className="h-5 w-5" style={{ color: theme.primary }} /></div>
-                  <div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Send Feedback</h3><p className="text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests</p></div>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><LifeBuoy className="h-5 w-5" style={{ color: theme.primary }} /></div>
+                  <div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Contact Support</h3><p className="text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? We'll get back to you.</p></div>
                 </div>
                 {feedbackError && (<div className="mb-4 rounded-xl p-3 text-sm" style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>{feedbackError}</div>)}
-                <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={4} maxLength={2000} className="w-full rounded-xl px-4 py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} autoFocus />
+                <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="How can we help?" rows={4} maxLength={2000} className="w-full rounded-xl px-4 py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} autoFocus />
                 <div className="flex items-center justify-between mt-1 mb-4"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span></div>
                 <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                  {sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send Feedback</>)}
+                  {sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}
                 </button>
               </>
             )}
@@ -211,7 +211,7 @@ export default function AgencyDashboardPage() {
           <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Here&apos;s how your agency is performing.</p>
         </div>
         <button onClick={() => setShowFeedbackModal(true)} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-          <MessageSquare className="h-4 w-4" /><span className="hidden sm:inline">Feedback</span>
+          <LifeBuoy className="h-4 w-4" /><span className="hidden sm:inline">Support</span>
         </button>
       </div>
 
