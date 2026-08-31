@@ -240,7 +240,7 @@ export default function ClientAIAgentPage() {
   const filteredVoices = getFilteredVoices();
   const availableAccents = getAvailableAccents();
   const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected;
-  const isCalendarPlanAllowed = calendarStatus?.plan_allowed !== false;
+  const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
 
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };

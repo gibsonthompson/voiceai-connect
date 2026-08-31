@@ -317,6 +317,9 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
   const isFeatureEnabled = useCallback((feature: ClientFeatureKey): boolean => {
     if (!client) return true;
+    // Test clients are a sandbox: everything unlocked so the agency can see the
+    // full product regardless of plan gating.
+    if ((client as any).is_test_client) return true;
     const plan = getEffectivePlan(client);
     const agencyFeatures = client.agency?.plan_features;
     const features = agencyFeatures?.[plan] || DEFAULT_PLAN_FEATURES[plan];
