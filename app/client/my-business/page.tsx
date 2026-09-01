@@ -9,7 +9,8 @@ import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
-import { timezoneOptions, detectBrowserTimezone } from '@/lib/timezones';
+import { detectBrowserTimezone } from '@/lib/timezones';
+import { TimezoneSelect } from '@/components/ui/timezone-select';
 
 interface BusinessHours {
   monday: { open: string; close: string; closed: boolean };
@@ -459,11 +460,9 @@ export default function MyBusinessPage() {
         <div className="fu fu2">
           <SectionCard icon={Clock} title="Business Hours" subtitle="When your business is open">
             <div className="mb-3">
-              <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Time zone</label>
-              <select value={timezone} onChange={e => setTimezone(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={inputStyle}>
-                {timezoneOptions(timezone).map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
-              </select>
-              <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Your hours are read in this time zone. Getting this right is what tells the AI when you're open vs closed.</p>
+              <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted4 }}>Time zone</label>
+              <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#1c1c1b' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>Your hours are read in this time zone. Getting this right is what tells the AI when you're open vs closed.</p>
             </div>
             <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
