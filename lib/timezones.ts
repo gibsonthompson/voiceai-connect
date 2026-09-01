@@ -66,7 +66,6 @@ export function allTimezones(): { value: string; label: string }[] {
 
   let zones: string[] = [];
   try {
-    // @ts-expect-error - supportedValuesOf is newer than some TS lib targets
     zones = (Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : []) || [];
   } catch {
     zones = [];
