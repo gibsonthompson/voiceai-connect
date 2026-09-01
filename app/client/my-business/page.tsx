@@ -9,6 +9,7 @@ import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
+import { timezoneOptions, detectBrowserTimezone } from '@/lib/timezones';
 
 interface BusinessHours {
   monday: { open: string; close: string; closed: boolean };
@@ -93,6 +94,7 @@ export default function MyBusinessPage() {
 
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
+  const [timezone, setTimezone] = useState<string>('');
   const [businessHours, setBusinessHours] = useState<BusinessHours>({
     monday: { open: '9:00 AM', close: '5:00 PM', closed: false },
     tuesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
@@ -162,6 +164,7 @@ export default function MyBusinessPage() {
           setWebsite(d.websiteUrl || '');
           if (d.data.faqs) parseFAQs(d.data.faqs);
           if (d.data.businessHours) parseBusinessHours(d.data.businessHours);
+          setTimezone((client as any)?.timezone || detectBrowserTimezone());
           setAdditionalInfo(d.data.additionalInfo || '');
           setExistingServicesText(d.data.services || '');
           setKbLastUpdated(d.updated_at || null);
@@ -234,6 +237,7 @@ export default function MyBusinessPage() {
     setSavingHours(true);
     try {
       const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, businessHours: formatBusinessHoursForSave() }) });
+      if (timezone) { await fetch(`${getBackendUrl()}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ timezone }) }); }
       const d = await r.json();
       if (d.success) { showMsg('Hours updated!'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Failed', true);
     } catch { showMsg('Error', true); }
@@ -454,6 +458,13 @@ export default function MyBusinessPage() {
         {/* Business Hours */}
         <div className="fu fu2">
           <SectionCard icon={Clock} title="Business Hours" subtitle="When your business is open">
+            <div className="mb-3">
+              <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Time zone</label>
+              <select value={timezone} onChange={e => setTimezone(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={inputStyle}>
+                {timezoneOptions(timezone).map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+              </select>
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Your hours are read in this time zone. Getting this right is what tells the AI when you're open vs closed.</p>
+            </div>
             <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
                 {getHoursSummary().slice(0, 3).map((h, i) => <span key={i} className="px-2 py-1 rounded-lg text-[11px]" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', color: theme.textMuted }}>{h}</span>)}

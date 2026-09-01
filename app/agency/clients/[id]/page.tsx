@@ -14,6 +14,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { getDemoClientDetail } from '../../demoData';
 import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/industries';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { timezoneOptions } from '@/lib/timezones';
 
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
@@ -184,6 +185,9 @@ export default function AgencyClientDetailPage() {
   const [industryValue, setIndustryValue] = useState('');
   const [industrySaving, setIndustrySaving] = useState(false);
   const [industrySaved, setIndustrySaved] = useState(false);
+  const [tzValue, setTzValue] = useState('');
+  const [tzSaving, setTzSaving] = useState(false);
+  const [tzSaved, setTzSaved] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   // Client login credentials (view + agency-initiated reset)
@@ -204,6 +208,7 @@ export default function AgencyClientDetailPage() {
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
   useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); } }, [client?.business_name, client?.owner_phone]);
 
+  const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
   const handleSaveField = async (field: 'business_name' | 'owner_phone', value: string) => {
@@ -420,6 +425,31 @@ export default function AgencyClientDetailPage() {
                       <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
                       <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '-'}</p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Time zone */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
+                    <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Time zone</p>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <CustomSelect
+                          value={tzValue || (client as any).timezone || ''}
+                          onChange={(v) => { setTzValue(v); handleSaveTimezone(v); }}
+                          options={timezoneOptions(tzValue || (client as any).timezone)}
+                          placeholder="Select time zone..."
+                          disabled={tzSaving}
+                          ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
+                        />
+                      </div>
+                      {tzSaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}
+                      {tzSaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}
+                    </div>
+                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>The client's business hours are evaluated in this time zone.</p>
                   </div>
                 </div>
 
