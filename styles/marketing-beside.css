@@ -420,7 +420,8 @@
   .beside .bsd-problems { grid-template-columns: repeat(3, 1fr); }
   .beside .bsd-steps { grid-template-columns: repeat(2, 1fr); }
   .beside .bsd-industries { grid-template-columns: repeat(2, 1fr); }
-  .beside .bsd-pricing { grid-template-columns: repeat(3, 1fr); }
+  .beside .bsd-pricing { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4rem; }
+  .beside .bsd-price { flex: 0 1 22rem; }
   .beside .bsd-price.pop { transform: scale(1.02); }
   .beside .bsd-price.pop:hover { transform: scale(1.02) translateY(-4px); }
   .beside .bsd-fx-panel { grid-template-columns: 1.1fr 0.9fr; padding: 2.2rem; }
