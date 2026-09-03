@@ -62,6 +62,8 @@ export default function MarketingWebsitePage() {
   const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>('light');
   const [savingColors, setSavingColors] = useState(false);
   const [colorsSaved, setColorsSaved] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [savingPlanKey, setSavingPlanKey] = useState<string | null>(null);
   // Currency
   const [displayCurrency, setDisplayCurrency] = useState('');
   const [savingCurrency, setSavingCurrency] = useState(false);
@@ -129,14 +131,28 @@ export default function MarketingWebsitePage() {
   }, [agency?.id, domainStatus, demoMode]);
 
   useEffect(() => {
-    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#10b981'); setSecondaryColor(agency?.secondary_color || '#059669'); setAccentColor(agency?.accent_color || '#34d399'); setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); return; }
-    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setPrimaryColor(agency.primary_color || '#10b981'); setSecondaryColor(agency.secondary_color || '#059669'); setAccentColor(agency.accent_color || '#34d399'); setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); }
+    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#10b981'); setSecondaryColor(agency?.secondary_color || '#059669'); setAccentColor(agency?.accent_color || '#34d399'); setWebsiteTheme(agency?.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
+    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setPrimaryColor(agency.primary_color || '#10b981'); setSecondaryColor(agency.secondary_color || '#059669'); setAccentColor(agency.accent_color || '#34d399'); setWebsiteTheme(agency.website_theme === 'dark' ? 'dark' : 'light'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
   }, [agency, demoMode]);
 
   const copyToClipboard = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000); };
 
   const handleSaveCurrency = async () => { if (demoMode) { setCurrencySaved(true); setTimeout(() => setCurrencySaved(false), 3000); return; } if (!agency) return; setSavingCurrency(true); setCurrencySaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ display_currency: displayCurrency || null }) }); if (response.ok) { await refreshAgency(); setCurrencySaved(true); setTimeout(() => setCurrencySaved(false), 3000); } } catch (error) { console.error('Failed to save currency:', error); } finally { setSavingCurrency(false); } };
   const handleSaveColors = async () => { if (demoMode) { setColorsSaved(true); setTimeout(() => setColorsSaved(false), 3000); return; } if (!agency) return; setSavingColors(true); setColorsSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ primary_color: primaryColor, secondary_color: secondaryColor, accent_color: accentColor, website_theme: websiteTheme }) }); if (response.ok) { await refreshAgency(); setColorsSaved(true); setTimeout(() => setColorsSaved(false), 3000); } } catch (error) { console.error('Failed to save colors:', error); } finally { setSavingColors(false); } };
+  const togglePlanVisible = async (key: string) => {
+    if (demoMode || !agency) return;
+    const prev = plans;
+    const next = plans.map((p) => (p.key === key ? { ...p, visible: p.visible === false } : p));
+    setPlans(next); // optimistic
+    setSavingPlanKey(key);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ plans: next }) });
+      if (response.ok) { await refreshAgency(); }
+      else { setPlans(prev); const d = await response.json().catch(() => ({})); alert(d.message || d.error || 'Failed to update plan visibility'); }
+    } catch (e) { setPlans(prev); console.error('Failed to toggle plan:', e); }
+    finally { setSavingPlanKey(null); }
+  };
   const handleSaveTracking = async () => { if (demoMode) { setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); return; } if (!agency) return; setSavingTracking(true); setTrackingSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ gtm_id: gtmId || null, fb_pixel_id: fbPixelId || null, google_analytics_id: googleAnalyticsId || null, custom_head_scripts: customHeadScripts || null, custom_body_scripts: customBodyScripts || null }) }); if (response.ok) { await refreshAgency(); setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save tracking settings'); } } catch (error) { console.error('Failed to save tracking:', error); } finally { setSavingTracking(false); } };
   const handleSaveSeo = async () => { if (demoMode) { setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); return; } if (!agency) return; setSavingSeo(true); setSeoSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ og_title: ogTitle || null, og_description: ogDescription || null, og_image_url: ogImageUrl || null }) }); if (response.ok) { await refreshAgency(); setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save SEO settings'); } } catch (error) { console.error('Failed to save SEO:', error); } finally { setSavingSeo(false); } };
   const handleSaveTemplate = async () => { if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; } if (!agency) return; setSavingTemplate(true); setTemplateSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: selectedTemplate }) }); if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save template'); } } catch (error) { console.error('Failed to save template:', error); } finally { setSavingTemplate(false); } };
@@ -190,6 +206,29 @@ export default function MarketingWebsitePage() {
 
       {/* ══════════════ OVERVIEW ══════════════ */}
       {activeTab === 'overview' && (<div className="space-y-4 sm:space-y-6">
+        <div className="rounded-2xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-center justify-between mb-1 gap-3">
+            <h3 className="text-base font-medium" style={{ color: textColor }}>Plans shown on your site</h3>
+            <button onClick={() => router.push('/agency/settings?tab=pricing')} className="inline-flex items-center gap-1 text-xs font-medium flex-shrink-0" style={{ color: agencyPrimaryColor }}>Edit pricing <ExternalLink className="h-3 w-3" /></button>
+          </div>
+          <p className="text-xs mb-4" style={{ color: mutedTextColor }}>Quickly toggle which plans appear on your marketing site. To change prices, names, or features, use Edit pricing.</p>
+          <div className="space-y-2">
+            {plans.length === 0 ? (
+              <p className="text-xs" style={{ color: mutedTextColor }}>No plans configured yet. <button onClick={() => router.push('/agency/settings?tab=pricing')} className="underline" style={{ color: agencyPrimaryColor }}>Set up pricing</button>.</p>
+            ) : plans.map((p) => (
+              <div key={p.key || p.name} className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, opacity: p.visible === false ? 0.6 : 1 }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: textColor }}>{p.name || 'Untitled plan'}</p>
+                  <p className="text-[11px]" style={{ color: mutedTextColor }}>{p.price_cents != null ? `$${Math.round(p.price_cents / 100)}/mo` : 'No price set'}</p>
+                </div>
+                <button type="button" role="switch" aria-checked={p.visible !== false} disabled={savingPlanKey === p.key || demoMode} onClick={() => togglePlanVisible(p.key)} className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50" style={{ backgroundColor: p.visible !== false ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }}>
+                  <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: p.visible !== false ? 'translateX(22px)' : 'translateX(4px)' }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Pricing Currency */}
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base">Pricing Currency</h3></div>

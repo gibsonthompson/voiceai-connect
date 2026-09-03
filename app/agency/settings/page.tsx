@@ -1292,7 +1292,8 @@ function AgencySettingsContent() {
                 billing mode, and demo toggle each have their own action and do
                 not go through handleSave. */}
             {(activeTab === 'profile' || activeTab === 'pricing') && (
-              <div className="mt-6 pt-6 flex justify-end" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <div className="sticky bottom-0 z-20 mt-6 pt-4 pb-4 flex items-center justify-end gap-3" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.isDark ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.96)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+                <span className="text-xs mr-auto" style={{ color: theme.textMuted }}>Changes aren&apos;t live until you save.</span>
                 <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 sm:px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save Changes</>}
                 </button>

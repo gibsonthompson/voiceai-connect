@@ -667,7 +667,8 @@
 
   /* Pricing */
   .marketing-page .pricing { padding: 4rem 0; }
-  .marketing-page .pricing-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .marketing-page .pricing-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; }
+  .marketing-page .pricing-card { flex: 0 1 22rem; }
   .marketing-page .pricing-popular { transform: scale(1.03); }
 
   /* FAQ */
