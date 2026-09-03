@@ -30,7 +30,6 @@ interface Agency {
   domain_verified: boolean | null;
 }
 
-const PLATFORM_DEMO_PHONE = '(470) 487-4561';
 
 // ============================================================================
 // HELPERS
@@ -173,6 +172,9 @@ export default function DemoPage() {
         if (!res.ok) { setError('Site not found'); setLoading(false); return; }
         const d = await res.json();
         if (!d.agency || ['suspended', 'deleted'].includes(d.agency.status)) { setError('Site not available'); setLoading(false); return; }
+        // No demo number on this agency => there's nothing to demo. Don't render the
+        // page (and never fall back to the platform number); send them to the home page.
+        if (!d.agency.demo_phone && !d.agency.demo_phone_number) { window.location.href = '/'; return; }
         try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: d.agency, ts: Date.now() })); } catch {}
         setAgency(d.agency);
       } catch { setError('Failed to load'); }
@@ -221,7 +223,7 @@ export default function DemoPage() {
   const isDark = theme === 'dark';
   const pcLight = isLightColor(pc);
   const textOnPrimary = pcLight ? '#1f2937' : '#ffffff';
-  const rawDemo = agency.demo_phone || agency.demo_phone_number || PLATFORM_DEMO_PHONE;
+  const rawDemo = agency.demo_phone || agency.demo_phone_number || '';
   const demoPhone = formatPhoneDisplay(rawDemo);
   const demoHref = `tel:+1${rawDemo.replace(/\D/g, '')}`;
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';

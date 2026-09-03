@@ -149,7 +149,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
             ))}
             <li><a href="#features">Features</a></li>
             <li><a href="#how-it-works">How It Works</a></li>
-            <li><a href="/demo">Demo</a></li>
+            {hero.demoPhone && <li><a href="/demo">Demo</a></li>}
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="/faq">FAQ</a></li>
           </ul>

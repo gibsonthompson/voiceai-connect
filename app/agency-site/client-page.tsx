@@ -60,7 +60,6 @@ interface Agency {
   plan_type: string | null;
 }
 
-const PLATFORM_DEMO_PHONE = '(470) 487-4561';
 
 // ============================================================================
 // HELPERS
@@ -181,7 +180,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   }, [agency]);
 
   // Resolve demo phone: manual override → auto-provisioned → platform fallback
-  const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || PLATFORM_DEMO_PHONE;
+  // No platform fallback: if the agency hasn't created its own demo number, we
+  // show nothing (the templates hide the demo CTA), rather than leaking the
+  // platform's number, which answers with an unrelated screening bot.
+  const rawDemoPhone = agency.demo_phone || agency.demo_phone_number || '';
   const demoPhone = formatPhoneDisplay(rawDemoPhone);
 
   // Currency resolution.
