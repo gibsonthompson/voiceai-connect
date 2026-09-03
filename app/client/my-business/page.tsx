@@ -219,6 +219,19 @@ export default function MyBusinessPage() {
 
   const showMsg = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 3000); };
 
+  // The AI checks the structured business_hours JSONB, not the KB text, so the
+  // save must write BOTH. Convert the editor state (12-hour + closed flag) to the
+  // shape checkBusinessHours reads (parseTimeToMinutes handles 12-hour times).
+  const buildBusinessHoursJSON = (): Record<string, unknown> => {
+    const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+    const out: Record<string, unknown> = {};
+    days.forEach(d => {
+      const day = businessHours[d as keyof BusinessHours];
+      out[d] = day.closed ? { closed: true } : { open: day.open, close: day.close, closed: false };
+    });
+    return out;
+  };
+
   const handleSaveBusinessName = async () => {
     if (!client || !nameValue.trim() || nameValue.trim() === client.business_name) { setEditingName(false); return; }
     setSavingName(true);
@@ -238,6 +251,8 @@ export default function MyBusinessPage() {
     setSavingHours(true);
     try {
       const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, businessHours: formatBusinessHoursForSave() }) });
+      // Also persist the structured JSONB the AI actually reads (KB text above is informational only).
+      await fetch(`${getBackendUrl()}/api/client/${client.id}/business-hours`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ business_hours: buildBusinessHoursJSON() }) });
       if (timezone) { await fetch(`${getBackendUrl()}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ timezone }) }); }
       const d = await r.json();
       if (d.success) { showMsg('Hours updated!'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Failed', true);
