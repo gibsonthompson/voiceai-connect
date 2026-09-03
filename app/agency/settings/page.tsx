@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown } from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { PLAN_NAMES, deriveAgencyTeamLimit, formatTeamLimit } from '@/lib/plan-limits';
@@ -11,7 +11,7 @@ import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'feedback';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
@@ -242,7 +242,7 @@ function AgencySettingsContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'feedback'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
@@ -360,10 +360,10 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(((agency.price_starter || 9900) / 100).toString()); setPricePro(((agency.price_pro || 14900) / 100).toString()); setPriceGrowth(((agency.price_growth || 29900) / 100).toString()); setSetupFee((((agency as any).setup_fee_cents ?? 0) as number) > 0 ? (((agency as any).setup_fee_cents as number) / 100).toString() : ''); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); setSetupFee((((agency as any).setup_fee_cents ?? 0) as number) > 0 ? (((agency as any).setup_fee_cents as number) / 100).toString() : ''); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
-  useEffect(() => { if (activeTab === 'feedback' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
+  useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
   useEffect(() => { if (activeTab === 'billing' && agency?.id) fetchUsageData(); }, [activeTab, agency?.id]);
 
   const handleTabChange = (tab: SettingsTab) => { setActiveTab(tab); const url = new URL(window.location.href); url.searchParams.set('tab', tab); window.history.replaceState({}, '', url.toString()); };
@@ -458,7 +458,7 @@ function AgencySettingsContent() {
     }
   };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'feedback' as SettingsTab, label: 'Feedback', icon: MessageSquare }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
 
   // If the requested tab (e.g. from a ?tab= URL) isn't one this member is
   // allowed to see, fall back to the first permitted tab so the gated content
@@ -507,9 +507,9 @@ function AgencySettingsContent() {
         payload.client_header_mode = clientHeaderMode;
         payload.allow_client_branding = allowClientBranding;
       } else if (activeTab === 'pricing') {
-        payload.price_starter = Math.round(parseFloat(priceStarter) * 100);
-        payload.price_pro = Math.round(parseFloat(pricePro) * 100);
-        payload.price_growth = Math.round(parseFloat(priceGrowth) * 100);
+        payload.price_starter = priceStarter.trim() === '' ? null : Math.round(parseFloat(priceStarter) * 100);
+        payload.price_pro = pricePro.trim() === '' ? null : Math.round(parseFloat(pricePro) * 100);
+        payload.price_growth = priceGrowth.trim() === '' ? null : Math.round(parseFloat(priceGrowth) * 100);
         // One-time setup fee: dollars in the input, cents to the backend. Blank
         // or non-numeric clears it (null = no fee).
         const _setupTrim = setupFee.trim();
@@ -955,7 +955,7 @@ function AgencySettingsContent() {
                       <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-4">
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
-                          <input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                          <input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Leave blank to hide this plan on your site.</p>
                         </div>
                         <div>
                           <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
@@ -1377,13 +1377,13 @@ function AgencySettingsContent() {
               </div>
             )}
 
-            {activeTab === 'feedback' && (
+            {activeTab === 'support' && (
               <div className="space-y-4 sm:space-y-6">
-                <div><h3 className="text-base sm:text-lg font-medium mb-1">Send Feedback</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions, issues, or feature requests, we read every message.</p></div>
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Contact Support</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? Send us a message and our team will get back to you.</p></div>
                 {feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}
-                {feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Feedback sent, thank you!</p></div>)}
+                {feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Message sent, we'll get back to you!</p></div>)}
                 <div>
-                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="What's on your mind?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="How can we help?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span>
                     <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? <><Loader2 className="h-4 w-4 animate-spin" />Sending...</> : <><Send className="h-4 w-4" />Send</>}</button>
@@ -1392,7 +1392,7 @@ function AgencySettingsContent() {
                 {loadingFeedback ? (
                   <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
                 ) : feedbackHistory.length > 0 ? (
-                  <div><p className="text-sm font-medium mb-3">Previous Feedback</p><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm">{item.message}</p><p className="text-[10px] sm:text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</p></div>))}</div></div>
+                  <div><p className="text-sm font-medium mb-3">Your previous messages</p><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm">{item.message}</p><p className="text-[10px] sm:text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</p></div>))}</div></div>
                 ) : null}
               </div>
             )}

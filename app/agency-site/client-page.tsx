@@ -208,9 +208,22 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ? agency.marketing_config.pricing
     : defaultMarketingConfig.pricing;
   const priceCents = [agency.price_starter, agency.price_pro, agency.price_growth];
-  const resolvedPricing = basePricing.map((tier, i) =>
-    priceCents[i] != null ? { ...tier, price: Math.round((priceCents[i] as number) / 100) } : tier
-  );
+  // PLAN VISIBILITY: show only tiers the agency has priced. An unpriced (null) tier
+  // is hidden — it previously rendered at a default price the agency never chose,
+  // which is why agencies couldn't limit how many plans appear. Guard: if NONE are
+  // priced, show all tiers so the section is never empty.
+  const anyPriced = priceCents.some((p) => p != null);
+  const resolvedPricing = basePricing
+    .map((tier, i) => {
+      if (i >= priceCents.length) return tier; // custom tiers beyond the 3 columns
+      if (priceCents[i] != null) return { ...tier, price: Math.round((priceCents[i] as number) / 100) };
+      return anyPriced ? null : tier;
+    })
+    .filter(Boolean) as typeof basePricing;
+  // Cheapest VISIBLE tier for the hero subtitle (the first tier may be filtered out).
+  const startingPrice = resolvedPricing.length > 0
+    ? Math.min(...resolvedPricing.map((t) => t.price))
+    : defaultMarketingConfig.pricing[0].price;
 
   // Logo background color
   const logoBgColor = (agency.logo_background_color && agency.logo_background_color !== '#000000' && agency.logo_background_color !== '#000')
@@ -232,17 +245,6 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
       primaryColor: agency.primary_color || '#10b981',
       primaryHoverColor: agency.secondary_color || adjustColor(agency.primary_color || '#10b981', -15),
       accentColor: agency.accent_color || '#34d399',
-    },
-    hero: {
-      ...defaultMarketingConfig.hero,
-      badge: agency.company_tagline || defaultMarketingConfig.hero.badge,
-      headline: agency.website_headline
-        ? agency.website_headline.split('\n').length > 1
-          ? agency.website_headline.split('\n')
-          : [agency.website_headline]
-        : defaultMarketingConfig.hero.headline,
-      subtitle: `AI Receptionist Starting at ${currencySymbol}${resolvedPricing[0].price}/month`,
-      demoPhone,
     },
     footer: {
       ...defaultMarketingConfig.footer,
@@ -273,6 +275,23 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // over any stale `pricing` array baked into marketing_config by marketing-copy
     // generation. Without this, editing prices in Settings does nothing on the site.
     pricing: resolvedPricing,
+    // Re-apply hero AFTER the marketing_config spread so the resolved demoPhone
+    // (manual override -> auto-provisioned -> platform fallback) always wins. Without
+    // this, a stale hero saved in marketing_config JSONB clobbered demoPhone and the
+    // number vanished from the site — the reported bug. Same rule as pricing above.
+    // The stored hero is merged first so custom badge/headline copy still survives.
+    hero: {
+      ...defaultMarketingConfig.hero,
+      ...(agency.marketing_config?.hero || {}),
+      badge: agency.company_tagline || agency.marketing_config?.hero?.badge || defaultMarketingConfig.hero.badge,
+      headline: agency.website_headline
+        ? (agency.website_headline.split('\n').length > 1
+            ? agency.website_headline.split('\n')
+            : [agency.website_headline])
+        : (agency.marketing_config?.hero?.headline || defaultMarketingConfig.hero.headline),
+      subtitle: `AI Receptionist Starting at ${currencySymbol}${startingPrice}/month`,
+      demoPhone,
+    },
   };
 
   // Resolve theme

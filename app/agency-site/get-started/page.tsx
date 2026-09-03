@@ -301,6 +301,9 @@ const INDUSTRY_OPTIONS = [
 function ClientSignupForm({ agency }: { agency: Agency }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Account-exists recovery state: when the API returns 409, we route the user to
+  // sign in / reset instead of dead-ending on an error they can't recover from.
+  const [accountExists, setAccountExists] = useState(false);
 
   // PHASE 2B: Success state with credentials
   const [signupSuccess, setSignupSuccess] = useState(false);
@@ -427,6 +430,16 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
       });
 
       const data = await response.json();
+
+      // Account already exists for this agency (409). Don't dead-end — the customer
+      // signed up before (and likely never saved the one-time temp password), so
+      // route them to sign in / reset instead of the "invalid credentials" trap.
+      if (response.status === 409) {
+        setAccountExists(true);
+        setLoading(false);
+        setLoadingPhase('');
+        return;
+      }
 
       if (!response.ok) {
         const errorMsg = data.error || data.errors?.join(', ') || 'Failed to create account';
@@ -619,6 +632,91 @@ function ClientSignupForm({ agency }: { agency: Agency }) {
               <p className="mt-4 text-center text-xs" style={{ color: mutedTextColor }}>
                 Your 7-day free trial has started. No credit card required.
               </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // ACCOUNT ALREADY EXISTS — recovery screen (instead of a dead-end error)
+  // Shown when the signup API returns 409. Routes the customer to sign in or
+  // reset their password rather than trapping them between "already exists" on
+  // signup and "invalid credentials" on login.
+  // ==========================================================================
+  if (accountExists) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
+        {isDark && (
+          <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+        )}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px]"
+            style={{ backgroundColor: primaryColor, opacity: isDark ? 0.07 : 0.1 }} />
+        </div>
+
+        {/* Header */}
+        <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-2xl"
+          style={{ backgroundColor: headerBg, borderColor: headerBorder }}>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 sm:h-20 items-center">
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3">
+                {agency.logo_url ? (
+                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
+                    style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                ) : (
+                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                  </div>
+                )}
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
+              </a>
+            </div>
+          </div>
+        </header>
+
+        {/* Recovery Content */}
+        <main className="relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6">
+          <div className="relative mx-auto max-w-lg">
+            <div className="rounded-2xl sm:rounded-3xl backdrop-blur-xl p-6 sm:p-8 shadow-2xl text-center"
+              style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`,
+                boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+              <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                style={{ backgroundColor: `${primaryColor}15` }}>
+                <User className="h-8 w-8" style={{ color: primaryColor }} />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">You already have an account</h1>
+              <p className="mt-2 mb-6" style={{ color: mutedTextColor }}>
+                An account with <span style={{ color: textColor }}>{formData.email}</span> already exists. Sign in to your dashboard, or reset your password if you don&apos;t remember it.
+              </p>
+
+              <a
+                href="/client/login"
+                className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9',
+                  boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40`,
+                }}
+              >
+                Sign In to Your Dashboard
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </a>
+
+              <div className="mt-4 flex items-center justify-center gap-4 text-sm">
+                <a href={`/auth/forgot-password?email=${encodeURIComponent(formData.email)}`} className="underline underline-offset-2 transition-colors" style={{ color: mutedTextColor }}>
+                  Reset password
+                </a>
+                <span style={{ color: mutedTextColor }}>·</span>
+                <button
+                  onClick={() => { setAccountExists(false); setError(''); setFormData(prev => ({ ...prev, email: '' })); }}
+                  className="underline underline-offset-2 transition-colors" style={{ color: mutedTextColor }}
+                >
+                  Use a different email
+                </button>
+              </div>
             </div>
           </div>
         </main>
