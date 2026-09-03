@@ -663,7 +663,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 {pos === 'after' && <span className="bsd-price-cur" style={{ marginTop: 0, alignSelf: 'flex-end', marginBottom: '0.35rem' }}>{cs}</span>}
                 <span className="bsd-price-per">/month</span>
               </div>
-              <p className="bsd-price-sub">{tier.subtitle}</p>
+              {tier.subtitle && <p className="bsd-price-sub">{tier.subtitle}</p>}
               <ul className="bsd-price-feats">
                 {tier.features.map((feat, j) => (
                   <li key={j}>{feat.startsWith('Everything') ? <strong>{feat}</strong> : <>{Icons.check}<span>{feat}</span></>}</li>

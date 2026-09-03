@@ -10,6 +10,7 @@ import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
+import PlansEditor, { UiPlan, makeEmptyPlan } from '@/components/agency/PlansEditor';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
@@ -261,6 +262,7 @@ function AgencySettingsContent() {
   const [setupOnStarter, setSetupOnStarter] = useState(false); const [setupStarter, setSetupStarter] = useState('');
   const [setupOnPro, setSetupOnPro] = useState(false); const [setupPro, setSetupPro] = useState('');
   const [setupOnGrowth, setSetupOnGrowth] = useState(false); const [setupGrowth, setSetupGrowth] = useState('');
+  const [plans, setPlans] = useState<UiPlan[]>([]);
   const [limitStarter, setLimitStarter] = useState('50'); const [limitPro, setLimitPro] = useState('150'); const [limitGrowth, setLimitGrowth] = useState('500');
   const [unlimitedStarter, setUnlimitedStarter] = useState(false); const [unlimitedPro, setUnlimitedPro] = useState(false); const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean | number>>>(DEFAULT_PLAN_FEATURES);
@@ -362,7 +364,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String(p.included_minutes != null ? p.included_minutes : 0), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -509,30 +511,23 @@ function AgencySettingsContent() {
         payload.client_header_mode = clientHeaderMode;
         payload.allow_client_branding = allowClientBranding;
       } else if (activeTab === 'pricing') {
-        payload.price_starter = priceStarter.trim() === '' ? null : Math.round(parseFloat(priceStarter) * 100);
-        payload.price_pro = pricePro.trim() === '' ? null : Math.round(parseFloat(pricePro) * 100);
-        payload.price_growth = priceGrowth.trim() === '' ? null : Math.round(parseFloat(priceGrowth) * 100);
-        // Per-plan one-time setup fee. Toggle off, or blank/non-positive, => null
-        // (no fee for that plan). Dollars in the input, cents to the backend.
-        const _feeVal = (on: boolean, v: string): number | null => { const n = parseFloat(v.trim()); return (on && v.trim() !== '' && !Number.isNaN(n) && n > 0) ? Math.round(n * 100) : null; };
-        payload.setup_fee_starter_cents = _feeVal(setupOnStarter, setupStarter);
-        payload.setup_fee_pro_cents = _feeVal(setupOnPro, setupPro);
-        payload.setup_fee_growth_cents = _feeVal(setupOnGrowth, setupGrowth);
-        payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter);
-        payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro);
-        payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
-        payload.plan_features = planFeatures;
-        payload.calendar_enabled_plans = deriveCalendarEnabledPlans(planFeatures);
-        payload.plan_starter_name = planStarterName.trim() || PLAN_NAME_DEFAULTS.starter;
-        payload.plan_pro_name = planProName.trim() || PLAN_NAME_DEFAULTS.pro;
-        payload.plan_growth_name = planGrowthName.trim() || PLAN_NAME_DEFAULTS.growth;
-        payload.plan_starter_description = planStarterDescription.trim() || null;
-        payload.plan_pro_description = planProDescription.trim() || null;
-        payload.plan_growth_description = planGrowthDescription.trim() || null;
-        // Client trial card requirement. Backend silently ignores this if
-        // stripe_charges_enabled is false (falls back to no-card trial at
-        // signup time), but we persist the preference so it takes effect
-        // as soon as Connect is configured.
+        payload.plans = plans.map((p, i) => ({
+          key: p.key || undefined,                       // new plans: backend generates the key
+          name: p.name.trim(),
+          price_cents: p.price.trim() === '' ? null : Math.round(parseFloat(p.price) * 100),
+          call_limit: p.unlimited ? -1 : (parseInt(p.call_limit) || 50),
+          description: p.description.trim(),
+          setup_fee_cents: (p.setupOn && p.setupFee.trim() !== '' && !Number.isNaN(parseFloat(p.setupFee)) && parseFloat(p.setupFee) > 0) ? Math.round(parseFloat(p.setupFee) * 100) : null,
+          included_minutes: parseInt(p.included_minutes) || 0,
+          features: p.features,
+          visible: p.visible,
+          order: i,
+        }));
+        // Calendar gating derives from each plan's features. A brand-new plan has
+        // no key until the server assigns one, so its calendar access lands on the
+        // next save; existing plans update immediately.
+        const _pf = Object.fromEntries(plans.filter((p) => p.key).map((p) => [p.key, p.features]));
+        payload.calendar_enabled_plans = deriveCalendarEnabledPlans(_pf);
         payload.require_card_for_trial = !!requireCardForTrial;
       }
 
@@ -541,7 +536,7 @@ function AgencySettingsContent() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save settings'); }
+      if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || data.error || 'Failed to save settings'); }
       await refreshAgency();
       setSaved(true);
       setDetectedWebsiteTheme(null);
@@ -881,102 +876,13 @@ function AgencySettingsContent() {
 
 
 
-                <div className="space-y-4">
-                  {pricingPlans.map((plan) => (
-                    <div key={plan.key} className="rounded-xl p-3 sm:p-4" style={plan.highlight ? { backgroundColor: `${theme.primary}08`, border: `1px solid ${theme.primary30}` } : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-sm sm:text-base">{plan.name || plan.defaultLabel}</h4>
-                          {plan.highlight && <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary20, color: theme.primary }}>Popular</span>}
-                        </div>
-                        <span className="text-xs" style={{ color: theme.textMuted }}>{getFeatureCount(plan.key)} features</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Display Name</label>
-                          <input
-                            type="text"
-                            value={plan.name}
-                            onChange={(e) => plan.setName(e.target.value)}
-                            placeholder={plan.defaultLabel}
-                            maxLength={50}
-                            className="w-full rounded-xl px-3 py-2 text-sm"
-                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                          />
-                          <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>What clients see on the signup widget</p>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Tagline</label>
-                          <input
-                            type="text"
-                            value={plan.description}
-                            onChange={(e) => plan.setDescription(e.target.value)}
-                            placeholder="e.g. Best for solo operators"
-                            maxLength={200}
-                            className="w-full rounded-xl px-3 py-2 text-sm"
-                            style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                          />
-                          <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Optional. Shows under the plan name.</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-4">
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Price ($/mo)</label>
-                          <input type="number" value={plan.price} onChange={(e) => plan.setPrice(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Leave blank to hide this plan on your site.</p>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
-                          {plan.unlimited ? (
-                            <div className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary, height: '38px' }}>Unlimited</div>
-                          ) : (
-                            <input type="number" value={plan.limit} onChange={(e) => plan.setLimit(e.target.value)} min="1" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                          )}
-                          <button type="button" onClick={() => plan.setUnlimited(!plan.unlimited)} className="mt-1.5 text-[10px] sm:text-xs transition-colors" style={{ color: plan.unlimited ? theme.primary : theme.textMuted }}>
-                            {plan.unlimited ? '✓ Unlimited' : 'Set unlimited'}
-                          </button>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Team Members</label>
-                          <input type="number" min="0" value={Number(planFeatures[plan.key]?.team_members) || 0} onChange={(e) => setPlanFeatures(prev => ({ ...prev, [plan.key]: { ...prev[plan.key], team_members: parseInt(e.target.value) || 0 } }))} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                          <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>0 = no team access</p>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg px-3 py-2.5 mb-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] sm:text-xs font-medium" style={{ color: theme.textMuted }}>One-time setup fee</label>
-                          <button type="button" role="switch" aria-checked={plan.setupOn} onClick={() => plan.setSetupOn(!plan.setupOn)} className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0" style={{ backgroundColor: plan.setupOn ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') }}>
-                            <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform" style={{ transform: plan.setupOn ? 'translateX(19px)' : 'translateX(3px)' }} />
-                          </button>
-                        </div>
-                        {plan.setupOn && (
-                          <div className="mt-2">
-                            <input type="number" min="0" step="1" value={plan.setup} onChange={(e) => plan.setSetup(e.target.value)} placeholder="0" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                            <p className="mt-1 text-[10px]" style={{ color: theme.textMuted }}>Charged once on the client&apos;s first invoice (Stripe checkout clients). Not during a free trial.</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
-                        <p className="text-[10px] sm:text-xs font-medium py-2" style={{ color: theme.textMuted }}>Included Features</p>
-                        <div className="divide-y" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
-                          {FEATURE_ORDER.map((featureKey) => (
-                            <div key={featureKey}>
-                              {featureKey === 'caller_recognition' && (
-                                <div className="pt-2 pb-1 mt-1" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                                  <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>AI Tools</p>
-                                </div>
-                              )}
-                              <FeatureToggle featureKey={featureKey} enabled={!!planFeatures[plan.key]?.[featureKey]} onToggle={() => toggleFeature(plan.key, featureKey)} theme={theme} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <PlansEditor
+                  plans={plans}
+                  setPlans={setPlans}
+                  featureKeys={FEATURE_ORDER}
+                  featureLabels={Object.fromEntries(FEATURE_ORDER.map((k) => [k, FEATURE_LABELS[k]?.label || k]))}
+                  theme={{ text: theme.text, textMuted: theme.textMuted, input: theme.input, inputBorder: theme.inputBorder, primary: theme.primary, isDark: theme.isDark, card: theme.isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', cardBorder: theme.inputBorder }}
+                />
 
                 <div className="flex items-center justify-between pt-2">
                   <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>

@@ -84,6 +84,7 @@ export interface PricingTier {
   isPopular?: boolean;
   features: string[];
   note?: string;
+  planKey?: string; // Path B: which agency plan this card signs up for
 }
 
 export interface FAQItem {

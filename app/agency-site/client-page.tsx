@@ -8,6 +8,7 @@ import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
+import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
 
 // ============================================================================
 // TYPES
@@ -23,6 +24,9 @@ interface Agency {
   secondary_color: string;
   accent_color: string;
   company_tagline: string | null;
+  plan_starter_description: string | null;
+  plan_pro_description: string | null;
+  plan_growth_description: string | null;
   website_headline: string | null;
   website_theme: 'light' | 'dark' | 'auto' | null;
   support_email: string | null;
@@ -204,22 +208,22 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // applied AFTER the marketing_config spread below so a stale `pricing` array
   // baked into that JSONB can never override what the agency sets in Settings.
   // (Same rule already used for customNavLinks and clientLoginPath.)
-  const basePricing = (agency.marketing_config?.pricing && agency.marketing_config.pricing.length > 0)
-    ? agency.marketing_config.pricing
-    : defaultMarketingConfig.pricing;
-  const priceCents = [agency.price_starter, agency.price_pro, agency.price_growth];
-  // PLAN VISIBILITY: show only tiers the agency has priced. An unpriced (null) tier
-  // is hidden — it previously rendered at a default price the agency never chose,
-  // which is why agencies couldn't limit how many plans appear. Guard: if NONE are
-  // priced, show all tiers so the section is never empty.
-  const anyPriced = priceCents.some((p) => p != null);
-  const resolvedPricing = basePricing
-    .map((tier, i) => {
-      if (i >= priceCents.length) return tier; // custom tiers beyond the 3 columns
-      if (priceCents[i] != null) return { ...tier, price: Math.round((priceCents[i] as number) / 100) };
-      return anyPriced ? null : tier;
-    })
-    .filter(Boolean) as typeof basePricing;
+  // Path B: pricing tiers come from the agency's plans (visible + priced). Each
+  // card's feature list is built from that plan's enabled feature flags, so the
+  // toggles the agency sets in Settings drive the card directly. The plan tagline
+  // (blank => no subtitle) and the show/hide toggle also come straight from the
+  // plan. Falls back to the template defaults only if there are no visible priced
+  // plans, so the pricing section is never empty.
+  const agencyPlans: any[] = Array.isArray((agency as any).plans) ? (agency as any).plans : [];
+  const visiblePlans = agencyPlans.filter((p) => p && p.visible && p.price_cents != null);
+  const planTiers = visiblePlans.map((p, i) => ({
+    name: p.name,
+    price: Math.round(p.price_cents / 100),
+    subtitle: (p.description || '').trim(),
+    isPopular: visiblePlans.length >= 3 ? i === 1 : false,
+    features: FEATURE_ORDER.filter((fk) => p.features && p.features[fk]).map((fk) => FEATURE_LABELS[fk]?.label || fk),
+  }));
+  const resolvedPricing = (planTiers.length > 0 ? planTiers : defaultMarketingConfig.pricing) as typeof defaultMarketingConfig.pricing;
   // Cheapest VISIBLE tier for the hero subtitle (the first tier may be filtered out).
   const startingPrice = resolvedPricing.length > 0
     ? Math.min(...resolvedPricing.map((t) => t.price))

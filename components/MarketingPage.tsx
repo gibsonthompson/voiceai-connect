@@ -597,7 +597,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
                 <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{tier.price}</span><span className="price-period">/month</span></div>
-                <p className="pricing-subtitle">{tier.subtitle}</p>
+                {tier.subtitle && <p className="pricing-subtitle">{tier.subtitle}</p>}
               </div>
               <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
