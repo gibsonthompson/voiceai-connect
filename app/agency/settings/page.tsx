@@ -258,7 +258,9 @@ function AgencySettingsContent() {
   const [priceStarter, setPriceStarter] = useState('99'); const [pricePro, setPricePro] = useState('149'); const [priceGrowth, setPriceGrowth] = useState('299');
   // One-time client setup fee, in dollars (empty = no fee). Saved to
   // setup_fee_cents (cents) with the Pricing tab Save button.
-  const [setupFee, setSetupFee] = useState('');
+  const [setupOnStarter, setSetupOnStarter] = useState(false); const [setupStarter, setSetupStarter] = useState('');
+  const [setupOnPro, setSetupOnPro] = useState(false); const [setupPro, setSetupPro] = useState('');
+  const [setupOnGrowth, setSetupOnGrowth] = useState(false); const [setupGrowth, setSetupGrowth] = useState('');
   const [limitStarter, setLimitStarter] = useState('50'); const [limitPro, setLimitPro] = useState('150'); const [limitGrowth, setLimitGrowth] = useState('500');
   const [unlimitedStarter, setUnlimitedStarter] = useState(false); const [unlimitedPro, setUnlimitedPro] = useState(false); const [unlimitedGrowth, setUnlimitedGrowth] = useState(false);
   const [planFeatures, setPlanFeatures] = useState<Record<string, Record<string, boolean | number>>>(DEFAULT_PLAN_FEATURES);
@@ -360,7 +362,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); setSetupFee((((agency as any).setup_fee_cents ?? 0) as number) > 0 ? (((agency as any).setup_fee_cents as number) / 100).toString() : ''); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setClientHeaderMode((agency as any).client_header_mode || 'agency_name'); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -510,13 +512,12 @@ function AgencySettingsContent() {
         payload.price_starter = priceStarter.trim() === '' ? null : Math.round(parseFloat(priceStarter) * 100);
         payload.price_pro = pricePro.trim() === '' ? null : Math.round(parseFloat(pricePro) * 100);
         payload.price_growth = priceGrowth.trim() === '' ? null : Math.round(parseFloat(priceGrowth) * 100);
-        // One-time setup fee: dollars in the input, cents to the backend. Blank
-        // or non-numeric clears it (null = no fee).
-        const _setupTrim = setupFee.trim();
-        const _setupParsed = parseFloat(_setupTrim);
-        payload.setup_fee_cents = (_setupTrim === '' || Number.isNaN(_setupParsed))
-          ? null
-          : Math.round(_setupParsed * 100);
+        // Per-plan one-time setup fee. Toggle off, or blank/non-positive, => null
+        // (no fee for that plan). Dollars in the input, cents to the backend.
+        const _feeVal = (on: boolean, v: string): number | null => { const n = parseFloat(v.trim()); return (on && v.trim() !== '' && !Number.isNaN(n) && n > 0) ? Math.round(n * 100) : null; };
+        payload.setup_fee_starter_cents = _feeVal(setupOnStarter, setupStarter);
+        payload.setup_fee_pro_cents = _feeVal(setupOnPro, setupPro);
+        payload.setup_fee_growth_cents = _feeVal(setupOnGrowth, setupGrowth);
         payload.limit_starter = unlimitedStarter ? -1 : parseInt(limitStarter);
         payload.limit_pro = unlimitedPro ? -1 : parseInt(limitPro);
         payload.limit_growth = unlimitedGrowth ? -1 : parseInt(limitGrowth);
@@ -669,9 +670,9 @@ function AgencySettingsContent() {
   const getFeatureCount = (plan: string) => Object.entries(planFeatures[plan] || {}).filter(([k, v]) => k !== 'team_members' && v === true).length;
 
   const pricingPlans = [
-    { key: 'starter', defaultLabel: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false, name: planStarterName, setName: setPlanStarterName, description: planStarterDescription, setDescription: setPlanStarterDescription },
-    { key: 'pro', defaultLabel: 'Professional', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true, name: planProName, setName: setPlanProName, description: planProDescription, setDescription: setPlanProDescription },
-    { key: 'growth', defaultLabel: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false, name: planGrowthName, setName: setPlanGrowthName, description: planGrowthDescription, setDescription: setPlanGrowthDescription },
+    { key: 'starter', defaultLabel: 'Starter', price: priceStarter, setPrice: setPriceStarter, limit: limitStarter, setLimit: setLimitStarter, unlimited: unlimitedStarter, setUnlimited: setUnlimitedStarter, highlight: false, name: planStarterName, setName: setPlanStarterName, description: planStarterDescription, setDescription: setPlanStarterDescription, setupOn: setupOnStarter, setSetupOn: setSetupOnStarter, setup: setupStarter, setSetup: setSetupStarter },
+    { key: 'pro', defaultLabel: 'Professional', price: pricePro, setPrice: setPricePro, limit: limitPro, setLimit: setLimitPro, unlimited: unlimitedPro, setUnlimited: setUnlimitedPro, highlight: true, name: planProName, setName: setPlanProName, description: planProDescription, setDescription: setPlanProDescription, setupOn: setupOnPro, setSetupOn: setSetupOnPro, setup: setupPro, setSetup: setSetupPro },
+    { key: 'growth', defaultLabel: 'Growth', price: priceGrowth, setPrice: setPriceGrowth, limit: limitGrowth, setLimit: setLimitGrowth, unlimited: unlimitedGrowth, setUnlimited: setUnlimitedGrowth, highlight: false, name: planGrowthName, setName: setPlanGrowthName, description: planGrowthDescription, setDescription: setPlanGrowthDescription, setupOn: setupOnGrowth, setSetupOn: setSetupOnGrowth, setup: setupGrowth, setSetup: setSetupGrowth },
   ];
 
   return (
@@ -878,39 +879,7 @@ function AgencySettingsContent() {
                   )}
                 </div>
 
-                {/* One-Time Setup Fee. Optional one-time onboarding charge on top
-                    of the monthly plan, billed on the client's first paid invoice
-                    on the agency's connected account (they keep 100 percent). It
-                    saves with the Pricing Save button (setup_fee_cents). Blank or
-                    0 means no fee. Applies to Stripe-checkout (connect) clients;
-                    a manual-billing agency collects any setup fee itself. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <DollarSign className="h-4 w-4" style={{ color: theme.primary }} />
-                    <h4 className="font-medium text-sm sm:text-base">One-Time Setup Fee</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
-                    Optional. Charge each new client a one-time onboarding fee on top of their monthly plan. It is collected on their first paid invoice through your own Stripe account, so you keep 100 percent of it, and it shows as its own line at checkout. Leave blank for no setup fee.
-                  </p>
-                  <div className="mb-3">
-                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Setup fee ($)</label>
-                    <input
-                      type="number" min="0" step="1"
-                      value={setupFee}
-                      onChange={(e) => setSetupFee(e.target.value)}
-                      placeholder="0"
-                      className="w-full sm:w-40 rounded-xl px-3 py-2 text-sm"
-                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                    />
-                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Charged once, when the client starts paying. Not charged during a free trial.</p>
-                  </div>
-                  <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                      Applies to clients who pay through Stripe checkout. If you bill your clients yourself (manual billing), collect any setup fee on your own invoice.
-                    </p>
-                  </div>
-                </div>
+
 
                 <div className="space-y-4">
                   {pricingPlans.map((plan) => (
@@ -973,6 +942,21 @@ function AgencySettingsContent() {
                           <input type="number" min="0" value={Number(planFeatures[plan.key]?.team_members) || 0} onChange={(e) => setPlanFeatures(prev => ({ ...prev, [plan.key]: { ...prev[plan.key], team_members: parseInt(e.target.value) || 0 } }))} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : plan.highlight ? '#ffffff' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                           <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>0 = no team access</p>
                         </div>
+                      </div>
+
+                      <div className="rounded-lg px-3 py-2.5 mb-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] sm:text-xs font-medium" style={{ color: theme.textMuted }}>One-time setup fee</label>
+                          <button type="button" role="switch" aria-checked={plan.setupOn} onClick={() => plan.setSetupOn(!plan.setupOn)} className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0" style={{ backgroundColor: plan.setupOn ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') }}>
+                            <span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform" style={{ transform: plan.setupOn ? 'translateX(19px)' : 'translateX(3px)' }} />
+                          </button>
+                        </div>
+                        {plan.setupOn && (
+                          <div className="mt-2">
+                            <input type="number" min="0" step="1" value={plan.setup} onChange={(e) => plan.setSetup(e.target.value)} placeholder="0" className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                            <p className="mt-1 text-[10px]" style={{ color: theme.textMuted }}>Charged once on the client&apos;s first invoice (Stripe checkout clients). Not during a free trial.</p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="rounded-lg px-3 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
