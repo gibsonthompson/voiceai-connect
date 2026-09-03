@@ -596,18 +596,18 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               {tier.isPopular && (<div className="pricing-badge"><span style={{ color: '#f59e0b', width: '1rem', height: '1rem' }}>{Icons.star}</span>Most Popular</div>)}
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
-                <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{tier.price}</span><span className="price-period">/month</span></div>
+                <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{tier.price}</span><span className="price-period">/month</span></div>{tier.setupFeeCents && tier.setupFeeCents > 0 ? <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.35rem', marginBottom: 0 }}>+ {cs}{Math.round(tier.setupFeeCents / 100)} one-time setup fee</p> : null}
                 {tier.subtitle && <p className="pricing-subtitle">{tier.subtitle}</p>}
               </div>
               <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <a href="/get-started" className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
+              <a href={tier.planKey ? `/get-started?plan=${tier.planKey}` : '/get-started'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
               {tier.isPopular && <p className="pricing-recommendation">Most businesses choose {tier.name}</p>}
             </div>
           ))}
         </div>
         <div className="pricing-guarantee">
-          <p><strong>All plans include:</strong> 7-day free trial (no credit card required) • Cancel anytime • Setup in under 10 minutes • 30-day money-back guarantee</p>
+          <p><strong>All plans include:</strong> 7-day free trial (no credit card required) • Cancel anytime • Setup in under 10 minutes</p>
           {config.footer.email && <p className="pricing-custom">Have 500+ calls per month? <a href={`mailto:${config.footer.email}`}>Contact us for custom pricing →</a></p>}
         </div>
       </div>

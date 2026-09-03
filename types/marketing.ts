@@ -85,6 +85,7 @@ export interface PricingTier {
   features: string[];
   note?: string;
   planKey?: string; // Path B: which agency plan this card signs up for
+  setupFeeCents?: number | null; // Path B: one-time setup fee for this plan (cents)
 }
 
 export interface FAQItem {

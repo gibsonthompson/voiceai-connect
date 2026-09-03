@@ -663,6 +663,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 {pos === 'after' && <span className="bsd-price-cur" style={{ marginTop: 0, alignSelf: 'flex-end', marginBottom: '0.35rem' }}>{cs}</span>}
                 <span className="bsd-price-per">/month</span>
               </div>
+              {tier.setupFeeCents && tier.setupFeeCents > 0 ? <p className="bsd-price-note" style={{ opacity: 0.75, marginTop: '0.35rem' }}>+ {cs}{Math.round(tier.setupFeeCents / 100)} one-time setup fee</p> : null}
               {tier.subtitle && <p className="bsd-price-sub">{tier.subtitle}</p>}
               <ul className="bsd-price-feats">
                 {tier.features.map((feat, j) => (
@@ -670,7 +671,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <p className="bsd-price-note">{tier.note}</p>}
-              <a href="/get-started" className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>Start 7-day free trial</a>
+              <a href={tier.planKey ? `/get-started?plan=${tier.planKey}` : '/get-started'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>Start 7-day free trial</a>
             </div>
           ))}
         </div>

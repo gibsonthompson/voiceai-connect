@@ -217,6 +217,8 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const agencyPlans: any[] = Array.isArray((agency as any).plans) ? (agency as any).plans : [];
   const visiblePlans = agencyPlans.filter((p) => p && p.visible && p.price_cents != null);
   const planTiers = visiblePlans.map((p, i) => ({
+    planKey: p.key,
+    setupFeeCents: p.setup_fee_cents,
     name: p.name,
     price: Math.round(p.price_cents / 100),
     subtitle: (p.description || '').trim(),
