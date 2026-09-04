@@ -26,6 +26,8 @@ interface Client {
   is_test_client?: boolean;
 }
 
+import { CustomSelect } from '@/components/ui/custom-select';
+
 export default function AgencyClientsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
@@ -347,18 +349,20 @@ export default function AgencyClientsPage() {
             />
           </div>
           
-          <select
-            value={statusFilter || ''}
-            onChange={(e) => setStatusFilter(e.target.value || null)}
-            className="rounded-xl px-4 py-2.5 text-sm transition-colors focus:outline-none w-full sm:w-auto"
-            style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="trial">Trial</option>
-            <option value="past_due">Past Due</option>
-            <option value="suspended">Suspended</option>
-          </select>
+          <div className="w-full sm:w-44">
+            <CustomSelect
+              value={statusFilter || ''}
+              onChange={(v) => setStatusFilter(v || null)}
+              options={[
+                { value: '', label: 'All Status' },
+                { value: 'active', label: 'Active' },
+                { value: 'trial', label: 'Trial' },
+                { value: 'past_due', label: 'Past Due' },
+                { value: 'suspended', label: 'Suspended' },
+              ]}
+              ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+            />
+          </div>
         </div>
       </div>
 
