@@ -469,7 +469,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
       <main className={mainPaddingClass}>
         <div className="relative mx-auto max-w-6xl">
           {!isEmbed && (
-            <a href={buildEmbedAwareUrl('/get-started', isEmbed)} className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8" style={{ color: mutedTextColor }}>
+            <a href={buildEmbedAwareUrl('/signup', isEmbed)} className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8" style={{ color: mutedTextColor }}>
               <ArrowLeft className="h-4 w-4" /><span>Back to signup</span>
             </a>
           )}
@@ -524,7 +524,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </label>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-3xl md:grid-cols-2' : 'md:grid-cols-3'}`}>
             {plans.map((plan) => (
               <div key={plan.id} className="relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300"
                 style={{
@@ -745,7 +745,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
             </div>
           )}
 
-          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-3xl md:grid-cols-2' : 'md:grid-cols-3'}`}>
             {plans.map((plan) => (
               <div key={plan.id}
                 className={`relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300 ${
@@ -888,8 +888,8 @@ function PlanContent() {
               if (stored) {
                 setSignupData(JSON.parse(stored));
               } else {
-                // Lost step-1 data — bounce back to /get-started preserving embed flag
-                window.location.href = buildEmbedAwareUrl('/get-started', isEmbed, { agency: agencyParam });
+                // Lost step-1 data — bounce back to /signup preserving embed flag
+                window.location.href = buildEmbedAwareUrl('/signup', isEmbed, { agency: agencyParam });
                 return;
               }
             } else if (res.status === 403) {
@@ -938,7 +938,7 @@ function PlanContent() {
           if (stored) {
             setSignupData(JSON.parse(stored));
           } else {
-            window.location.href = buildEmbedAwareUrl('/get-started', isEmbed);
+            window.location.href = buildEmbedAwareUrl('/signup', isEmbed);
             return;
           }
         } else {
@@ -969,7 +969,7 @@ function PlanContent() {
   if (isAgencySubdomain && agency && signupData) return <ClientPlanSelection agency={agency} signupData={signupData} isEmbed={isEmbed} />;
   if (agencyIdFromUrl) return <AgencyPlanSelection agencyId={agencyIdFromUrl} />;
 
-  if (typeof window !== 'undefined') window.location.href = buildEmbedAwareUrl('/get-started', isEmbed);
+  if (typeof window !== 'undefined') window.location.href = buildEmbedAwareUrl('/signup', isEmbed);
   return <ThemedLoading theme={cachedTheme} message="Redirecting..." />;
 }
 

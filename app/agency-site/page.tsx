@@ -72,7 +72,7 @@ export default async function AgencySitePage() {
 
   // If agency doesn't have marketing site access, redirect to signup
   if (!hasMarketingSiteAccess(agency)) {
-    redirect('/get-started');
+    redirect('/signup');
   }
 
   // Pass full agency data to client component for config building + rendering

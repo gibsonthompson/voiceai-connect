@@ -193,7 +193,7 @@ function Nav({ config }: { config: MarketingConfig }) {
         <div className="bsd-nav-actions">
           {config.clientLoginPath && <a href={config.clientLoginPath} className="bsd-nav-login">Client login</a>}
           {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="bsd-btn bsd-btn-ghost bsd-btn-sm bsd-nav-call">Call us</a>}
-          <a href="/get-started" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
         </div>
       </div>
     </nav>
@@ -219,7 +219,7 @@ function Hero({ config }: { config: MarketingConfig }) {
           <p className="bsd-hero-price">{subtitle}</p>
           <p className="bsd-hero-desc">{hero.description}</p>
           <div className="bsd-hero-ctas">
-            <a href="/get-started" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start free trial, 7 days free</a>
+            <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start free trial, 7 days free</a>
             {hero.demoPhone
               ? <a href="/demo" className="bsd-btn bsd-btn-ghost bsd-btn-lg">{Icons.phone}Try live demo</a>
               : <a href="#how" className="bsd-btn bsd-btn-ghost bsd-btn-lg">See how it works</a>}
@@ -362,7 +362,7 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="bsd-steps-cta">
-          <a href="/get-started" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your 7-day free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your 7-day free trial</a>
           <p>No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -629,7 +629,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
               <div><p className="k">Annual savings</p><p className="v pos">{m(annualSavings)}</p></div>
               <div><p className="k">Return on investment</p><p className="v pos">{roi}x</p></div>
             </div>
-            <a href="/get-started" className="bsd-btn bsd-btn-primary" style={{ marginTop: '1.25rem' }}>Stop losing {m(monthlyLost)}/month</a>
+            <a href="/signup" className="bsd-btn bsd-btn-primary" style={{ marginTop: '1.25rem' }}>Stop losing {m(monthlyLost)}/month</a>
           </div>
         </div>
       </div>
@@ -671,7 +671,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <p className="bsd-price-note">{tier.note}</p>}
-              <a href={tier.planKey ? `/get-started?plan=${tier.planKey}` : '/get-started'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>Start 7-day free trial</a>
+              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>Start 7-day free trial</a>
             </div>
           ))}
         </div>
@@ -724,7 +724,7 @@ function FinalCTA({ config, textOnPrimary, mutedOnPrimary }: { config: Marketing
         <h2 style={{ color: textOnPrimary }}>Stop losing customers to voicemail</h2>
         <p style={{ color: mutedOnPrimary }}>Every missed call is money out the door. While you are on the job or closed for the night, your competitors are answering their phones.</p>
         <div className="bsd-final-actions">
-          <a href="/get-started" className="bsd-btn bsd-btn-lg bsd-final-btn">Start your 7-day free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">Start your 7-day free trial</a>
           {hero.demoPhone && <a href={telHref(hero.demoPhone)} className="bsd-final-demo">{Icons.phone}or call the live demo: {hero.demoPhone}</a>}
           <div className="bsd-final-trust">
             <span>Setup in 10 minutes</span>
@@ -794,7 +794,7 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
   }, []);
   return (
     <div className={`bsd-sticky${show ? ' show' : ''}`}>
-      <a href="/get-started" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
+      <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
     </div>
   );
 }
@@ -828,8 +828,8 @@ function ExitIntentModal({ config }: { config: MarketingConfig }) {
         <p>See how your AI receptionist handles a real call. No signup, no commitment.</p>
         {hero.demoPhone
           ? <a href={telHref(hero.demoPhone)} className="bsd-btn bsd-btn-primary bsd-btn-lg">{Icons.phone}{hero.demoPhone}</a>
-          : <a href="/get-started" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your free trial</a>}
-        <a href="/get-started" className="bsd-modal-alt">Or start your free trial</a>
+          : <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your free trial</a>}
+        <a href="/signup" className="bsd-modal-alt">Or start your free trial</a>
       </div>
     </div>
   );

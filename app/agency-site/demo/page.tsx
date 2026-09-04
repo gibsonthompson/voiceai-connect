@@ -276,7 +276,7 @@ export default function DemoPage() {
             </a>
             <div className="nav-actions">
               <a href={homeUrl} className="btn-ghost btn-small">← Back to site</a>
-              <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
+              <a href="/signup" className="btn-primary btn-small">Start Free Trial</a>
             </div>
           </div>
         </div>
@@ -394,7 +394,7 @@ export default function DemoPage() {
                   Start your 7-day free trial and have your own AI receptionist live in under 10 minutes.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginTop: '1.5rem' }}>
-                  <a href="/get-started" className="btn-large" style={{
+                  <a href="/signup" className="btn-large" style={{
                     background: pcLight ? sc : 'white',
                     color: pcLight ? 'white' : pc,
                     borderRadius: 'var(--radius-full)', fontWeight: 700, textDecoration: 'none',
@@ -430,7 +430,7 @@ export default function DemoPage() {
                   </div>
                   <div className="cta-box-divider" style={{ color: textOnPrimary, opacity: 0.6 }}>or</div>
                   <div className="cta-box-secondary" style={{ background: pcLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)' }}>
-                    <a href="/get-started" className="btn-large btn-primary" style={{
+                    <a href="/signup" className="btn-large btn-primary" style={{
                       background: pcLight ? sc : 'white', color: pcLight ? 'white' : pc,
                     }}>
                       Start Your 7-Day Free Trial
@@ -464,7 +464,7 @@ export default function DemoPage() {
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', fontSize: '0.813rem' }}>
               <a href={homeUrl} style={{ color: 'var(--text-medium)' }}>Home</a>
-              <a href="/get-started" style={{ color: 'var(--text-medium)' }}>Get Started</a>
+              <a href="/signup" style={{ color: 'var(--text-medium)' }}>Get Started</a>
               <a href="/privacy" style={{ color: 'var(--text-medium)' }}>Privacy</a>
               <a href="/terms" style={{ color: 'var(--text-medium)' }}>Terms</a>
             </div>
@@ -479,7 +479,7 @@ export default function DemoPage() {
       <div className={`sticky-cta ${stickyVisible ? 'visible' : ''}`}>
         <span className="sticky-cta-text">Ready to try {agency.name}?</span>
         <div className="sticky-cta-actions">
-          <a href="/get-started" className="btn-primary btn-small">Start Free Trial</a>
+          <a href="/signup" className="btn-primary btn-small">Start Free Trial</a>
         </div>
       </div>
 

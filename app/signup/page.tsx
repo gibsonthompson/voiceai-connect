@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Children, isValidElement, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
@@ -231,6 +231,13 @@ function ThemedFormInput({
 // ============================================================================
 // THEMED SELECT (supports light/dark)
 // ============================================================================
+// Common countries pinned to the top of the country dropdown; the rest follow.
+const COMMON_COUNTRY_CODES = ['US', 'CA', 'GB', 'AU'];
+const orderedCountries = [
+  ...COMMON_COUNTRY_CODES.map((code) => supportedCountries.find((c) => c.code === code)).filter(Boolean),
+  ...supportedCountries.filter((c) => !COMMON_COUNTRY_CODES.includes(c.code)),
+] as typeof supportedCountries;
+
 function ThemedSelect({
   label, name, value, onChange, required = false, icon: Icon,
   children, isDark = true, primaryColor = '#10b981',
@@ -240,26 +247,89 @@ function ThemedSelect({
   required?: boolean; icon?: React.ComponentType<{ className?: string }>;
   children: React.ReactNode; isDark?: boolean; primaryColor?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Parse the <option> children into data so we can render a fully custom,
+  // consistent dropdown instead of the native OS picker (the iOS wheel on
+  // mobile, unstyleable option popup on desktop).
+  const options = Children.toArray(children)
+    .filter((c) => isValidElement(c) && (c as any).type === 'option')
+    .map((c: any) => ({ value: String(c.props.value ?? ''), label: c.props.children, disabled: !!c.props.disabled }));
+
+  const selected = options.find((o) => o.value === String(value));
+  const placeholder = options.find((o) => o.value === '');
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const pick = (val: string) => { setOpen(false); onChange({ target: { name, value: val } } as any); };
+
+  const menuBg = isDark ? '#0e0e0e' : '#ffffff';
+  const menuBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
+  const itemHover = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const hasValue = !!selected && selected.value !== '';
+
   return (
-    <div>
+    <div ref={ref}>
       <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>{label}</label>
       <div className="relative">
         {Icon && <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'} z-10 pointer-events-none`} />}
-        <select
-          name={name} value={value} onChange={onChange} required={required}
-          className={`w-full rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-10 py-3.5 transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className={`w-full text-left rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-10 py-3.5 transition-all cursor-pointer focus:outline-none focus:ring-2 ${
             isDark
-              ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20 focus:bg-white/[0.05]'
+              ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20'
               : 'border-gray-200 bg-white text-gray-900 focus:border-gray-300'
           }`}
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${isDark ? '%23666' : '%239ca3af'}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem',
-            '--tw-ring-color': `${primaryColor}30`,
-          } as React.CSSProperties}
+          style={{ '--tw-ring-color': `${primaryColor}30` } as React.CSSProperties}
         >
-          {children}
-        </select>
+          <span className={hasValue ? '' : (isDark ? 'text-[#fafaf9]/40' : 'text-gray-400')}>
+            {hasValue ? selected!.label : (placeholder?.label || 'Select')}
+          </span>
+          <svg className={`absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-transform ${open ? 'rotate-180' : ''} ${isDark ? 'text-[#fafaf9]/40' : 'text-gray-400'}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        </button>
+
+        {/* Hidden field so native "required" validation still works on submit */}
+        {required && (
+          <input tabIndex={-1} aria-hidden="true" required value={value || ''} onChange={() => {}}
+            style={{ position: 'absolute', opacity: 0, height: 1, width: 1, bottom: 0, left: '50%', pointerEvents: 'none' }} />
+        )}
+
+        {open && (
+          <div role="listbox" className="absolute z-50 mt-1.5 w-full rounded-xl border shadow-xl overflow-hidden"
+            style={{ backgroundColor: menuBg, borderColor: menuBorder, maxHeight: '16rem', overflowY: 'auto' }}>
+            {options.filter((o) => o.value !== '').map((o, i) => {
+              const isSel = o.value === String(value);
+              return (
+                <button
+                  key={`${o.value}-${i}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isSel}
+                  disabled={o.disabled}
+                  onClick={() => !o.disabled && pick(o.value)}
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ color: isDark ? '#fafaf9' : '#111', background: isSel ? `${primaryColor}22` : 'transparent' }}
+                  onMouseEnter={(e) => { if (!o.disabled && !isSel) e.currentTarget.style.background = itemHover; }}
+                  onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -451,7 +521,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
               </div>
 
               <ThemedSelect label="Country" name="country" value={formData.country} onChange={handleChange} required icon={Globe} isDark={isDark} primaryColor={primaryColor}>
-                {supportedCountries.map(c => (<option key={c.code} value={c.code}>{c.flag} {c.name}</option>))}
+                {orderedCountries.map(c => (<option key={c.code} value={c.code}>{c.flag} {c.name}</option>))}
               </ThemedSelect>
 
               <div className="grid grid-cols-2 gap-4">

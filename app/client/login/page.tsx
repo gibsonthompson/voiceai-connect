@@ -210,7 +210,7 @@ function ClientLoginContent() {
               )}
               <span className="text-base sm:text-lg font-medium tracking-tight truncate">{agency?.name || 'Client Portal'}</span>
             </Link>
-            <Link href="/get-started" className="text-sm transition-colors whitespace-nowrap flex-shrink-0" style={{ color: t.textLink }}>
+            <Link href="/signup" className="text-sm transition-colors whitespace-nowrap flex-shrink-0" style={{ color: t.textLink }}>
               <span className="hidden sm:inline">Don&apos;t have an account? </span>Sign up
             </Link>
           </div>

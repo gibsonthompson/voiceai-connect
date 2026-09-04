@@ -156,7 +156,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
           <div className="nav-actions">
             {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
             {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
-            <a href="/get-started" className="btn-primary">Start Free Trial</a>
+            <a href="/signup" className="btn-primary">Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
           </h1>
           <p className="hero-subtitle">{hero.description}</p>
           <div className="hero-ctas">
-            <a href="/get-started" className="btn-large btn-primary">Start Free Trial, 7 Days Free</a>
+            <a href="/signup" className="btn-large btn-primary">Start Free Trial, 7 Days Free</a>
             {hero.demoPhone ? (
               <a href="/demo" className="btn-large btn-ghost">
                 <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
@@ -267,7 +267,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="cta-box">
-          <a href="/get-started" className="btn-large btn-primary">Start Your 7-Day Free Trial</a>
+          <a href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</a>
           <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
         </div>
       </div>
@@ -571,7 +571,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
             </div>
-            <a href="/get-started" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month, Start Free Trial</a>
+            <a href="/signup" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month, Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -603,7 +603,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               </div>
               <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <a href={tier.planKey ? `/get-started?plan=${tier.planKey}` : '/get-started'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
+              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
               {tier.isPopular && <p className="pricing-recommendation">Most businesses choose {tier.name}</p>}
             </div>
           ))}
@@ -673,7 +673,7 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
               </>
             )}
             <div className="cta-box-secondary" style={{ background: contrastColors.buttonBg }}>
-              <a href="/get-started" className="btn-large btn-primary" style={{ background: contrastColors.isLight ? branding.primaryHoverColor : 'white', color: contrastColors.isLight ? 'white' : branding.primaryColor }}>
+              <a href="/signup" className="btn-large btn-primary" style={{ background: contrastColors.isLight ? branding.primaryHoverColor : 'white', color: contrastColors.isLight ? 'white' : branding.primaryColor }}>
                 Start Your 7-Day Free Trial
               </a>
               <div className="cta-benefits">
@@ -710,8 +710,8 @@ function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose
             </a>
             <p style={{ fontSize: '0.813rem', color: 'var(--text-light)', marginBottom: '1rem' }}>{hero.demoInstructions || 'Takes 30 seconds. Your phone will ring with a live demo.'}</p>
           </>
-        ) : (<a href="/get-started" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>Start Your 7-Day Free Trial</a>)}
-        <a href="/get-started" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>Or start your free trial →</a>
+        ) : (<a href="/signup" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>Start Your 7-Day Free Trial</a>)}
+        <a href="/signup" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>Or start your free trial →</a>
       </div>
     </div>
   );
