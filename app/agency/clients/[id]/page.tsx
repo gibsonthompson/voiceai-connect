@@ -585,17 +585,20 @@ export default function AgencyClientDetailPage() {
         </div>
       </div>
 
-      {/* Danger zone: delete client */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.25)'}` }}>
-          <div className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4" style={{ color: '#ef4444' }} /><h2 className="font-semibold text-sm sm:text-base" style={{ color: '#ef4444' }}>Delete client</h2></div>
-            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Permanently deletes {client.business_name}, releasing their phone number and AI receptionist. This cannot be undone.</p>
-            <button onClick={handleDeleteClient} disabled={deleting} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{deleting ? 'Deleting\u2026' : 'Delete client'}
-            </button>
-          </div>
-        </div>
+      {/* Delete client — small, understated destructive action */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8 mb-2 flex justify-end">
+        <button
+          onClick={handleDeleteClient}
+          disabled={deleting}
+          title={`Delete ${client.business_name} (releases their number, cannot be undone)`}
+          className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+          style={{ color: theme.textMuted }}
+          onMouseEnter={(e) => { if (!deleting) e.currentTarget.style.color = '#ef4444'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; }}
+        >
+          {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          {deleting ? 'Deleting\u2026' : 'Delete client'}
+        </button>
       </div>
 
       {/* Knowledge Base Modal */}
