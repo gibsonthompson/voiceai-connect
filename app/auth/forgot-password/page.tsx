@@ -38,19 +38,26 @@ const getBackendUrl = () => {
          'https://urchin-app-bqb4i.ondigitalocean.app';
 };
 
-// Waveform fallback icon. Only used on an agency subdomain whose agency has no
-// uploaded logo. On the platform domain we render the real product icon.
-function WaveformIcon({ className }: { className?: string }) {
+// Theme hint, mirrors the login page. Reads the cached agency theme from
+// localStorage so the loading state paints the right background immediately
+// instead of flashing light on a dark agency. Server-safe: returns 'dark' (the
+// SSR constant) when window is absent, so first paint matches on both sides.
+function getThemeHint(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'dark';
+  try { return localStorage.getItem('voiceai_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
+}
+
+// Theme-aware full-screen loader used for BOTH the Suspense fallback and the
+// in-component page-loading state, so neither hardcodes a color. Starts at the
+// SSR constant ('dark') and corrects to the cached hint in an effect (no
+// hydration mismatch).
+function LoadingScreen() {
+  const [dark, setDark] = useState(true);
+  useEffect(() => { setDark(getThemeHint() === 'dark'); }, []);
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill="currentColor" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill="currentColor" />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill="currentColor" opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill="currentColor" opacity="0.6" />
-    </svg>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: dark ? '#050505' : '#ffffff' }}>
+      <Loader2 className="h-8 w-8 animate-spin" style={{ color: dark ? 'rgba(255,255,255,0.35)' : '#9ca3af' }} />
+    </div>
   );
 }
 
@@ -476,6 +483,8 @@ function ForgotPasswordContent() {
             const data = await response.json();
             setAgency(data.agency);
             setIsAgencySubdomain(true);
+            // Cache the resolved theme so the next visit's loader paints correctly.
+            try { localStorage.setItem('voiceai_ui_theme', data.agency?.website_theme === 'light' ? 'light' : 'dark'); } catch {}
           }
         }
       } catch (err) {
@@ -660,11 +669,7 @@ function ForgotPasswordContent() {
   };
 
   if (pageLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Dynamic autofill styles
@@ -734,13 +739,10 @@ function ForgotPasswordContent() {
                   </div>
                 ) : (
                   <div
-                    className="relative h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center"
-                    style={{
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                      border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
+                    style={{ backgroundColor: primaryColor }}
                   >
-                    <WaveformIcon className="h-5 w-5" />
+                    <Phone className="h-4 w-4" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
                   </div>
                 )
               ) : (
@@ -832,11 +834,7 @@ function ForgotPasswordContent() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen />}>
       <ForgotPasswordContent />
     </Suspense>
   );
