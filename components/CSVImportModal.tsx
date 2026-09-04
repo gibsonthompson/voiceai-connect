@@ -428,60 +428,96 @@ const SOURCE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
-  const lines = text.split(/\r?\n/).filter(line => line.trim());
-  if (lines.length < 2) return { headers: [], rows: [] };
-
-  // Parse header
-  const headers = parseCSVLine(lines[0]);
-
-  // Parse rows
-  const rows: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    if (values.length === 0 || values.every(v => !v.trim())) continue;
-    
-    const row: Record<string, string> = {};
-    headers.forEach((header, idx) => {
-      row[header] = values[idx] || '';
-    });
-    rows.push(row);
+// Detect the delimiter from the header line by counting candidates OUTSIDE
+// quotes. Handles comma (CSV), tab (TSV), semicolon (many EU exports), pipe.
+function detectDelimiter(headerLine: string): string {
+  const candidates = [',', '\t', ';', '|'];
+  let best = ',';
+  let bestCount = -1;
+  for (const d of candidates) {
+    let count = 0;
+    let inQ = false;
+    for (let i = 0; i < headerLine.length; i++) {
+      const c = headerLine[i];
+      if (c === '"') inQ = !inQ;
+      else if (c === d && !inQ) count++;
+    }
+    if (count > bestCount) { bestCount = count; best = d; }
   }
-
-  return { headers, rows };
+  return best;
 }
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
+// Full RFC-4180-ish parser: quote-aware across physical lines, so a quoted
+// field containing newlines (notes, addresses, Apollo descriptions) stays in
+// one field instead of shattering the row. Also strips a UTF-8 BOM, handles
+// escaped quotes (""), CRLF/LF/CR, and auto-detects the delimiter.
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  if (!text) return { headers: [], rows: [] };
+  // Strip UTF-8 BOM — Excel/Sheets exports commonly prepend it, which would
+  // otherwise corrupt the first header (e.g. "\uFEFFBusiness Name") and break
+  // auto-mapping of the first column.
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    if (inQuotes) {
-      if (char === '"' && nextChar === '"') {
-        current += '"';
-        i++;
-      } else if (char === '"') {
-        inQuotes = false;
-      } else {
-        current += char;
-      }
-    } else {
-      if (char === '"') {
-        inQuotes = true;
-      } else if (char === ',') {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
+  // Delimiter from the first physical line (up to the first UNquoted newline).
+  let firstLineEnd = text.length;
+  {
+    let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '"') inQ = !inQ;
+      else if ((c === '\n' || c === '\r') && !inQ) { firstLineEnd = i; break; }
     }
   }
-  result.push(current.trim());
-  return result;
+  const delim = detectDelimiter(text.slice(0, firstLineEnd));
+
+  // Tokenize into records (arrays of raw field strings).
+  const records: string[][] = [];
+  let field = '';
+  let record: string[] = [];
+  let inQuotes = false;
+  let sawAny = false; // any char consumed toward the current record
+  const endRecord = () => { record.push(field); records.push(record); field = ''; record = []; sawAny = false; };
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    if (inQuotes) {
+      if (char === '"' && nextChar === '"') { field += '"'; i++; }
+      else if (char === '"') { inQuotes = false; }
+      else { field += char; }
+    } else {
+      if (char === '"') { inQuotes = true; sawAny = true; }
+      else if (char === delim) { record.push(field); field = ''; sawAny = true; }
+      else if (char === '\n') { endRecord(); }
+      else if (char === '\r') { if (nextChar !== '\n') endRecord(); /* CRLF: let \n end it */ }
+      else { field += char; sawAny = true; }
+    }
+  }
+  // Flush a trailing record with no closing newline.
+  if (sawAny || field.length > 0 || record.length > 0) { record.push(field); records.push(record); }
+
+  // Drop records that are entirely empty (blank lines anywhere in the file).
+  const nonEmpty = records.filter(r => r.some(v => v.trim() !== ''));
+  if (nonEmpty.length < 2) return { headers: [], rows: [] };
+
+  // De-duplicate header names so two same-named columns (e.g. two "Phone"
+  // columns) don't collapse onto each other and silently drop data.
+  const seen: Record<string, number> = {};
+  const headers = nonEmpty[0].map((h) => {
+    const base = h.trim() || 'Column';
+    if (seen[base] === undefined) { seen[base] = 0; return base; }
+    seen[base] += 1;
+    return `${base} (${seen[base]})`;
+  });
+
+  const rows: Record<string, string>[] = [];
+  for (let r = 1; r < nonEmpty.length; r++) {
+    const values = nonEmpty[r];
+    const row: Record<string, string> = {};
+    headers.forEach((header, idx) => { row[header] = (values[idx] ?? '').trim(); });
+    rows.push(row);
+  }
+  return { headers, rows };
 }
 
 type Step = 'upload' | 'map' | 'review' | 'importing' | 'done';
@@ -625,7 +661,7 @@ export default function CSVImportModal({
           const wb = XLSX.read(buf, { type: 'array' });
           const ws = wb.Sheets[wb.SheetNames[0]];
           if (!ws) { setError('That workbook has no readable sheet.'); return; }
-          ingestCsvText(XLSX.utils.sheet_to_csv(ws));
+          ingestCsvText(XLSX.utils.sheet_to_csv(ws, { blankrows: false }));
         } catch {
           setError('Could not read that Excel file.');
         }
