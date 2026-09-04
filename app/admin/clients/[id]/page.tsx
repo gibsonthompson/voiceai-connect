@@ -7,6 +7,10 @@
 // GET /api/admin/clients/:clientId which returns { client, calls }. Includes a
 // "Log in as client" action that mints an impersonation token and opens the
 // client's own dashboard through /client/preview.
+// Back navigation goes to the client's agency, EXPANDED (/admin/agencies?expand=
+// <agency_id>), instead of router.back(): a plain back landed on a collapsed
+// agencies list ("just reloads the agency page"), losing the context the admin
+// came from.
 // ============================================================================
 
 import { useState, useEffect } from 'react';
@@ -162,9 +166,11 @@ export default function AdminClientDetailPage() {
 
   return (
     <div className="admin-scope p-5 lg:p-8 max-w-[1100px]">
-      <button onClick={() => router.back()} className="mb-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--a-dim)] hover:text-[var(--a-muted)] transition-colors">
-        <ArrowLeft className="h-4 w-4" />Back
-      </button>
+      {/* Back to the client's agency, EXPANDED, so the admin returns to the
+          context they came from instead of a collapsed agencies list. */}
+      <Link href={`/admin/agencies?expand=${client.agency_id}`} className="mb-6 inline-flex items-center gap-1.5 text-[13px] text-[var(--a-dim)] hover:text-[var(--a-muted)] transition-colors">
+        <ArrowLeft className="h-4 w-4" />Back to {client.agencies?.name || 'agency'}
+      </Link>
 
       {/* Header */}
       <div className="a-card p-5 mb-6">
@@ -178,6 +184,10 @@ export default function AdminClientDetailPage() {
                 <h1 className="text-[20px] font-semibold text-[var(--a-ink)] tracking-tight truncate">{client.business_name}</h1>
                 {client.is_test_client && <span className="text-[9px] px-1.5 py-0.5 rounded-full border font-medium" style={{ color: 'var(--a-violet)', background: 'var(--a-violet-soft)', borderColor: 'var(--a-violet-soft)' }}>Test</span>}
               </div>
+              {/* Agency line: always visible, links to the agency (expanded). */}
+              <Link href={`/admin/agencies?expand=${client.agency_id}`} className="mt-1 inline-flex items-center gap-1.5 text-[12px] hover:underline" style={{ color: 'var(--a-em-deep)' }}>
+                <Building2 className="h-3.5 w-3.5" />{client.agencies?.name || 'View agency'}
+              </Link>
               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                 {planBadge(client.plan_type)}
                 {statusBadge(client.subscription_status || client.status)}
@@ -228,7 +238,7 @@ export default function AdminClientDetailPage() {
 
         {/* Plan & agency */}
         <div className="a-card p-5 space-y-3">
-          <h4 className={label}>Plan & Agency</h4>
+          <h4 className={label}>Plan &amp; Agency</h4>
           <div className="space-y-2.5 text-[13px]">
             <div className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)] capitalize">{client.plan_type || 'starter'}</span></div>
             {client.trial_ends_at && (<div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--a-cyan)' }} /><span className="text-[11px]" style={{ color: 'var(--a-cyan)' }}>Trial ends {formatDate(client.trial_ends_at)}</span></div>)}

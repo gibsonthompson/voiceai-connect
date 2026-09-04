@@ -228,6 +228,7 @@ export default function AdminAgenciesPage() {
   const [expandedLoading, setExpandedLoading] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [clientImpersonating, setClientImpersonating] = useState<string | null>(null);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
@@ -724,8 +725,12 @@ export default function AdminAgenciesPage() {
                             <span className="text-[10px] text-[var(--a-dim)]">{expandedData[agency.id].billable_client_count} billable</span>
                           </div>
                           <div className="space-y-1">
-                            {expandedData[agency.id].clients.map((client: any) => (
-                              <div key={client.id} className="flex items-center justify-between rounded-lg px-3 py-2 bg-white border border-[var(--a-line)] hover:border-[var(--a-em-line)] transition-colors">
+                            {expandedData[agency.id].clients.map((client: any) => {
+                              const clientOpen = expandedClients.has(client.id);
+                              const callLimit = client.monthly_call_limit ?? client.call_limit;
+                              return (
+                              <div key={client.id} className="rounded-lg bg-white border border-[var(--a-line)] hover:border-[var(--a-em-line)] transition-colors overflow-hidden">
+                                <div className="flex items-center justify-between px-3 py-2">
                                 <Link href={`/admin/clients/${client.id}`} className="flex items-center gap-2.5 min-w-0 flex-1">
                                   <div className="flex h-6 w-6 items-center justify-center rounded-md shrink-0" style={{ background: client.is_test_client ? 'var(--a-violet-soft)' : 'var(--a-em-soft)' }}>
                                     {client.is_test_client ? <FlaskConical className="h-3 w-3" style={{ color: 'var(--a-violet)' }} /> : <span className="text-[9px] font-semibold" style={{ color: 'var(--a-em-deep)' }}>{client.business_name?.charAt(0)}</span>}
@@ -742,13 +747,37 @@ export default function AdminAgenciesPage() {
                                   {client.vapi_phone_number && <span className="text-[var(--a-dim)] a-num hidden sm:inline">{formatPhone(client.vapi_phone_number)}</span>}
                                   <span className="text-[var(--a-dim)] a-num">{client.calls_this_month || 0} calls</span>
                                   {(() => { const b = getStatusBadge(client.subscription_status); return (<span className="rounded-md border px-1.5 py-0.5 font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{client.subscription_status}</span>); })()}
+                                  <button onClick={() => setExpandedClients(prev => { const n = new Set(prev); if (n.has(client.id)) n.delete(client.id); else n.add(client.id); return n; })} title={clientOpen ? 'Hide details' : 'More info'} aria-expanded={clientOpen} className="inline-flex items-center rounded-md p-1 transition-colors" style={{ background: clientOpen ? 'var(--a-em-soft)' : 'transparent', color: 'var(--a-muted)' }}>
+                                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${clientOpen ? 'rotate-180' : ''}`} />
+                                  </button>
                                   <button onClick={() => handleImpersonateClient(client.id)} disabled={clientImpersonating === client.id} title="Log in as client" className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-50" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', border: '1px solid var(--a-em-line)' }}>
                                     {clientImpersonating === client.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogIn className="h-3 w-3" />}
                                     <span className="hidden sm:inline">Log in</span>
                                   </button>
                                 </div>
+                                </div>
+                                {clientOpen && (
+                                  <div className="border-t border-[var(--a-line)] px-3 py-2.5" style={{ background: '#F9FCFB' }}>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
+                                      {client.owner_name && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Owner</div><div className="text-[11px] text-[var(--a-muted)] truncate">{client.owner_name}</div></div>)}
+                                      {client.owner_phone && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Owner Phone</div><div className="text-[11px] text-[var(--a-muted)] a-num">{formatPhone(client.owner_phone)}</div></div>)}
+                                      {client.email && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Email</div><div className="text-[11px] text-[var(--a-muted)] truncate">{client.email}</div></div>)}
+                                      {client.plan_type && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Plan</div><div className="text-[11px] text-[var(--a-muted)] capitalize">{typeof getPlanDisplayName === 'function' ? getPlanDisplayName(client.plan_type) : client.plan_type}</div></div>)}
+                                      {client.vapi_phone_number && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">AI Number</div><div className="text-[11px] text-[var(--a-muted)] a-num">{formatPhone(client.vapi_phone_number)}</div></div>)}
+                                      {client.forwarding_number && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Forwards From</div><div className="text-[11px] text-[var(--a-muted)] a-num">{formatPhone(client.forwarding_number)}</div></div>)}
+                                      <div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Usage</div><div className="text-[11px] text-[var(--a-muted)] a-num">{client.calls_this_month || 0}{callLimit ? ` / ${callLimit}` : ''} calls</div></div>
+                                      {client.created_at && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Created</div><div className="text-[11px] text-[var(--a-muted)]">{formatDate(client.created_at)}</div></div>)}
+                                      {client.trial_ends_at && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Trial Ends</div><div className="text-[11px] text-[var(--a-muted)]">{formatDate(client.trial_ends_at)}</div></div>)}
+                                      {'vapi_assistant_id' in client && (<div><div className="text-[8px] uppercase tracking-wide text-[var(--a-dim)] mb-0.5">Assistant</div><div className="text-[11px] text-[var(--a-muted)]">{client.vapi_assistant_id ? 'Configured' : 'Not set'}</div></div>)}
+                                    </div>
+                                    <Link href={`/admin/clients/${client.id}`} className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-medium" style={{ color: 'var(--a-em-deep)' }}>
+                                      View full detail <ExternalLink className="h-3 w-3" />
+                                    </Link>
+                                  </div>
+                                )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
