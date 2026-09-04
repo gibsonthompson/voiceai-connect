@@ -480,6 +480,8 @@ export default function CSVImportModal({
   // Track first/last name columns for combining
   const [firstNameCol, setFirstNameCol] = useState<string | null>(null);
   const [lastNameCol, setLastNameCol] = useState<string | null>(null);
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  const [sheetLoading, setSheetLoading] = useState(false);
 
   // Determine if we're in admin mode
   const isAdminMode = Boolean(apiBase);
@@ -514,23 +516,9 @@ export default function CSVImportModal({
     if (file) processFile(file);
   };
 
-  const processFile = (file: File) => {
-    if (!file.name.endsWith('.csv') && !file.name.endsWith('.tsv') && !file.name.endsWith('.txt')) {
-      setError('Please upload a CSV file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File too large. Maximum 5MB.');
-      return;
-    }
-
-    setError('');
-    setFileName(file.name);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
+  // Shared pipeline: raw CSV text (from a .csv file, an Excel export, or a
+  // Google Sheet) -> parse -> auto-detect source -> auto-map columns -> map step.
+  const ingestCsvText = (text: string) => {
       const { headers, rows } = parseCSV(text);
 
       if (headers.length === 0 || rows.length === 0) {
@@ -580,8 +568,72 @@ export default function CSVImportModal({
 
       setColumnMapping(mapping);
       setStep('map');
-    };
+  };
+
+  const processFile = (file: File) => {
+    const name = file.name.toLowerCase();
+    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
+    const isCsv = name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt');
+    if (!isExcel && !isCsv) {
+      setError('Please upload a CSV or Excel file (.csv, .xlsx)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File too large. Maximum 5MB.');
+      return;
+    }
+    setError('');
+    setFileName(file.name);
+
+    if (isExcel) {
+      // Excel: read the first sheet and convert it to CSV text, then reuse the
+      // same pipeline. xlsx is dynamically imported so it only loads when needed.
+      file.arrayBuffer().then(async (buf) => {
+        try {
+          const XLSX = await import('xlsx');
+          const wb = XLSX.read(buf, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          if (!ws) { setError('That workbook has no readable sheet.'); return; }
+          ingestCsvText(XLSX.utils.sheet_to_csv(ws));
+        } catch {
+          setError('Could not read that Excel file.');
+        }
+      }).catch(() => setError('Could not read that Excel file.'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => ingestCsvText((e.target?.result as string) || '');
     reader.readAsText(file);
+  };
+
+
+
+  const handleGoogleSheetImport = async () => {
+    const url = googleSheetUrl.trim();
+    if (!url) { setError('Paste your Google Sheets link first.'); return; }
+    if (!/\/spreadsheets\/d\/[a-zA-Z0-9-_]+/.test(url)) { setError("That doesn't look like a Google Sheets link."); return; }
+    setError(''); setSheetLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const resp = await fetch(`${backendUrl}/api/leads/google-sheet-csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ url }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.csv) {
+        setError(data.message || data.error || 'Could not read that Google Sheet. Make sure it is shared as "Anyone with the link can view".');
+        return;
+      }
+      setFileName('Google Sheet');
+      ingestCsvText(data.csv);
+    } catch {
+      setError('Could not reach that Google Sheet.');
+    } finally {
+      setSheetLoading(false);
+    }
   };
 
   const handleMappingChange = (leadField: string, csvColumn: string) => {
@@ -756,6 +808,14 @@ export default function CSVImportModal({
           {/* ============ STEP 1: UPLOAD ============ */}
           {step === 'upload' && (
             <div>
+              <div className="flex items-center justify-center gap-5 mb-4">
+                {[{ label: 'CSV', c: '#6b7280' }, { label: 'Excel', c: '#217346' }, { label: 'Google Sheets', c: '#0f9d58' }].map((sce) => (
+                  <div key={sce.label} className="flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={sce.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
+                    <span className="text-xs font-medium" style={{ color: theme.textMuted }}>{sce.label}</span>
+                  </div>
+                ))}
+              </div>
               <div
                 className="rounded-xl p-8 sm:p-12 text-center cursor-pointer transition-colors"
                 style={{ border: `2px dashed ${theme.border}`, backgroundColor: theme.hover || 'rgba(255,255,255,0.02)' }}
@@ -765,19 +825,45 @@ export default function CSVImportModal({
               >
                 <Upload className="h-10 w-10 mx-auto mb-3" style={{ color: theme.textMuted }} />
                 <p className="font-medium text-sm mb-1" style={{ color: theme.text }}>
-                  Drop your CSV here or click to browse
+                  Drop your CSV or Excel file here, or click to browse
                 </p>
                 <p className="text-xs" style={{ color: theme.textMuted }}>
-                  Supports .csv files up to 5MB (max 500 rows)
+                  CSV or Excel (.csv, .xlsx) up to 5MB, max 500 rows
                 </p>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.tsv,.txt"
+                accept=".csv,.tsv,.txt,.xlsx,.xls"
                 onChange={handleFileSelect}
                 className="hidden"
               />
+
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="#0f9d58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
+                  <span className="text-sm font-medium" style={{ color: theme.text }}>Or import from Google Sheets</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={googleSheetUrl}
+                    onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                    placeholder="Paste your Google Sheets link"
+                    className="flex-1 rounded-lg px-3 py-2 text-sm"
+                    style={{ backgroundColor: theme.input || 'rgba(255,255,255,0.03)', border: `1px solid ${theme.border}`, color: theme.text }}
+                  />
+                  <button
+                    onClick={handleGoogleSheetImport}
+                    disabled={sheetLoading}
+                    className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                    style={{ backgroundColor: '#0f9d58', color: '#fff' }}
+                  >
+                    {sheetLoading ? 'Loading...' : 'Import'}
+                  </button>
+                </div>
+                <p className="text-xs mt-1.5" style={{ color: theme.textMuted }}>The sheet must be shared as &quot;Anyone with the link can view&quot;.</p>
+              </div>
 
               <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.hover || 'rgba(255,255,255,0.02)', border: `1px solid ${theme.border}` }}>
                 <div className="flex items-start gap-2">

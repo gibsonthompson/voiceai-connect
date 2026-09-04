@@ -177,7 +177,8 @@ const DEFAULT_PLAN_LIMITS: Record<ClientPlanId, number> = {
 // ============================================================================
 
 export interface ClientPlanTile {
-  id: ClientPlanId;
+  /** Plan key: legacy 'starter'|'pro'|'growth', or a Path B plan key. */
+  id: string;
   /** Display name. Falls back to "Starter" / "Professional" / "Growth". */
   name: string;
   /** Optional one-line tagline shown under the name. null if unset. */
@@ -215,59 +216,71 @@ export interface ClientPlanTile {
 //   }
 // ============================================================================
 
+function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit: number): { included: string[]; excluded: string[]; teamMembers: number } {
+  const included: string[] = [...CORE_CLIENT_FEATURES];
+  included.push(callLimit === -1 ? 'Unlimited calls per month' : `Up to ${callLimit.toLocaleString()} calls per month`);
+  const excluded: string[] = [];
+  for (const key of FEATURE_ORDER) {
+    const meta = FEATURE_LABELS[key];
+    if (!meta) continue;
+    if (featuresForTier[key] === true) included.push(meta.label);
+    else excluded.push(meta.label);
+  }
+  const teamMembersRaw = featuresForTier.team_members;
+  const teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
+  if (teamMembers > 0) included.push(`Up to ${teamMembers} team member${teamMembers === 1 ? '' : 's'}`);
+  return { included, excluded, teamMembers };
+}
+
 export function buildClientPlans(agency: Record<string, any> | null | undefined): ClientPlanTile[] {
   const safeAgency: Record<string, any> = agency || {};
-  const planFeatures: Record<string, any> = safeAgency.plan_features || {};
 
+  // Path B is the source of truth the moment the agency has a plans array. Show
+  // its VISIBLE + PRICED plans; if there are none, return an EMPTY list. Do NOT
+  // fall back to the legacy three tiers here: an agency that configured plans and
+  // hid them must never suddenly show three it never set. Legacy is only reached
+  // when there is no plans array at all (a pre-migration agency).
+  const hasPathB = Array.isArray(safeAgency.plans) && safeAgency.plans.length > 0;
+  if (hasPathB) {
+    const visible: any[] = (safeAgency.plans as any[]).filter((p: any) =>
+      p && typeof p === 'object'
+      && p.key != null && String(p.key).length > 0        // drop malformed / keyless plans
+      && p.visible !== false && String(p.visible).toLowerCase() !== 'false'  // boolean OR stringified "false"
+      && p.price_cents != null
+      && Number.isFinite(Number(p.price_cents))             // drop non-numeric prices
+    );
+    return visible.map((p: any, i: number): ClientPlanTile => {
+      const callLimit = (typeof p.call_limit === 'number' && !isNaN(p.call_limit)) ? p.call_limit : 50;
+      const feats: Record<string, any> =
+        (p.features && typeof p.features === 'object' && !Array.isArray(p.features)) ? p.features : {};
+      const { included, excluded, teamMembers } = buildClientFeatureLists(feats, callLimit);
+      return {
+        id: String(p.key),
+        name: (p.name || '').toString().trim() || 'Plan',
+        description: (p.description || '').toString().trim() || null,
+        price: Number(p.price_cents),
+        callLimit,
+        popular: visible.length >= 3 && i === 1, // middle tier of 3+, else no badge
+        included,
+        excluded,
+        teamMembers,
+      };
+    });
+  }
+
+  // Legacy fallback: the old starter/pro/growth columns (only when no plans array exists).
+  const planFeatures: Record<string, any> = safeAgency.plan_features || {};
   return CLIENT_PLAN_IDS.map((id): ClientPlanTile => {
-    // Resolve all the per-tier values
     const rawPrice = safeAgency[`price_${id}`];
     const price = (typeof rawPrice === 'number' && !isNaN(rawPrice)) ? rawPrice : DEFAULT_PLAN_PRICES[id];
-
     const rawLimit = safeAgency[`limit_${id}`];
     const callLimit = (typeof rawLimit === 'number' && !isNaN(rawLimit)) ? rawLimit : DEFAULT_PLAN_LIMITS[id];
-
     const name = (safeAgency[`plan_${id}_name`] || '').toString().trim() || DEFAULT_PLAN_NAMES[id];
-
     const rawDesc = (safeAgency[`plan_${id}_description`] || '').toString().trim();
     const description = rawDesc.length > 0 ? rawDesc : null;
-
     const featuresForTier: Record<string, any> = (planFeatures[id] && typeof planFeatures[id] === 'object') ? planFeatures[id] : {};
-
-    // Build the included / excluded bullet lists
-    const included: string[] = [...CORE_CLIENT_FEATURES];
-    included.push(callLimit === -1 ? 'Unlimited calls per month' : `Up to ${callLimit.toLocaleString()} calls per month`);
-
-    const excluded: string[] = [];
-
-    for (const key of FEATURE_ORDER) {
-      const meta = FEATURE_LABELS[key];
-      if (!meta) continue;
-      if (featuresForTier[key] === true) {
-        included.push(meta.label);
-      } else {
-        excluded.push(meta.label);
-      }
-    }
-
-    // team_members is a number, not a boolean - render specially.
-    const teamMembersRaw = featuresForTier.team_members;
-    const teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
-    if (teamMembers > 0) {
-      included.push(`Up to ${teamMembers} team member${teamMembers === 1 ? '' : 's'}`);
-    }
-
-    return {
-      id,
-      name,
-      description,
-      price,
-      callLimit,
-      popular: id === 'pro', // Pro is "Most Popular" by default. Future: agency override column.
-      included,
-      excluded,
-      teamMembers,
-    };
+    const { included, excluded, teamMembers } = buildClientFeatureLists(featuresForTier, callLimit);
+    return { id, name, description, price, callLimit, popular: id === 'pro', included, excluded, teamMembers };
   });
 }
 

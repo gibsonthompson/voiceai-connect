@@ -266,7 +266,7 @@ function ClientLoginContent() {
                 </div>
               </div>
               <div className="flex items-center justify-end">
-                <Link href="/auth/forgot-password" className="text-sm" style={{ color: t.textMuted }}>Forgot password?</Link>
+                <Link href="/auth/forgot-password?scope=client" className="text-sm" style={{ color: t.textMuted }}>Forgot password?</Link>
               </div>
               {error && <div className="rounded-xl p-3 text-sm" style={{ backgroundColor: t.errorBg, border: `1px solid ${t.errorBorder}`, color: t.errorText }}>{error}</div>}
               <button type="submit" disabled={loading}

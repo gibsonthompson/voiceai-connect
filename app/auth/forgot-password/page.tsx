@@ -483,7 +483,7 @@ function ForgotPasswordContent() {
       const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, scope: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scope') === 'client') ? 'client' : 'agency' }),
       });
 
       const data = await response.json();
@@ -519,7 +519,7 @@ function ForgotPasswordContent() {
       const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, scope: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scope') === 'client') ? 'client' : 'agency' }),
       });
 
       const data = await response.json();

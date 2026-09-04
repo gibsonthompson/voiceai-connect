@@ -639,7 +639,7 @@ export default function AgencyLeadsPage() {
             </Link>
             <button onClick={() => setShowCSVImport(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <FileSpreadsheet className="h-4 w-4" />
-              Import CSV
+              Import Leads
             </button>
             <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <Plus className="h-4 w-4" />
@@ -771,7 +771,7 @@ export default function AgencyLeadsPage() {
                 </Link>
                 <button onClick={() => setShowCSVImport(true)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
                   <FileSpreadsheet className="h-4 w-4" />
-                  Import CSV
+                  Import Leads
                 </button>
               </div>
             )}
