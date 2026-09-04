@@ -30,9 +30,8 @@ type SourceTab = "indeed" | "google_maps";
 // ── Indeed Logo SVG ─────────────────────────────────────────────────────
 function IndeedLogo({ size = 16 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect width="24" height="24" rx="4" fill="#003A9B" />
-      <path d="M13.5 4.5c-1.1 0-2 .7-2.4 1.7-.1.3-.2.7-.2 1.1v9.2c0 1.1-.3 2-.8 2.6-.4.5-.9.8-1.5.9h-.1v1h.2c1.3-.1 2.4-.7 3.1-1.7.7-1 1.1-2.3 1.1-3.8V7.3c0-.4.1-.7.2-1 .2-.5.6-.8 1.1-.8.3 0 .5.1.7.3.2.2.3.5.3.8 0 .4-.2.7-.5.9-.2.1-.4.2-.7.2v1.1c.8 0 1.5-.3 2-.8s.8-1.2.8-2c0-.5-.2-1-.5-1.3-.4-.5-.9-.7-1.5-.7h-.3z" fill="white"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#003A9B" xmlns="http://www.w3.org/2000/svg" aria-label="Indeed">
+      <path d="M11.566 21.5633v-8.762c.2553.0231.5009.0346.758.0346 1.2225 0 2.3739-.3206 3.3506-.8928v9.6182c0 .8219-.1957 1.4287-.5757 1.8338-.378.4033-.8808.6049-1.491.6049-.6007 0-1.0766-.2016-1.468-.6183-.3781-.4032-.5739-1.01-.5739-1.8184zM11.589.5659c2.5447-.8929 5.4424-.8449 7.6186.987.405.3687.8673.8334 1.0515 1.3806.2207.6913-.7695-.073-.9057-.167-.71-.4532-1.4182-.8334-2.2127-1.0946C12.8614.3873 8.8122 2.709 6.2945 6.315c-1.0516 1.5939-1.7367 3.2721-2.299 5.1174-.0614.2017-.1094.4647-.2207.6413-.1113.2036-.048-.5453-.048-.5702.0845-.7623.2438-1.4997.4414-2.237C5.3292 5.3375 7.897 2.0655 11.5891.5658zm4.9281 7.0587c0 1.6686-1.353 3.0224-3.0205 3.0224-1.6677 0-3.0186-1.3538-3.0186-3.0224 0-1.6687 1.351-3.0224 3.0186-3.0224 1.6676 0 3.0205 1.3518 3.0205 3.0224Z" />
     </svg>
   );
 }
@@ -40,12 +39,9 @@ function IndeedLogo({ size = 16 }: { size?: number }) {
 // ── Google Maps Logo SVG ────────────────────────────────────────────────
 function GoogleMapsLogo({ size = 16 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect width="24" height="24" rx="4" fill="#ffffff" />
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335"/>
-      <circle cx="12" cy="9" r="2.5" fill="#B31412"/>
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 1.74.56 3.35 1.51 4.67L12 22l5.49-8.33C18.44 12.35 19 10.74 19 9c0-3.87-3.13-7-7-7z" fill="#EA4335" fillOpacity="0.3"/>
-      <circle cx="12" cy="9" r="2.5" fill="white"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Google Maps">
+      <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" fill="#EA4335"/>
+      <circle cx="12" cy="9" r="2.6" fill="#fff"/>
     </svg>
   );
 }
@@ -593,15 +589,14 @@ export default function LeadFinderPage() {
             <GoogleMapsLogo size={18} />
             Google Maps
           </button>
-          <button onClick={() => setActiveTab("indeed")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-all"
-            style={{
-              color: activeTab === "indeed" ? "#003a9b" : theme.textMuted,
-              borderBottom: activeTab === "indeed" ? "2px solid #003a9b" : "2px solid transparent",
-              background: activeTab === "indeed" ? "#003a9b08" : "transparent",
-            }}>
-            <IndeedLogo size={18} />
+          <button
+            disabled
+            title="Indeed sourcing is coming soon"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium cursor-not-allowed"
+            style={{ color: theme.textMuted, opacity: 0.55, borderBottom: "2px solid transparent", background: "transparent" }}>
+            <span style={{ filter: "grayscale(1)", display: "inline-flex" }}><IndeedLogo size={18} /></span>
             Indeed
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${theme.textMuted}22`, color: theme.textMuted }}>Coming soon</span>
           </button>
         </div>
 
