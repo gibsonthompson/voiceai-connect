@@ -6,7 +6,7 @@ import {
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save,
   Sun, Moon, Wand2, BarChart3, Share2, Layout, DollarSign, Code,
-  ChevronUp, ChevronDown, Trash2, Plus
+  ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard
 } from 'lucide-react';
 import LockedFeature from '@/components/LockedFeature';
 import { useAgency } from '../context';
@@ -117,6 +117,10 @@ export default function MarketingWebsitePage() {
   // Button-link snippet — separate const so the JSX stays readable and we
   // don't recompute it twice (once for the <pre>, once for the copy button).
   const embedButtonSnippet = `<a href="${signupUrl}" style="display:inline-block;padding:14px 32px;background:${agencyPrimaryColor};color:${isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff'};border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Start Free Trial</a>`;
+
+  // Client Login: where agencies send their clients to sign in.
+  const loginUrl = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/client/login` : `${subdomainUrl}/client/login`;
+  const loginButtonSnippet = `<a href="${loginUrl}" style="display:inline-block;padding:12px 28px;background:transparent;color:${agencyPrimaryColor};border:2px solid ${agencyPrimaryColor};border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">Client Login</a>`;
 
   useEffect(() => {
     if (demoMode) { setDnsConfig({ aRecord: '216.198.79.1', cname: 'cname.vercel-dns.com' }); return; }
@@ -243,6 +247,46 @@ export default function MarketingWebsitePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">{(TEMPLATES.find(t => t.id === selectedTemplate)?.preview.sections || []).map((section) => (<div key={section} className="flex items-start gap-2 sm:gap-3"><span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span><p className="font-medium text-xs sm:text-sm">{section}</p></div>))}</div>
         </div>
 
+        {/* ── Your Clients' Dashboard ────────────────────────────────────────
+            Prevents the onboarding confusion surfaced by a support request:
+            agencies not realizing the client dashboard is a SEPARATE, always-
+            hosted destination reached via a login link, independent of whatever
+            marketing site (ours, theirs, or none) they use. This card states
+            that model up front and shows the three ways a client reaches it, so
+            no agency has to ask "how do my clients get to their dashboard?"
+        ─────────────────────────────────────────────────────────────────── */}
+        <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: isDark ? `${agencyPrimaryColor}0d` : `${agencyPrimaryColor}0a`, border: `1px solid ${agencyPrimaryColor}40` }}>
+          <div className="flex items-center gap-2 mb-1.5"><LayoutDashboard className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>Your clients&apos; dashboard</h3></div>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Every client you add gets their own dashboard, hosted here and always available at the link below. It&apos;s separate from your marketing page, so it works whether you use our website, your own website, or no website at all.</p>
+
+          <label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your client login link</label>
+          <div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+            <Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+            <span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{loginUrl}</span>
+            <button onClick={() => copyToClipboard(loginUrl, 'login-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'login-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button>
+          </div>
+          <p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `On your custom domain — ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded link.'}</p>
+
+          <p className="text-xs font-medium mt-4 mb-2.5" style={{ color: textColor }}>How your clients get there — use any of these:</p>
+          <div className="space-y-2.5">
+            <div className="flex items-start gap-2.5"><span className="flex items-center justify-center h-5 w-5 rounded-full flex-shrink-0 text-[10px] font-semibold mt-0.5" style={{ backgroundColor: `${agencyPrimaryColor}22`, color: agencyPrimaryColor }}>1</span><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}><span style={{ color: textColor, fontWeight: 500 }}>Using our marketing site?</span> A &quot;Client Login&quot; link is already built into your site&apos;s header. Nothing to set up.</p></div>
+            <div className="flex items-start gap-2.5"><span className="flex items-center justify-center h-5 w-5 rounded-full flex-shrink-0 text-[10px] font-semibold mt-0.5" style={{ backgroundColor: `${agencyPrimaryColor}22`, color: agencyPrimaryColor }}>2</span><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}><span style={{ color: textColor, fontWeight: 500 }}>Using your own website?</span> Paste the button below onto any page.</p></div>
+            <div className="flex items-start gap-2.5"><span className="flex items-center justify-center h-5 w-5 rounded-full flex-shrink-0 text-[10px] font-semibold mt-0.5" style={{ backgroundColor: `${agencyPrimaryColor}22`, color: agencyPrimaryColor }}>3</span><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}><span style={{ color: textColor, fontWeight: 500 }}>No website?</span> Email or text the link directly to a client anytime.</p></div>
+          </div>
+
+          <details className="group mt-4">
+            <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: agencyPrimaryColor }}><Code className="h-3.5 w-3.5" /> Get the &quot;Client Login&quot; button for your website</summary>
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Paste this anywhere on your site</label>
+                <button onClick={() => copyToClipboard(loginButtonSnippet, 'login-btn')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'login-btn' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button>
+              </div>
+              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{loginButtonSnippet}</pre>
+              <div className="mt-2 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><span className="inline-block px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'transparent', color: agencyPrimaryColor, border: `2px solid ${agencyPrimaryColor}` }}>Client Login</span></div>
+            </div>
+          </details>
+        </div>
+
         {/* ── Embed on Your Own Website ─────────────────────────────────────
             Two snippet options:
             (A) Inline widget — iframe-based embed.js form, lives on prospects'
@@ -255,7 +299,7 @@ export default function MarketingWebsitePage() {
         ─────────────────────────────────────────────────────────────────── */}
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2 mb-1"><LinkIcon className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>Embed on Your Own Website</h3></div>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Already have a site? Drop one of these snippets onto your existing page — clients sign up through your branded form without leaving.</p>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>This is for <strong style={{ color: textColor, fontWeight: 600 }}>new clients signing up</strong> (not existing clients logging in — that&apos;s the card above). Drop one of these snippets onto your existing page and prospects join through your branded form without leaving.</p>
 
           {/* Signup URL row — handy reference even if they pick the widget */}
           <div className="mb-4"><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your Client Signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain — ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
