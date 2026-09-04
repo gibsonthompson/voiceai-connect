@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown, Users, Shield
+  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -208,6 +208,23 @@ export default function AgencyClientDetailPage() {
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
   useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); } }, [client?.business_name, client?.owner_phone]);
 
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteClient = async () => {
+    if (!agency || !clientId || !client) return;
+    if (!confirm(`Delete ${client.business_name}? This releases their phone number and AI receptionist and cannot be undone.`)) return;
+    if (!confirm(`Really delete ${client.business_name}? This is permanent.`)) return;
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.detail || 'Failed to delete client');
+      window.location.href = '/agency/clients';
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete client');
+      setDeleting(false);
+    }
+  };
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
@@ -565,6 +582,19 @@ export default function AgencyClientDetailPage() {
 
           {/* Quick Info */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
+        </div>
+      </div>
+
+      {/* Danger zone: delete client */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.25)'}` }}>
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-2"><AlertCircle className="h-4 w-4" style={{ color: '#ef4444' }} /><h2 className="font-semibold text-sm sm:text-base" style={{ color: '#ef4444' }}>Delete client</h2></div>
+            <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Permanently deletes {client.business_name}, releasing their phone number and AI receptionist. This cannot be undone.</p>
+            <button onClick={handleDeleteClient} disabled={deleting} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{deleting ? 'Deleting\u2026' : 'Delete client'}
+            </button>
+          </div>
         </div>
       </div>
 
