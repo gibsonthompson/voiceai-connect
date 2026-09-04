@@ -528,7 +528,7 @@ function Comparison({ config }: { config: MarketingConfig }) {
   const moneyRange = (lo: number, hi: number) => priceString(cs, `${Math.round(lo * rate).toLocaleString()}-${Math.round(hi * rate).toLocaleString()}`, pos);
   const lowest = pricing.length > 0 ? pricing[0].price : 49;
   const highest = pricing.length > 0 ? pricing[pricing.length - 1].price : 197;
-  const ours = priceString(cs, `${lowest}-${highest}`, pos);
+  const ours = priceString(cs, lowest === highest ? `${lowest}` : `${lowest}-${highest}`, pos);
 
   const rows = [
     { label: 'Monthly cost', us: ours, human: moneyRange(3000, 4500), svc: moneyRange(299, 600), vm: money(0) },

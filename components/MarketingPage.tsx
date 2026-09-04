@@ -456,7 +456,9 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
   };
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const highestPrice = pricing.length > 0 ? pricing[pricing.length - 1].price : 197;
-  const oursMonthly = pos === 'after' ? `${lowestPrice}-${highestPrice} ${cs}` : `${cs}${lowestPrice}-${highestPrice}`;
+  const oursMonthly = lowestPrice === highestPrice
+    ? (pos === 'after' ? `${lowestPrice} ${cs}` : `${cs}${lowestPrice}`)
+    : (pos === 'after' ? `${lowestPrice}-${highestPrice} ${cs}` : `${cs}${lowestPrice}-${highestPrice}`);
   const oursLowest = pos === 'after' ? `${lowestPrice} ${cs}` : `${cs}${lowestPrice}`;
   const comparisonData = [
     { label: 'Monthly Cost', ours: oursMonthly, human: moneyRange(3000, 4500), ruby: moneyRange(299, 600), vm: money(0) },
