@@ -6,6 +6,37 @@ import {
   AlertCircle, ArrowRight, ArrowLeft, ChevronDown, Info
 } from 'lucide-react';
 
+// Brand glyphs for the import sources. Google Sheets and Excel use the official
+// Simple Icons vector paths (CC0-licensed) in their brand green, so they read as
+// the real products. CSV is a file format, not a brand, so it gets a neutral
+// document-grid glyph that follows the current theme color.
+function GoogleSheetsGlyph({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="#0F9D58" role="img" aria-label="Google Sheets">
+      <path d="M11.318 12.545H7.91v-1.909h3.41v1.91zM14.728 0v6h6l-6-6zm1.363 10.636h-3.41v1.91h3.41v-1.91zm0 3.273h-3.41v1.91h3.41v-1.91zM20.727 6.5v15.864c0 .904-.732 1.636-1.636 1.636H4.909a1.636 1.636 0 0 1-1.636-1.636V1.636C3.273.732 4.005 0 4.909 0h9.318v6.5h6.5zm-3.273 2.773H6.545v7.909h10.91v-7.91zm-6.136 4.636H7.91v1.91h3.41v-1.91z" />
+    </svg>
+  );
+}
+
+function ExcelGlyph({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="#217346" role="img" aria-label="Microsoft Excel">
+      <path d="M23 1.5q.41 0 .7.3.3.29.3.7v19q0 .41-.3.7-.29.3-.7.3H7q-.41 0-.7-.3-.3-.29-.3-.7V18H1q-.41 0-.7-.3-.3-.29-.3-.7V7q0-.41.3-.7Q.58 6 1 6h5V2.5q0-.41.3-.7.29-.3.7-.3zM6 13.28l1.42 2.66h2.14l-2.38-3.87 2.34-3.8H7.46l-1.3 2.4-.05.08-.04.09-.64-1.28-.66-1.29H2.59l2.27 3.82-2.48 3.85h2.16zM14.25 21v-3H7.5v3zm0-4.5v-3.75H12v3.75zm0-5.25V7.5H12v3.75zm0-5.25V3H7.5v3zm8.25 15v-3h-6.75v3zm0-4.5v-3.75h-6.75v3.75zm0-5.25V7.5h-6.75v3.75zm0-5.25V3h-6.75v3Z" />
+    </svg>
+  );
+}
+
+function CsvGlyph({ className = 'h-5 w-5', style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} role="img" aria-label="CSV file">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <line x1="8" y1="13" x2="15" y2="13" />
+      <line x1="8" y1="17" x2="15" y2="17" />
+    </svg>
+  );
+}
+
 // Default dark theme for admin pages (no agency theme available)
 const ADMIN_DARK_THEME = {
   bg: '#0a0a0a',
@@ -809,12 +840,18 @@ export default function CSVImportModal({
           {step === 'upload' && (
             <div>
               <div className="flex items-center justify-center gap-5 mb-4">
-                {[{ label: 'CSV', c: '#6b7280' }, { label: 'Excel', c: '#217346' }, { label: 'Google Sheets', c: '#0f9d58' }].map((sce) => (
-                  <div key={sce.label} className="flex items-center gap-1.5">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={sce.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
-                    <span className="text-xs font-medium" style={{ color: theme.textMuted }}>{sce.label}</span>
-                  </div>
-                ))}
+                <div className="flex items-center gap-1.5">
+                  <CsvGlyph className="h-5 w-5" style={{ color: theme.textMuted }} />
+                  <span className="text-xs font-medium" style={{ color: theme.textMuted }}>CSV</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ExcelGlyph className="h-5 w-5" />
+                  <span className="text-xs font-medium" style={{ color: theme.textMuted }}>Excel</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <GoogleSheetsGlyph className="h-5 w-5" />
+                  <span className="text-xs font-medium" style={{ color: theme.textMuted }}>Google Sheets</span>
+                </div>
               </div>
               <div
                 className="rounded-xl p-8 sm:p-12 text-center cursor-pointer transition-colors"
@@ -841,7 +878,7 @@ export default function CSVImportModal({
 
               <div className="mt-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="#0f9d58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="3" x2="9" y2="21" /></svg>
+                  <GoogleSheetsGlyph className="h-4 w-4" />
                   <span className="text-sm font-medium" style={{ color: theme.text }}>Or import from Google Sheets</span>
                 </div>
                 <div className="flex gap-2">
