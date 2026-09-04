@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { Loader2, ArrowRight, ArrowLeft, Mail, Lock, Eye, EyeOff, Shield, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, Mail, Lock, Eye, EyeOff, Shield, CheckCircle2, Phone } from 'lucide-react';
 import DynamicFavicon from '@/components/DynamicFavicon';
 
 // ============================================================================
@@ -58,10 +58,11 @@ function WaveformIcon({ className }: { className?: string }) {
 // STEP 1: Enter Email
 // ============================================================================
 function EmailStep({
-  email, setEmail, onSubmit, loading, error,
+  email, setEmail, phone, setPhone, isClient, onSubmit, loading, error,
   isDark, primaryColor, primaryLight, textColor, textMuted, textSubtle,
   inputBg, inputBorder, cardBg, cardBorder
 }: any) {
+  const FieldIcon = isClient ? Phone : Mail;
   return (
     <div
       className="rounded-2xl p-6 sm:p-8 backdrop-blur-sm"
@@ -76,11 +77,13 @@ function EmailStep({
           className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
           style={{ backgroundColor: `${primaryColor}15` }}
         >
-          <Mail className="h-6 w-6" style={{ color: primaryColor }} />
+          <FieldIcon className="h-6 w-6" style={{ color: primaryColor }} />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Forgot Password</h1>
         <p className="mt-3 text-sm" style={{ color: textMuted }}>
-          Enter your email and we&apos;ll send you a verification code
+          {isClient
+            ? 'Enter your phone number and we\u2019ll text you a verification code'
+            : 'Enter your email and we\u2019ll send you a verification code'}
         </p>
       </div>
 
@@ -90,26 +93,41 @@ function EmailStep({
             className="block text-xs font-medium mb-2"
             style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}
           >
-            Email Address
+            {isClient ? 'Phone Number' : 'Email Address'}
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: textSubtle }} />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              required
-              autoComplete="email"
-              autoFocus
-              className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-colors focus:outline-none"
-              style={{
-                backgroundColor: inputBg,
-                border: `1px solid ${inputBorder}`,
-                color: textColor,
-              }}
-            />
+            <FieldIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: textSubtle }} />
+            {isClient ? (
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+                required
+                autoComplete="tel"
+                autoFocus
+                className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-colors focus:outline-none"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+              />
+            ) : (
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                required
+                autoComplete="email"
+                autoFocus
+                className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-colors focus:outline-none"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}
+              />
+            )}
           </div>
+          {isClient && (
+            <p className="mt-2 text-xs" style={{ color: textSubtle }}>
+              Use the mobile number on file for your account. We&apos;ll text your code there.
+            </p>
+          )}
         </div>
 
         {error && (
@@ -420,6 +438,11 @@ function SuccessStep({
 function ForgotPasswordContent() {
   const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  // Client resets identify by phone (code is texted); agency resets by email
+  // (code is emailed). scope comes from the login page that linked here.
+  const [scope, setScope] = useState<'client' | 'agency'>('agency');
+  const isClient = scope === 'client';
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -466,6 +489,12 @@ function ForgotPasswordContent() {
 
   // Resend cooldown timer
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setScope(new URLSearchParams(window.location.search).get('scope') === 'client' ? 'client' : 'agency');
+    }
+  }, []);
+
+  useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     return () => clearTimeout(timer);
@@ -483,7 +512,7 @@ function ForgotPasswordContent() {
       const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, scope: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scope') === 'client') ? 'client' : 'agency' }),
+        body: JSON.stringify(isClient ? { phone, scope: 'client' } : { email, scope: 'agency' }),
       });
 
       const data = await response.json();
@@ -519,7 +548,7 @@ function ForgotPasswordContent() {
       const response = await fetch(`${backendUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, scope: (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scope') === 'client') ? 'client' : 'agency' }),
+        body: JSON.stringify(isClient ? { phone, scope: 'client' } : { email, scope: 'agency' }),
       });
 
       const data = await response.json();
@@ -563,7 +592,6 @@ function ForgotPasswordContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
           code: code.trim(),
           password,
           resetToken,
@@ -633,8 +661,8 @@ function ForgotPasswordContent() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#34d399' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
       </div>
     );
   }
@@ -666,7 +694,7 @@ function ForgotPasswordContent() {
   `;
 
   return (
-    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor, zoom: 0.9 }}>
+    <div className="forgot-pw min-h-screen" style={{ backgroundColor: bgColor, color: textColor }}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
 
       <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />
@@ -748,6 +776,9 @@ function ForgotPasswordContent() {
             <EmailStep
               email={email}
               setEmail={setEmail}
+              phone={phone}
+              setPhone={setPhone}
+              isClient={isClient}
               onSubmit={handleEmailSubmit}
               loading={loading}
               error={error}
@@ -802,8 +833,8 @@ function ForgotPasswordContent() {
 export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#34d399' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     }>
       <ForgotPasswordContent />
