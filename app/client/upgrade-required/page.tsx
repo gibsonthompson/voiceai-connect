@@ -166,7 +166,7 @@ function ClientUpgradeContent() {
     finally { setLoading(false); }
   };
 
-  const handleSelectPlan = async (planTier: 'starter' | 'pro' | 'growth') => {
+  const handleSelectPlan = async (planTier: string) => {
     if (!client) { setError('Account not loaded. Please refresh.'); return; }
     setError(null);
 
