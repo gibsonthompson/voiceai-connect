@@ -6,6 +6,7 @@ import {
   Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
+import { CustomSelect } from '@/components/ui/custom-select';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
@@ -307,6 +308,8 @@ export default function MyBusinessPage() {
 
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
+  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', accent: primaryColor, isDark: theme.isDark };
+  const timeOptions = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
 
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
 
@@ -495,9 +498,9 @@ export default function MyBusinessPage() {
                     <label className="flex items-center gap-1"><input type="checkbox" checked={businessHours[day].closed} onChange={e => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3.5 h-3.5 rounded" /><span className="text-[11px]" style={{ color: theme.textMuted }}>Closed</span></label>
                     {!businessHours[day].closed && (
                       <div className="flex items-center gap-1 ml-auto">
-                        <select value={businessHours[day].open} onChange={e => updateBusinessHoursField(day, 'open', e.target.value)} className="px-2 py-1 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                        <div className="w-24"><CustomSelect size="sm" value={businessHours[day].open} onChange={v => updateBusinessHoursField(day, 'open', v)} options={timeOptions} ui={dropdownUi} /></div>
                         <span className="text-[10px]" style={{ color: theme.textMuted4 }}>–</span>
-                        <select value={businessHours[day].close} onChange={e => updateBusinessHoursField(day, 'close', e.target.value)} className="px-2 py-1 text-[11px] rounded-lg focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                        <div className="w-24"><CustomSelect size="sm" value={businessHours[day].close} onChange={v => updateBusinessHoursField(day, 'close', v)} options={timeOptions} ui={dropdownUi} /></div>
                       </div>
                     )}
                   </div>

@@ -12,6 +12,7 @@ import { useAgency } from '../context';
 import LockedFeatureOverlay from '@/components/LockedFeature';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
+import { CustomSelect } from '@/components/ui/custom-select';
 import { getDemoLeads, getDemoLeadStats } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
 import ComposerModal from '@/components/ComposerModal';
@@ -709,22 +710,22 @@ export default function AgencyLeadsPage() {
         </div>
 
         <div className="flex gap-2">
-          <select
-            value={statusFilter || ''}
-            onChange={(e) => {
-              setStatusFilter(e.target.value || null);
-              if (e.target.value) setFilterMode('all');
-            }}
-            className="flex-1 sm:flex-none rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)]"
-          >
-            <option value="">All Status</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="qualified">Qualified</option>
-            <option value="proposal">Proposal</option>
-            <option value="won">Won</option>
-            <option value="lost">Lost</option>
-          </select>
+          <div className="flex-1 sm:flex-none sm:w-44">
+            <CustomSelect
+              value={statusFilter || ''}
+              onChange={(v) => { setStatusFilter(v || null); if (v) setFilterMode('all'); }}
+              options={[
+                { value: '', label: 'All Status' },
+                { value: 'new', label: 'New' },
+                { value: 'contacted', label: 'Contacted' },
+                { value: 'qualified', label: 'Qualified' },
+                { value: 'proposal', label: 'Proposal' },
+                { value: 'won', label: 'Won' },
+                { value: 'lost', label: 'Lost' },
+              ]}
+              ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+            />
+          </div>
 
           {!showTips && (
             <button

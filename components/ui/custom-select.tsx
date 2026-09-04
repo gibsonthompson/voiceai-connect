@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
 // Shared theming passed in by the host page so these components match whatever
@@ -22,23 +23,53 @@ export type Country = { code: string; name: string; flag: string };
 // Custom single-select dropdown. Replaces the native <select> (which renders as
 // an OS picker on iOS and is unstyleable) with a themed panel: keyboard nav,
 // click-outside, disabled state, and a checkmark on the selected row.
-export function CustomSelect({ value, onChange, options, placeholder, disabled, ui }: {
+export function CustomSelect({ value, onChange, options, placeholder, disabled, ui, size = 'md' }: {
   value: string;
   onChange: (v: string) => void;
   options: Option[];
   placeholder?: string;
   disabled?: boolean;
   ui: DropdownUI;
+  size?: 'sm' | 'md';
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxH: number } | null>(null);
   const selected = options.find(o => o.value === value) || null;
+
+  // Position the panel in a body-level portal so it is never clipped by an
+  // overflow-hidden ancestor (rounded cards, the leads list, etc.). Opens below
+  // the trigger, flips above when there isn't room.
+  const measure = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const gap = 6;
+    const below = window.innerHeight - r.bottom - gap - 8;
+    const above = r.top - gap - 8;
+    const openUp = below < 160 && above > below;
+    const maxH = Math.max(120, Math.min(240, openUp ? above : below));
+    setPos({ top: openUp ? Math.max(8, r.top - gap - maxH) : r.bottom + gap, left: r.left, width: r.width, maxH });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setPos(null); return; }
+    measure();
+    const onScroll = () => measure();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', measure);
+    return () => { window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', measure); };
+  }, [open, measure]);
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || listRef.current?.contains(t)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
@@ -67,24 +98,25 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={btnRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen(o => !o)}
         onKeyDown={onKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full rounded-xl px-4 py-2.5 text-sm flex items-center justify-between gap-2 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`w-full rounded-xl flex items-center justify-between gap-2 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2.5 text-sm'}`}
         style={ui.inputStyle}
       >
         <span className="truncate text-left" style={{ color: selected ? ui.text : ui.muted }}>{selected ? selected.label : (placeholder || 'Select...')}</span>
         <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: ui.muted }} />
       </button>
-      {open && (
+      {open && pos && typeof document !== 'undefined' && createPortal(
         <div
           ref={listRef}
           role="listbox"
-          className="absolute z-50 mt-1.5 w-full rounded-xl overflow-y-auto py-1 shadow-xl"
-          style={{ maxHeight: '15rem', backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}` }}
+          className="rounded-xl overflow-y-auto py-1 shadow-xl"
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH, zIndex: 9999, backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}` }}
         >
           {options.map((o, i) => {
             const isSel = o.value === value;
@@ -97,7 +129,7 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
                 aria-selected={isSel}
                 onClick={() => commit(o.value)}
                 onMouseEnter={() => setActive(i)}
-                className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between gap-2 transition-colors"
+                className={`w-full text-left flex items-center justify-between gap-2 transition-colors ${size === 'sm' ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm'}`}
                 style={{ backgroundColor: isAct ? ui.hover : 'transparent', color: ui.text }}
               >
                 <span className="truncate">{o.label}</span>
@@ -105,7 +137,8 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import {
 import { useAgency } from '../../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../../hooks/useTheme';
+import { CustomSelect } from '@/components/ui/custom-select';
 import { addDemoLead } from '../../demoData';
 
 const STATUS_OPTIONS = [
@@ -324,30 +325,22 @@ export default function NewLeadPage() {
               <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
-                  <select
+                  <CustomSelect
                     value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={inputStyle}
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
+                    options={STATUS_OPTIONS}
+                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
-                  <select
+                  <CustomSelect
                     value={formData.source}
-                    onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={inputStyle}
-                  >
-                    <option value="">Select source</option>
-                    {SOURCE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
+                    options={[{ value: '', label: 'Select source' }, ...SOURCE_OPTIONS]}
+                    placeholder="Select source"
+                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+                  />
                 </div>
               </div>
             </div>
