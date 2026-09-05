@@ -9,7 +9,7 @@ import { DEMO_REFERRALS } from '../demoData';
 import { 
   Users, DollarSign, TrendingUp, Copy, Check, ExternalLink, 
   Loader2, ArrowUpRight, Clock, Sparkles, Gift, Edit2, X,
-  Banknote, AlertCircle
+  Banknote, AlertCircle, Youtube, Phone, Share2
 } from 'lucide-react';
 
 // ============================================================================
@@ -452,8 +452,8 @@ export default function ReferralsPage() {
           {!editingCode ? (
             <button
               onClick={() => setEditingCode(true)}
-              className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: theme.primary }}
+              className="flex items-center gap-2 text-sm font-medium rounded-lg px-3.5 py-2 transition-colors self-start whitespace-nowrap"
+              style={{ color: theme.primary, backgroundColor: theme.primary + '18', border: `1px solid ${theme.primary}40` }}
             >
               <Edit2 className="h-4 w-4" />
               Customize Code
@@ -464,8 +464,8 @@ export default function ReferralsPage() {
                 setEditingCode(false);
                 setNewCode(data?.referralCode || '');
               }}
-              className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: theme.textMuted }}
+              className="flex items-center gap-2 text-sm font-medium rounded-lg px-3.5 py-2 transition-colors self-start whitespace-nowrap"
+              style={{ color: theme.textMuted, backgroundColor: theme.textMuted + '12', border: `1px solid ${theme.border}` }}
             >
               <X className="h-4 w-4" />
               Cancel
@@ -754,7 +754,7 @@ export default function ReferralsPage() {
                             color: statusColors.text,
                           }}
                         >
-                          {commission.status}
+                          {commission.status === 'transferred' ? 'Paid' : commission.status === 'pending' ? 'Pending' : commission.status}
                         </span>
                         <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
                           {formatDate(commission.created_at)}
@@ -775,7 +775,7 @@ export default function ReferralsPage() {
         </div>
       </div>
 
-      {/* How It Works */}
+      {/* How It Works + Passive Income */}
       <div 
         className="mt-8 rounded-2xl p-6"
         style={{ 
@@ -787,9 +787,9 @@ export default function ReferralsPage() {
         <h3 className="font-medium mb-4" style={{ color: theme.text }}>How It Works</h3>
         <div className="grid sm:grid-cols-3 gap-6">
           {[
-            { num: '1', title: 'Share Your Link', desc: 'Share your unique referral link with other agency owners' },
-            { num: '2', title: 'They Sign Up', desc: "When they create an agency using your link, they're linked to you" },
-            { num: '3', title: 'Earn 40% Forever', desc: 'Earn 40% of their subscription fee every month they stay subscribed' },
+            { num: '1', title: 'Share Your Link', desc: 'Send your referral link to other agency owners, or add it to your site, emails, and socials.' },
+            { num: '2', title: 'They Sign Up', desc: "When they start an agency through your link, they're permanently linked to you." },
+            { num: '3', title: 'Earn 40% Every Month', desc: 'You earn 40% of their subscription for as long as they stay, automatically, with no extra work.' },
           ].map((step) => (
             <div key={step.num} className="flex gap-4">
               <div 
@@ -806,6 +806,73 @@ export default function ReferralsPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Recurring passive income */}
+        <div className="mt-6 rounded-xl p-5" style={{ backgroundColor: theme.primary + '0A', border: `1px solid ${theme.primary}25` }}>
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary + '20', color: theme.primary }}>
+              <TrendingUp className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-medium text-sm mb-1" style={{ color: theme.text }}>Recurring, hands-off income</p>
+              <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                This isn't a one-time bounty. You do the work once, when you make the referral, and the 40% commission repeats every single month that agency stays subscribed. No follow-up, no maintenance, and no cap on how many you refer. Stack enough referrals and it becomes standing monthly income that keeps paying in the background.
+              </p>
+            </div>
+          </div>
+
+          {/* Concrete projection at 40% of real plan prices */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            {[
+              { count: '10 agencies', plan: 'on Pro ($99/mo)', monthly: '$396/mo', yearly: '≈ $4,752/yr' },
+              { count: '25 agencies', plan: 'on Pro ($99/mo)', monthly: '$990/mo', yearly: '≈ $11,880/yr' },
+              { count: '25 agencies', plan: 'on Scale ($499/mo)', monthly: '$4,990/mo', yearly: '≈ $59,880/yr' },
+            ].map((ex, i) => (
+              <div key={i} className="rounded-lg p-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <p className="text-xs" style={{ color: theme.textMuted }}>{ex.count} {ex.plan}</p>
+                <p className="text-lg font-semibold mt-1" style={{ color: theme.primary }}>{ex.monthly}</p>
+                <p className="text-[11px]" style={{ color: theme.textMuted }}>{ex.yearly} recurring</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] mt-3" style={{ color: theme.textMuted }}>
+            Illustrative, based on 40% of each agency's monthly plan. Your actual earnings depend on how many agencies you refer and which plans they choose. Commissions accrue automatically as your referred agencies are billed each month.
+          </p>
+        </div>
+
+        {/* Payout terms */}
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs" style={{ color: theme.textMuted }}>
+          <span className="inline-flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" style={{ color: theme.primary }} />40% recurring commission</span>
+          <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" style={{ color: theme.primary }} />Paid every month they stay</span>
+          <span className="inline-flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5" style={{ color: theme.primary }} />Withdraw to your Stripe account ($10 minimum)</span>
+          <span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" style={{ color: theme.primary }} />No limit on referrals</span>
+        </div>
+
+        {/* Ways to grow your referrals */}
+        <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
+          <p className="font-medium text-sm mb-1" style={{ color: theme.text }}>Ways to grow your referrals</p>
+          <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+            The link earns for you, but content is what drives people to it. A few approaches that compound over time:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: Youtube, title: 'Make YouTube videos', desc: 'Post tutorials and reviews, "how I run an AI receptionist agency", "AI answers my business calls", with your link in the description. Videos keep sending signups for years after you upload them.' },
+              { icon: Share2, title: 'Post short-form content', desc: 'Reels, TikToks, Shorts, and LinkedIn posts of the AI handling a real call. Show, don\'t tell, then drop your link. One clip that hits can drive dozens of signups.' },
+              { icon: Phone, title: 'Show the live demo', desc: 'Point prospects at demo mode so they can call and hear the AI receptionist answer before they commit. It sells itself, and they sign up through your link right after.' },
+            ].map((s, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary + '20', color: theme.primary }}>
+                  <s.icon className="h-4 w-4" />
+                </div>
+                <p className="font-medium text-xs" style={{ color: theme.text }}>{s.title}</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] mt-4" style={{ color: theme.textMuted }}>
+            Tip: put your referral link everywhere it makes sense, video descriptions, link-in-bio, email signatures, community posts. Every place it lives is another door into your recurring commission.
+          </p>
         </div>
       </div>
     </div>
