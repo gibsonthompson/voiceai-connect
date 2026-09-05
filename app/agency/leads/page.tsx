@@ -4,7 +4,7 @@ import { useState, useEffect, type CSSProperties, type ComponentType, type React
 import Link from 'next/link';
 import { 
   Users, Search, Plus, ChevronRight, ChevronDown, Loader2, ArrowUpRight,
-  Target, Phone, Mail, MessageSquare, Calendar, DollarSign, TrendingUp,
+  Target, Phone, Mail, MessageSquare, Calendar, TrendingUp,
   ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock, Clock,
   CheckCircle2, FileSpreadsheet
 } from 'lucide-react';
@@ -45,7 +45,6 @@ interface LeadStats {
   proposal: number;
   won: number;
   lost: number;
-  totalEstimatedValue: number;
   followUpsToday: number;
   overdueFollowUps: number;
 }
@@ -298,7 +297,6 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
             {lead.phone && (
               <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'sms'); }} className="p-1 rounded-md transition-colors hover:bg-[var(--lp-hover)]" title="Send SMS" aria-label="Send SMS"><MessageSquare className="h-4 w-4 text-[var(--lp-muted)]" /></button>
             )}
-            <span className="text-[var(--lp-muted)] ml-0.5">{lead.estimated_value ? formatCurrency(lead.estimated_value) : '\u2013'}</span>
           </div>
         </div>
       </div>
@@ -315,7 +313,7 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
           </div>
         </div>
 
-        <div className="col-span-2 min-w-0">
+        <div className="col-span-3 min-w-0">
           <p className="text-sm truncate text-[var(--lp-text)]">{lead.contact_name || '\u2013'}</p>
           <p className="text-xs truncate text-[var(--lp-muted)]">{lead.email || '\u2013'}</p>
         </div>
@@ -324,12 +322,7 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
           <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
         </div>
 
-        <div className="col-span-2">
-          <p className="text-sm text-[var(--lp-text)]">{lead.estimated_value ? formatCurrency(lead.estimated_value) : '\u2013'}</p>
-          {lead.estimated_value ? <p className="text-xs text-[var(--lp-muted)]">/month</p> : null}
-        </div>
-
-        <div className="col-span-2">
+        <div className="col-span-3">
           {lead.next_follow_up ? (
             <div className="flex items-center gap-2">
               {followUpOverdue && <AlertCircle className="h-4 w-4 flex-shrink-0 text-[var(--lp-error)]" />}
@@ -468,9 +461,6 @@ export default function AgencyLeadsPage() {
           proposal: allLeads.filter((l: Lead) => l.status === 'proposal').length,
           won: allLeads.filter((l: Lead) => l.status === 'won').length,
           lost: allLeads.filter((l: Lead) => l.status === 'lost').length,
-          totalEstimatedValue: allLeads
-            .filter((l: Lead) => l.status !== 'lost')
-            .reduce((sum: number, l: Lead) => sum + (l.estimated_value || 0), 0),
           followUpsToday: allLeads.filter((l: Lead) => {
             if (!l.next_follow_up) return false;
             return isToday(l.next_follow_up);
@@ -662,10 +652,9 @@ export default function AgencyLeadsPage() {
 
       {/* Stats */}
       {stats && stats.total > 0 && (
-        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-5 mb-4 sm:mb-8">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-8">
           <StatCard label="Active" value={stats.total - stats.won - stats.lost} icon={Target} tone="info" active={filterMode === 'active'} onClick={() => handleStatClick('active')} />
           <StatCard label="Qualified" value={stats.qualified + stats.proposal} icon={TrendingUp} tone="primary" active={statusFilter === 'qualified'} onClick={() => { setFilterMode('all'); setStatusFilter(statusFilter === 'qualified' ? null : 'qualified'); }} />
-          <StatCard label="Pipeline" value={formatCurrency(stats.totalEstimatedValue)} icon={DollarSign} tone="primary" />
           {followUpSummary && followUpSummary.total > 0 && (
             <StatCard label="Sequence Due" value={followUpSummary.total} icon={Mail} tone={followUpSummary.overdue > 0 ? 'error' : 'primary'} active={filterMode === 'sequence-due'} onClick={() => handleStatClick('sequence-due')} />
           )}
@@ -782,10 +771,9 @@ export default function AgencyLeadsPage() {
             {/* Desktop column header */}
             <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 text-xs font-medium uppercase tracking-wide text-[var(--lp-muted)] border-b border-[var(--lp-border)]">
               <div className="col-span-3">Business</div>
-              <div className="col-span-2">Contact</div>
+              <div className="col-span-3">Contact</div>
               <div className="col-span-2">Status</div>
-              <div className="col-span-2">Value</div>
-              <div className="col-span-2">Follow-up</div>
+              <div className="col-span-3">Follow-up</div>
               <div className="col-span-1"></div>
             </div>
 

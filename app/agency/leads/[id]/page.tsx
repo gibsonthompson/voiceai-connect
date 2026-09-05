@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Loader2, Phone, Mail, Globe, Building2, User,
-  Calendar, DollarSign, Tag, FileText, Save, Trash2, Clock,
+  Calendar, Tag, FileText, Save, Trash2, Clock,
   CheckCircle, XCircle, MessageSquare, PhoneCall, Send,
   Hash, TrendingUp
 } from 'lucide-react';
@@ -881,17 +881,9 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <DollarSign className="h-4 w-4" style={{ color: theme.textMuted }} />
-              Deal Info
+              Details
             </h3>
             <div className="space-y-3 sm:space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Estimated Value ($/mo)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
-                  <input type="number" value={formData.estimated_value} onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))} readOnly={demoMode} placeholder="99" className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
-                </div>
-              </div>
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
                   Scheduled Follow-up

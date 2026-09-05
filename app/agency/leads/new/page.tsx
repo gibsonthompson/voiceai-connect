@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Loader2, Phone, Mail, Globe, Building2, User,
-  Calendar, DollarSign, Tag, FileText, Save
+  Calendar, Tag, FileText, Save
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
@@ -351,25 +351,9 @@ export default function NewLeadPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                <DollarSign className="h-4 w-4" style={{ color: theme.textMuted }} />
-                Deal Info
+                Details
               </h3>
               <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Estimated Value ($/mo)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
-                    <input
-                      type="number"
-                      value={formData.estimated_value}
-                      onChange={(e) => setFormData(prev => ({ ...prev, estimated_value: e.target.value }))}
-                      placeholder="99"
-                      className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                      style={inputStyle}
-                    />
-                  </div>
-                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Expected monthly revenue</p>
-                </div>
                 <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Next Follow-up</label>
                   <div className="relative">
