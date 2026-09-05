@@ -12,6 +12,7 @@ import {
 import { useAgency } from '../../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../../hooks/useTheme';
+import { CustomSelect } from '@/components/ui/custom-select';
 import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
 import ComposerModal from '../../../../components/ComposerModal';
@@ -457,6 +458,8 @@ export default function LeadDetailPage() {
     color: theme.text,
   };
 
+  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Back Button & Header */}
@@ -557,120 +560,53 @@ export default function LeadDetailPage() {
         className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5"
         style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-4 w-4" style={{ color: theme.primary }} />
-          <h3 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Outreach Progress</h3>
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary + '18' }}>
+              <TrendingUp className="h-4 w-4" style={{ color: theme.primary }} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm sm:text-base leading-tight" style={{ color: theme.text }}>Outreach Progress</h3>
+              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                {(outreach?.total_count || 0)} touch{(outreach?.total_count || 0) === 1 ? '' : 'es'}
+                {outreach?.last_outreach ? ` · last ${timeAgo(outreach.last_outreach.sent_at)} via ${outreach.last_outreach.type}` : ' · no contact yet'}
+              </p>
+            </div>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-4">
-          {/* Email Count */}
-          <div 
-            className="rounded-lg p-3"
-            style={{ backgroundColor: 'rgba(168,85,247,0.1)' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Mail className="h-4 w-4" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }} />
-              <span className="text-xs" style={{ color: theme.textMuted }}>Emails</span>
-            </div>
-            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }}>
-              {outreach?.email_count || 0}
-            </p>
-            {outreach?.last_email && (
-              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
-                Last: {timeAgo(outreach.last_email.sent_at)}
-              </p>
-            )}
-          </div>
-          
-          {/* SMS Count */}
-          <div 
-            className="rounded-lg p-3"
-            style={{ backgroundColor: 'rgba(6,182,212,0.1)' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="h-4 w-4" style={{ color: theme.isDark ? '#22d3ee' : '#0891b2' }} />
-              <span className="text-xs" style={{ color: theme.textMuted }}>SMS</span>
-            </div>
-            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#22d3ee' : '#0891b2' }}>
-              {outreach?.sms_count || 0}
-            </p>
-            {outreach?.last_sms && (
-              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
-                Last: {timeAgo(outreach.last_sms.sent_at)}
-              </p>
-            )}
-          </div>
 
-          {/* Call Count */}
-          <div 
-            className="rounded-lg p-3"
-            style={{ backgroundColor: 'rgba(34,197,94,0.1)' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <PhoneCall className="h-4 w-4" style={{ color: theme.isDark ? '#4ade80' : '#16a34a' }} />
-              <span className="text-xs" style={{ color: theme.textMuted }}>Calls</span>
-            </div>
-            <p className="text-xl font-semibold" style={{ color: theme.isDark ? '#4ade80' : '#16a34a' }}>
-              {outreach?.call_count || 0}
-            </p>
-            {outreach?.last_call && (
-              <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
-                Last: {timeAgo(outreach.last_call.sent_at)}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
+          {[
+            { label: 'Emails', count: outreach?.email_count || 0, last: outreach?.last_email?.sent_at || null, Icon: Mail, color: theme.isDark ? '#a78bfa' : '#7c3aed', bg: 'rgba(168,85,247,0.10)', border: 'rgba(168,85,247,0.22)' },
+            { label: 'SMS', count: outreach?.sms_count || 0, last: outreach?.last_sms?.sent_at || null, Icon: MessageSquare, color: theme.isDark ? '#22d3ee' : '#0891b2', bg: 'rgba(6,182,212,0.10)', border: 'rgba(6,182,212,0.22)' },
+            { label: 'Calls', count: outreach?.call_count || 0, last: outreach?.last_call?.sent_at || null, Icon: PhoneCall, color: theme.isDark ? '#4ade80' : '#16a34a', bg: 'rgba(34,197,94,0.10)', border: 'rgba(34,197,94,0.22)' },
+            { label: 'Total', count: outreach?.total_count || 0, last: null, Icon: Hash, color: theme.text, bg: theme.hover, border: theme.border },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl p-3 sm:p-3.5 transition-transform hover:-translate-y-0.5" style={{ backgroundColor: s.bg, border: `1px solid ${s.border}` }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.75)' }}>
+                  <s.Icon className="h-3.5 w-3.5" style={{ color: s.color }} />
+                </div>
+                <span className="text-2xl font-bold leading-none tabular-nums" style={{ color: s.color }}>{s.count}</span>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: theme.text }}>{s.label}</p>
+              <p className="text-[10px] sm:text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                {s.last ? `Last ${timeAgo(s.last)}` : (s.label === 'Total' ? 'all channels' : 'None yet')}
               </p>
-            )}
-          </div>
-          
-          {/* Total Touches */}
-          <div 
-            className="rounded-lg p-3"
-            style={{ backgroundColor: theme.hover }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Hash className="h-4 w-4" style={{ color: theme.textMuted }} />
-              <span className="text-xs" style={{ color: theme.textMuted }}>Total</span>
             </div>
-            <p className="text-xl font-semibold" style={{ color: theme.text }}>
-              {outreach?.total_count || 0}
-            </p>
-            <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
-              touches
-            </p>
-          </div>
-          
-          {/* Last Contact */}
-          <div 
-            className="rounded-lg p-3"
-            style={{ backgroundColor: theme.hover }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
-              <span className="text-xs" style={{ color: theme.textMuted }}>Last Contact</span>
-            </div>
-            <p className="text-sm font-medium truncate" style={{ color: theme.text }}>
-              {outreach?.last_outreach 
-                ? timeAgo(outreach.last_outreach.sent_at)
-                : 'Never'}
-            </p>
-            {outreach?.last_outreach && (
-              <p className="text-[10px] sm:text-xs mt-1 capitalize" style={{ color: theme.textMuted }}>
-                via {outreach.last_outreach.type}
-              </p>
-            )}
-          </div>
+          ))}
         </div>
 
         {/* Quick Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => openComposer('email')}
-            disabled={!canSendEmail}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
             style={{
-              backgroundColor: canSendEmail ? 'rgba(168,85,247,0.1)' : theme.hover,
-              border: `1px solid ${canSendEmail ? 'rgba(168,85,247,0.3)' : theme.border}`,
-              color: canSendEmail ? (theme.isDark ? '#a78bfa' : '#7c3aed') : theme.textMuted,
+              backgroundColor: 'rgba(168,85,247,0.1)',
+              border: '1px solid rgba(168,85,247,0.3)',
+              color: theme.isDark ? '#a78bfa' : '#7c3aed',
             }}
-            title={!canSendEmail ? 'Add email address to send' : undefined}
           >
             <Mail className="h-4 w-4" />
             <span>{getOutreachLabel('email', outreach?.next_email_number || 1)}</span>
@@ -679,14 +615,12 @@ export default function LeadDetailPage() {
           
           <button
             onClick={() => openComposer('sms')}
-            disabled={!canSendSms}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors"
             style={{
-              backgroundColor: canSendSms ? 'rgba(6,182,212,0.1)' : theme.hover,
-              border: `1px solid ${canSendSms ? 'rgba(6,182,212,0.3)' : theme.border}`,
-              color: canSendSms ? (theme.isDark ? '#22d3ee' : '#0891b2') : theme.textMuted,
+              backgroundColor: 'rgba(6,182,212,0.1)',
+              border: '1px solid rgba(6,182,212,0.3)',
+              color: theme.isDark ? '#22d3ee' : '#0891b2',
             }}
-            title={!canSendSms ? 'Add phone number to send' : undefined}
           >
             <MessageSquare className="h-4 w-4" />
             <span>{getOutreachLabel('sms', outreach?.next_sms_number || 1)}</span>
@@ -789,21 +723,6 @@ export default function LeadDetailPage() {
           </div>
         )}
 
-        {/* Missing contact info warnings */}
-        {!demoMode && (!canSendEmail || !canSendSms) && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {!canSendEmail && (
-              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: theme.warningBg, color: theme.warning }}>
-                Add email to enable email outreach
-              </span>
-            )}
-            {!canSendSms && (
-              <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: theme.warningBg, color: theme.warning }}>
-                Add phone to enable SMS outreach
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Quick Status Buttons */}
@@ -934,20 +853,24 @@ export default function LeadDetailPage() {
             <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
-                <select value={formData.status} onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))} disabled={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle}>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={formData.status}
+                  onChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
+                  options={STATUS_OPTIONS}
+                  disabled={demoMode}
+                  ui={dropdownUi}
+                />
               </div>
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
-                <select value={formData.source} onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))} disabled={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle}>
-                  <option value="">Select source</option>
-                  {SOURCE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={formData.source}
+                  onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
+                  options={[{ value: '', label: 'Select source' }, ...SOURCE_OPTIONS]}
+                  placeholder="Select source"
+                  disabled={demoMode}
+                  ui={dropdownUi}
+                />
               </div>
             </div>
           </div>

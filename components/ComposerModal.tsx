@@ -121,6 +121,9 @@ export default function ComposerModal({
   const [loading, setLoading] = useState(false);
   const [composing, setComposing] = useState(false);
   const [copied, setCopied] = useState<'none' | 'subject' | 'body' | 'all' | 'recipient' | 'note'>('none');
+  // Editable recipient for leads with no phone/email on file (the send gates
+  // were removed, so the composer must let you enter a destination here).
+  const [recipientOverride, setRecipientOverride] = useState('');
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [loggedSuccess, setLoggedSuccess] = useState(false);
   
@@ -394,8 +397,8 @@ export default function ComposerModal({
           leadId: lead.id,
           templateId: selectedTemplate || null,
           type,
-          toAddress: type === 'email' ? lead.email : (type === 'linkedin' ? lead.linkedin_url : lead.phone),
-          toPhone: type === 'sms' ? lead.phone : null,
+          toAddress: type === 'email' ? (lead.email || recipientOverride.trim()) : (type === 'linkedin' ? lead.linkedin_url : (lead.phone || recipientOverride.trim())),
+          toPhone: type === 'sms' ? (lead.phone || recipientOverride.trim()) : null,
           subject: type === 'email' ? subject : null,
           body: isConnectStage ? connectionNote : body,
           userId: user.id,
@@ -562,43 +565,65 @@ export default function ComposerModal({
           </div>
         )}
 
-        {/* Recipient email/phone - for email and sms only */}
-        {type !== 'linkedin' && ((type === 'email' && lead.email) || (type === 'sms' && lead.phone)) && (
+        {/* Recipient email/phone - for email and sms. Shows the value on file, or
+            an editable input when the lead has none (so you can still send). */}
+        {type !== 'linkedin' && (() => {
+          const leadValue = (type === 'email' ? lead.email : lead.phone) || '';
+          const hasValue = Boolean(leadValue);
+          return (
           <div className="px-4 sm:px-6 pb-2">
             <div 
               className="flex items-center gap-2 rounded-lg px-3 py-2.5"
-              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: `1px solid ${theme.border}` }}
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: `1px solid ${hasValue ? theme.border : (isDark ? 'rgba(251,191,36,0.35)' : 'rgba(217,119,6,0.35)')}` }}
             >
               <span className="text-xs font-medium shrink-0 uppercase tracking-wide" style={{ color: theme.textMuted }}>
                 {type === 'email' ? 'To' : 'Phone'}
               </span>
-              <input
-                type="text"
-                readOnly
-                value={type === 'email' ? lead.email : lead.phone}
-                className="flex-1 bg-transparent text-sm font-medium focus:outline-none cursor-text select-all"
-                style={{ color: theme.text }}
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
-              <button
-                onClick={() => {
-                  const val = type === 'email' ? lead.email : lead.phone;
-                  navigator.clipboard.writeText(val);
-                  setCopied('recipient');
-                  setTimeout(() => setCopied(prev => prev === 'recipient' ? 'none' : prev), 2000);
-                }}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors shrink-0"
-                style={{
-                  backgroundColor: copied === 'recipient' ? 'rgba(16,185,129,0.1)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
-                  color: copied === 'recipient' ? '#10b981' : theme.textMuted,
-                  border: `1px solid ${copied === 'recipient' ? 'rgba(16,185,129,0.3)' : theme.border}`,
-                }}
-              >
-                {copied === 'recipient' ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
-              </button>
+              {hasValue ? (
+                <>
+                  <input
+                    type="text"
+                    readOnly
+                    value={leadValue}
+                    className="flex-1 bg-transparent text-sm font-medium focus:outline-none cursor-text select-all"
+                    style={{ color: theme.text }}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(leadValue);
+                      setCopied('recipient');
+                      setTimeout(() => setCopied(prev => prev === 'recipient' ? 'none' : prev), 2000);
+                    }}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors shrink-0"
+                    style={{
+                      backgroundColor: copied === 'recipient' ? 'rgba(16,185,129,0.1)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                      color: copied === 'recipient' ? '#10b981' : theme.textMuted,
+                      border: `1px solid ${copied === 'recipient' ? 'rgba(16,185,129,0.3)' : theme.border}`,
+                    }}
+                  >
+                    {copied === 'recipient' ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+                  </button>
+                </>
+              ) : (
+                <input
+                  type={type === 'email' ? 'email' : 'tel'}
+                  value={recipientOverride}
+                  onChange={(e) => setRecipientOverride(e.target.value)}
+                  placeholder={type === 'email' ? 'Enter an email to send to' : 'Enter a phone number to send to'}
+                  className="flex-1 bg-transparent text-sm font-medium focus:outline-none"
+                  style={{ color: theme.text }}
+                />
+              )}
             </div>
+            {!hasValue && (
+              <p className="text-[11px] mt-1.5 px-1" style={{ color: theme.textMuted }}>
+                No {type === 'email' ? 'email' : 'phone'} on file for this lead. Enter one to send, or add it to the lead to save it.
+              </p>
+            )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ════════════════════════════════════════════════════════════ */}
         {/* LINKEDIN STAGE 1: CONNECT                                  */}
@@ -837,9 +862,21 @@ export default function ComposerModal({
 
               {/* Template Selector */}
               <div className="relative">
-                <label className="block text-sm mb-1.5" style={{ color: theme.textMuted }}>
-                  Template
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm" style={{ color: theme.textMuted }}>
+                    Template
+                  </label>
+                  <a
+                    href="/agency/outreach"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-80"
+                    style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}
+                  >
+                    Manage templates
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
                 <button
                   onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}
                   disabled={loading}
