@@ -188,16 +188,22 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
   const baseBorder = 'rgba(255,255,255,0.06)';
   const baseSidebarBg = '#050505';
 
-  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg : baseBg;
-  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary : baseText;
-  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted : baseTextMuted;
-  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg : baseCard;
-  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border : baseBorder;
+  // Structural overrides are gated by mode brightness so a LIGHT override never
+  // bleeds into dark mode (and vice versa in buildLightTheme). Without this, an
+  // agency that set page_bg/card_bg/text overrides in one mode broke the other
+  // mode entirely, which is why light/dark appeared not to work app-wide. An
+  // override that fits the mode still applies; one that would fight it falls
+  // back to the base. primary and button_text are contrast-based, so they stay.
+  const pageBg = (isValidHex(overrides?.page_bg) && !isLightColor(overrides!.page_bg)) ? overrides!.page_bg : baseBg;
+  const textPrimary = (isValidHex(overrides?.text_primary) && isLightColor(overrides!.text_primary)) ? overrides!.text_primary : baseText;
+  const textMuted = (isValidHex(overrides?.text_muted) && isLightColor(overrides!.text_muted)) ? overrides!.text_muted : baseTextMuted;
+  const cardBg = (isValidHex(overrides?.card_bg) && !isLightColor(overrides!.card_bg)) ? overrides!.card_bg : baseCard;
+  const cardBorder = (isValidHex(overrides?.card_border) && !isLightColor(overrides!.card_border)) ? overrides!.card_border : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, true);
 
-  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : baseSidebarBg;
-  const hasNavBgOverride = isValidHex(overrides?.nav_bg);
-  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navBg = (isValidHex(overrides?.nav_bg) && !isLightColor(overrides!.nav_bg)) ? overrides!.nav_bg : baseSidebarBg;
+  const hasNavBgOverride = navBg !== baseSidebarBg;
+  const navText = (isValidHex(overrides?.nav_text) && isLightColor(overrides!.nav_text)) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
   const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : 'rgba(250,250,249,0.5)';
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(255,255,255,0.04)';
@@ -279,16 +285,19 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
   const baseBorder = '#e5e7eb';
   const baseSidebarBg = '#ffffff';
 
-  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg : baseBg;
-  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary : baseText;
-  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted : baseTextMuted;
-  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg : baseCard;
-  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border : baseBorder;
+  // Mode-gated: in light mode only LIGHT surface overrides and DARK text
+  // overrides apply; anything that would fight light mode falls back to the
+  // light base. Mirror of the dark builder above.
+  const pageBg = (isValidHex(overrides?.page_bg) && isLightColor(overrides!.page_bg)) ? overrides!.page_bg : baseBg;
+  const textPrimary = (isValidHex(overrides?.text_primary) && !isLightColor(overrides!.text_primary)) ? overrides!.text_primary : baseText;
+  const textMuted = (isValidHex(overrides?.text_muted) && !isLightColor(overrides!.text_muted)) ? overrides!.text_muted : baseTextMuted;
+  const cardBg = (isValidHex(overrides?.card_bg) && isLightColor(overrides!.card_bg)) ? overrides!.card_bg : baseCard;
+  const cardBorder = (isValidHex(overrides?.card_border) && isLightColor(overrides!.card_border)) ? overrides!.card_border : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, false);
 
-  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg : baseSidebarBg;
-  const hasNavBgOverride = isValidHex(overrides?.nav_bg);
-  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navBg = (isValidHex(overrides?.nav_bg) && isLightColor(overrides!.nav_bg)) ? overrides!.nav_bg : baseSidebarBg;
+  const hasNavBgOverride = navBg !== baseSidebarBg;
+  const navText = (isValidHex(overrides?.nav_text) && !isLightColor(overrides!.nav_text)) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
   const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : '#6b7280';
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(0,0,0,0.02)';
