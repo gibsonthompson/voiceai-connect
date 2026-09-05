@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { CustomSelect } from '@/components/ui/custom-select';
 import {
   X, Upload, FileSpreadsheet, Loader2, CheckCircle,
   AlertCircle, ArrowRight, ArrowLeft, ChevronDown, Info
@@ -532,6 +533,16 @@ export default function CSVImportModal({
 }: CSVImportModalProps) {
   // Use provided theme or fall back to admin dark theme
   const theme = themeProp || ADMIN_DARK_THEME;
+  const dropdownUi = {
+    inputStyle: { backgroundColor: theme.input || theme.hover, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text },
+    text: theme.text,
+    muted: theme.textMuted,
+    panelBg: theme.isDark ? '#232321' : '#ffffff',
+    panelBorder: theme.inputBorder || theme.border,
+    hover: theme.hover || (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+    accent: theme.primary || '#10b981',
+    isDark: !!theme.isDark,
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>('upload');
@@ -971,16 +982,12 @@ export default function CSVImportModal({
                 <label className="block text-xs mb-1.5" style={{ color: theme.textMuted }}>
                   Lead Source (applied to all imported leads)
                 </label>
-                <select
+                <CustomSelect
                   value={defaultSource}
-                  onChange={(e) => setDefaultSource(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                  style={{ backgroundColor: theme.input || theme.hover, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}
-                >
-                  {SOURCE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setDefaultSource(v)}
+                  options={SOURCE_OPTIONS}
+                  ui={dropdownUi}
+                />
               </div>
 
               {/* Column mapping */}
@@ -1000,17 +1007,15 @@ export default function CSVImportModal({
                         </p>
                       </div>
                       <ArrowLeft className="h-4 w-4 shrink-0" style={{ color: theme.textMuted }} />
-                      <select
-                        value={columnMapping[field.key] || ''}
-                        onChange={(e) => handleMappingChange(field.key, e.target.value)}
-                        className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                        style={{ backgroundColor: theme.input || theme.hover, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}
-                      >
-                        <option value="">— Skip —</option>
-                        {filteredHeaders.map(header => (
-                          <option key={header} value={header}>{header}</option>
-                        ))}
-                      </select>
+                      <div className="flex-1 min-w-0">
+                        <CustomSelect
+                          value={columnMapping[field.key] || ''}
+                          onChange={(v) => handleMappingChange(field.key, v)}
+                          options={[{ value: '', label: '— Skip —' }, ...filteredHeaders.map(header => ({ value: header, label: header }))]}
+                          placeholder="— Skip —"
+                          ui={dropdownUi}
+                        />
+                      </div>
                     </div>
                   );
                 })}
