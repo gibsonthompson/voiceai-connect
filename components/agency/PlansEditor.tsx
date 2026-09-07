@@ -8,7 +8,7 @@
 // settings.tsx converts to the API shape (cents, key handling) on save.
 // ============================================================================
 
-import { Plus, Trash2, ChevronUp, ChevronDown, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown, Eye, EyeOff, GripVertical, Infinity } from 'lucide-react';
 
 // UI shape of a plan (dollars as strings for editing; converted to cents on save)
 export interface UiPlan {
@@ -144,15 +144,26 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
             <div>
               <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Calls/mo</label>
               {p.unlimited ? (
-                <div className="w-full rounded-xl px-3 py-2 text-sm font-medium flex items-center justify-center"
-                  style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}>Unlimited</div>
+                <button type="button" onClick={() => update(p._uid, { unlimited: false })}
+                  title="Click to set a specific number instead"
+                  className="w-full rounded-xl px-3 py-2 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  style={{ backgroundColor: `${theme.primary}18`, color: theme.primary, border: `1px solid ${theme.primary}40` }}>
+                  <Infinity className="h-4 w-4" /> Unlimited
+                </button>
               ) : (
-                <input type="number" min="1" value={p.call_limit} onChange={(e) => update(p._uid, { call_limit: e.target.value })}
-                  className="w-full rounded-xl px-3 py-2 text-sm" style={inputStyle} />
+                <div className="flex items-center gap-1.5">
+                  <input type="number" min="1" value={p.call_limit} onChange={(e) => update(p._uid, { call_limit: e.target.value })}
+                    className="flex-1 min-w-0 rounded-xl px-3 py-2 text-sm" style={inputStyle} />
+                  <button type="button" onClick={() => update(p._uid, { unlimited: true })} title="Set to unlimited"
+                    className="rounded-xl px-2.5 py-2 flex items-center justify-center transition-colors flex-shrink-0"
+                    style={{ backgroundColor: `${theme.primary}12`, color: theme.primary, border: `1px solid ${theme.primary}30` }}>
+                    <Infinity className="h-4 w-4" />
+                  </button>
+                </div>
               )}
               <button type="button" onClick={() => update(p._uid, { unlimited: !p.unlimited })}
-                className="mt-1.5 text-[10px] sm:text-xs" style={{ color: p.unlimited ? theme.primary : theme.textMuted }}>
-                {p.unlimited ? '✓ Unlimited' : 'Set unlimited'}
+                className="mt-1.5 text-[11px] sm:text-xs font-medium transition-colors" style={{ color: p.unlimited ? theme.primary : theme.textMuted }}>
+                {p.unlimited ? 'Use a specific limit' : 'Or make it unlimited'}
               </button>
             </div>
             <div>
