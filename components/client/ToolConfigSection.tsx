@@ -76,7 +76,9 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setConfig({ ...DEFAULT_CONFIG, ...data.tool_config });
+          const merged = { ...DEFAULT_CONFIG, ...data.tool_config };
+          setConfig(merged);
+          setSmsSnapshot(smsKey(merged));
         }
       }
     } catch (e) {
@@ -131,42 +133,51 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
 
   const [smsAdvancedOpen, setSmsAdvancedOpen] = useState(false);
 
-  const persistSms = async (
-    presets: Record<string, { enabled: boolean; value: string }>,
-    snippets: { label: string; value: string }[],
-    instructions: string,
-  ) => {
+  const togglePreset = (key: string) => {
+    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: false, value: '' };
+    const next = { ...(config.smsPresets || {}), [key]: { ...cur, enabled: !cur.enabled } };
+    setConfig({ ...config, smsPresets: next });
+  };
+  const setPresetValue = (key: string, value: string) => {
+    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: true, value: '' };
+    setConfig({ ...config, smsPresets: { ...(config.smsPresets || {}), [key]: { ...cur, value } } });
+  };
+
+  // Explicit save for the SMS details (presets / custom texts / instructions),
+  // so it is unambiguous whether they saved. The master toggle still auto-saves;
+  // these details now save on a button with a persistent confirmation.
+  const smsKey = (c: ToolConfig) => JSON.stringify({
+    p: c.smsPresets || {},
+    s: (c.smsSnippets || []).filter((x) => (x.label || '').trim() || (x.value || '').trim()),
+    i: c.smsInstructions || '',
+  });
+  const [smsSnapshot, setSmsSnapshot] = useState('');
+  const [smsJustSaved, setSmsJustSaved] = useState(false);
+  const smsDirty = smsKey(config) !== smsSnapshot;
+
+  const saveSms = async () => {
     setSaving(true);
+    setSmsJustSaved(false);
     try {
       const token = localStorage.getItem('auth_token');
-      await fetch(`${backendUrl}/api/client/${clientId}/tool-config`, {
+      const cleanedSnippets = (config.smsSnippets || []).filter((x) => (x.label || '').trim() || (x.value || '').trim());
+      const res = await fetch(`${backendUrl}/api/client/${clientId}/tool-config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          smsPresets: presets || {},
-          smsInstructions: instructions || '',
-          smsSnippets: (snippets || []).filter(s => (s.label || '').trim() || (s.value || '').trim()),
-        }),
+        body: JSON.stringify({ smsPresets: config.smsPresets || {}, smsInstructions: config.smsInstructions || '', smsSnippets: cleanedSnippets }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (res.ok) {
+        const nc = { ...config, smsSnippets: cleanedSnippets };
+        setConfig(nc);
+        setSmsSnapshot(smsKey(nc));
+        setSmsJustSaved(true);
+        setTimeout(() => setSmsJustSaved(false), 5000);
+      }
     } catch (e) {
       console.error('Failed to save SMS config:', e);
     } finally {
       setSaving(false);
     }
-  };
-
-  const persistAllSms = () => persistSms(config.smsPresets || {}, config.smsSnippets, config.smsInstructions);
-  const togglePreset = (key: string) => {
-    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: false, value: '' };
-    const next = { ...(config.smsPresets || {}), [key]: { ...cur, enabled: !cur.enabled } };
-    setConfig({ ...config, smsPresets: next });
-    persistSms(next, config.smsSnippets, config.smsInstructions);
-  };
-  const setPresetValue = (key: string, value: string) => {
-    const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: true, value: '' };
-    setConfig({ ...config, smsPresets: { ...(config.smsPresets || {}), [key]: { ...cur, value } } });
   };
 
   if (loading) {
@@ -378,7 +389,7 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
                     </div>
                     {p.enabled && (
                       <div className="px-2.5 pb-2">
-                        <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} onBlur={persistAllSms} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                        <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                     )}
                   </div>
@@ -394,17 +405,34 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
                   <p className="text-[9px] mb-1.5" style={{ color: theme.textMuted4 }}>For anything not above. A label and the exact text or link, sent word-for-word.</p>
                   {(config.smsSnippets || []).map((snip, i) => (
                     <div key={i} className="flex items-center gap-1.5 mb-1.5">
-                      <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={persistAllSms} placeholder="Label" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} onBlur={persistAllSms} placeholder="Exact text or link" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); persistSms(config.smsPresets || {}, s, config.smsInstructions); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                      <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Label" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Exact text or link" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
                   <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a custom text</button>
 
                   <label className="block text-[10px] font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
-                  <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} onBlur={persistAllSms} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
+                  <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
                 </div>
               )}
+
+              <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                {smsDirty ? (
+                  <button type="button" onClick={saveSms} disabled={saving}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition disabled:opacity-60"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
+                    {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : 'Save texting settings'}
+                  </button>
+                ) : smsJustSaved ? (
+                  <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
+                    style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
+                    <Check className="h-3.5 w-3.5" /> Texting settings saved
+                  </div>
+                ) : (
+                  <p className="text-center text-[10px]" style={{ color: theme.textMuted4 }}>All texting settings saved</p>
+                )}
+              </div>
             </div>
           </div>
         )}
