@@ -161,10 +161,6 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
                   </button>
                 </div>
               )}
-              <button type="button" onClick={() => update(p._uid, { unlimited: !p.unlimited })}
-                className="mt-1.5 text-[11px] sm:text-xs font-medium transition-colors" style={{ color: p.unlimited ? theme.primary : theme.textMuted }}>
-                {p.unlimited ? 'Use a specific limit' : 'Or make it unlimited'}
-              </button>
             </div>
             <div>
               <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>Incl. min/mo</label>
