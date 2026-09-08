@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2
+  Brain, Zap, X, BookOpen, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban
 } from 'lucide-react';
 import { useAgency } from '../../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -256,6 +256,42 @@ export default function AgencyClientDetailPage() {
       setChangingPlan(false);
     }
   };
+  const [canceling, setCanceling] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+  const [cancelScheduled, setCancelScheduled] = useState(false);
+  const postCancel = async (body: any) => {
+    if (!clientId || !client) return;
+    setCanceling(true); setCancelMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: clientId, ...body }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
+      if (data.resumed) { setCancelScheduled(false); setCancelMsg('Cancellation undone — subscription continues.'); }
+      else if (data.scheduled) { setCancelScheduled(true); setCancelMsg(data.cancels_at ? `Set to cancel on ${new Date(data.cancels_at).toLocaleDateString()}.` : 'Set to cancel at period end.'); }
+      else if (data.canceled) { setCancelScheduled(false); setCancelMsg('Subscription canceled.'); }
+      fetchClientData();
+    } catch (err: any) {
+      setCancelMsg(err.message || 'Failed to cancel');
+    } finally {
+      setCanceling(false);
+    }
+  };
+  const handleCancel = () => {
+    if (!client) return;
+    if (!confirm(`Cancel ${client.business_name}'s subscription at the end of their billing period? They keep service until then.`)) return;
+    postCancel({});
+  };
+  const handleCancelNow = () => {
+    if (!client) return;
+    if (!confirm(`Cancel ${client.business_name} IMMEDIATELY? This ends their service and releases their number right now, and cannot be undone.`)) return;
+    postCancel({ immediate: true });
+  };
+  const handleResume = () => postCancel({ resume: true });
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
@@ -643,6 +679,34 @@ export default function AgencyClientDetailPage() {
               {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
             </button>
             {planMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Cancel subscription */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Ban className="h-4 w-4" style={{ color: '#ef4444' }} />
+            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Cancel subscription</h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Cancels at the end of the current billing period — the client keeps service until then. Use &quot;Cancel now&quot; only to end service and release their number immediately.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {cancelScheduled ? (
+              <button onClick={handleResume} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Resume subscription
+              </button>
+            ) : (
+              <>
+                <button onClick={handleCancel} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
+                  {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Cancel at period end
+                </button>
+                <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 hover:underline" style={{ color: theme.textMuted }}>
+                  Cancel now
+                </button>
+              </>
+            )}
+            {cancelMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{cancelMsg}</span>}
           </div>
         </div>
       </div>

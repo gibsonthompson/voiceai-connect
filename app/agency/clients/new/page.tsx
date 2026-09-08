@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign } from 'lucide-react';
@@ -252,15 +252,35 @@ export default function AddClientPage() {
     return phone.replace(/\D/g, '').length;
   };
 
-  const getPlanPrice = (planType: string) => {
-    if (!agency) return 0;
-    switch (planType) {
-      case 'starter': return agency.price_starter || 4900;
-      case 'pro': return agency.price_pro || 9900;
-      case 'growth': return agency.price_growth || 14900;
-      default: return 0;
+  // Live plans: the agency's ACTUAL plan list (visible + priced), so a deleted or
+  // renamed plan never shows here. Falls back to the legacy starter/pro/growth
+  // columns only when the agency has no custom plan list.
+  const availablePlans = useMemo(() => {
+    const raw = (agency as any)?.plans;
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw
+        .filter((pl: any) => pl && pl.key && pl.visible !== false && String(pl.visible).toLowerCase() !== 'false')
+        .map((pl: any) => ({ value: pl.key, label: pl.name || pl.key, price_cents: pl.price_cents }));
     }
+    return [
+      { value: 'starter', label: (agency as any)?.plan_starter_name || 'Starter', price_cents: agency?.price_starter },
+      { value: 'pro', label: (agency as any)?.plan_pro_name || 'Pro', price_cents: agency?.price_pro },
+      { value: 'growth', label: (agency as any)?.plan_growth_name || 'Growth', price_cents: agency?.price_growth },
+    ].filter((pl) => pl.price_cents);
+  }, [agency]);
+
+  const getPlanPrice = (planType: string) => {
+    return availablePlans.find((pl) => pl.value === planType)?.price_cents || 0;
   };
+
+  // If the selected plan isn't one the agency still offers (e.g. default 'starter'
+  // was deleted/renamed), snap to the first available plan so we never create a
+  // client on a plan key that no longer exists.
+  useEffect(() => {
+    if (availablePlans.length && !availablePlans.some((pl) => pl.value === form.planType)) {
+      updateForm('planType', availablePlans[0].value);
+    }
+  }, [availablePlans]);
 
   const validate = (): boolean => {
     const errs: string[] = [];
@@ -600,7 +620,7 @@ export default function AddClientPage() {
                 <CustomSelect
                   value={form.planType}
                   onChange={(v) => updateForm('planType', v)}
-                  options={PLAN_TYPES.map(p => ({ value: p.value, label: `${p.label} - ${formatAgencyPrice(getPlanPrice(p.value))}/mo` }))}
+                  options={availablePlans.map(p => ({ value: p.value, label: `${p.label} - ${formatAgencyPrice(getPlanPrice(p.value))}/mo` }))}
                   disabled={submitting}
                   ui={ui}
                 />

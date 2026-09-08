@@ -138,6 +138,28 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     } catch { setMessage('Error opening billing portal'); }
   };
 
+  const [canceling, setCanceling] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState('');
+  const handleCancelSubscription = async () => {
+    if (!confirm('Cancel your subscription at the end of your current billing period? You keep full access until then.')) return;
+    setCanceling(true); setCancelMsg('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: client.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
+      setCancelMsg(data.cancels_at ? `Your subscription will cancel on ${new Date(data.cancels_at).toLocaleDateString()}. You keep access until then.` : 'Your subscription will cancel at the end of your billing period.');
+    } catch (err: any) {
+      setCancelMsg(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setCanceling(false);
+    }
+  };
+
   const getDaysRemaining = (): number | null => { if (!client.trial_ends_at) return null; const diffTime = new Date(client.trial_ends_at).getTime() - Date.now(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return diffDays > 0 ? diffDays : 0; };
 
   const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '');
@@ -316,7 +338,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             {(client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
             ) : client.subscription_status === 'active' ? (
-              <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Manage Subscription</button>
+              <>
+                <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Manage Subscription</button>
+                <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
+                {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
+              </>
             ) : (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
             )}
