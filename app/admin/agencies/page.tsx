@@ -16,7 +16,7 @@
 // the expanded Usage footer. colSpan on the detail row bumped 9 -> 10.
 // ============================================================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Component } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -33,6 +33,16 @@ import {
   getStatusBadge, getPlanBadge, getPlanDisplayName, getSmsTypeLabel, deriveCallOutcome,
 } from '@/lib/admin/status';
 import CallDrawer from '@/components/admin/CallDrawer';
+
+class PanelBoundary extends Component<{ children: any }, { err: string | null }> {
+  state = { err: null as string | null };
+  static getDerivedStateFromError(error: any) { return { err: String(error?.message || error) }; }
+  componentDidCatch(error: any, info: any) { console.error('Agency panel render error:', error, info); }
+  render() {
+    if (this.state.err) return (<div className="py-5 text-[13px]" style={{ color: '#ef4444' }}>Panel render error: {this.state.err}</div>);
+    return this.props.children;
+  }
+}
 
 interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
@@ -606,7 +616,7 @@ export default function AdminAgenciesPage() {
                   </td>
                 </tr>
 
-                {expandedRow === agency.id && (<tr key={`${agency.id}-detail`}><td colSpan={10} className="px-6 py-0"><div className="py-5 border-t border-[var(--a-line)]">
+                {expandedRow === agency.id && (<tr key={`${agency.id}-detail`}><td colSpan={10} className="px-6 py-0"><PanelBoundary><div className="py-5 border-t border-[var(--a-line)]">
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
                     {/* Contact */}
                     <div className="space-y-3"><h4 className={label}>Contact</h4><div className="space-y-2 text-[13px]"><div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-[var(--a-dim)]" /><span className="text-[var(--a-muted)] truncate">{agency.email}</span></div>{agency.phone && (<div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-[var(--a-dim)]" /><span className="text-[var(--a-muted)]">{formatPhone(agency.phone)}</span>{getPhoneLocation(agency.phone, agency.country) && (<span className="text-[var(--a-dim)] text-[11px]">&middot; {getPhoneLocation(agency.phone, agency.country)}</span>)}</div>)}{agency.country && (<div className="flex items-center gap-2"><Globe className="h-3.5 w-3.5 text-[var(--a-dim)]" /><span className="text-[var(--a-muted)]">{getCountryName(agency.country)} {agency.currency ? `(${String(agency.currency || '').toUpperCase()})` : ''}</span></div>)}{agency.timezone && (<div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-[var(--a-dim)]" /><span className="text-[var(--a-muted)]">{agency.timezone}</span></div>)}</div></div>
@@ -860,7 +870,7 @@ export default function AdminAgenciesPage() {
                       )}
 
                       {/* Referral Chain */}
-                      {(expandedData[agency.id].referral_chain.referred_agencies.length > 0 || expandedData[agency.id].referral_chain.referred_by) && (
+                      {expandedData[agency.id].referral_chain && (expandedData[agency.id].referral_chain.referred_agencies?.length > 0 || expandedData[agency.id].referral_chain.referred_by) && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <TrendingUp className="h-3.5 w-3.5" style={{ color: 'var(--a-amber)' }} />
@@ -889,7 +899,7 @@ export default function AdminAgenciesPage() {
                   )}
 
                   <div className="mt-4 pt-3 border-t border-[var(--a-line)] flex items-center gap-3"><span className="text-[10px] text-[var(--a-dim)]">ID:</span><button onClick={() => copyToClipboard(agency.id, `id-${agency.id}`)} className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--a-dim)] hover:text-[var(--a-muted)] transition-colors">{agency.id}{copiedId === `id-${agency.id}` ? (<Check className="h-3 w-3" style={{ color: 'var(--a-em-deep)' }} />) : (<Copy className="h-3 w-3" />)}</button></div>
-                </div></td></tr>)}
+                </div></PanelBoundary></td></tr>)}
                 </>
               ))}
             </tbody></table>
