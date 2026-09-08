@@ -631,7 +631,7 @@ export default function AgencyClientDetailPage() {
                 onChange={(v) => setTargetPlan(v)}
                 options={availablePlans.map((p) => ({ value: p.key, label: p.name }))}
                 disabled={changingPlan}
-                ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } }}
+                ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
               />
             </div>
             <button
