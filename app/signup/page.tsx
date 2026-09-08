@@ -690,9 +690,18 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
         } catch (recoverErr) {
           console.error('Setup recovery failed:', recoverErr);
         }
-        // Account exists and already has a password: point them to sign in.
-        setExistingAccount(true);
-        setError('An account with this email already exists.');
+        // Account exists and already has a password. Use the backend's actual
+        // reason (email / phone / workspace name) instead of always blaming the
+        // email, which sent people chasing a problem they didn't have. Only show
+        // the "Sign in instead" link when it's genuinely an email conflict.
+        const backendMsg = (data && (data.message || data.error)) || '';
+        const isEmailConflict =
+          data?.error === 'email_exists' ||
+          data?.error === 'account_exists' ||
+          data?.error === 'Account already exists' ||
+          /email/i.test(backendMsg);
+        setExistingAccount(isEmailConflict);
+        setError(backendMsg || 'An account with these details already exists.');
         setLoading(false);
         return;
       }
