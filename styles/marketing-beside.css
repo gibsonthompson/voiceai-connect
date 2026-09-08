@@ -255,7 +255,7 @@
 
 /* ==================== FEATURE EXPLORER ==================== */
 .beside .bsd-fx { display: grid; grid-template-columns: 1fr; gap: 1.6rem; }
-.beside .bsd-fx-pills { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.beside .bsd-fx-pills { display: flex; flex-wrap: wrap; gap: 0.55rem; justify-content: center; }
 .beside .bsd-fx-pill { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--bsd-font-display); font-weight: 500; font-size: 0.86rem; padding: 0.55rem 1rem; border-radius: var(--bsd-radius-full); border: 1px solid var(--bsd-border-strong); background: var(--bsd-surface); color: var(--bsd-ink-soft); cursor: pointer; transition: all 0.2s var(--bsd-ease); }
 .beside .bsd-fx-pill svg { width: 1rem; height: 1rem; }
 .beside .bsd-fx-pill:hover { border-color: var(--primary-color); color: var(--primary-color); }
@@ -392,7 +392,7 @@
 .beside .bsd-footer-bottom p { font-size: 0.78rem; color: var(--bsd-muted); }
 
 /* ==================== STICKY CTA ==================== */
-.beside .bsd-sticky { position: fixed; bottom: var(--bsd-fab-clearance); right: 16px; z-index: 999; opacity: 0; transform: translateY(16px); pointer-events: none; transition: opacity 0.3s var(--bsd-ease), transform 0.3s var(--bsd-ease); }
+.beside .bsd-sticky { position: fixed; bottom: 16px; left: 16px; right: auto; z-index: 999; opacity: 0; transform: translateY(16px); pointer-events: none; transition: opacity 0.3s var(--bsd-ease), transform 0.3s var(--bsd-ease); }
 .beside .bsd-sticky.show { opacity: 1; transform: none; pointer-events: auto; }
 .beside .bsd-sticky .bsd-btn { box-shadow: var(--bsd-shadow); }
 
@@ -442,7 +442,7 @@
   /* Floating accent cards only on wide screens, where there is room. */
   .beside .bsd-card-float { display: block; position: absolute; z-index: 3; width: 250px; }
   .beside .bsd-card-call { top: -30px; right: -10px; padding: 0.95rem 1.1rem; transform: rotate(2.5deg); }
-  .beside .bsd-card-sms { bottom: -42px; left: -22px; transform: rotate(-2.5deg); }
+  .beside .bsd-card-sms { bottom: -42px; left: -22px; transform: rotate(-2.5deg); padding: 0.95rem 1.15rem; }
   .beside .bsd-card-main { margin: 0; }
 }
 
