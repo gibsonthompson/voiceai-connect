@@ -200,6 +200,42 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (iso: str
   );
 }
 
+// Custom "how did you hear about us" dropdown. Same dark styling as the country
+// picker, and NOT a native <select> (which renders inconsistently across OSes).
+// Keeps the exact value/onChange/options contract so nothing downstream changes.
+function ReferralSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => { if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+  const selected = options.find((o) => o.value === value && o.value !== '');
+  const placeholder = options.find((o) => o.value === '')?.label || 'Select an option...';
+  return (
+    <div ref={rootRef} className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-left focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all cursor-pointer"
+        style={{ color: selected ? '#fafaf9' : 'rgba(250,250,249,0.4)' }}>
+        <span className="truncate pr-2">{selected ? selected.label : placeholder}</span>
+        <ChevronDown className={`h-5 w-5 shrink-0 text-[#fafaf9]/30 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-2 w-full rounded-xl border border-white/[0.1] bg-[#1a1a1a] shadow-2xl overflow-hidden max-h-72 overflow-y-auto">
+          {options.filter((o) => o.value !== '').map((o) => (
+            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
+              className="w-full text-left px-4 py-3 text-base text-[#fafaf9]/90 hover:bg-white/[0.06] transition-colors"
+              style={value === o.value ? { backgroundColor: 'rgba(16,185,129,0.15)', color: '#fafaf9' } : {}}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OnboardingProgress({ currentStep }: { currentStep: number }) {
   return (
     <div className="mb-10 sm:mb-12">
@@ -431,16 +467,11 @@ function OnboardingContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
-                <div className="relative">
-                  <select value={agencyDetails.referralSource}
-                    onChange={(e) => { setAgencyDetails({ ...agencyDetails, referralSource: e.target.value }); setError(''); }}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-4 text-lg text-[#fafaf9] focus:outline-none focus:border-white/20 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer">
-                    {REFERRAL_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value} className="bg-[#1a1a1a] text-[#fafaf9]">{option.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#fafaf9]/30 pointer-events-none" />
-                </div>
+                <ReferralSelect
+                  value={agencyDetails.referralSource}
+                  options={REFERRAL_OPTIONS}
+                  onChange={(v) => { setAgencyDetails({ ...agencyDetails, referralSource: v }); setError(''); }}
+                />
               </div>
             </div>
             <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
