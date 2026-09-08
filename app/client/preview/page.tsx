@@ -34,19 +34,12 @@ function PreviewContent() {
     }
 
     try {
-      // Back up current agency auth so we can restore it later. (When an admin
-      // opens this, auth_token is empty because admin uses admin_token, so there
-      // is simply nothing to back up and the admin session is untouched.)
-      const currentToken = localStorage.getItem('auth_token');
-      const currentAgency = localStorage.getItem('agency');
-      const currentUser = localStorage.getItem('user');
-      const currentClient = localStorage.getItem('client');
-
-      if (currentToken) localStorage.setItem('agency_auth_backup', currentToken);
-      if (currentAgency) localStorage.setItem('agency_data_backup', currentAgency);
-      if (currentUser) localStorage.setItem('agency_user_backup', currentUser);
-      if (currentClient) localStorage.setItem('agency_client_backup', currentClient);
-
+      // Preview auth lives in sessionStorage, which is scoped to THIS tab.
+      // localStorage is shared across every tab on the origin, so writing the
+      // client token there (as this page used to) silently overwrote the
+      // agency's own auth_token in their other tab and signed them out. Keeping
+      // the preview credential in sessionStorage confines it to the preview tab;
+      // the agency's session is never touched, so no backup/restore is needed.
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
       // Decode the token to get clientId + userId (base64url-safe).
@@ -75,16 +68,16 @@ function PreviewContent() {
         })
         .then(data => {
           const clientRecord = data.client || data;
-          // Set client auth in localStorage.
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('client', JSON.stringify(clientRecord));
-          localStorage.setItem('user', JSON.stringify({
+          // Set client auth in sessionStorage (tab-scoped, never localStorage).
+          sessionStorage.setItem('preview_auth_token', token);
+          sessionStorage.setItem('preview_client', JSON.stringify(clientRecord));
+          sessionStorage.setItem('preview_user', JSON.stringify({
             id: payload.userId,
             email: clientRecord?.email,
             role: 'client',
             client_id: clientId,
           }));
-          localStorage.setItem('preview_mode', 'true');
+          sessionStorage.setItem('preview_mode', 'true');
 
           // Redirect to client dashboard.
           window.location.href = '/client/dashboard';

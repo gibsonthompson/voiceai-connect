@@ -52,21 +52,20 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const [isPreviewMode] = useState(getInitialPreviewMode);
 
   const handleExitPreview = () => {
+    // Preview runs in its own tab with its credential in sessionStorage, so
+    // exiting is just: clear that tab-scoped session and close the tab. The
+    // agency's own tab was never touched and is still signed in. If the browser
+    // blocks window.close() (tab not script-opened), fall back to the agency
+    // dashboard — on an /agency route the preview override is absent, so it
+    // reads the real, never-clobbered agency token from localStorage.
     try {
-      const backupToken = localStorage.getItem('agency_auth_backup');
-      const backupAgency = localStorage.getItem('agency_data_backup');
-      const backupUser = localStorage.getItem('agency_user_backup');
-      if (backupToken) localStorage.setItem('auth_token', backupToken);
-      if (backupAgency) localStorage.setItem('agency', backupAgency);
-      if (backupUser) localStorage.setItem('user', backupUser);
-      localStorage.removeItem('client');
-      localStorage.removeItem('preview_mode');
-      localStorage.removeItem('agency_auth_backup');
-      localStorage.removeItem('agency_data_backup');
-      localStorage.removeItem('agency_user_backup');
-      localStorage.removeItem('agency_client_backup');
-      window.location.href = '/agency/dashboard';
-    } catch { window.location.href = '/agency/dashboard'; }
+      sessionStorage.removeItem('preview_mode');
+      sessionStorage.removeItem('preview_auth_token');
+      sessionStorage.removeItem('preview_client');
+      sessionStorage.removeItem('preview_user');
+    } catch {}
+    window.close();
+    setTimeout(() => { window.location.href = '/agency/dashboard'; }, 120);
   };
 
   const nav = {

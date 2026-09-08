@@ -92,6 +92,34 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+// Runs before hydration, before any client page reads its token. In a PREVIEW
+// tab (flagged in sessionStorage by /client/preview), it redirects the auth-key
+// reads/writes that client pages make against localStorage over to
+// sessionStorage instead. localStorage is shared across every tab on the origin,
+// so the old behavior of writing the client's preview token into
+// localStorage.auth_token overwrote the agency's own token in their other tab
+// and signed them out. sessionStorage is tab-scoped, so the preview credential
+// stays inside the preview tab and the agency's session is never disturbed.
+// In a NORMAL tab it also clears any legacy preview flags a pre-fix build may
+// have left in localStorage, so a real client is never shown a stale banner.
+const PREVIEW_AUTH_BOOTSTRAP = `(function(){try{
+var ss=window.sessionStorage,ls=window.localStorage;
+if(ss.getItem('preview_mode')==='true'){
+var M={auth_token:'preview_auth_token',client:'preview_client',user:'preview_user',preview_mode:'preview_mode'};
+var g=ls.getItem.bind(ls),s=ls.setItem.bind(ls),r=ls.removeItem.bind(ls);
+ls.getItem=function(k){return M[k]?ss.getItem(M[k]):g(k);};
+ls.setItem=function(k,v){if(M[k]){ss.setItem(M[k],v);return;}return s(k,v);};
+ls.removeItem=function(k){if(M[k]){ss.removeItem(M[k]);return;}return r(k);};
+}else{
+ls.removeItem('preview_mode');ls.removeItem('agency_auth_backup');ls.removeItem('agency_data_backup');ls.removeItem('agency_user_backup');ls.removeItem('agency_client_backup');
+}
+}catch(e){}})();`;
+
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  return <ClientShell>{children}</ClientShell>;
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: PREVIEW_AUTH_BOOTSTRAP }} />
+      <ClientShell>{children}</ClientShell>
+    </>
+  );
 }
