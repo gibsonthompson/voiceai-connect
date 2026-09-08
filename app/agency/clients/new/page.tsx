@@ -255,6 +255,9 @@ export default function AddClientPage() {
   // Live plans: the agency's ACTUAL plan list (visible + priced), so a deleted or
   // renamed plan never shows here. Falls back to the legacy starter/pro/growth
   // columns only when the agency has no custom plan list.
+  const [cPricingMode, setCPricingMode] = useState<'plan' | 'custom'>('plan');
+  const [cMonthly, setCMonthly] = useState(''); const [cSetup, setCSetup] = useState('');
+  const [cIncluded, setCIncluded] = useState(''); const [cRate, setCRate] = useState(''); const [cLimit, setCLimit] = useState('');
   const availablePlans = useMemo(() => {
     const raw = (agency as any)?.plans;
     if (Array.isArray(raw) && raw.length > 0) {
@@ -343,6 +346,14 @@ export default function AddClientPage() {
           businessCountry: form.businessCountry,
           websiteUrl: form.websiteUrl.trim() || undefined,
           planType: form.planType,
+          pricingMode: cPricingMode,
+          ...(cPricingMode === 'custom' ? { customPricing: {
+            priceCents: Math.round(parseFloat(cMonthly || '0') * 100),
+            setupFeeCents: cSetup === '' ? null : Math.round(parseFloat(cSetup) * 100),
+            includedMinutes: cIncluded === '' ? null : parseInt(cIncluded, 10),
+            minuteRateCents: cRate === '' ? null : parseFloat(cRate) * 100,
+            callLimit: cLimit === '' ? null : parseInt(cLimit, 10),
+          } } : {}),
           tempPassword: form.tempPassword
         })
       });
@@ -615,15 +626,40 @@ export default function AddClientPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
-                  Plan
+                  Pricing
                 </label>
-                <CustomSelect
-                  value={form.planType}
-                  onChange={(v) => updateForm('planType', v)}
-                  options={availablePlans.map(p => ({ value: p.value, label: `${p.label} - ${formatAgencyPrice(getPlanPrice(p.value))}/mo` }))}
-                  disabled={submitting}
-                  ui={ui}
-                />
+                <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  {(['plan', 'custom'] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setCPricingMode(m)} disabled={submitting} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={cPricingMode === m ? { backgroundColor: primaryColor, color: buttonTextColor } : { color: labelColor }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
+                  ))}
+                </div>
+                {cPricingMode === 'plan' ? (
+                  <CustomSelect
+                    value={form.planType}
+                    onChange={(v) => updateForm('planType', v)}
+                    options={availablePlans.map(p => ({ value: p.value, label: `${p.label} - ${formatAgencyPrice(getPlanPrice(p.value))}/mo` }))}
+                    disabled={submitting}
+                    ui={ui}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Monthly ($)', val: cMonthly, set: setCMonthly, ph: '499' },
+                        { label: 'Setup ($)', val: cSetup, set: setCSetup, ph: '1000' },
+                        { label: 'Included min', val: cIncluded, set: setCIncluded, ph: '2000' },
+                        { label: 'Per-min after ($)', val: cRate, set: setCRate, ph: '0.15' },
+                        { label: 'Call limit', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
+                      ].map((f) => (
+                        <div key={f.label}>
+                          <label className="block text-[11px] mb-0.5" style={{ color: labelColor }}>{f.label}</label>
+                          <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" disabled={submitting} className="w-full rounded-lg px-2.5 py-2 text-sm focus:outline-none" style={inputStyle} />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[11px]" style={{ color: labelColor, opacity: 0.7 }}>This client is billed exactly these amounts and never sees your standard plans.</p>
+                  </div>
+                )}
               </div>
             </div>
 

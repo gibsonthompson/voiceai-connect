@@ -292,6 +292,43 @@ export default function AgencyClientDetailPage() {
     postCancel({ immediate: true });
   };
   const handleResume = () => postCancel({ resume: true });
+
+  // ── Custom (white-glove) pricing ──
+  const [pricingMode, setPricingMode] = useState<'plan' | 'custom'>('plan');
+  const [cMonthly, setCMonthly] = useState(''); const [cSetup, setCSetup] = useState('');
+  const [cIncluded, setCIncluded] = useState(''); const [cRate, setCRate] = useState(''); const [cLimit, setCLimit] = useState('');
+  const [savingCustom, setSavingCustom] = useState(false); const [customMsg, setCustomMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (!client) return; const c = client as any;
+    setPricingMode(c.pricing_mode === 'custom' ? 'custom' : 'plan');
+    setCMonthly(c.custom_price_cents != null ? String(c.custom_price_cents / 100) : '');
+    setCSetup(c.custom_setup_fee_cents != null ? String(c.custom_setup_fee_cents / 100) : '');
+    setCIncluded(c.custom_included_minutes != null ? String(c.custom_included_minutes) : '');
+    setCRate(c.custom_minute_rate_cents != null ? String(c.custom_minute_rate_cents / 100) : '');
+    setCLimit(c.custom_call_limit != null ? String(c.custom_call_limit) : '');
+  }, [client]);
+  const saveCustomPricing = async () => {
+    if (!clientId) return; setSavingCustom(true); setCustomMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const body: any = { client_id: clientId, mode: pricingMode };
+      if (pricingMode === 'custom') {
+        const monthly = parseFloat(cMonthly || '0');
+        if (!(monthly > 0)) { setCustomMsg('Monthly fee must be greater than 0.'); setSavingCustom(false); return; }
+        body.price_cents = Math.round(monthly * 100);
+        body.setup_fee_cents = cSetup === '' ? null : Math.round(parseFloat(cSetup) * 100);
+        body.included_minutes = cIncluded === '' ? null : parseInt(cIncluded, 10);
+        body.minute_rate_cents = cRate === '' ? null : parseFloat(cRate) * 100;
+        body.call_limit = cLimit === '' ? null : parseInt(cLimit, 10);
+      }
+      const res = await fetch(`${backendUrl}/api/client/set-custom-pricing`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to save');
+      setCustomMsg(pricingMode === 'custom' ? 'Custom pricing saved.' : 'Reverted to plan pricing.');
+      fetchClientData();
+    } catch (err: any) { setCustomMsg(err.message || 'Failed to save'); }
+    finally { setSavingCustom(false); }
+  };
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
@@ -649,6 +686,50 @@ export default function AgencyClientDetailPage() {
 
           {/* Quick Info */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
+        </div>
+      </div>
+
+      {/* Custom pricing (white-glove, per-client override) */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="flex items-center gap-2 mb-1">
+            <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Custom pricing</h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only. They&apos;re billed exactly these amounts and never see your standard plans, use it for white-glove deals. Applies at their next checkout.</p>
+          <div className="inline-flex rounded-lg p-0.5 mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+            {(['plan', 'custom'] as const).map((m) => (
+              <button key={m} onClick={() => setPricingMode(m)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={pricingMode === m ? { backgroundColor: theme.primary, color: theme.primaryText } : { color: theme.textMuted }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
+            ))}
+          </div>
+          {pricingMode === 'custom' && (
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { label: 'Monthly fee ($)', val: cMonthly, set: setCMonthly, ph: '499' },
+                  { label: 'Setup fee ($)', val: cSetup, set: setCSetup, ph: '1000' },
+                  { label: 'Included minutes/mo', val: cIncluded, set: setCIncluded, ph: '2000' },
+                  { label: 'Per-minute after ($)', val: cRate, set: setCRate, ph: '0.15' },
+                  { label: 'Call limit/mo', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
+                ].map((f) => (
+                  <div key={f.label}>
+                    <label className="text-[11px]" style={{ color: theme.textMuted }}>{f.label}</label>
+                    <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" className="w-full mt-0.5 rounded-lg px-2.5 py-1.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: theme.input, color: theme.textMuted }}>
+                <span className="font-medium" style={{ color: theme.text }}>This client pays: </span>
+                {cSetup && parseFloat(cSetup) > 0 ? `$${cSetup} setup once, then ` : ''}${cMonthly || '0'}/mo{cIncluded ? `, includes ${cIncluded} min` : ''}{cRate ? `, $${cRate}/min after` : ''}{cLimit && cLimit !== '-1' ? `, ${cLimit} calls/mo` : ''}.
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-2 mt-3">
+            <button onClick={saveCustomPricing} disabled={savingCustom} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              {savingCustom ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {pricingMode === 'custom' ? 'Save custom pricing' : 'Use plan pricing'}
+            </button>
+            {customMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{customMsg}</span>}
+          </div>
         </div>
       </div>
 

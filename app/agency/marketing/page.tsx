@@ -192,6 +192,21 @@ export default function MarketingWebsitePage() {
     } catch (e) { console.error('Failed to toggle section:', e); }
     finally { setSavingSection(null); }
   };
+
+  // ── Master switch: turn the whole public marketing site on/off ──
+  const [savingSite, setSavingSite] = useState(false);
+  const siteEnabled = (agency as any)?.marketing_site_enabled !== false;
+  const toggleSiteEnabled = async () => {
+    if (demoMode || !agency) return;
+    setSavingSite(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_site_enabled: !siteEnabled }) });
+      if (res.ok) { await refreshAgency(); }
+      else { const d = await res.json().catch(() => ({})); alert(d.message || d.error || 'Failed to update site'); }
+    } catch (e) { console.error('Failed to toggle site:', e); }
+    finally { setSavingSite(false); }
+  };
   const handleSaveTracking = async () => { if (demoMode) { setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); return; } if (!agency) return; setSavingTracking(true); setTrackingSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ gtm_id: gtmId || null, fb_pixel_id: fbPixelId || null, google_analytics_id: googleAnalyticsId || null, custom_head_scripts: customHeadScripts || null, custom_body_scripts: customBodyScripts || null }) }); if (response.ok) { await refreshAgency(); setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save tracking settings'); } } catch (error) { console.error('Failed to save tracking:', error); } finally { setSavingTracking(false); } };
   const handleSaveSeo = async () => { if (demoMode) { setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); return; } if (!agency) return; setSavingSeo(true); setSeoSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ og_title: ogTitle || null, og_description: ogDescription || null, og_image_url: ogImageUrl || null }) }); if (response.ok) { await refreshAgency(); setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save SEO settings'); } } catch (error) { console.error('Failed to save SEO:', error); } finally { setSavingSeo(false); } };
   const handleSaveTemplate = async () => { if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; } if (!agency) return; setSavingTemplate(true); setTemplateSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: selectedTemplate }) }); if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save template'); } } catch (error) { console.error('Failed to save template:', error); } finally { setSavingTemplate(false); } };
@@ -384,6 +399,17 @@ export default function MarketingWebsitePage() {
       {/* ══════════════ SECTIONS ══════════════ */}
       {activeTab === 'sections' && (<div className="space-y-4 sm:space-y-6">
         <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Public marketing site{savingSite && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</h3>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>When off, your site address becomes a client login page — no public marketing and no pricing on show. Use this if you onboard every client yourself (white-glove).</p>
+            </div>
+            <button onClick={toggleSiteEnabled} disabled={savingSite || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0 mt-0.5" style={{ backgroundColor: siteEnabled ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={siteEnabled} aria-label="Toggle public marketing site">
+              <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: siteEnabled ? 'translateX(22px)' : 'translateX(4px)' }} />
+            </button>
+          </div>
+        </div>
+        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, opacity: siteEnabled ? 1 : 0.5, pointerEvents: siteEnabled ? 'auto' : 'none' }}>
           <h3 className="text-sm sm:text-base font-semibold mb-1" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Website sections</h3>
           <p className="text-xs sm:text-sm mb-4" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Turn sections of your marketing site on or off. Changes save instantly and go live on your site.</p>
           <div className="space-y-2">

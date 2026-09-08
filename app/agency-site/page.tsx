@@ -70,6 +70,12 @@ export default async function AgencySitePage() {
     );
   }
 
+  // Agency has turned OFF their public marketing site (white-glove / client-login-only).
+  // Their domain becomes a client login portal, no public marketing, no pricing on show.
+  if (agency.marketing_site_enabled === false) {
+    redirect('/client/login');
+  }
+
   // If agency doesn't have marketing site access, redirect to signup
   if (!hasMarketingSiteAccess(agency)) {
     redirect('/signup');
