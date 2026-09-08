@@ -164,7 +164,14 @@ function useReveal<T extends HTMLElement>() {
 // ============================================================================
 // SHARED HELPERS
 // ============================================================================
-function telHref(phone: string) { return `tel:+1${phone.replace(/\D/g, '')}`; }
+function telHref(phone: string): string {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return 'tel:';
+  if (digits.length === 11 && digits[0] === '1') return `tel:+${digits}`;
+  if (digits.length === 10) return `tel:+1${digits}`;
+  if ((phone || '').trim().startsWith('+')) return `tel:+${digits}`;
+  return `tel:+1${digits}`;
+}
 function priceString(cs: string, amount: number | string, pos: 'before' | 'after') {
   return pos === 'after' ? `${amount} ${cs}` : `${cs}${amount}`;
 }

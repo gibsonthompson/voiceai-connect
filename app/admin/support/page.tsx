@@ -29,6 +29,16 @@ import {
   User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X,
 } from 'lucide-react';
 
+
+// Gmail compose deep link so "Reply by email" opens Gmail with the message
+// already composed and the recipient prefilled, instead of handing off to the
+// OS default mail app (Apple Mail). authuser hints the support@ inbox.
+function gmailComposeUrl(to: string | null, subject: string, body: string): string {
+  const params = new URLSearchParams({ view: 'cm', fs: '1', to: to || '', su: subject, body });
+  return `https://mail.google.com/mail/?${params.toString()}&authuser=support@myvoiceaiconnect.com`;
+}
+
+
 const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '');
 
@@ -431,7 +441,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                       </Link>
                                     )}
                                     {req.user_email && (
-                                      <a href={`mailto:${req.user_email}`} onClick={(e) => e.stopPropagation()}
+                                      <a href={gmailComposeUrl(req.user_email, 'Re: your VoiceAI Connect support request', `Hi ${req.display_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                                         className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
                                         <Mail className="h-3 w-3" /> Reply by email
                                       </a>
@@ -743,7 +753,7 @@ function FeedbackTab({ onChanged }: { onChanged: () => void }) {
                                       </Link>
                                     )}
                                     {fb.agency_email && (
-                                      <a href={`mailto:${fb.agency_email}`} onClick={(e) => e.stopPropagation()}
+                                      <a href={gmailComposeUrl(fb.agency_email, 'Re: your feedback', `Hi ${fb.agency_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                                         className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
                                         <Mail className="h-3 w-3" /> Reply by email
                                       </a>

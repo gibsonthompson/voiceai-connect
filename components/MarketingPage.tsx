@@ -6,6 +6,22 @@ import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import '@/styles/marketing.css';
 
 // ============================================================================
+// PHONE UTILITIES
+// ============================================================================
+// Build a dialable tel: href in E.164 without double-prefixing the country
+// code. A demo number stored WITH its country code (e.g. "15058332344" or
+// "+1 505 833 2344") would become "+11505..." if we blindly prepend "+1" —
+// that "+11" is why tapping the demo number failed to dial. Normalize instead.
+function telHref(phone: string): string {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return 'tel:';
+  if (digits.length === 11 && digits[0] === '1') return `tel:+${digits}`; // already has US country code
+  if (digits.length === 10) return `tel:+1${digits}`;                      // bare US 10-digit
+  if ((phone || '').trim().startsWith('+')) return `tel:+${digits}`;       // already E.164 (intl)
+  return `tel:+1${digits}`;                                                // fallback: assume US
+}
+
+// ============================================================================
 // COLOR UTILITIES
 // ============================================================================
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -200,7 +216,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
                 <div className="demo-icon" style={{ color: contrastColors.text }}>{Icons.headphones}</div>
                 <div className="demo-content">
                   <h3 style={{ color: contrastColors.text }}>HEAR IT IN ACTION:</h3>
-                  <a href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`} className="demo-phone" style={{ color: contrastColors.text, background: contrastColors.buttonBg }}>
+                  <a href={telHref(hero.demoPhone)} className="demo-phone" style={{ color: contrastColors.text, background: contrastColors.buttonBg }}>
                     <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>{Icons.phone}</span>{hero.demoPhone}
                   </a>
                   {hero.demoInstructions && <p className="demo-instructions" style={{ color: contrastColors.textMuted }}>{hero.demoInstructions}</p>}
@@ -659,7 +675,7 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
             {hero.demoPhone && (
               <>
                 <a
-                  href={`tel:+1${hero.demoPhone.replace(/\D/g, '')}`}
+                  href={telHref(hero.demoPhone)}
                   className="cta-box-primary"
                   style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                 >
@@ -704,7 +720,7 @@ function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose
         <p>Call our AI receptionist right now. No signup, no commitment, just see how it handles a real call for your business.</p>
         {demoPhone ? (
           <>
-            <a href={`tel:+1${demoPhone.replace(/\D/g, '')}`} className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
+            <a href={telHref(demoPhone)} className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem', fontSize: '1.125rem' }}
               onClick={() => { if (typeof window !== 'undefined' && (window as any).dataLayer) { (window as any).dataLayer.push({ event: 'exit_intent_demo_call' }); } }}>
               <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>{demoPhone}
             </a>

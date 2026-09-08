@@ -36,7 +36,7 @@ import CallDrawer from '@/components/admin/CallDrawer';
 
 interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
-interface ExpandedData { clients: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null }; onboarding_email: { step: number; last_sent: string | null }; email_history?: any[] }
+interface ExpandedData { clients: any[]; support_requests?: any[]; feedback?: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null }; onboarding_email: { step: number; last_sent: string | null }; email_history?: any[] }
 
 // Onboarding email templates the admin sends manually via Gmail (as support@).
 // Plain text, no fabricated stats. The welcome email still auto-sends on signup;
@@ -229,6 +229,7 @@ export default function AdminAgenciesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [clientImpersonating, setClientImpersonating] = useState<string | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [openMsgs, setOpenMsgs] = useState<Set<string>>(new Set());
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
@@ -658,6 +659,56 @@ export default function AdminAgenciesPage() {
 
                   {expandedData[agency.id] && (
                     <div className="mt-5 pt-5 border-t border-[var(--a-line)] space-y-5">
+                      {/* Support & Feedback — what THIS agency has sent in */}
+                      {(() => {
+                        const sr = (expandedData[agency.id].support_requests || []).map((r: any) => ({ ...r, _kind: 'support' }));
+                        const fb = (expandedData[agency.id].feedback || []).map((r: any) => ({ ...r, _kind: 'feedback' }));
+                        const items = [...sr, ...fb].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                        return (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--a-cyan)' }} />
+                              <h4 className={label}>Support &amp; Feedback</h4>
+                              <span className="text-[10px] text-[var(--a-dim)]">{items.length}</span>
+                              <a href="/admin/support" className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold hover:underline" style={{ color: 'var(--a-em-deep)' }}>Open queue <ExternalLink className="h-2.5 w-2.5" /></a>
+                            </div>
+                            {items.length > 0 ? (
+                              <div className="space-y-1">
+                                {items.map((it: any) => {
+                                  const key = `${it._kind}-${it.id}`;
+                                  const open = openMsgs.has(key);
+                                  const isSupport = it._kind === 'support';
+                                  const contact: string | null = it.user_email || null;
+                                  return (
+                                    <div key={key} className="rounded-lg px-3 py-2 bg-white border border-[var(--a-line)]">
+                                      <button onClick={() => setOpenMsgs(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; })} className="w-full flex items-center gap-2 text-left">
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full border shrink-0" style={isSupport ? { background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' } : { background: 'rgba(6,182,212,0.10)', color: 'var(--a-cyan)', borderColor: 'rgba(6,182,212,0.25)' }}>{isSupport ? 'Support' : 'Feedback'}</span>
+                                        <span className={`text-[11px] text-[var(--a-ink)] flex-1 ${open ? '' : 'truncate'}`}>{it.message}</span>
+                                        <span className="text-[10px] text-[var(--a-dim)] shrink-0 a-num">{timeAgo(it.created_at)}</span>
+                                        <ChevronDown className={`h-3 w-3 shrink-0 text-[var(--a-dim)] transition-transform ${open ? 'rotate-180' : ''}`} />
+                                      </button>
+                                      {open && (
+                                        <div className="mt-2 pt-2 border-t border-[var(--a-line)] space-y-1.5">
+                                          <p className="text-[11px] text-[var(--a-muted)] whitespace-pre-wrap break-words">{it.message}</p>
+                                          <div className="flex items-center gap-3 flex-wrap">
+                                            {it.display_name && <span className="text-[10px] text-[var(--a-dim)]">{it.display_name}</span>}
+                                            {contact && <span className="text-[10px] text-[var(--a-dim)]">{contact}</span>}
+                                            {isSupport && it.status && <span className="text-[10px] text-[var(--a-dim)]">Status: {it.status}</span>}
+                                            {contact && contact.includes('@') && <a href={gmailComposeUrl(contact, 'Re: your message to VoiceAI Connect', `Hi ${it.display_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" className="text-[10px] font-semibold hover:underline" style={{ color: 'var(--a-em-deep)' }}>Reply <ExternalLink className="inline h-2.5 w-2.5" /></a>}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-[var(--a-dim)]">Nothing sent in yet.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       {/* Emails (composed here, sent from Gmail as support@, logged) */}
                       <div>
                         <div className="flex items-center gap-2 mb-2">
