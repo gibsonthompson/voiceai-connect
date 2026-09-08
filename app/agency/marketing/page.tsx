@@ -13,7 +13,7 @@ import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
-type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation';
+type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -157,6 +157,41 @@ export default function MarketingWebsitePage() {
     } catch (e) { setPlans(prev); console.error('Failed to toggle plan:', e); }
     finally { setSavingPlanKey(null); }
   };
+
+  // ── Website section visibility (show/hide marketing sections) ──
+  const SECTIONS: { key: string; label: string; defaultOff?: boolean }[] = [
+    { key: 'showProofStrip', label: 'Proof / stats strip' },
+    { key: 'showProblemSolution', label: 'Problem & solution' },
+    { key: 'showHowItWorks', label: 'How it works' },
+    { key: 'showFeatures', label: 'Features / capabilities' },
+    { key: 'showCommandCenter', label: 'App showcase' },
+    { key: 'showROICalculator', label: 'ROI calculator' },
+    { key: 'showPricing', label: 'Pricing' },
+    { key: 'showFAQ', label: 'FAQ' },
+    { key: 'showFinalCTA', label: 'Final call-to-action' },
+    { key: 'showIndustries', label: 'Industries', defaultOff: true },
+    { key: 'showComparison', label: 'Comparison table', defaultOff: true },
+    { key: 'showTestimonials', label: 'Testimonials', defaultOff: true },
+  ];
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const sectionIsOn = (key: string, defaultOff?: boolean) => {
+    const c = (agency?.marketing_config || {}) as any;
+    return defaultOff ? c[key] === true : c[key] !== false;
+  };
+  const toggleSection = async (key: string, defaultOff?: boolean) => {
+    if (demoMode || !agency) return;
+    const nextVal = !sectionIsOn(key, defaultOff);
+    setSavingSection(key);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const current = (agency.marketing_config || {}) as any;
+      const updated = { ...current, [key]: nextVal };
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_config: updated }) });
+      if (res.ok) { await refreshAgency(); }
+      else { const d = await res.json().catch(() => ({})); alert(d.message || d.error || 'Failed to update section'); }
+    } catch (e) { console.error('Failed to toggle section:', e); }
+    finally { setSavingSection(null); }
+  };
   const handleSaveTracking = async () => { if (demoMode) { setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); return; } if (!agency) return; setSavingTracking(true); setTrackingSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ gtm_id: gtmId || null, fb_pixel_id: fbPixelId || null, google_analytics_id: googleAnalyticsId || null, custom_head_scripts: customHeadScripts || null, custom_body_scripts: customBodyScripts || null }) }); if (response.ok) { await refreshAgency(); setTrackingSaved(true); setTimeout(() => setTrackingSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save tracking settings'); } } catch (error) { console.error('Failed to save tracking:', error); } finally { setSavingTracking(false); } };
   const handleSaveSeo = async () => { if (demoMode) { setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); return; } if (!agency) return; setSavingSeo(true); setSeoSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ og_title: ogTitle || null, og_description: ogDescription || null, og_image_url: ogImageUrl || null }) }); if (response.ok) { await refreshAgency(); setSeoSaved(true); setTimeout(() => setSeoSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save SEO settings'); } } catch (error) { console.error('Failed to save SEO:', error); } finally { setSavingSeo(false); } };
   const handleSaveTemplate = async () => { if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; } if (!agency) return; setSavingTemplate(true); setTemplateSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: selectedTemplate }) }); if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save template'); } } catch (error) { console.error('Failed to save template:', error); } finally { setSavingTemplate(false); } };
@@ -175,6 +210,7 @@ export default function MarketingWebsitePage() {
   const tabs = [
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
     { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
+    { id: 'sections' as ActiveTab, label: 'Sections', icon: Eye },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
     { id: 'navigation' as ActiveTab, label: 'Navigation', icon: ExternalLink },
     { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
@@ -343,6 +379,24 @@ export default function MarketingWebsitePage() {
         <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><h3 className="font-medium text-sm sm:text-base mb-1">Choose Your Template</h3><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Each template has a unique layout structure and visual style. Your content carries over between templates.</p></div>
         <div className="grid grid-cols-1 gap-4">{TEMPLATES.map((template) => { const isActive = selectedTemplate === template.id; return (<div key={template.id} className="rounded-xl overflow-hidden transition-all" style={{ border: isActive ? `2px solid ${agencyPrimaryColor}` : `1px solid ${borderColor}`, backgroundColor: cardBg, boxShadow: isActive ? `0 0 0 3px ${agencyPrimaryColor}20` : 'none' }}><div className="flex flex-col sm:flex-row"><div className="sm:w-64 flex-shrink-0 p-4 flex flex-col items-center justify-center gap-3" style={{ backgroundColor: template.preview.bgColor, minHeight: '180px' }}><div className="w-full max-w-[200px] space-y-2"><div className="h-2 rounded-full w-3/4 mx-auto" style={{ backgroundColor: template.preview.accentColor, opacity: 0.7 }} /><div className="h-1.5 rounded-full w-1/2 mx-auto" style={{ backgroundColor: template.preview.textColor, opacity: 0.15 }} /><div className="h-8 rounded-lg mt-2" style={{ backgroundColor: template.preview.accentColor, opacity: 0.12 }} /><div className="grid grid-cols-3 gap-1.5 mt-1"><div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} /><div className="h-6 rounded" style={{ backgroundColor: template.preview.accentColor, opacity: 0.15 }} /><div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} /></div></div></div><div className="flex-1 p-4 sm:p-5 flex flex-col justify-between"><div><div className="flex items-center gap-2 mb-1"><h3 className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>{template.name}</h3>{isActive && (<span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Active</span>)}</div><p className="text-xs font-medium mb-2" style={{ color: agencyPrimaryColor }}>{template.style}</p><p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>{template.description}</p><div className="flex flex-wrap gap-1.5 mb-3">{template.preview.sections.slice(0, 4).map(s => (<span key={s} className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>{s}</span>))}{template.preview.sections.length > 4 && (<span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>+{template.preview.sections.length - 4} more</span>)}</div></div><div className="flex gap-2">{isActive ? (<span className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><CheckCircle2 className="h-3.5 w-3.5" />Currently Active</span>) : (<button onClick={() => setSelectedTemplate(template.id)} className="text-xs font-medium px-4 py-2 rounded-lg text-white transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>Select Template</button>)}<a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}><ExternalLink className="h-3.5 w-3.5" />Preview</a></div></div></div></div>); })}</div>
         {selectedTemplate !== (agency?.marketing_template || 'classic') && (<div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}` }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>You've selected <strong style={{ color: textColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name}</strong>. Save to apply it to your marketing website.</p><div className="flex items-center gap-3 w-full sm:w-auto">{templateSaved && (<span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveTemplate} disabled={savingTemplate} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Template</button></div></div>)}
+      </div>)}
+
+      {/* ══════════════ SECTIONS ══════════════ */}
+      {activeTab === 'sections' && (<div className="space-y-4 sm:space-y-6">
+        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <h3 className="text-sm sm:text-base font-semibold mb-1" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Website sections</h3>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Turn sections of your marketing site on or off. Changes save instantly and go live on your site.</p>
+          <div className="space-y-2">
+            {SECTIONS.map((sec) => { const on = sectionIsOn(sec.key, sec.defaultOff); const saving = savingSection === sec.key; return (
+              <div key={sec.key} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <span className="text-sm flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>{sec.label}{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</span>
+                <button onClick={() => toggleSection(sec.key, sec.defaultOff)} disabled={saving || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0" style={{ backgroundColor: on ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={on} aria-label={`Toggle ${sec.label}`}>
+                  <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: on ? 'translateX(22px)' : 'translateX(4px)' }} />
+                </button>
+              </div>
+            ); })}
+          </div>
+        </div>
       </div>)}
 
       {/* ══════════════ CONTENT ══════════════ */}

@@ -883,17 +883,17 @@ export default function MarketingPageBeside({ config: partialConfig }: Marketing
       <AnalyticsScripts analytics={config.analytics} />
       <Nav config={config} />
       <Hero config={config} />
-      <ProofStrip config={config} />
-      <ProblemSolution config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />
-      <HowItWorks config={config} />
-      <FeatureExplorer config={config} />
-      <CommandCenter config={config} primary={primary} textOnPrimary={textOnPrimary} />
+      {config.showProofStrip !== false && <ProofStrip config={config} />}
+      {config.showProblemSolution !== false && <ProblemSolution config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />}
+      {config.showHowItWorks !== false && <HowItWorks config={config} />}
+      {config.showFeatures !== false && <FeatureExplorer config={config} />}
+      {config.showCommandCenter !== false && <CommandCenter config={config} primary={primary} textOnPrimary={textOnPrimary} />}
       {config.showIndustries && <Industries config={config} />}
       {config.showComparison && <Comparison config={config} />}
-      <ROICalculator config={config} />
-      <Pricing config={config} />
-      <FAQ config={config} />
-      <FinalCTA config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />
+      {config.showROICalculator !== false && <ROICalculator config={config} />}
+      {config.showPricing !== false && <Pricing config={config} />}
+      {config.showFAQ !== false && <FAQ config={config} />}
+      {config.showFinalCTA !== false && <FinalCTA config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />}
       <Footer config={config} />
       <StickyCTA config={config} />
       <ExitIntentModal config={config} />

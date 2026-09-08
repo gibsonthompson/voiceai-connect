@@ -876,16 +876,16 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       <AnalyticsScripts analytics={config.analytics} />
       <Navigation config={config} />
       <HeroSection config={config} contrastColors={contrastColors} />
-      <ProblemSolutionSection config={config} contrastColors={contrastColors} />
-      <HowItWorksSection config={config} />
-      <AppShowcaseSection config={config} contrastColors={contrastColors} />
-      <FeaturesSection config={config} />
+      {config.showProblemSolution !== false && <ProblemSolutionSection config={config} contrastColors={contrastColors} />}
+      {config.showHowItWorks !== false && <HowItWorksSection config={config} />}
+      {config.showCommandCenter !== false && <AppShowcaseSection config={config} contrastColors={contrastColors} />}
+      {config.showFeatures !== false && <FeaturesSection config={config} />}
       {config.showIndustries && <IndustriesSection config={config} />}
       {config.showComparison && <ComparisonSection config={config} />}
-      <ROICalculatorSection config={config} />
-      <PricingSection config={config} />
-      <FAQSection config={config} />
-      <FinalCTASection config={config} contrastColors={contrastColors} />
+      {config.showROICalculator !== false && <ROICalculatorSection config={config} />}
+      {config.showPricing !== false && <PricingSection config={config} />}
+      {config.showFAQ !== false && <FAQSection config={config} />}
+      {config.showFinalCTA !== false && <FinalCTASection config={config} contrastColors={contrastColors} />}
       <Footer config={config} />
       <StickyCTA config={config} />
       {showExitModal && <ExitIntentModal config={config} onClose={() => setShowExitModal(false)} />}

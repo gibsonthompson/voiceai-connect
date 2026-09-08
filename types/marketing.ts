@@ -155,6 +155,18 @@ export interface MarketingConfig {
   showIndustries?: boolean;
   showComparison?: boolean;
   showTestimonials?: boolean;
+  // Section visibility for the always-on sections. Default = shown; set to false
+  // to hide. (showIndustries/showComparison/showTestimonials above are opt-IN and
+  // default hidden.) Undefined means shown, so existing sites are unaffected.
+  showProofStrip?: boolean;
+  showProblemSolution?: boolean;
+  showHowItWorks?: boolean;
+  showFeatures?: boolean;
+  showCommandCenter?: boolean;
+  showROICalculator?: boolean;
+  showPricing?: boolean;
+  showFAQ?: boolean;
+  showFinalCTA?: boolean;
   clientLoginPath?: string;
   // Agency-defined external links rendered in the marketing header + footer.
   customNavLinks?: CustomNavLink[];
