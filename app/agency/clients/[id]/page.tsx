@@ -225,6 +225,37 @@ export default function AgencyClientDetailPage() {
       setDeleting(false);
     }
   };
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [targetPlan, setTargetPlan] = useState<string>('');
+  const [planMsg, setPlanMsg] = useState<string | null>(null);
+  const availablePlans: { key: string; name: string }[] =
+    Array.isArray((agency as any)?.plans) && (agency as any).plans.length
+      ? (agency as any).plans.map((p: any) => ({ key: p.key, name: p.name }))
+      : [{ key: 'starter', name: 'Starter' }, { key: 'pro', name: 'Pro' }, { key: 'growth', name: 'Growth' }];
+  const handleChangePlan = async () => {
+    const newPlan = targetPlan || client?.plan_type;
+    if (!clientId || !client || !newPlan || newPlan === client.plan_type) return;
+    const label = availablePlans.find((p) => p.key === newPlan)?.name || newPlan;
+    if (!confirm(`Move ${client.business_name} to ${label}? If this client is on paid billing, Stripe prorates the difference on their next invoice.`)) return;
+    setChangingPlan(true); setPlanMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/change-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: clientId, plan: newPlan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to change plan');
+      setPlanMsg(`Moved to ${label}.`);
+      fetchClientData();
+      setTimeout(() => setPlanMsg(null), 4000);
+    } catch (err: any) {
+      setPlanMsg(err.message || 'Failed to change plan');
+    } finally {
+      setChangingPlan(false);
+    }
+  };
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
@@ -582,6 +613,37 @@ export default function AgencyClientDetailPage() {
 
           {/* Quick Info */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
+        </div>
+      </div>
+
+      {/* Change plan — move this client to a different plan (prorates if billed) */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="flex items-center gap-2 mb-1">
+            <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Plan</h3>
+          </div>
+          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Currently on {getPlanLabel(client.plan_type)}. Move this client to a different plan below. If they are on paid billing the difference is prorated on their next invoice.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="min-w-[180px]">
+              <CustomSelect
+                value={targetPlan || client.plan_type}
+                onChange={(v) => setTargetPlan(v)}
+                options={availablePlans.map((p) => ({ value: p.key, label: p.name }))}
+                disabled={changingPlan}
+                ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } }}
+              />
+            </div>
+            <button
+              onClick={handleChangePlan}
+              disabled={changingPlan || (targetPlan || client.plan_type) === client.plan_type}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
+            </button>
+            {planMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>}
+          </div>
         </div>
       </div>
 
