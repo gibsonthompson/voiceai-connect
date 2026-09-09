@@ -48,10 +48,6 @@ export interface FeatureLabel {
 }
 
 export const FEATURE_LABELS: Record<string, FeatureLabel> = {
-  google_calendar: {
-    label: 'Google Calendar Booking',
-    description: 'AI books appointments directly into your calendar during the call',
-  },
   knowledge_base: {
     label: 'Knowledge Base',
     description: 'Train the AI on your website, FAQs, and documents',
@@ -92,14 +88,6 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
     label: 'Email Call Summaries',
     description: 'AI-generated summaries emailed to you after each call',
   },
-  advanced_analytics: {
-    label: 'Advanced Analytics',
-    description: 'Call intent breakdowns, peak times, conversion tracking',
-  },
-  priority_support: {
-    label: 'Priority Support',
-    description: 'Direct line for setup help and troubleshooting',
-  },
 };
 
 // ============================================================================
@@ -108,7 +96,6 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
 // ============================================================================
 
 export const FEATURE_ORDER: string[] = [
-  'google_calendar',
   'knowledge_base',
   'custom_voice',
   'custom_greeting',
@@ -119,8 +106,6 @@ export const FEATURE_ORDER: string[] = [
   'caller_recognition',
   'spam_detection',
   'email_summaries',
-  'advanced_analytics',
-  'priority_support',
 ];
 
 // ============================================================================
@@ -142,6 +127,7 @@ export const CORE_CLIENT_FEATURES: string[] = [
   'Two-way text messaging',
   'Call recordings & transcripts',
   'AI-powered call summaries',
+  'Google Calendar appointment booking',
   'Call history dashboard',
 ];
 
@@ -216,15 +202,31 @@ export interface ClientPlanTile {
 //   }
 // ============================================================================
 
-function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit: number): { included: string[]; excluded: string[]; teamMembers: number } {
+export interface CustomFeature { key: string; label: string; }
+
+// Merge the built-in features (FEATURE_ORDER) with an agency's custom_features
+// into one ordered [key,label] list. Single source used by BOTH the rendered
+// plan tiles and the Settings editor, so custom features stay in sync across
+// marketing, signup, and the editor.
+export function agencyFeatureEntries(agency: Record<string, any> | null | undefined): { key: string; label: string }[] {
+  const builtIn = FEATURE_ORDER
+    .map((k) => ({ key: k, label: FEATURE_LABELS[k]?.label || '' }))
+    .filter((e) => e.label);
+  const raw = agency && Array.isArray(agency.custom_features) ? agency.custom_features : [];
+  const custom = raw
+    .filter((f: any) => f && typeof f === 'object' && f.key && f.label)
+    .map((f: any) => ({ key: String(f.key), label: String(f.label) }));
+  return [...builtIn, ...custom];
+}
+
+function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit: number, featureEntries: { key: string; label: string }[]): { included: string[]; excluded: string[]; teamMembers: number } {
   const included: string[] = [...CORE_CLIENT_FEATURES];
   included.push(callLimit === -1 ? 'Unlimited calls per month' : `Up to ${callLimit.toLocaleString()} calls per month`);
   const excluded: string[] = [];
-  for (const key of FEATURE_ORDER) {
-    const meta = FEATURE_LABELS[key];
-    if (!meta) continue;
-    if (featuresForTier[key] === true) included.push(meta.label);
-    else excluded.push(meta.label);
+  for (const { key, label } of featureEntries) {
+    if (!label) continue;
+    if (featuresForTier[key] === true) included.push(label);
+    else excluded.push(label);
   }
   const teamMembersRaw = featuresForTier.team_members;
   const teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
@@ -234,6 +236,7 @@ function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit
 
 export function buildClientPlans(agency: Record<string, any> | null | undefined): ClientPlanTile[] {
   const safeAgency: Record<string, any> = agency || {};
+  const featureEntries = agencyFeatureEntries(safeAgency);
 
   // Path B is the source of truth the moment the agency has a plans array. Show
   // its VISIBLE + PRICED plans; if there are none, return an EMPTY list. Do NOT
@@ -253,7 +256,7 @@ export function buildClientPlans(agency: Record<string, any> | null | undefined)
       const callLimit = (typeof p.call_limit === 'number' && !isNaN(p.call_limit)) ? p.call_limit : 50;
       const feats: Record<string, any> =
         (p.features && typeof p.features === 'object' && !Array.isArray(p.features)) ? p.features : {};
-      const { included, excluded, teamMembers } = buildClientFeatureLists(feats, callLimit);
+      const { included, excluded, teamMembers } = buildClientFeatureLists(feats, callLimit, featureEntries);
       return {
         id: String(p.key),
         name: (p.name || '').toString().trim() || 'Plan',
@@ -279,7 +282,7 @@ export function buildClientPlans(agency: Record<string, any> | null | undefined)
     const rawDesc = (safeAgency[`plan_${id}_description`] || '').toString().trim();
     const description = rawDesc.length > 0 ? rawDesc : null;
     const featuresForTier: Record<string, any> = (planFeatures[id] && typeof planFeatures[id] === 'object') ? planFeatures[id] : {};
-    const { included, excluded, teamMembers } = buildClientFeatureLists(featuresForTier, callLimit);
+    const { included, excluded, teamMembers } = buildClientFeatureLists(featuresForTier, callLimit, featureEntries);
     return { id, name, description, price, callLimit, popular: id === 'pro', included, excluded, teamMembers };
   });
 }
