@@ -62,11 +62,7 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
   },
   business_hours: {
     label: 'Business Hours Routing',
-    description: 'Different behavior in and out of business hours',
-  },
-  after_hours_mode: {
-    label: 'After-Hours Mode',
-    description: 'Custom AI behavior for evenings and weekends',
+    description: 'Different greeting and behavior during vs. after business hours, with a custom after-hours message',
   },
   call_transfer: {
     label: 'Live Call Transfer',
@@ -84,10 +80,6 @@ export const FEATURE_LABELS: Record<string, FeatureLabel> = {
     label: 'Spam & Robocall Detection',
     description: 'AI filters out junk calls automatically',
   },
-  email_summaries: {
-    label: 'Email Call Summaries',
-    description: 'AI-generated summaries emailed to you after each call',
-  },
 };
 
 // ============================================================================
@@ -100,12 +92,10 @@ export const FEATURE_ORDER: string[] = [
   'custom_voice',
   'custom_greeting',
   'business_hours',
-  'after_hours_mode',
   'call_transfer',
   'transfer_fallback',
   'caller_recognition',
   'spam_detection',
-  'email_summaries',
 ];
 
 // ============================================================================

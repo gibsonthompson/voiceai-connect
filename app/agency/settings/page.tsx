@@ -19,9 +19,9 @@ function isTrialStatus(status: string | null | undefined): boolean { return stat
 
 const PLAN_PRICING: Record<string, number> = { free: 0, pro: 99, scale: 499, starter: 0, professional: 99, enterprise: 499 };
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean | number>> = {
-  starter: { email_summaries: true, custom_greeting: false, custom_voice: false, knowledge_base: false, business_hours: true, google_calendar: false, advanced_analytics: false, priority_support: false, caller_recognition: true, spam_detection: true, call_transfer: false, transfer_fallback: false, after_hours_mode: true, team_members: 0 },
-  pro: { email_summaries: true, custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: false, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true, team_members: 2 },
-  growth: { email_summaries: true, custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, google_calendar: true, advanced_analytics: true, priority_support: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, after_hours_mode: true, team_members: 5 },
+  starter: { custom_greeting: false, custom_voice: false, knowledge_base: false, business_hours: true, caller_recognition: false, spam_detection: true, call_transfer: false, transfer_fallback: false, team_members: 0 },
+  pro: { custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, team_members: 2 },
+  growth: { custom_greeting: true, custom_voice: true, knowledge_base: true, business_hours: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, team_members: 5 },
 };
 
 const PLAN_NAME_DEFAULTS: Record<string, string> = {
@@ -804,7 +804,7 @@ function AgencySettingsContent() {
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
                     <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Every plan includes the core, regardless of price:</p>
-                    <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{CORE_CLIENT_FEATURES.join('  ·  ')}.</p>
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1.5">{CORE_CLIENT_FEATURES.map((feat, i) => (<span key={i} className="text-[11px] sm:text-xs whitespace-nowrap" style={{ color: theme.textMuted }}>{feat}{i < CORE_CLIENT_FEATURES.length - 1 ? ' \u00b7' : ''}</span>))}</div>
                     <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>The toggles in the grid below are the extras you include or exclude per plan.</p>
                   </div>
                 </div>
