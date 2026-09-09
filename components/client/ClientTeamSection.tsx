@@ -117,7 +117,7 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
             <Users className="w-4 h-4" style={{ color: theme.primary }} />Users
           </h2>
-          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts — {limits.current} of {limits.max}</p>
+          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts — {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)} disabled={!limits.allowed} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" />Add</button>
       </div>
