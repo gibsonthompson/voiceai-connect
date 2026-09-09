@@ -25,7 +25,7 @@ export interface UiPlan {
   setupOn: boolean;
   setupFee: string;
   included_minutes: string;
-  features: Record<string, boolean>;
+  features: Record<string, boolean | number>;
   visible: boolean;
 }
 
@@ -190,6 +190,28 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
               <input type="number" min="0" value={p.included_minutes} onChange={(e) => update(p._uid, { included_minutes: e.target.value })}
                 className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
               <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>Minutes bundled into the price. 0 = every minute billed at the per-minute rate.</p>
+
+              <label className={fieldLabel} style={{ color: theme.textMuted }}>Client team seats</label>
+              {Number(p.features.team_members) === -1 ? (
+                <button type="button" onClick={() => update(p._uid, { features: { ...p.features, team_members: 0 } })}
+                  title="Click to set a specific number instead"
+                  className="w-full rounded-lg px-3 py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ backgroundColor: `${theme.primary}18`, color: theme.primary, border: `1px solid ${theme.primary}40` }}>
+                  <InfinityIcon className="h-4 w-4" /> Unlimited
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input type="number" min="0" value={String(Number(p.features.team_members) || 0)}
+                    onChange={(e) => update(p._uid, { features: { ...p.features, team_members: parseInt(e.target.value) || 0 } })}
+                    className="flex-1 min-w-0 rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
+                  <button type="button" onClick={() => update(p._uid, { features: { ...p.features, team_members: -1 } })} title="Set to unlimited"
+                    className="rounded-lg px-2.5 py-2.5 flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${theme.primary}12`, color: theme.primary, border: `1px solid ${theme.primary}30` }}>
+                    <InfinityIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              <p className="mt-1 mb-3.5 text-[9px] leading-tight" style={{ color: theme.textMuted }}>Extra dashboard logins beyond the owner. 0 = owner only.</p>
 
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Tagline (blank = none)</label>
               <input value={p.description} onChange={(e) => update(p._uid, { description: e.target.value })}

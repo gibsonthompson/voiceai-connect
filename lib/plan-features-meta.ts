@@ -219,8 +219,14 @@ function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit
     else excluded.push(label);
   }
   const teamMembersRaw = featuresForTier.team_members;
-  const teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
-  if (teamMembers > 0) included.push(`Up to ${teamMembers} team member${teamMembers === 1 ? '' : 's'}`);
+  let teamMembers = 0;
+  if (teamMembersRaw === -1) {
+    included.push('Unlimited team members');
+    teamMembers = -1;
+  } else {
+    teamMembers = (typeof teamMembersRaw === 'number' && teamMembersRaw > 0) ? teamMembersRaw : 0;
+    if (teamMembers > 0) included.push(`Up to ${teamMembers} team member${teamMembers === 1 ? '' : 's'}`);
+  }
   return { included, excluded, teamMembers };
 }
 
