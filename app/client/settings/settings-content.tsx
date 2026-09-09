@@ -14,7 +14,7 @@ import ClientTeamSection from '@/components/client/ClientTeamSection';
 import { useClient } from '@/lib/client-context';
 
 interface Client {
-  id: string; business_name: string; email: string; owner_phone: string; industry: string;
+  id: string; business_name: string; owner_name?: string; email: string; owner_phone: string; industry: string;
   business_city: string; business_state: string; vapi_phone_number: string; subscription_status: string;
   plan_type: string; trial_ends_at: string | null; monthly_call_limit: number; calls_this_month: number;
   google_calendar_connected: boolean; call_mode?: string; ring_timeout?: number; created_at: string;
@@ -54,6 +54,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [client, setClient] = useState(initialClient);
   const [email, setEmail] = useState(client.email || '');
   const [ownerPhone, setOwnerPhone] = useState(client.owner_phone || '');
+  const [ownerName, setOwnerName] = useState(client.owner_name || '');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
@@ -95,7 +96,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   }, [client.id, backendUrl]);
   const copyCred = async (text: string, which: 'user' | 'pass') => { try { await navigator.clipboard.writeText(text); setCredCopied(which); setTimeout(() => setCredCopied(null), 1500); } catch {} };
 
-  const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
+  const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone, owner_name: ownerName }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone, owner_name: ownerName }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
 
   const handleChangePassword = async () => { setPasswordMessage(''); if (!currentPassword) { setPasswordMessage('Current password is required'); return; } if (!newPassword || newPassword.length < 6) { setPasswordMessage('New password must be at least 6 characters'); return; } if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; } setChangingPassword(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ currentPassword, newPassword }) }); const data = await response.json(); if (data.success) { setPasswordMessage('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setTimeout(() => setPasswordMessage(''), 3000); } else { setPasswordMessage(data.error || 'Failed to change password'); } } catch (error) { setPasswordMessage('Error changing password'); } finally { setChangingPassword(false); } };
 
@@ -162,7 +163,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const getDaysRemaining = (): number | null => { if (!client.trial_ends_at) return null; const diffTime = new Date(client.trial_ends_at).getTime() - Date.now(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return diffDays > 0 ? diffDays : 0; };
 
-  const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '');
+  const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '') || ownerName !== (client.owner_name || '');
   const daysRemaining = getDaysRemaining();
   const hasPasswordChanges = currentPassword || newPassword || confirmPassword;
 
@@ -260,6 +261,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         <section className="mb-4 sm:mb-6">
           <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><User className="w-4 h-4" style={{ color: theme.primary }} />Contact Information</h2>
           <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Your name</label><input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="e.g. Mike Johnson" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Shown in your dashboard greeting. Your business name is set separately.</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Owner SMS notifications are sent here, and this is the default number the AI transfers to when a caller needs a person. Team members get SMS on their own number, set under Users.</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
             <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
