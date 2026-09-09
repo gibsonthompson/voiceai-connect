@@ -594,7 +594,7 @@ export default function AgencyClientDetailPage() {
                       ) : (
                         <div className="flex-1 min-w-0">
                           <p className="text-sm truncate" style={{ color: theme.text }}>{industryEntry?.label || client.industry || '—'}</p>
-                          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted4 }}>Locked after creation</p>
+                          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Locked after creation</p>
                         </div>
                       )}
                       {industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />}
