@@ -187,7 +187,7 @@ function buildBranding(c: any): Branding {
     logoUrl: c.logo_url || agency?.logo_url || null,
     supportEmail: agency?.support_email || null,
     supportPhone: agency?.support_phone || null,
-    websiteTheme: agency?.website_theme || 'dark',
+    websiteTheme: (c.theme_mode === 'light' || c.theme_mode === 'dark') ? c.theme_mode : (agency?.website_theme || 'dark'),
     clientHeaderMode: agency?.client_header_mode || 'agency_name',
   };
 }
