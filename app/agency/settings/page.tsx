@@ -18,6 +18,15 @@ interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
 
 const PLAN_PRICING: Record<string, number> = { free: 0, pro: 99, scale: 499, starter: 0, professional: 99, enterprise: 499 };
+// Suggested bundled minutes for a plan that hasn't set any yet, so plans load
+// ready instead of sitting at 0. ~4 minutes per call, rounded to the nearest 50;
+// unlimited plans get a generous default.
+function optimalMinutes(callLimit: number | null | undefined): number {
+  if (callLimit == null || callLimit === -1) return 2000;
+  const cl = Number(callLimit) || 50;
+  return Math.max(100, Math.round((cl * 4) / 50) * 50);
+}
+
 const DEFAULT_PLAN_FEATURES: Record<string, Record<string, boolean | number>> = {
   starter: { custom_greeting: false, custom_voice: false, knowledge_base: false, business_hours: true, caller_recognition: false, spam_detection: true, call_transfer: false, transfer_fallback: false, team_members: 0 },
   pro: { custom_greeting: true, custom_voice: false, knowledge_base: true, business_hours: true, caller_recognition: true, spam_detection: true, call_transfer: true, transfer_fallback: true, team_members: 2 },
@@ -293,9 +302,6 @@ function AgencySettingsContent() {
   // creates the connected-account meter, and sweeps existing clients.
   const [minutePassThrough, setMinutePassThrough] = useState(false);
   const [clientMinuteRate, setClientMinuteRate] = useState('');
-  const [includedStarter, setIncludedStarter] = useState('0');
-  const [includedPro, setIncludedPro] = useState('0');
-  const [includedGrowth, setIncludedGrowth] = useState('0');
   const [minuteSaving, setMinuteSaving] = useState(false);
   const [minuteSaved, setMinuteSaved] = useState(false);
   const [minuteToggleLoading, setMinuteToggleLoading] = useState(false);
@@ -365,7 +371,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setIncludedStarter(String((agency as any).included_minutes_starter ?? 0)); setIncludedPro(String((agency as any).included_minutes_pro ?? 0)); setIncludedGrowth(String((agency as any).included_minutes_growth ?? 0)); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String(p.included_minutes != null ? p.included_minutes : 0), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -569,9 +575,6 @@ function AgencySettingsContent() {
         : Math.round(dollars * 1000000) / 10000;
       const payload = {
         client_minute_rate_cents: rateCents,
-        included_minutes_starter: parseInt(includedStarter) || 0,
-        included_minutes_pro: parseInt(includedPro) || 0,
-        included_minutes_growth: parseInt(includedGrowth) || 0,
       };
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
@@ -897,12 +900,119 @@ function AgencySettingsContent() {
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><h4 className="font-medium text-sm sm:text-base">Custom features</h4></div>
                   <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Add your own feature bullets for your pricing. They show up as toggle rows in the grid above, so you include or exclude them per plan like the built-in ones.</p>
                   {customFeatures.length > 0 && (<div className="space-y-2 mb-3">{customFeatures.map((cf) => (<div key={cf.key} className="flex items-center gap-2"><input value={cf.label} onChange={(e) => renameCustomFeature(cf.key, e.target.value)} maxLength={60} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><button type="button" onClick={() => deleteCustomFeature(cf.key)} title="Delete feature" className="p-2 rounded-lg flex-shrink-0" style={{ color: theme.textMuted }}><Trash2 className="h-4 w-4" /></button></div>))}</div>)}
-                  <div className="flex items-center gap-2"><input value={newFeatureLabel} onChange={(e) => setNewFeatureLabel(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomFeature(); } }} placeholder="e.g. Free onboarding call" maxLength={60} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><button type="button" onClick={addCustomFeature} disabled={!newFeatureLabel.trim() || customFeatures.length >= 15} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium flex-shrink-0 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" /> Add</button></div>
+                  <div className="flex items-center gap-2"><input value={newFeatureLabel} onChange={(e) => setNewFeatureLabel(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomFeature(); } }} placeholder="e.g. Dedicated account manager" maxLength={60} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><button type="button" onClick={addCustomFeature} disabled={!newFeatureLabel.trim() || customFeatures.length >= 15} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium flex-shrink-0 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" /> Add</button></div>
                   {customFeatures.length >= 15 && (<p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>Maximum of 15 custom features.</p>)}
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
                   <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
+                </div>
+
+                {/* Client Per-Minute Billing. Optional: charge your OWN clients
+                    per voice minute on top of their flat plan, billed on your
+                    connected Stripe account (you keep 100 percent). Rate + the
+                    per-plan included minutes save via the settings PUT. The
+                    master switch goes through the dedicated toggle endpoint,
+                    which validates, creates the connected meter, and applies to
+                    existing clients. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <DollarSign className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h4 className="font-medium text-sm sm:text-base">Client Per-Minute Billing</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                    Charge your clients per voice minute on top of their monthly plan. Charges run on your connected Stripe account, so you keep 100 percent of what you bill. Leave this off to absorb minutes yourself and bill only the flat plan.
+                  </p>
+
+                  {minuteError && (
+                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
+                      <p className="text-sm" style={{ color: theme.errorText }}>{minuteError}</p>
+                    </div>
+                  )}
+                  {minuteSaved && (
+                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                      <Check className="h-4 w-4" style={{ color: theme.primary }} />
+                      <p className="text-sm" style={{ color: theme.primary }}>Saved.</p>
+                    </div>
+                  )}
+
+                  {/* Rate (dollars) */}
+                  <div className="mb-4">
+                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Rate per minute ($)</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={clientMinuteRate}
+                      onChange={(e) => setClientMinuteRate(e.target.value)}
+                      placeholder="0.35"
+                      className="w-full sm:w-40 rounded-xl px-3 py-2 text-sm"
+                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                    />
+                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>What each client pays per voice minute beyond the included minutes set per plan above.</p>
+                  </div>
+
+                  <button
+                    onClick={handleSaveMinuteBilling}
+                    disabled={minuteSaving}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                  >
+                    {minuteSaving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save per-minute rate</>}
+                  </button>
+
+                  {/* Master toggle */}
+                  <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: minutePassThrough ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${minutePassThrough ? theme.primary30 : theme.border}`, opacity: (!minutePassThrough && !canEnableMinutePassThrough) ? 0.6 : 1 }}>
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="text-sm font-medium" style={{ color: minutePassThrough ? theme.primary : theme.text }}>Charge clients per minute</p>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                        {minutePassThrough
+                          ? 'On. New and existing clients are billed per minute above their included minutes.'
+                          : 'Off. You absorb minutes and bill clients only their flat plan.'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleMinutePassThrough}
+                      disabled={minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)}
+                      className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+                      style={{ backgroundColor: minutePassThrough ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'), cursor: (minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)) ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: minutePassThrough ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+
+                  {minuteToggleLoading && (
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
+                  )}
+                  {minuteSweepMsg && !minuteToggleLoading && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+                      <p className="text-xs sm:text-sm" style={{ color: theme.primary }}>{minuteSweepMsg}</p>
+                    </div>
+                  )}
+
+                  {!connectChargesReady && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+                      <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
+                        <p className="font-medium mb-0.5">Connect Stripe first</p>
+                        <p style={{ color: theme.textMuted }}>Finish Stripe Connect setup above before you can charge clients per minute.</p>
+                      </div>
+                    </div>
+                  )}
+                  {connectChargesReady && savedRateCents <= 0 && !minutePassThrough && (
+                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                      <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Set a rate above 0 and save it before turning this on.</p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                      Turning this off stops new per-minute charges right away. Minutes already used this cycle still bill, and the per-minute line item drops off at each client's next renewal.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="rounded-xl p-4 mt-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
@@ -1062,130 +1172,6 @@ function AgencySettingsContent() {
 
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
 
-                {/* Client Per-Minute Billing. Optional: charge your OWN clients
-                    per voice minute on top of their flat plan, billed on your
-                    connected Stripe account (you keep 100 percent). Rate + the
-                    per-plan included minutes save via the settings PUT. The
-                    master switch goes through the dedicated toggle endpoint,
-                    which validates, creates the connected meter, and applies to
-                    existing clients. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <DollarSign className="h-4 w-4" style={{ color: theme.primary }} />
-                    <h4 className="font-medium text-sm sm:text-base">Client Per-Minute Billing</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
-                    Charge your clients per voice minute on top of their monthly plan. Charges run on your connected Stripe account, so you keep 100 percent of what you bill. Leave this off to absorb minutes yourself and bill only the flat plan.
-                  </p>
-
-                  {minuteError && (
-                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} />
-                      <p className="text-sm" style={{ color: theme.errorText }}>{minuteError}</p>
-                    </div>
-                  )}
-                  {minuteSaved && (
-                    <div className="mb-3 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                      <Check className="h-4 w-4" style={{ color: theme.primary }} />
-                      <p className="text-sm" style={{ color: theme.primary }}>Saved.</p>
-                    </div>
-                  )}
-
-                  {/* Rate (dollars) */}
-                  <div className="mb-4">
-                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Rate per minute ($)</label>
-                    <input
-                      type="number" min="0" step="0.01"
-                      value={clientMinuteRate}
-                      onChange={(e) => setClientMinuteRate(e.target.value)}
-                      placeholder="0.35"
-                      className="w-full sm:w-40 rounded-xl px-3 py-2 text-sm"
-                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                    />
-                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>What each client pays per voice minute beyond their included minutes.</p>
-                  </div>
-
-                  {/* Included minutes per plan */}
-                  <div className="mb-4">
-                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Included minutes per plan</label>
-                    <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Free minutes each plan includes before per-minute charges apply. Set 0 for pure per-minute.</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {([
-                        { label: planStarterName || 'Starter', value: includedStarter, set: setIncludedStarter },
-                        { label: planProName || 'Professional', value: includedPro, set: setIncludedPro },
-                        { label: planGrowthName || 'Growth', value: includedGrowth, set: setIncludedGrowth },
-                      ]).map((p) => (
-                        <div key={p.label}>
-                          <label className="block text-[10px] sm:text-xs mb-1" style={{ color: theme.textMuted }}>{p.label}</label>
-                          <input type="number" min="0" step="1" value={p.value} onChange={(e) => p.set(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveMinuteBilling}
-                    disabled={minuteSaving}
-                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 mb-5"
-                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-                  >
-                    {minuteSaving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save rate and minutes</>}
-                  </button>
-
-                  {/* Master toggle */}
-                  <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: minutePassThrough ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${minutePassThrough ? theme.primary30 : theme.border}`, opacity: (!minutePassThrough && !canEnableMinutePassThrough) ? 0.6 : 1 }}>
-                    <div className="flex-1 min-w-0 mr-3">
-                      <p className="text-sm font-medium" style={{ color: minutePassThrough ? theme.primary : theme.text }}>Charge clients per minute</p>
-                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
-                        {minutePassThrough
-                          ? 'On. New and existing clients are billed per minute above their included minutes.'
-                          : 'Off. You absorb minutes and bill clients only their flat plan.'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleToggleMinutePassThrough}
-                      disabled={minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)}
-                      className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
-                      style={{ backgroundColor: minutePassThrough ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'), cursor: (minuteToggleLoading || (!minutePassThrough && !canEnableMinutePassThrough)) ? 'not-allowed' : 'pointer' }}
-                    >
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: minutePassThrough ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-
-                  {minuteToggleLoading && (
-                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
-                  )}
-                  {minuteSweepMsg && !minuteToggleLoading && (
-                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
-                      <p className="text-xs sm:text-sm" style={{ color: theme.primary }}>{minuteSweepMsg}</p>
-                    </div>
-                  )}
-
-                  {!connectChargesReady && (
-                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
-                      <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
-                        <p className="font-medium mb-0.5">Connect Stripe first</p>
-                        <p style={{ color: theme.textMuted }}>Finish Stripe Connect setup above before you can charge clients per minute.</p>
-                      </div>
-                    </div>
-                  )}
-                  {connectChargesReady && savedRateCents <= 0 && !minutePassThrough && (
-                    <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                      <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Set a rate above 0 and save it before turning this on.</p>
-                    </div>
-                  )}
-
-                  <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-                      Turning this off stops new per-minute charges right away. Minutes already used this cycle still bill, and the per-minute line item drops off at each client's next renewal.
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 

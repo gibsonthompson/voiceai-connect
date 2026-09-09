@@ -64,7 +64,7 @@ export function makeEmptyPlan(): UiPlan {
     description: '',
     setupOn: false,
     setupFee: '',
-    included_minutes: '0',
+    included_minutes: '200',
     features: {},
     visible: true,
   };
@@ -104,16 +104,16 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
   // Larger switch for a more legible grid.
   const Switch = ({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) => (
     <button type="button" role="switch" aria-checked={on} onClick={onClick} title={label}
-      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0"
+      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0"
       style={{ backgroundColor: on ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') }}>
-      <span className="inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
-        style={{ transform: on ? 'translateX(24px)' : 'translateX(4px)' }} />
+      <span className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform"
+        style={{ transform: on ? 'translateX(19px)' : 'translateX(3px)' }} />
     </button>
   );
 
   const gridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: `minmax(150px, 210px) repeat(${plans.length}, minmax(230px, 1fr))`,
+    gridTemplateColumns: `minmax(150px, 190px) repeat(${plans.length}, 240px)`,
     minWidth: 'min-content',
   };
   const stickyLabel: React.CSSProperties = { position: 'sticky', left: 0, zIndex: 1, backgroundColor: theme.card };
@@ -189,7 +189,7 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Included min / mo</label>
               <input type="number" min="0" value={p.included_minutes} onChange={(e) => update(p._uid, { included_minutes: e.target.value })}
                 className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
-              <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>0 = per-minute from first minute</p>
+              <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>Minutes bundled into the price. 0 = every minute billed at the per-minute rate.</p>
 
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Tagline (blank = none)</label>
               <input value={p.description} onChange={(e) => update(p._uid, { description: e.target.value })}
