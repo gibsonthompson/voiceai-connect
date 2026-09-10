@@ -315,6 +315,7 @@ function AgencySettingsContent() {
   // tab has no shared Save button. Switching affects only clients added
   // afterward; existing clients keep their stamped billing mode.
   const [clientBillingMode, setClientBillingMode] = useState<'connect' | 'manual'>('connect');
+  const [billingMethod, setBillingMethod] = useState('');
   const [billingModeLoading, setBillingModeLoading] = useState(false);
   const [billingModeError, setBillingModeError] = useState<string | null>(null);
   const [billingModeSaved, setBillingModeSaved] = useState(false);
@@ -355,7 +356,7 @@ function AgencySettingsContent() {
   // Card-required toggle is only meaningful when the agency has Stripe Connect
   // set up AND can accept charges. UI grays out the toggle when this is false
   // and shows a link to the Payments tab.
-  const canEnableCardRequired = !!(agency?.stripe_account_id && (agency as any)?.stripe_charges_enabled);
+  const canEnableCardRequired = clientBillingMode !== 'manual' && !!(agency?.stripe_account_id && (agency as any)?.stripe_charges_enabled);
 
   // Per-minute pass-through gating. The toggle can only be turned ON when
   // Stripe Connect can accept charges AND a rate is already SAVED (> 0). It can
@@ -371,7 +372,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -632,6 +633,19 @@ function AgencySettingsContent() {
   // creation, so this only changes what NEW clients get. The toggle flips only
   // after the PUT succeeds; a failure leaves it where it was. refreshAgency()
   // pulls the persisted value back so the toggle reflects the saved state.
+  const saveBillingMethod = async (method: string) => {
+    setBillingMethod(method);
+    if (!agency?.id) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ billing_method: method }),
+      });
+    } catch { /* record-only; non-fatal */ }
+  };
+
   const handleToggleClientBillingMode = async () => {
     if (!agency) return;
     const next = clientBillingMode === 'manual' ? 'connect' : 'manual';
@@ -858,16 +872,26 @@ function AgencySettingsContent() {
                   </div>
 
                   {!canEnableCardRequired && (
-                    <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
-                      <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
-                        <p className="font-medium mb-0.5">Stripe Connect required</p>
-                        <p style={{ color: theme.textMuted }}>
-                          You need to connect Stripe before clients can be charged.{' '}
-                          <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Set up Stripe Connect</a>
-                        </p>
+                    clientBillingMode === 'manual' ? (
+                      <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                        <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                          <p className="font-medium mb-0.5" style={{ color: theme.infoText }}>You bill your clients yourself</p>
+                          <p>Card-on-trial and Stripe checkout don&apos;t apply, new clients go live immediately with no card and you invoice them directly. Switch this off in the <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payments tab</a> if you want the platform to charge them.</p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                        <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+                        <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
+                          <p className="font-medium mb-0.5">Stripe Connect required</p>
+                          <p style={{ color: theme.textMuted }}>
+                            You need to connect Stripe before clients can be charged.{' '}
+                            <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Set up Stripe Connect</a>
+                          </p>
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {canEnableCardRequired && requireCardForTrial && (
@@ -915,7 +939,13 @@ function AgencySettingsContent() {
                     master switch goes through the dedicated toggle endpoint,
                     which validates, creates the connected meter, and applies to
                     existing clients. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                {clientBillingMode === 'manual' && (
+                  <div className="mb-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Not needed while you&apos;re billing clients yourself. Per-minute charges run through Stripe Connect, which is off in manual mode.</p>
+                  </div>
+                )}
+                <div className={`rounded-xl p-4 sm:p-5 ${clientBillingMode === 'manual' ? 'opacity-50 pointer-events-none select-none' : ''}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <DollarSign className="h-4 w-4" style={{ color: theme.primary }} />
                     <h4 className="font-medium text-sm sm:text-base">Client Per-Minute Billing</h4>
@@ -1021,10 +1051,16 @@ function AgencySettingsContent() {
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+                {clientBillingMode === 'manual' && (
+                  <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Not needed while you&apos;re billing clients yourself. Turn off &ldquo;Bill my clients myself&rdquo; below if you want the platform to charge your clients through Stripe.</p>
+                  </div>
+                )}
                 {loadingStripeStatus ? (
                   <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>
-                ) : (
-                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+) : (
+                  <div className={`rounded-xl p-4 sm:p-5 ${clientBillingMode === 'manual' ? 'opacity-50 pointer-events-none select-none' : ''}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex items-center gap-4">
                       <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" />
                       <div className="flex-1 min-w-0">
@@ -1082,8 +1118,8 @@ function AgencySettingsContent() {
                       <p className="text-sm font-medium" style={{ color: clientBillingMode === 'manual' ? theme.primary : theme.text }}>Bill my clients myself</p>
                       <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
                         {clientBillingMode === 'manual'
-                          ? 'On. New clients go live immediately with no card or checkout. You collect payment from them however you like (invoice, payment link).'
-                          : 'Off. New clients pay through Stripe Connect checkout as usual.'}
+                          ? 'On. You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don\u2019t apply and are disabled below.'
+                          : 'Off. The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).'}
                       </p>
                     </div>
                     <button
@@ -1099,6 +1135,22 @@ function AgencySettingsContent() {
 
                   {billingModeLoading && (
                     <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
+                  )}
+
+                  {clientBillingMode === 'manual' && (
+                    <div className="mt-3">
+                      <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>How do you bill your clients?</label>
+                      <select value={billingMethod} onChange={(e) => saveBillingMethod(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
+                        <option value="">Select a method...</option>
+                        <option value="invoices">Manual invoices</option>
+                        <option value="own_stripe">My own Stripe account</option>
+                        <option value="quickbooks">QuickBooks / Xero</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="bank">Bank transfer / ACH</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <p className="text-[10px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>For our records only, this doesn&apos;t change anything today. We may use it to offer a direct integration with your billing tool down the line.</p>
+                    </div>
                   )}
 
                   <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
