@@ -44,7 +44,7 @@ class PanelBoundary extends Component<{ children: any }, { err: string | null }>
   }
 }
 
-interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
+interface Agency { id: string; name: string; email: string; slug: string; stripe_customer_id?: string; phone: string | null; plan_type: string; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
 interface ExpandedData { clients: any[]; support_requests?: any[]; feedback?: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null }; onboarding_email: { step: number; last_sent: string | null }; email_history?: any[] }
 
@@ -416,6 +416,8 @@ export default function AdminAgenciesPage() {
       (a.email || '').toLowerCase().includes(t) ||
       (a.slug || '').toLowerCase().includes(t) ||
       (a.marketing_domain || '').toLowerCase().includes(t) ||
+      (a.id || '').toLowerCase().includes(t) ||
+      (a.stripe_customer_id || '').toLowerCase().includes(t) ||
       (digits.length >= 3 && phoneDigits.includes(digits))
     );
   };
@@ -746,19 +748,19 @@ export default function AdminAgenciesPage() {
                         <div className="flex items-center gap-2 mb-3">
                           <Zap className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} />
                           <h4 className={label}>Setup Checklist</h4>
-                          <span className="text-[10px] text-[var(--a-dim)]">{expandedData[agency.id].checklist.done}/{expandedData[agency.id].checklist.total}</span>
-                          {expandedData[agency.id].checklist.complete && <span className="text-[9px] px-1.5 py-0.5 rounded-full border" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' }}>Complete</span>}
+                          <span className="text-[10px] text-[var(--a-dim)]">{expandedData[agency.id].checklist?.done}/{expandedData[agency.id].checklist?.total}</span>
+                          {expandedData[agency.id].checklist?.complete && <span className="text-[9px] px-1.5 py-0.5 rounded-full border" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', borderColor: 'var(--a-em-line)' }}>Complete</span>}
                         </div>
                         <div className="flex items-center gap-3 flex-wrap">
-                          {Object.entries(expandedData[agency.id].checklist.items).filter(([key]) => key !== 'stripe_charges').map(([key, item]) => (
+                          {Object.entries(expandedData[agency.id].checklist?.items || {}).filter(([key]) => key !== 'stripe_charges').map(([key, item]) => (
                             <div key={key} className="flex items-center gap-1.5">
                               {item.done ? <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} /> : <Circle className="h-3.5 w-3.5 text-[var(--a-dim)]" />}
                               <span className={`text-[11px] ${item.done ? 'text-[var(--a-dim)] line-through' : 'text-[var(--a-muted)]'}`}>{item.label}</span>
                             </div>
                           ))}
                         </div>
-                        {expandedData[agency.id].activation.step > 0 && (
-                          <p className="text-[10px] text-[var(--a-dim)] mt-2">Activation SMS: step {expandedData[agency.id].activation.step}/9{expandedData[agency.id].activation.last_sent && ` \u00b7 last sent ${timeAgo(expandedData[agency.id].activation.last_sent!)}`}</p>
+                        {expandedData[agency.id].activation?.step > 0 && (
+                          <p className="text-[10px] text-[var(--a-dim)] mt-2">Activation SMS: step {expandedData[agency.id].activation?.step}/9{expandedData[agency.id].activation?.last_sent && ` \u00b7 last sent ${timeAgo(expandedData[agency.id].activation?.last_sent!)}`}</p>
                         )}
                       </div>
 
@@ -778,7 +780,7 @@ export default function AdminAgenciesPage() {
                       )}
 
                       {/* Clients */}
-                      {expandedData[agency.id].clients.length > 0 && (
+                      {expandedData[agency.id].clients?.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <Users className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} />
@@ -786,7 +788,7 @@ export default function AdminAgenciesPage() {
                             <span className="text-[10px] text-[var(--a-dim)]">{expandedData[agency.id].billable_client_count} billable</span>
                           </div>
                           <div className="space-y-1">
-                            {expandedData[agency.id].clients.map((client: any) => {
+                            {expandedData[agency.id].clients?.map((client: any) => {
                               const clientOpen = expandedClients.has(client.id);
                               const callLimit = client.monthly_call_limit ?? client.call_limit;
                               return (
@@ -844,15 +846,15 @@ export default function AdminAgenciesPage() {
                       )}
 
                       {/* SMS History */}
-                      {expandedData[agency.id].sms_history.length > 0 && (
+                      {expandedData[agency.id].sms_history?.length > 0 && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--a-cyan)' }} />
                             <h4 className={label}>SMS History</h4>
-                            <span className="text-[10px] text-[var(--a-dim)]">Last {expandedData[agency.id].sms_history.length}</span>
+                            <span className="text-[10px] text-[var(--a-dim)]">Last {expandedData[agency.id].sms_history?.length}</span>
                           </div>
                           <div className="space-y-1">
-                            {expandedData[agency.id].sms_history.map((sms: any) => {
+                            {expandedData[agency.id].sms_history?.map((sms: any) => {
                               const typeInfo = getSmsTypeLabel(sms.message_type);
                               const del = getStatusBadge(sms.delivery_status === 'delivered' ? 'active' : sms.delivery_status);
                               const ok = sms.delivery_status === 'sent' || sms.delivery_status === 'delivered';

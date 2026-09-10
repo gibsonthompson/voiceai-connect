@@ -26,8 +26,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X,
-} from 'lucide-react';
+  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X, AlertTriangle} from 'lucide-react';
 
 
 // Gmail compose deep link so "Reply by email" opens Gmail with the message
@@ -62,20 +61,23 @@ function formatDateTime(date: string): string {
 // PAGE (tab shell + badge counts)
 // ============================================================================
 export default function AdminSupportPage() {
-  const [tab, setTab] = useState<'support' | 'feedback'>('support');
+  const [tab, setTab] = useState<'support' | 'feedback' | 'errors'>('support');
   const [supportOpen, setSupportOpen] = useState<number | null>(null);
   const [feedbackNew, setFeedbackNew] = useState<number | null>(null);
+  const [errorsOpen, setErrorsOpen] = useState<number | null>(null);
 
   const reloadBadges = useCallback(async () => {
     try {
       const token = getToken();
       const backendUrl = getBackendUrl();
-      const [s, f] = await Promise.all([
+      const [s, f, e] = await Promise.all([
         fetch(`${backendUrl}/api/admin/support-requests?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${backendUrl}/api/admin/feedback?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${backendUrl}/api/admin/error-reports?resolved=false`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       if (s.ok) { const d = await s.json(); setSupportOpen(d.counts?.open ?? 0); }
       if (f.ok) { const d = await f.json(); setFeedbackNew(d.counts?.new ?? 0); }
+      if (e.ok) { const d = await e.json(); setErrorsOpen(d.unresolved ?? (d.reports?.length ?? 0)); }
     } catch (e) {
       // Badges are non-critical; leave them as-is on error.
     }
@@ -83,7 +85,7 @@ export default function AdminSupportPage() {
 
   useEffect(() => { reloadBadges(); }, [reloadBadges]);
 
-  const tabBtn = (id: 'support' | 'feedback', label: string, Icon: any, badge: number | null) => {
+  const tabBtn = (id: 'support' | 'feedback' | 'errors', label: string, Icon: any, badge: number | null) => {
     const active = tab === id;
     return (
       <button
@@ -119,9 +121,10 @@ export default function AdminSupportPage() {
       <div className="flex items-center gap-2 mb-6">
         {tabBtn('support', 'Support Requests', LifeBuoy, supportOpen)}
         {tabBtn('feedback', 'Feedback', MessageSquare, feedbackNew)}
+        {tabBtn('errors', 'Backend Errors', AlertTriangle, errorsOpen)}
       </div>
 
-      {tab === 'support' ? <SupportTab onChanged={reloadBadges} /> : <FeedbackTab onChanged={reloadBadges} />}
+      {tab === 'support' ? <SupportTab onChanged={reloadBadges} /> : tab === 'feedback' ? <FeedbackTab onChanged={reloadBadges} /> : <ErrorsTab onChanged={reloadBadges} />}
     </div>
   );
 }
@@ -948,6 +951,94 @@ function CreateTicketModal({ onClose, onCreated }: { onClose: () => void; onCrea
             {submitting ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}Create Ticket
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ============================================================================
+// BACKEND ERRORS TAB - rows written by alertError() in lib/error-monitor.js
+// ============================================================================
+interface ErrorReport {
+  id: string;
+  context: string;
+  message: string | null;
+  stack: string | null;
+  metadata: Record<string, any> | null;
+  signature: string | null;
+  resolved: boolean;
+  created_at: string;
+}
+
+function ErrorsTab({ onChanged }: { onChanged: () => void }) {
+  const [reports, setReports] = useState<ErrorReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showResolved, setShowResolved] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const fetchErrors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/admin/error-reports?resolved=${showResolved}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) { const d = await res.json(); setReports(d.reports || []); }
+    } catch { /* leave list as-is */ }
+    finally { setLoading(false); }
+  }, [showResolved]);
+
+  useEffect(() => { fetchErrors(); }, [fetchErrors]);
+
+  const resolve = async (id: string, resolved: boolean) => {
+    setBusy(id);
+    try {
+      await fetch(`${getBackendUrl()}/api/admin/error-reports/${id}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ resolved }),
+      });
+      await fetchErrors();
+      onChanged();
+    } catch { /* no-op */ } finally { setBusy(null); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-[var(--a-muted)]">{loading ? 'Loading…' : `${reports.length} ${showResolved ? 'resolved' : 'open'} error${reports.length === 1 ? '' : 's'}`}</p>
+        <button onClick={() => setShowResolved(v => !v)} className="text-xs rounded-lg px-3 py-1.5" style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)', color: 'var(--a-muted)' }}>
+          {showResolved ? 'Show open' : 'Show resolved'}
+        </button>
+      </div>
+      {!loading && reports.length === 0 && (
+        <div className="rounded-xl p-8 text-center text-sm text-[var(--a-muted)]" style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)' }}>
+          No {showResolved ? 'resolved' : 'open'} backend errors.
+        </div>
+      )}
+      <div className="space-y-3">
+        {reports.map((r) => (
+          <div key={r.id} className="rounded-xl p-4" style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)' }}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--a-ink)] break-words">{r.context}</p>
+                <p className="mt-1 text-sm text-[var(--a-muted)] break-words">{r.message}</p>
+              </div>
+              <button onClick={() => resolve(r.id, !r.resolved)} disabled={busy === r.id} className="flex-shrink-0 text-xs rounded-lg px-3 py-1.5 disabled:opacity-50" style={{ background: r.resolved ? 'var(--a-card)' : 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }}>
+                {r.resolved ? 'Reopen' : 'Resolve'}
+              </button>
+            </div>
+            {r.metadata && Object.keys(r.metadata).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                {Object.entries(r.metadata).map(([k, v]) => (
+                  <span key={k} className="text-[11px] text-[var(--a-muted)] break-all"><span className="font-medium text-[var(--a-ink)]">{k}:</span> {String(v)}</span>
+                ))}
+              </div>
+            )}
+            {r.stack && (<pre className="mt-2 max-h-32 overflow-auto rounded-lg p-2 text-[10px] leading-relaxed text-[var(--a-muted)]" style={{ background: 'rgba(127,127,127,0.06)' }}>{r.stack}</pre>)}
+            <p className="mt-2 text-[10px] text-[var(--a-muted)]">{new Date(r.created_at).toLocaleString()}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
