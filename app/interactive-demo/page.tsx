@@ -22,24 +22,10 @@ import {
 import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
 
-function WaveformIcon({ className, color }: { className?: string; color?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" />
-    </svg>
-  );
-}
-
 // ─── Demo Data ─────────────────────────────────────────────────────────────────
 
 const AGENCY = {
-  name: 'Your Agency', plan: 'Professional', signupLink: 'aivoice.pro/signup',
+  name: 'AI Voice Pro', plan: 'Professional', signupLink: 'aivoice.pro/signup',
   stats: { clients: 47, revenue: '$12,400', calls: '2,847', mrr: '$6,903' },
   analyticsStats: { mrr: 690300, totalEarned: 4720000, pendingPayout: 189400, activeClients: 42, trialClients: 5 },
   revenueByMonth: [
@@ -821,7 +807,7 @@ function AgencySettings() {
             {tab === 'profile' && (<div className="space-y-5">
               <div><h3 className="text-base font-medium mb-1 text-[#fafaf9]">Agency Profile</h3><p className="text-xs text-[#fafaf9]/40">Basic information about your agency.</p></div>
               <div><label className={labelCls}>Agency Name</label><input type="text" defaultValue="AI Voice Pro" className={inputCls} /></div>
-              <div><label className={labelCls}>Logo</label><div className="flex items-center gap-4"><div className="h-16 w-16 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08]"><WaveformIcon className="h-8 w-8 text-emerald-400" /></div><button className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><Upload className="h-4 w-4" />Upload</button></div><p className="mt-1.5 text-[10px] text-[#fafaf9]/30">PNG, JPG up to 2MB</p></div>
+              <div><label className={labelCls}>Logo</label><div className="flex items-center gap-4"><div className="h-16 w-16 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08]"><span className="text-2xl font-bold text-emerald-400">{AGENCY.name.charAt(0)}</span></div><button className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><Upload className="h-4 w-4" />Upload</button></div><p className="mt-1.5 text-[10px] text-[#fafaf9]/30">PNG, JPG up to 2MB</p></div>
               <div><label className={labelCls}>Subdomain</label><div className="flex items-stretch rounded-xl overflow-hidden border border-white/[0.08]"><input type="text" defaultValue="aivoicepro" className="flex-1 min-w-0 px-3 py-2.5 text-sm bg-white/[0.04] text-[#fafaf9] focus:outline-none" /><div className="flex items-center px-3 text-sm whitespace-nowrap bg-white/[0.03] text-[#fafaf9]/40 border-l border-white/[0.08]">.myvoiceaiconnect.com</div></div><p className="mt-1.5 text-[10px] text-[#fafaf9]/30">Preview: https://aivoicepro.myvoiceaiconnect.com/signup</p></div>
               <div className="rounded-xl p-4 bg-emerald-500/[0.06] border border-white/[0.08]"><div className="flex items-start gap-2.5"><Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="text-sm font-medium mb-1 text-[#fafaf9]">How white-labeling works</p><p className="text-xs leading-relaxed text-[#fafaf9]/40">The logo, colors, and theme you set here become your agency default and apply to every client dashboard. You can also brand each client individually from that client&apos;s page. Client dashboards show your logo, never VoiceAI Connect.</p></div></div></div>
               <div><label className={labelCls}>Client Branding</label><div className="flex items-center justify-between rounded-xl px-4 py-3 bg-white/[0.04] border border-white/[0.08]"><div><p className="text-sm font-medium text-[#fafaf9]">Allow client branding</p><p className="text-[10px] mt-0.5 text-[#fafaf9]/40">Clients can upload their own logo and set custom colors</p></div><SettingsSwitch on={false} onClick={() => {}} /></div></div>
@@ -1388,7 +1374,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
                 <Link href="/#pricing" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] px-5 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium text-[#fafaf9]/80 hover:text-[#fafaf9] hover:border-white/25 transition-all w-full sm:w-auto">See Pricing</Link>
               </div>
               <button onClick={onPause} className="text-sm text-[#fafaf9]/40 hover:text-[#fafaf9]/70 transition-colors mt-1">
-                or explore the dashboard →
+                Or Explore The Dashboard →
               </button>
             </div>
           )}
@@ -1445,38 +1431,38 @@ export default function DemoPage() {
 
   const TOUR_STEPS = [
     { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const, pin: 'top' as const,
-      title: 'Your monthly recurring revenue',
-      body: 'Forty-seven local businesses paying $99/month each, $4,653 in MRR running on autopilot.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you scale, so this number compounds while costs don\u2019t.' },
+      title: 'Your Monthly Recurring Revenue',
+      body: 'Forty-seven local businesses on the platform, $6,903 landing in your account every month.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you add clients, so this number keeps climbing while your costs hold steady.' },
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
-      title: 'Each row, a paying client',
-      body: 'Every entry is a local business paying you monthly for their AI receptionist.\n\nYou set the price, $49, $99, $149, your call. The platform handles provisioning, billing, and ongoing operations. No setup calls. No fulfillment work.' },
+      title: 'Every Row Is A Paying Client',
+      body: 'Each one is a local business paying you every month for their AI receptionist.\n\nYou set the price. The platform handles provisioning, billing, and the day-to-day, so there are no setup calls and no fulfillment work on your end.' },
     { target: 'add-client-form', view: 'agency' as const, tab: 'add-client', position: 'right' as const,
-      title: 'Onboarding in sixty seconds',
-      body: 'Business name, plan, click Create.\n\nThe platform provisions a dedicated phone number, configures the AI agent for the industry, and sends login credentials. No technical work on your end. No A2P registration delay.' },
+      title: 'Onboard A Client In Sixty Seconds',
+      body: 'Enter a business name, pick a plan, click Create.\n\nThe platform provisions a dedicated number, tunes the AI for that industry, and sends the client their login. No technical work on your end, no A2P registration delay.' },
     { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
-      title: 'Watch the revenue add up',
-      body: 'MRR, total revenue, active clients, and Stripe payouts update live.\n\nStripe Connect routes every subscription directly to your bank, the platform never custodies funds.' },
+      title: 'Watch The Revenue Add Up',
+      body: 'Recurring revenue, total earned, active clients, and payouts, all updating in real time.\n\nStripe Connect routes every subscription straight to your bank. The platform never touches your money.' },
     { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const,
-      title: 'Try the AI yourself, call it',
-      body: 'This is a real number, call it. The AI books appointments, answers questions, and captures leads, exactly what your clients get.\n\nIt is also your best sales tool: hand a prospect the number instead of explaining, and they get it in 30 seconds. No sales call needed.' },
+      title: 'Hear The AI For Yourself',
+      body: 'Every agency gets a demo line. Point a prospect to it and the AI books appointments, answers questions, and captures leads, exactly what their business would get.\n\nIt is your sharpest sales tool. Hand someone the number instead of explaining, and they understand the product in thirty seconds.' },
     { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const,
-      title: 'A branded marketing site, included',
-      body: 'Every agency ships with a fully white-labeled marketing site under your domain.\n\nHero, pricing, testimonials, FAQ, embedded demo line, signup flow. Prospects discover, try, and subscribe, without you onboarding them manually.' },
+      title: 'A Branded Marketing Site, Included',
+      body: 'Every agency ships with a white-labeled marketing site on your own domain.\n\nHero, pricing, FAQ, an embedded demo line, and a signup flow, all under your brand. Prospects find you, try it, and subscribe without you onboarding them by hand.' },
     { target: 'leads-pipeline', view: 'agency' as const, tab: 'leads', position: 'bottom' as const,
-      title: 'Pipeline and outreach, built in',
-      body: 'Move every prospect from first contact to paying client without leaving the platform.\n\nGoogle Maps prospecting, 13 outreach templates, follow-up tracking, reply detection. No external CRM.' },
+      title: 'Pipeline And Outreach, Built In',
+      body: 'Take a prospect from first contact to paying client without leaving the platform.\n\nGoogle Maps prospecting, ready-made outreach templates, follow-up tracking, and reply detection. No separate CRM to buy or set up.' },
     { target: 'view-toggle', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: 'Switch into the client view',
-      body: 'This is what your end clients log into when they pay you.\n\nFully white-labeled, your name, your domain, your colors. They never see VoiceAI Connect at any touchpoint.' },
+      title: 'Now Switch To The Client View',
+      body: 'This is what your clients log into once they are paying you.\n\nFully white-labeled: your name, your domain, your colors. They never see VoiceAI Connect anywhere.' },
     { target: 'client-phone', view: 'client' as const, tab: 'dashboard', position: 'bottom' as const,
-      title: 'What clients see every day',
-      body: 'Calls handled, leads captured, missed calls saved.\n\nThat visibility is what justifies the recurring fee, clients can measure exactly what they\u2019re paying for, every month.' },
+      title: 'What Your Clients See Every Day',
+      body: 'Calls handled, leads captured, missed calls saved.\n\nThat visibility is what earns the monthly fee. Clients can see exactly what they are paying for, every single month.' },
     { target: 'client-ai', view: 'client' as const, tab: 'ai-agent', position: 'top' as const,
-      title: 'Clients tune their own agent',
-      body: 'Voice, greeting, services, FAQ, the end client configures the AI themselves.\n\nThe more they personalize it, the more central it becomes to their operations. That\u2019s what reduces churn.' },
+      title: 'Clients Tune Their Own Agent',
+      body: 'Voice, greeting, services, FAQ, the client configures the AI themselves.\n\nThe more they personalize it, the more it becomes part of how they run the business. That is what keeps them subscribed.' },
     { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const,
-      title: 'Ready to run the real thing?',
-      body: 'Start your 14-day free trial, spin up a real test client in a couple minutes, and hear the AI on your own number.\n\nSet your pricing, share your branded signup link, and prospects subscribe under your brand. The platform provisions everything. The recurring revenue is yours.' },
+      title: 'Ready To Make It Yours?',
+      body: 'Start your 14-day free trial, set up a real test client in a couple of minutes, and hear the AI answer on your own number.\n\nSet your pricing, share your branded signup link, and prospects subscribe under your brand. The platform provisions everything. The recurring revenue is yours.' },
   ];
 
   const tourActive = !tourPaused && tourStep >= 0 && tourStep < TOUR_STEPS.length;
@@ -1540,7 +1526,7 @@ export default function DemoPage() {
         <header className="flex items-center justify-between h-14 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
           {/* Logo icon only, no name on mobile */}
           {view === 'agency' ? (
-            <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}><WaveformIcon className="h-5 w-5" color="#10b981" /></div>
+            <div className="flex items-center justify-center rounded-xl flex-shrink-0 text-base font-bold text-emerald-400" style={{ height: 36, width: 36, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}>{AGENCY.name.charAt(0)}</div>
           ) : (
             <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-5 w-5 text-white" /></div>
           )}
@@ -1559,7 +1545,7 @@ export default function DemoPage() {
       {/* Desktop Top Bar, only visible on lg+ */}
       <div className="hidden lg:flex relative z-40 items-center justify-between px-5 h-14 border-b border-white/[0.06] bg-[#050505]/95 backdrop-blur-2xl flex-shrink-0">
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2.5"><div className="h-7 w-7 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center bg-white/5"><WaveformIcon className="w-4 h-4" /></div><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
+          <Link href="/" className="flex items-center gap-2.5"><img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-7 w-7 rounded-lg flex-shrink-0" /><span className="text-sm font-semibold tracking-tight">VoiceAI Connect</span></Link>
           <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-xs"><span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" /></span><span className="text-emerald-300/90">Interactive Demo</span></div>
         </div>
         <div data-tour="view-toggle" className="absolute left-1/2 -translate-x-1/2 inline-flex rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5"><button onClick={() => setView('agency')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'agency' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Agency Dashboard</button><button onClick={() => setView('client')} className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === 'client' ? 'bg-emerald-500 text-[#050505]' : 'text-[#fafaf9]/60 hover:text-[#fafaf9]'}`}>Client Dashboard</button></div>
@@ -1631,18 +1617,18 @@ export default function DemoPage() {
       <div className="flex-1 flex overflow-hidden">
         {view === 'agency' ? (<>
           <div className="hidden lg:flex w-56 border-r border-white/[0.06] bg-[#050505] flex-shrink-0 flex-col">
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5"><WaveformIcon className="h-5 w-5 text-[#fafaf9]" /></div><div className="min-w-0"><p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p><p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p></div></div>
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5"><span className="text-sm font-bold text-[#fafaf9]">{AGENCY.name.charAt(0)}</span></div><div className="min-w-0"><p className="font-semibold text-sm text-[#fafaf9] truncate">{AGENCY.name}</p><p className="text-[10px] text-[#fafaf9]/40">{AGENCY.plan} Plan</p></div></div>
             <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">{agencyNav.map(item => (<button key={item.id} onClick={() => setAgencyTab(item.id)} className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${agencyTab === item.id ? 'bg-emerald-500/10 text-emerald-400' : 'text-[#fafaf9]/60 hover:bg-white/[0.04] hover:text-[#fafaf9]'}`}><item.icon className="h-4 w-4 flex-shrink-0" /><span className="truncate">{item.label}</span></button>))}</nav>
             <div className="p-3 border-t border-white/[0.06]"><div data-tour="sidebar-mrr" className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] p-3"><p className="text-[10px] text-emerald-400/70 mb-0.5">Monthly Revenue</p><p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p><p className="text-[10px] text-emerald-400/50 mt-0.5">{AGENCY.stats.clients} active clients</p></div></div>
           </div>
-          <div className="flex-1 overflow-y-auto bg-[#0a0a0a] ">{renderAgency()}</div>
+          <div className="flex-1 overflow-y-auto bg-[#0a0a0a]" style={{ zoom: 0.8 } as any}>{renderAgency()}</div>
         </>) : (<>
           <div className="hidden lg:flex w-56 border-r flex-shrink-0 flex-col" style={{ backgroundColor: 'rgb(17,78,60)', borderColor: 'rgba(255,255,255,0.08)' }}>
             <div className="flex items-center gap-3 px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.1)' }}><div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-4 w-4 text-white" /></div><div className="min-w-0"><p className="font-semibold text-sm text-white truncate">{CLIENT.name}</p><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>AI Receptionist Active</p></div></div>
             <nav className="p-3 space-y-0.5 flex-1 overflow-y-auto">{clientNav.map(item => (<button key={item.id} onClick={() => setClientTab(item.id)} className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all" style={{ backgroundColor: clientTab === item.id ? 'rgba(255,255,255,0.15)' : 'transparent', color: clientTab === item.id ? '#ffffff' : 'rgba(255,255,255,0.65)' }} onMouseEnter={e => { if (clientTab !== item.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)'; }} onMouseLeave={e => { if (clientTab !== item.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><item.icon className="h-4 w-4 flex-shrink-0" /><span className="truncate">{item.label}</span></button>))}</nav>
             <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}><div className="rounded-lg border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}><p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</p><p className="text-sm font-semibold text-white">{CLIENT.agencyName}</p></div></div>
           </div>
-          <div className="flex-1 overflow-y-auto ">{renderClient()}</div>
+          <div className="flex-1 overflow-y-auto" style={{ zoom: 0.8 } as any}>{renderClient()}</div>
         </>)}
       </div>
       {/* Tour Overlay */}
