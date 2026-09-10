@@ -414,6 +414,7 @@ export default function AdminAgenciesPage() {
     return (
       (a.name || '').toLowerCase().includes(t) ||
       (a.email || '').toLowerCase().includes(t) ||
+      ((a as any).login_email || '').toLowerCase().includes(t) ||
       (a.slug || '').toLowerCase().includes(t) ||
       (a.marketing_domain || '').toLowerCase().includes(t) ||
       (a.id || '').toLowerCase().includes(t) ||
