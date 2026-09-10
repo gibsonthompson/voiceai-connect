@@ -117,10 +117,10 @@ function AgencyOverview() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Welcome back, Alex! 👋</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Welcome back, Alex</h1>
         <p className="mt-1 text-sm text-[#fafaf9]/50">Here&apos;s how your agency is performing.</p>
       </div>
-      <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.08] to-transparent p-4 mb-6">
+      <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.08] to-transparent p-4 mb-6">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0"><p className="text-xs text-[#fafaf9]/50 mb-1">Your Client Signup Link</p><p className="text-sm font-medium text-emerald-300 truncate">{AGENCY.signupLink}</p></div>
           <button onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 transition-colors flex-shrink-0">
@@ -135,7 +135,7 @@ function AgencyOverview() {
           { label: 'Calls This Month', value: AGENCY.stats.calls, icon: PhoneCall, color: '#3b82f6' },
           { label: 'MRR', value: AGENCY.stats.mrr, icon: TrendingUp, color: '#a78bfa' },
         ] as const).map((s) => (
-          <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${s.color}18` }}><s.icon className="h-5 w-5" style={{ color: s.color }} /></div>
               <div><p className="text-[10px] sm:text-xs text-[#fafaf9]/50">{s.label}</p><p className="text-lg sm:text-xl font-semibold text-[#fafaf9]">{s.value}</p></div>
@@ -143,7 +143,7 @@ function AgencyOverview() {
           </div>
         ))}
       </div>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025]">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3"><h2 className="text-sm font-medium text-[#fafaf9]">Recent Clients</h2><span className="text-xs text-emerald-400 cursor-pointer">View all →</span></div>
         <div className="p-3 space-y-2">
           {AGENCY.clients.slice(0, 5).map((c) => (
@@ -186,7 +186,7 @@ function AgencyClients() {
           <select value={sf} onChange={e => setSf(e.target.value)} className="rounded-xl px-4 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/70 focus:outline-none"><option value="">All Status</option><option value="active">Active</option><option value="trial">Trial</option></select>
         </div>
       </div>
-      <div data-tour="clients-table" className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+      <div data-tour="clients-table" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">
         <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium uppercase tracking-wide text-[#fafaf9]/40 border-b border-white/[0.06]"><div className="col-span-4">Business</div><div className="col-span-2">Plan</div><div className="col-span-2">Calls</div><div className="col-span-2">Status</div><div className="col-span-2 text-right">Added</div></div>
         {filtered.map((c, i) => (
           <div key={c.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.03] cursor-pointer transition-colors" style={{ borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
@@ -220,7 +220,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Add New Client</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Set up a new AI receptionist client in under 60 seconds</p></div>
       <div data-tour="add-client-form" className="space-y-6">
         {/* Business Info */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><Building className="h-4 w-4 text-emerald-400" />Business Information</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -234,7 +234,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
           </div>
         </div>
         {/* Owner Info */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><User className="h-4 w-4 text-emerald-400" />Owner Information</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -244,7 +244,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
           </div>
         </div>
         {/* Plan Selection */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><CreditCard className="h-4 w-4 text-emerald-400" />Plan Selection</h3>
           <div className="grid grid-cols-3 gap-3">
             {[{ name: 'Starter', price: '$49', calls: '50 calls/mo', sel: false }, { name: 'Pro', price: '$99', calls: '150 calls/mo', sel: true }, { name: 'Growth', price: '$149', calls: '500 calls/mo', sel: false }].map(p => (
@@ -258,7 +258,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
           </div>
         </div>
         {/* Login Credentials */}
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="text-sm font-semibold text-[#fafaf9] mb-4 flex items-center gap-2"><Lock className="h-4 w-4 text-emerald-400" />Login Credentials</h3>
           <div className="space-y-4">
             <div><label className="block text-xs font-medium text-[#fafaf9]/50 mb-1.5">Email *</label><input type="email" defaultValue="maria@comfortair.com" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
@@ -330,7 +330,7 @@ function AgencyLeads() {
           { label: 'Sequence Due', value: '7', icon: Mail, color: '#a78bfa', bg: 'rgba(168,85,247,0.1)' },
           { label: 'Today', value: ls.followUpsToday, icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
         ] as const).map(s => (
-          <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-4 cursor-pointer hover:bg-white/[0.04] transition-colors">
+          <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3 sm:p-4 cursor-pointer hover:bg-white/[0.04] transition-colors">
             <div className="flex items-center gap-2 sm:gap-3"><div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: s.bg }}><s.icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: s.color }} /></div><div><p className="text-[10px] sm:text-xs text-[#fafaf9]/40">{s.label}</p><p className="text-lg sm:text-xl font-semibold text-[#fafaf9]">{s.value}</p></div></div>
           </div>
         ))}
@@ -343,7 +343,7 @@ function AgencyLeads() {
       </div>
 
       {/* Leads Table */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">
         <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium uppercase tracking-wide text-[#fafaf9]/40 border-b border-white/[0.06]"><div className="col-span-3">Business</div><div className="col-span-2">Contact</div><div className="col-span-2">Status</div><div className="col-span-2">Value</div><div className="col-span-2">Follow-up</div><div className="col-span-1"></div></div>
         {filtered.map((l, i) => {
           const ss = getStatusStyle(l.status);
@@ -402,7 +402,7 @@ function AgencyOutreach() {
       {/* Quick Links */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-6">
         {[{ label: 'Email Template', sub: 'Create new email', icon: Mail, bg: 'rgba(59,130,246,0.1)', color: 'text-blue-400' }, { label: 'SMS Template', sub: 'Create new SMS', icon: MessageSquare, bg: 'rgba(6,182,212,0.1)', color: 'text-cyan-400' }, { label: 'Call Script', sub: 'Create cold call script', icon: PhoneCall, bg: 'rgba(34,197,94,0.1)', color: 'text-green-400' }].map(c => (
-          <div key={c.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 hover:bg-white/[0.04] cursor-pointer transition-colors"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: c.bg }}><c.icon className={`h-5 w-5 ${c.color}`} /></div><div><p className="font-medium text-sm text-[#fafaf9]">{c.label}</p><p className="text-xs text-[#fafaf9]/40">{c.sub}</p></div></div></div>
+          <div key={c.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 hover:bg-white/[0.04] cursor-pointer transition-colors"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: c.bg }}><c.icon className={`h-5 w-5 ${c.color}`} /></div><div><p className="font-medium text-sm text-[#fafaf9]">{c.label}</p><p className="text-xs text-[#fafaf9]/40">{c.sub}</p></div></div></div>
         ))}
       </div>
       {/* Search + filter */}
@@ -412,9 +412,9 @@ function AgencyOutreach() {
       </div>
       {/* Grouped lists */}
       <div className="space-y-5">
-        {emails.length > 0 && <div><div className="flex items-center gap-2 mb-2"><Mail className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">Email Templates</h3><span className="text-[10px] text-[#fafaf9]/30">({emails.length})</span></div><div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">{emails.map((t, i) => renderRow(t, i, emails.length))}</div></div>}
-        {sms.length > 0 && <div><div className="flex items-center gap-2 mb-2"><MessageSquare className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">SMS Templates</h3><span className="text-[10px] text-[#fafaf9]/30">({sms.length})</span></div><div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">{sms.map((t, i) => renderRow(t, i, sms.length))}</div></div>}
-        {calls.length > 0 && <div><div className="flex items-center gap-2 mb-2"><PhoneCall className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">Call Scripts</h3><span className="text-[10px] text-[#fafaf9]/30">({calls.length})</span></div><div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">{calls.map((t, i) => renderRow(t, i, calls.length))}</div></div>}
+        {emails.length > 0 && <div><div className="flex items-center gap-2 mb-2"><Mail className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">Email Templates</h3><span className="text-[10px] text-[#fafaf9]/30">({emails.length})</span></div><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">{emails.map((t, i) => renderRow(t, i, emails.length))}</div></div>}
+        {sms.length > 0 && <div><div className="flex items-center gap-2 mb-2"><MessageSquare className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">SMS Templates</h3><span className="text-[10px] text-[#fafaf9]/30">({sms.length})</span></div><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">{sms.map((t, i) => renderRow(t, i, sms.length))}</div></div>}
+        {calls.length > 0 && <div><div className="flex items-center gap-2 mb-2"><PhoneCall className="h-4 w-4 text-[#fafaf9]/40" /><h3 className="text-xs font-medium text-[#fafaf9]/50">Call Scripts</h3><span className="text-[10px] text-[#fafaf9]/30">({calls.length})</span></div><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">{calls.map((t, i) => renderRow(t, i, calls.length))}</div></div>}
       </div>
     </div>
   );
@@ -434,19 +434,19 @@ function AgencyAnalytics() {
           { label: 'Pending Payout', value: fmtCents(AGENCY.analyticsStats.pendingPayout), icon: Wallet, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
           { label: 'Paying Clients', value: String(AGENCY.analyticsStats.activeClients), icon: Users, color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', sub: `+${AGENCY.analyticsStats.trialClients} in trial` },
         ] as const).map(s => (
-          <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 sm:p-5">
+          <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3 sm:p-5">
             <div className="flex items-center gap-2 sm:gap-4"><div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: s.bg }}><s.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: s.color }} /></div><div className="min-w-0"><p className="text-[10px] sm:text-xs text-[#fafaf9]/50">{s.label}</p><p className="text-lg sm:text-2xl font-semibold text-[#fafaf9]">{s.value}</p>{'sub' in s && s.sub && <p className="text-[10px] text-[#fafaf9]/40">{s.sub}</p>}</div></div>
           </div>
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-3 mb-6">
-        <div className="lg:col-span-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="lg:col-span-2 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="font-medium mb-4 text-sm text-[#fafaf9]">Revenue Over Time</h3>
           <div className="h-36 sm:h-48"><div className="flex items-end justify-between h-full gap-1 sm:gap-2">
             {AGENCY.revenueByMonth.map((item, idx) => (<div key={item.month} className="flex-1 flex flex-col items-center gap-1"><div className="w-full flex flex-col items-center justify-end h-28 sm:h-40"><div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg" style={{ height: `${Math.max((item.amount / mx) * 100, 4)}%`, backgroundColor: '#10b981', opacity: 0.5 + (idx / AGENCY.revenueByMonth.length) * 0.5 }} title={fmtCents(item.amount)} /></div><span className="text-[8px] sm:text-xs text-[#fafaf9]/40">{fmtMonth(item.month)}</span></div>))}
           </div></div>
         </div>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="font-medium mb-4 text-sm text-[#fafaf9]">Revenue by Plan</h3>
           <div className="space-y-4">
             {[{ plan: 'Starter', count: AGENCY.planClients.starter, price: 9900, color: '#3b82f6' }, { plan: 'Professional', count: AGENCY.planClients.pro, price: 14900, color: '#10b981' }, { plan: 'Growth', count: AGENCY.planClients.growth, price: 24900, color: '#a78bfa' }].map(p => {
@@ -456,7 +456,7 @@ function AgencyAnalytics() {
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">
         <div className="px-4 sm:px-6 py-3 border-b border-white/[0.06]"><h3 className="font-medium text-sm text-[#fafaf9]">Recent Transactions</h3></div>
         <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium uppercase tracking-wide text-[#fafaf9]/40 border-b border-white/[0.06]"><div className="col-span-4">Client</div><div className="col-span-2">Amount</div><div className="col-span-2">Status</div><div className="col-span-2">Type</div><div className="col-span-2 text-right">Date</div></div>
         {AGENCY.payments.map((p, i) => (
@@ -479,7 +479,7 @@ function AgencyBranding() {
         <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/10"><Paintbrush className="h-5 w-5 text-emerald-400" /></div><div><h1 className="text-xl sm:text-2xl font-bold text-[#fafaf9]">Dashboard Branding</h1><p className="text-sm mt-0.5 text-[#fafaf9]/50">Customize colors for your agency and client dashboards</p></div></div>
         <div className="flex items-center gap-2"><button className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-white/[0.06] bg-white/[0.02] text-[#fafaf9]/50"><RotateCcw className="h-4 w-4" />Reset All</button><button className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505]"><Save className="h-4 w-4" />Save Changes</button></div>
       </div>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-500/10 flex-shrink-0"><Sparkles className="h-4 w-4 text-emerald-400" /></div><div><p className="text-sm font-medium text-[#fafaf9]">Auto-generate a palette</p><p className="text-xs mt-0.5 text-[#fafaf9]/40">Shuffles your brand colors into different arrangements</p></div></div>
         <button className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505] flex-shrink-0"><Shuffle className="h-4 w-4" />Shuffle</button>
       </div>
@@ -487,7 +487,7 @@ function AgencyBranding() {
         <div className="lg:col-span-3 space-y-5">
           <div className="rounded-xl px-4 py-3 flex items-center justify-between border border-white/[0.06] bg-white/[0.02]"><div className="flex items-center gap-2"><Paintbrush className="h-4 w-4 text-[#fafaf9]/40" /><span className="text-sm text-[#fafaf9]/50">2 custom colors active</span></div><span className="text-xs px-2 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400">dark mode</span></div>
           {[{ g: 'Sidebar / Navigation', f: [{ l: 'Sidebar Background', c: '#0a2e1f', custom: true }, { l: 'Sidebar Text', c: '#ffffff', custom: false }] }, { g: 'Page Background', f: [{ l: 'Page Background', c: '#0a0a0a', custom: false }] }, { g: 'Cards & Surfaces', f: [{ l: 'Card Background', c: '#111111', custom: false }, { l: 'Card Border', c: '#1a1a1a', custom: true }] }, { g: 'Text Colors', f: [{ l: 'Primary Text', c: '#fafaf9', custom: false }, { l: 'Muted Text', c: '#888888', custom: false }] }].map(s => (
-            <div key={s.g} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+            <div key={s.g} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">
               <div className="px-4 py-3 flex items-center gap-2 border-b border-white/[0.06]"><Paintbrush className="h-4 w-4 text-emerald-400" /><span className="text-sm font-semibold text-[#fafaf9]">{s.g}</span></div>
               <div className="p-3 space-y-2">{s.f.map(f => (<div key={f.l} className="flex items-center gap-3 rounded-xl px-3 py-3" style={{ backgroundColor: f.custom ? 'rgba(16,185,129,0.05)' : 'transparent', border: f.custom ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.04)' }}><div className="w-9 h-9 rounded-lg border border-white/10 flex-shrink-0" style={{ backgroundColor: f.c }} /><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-medium text-[#fafaf9]">{f.l}</span>{f.custom && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400">Custom</span>}</div></div><span className="w-[90px] text-xs font-mono text-center rounded-lg px-2 py-1.5 bg-white/[0.04] border border-white/[0.06] text-[#fafaf9]/60">{f.c}</span></div>))}</div>
             </div>
@@ -499,7 +499,7 @@ function AgencyBranding() {
             <div className="w-[130px] flex-shrink-0 p-3 bg-[#0a2e1f] border-r border-white/10"><div className="flex items-center gap-2 mb-3 px-1"><div className="w-5 h-5 rounded bg-emerald-500/20" /><div className="h-2 rounded-full flex-1 bg-white/40" /></div>{['Dashboard', 'Clients', 'Settings'].map((l, i) => (<div key={l} className="flex items-center gap-2 rounded-lg px-2 py-1.5 mb-0.5" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.15)' : 'transparent' }}><div className="w-3 h-3 rounded" style={{ backgroundColor: i === 0 ? '#fff' : 'rgba(255,255,255,0.4)' }} /><span className="text-[9px]" style={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.6)' }}>{l}</span></div>))}</div>
             <div className="flex-1 p-3 bg-[#0a0a0a]"><div className="h-3 w-20 rounded-full bg-white/60 mb-3" /><div className="grid grid-cols-2 gap-2">{[1,2,3,4].map(n => (<div key={n} className="rounded-lg p-2.5 bg-[#111] border border-[#1a1a1a]"><div className="h-1.5 w-10 rounded-full bg-white/30 mb-1.5" /><div className="h-3 w-14 rounded-full bg-white/50 mb-1.5" /><div className="h-1 w-full rounded-full bg-white/10" /></div>))}</div><div className="mt-2.5 flex gap-2"><div className="rounded-lg px-2.5 py-1 bg-emerald-500"><span className="text-[9px] font-medium text-[#050505]">Primary</span></div><div className="rounded-lg px-2.5 py-1 bg-[#111] border border-[#1a1a1a]"><span className="text-[9px] font-medium text-white/70">Secondary</span></div></div></div>
           </div></div>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"><p className="text-xs font-medium mb-2 text-[#fafaf9]/40">Your brand colors</p><div className="flex gap-3">{[{ l: 'Primary', c: '#10b981' }, { l: 'Secondary', c: '#059669' }, { l: 'Accent', c: '#34d399' }].map(({ l, c }) => (<div key={l} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md border border-white/10 flex-shrink-0" style={{ backgroundColor: c }} /><div><p className="text-[10px] font-medium text-[#fafaf9]">{l}</p><p className="text-[9px] font-mono text-[#fafaf9]/40">{c}</p></div></div>))}</div></div>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3"><p className="text-xs font-medium mb-2 text-[#fafaf9]/40">Your brand colors</p><div className="flex gap-3">{[{ l: 'Primary', c: '#10b981' }, { l: 'Secondary', c: '#059669' }, { l: 'Accent', c: '#34d399' }].map(({ l, c }) => (<div key={l} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md border border-white/10 flex-shrink-0" style={{ backgroundColor: c }} /><div><p className="text-[10px] font-medium text-[#fafaf9]">{l}</p><p className="text-[9px] font-mono text-[#fafaf9]/40">{c}</p></div></div>))}</div></div>
         </div></div>
       </div>
     </div>
@@ -515,7 +515,7 @@ function AgencyDemoPhone() {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Demo Phone</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Your dedicated demo line for showcasing AI receptionist capabilities</p></div>
 
       {/* Active Demo Card */}
-      <div data-tour="demo-phone" className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 mb-6">
+      <div data-tour="demo-phone" className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6 mb-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10"><Phone className="h-5 w-5 text-emerald-400" /></div>
@@ -541,7 +541,7 @@ function AgencyDemoPhone() {
       </div>
 
       {/* How It Works */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6">
         <h3 className="font-semibold text-sm sm:text-base text-[#fafaf9] mb-1">How the Demo Works</h3>
         <p className="text-xs sm:text-sm text-[#fafaf9]/40 mb-5">When a prospect calls your demo number, the AI walks them through an interactive experience</p>
         <div className="space-y-4 mb-6">
@@ -587,18 +587,18 @@ function AgencyMarketing() {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Marketing Website</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Your public website where clients learn about your service</p></div>
       {/* Quick Actions */}
       <div data-tour="marketing-site" className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Globe className="h-5 w-5 text-emerald-400" /></div><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />Live</span></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Your Website</h3><p className="text-xs mb-3 text-[#fafaf9]/40 truncate">https://demo.myvoiceaiconnect.com</p><div className="flex gap-2"><button className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-emerald-500 text-[#050505]"><Eye className="h-4 w-4" />View</button><button onClick={() => { setCopied('url'); setTimeout(() => setCopied(null), 2000); }} className="flex items-center justify-center rounded-lg px-3 py-2 bg-white/[0.04] border border-white/[0.08]">{copied === 'url' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-[#fafaf9]/40" />}</button></div></div>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Palette className="h-5 w-5 text-emerald-400" /></div></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Current Theme</h3><div className="flex items-center gap-2 mb-3"><div className="flex gap-0.5"><div className="h-6 w-6 rounded" style={{ backgroundColor: '#10b981' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#059669' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#34d399' }} /></div><span className="text-xs text-[#fafaf9]/40 flex items-center gap-1"><Moon className="h-3 w-3" />dark</span></div><button className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><Palette className="h-4 w-4" />Customize</button></div>
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Globe className="h-5 w-5 text-emerald-400" /></div><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />Live</span></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Your Website</h3><p className="text-xs mb-3 text-[#fafaf9]/40 truncate">https://demo.myvoiceaiconnect.com</p><div className="flex gap-2"><button className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-emerald-500 text-[#050505]"><Eye className="h-4 w-4" />View</button><button onClick={() => { setCopied('url'); setTimeout(() => setCopied(null), 2000); }} className="flex items-center justify-center rounded-lg px-3 py-2 bg-white/[0.04] border border-white/[0.08]">{copied === 'url' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4 text-[#fafaf9]/40" />}</button></div></div>
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Palette className="h-5 w-5 text-emerald-400" /></div></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Current Theme</h3><div className="flex items-center gap-2 mb-3"><div className="flex gap-0.5"><div className="h-6 w-6 rounded" style={{ backgroundColor: '#10b981' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#059669' }} /><div className="h-6 w-6 rounded" style={{ backgroundColor: '#34d399' }} /></div><span className="text-xs text-[#fafaf9]/40 flex items-center gap-1"><Moon className="h-3 w-3" />dark</span></div><button className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><Palette className="h-4 w-4" />Customize</button></div>
       </div>
       {/* Tabs */}
       <div className="mb-4 overflow-x-auto border-b border-white/[0.06]"><nav className="flex gap-5 min-w-max">{tabs.map(tab => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 pb-3 text-xs font-medium border-b-2 transition-colors" style={activeTab === tab.id ? { borderColor: '#10b981', color: '#10b981' } : { borderColor: 'transparent', color: 'rgba(250,250,249,0.4)' }}><tab.icon className="h-4 w-4" />{tab.label}</button>))}</nav></div>
       {/* Overview */}
       {activeTab === 'overview' && (<div className="space-y-4">
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6"><h3 className="font-medium text-sm mb-4 text-[#fafaf9]">Your website includes:</h3><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[{ t: 'Hero Section', d: 'Eye-catching headline with CTAs' }, { t: 'Features Overview', d: 'AI receptionist capabilities' }, { t: 'How It Works', d: '4-step process to get started' }, { t: 'Pricing Plans', d: 'Starter, Pro, and Growth tiers' }, { t: 'Testimonials', d: 'Social proof section' }, { t: 'FAQ Section', d: 'Common questions answered' }, { t: 'Industry Cards', d: 'Industries you serve' }, { t: 'Comparison Table', d: 'Compare vs competitors' }].map(i => (<div key={i.t} className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="font-medium text-xs text-[#fafaf9]">{i.t}</p><p className="text-[10px] text-[#fafaf9]/40">{i.d}</p></div></div>))}</div></div>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6"><h3 className="font-medium text-sm mb-4 text-[#fafaf9]">Current Settings</h3><div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[{ l: 'Tagline', v: 'AI-Powered Phone Answering' }, { l: 'Headline', v: 'Never Miss Another Call' }, { l: 'Theme', v: 'Dark' }, { l: 'Domain', v: 'voiceai.youragency.com' }].map(s => (<div key={s.l}><p className="text-[10px] uppercase tracking-wide mb-1 text-[#fafaf9]/40">{s.l}</p><p className="text-xs text-[#fafaf9] truncate">{s.v}</p></div>))}</div></div>
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><h3 className="font-medium text-sm mb-4 text-[#fafaf9]">Your website includes:</h3><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[{ t: 'Hero Section', d: 'Eye-catching headline with CTAs' }, { t: 'Features Overview', d: 'AI receptionist capabilities' }, { t: 'How It Works', d: '4-step process to get started' }, { t: 'Pricing Plans', d: 'Starter, Pro, and Growth tiers' }, { t: 'Testimonials', d: 'Social proof section' }, { t: 'FAQ Section', d: 'Common questions answered' }, { t: 'Industry Cards', d: 'Industries you serve' }, { t: 'Comparison Table', d: 'Compare vs competitors' }].map(i => (<div key={i.t} className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="font-medium text-xs text-[#fafaf9]">{i.t}</p><p className="text-[10px] text-[#fafaf9]/40">{i.d}</p></div></div>))}</div></div>
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><h3 className="font-medium text-sm mb-4 text-[#fafaf9]">Current Settings</h3><div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[{ l: 'Tagline', v: 'AI-Powered Phone Answering' }, { l: 'Headline', v: 'Never Miss Another Call' }, { l: 'Theme', v: 'Dark' }, { l: 'Domain', v: 'voiceai.youragency.com' }].map(s => (<div key={s.l}><p className="text-[10px] uppercase tracking-wide mb-1 text-[#fafaf9]/40">{s.l}</p><p className="text-xs text-[#fafaf9] truncate">{s.v}</p></div>))}</div></div>
       </div>)}
-      {activeTab === 'content' && (<div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6 space-y-4"><h3 className="font-medium text-sm text-[#fafaf9]">Website Content</h3><p className="text-xs text-[#fafaf9]/40 mb-4">Customize the text on your marketing website.</p>{[{ l: 'Tagline / Badge', v: 'AI-Powered Phone Answering', p: 'AI-Powered Phone Answering' }, { l: 'Main Headline', v: 'Never Miss Another Call', p: 'Never Miss Another Call' }, { l: 'Subheadline', v: 'Our AI receptionist answers calls 24/7...', p: 'AI Receptionist Starting at $49/month' }].map(f => (<div key={f.l}><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">{f.l}</label><input type="text" defaultValue={f.v} placeholder={f.p} className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>))}<button className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505] mt-2"><Save className="h-4 w-4" />Save Content</button></div>)}
-      {activeTab === 'domain' && (<div className="space-y-4"><div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6"><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Default Subdomain</h3><p className="text-xs text-[#fafaf9]/40 mb-3">Always available at this URL</p><div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/[0.08]"><Globe className="h-5 w-5 text-[#fafaf9]/40 flex-shrink-0" /><span className="flex-1 text-xs font-mono text-[#fafaf9] truncate">https://demo.myvoiceaiconnect.com</span><Copy className="h-4 w-4 text-[#fafaf9]/30" /></div></div><div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6"><div className="flex items-center justify-between mb-2"><h3 className="font-medium text-sm text-[#fafaf9]">Custom Domain</h3><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" />Verified</span></div><p className="text-xs text-[#fafaf9]/40 mb-3">Connect your own domain</p><input type="text" defaultValue="voiceai.youragency.com" className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div></div>)}
+      {activeTab === 'content' && (<div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6 space-y-4"><h3 className="font-medium text-sm text-[#fafaf9]">Website Content</h3><p className="text-xs text-[#fafaf9]/40 mb-4">Customize the text on your marketing website.</p>{[{ l: 'Tagline / Badge', v: 'AI-Powered Phone Answering', p: 'AI-Powered Phone Answering' }, { l: 'Main Headline', v: 'Never Miss Another Call', p: 'Never Miss Another Call' }, { l: 'Subheadline', v: 'Our AI receptionist answers calls 24/7...', p: 'AI Receptionist Starting at $49/month' }].map(f => (<div key={f.l}><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">{f.l}</label><input type="text" defaultValue={f.v} placeholder={f.p} className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>))}<button className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505] mt-2"><Save className="h-4 w-4" />Save Content</button></div>)}
+      {activeTab === 'domain' && (<div className="space-y-4"><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Default Subdomain</h3><p className="text-xs text-[#fafaf9]/40 mb-3">Always available at this URL</p><div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/[0.08]"><Globe className="h-5 w-5 text-[#fafaf9]/40 flex-shrink-0" /><span className="flex-1 text-xs font-mono text-[#fafaf9] truncate">https://demo.myvoiceaiconnect.com</span><Copy className="h-4 w-4 text-[#fafaf9]/30" /></div></div><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><div className="flex items-center justify-between mb-2"><h3 className="font-medium text-sm text-[#fafaf9]">Custom Domain</h3><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" />Verified</span></div><p className="text-xs text-[#fafaf9]/40 mb-3">Connect your own domain</p><input type="text" defaultValue="voiceai.youragency.com" className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div></div>)}
     </div>
   );
 }
@@ -661,7 +661,7 @@ function AgencySettings() {
         <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">{tabs.map(t => (<button key={t.id} onClick={() => setTab(t.id)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap" style={tab === t.id ? { backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981' } : { color: 'rgba(250,250,249,0.5)' }}><t.icon className="h-4 w-4" />{t.label}</button>))}</nav></div>
         {/* Content */}
         <div className="flex-1 max-w-2xl">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-6">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
             {tab === 'profile' && (<div className="space-y-5"><div><h3 className="text-base font-medium mb-1 text-[#fafaf9]">Agency Profile</h3><p className="text-xs text-[#fafaf9]/40">Basic information about your agency.</p></div><div><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">Agency Name</label><input type="text" defaultValue="AI Voice Pro" className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div><div><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">Logo</label><div className="flex items-center gap-4"><div className="h-16 w-16 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08]"><WaveformIcon className="h-8 w-8 text-emerald-400" /></div><button className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60">Upload</button></div></div><div><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">Slug</label><div className="rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/40">aivoicepro</div><p className="mt-1.5 text-[10px] text-[#fafaf9]/30">URL: https://aivoicepro.myvoiceaiconnect.com/signup</p></div><div className="pt-4 flex justify-end border-t border-white/[0.06]"><button className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505]"><Check className="h-4 w-4" />Save Changes</button></div></div>)}
             {tab === 'pricing' && (<div className="space-y-5"><div><h3 className="text-base font-medium mb-1 text-[#fafaf9]">Client Plans</h3><p className="text-xs text-[#fafaf9]/40">Set pricing, call limits, and features for each plan.</p></div><div className="rounded-xl p-3 flex items-start gap-3 bg-blue-500/[0.06] border border-blue-500/15"><Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400" /><p className="text-xs text-blue-300/80">Every client gets the core AI receptionist regardless of plan. The features below are extras per plan.</p></div>{[{ k: 'Starter', p: '49', l: '50', hl: false }, { k: 'Pro', p: '99', l: '150', hl: true }, { k: 'Growth', p: '149', l: '500', hl: false }].map(pl => (<div key={pl.k} className="rounded-xl p-3" style={pl.hl ? { backgroundColor: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' } : { backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><h4 className="font-medium text-sm text-[#fafaf9]">{pl.k} Plan</h4>{pl.hl && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Popular</span>}</div></div><div className="grid grid-cols-2 gap-3"><div><label className="block text-[10px] mb-1 text-[#fafaf9]/40">Price ($/mo)</label><input type="number" defaultValue={pl.p} className="w-full rounded-xl px-3 py-2 text-sm bg-[#050505] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div><div><label className="block text-[10px] mb-1 text-[#fafaf9]/40">Calls/mo</label><input type="number" defaultValue={pl.l} className="w-full rounded-xl px-3 py-2 text-sm bg-[#050505] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div></div></div>))}<div className="pt-4 flex justify-end border-t border-white/[0.06]"><button className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505]"><Check className="h-4 w-4" />Save Changes</button></div></div>)}
             {tab === 'payments' && (<div className="space-y-5"><div><h3 className="text-base font-medium mb-1 text-[#fafaf9]">Payment Settings</h3><p className="text-xs text-[#fafaf9]/40">Connect Stripe to receive payments.</p></div><div className="rounded-xl p-4 bg-white/[0.03] border border-white/[0.06]"><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-6 w-6 text-white" /></div><div className="flex-1"><p className="font-medium text-sm text-[#fafaf9]">Stripe Connect</p><p className="text-xs text-emerald-400">Active</p></div><Check className="h-5 w-5 text-emerald-400" /></div><div className="mt-4 pt-4 border-t border-white/[0.06] grid grid-cols-2 gap-3 text-xs"><div className="flex items-center justify-between rounded-lg px-3 py-2 bg-white/[0.03]"><span className="text-[#fafaf9]/40">Charges</span><span className="flex items-center gap-1 text-emerald-400"><Check className="h-3 w-3" />OK</span></div><div className="flex items-center justify-between rounded-lg px-3 py-2 bg-white/[0.03]"><span className="text-[#fafaf9]/40">Payouts</span><span className="flex items-center gap-1 text-emerald-400"><Check className="h-3 w-3" />OK</span></div></div></div></div>)}
@@ -684,9 +684,9 @@ function ClientOverview() {
   const pc = '#10b981';
   return (
     <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: '#f9fafb' }}>
-      <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Welcome back! 👋</h1><p className="mt-1 text-sm text-gray-500">Here&apos;s your AI receptionist activity.</p></div>
+      <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Welcome back!</h1><p className="mt-1 text-sm text-gray-500">Here&apos;s your AI receptionist activity.</p></div>
       {/* Phone Number Card */}
-      <div data-tour="client-phone" className="mb-6 sm:mb-8 rounded-xl border border-emerald-200 bg-white p-4 sm:p-6 shadow-sm">
+      <div data-tour="client-phone" className="mb-6 sm:mb-8 rounded-2xl border border-emerald-200 bg-white p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-emerald-50 flex-shrink-0"><Phone className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-600" /></div>
@@ -1202,11 +1202,11 @@ export default function DemoPage() {
       title: 'Onboarding in sixty seconds',
       body: 'Business name, plan, click Create.\n\nThe platform provisions a dedicated phone number, configures the AI agent for the industry, and sends login credentials. No technical work on your end. No A2P registration delay.' },
     { target: 'analytics-stats', view: 'agency' as const, tab: 'analytics', position: 'bottom' as const,
-      title: 'Real-time analytics',
+      title: 'Watch the revenue add up',
       body: 'MRR, total revenue, active clients, and Stripe payouts update live.\n\nStripe Connect routes every subscription directly to your bank \u2014 the platform never custodies funds.' },
     { target: 'demo-phone', view: 'agency' as const, tab: 'demo-phone', position: 'top' as const,
-      title: 'Your highest-converting sales tool',
-      body: 'Instead of explaining what an AI receptionist does, hand prospects this number and let them call.\n\nScheduling, FAQs, lead capture \u2014 they understand the value in 30 seconds. No sales call needed.' },
+      title: 'Try the AI yourself, call it',
+      body: 'This is a real number, call it. The AI books appointments, answers questions, and captures leads, exactly what your clients get.\n\nIt is also your best sales tool: hand a prospect the number instead of explaining, and they get it in 30 seconds. No sales call needed.' },
     { target: 'marketing-site', view: 'agency' as const, tab: 'marketing', position: 'bottom' as const,
       title: 'A branded marketing site, included',
       body: 'Every agency ships with a fully white-labeled marketing site under your domain.\n\nHero, pricing, testimonials, FAQ, embedded demo line, signup flow. Prospects discover, try, and subscribe \u2014 without you onboarding them manually.' },
@@ -1223,8 +1223,8 @@ export default function DemoPage() {
       title: 'Clients tune their own agent',
       body: 'Voice, greeting, services, FAQ \u2014 the end client configures the AI themselves.\n\nThe more they personalize it, the more central it becomes to their operations. That\u2019s what reduces churn.' },
     { target: null, view: 'agency' as const, tab: 'dashboard', position: 'center' as const,
-      title: 'Launch the agency',
-      body: 'Activate a workspace, set your pricing, share your branded signup link.\n\nProspects subscribe under your brand. The platform provisions everything. You build recurring revenue.' },
+      title: 'Ready to run the real thing?',
+      body: 'Start your 14-day free trial, spin up a real test client in a couple minutes, and hear the AI on your own number.\n\nSet your pricing, share your branded signup link, and prospects subscribe under your brand. The platform provisions everything. The recurring revenue is yours.' },
   ];
 
   const tourActive = !tourPaused && tourStep >= 0 && tourStep < TOUR_STEPS.length;
@@ -1264,10 +1264,10 @@ export default function DemoPage() {
           <div className="max-w-3xl">
             <p className="t-eyebrow text-em mb-5">Interactive demo</p>
             <h1 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 4vw, 3.25rem)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
-              Click around. It&apos;s the actual product.
+              Click around. This is the agency you&apos;d run.
             </h1>
             <p className="t-body mt-5 max-w-xl text-[1rem]">
-              A fully-interactive simulation of the platform — agency dashboard, client portal, branding tools, leads CRM. Toggle between agency and end-client views any time. No signup required.
+              This is the actual product, not a video. Poke around the business you&apos;d be running: local businesses paying you every month, the AI handling their calls, all under your brand. Flip between what you see and what your clients see, or take the guided tour. No signup required.
             </p>
           </div>
         </div>
