@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import MarketingPage from '@/components/MarketingPage';
 import MarketingPageBeside from '@/components/MarketingPageBeside';
+import MarketingPageEditorial from '@/components/MarketingPageEditorial';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
@@ -164,6 +165,7 @@ function resolveLoginUrl(agency: Agency): string {
 const TEMPLATES: Record<string, React.ComponentType<{ config: Partial<MarketingConfig> }>> = {
   classic: MarketingPage,
   beside: MarketingPageBeside,
+  editorial: MarketingPageEditorial,
 };
 
 // ============================================================================
