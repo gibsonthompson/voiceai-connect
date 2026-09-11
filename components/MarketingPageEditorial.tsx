@@ -169,7 +169,7 @@ function Nav({ config }: { config: MarketingConfig }) {
         </ul>
         <div className="ed-nav-actions">
           {config.clientLoginPath && <a href={config.clientLoginPath} className="ed-nav-login">Client login</a>}
-          <a href="/signup" className="ed-btn ed-btn-ink ed-btn-sm">Start free trial</a>
+          <a href="/signup" className="ed-btn ed-btn-primary ed-btn-sm">Start free trial</a>
         </div>
       </div>
     </nav>
@@ -186,11 +186,11 @@ function Hero({ config }: { config: MarketingConfig }) {
     <header className="ed-hero">
       <div className="ed-container ed-hero-inner">
         {hero.badge && <p className="ed-hero-badge">{hero.badge}</p>}
-        <h1 className="ed-hero-title">{hero.headline}</h1>
+        <h1 className="ed-hero-title">{(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).map((line, i) => <span key={i}>{line}</span>)}</h1>
         {hero.subtitle && <p className="ed-hero-sub">{hero.subtitle}</p>}
         {hero.description && <p className="ed-hero-desc">{hero.description}</p>}
         <div className="ed-hero-cta">
-          <a href="/signup" className="ed-btn ed-btn-ink">Start free trial</a>
+          <a href="/signup" className="ed-btn ed-btn-primary">Start free trial</a>
           {hasDemo
             ? <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-line">{hero.demoInstructions || `Hear it: ${hero.demoPhone}`}</a>
             : <a href="#how" className="ed-btn ed-btn-line">See how it works</a>}
@@ -241,28 +241,18 @@ function Features({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-features" id="features">
       <div className="ed-container">
-        <div className="ed-section-head">
-          <h2 className="ed-h2">{config.solution?.headline || 'Everything the phone needs to do, handled'}</h2>
-        </div>
-        <div className="ed-feature-list">
+        <div className="ed-section-head"><h2 className="ed-h2">{config.solution?.headline || 'Everything the phone needs to do, handled'}</h2></div>
+        <div className="ed-feat-grid">
           {features.map((f, i) => (
-            <article className={`ed-feature ${i % 2 === 1 ? 'ed-feature-rev' : ''}`} key={i}>
-              <div className="ed-feature-copy">
-                <span className="ed-feature-ico ed-accent">{featureIcon(f.icon)}</span>
-                <h3 className="ed-h3">{f.title}</h3>
-                <p className="ed-feature-desc">{f.description}</p>
-                {f.example && <p className="ed-feature-eg">{f.example}</p>}
+            <article className={`ed-feat ${i === 0 ? 'ed-feat-lead' : ''}`} key={i}>
+              <span className="ed-feat-ico">{featureIcon(f.icon)}</span>
+              <div className="ed-feat-body">
+                <h3 className="ed-feat-title">{f.title}</h3>
+                <p className="ed-feat-desc">{f.description}</p>
+                {f.example && <p className="ed-feat-eg">{f.example}</p>}
                 {f.integrations && f.integrations.length > 0 && (
-                  <ul className="ed-feature-tags">{f.integrations.map((t, j) => <li key={j}>{t}</li>)}</ul>
+                  <ul className="ed-feat-tags">{f.integrations.map((t, j) => <li key={j}>{t}</li>)}</ul>
                 )}
-              </div>
-              <div className="ed-feature-figure">
-                <div className="ed-figure-card">
-                  <span className="ed-figure-ico ed-accent">{featureIcon(f.icon)}</span>
-                  {f.stat && <p className="ed-figure-stat">{f.stat}</p>}
-                  <p className="ed-figure-title">{f.title}</p>
-                </div>
-                <div className="ed-figure-wave ed-accent"><Wave /></div>
               </div>
             </article>
           ))}
@@ -364,7 +354,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
               <ul className="ed-price-feats">
                 {t.features.map((f, j) => <li key={j}><span className="ed-tick ed-accent">{Icons.check}</span>{f}</li>)}
               </ul>
-              <a href={t.planKey ? `/signup?plan=${t.planKey}` : '/signup'} className={`ed-btn ${t.isPopular ? 'ed-btn-ink' : 'ed-btn-line'} ed-btn-full`}>Start free trial</a>
+              <a href={t.planKey ? `/signup?plan=${t.planKey}` : '/signup'} className={`ed-btn ${t.isPopular ? 'ed-btn-primary' : 'ed-btn-line'} ed-btn-full`}>Start free trial</a>
               {t.note && <p className="ed-price-note">{t.note}</p>}
             </article>
           ))}
@@ -429,24 +419,33 @@ function Footer({ config }: { config: MarketingConfig }) {
   const { footer, branding } = config;
   const homeUrl = config.homepageUrl || '/';
   const year = new Date().getFullYear();
-  const links = [...(footer.productLinks || []), ...(footer.industryLinks || []), ...(footer.companyLinks || [])];
+  const groups = [
+    { head: 'Product', links: footer.productLinks || [] },
+    { head: 'Industries', links: footer.industryLinks || [] },
+    { head: 'Company', links: footer.companyLinks || [] },
+  ].filter(g => g.links.length > 0);
   return (
     <footer className="ed-footer">
-      <div className="ed-container ed-footer-inner">
+      <div className="ed-container ed-footer-grid">
         <div className="ed-footer-brand">
           <a href={homeUrl} className="ed-logo">{branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} /> : <span>{branding.name}</span>}</a>
-          {footer.address && <p className="ed-footer-tag">{footer.address}</p>}
+          {footer.address && <p className="ed-footer-addr">{footer.address}</p>}
+          <div className="ed-footer-contact">
+            {footer.phone && <a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a>}
+            {footer.email && <a href={`mailto:${footer.email}`}>{footer.email}</a>}
+          </div>
         </div>
-        <div className="ed-footer-meta">
-          {footer.phone && <a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a>}
-          {footer.email && <a href={`mailto:${footer.email}`}>{footer.email}</a>}
-          {links.map((l, i) => <a key={i} href={l.href}>{l.label}</a>)}
-          {config.clientLoginPath && <a href={config.clientLoginPath}>Client login</a>}
-        </div>
+        {groups.map((g, gi) => (
+          <nav className="ed-footer-col" key={gi}>
+            <h4 className="ed-footer-head">{g.head}</h4>
+            <ul>
+              {g.links.map((l, j) => <li key={j}><a href={l.href}>{l.label}</a></li>)}
+              {gi === groups.length - 1 && config.clientLoginPath && <li><a href={config.clientLoginPath}>Client login</a></li>}
+            </ul>
+          </nav>
+        ))}
       </div>
-      <div className="ed-container ed-footer-legal">
-        <span>&copy; {year} {branding.name}. All rights reserved.</span>
-      </div>
+      <div className="ed-container ed-footer-legal"><span>&copy; {year} {branding.name}. All rights reserved.</span></div>
     </footer>
   );
 }
