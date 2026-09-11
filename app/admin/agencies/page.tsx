@@ -23,7 +23,7 @@ import {
   Building2, Search, Filter, Users, ExternalLink, Loader2, ChevronDown, MoreVertical,
   UserCheck, Ban, Phone, DollarSign, Target, PhoneCall, Globe, Clock, CreditCard, Mail,
   Shield, TrendingUp, Calendar, Zap, Copy, Check, FlaskConical, MessageSquare,
-  CheckCircle2, Circle, X, LogIn,
+  CheckCircle2, Circle, X, LogIn, ArrowUpDown,
 } from 'lucide-react';
 import {
   formatPhone, formatDate, formatDateTime, timeAgo, formatCurrencyCents,
@@ -232,6 +232,7 @@ export default function AdminAgenciesPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'plan'>('recent');
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedData, setExpandedData] = useState<Record<string, ExpandedData>>({});
@@ -423,7 +424,18 @@ export default function AdminAgenciesPage() {
     );
   };
 
-  const filteredAgencies = agencies.filter(a => matchAgency(a, search));
+  // Plan tiers ranked high -> low so 'Plan type' sort surfaces paying agencies first.
+  const PLAN_RANK: Record<string, number> = { scale: 0, enterprise: 0, pro: 1, professional: 1, growth: 2, free: 3, starter: 3 };
+  const planRank = (pt?: string | null) => (pt && pt in PLAN_RANK ? PLAN_RANK[pt] : 3);
+  const filteredAgencies = agencies
+    .filter(a => matchAgency(a, search))
+    .sort((a, b) => {
+      if (sortBy === 'plan') {
+        const d = planRank(a.plan_type) - planRank(b.plan_type);
+        return d !== 0 ? d : (a.name || '').localeCompare(b.name || '');
+      }
+      return 0; // 'recent': keep the server's order
+    });
   const suggestions = search.trim() ? filteredAgencies.slice(0, 7) : [];
   const showSuggestions = searchFocused && search.trim().length > 0 && suggestions.length > 0;
 
@@ -445,7 +457,7 @@ export default function AdminAgenciesPage() {
   const fnlPct = (n: number) => (fnlTotal > 0 ? Math.round((n / fnlTotal) * 100) : 0);
 
   // ── badge renderers using shared helpers ────────────────────────────────────
-  const statusBadge = (status: string) => { const b = getStatusBadge(status); return (<span className="rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{status || 'pending'}</span>); };
+  const statusBadge = (status: string) => { const b = getStatusBadge(status); return (<span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: b.color }} />{b.label}</span>); };
   const planBadge = (plan: string) => { const b = getPlanBadge(plan); return (<span className="rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{getPlanDisplayName(plan)}</span>); };
 
   const label = "text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]";
@@ -586,6 +598,16 @@ export default function AdminAgenciesPage() {
             <option value="past_due">Past Due</option>
             <option value="pending">Pending</option>
             <option value="canceled">Canceled</option>
+          </select>
+        </div>
+
+        {/* Sort */}
+        <div className="relative">
+          <ArrowUpDown className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'recent' | 'plan')} className="a-input !pl-10 !pr-9 appearance-none cursor-pointer">
+            <option value="recent">Sort: Newest</option>
+            <option value="plan">Sort: Plan type</option>
           </select>
         </div>
       </div>
