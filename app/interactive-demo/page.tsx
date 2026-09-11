@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import {
   Phone, ArrowRight, Check, Users, DollarSign, PhoneCall,
   Settings, Copy, TrendingUp, ChevronRight, Zap, LayoutDashboard,
@@ -757,10 +757,10 @@ function AgencyPlansMatrix() {
           <div className="px-4 pt-5 pb-2 flex items-end"><p className="text-[11px] font-bold uppercase tracking-wider text-[#fafaf9]/40">Features</p></div>
           {plans.map(p => (<div key={p.id} className="pt-5 pb-2" style={colStyle(p.visible)} />))}
           {SETTINGS_FEATURE_ROWS.map(row => (
-            <React.Fragment key={row.key}>
+            <Fragment key={row.key}>
               <div className="px-4 py-3 flex items-center"><span className="text-sm text-[#fafaf9]">{row.label}</span></div>
               {plans.map((p, idx) => (<div key={p.id} className="px-4 py-3 flex items-center justify-center" style={colStyle(p.visible)}><SettingsSwitch on={!!p.features[row.key]} onClick={() => toggle(idx, row.key)} /></div>))}
-            </React.Fragment>
+            </Fragment>
           ))}
           <div className="h-3" />
           {plans.map(p => (<div key={p.id} className="h-3 rounded-b-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderLeft: cellBorder, borderRight: cellBorder, borderBottom: cellBorder, borderTop: `1px solid ${rowLine}`, opacity: p.visible ? 1 : 0.55 }} />))}
