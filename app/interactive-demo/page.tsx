@@ -26,48 +26,48 @@ import MarketingFooter from '@/components/marketing-footer';
 
 const AGENCY = {
   name: 'AI Voice Pro', plan: 'Professional', signupLink: 'aivoice.pro/signup',
-  stats: { clients: 47, revenue: '$12,400', calls: '2,847', mrr: '$6,903' },
-  analyticsStats: { mrr: 690300, totalEarned: 4720000, pendingPayout: 189400, activeClients: 42, trialClients: 5 },
+  stats: { clients: 47, revenue: '$15,100', calls: '2,847', mrr: '$8,408' },
+  analyticsStats: { mrr: 840800, totalEarned: 5750000, pendingPayout: 231000, activeClients: 42, trialClients: 5 },
   revenueByMonth: [
-    { month: '2025-07', amount: 280000 }, { month: '2025-08', amount: 320000 },
-    { month: '2025-09', amount: 310000 }, { month: '2025-10', amount: 390000 },
-    { month: '2025-11', amount: 420000 }, { month: '2025-12', amount: 480000 },
-    { month: '2026-01', amount: 520000 }, { month: '2026-02', amount: 580000 },
-    { month: '2026-03', amount: 690300 },
+    { month: '2025-07', amount: 341000 }, { month: '2025-08', amount: 390000 },
+    { month: '2025-09', amount: 378000 }, { month: '2025-10', amount: 475000 },
+    { month: '2025-11', amount: 512000 }, { month: '2025-12', amount: 585000 },
+    { month: '2026-01', amount: 634000 }, { month: '2026-02', amount: 706000 },
+    { month: '2026-03', amount: 840800 },
   ],
   payments: [
-    { id: 'p1', client: 'Smith Plumbing Co', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-08' },
-    { id: 'p2', client: 'Elite Dental Care', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-08' },
-    { id: 'p3', client: 'Peak Roofing LLC', amount: 9900, status: 'succeeded', type: 'subscription', date: '2026-03-07' },
-    { id: 'p4', client: 'Valley Electric', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-07' },
-    { id: 'p5', client: 'Sunrise HVAC', amount: 9900, status: 'pending', type: 'subscription', date: '2026-03-06' },
-    { id: 'p6', client: 'Metro Law Group', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-05' },
-    { id: 'p7', client: 'Bright Smile Dental', amount: 9900, status: 'succeeded', type: 'subscription', date: '2026-03-05' },
+    { id: 'p1', client: 'Smith Plumbing Co', amount: 19900, status: 'succeeded', type: 'subscription', date: '2026-03-08' },
+    { id: 'p2', client: 'Elite Dental Care', amount: 19900, status: 'succeeded', type: 'subscription', date: '2026-03-08' },
+    { id: 'p3', client: 'Peak Roofing LLC', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-07' },
+    { id: 'p4', client: 'Valley Electric', amount: 19900, status: 'succeeded', type: 'subscription', date: '2026-03-07' },
+    { id: 'p5', client: 'Sunrise HVAC', amount: 14900, status: 'pending', type: 'subscription', date: '2026-03-06' },
+    { id: 'p6', client: 'Metro Law Group', amount: 19900, status: 'succeeded', type: 'subscription', date: '2026-03-05' },
+    { id: 'p7', client: 'Bright Smile Dental', amount: 14900, status: 'succeeded', type: 'subscription', date: '2026-03-05' },
   ],
   planClients: { starter: 14, pro: 23, growth: 5 },
   clients: [
-    { id: '1', name: 'Smith Plumbing Co', email: 'john@smithplumbing.com', plan: 'professional', status: 'active', calls: 127, mrr: '$149', created: '2025-11-14' },
-    { id: '2', name: 'Elite Dental Care', email: 'dr.chen@elitedental.com', plan: 'professional', status: 'active', calls: 203, mrr: '$149', created: '2025-10-22' },
-    { id: '3', name: 'Sunrise HVAC', email: 'mike@sunrisehvac.com', plan: 'starter', status: 'trial', calls: 44, mrr: '$99', created: '2026-03-02' },
-    { id: '4', name: 'Peak Roofing LLC', email: 'dan@peakroofing.com', plan: 'starter', status: 'active', calls: 89, mrr: '$99', created: '2025-12-08' },
-    { id: '5', name: 'Valley Electric', email: 'sarah@valleyelectric.com', plan: 'professional', status: 'active', calls: 167, mrr: '$149', created: '2025-09-30' },
-    { id: '6', name: 'Metro Law Group', email: 'info@metrolaw.com', plan: 'professional', status: 'active', calls: 211, mrr: '$149', created: '2025-08-15' },
-    { id: '7', name: 'Bright Smile Dental', email: 'admin@brightsmile.com', plan: 'starter', status: 'active', calls: 56, mrr: '$99', created: '2026-01-20' },
-    { id: '8', name: 'Swift Auto Repair', email: 'tom@swiftauto.com', plan: 'professional', status: 'trial', calls: 12, mrr: '$149', created: '2026-03-05' },
+    { id: '1', name: 'Smith Plumbing Co', email: 'john@smithplumbing.com', plan: 'professional', status: 'active', calls: 127, mrr: '$199', created: '2025-11-14' },
+    { id: '2', name: 'Elite Dental Care', email: 'dr.chen@elitedental.com', plan: 'professional', status: 'active', calls: 203, mrr: '$199', created: '2025-10-22' },
+    { id: '3', name: 'Sunrise HVAC', email: 'mike@sunrisehvac.com', plan: 'starter', status: 'trial', calls: 44, mrr: '$149', created: '2026-03-02' },
+    { id: '4', name: 'Peak Roofing LLC', email: 'dan@peakroofing.com', plan: 'starter', status: 'active', calls: 89, mrr: '$149', created: '2025-12-08' },
+    { id: '5', name: 'Valley Electric', email: 'sarah@valleyelectric.com', plan: 'professional', status: 'active', calls: 167, mrr: '$199', created: '2025-09-30' },
+    { id: '6', name: 'Metro Law Group', email: 'info@metrolaw.com', plan: 'professional', status: 'active', calls: 211, mrr: '$199', created: '2025-08-15' },
+    { id: '7', name: 'Bright Smile Dental', email: 'admin@brightsmile.com', plan: 'starter', status: 'active', calls: 56, mrr: '$149', created: '2026-01-20' },
+    { id: '8', name: 'Swift Auto Repair', email: 'tom@swiftauto.com', plan: 'professional', status: 'trial', calls: 12, mrr: '$199', created: '2026-03-05' },
   ],
   leads: [
-    { id: '1', name: 'Ace Garage Doors', contact: 'Tom Wilson', email: 'tom@acegaragedoors.com', phone: '(404) 555-1001', industry: 'Home Services', source: 'Cold Email', status: 'qualified', value: 14900, followUp: '2026-03-10', created: '2026-02-15' },
-    { id: '2', name: 'Comfort Air HVAC', contact: 'Maria Santos', email: 'maria@comfortair.com', phone: '(678) 555-2002', industry: 'HVAC', source: 'LinkedIn', status: 'contacted', value: 9900, followUp: '2026-03-11', created: '2026-02-20' },
-    { id: '3', name: 'Quick Fix Plumbing', contact: 'James Lee', email: 'james@quickfixplumbing.com', phone: '(770) 555-3003', industry: 'Plumbing', source: 'Referral', status: 'proposal', value: 14900, followUp: '2026-03-08', created: '2026-01-28' },
-    { id: '4', name: 'Bright Smiles Dental', contact: 'Dr. Patel', email: 'admin@brightsmilesdental.com', phone: '(404) 555-4004', industry: 'Medical/Dental', source: 'Website', status: 'new', value: 9900, followUp: null, created: '2026-03-09' },
-    { id: '5', name: 'Summit Roofing', contact: 'Mike Brown', email: 'mike@summitroofing.com', phone: '(678) 555-5005', industry: 'Roofing', source: 'Cold Email', status: 'contacted', value: 9900, followUp: '2026-03-07', created: '2026-02-10' },
-    { id: '6', name: 'Express Locksmith', contact: 'Dana Rivera', email: 'dana@expresslocksmith.com', phone: '(770) 555-6006', industry: 'Home Services', source: 'DM', status: 'qualified', value: 14900, followUp: '2026-03-12', created: '2026-02-05' },
-    { id: '7', name: 'Green Lawn Landscaping', contact: 'Carlos Mendez', email: 'carlos@greenlawn.com', phone: '(404) 555-7007', industry: 'Landscaping', source: 'Google Maps', status: 'new', value: 9900, followUp: null, created: '2026-03-08' },
-    { id: '8', name: 'Premier Auto Body', contact: 'Kevin Park', email: 'kevin@premierautobody.com', phone: '(678) 555-8008', industry: 'Automotive', source: 'Referral', status: 'won', value: 14900, followUp: null, created: '2026-01-15' },
-    { id: '9', name: 'Cozy Home HVAC', contact: 'Linda Torres', email: 'linda@cozyhomehvac.com', phone: '(770) 555-9009', industry: 'HVAC', source: 'Instagram', status: 'lost', value: 9900, followUp: null, created: '2026-01-20' },
-    { id: '10', name: 'Diamond Electrical', contact: 'Ray Thompson', email: 'ray@diamondelectrical.com', phone: '(404) 555-1010', industry: 'Electrical', source: 'Google Maps', status: 'contacted', value: 14900, followUp: '2026-03-09', created: '2026-02-25' },
+    { id: '1', name: 'Ace Garage Doors', contact: 'Tom Wilson', email: 'tom@acegaragedoors.com', phone: '(404) 555-1001', industry: 'Home Services', source: 'Cold Email', status: 'qualified', value: 19900, followUp: '2026-03-10', created: '2026-02-15' },
+    { id: '2', name: 'Comfort Air HVAC', contact: 'Maria Santos', email: 'maria@comfortair.com', phone: '(678) 555-2002', industry: 'HVAC', source: 'LinkedIn', status: 'contacted', value: 14900, followUp: '2026-03-11', created: '2026-02-20' },
+    { id: '3', name: 'Quick Fix Plumbing', contact: 'James Lee', email: 'james@quickfixplumbing.com', phone: '(770) 555-3003', industry: 'Plumbing', source: 'Referral', status: 'proposal', value: 19900, followUp: '2026-03-08', created: '2026-01-28' },
+    { id: '4', name: 'Bright Smiles Dental', contact: 'Dr. Patel', email: 'admin@brightsmilesdental.com', phone: '(404) 555-4004', industry: 'Medical/Dental', source: 'Website', status: 'new', value: 14900, followUp: null, created: '2026-03-09' },
+    { id: '5', name: 'Summit Roofing', contact: 'Mike Brown', email: 'mike@summitroofing.com', phone: '(678) 555-5005', industry: 'Roofing', source: 'Cold Email', status: 'contacted', value: 14900, followUp: '2026-03-07', created: '2026-02-10' },
+    { id: '6', name: 'Express Locksmith', contact: 'Dana Rivera', email: 'dana@expresslocksmith.com', phone: '(770) 555-6006', industry: 'Home Services', source: 'DM', status: 'qualified', value: 19900, followUp: '2026-03-12', created: '2026-02-05' },
+    { id: '7', name: 'Green Lawn Landscaping', contact: 'Carlos Mendez', email: 'carlos@greenlawn.com', phone: '(404) 555-7007', industry: 'Landscaping', source: 'Google Maps', status: 'new', value: 14900, followUp: null, created: '2026-03-08' },
+    { id: '8', name: 'Premier Auto Body', contact: 'Kevin Park', email: 'kevin@premierautobody.com', phone: '(678) 555-8008', industry: 'Automotive', source: 'Referral', status: 'won', value: 19900, followUp: null, created: '2026-01-15' },
+    { id: '9', name: 'Cozy Home HVAC', contact: 'Linda Torres', email: 'linda@cozyhomehvac.com', phone: '(770) 555-9009', industry: 'HVAC', source: 'Instagram', status: 'lost', value: 14900, followUp: null, created: '2026-01-20' },
+    { id: '10', name: 'Diamond Electrical', contact: 'Ray Thompson', email: 'ray@diamondelectrical.com', phone: '(404) 555-1010', industry: 'Electrical', source: 'Google Maps', status: 'contacted', value: 19900, followUp: '2026-03-09', created: '2026-02-25' },
   ],
-  leadStats: { total: 42, active: 33, qualified: 12, pipeline: 389400, followUpsToday: 3, overdue: 2 },
+  leadStats: { total: 42, active: 33, qualified: 12, pipeline: 598000, followUpsToday: 3, overdue: 2 },
   templates: [
     { id: '1', name: 'Cold Intro Email', type: 'email', sent: 38, desc: 'Hey {name}, noticed {business} doesn\'t have...' },
     { id: '2', name: 'Follow-Up #1', type: 'email', sent: 22, desc: 'Following up on my note about AI receptionist...' },
@@ -248,7 +248,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
                 <label className={labelCls}>Pricing</label>
                 <div className="inline-flex rounded-lg p-0.5 mb-2 bg-white/[0.04] border border-white/[0.08]">{(['plan', 'custom'] as const).map(m => (<button key={m} type="button" onClick={() => setPmode(m)} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={pmode === m ? { backgroundColor: '#10b981', color: '#050505' } : { color: 'rgba(250,250,249,0.7)' }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>))}</div>
                 {pmode === 'plan' ? (
-                  <select value={plan} onChange={e => setPlan(e.target.value)} className={inputCls}><option value="starter">Starter - $99/mo</option><option value="pro">Professional - $149/mo</option><option value="growth">Growth - $249/mo</option></select>
+                  <select value={plan} onChange={e => setPlan(e.target.value)} className={inputCls}><option value="starter">Starter - $149/mo</option><option value="pro">Professional - $199/mo</option><option value="growth">Growth - $349/mo</option></select>
                 ) : (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">{customFields.map(f => (<div key={f.label}><label className="block text-[11px] mb-0.5 text-[#fafaf9]/70">{f.label}</label><input placeholder={f.ph} inputMode="decimal" className="w-full rounded-lg px-2.5 py-2 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>))}</div>
@@ -468,7 +468,7 @@ function AgencyAnalytics() {
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="font-medium mb-4 text-sm text-[#fafaf9]">Revenue by Plan</h3>
           <div className="space-y-4">
-            {[{ plan: 'Starter', count: AGENCY.planClients.starter, price: 9900, color: '#3b82f6' }, { plan: 'Professional', count: AGENCY.planClients.pro, price: 14900, color: '#10b981' }, { plan: 'Growth', count: AGENCY.planClients.growth, price: 24900, color: '#a78bfa' }].map(p => {
+            {[{ plan: 'Starter', count: AGENCY.planClients.starter, price: 14900, color: '#3b82f6' }, { plan: 'Professional', count: AGENCY.planClients.pro, price: 19900, color: '#10b981' }, { plan: 'Growth', count: AGENCY.planClients.growth, price: 34900, color: '#a78bfa' }].map(p => {
               const rev = p.count * p.price; const pct = (rev / AGENCY.analyticsStats.mrr) * 100;
               return (<div key={p.plan}><div className="flex items-center justify-between mb-1"><span className="text-xs sm:text-sm text-[#fafaf9]">{p.plan}</span><span className="text-xs sm:text-sm font-medium text-[#fafaf9]">{fmtCents(rev)}</span></div><div className="h-1.5 sm:h-2 rounded-full bg-white/[0.06] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: p.color }} /></div><p className="text-[10px] text-[#fafaf9]/40 mt-1">{p.count} client{p.count !== 1 ? 's' : ''}</p></div>);
             })}
@@ -695,9 +695,9 @@ const SETTINGS_FEATURE_ROWS: { key: string; label: string }[] = [
 interface DemoPlan { id: string; name: string; price: string; calls: string; unlimited: boolean; minutes: string; seats: string; tagline: string; visible: boolean; popular: boolean; features: Record<string, boolean>; }
 
 const SETTINGS_PLANS_SEED: DemoPlan[] = [
-  { id: 'starter', name: 'Starter', price: '99', calls: '50', unlimited: false, minutes: '300', seats: '0', tagline: 'Great for solo operators', visible: true, popular: false, features: { knowledge_base: false, custom_voice: false, custom_greeting: false, business_hours: true, call_transfer: false, transfer_fallback: false, caller_recognition: false, spam_detection: true } },
-  { id: 'pro', name: 'Professional', price: '149', calls: '150', unlimited: false, minutes: '600', seats: '2', tagline: 'Most popular with growing teams', visible: true, popular: true, features: { knowledge_base: true, custom_voice: false, custom_greeting: true, business_hours: true, call_transfer: true, transfer_fallback: true, caller_recognition: true, spam_detection: true } },
-  { id: 'growth', name: 'Growth', price: '249', calls: '', unlimited: true, minutes: '2000', seats: '5', tagline: 'For high call volume', visible: true, popular: false, features: { knowledge_base: true, custom_voice: true, custom_greeting: true, business_hours: true, call_transfer: true, transfer_fallback: true, caller_recognition: true, spam_detection: true } },
+  { id: 'starter', name: 'Starter', price: '149', calls: '50', unlimited: false, minutes: '300', seats: '0', tagline: 'Great for solo operators', visible: true, popular: false, features: { knowledge_base: false, custom_voice: false, custom_greeting: false, business_hours: true, call_transfer: false, transfer_fallback: false, caller_recognition: false, spam_detection: true } },
+  { id: 'pro', name: 'Professional', price: '199', calls: '150', unlimited: false, minutes: '600', seats: '2', tagline: 'Most popular with growing teams', visible: true, popular: true, features: { knowledge_base: true, custom_voice: false, custom_greeting: true, business_hours: true, call_transfer: true, transfer_fallback: true, caller_recognition: true, spam_detection: true } },
+  { id: 'growth', name: 'Growth', price: '349', calls: '', unlimited: true, minutes: '2000', seats: '5', tagline: 'For high call volume', visible: true, popular: false, features: { knowledge_base: true, custom_voice: true, custom_greeting: true, business_hours: true, call_transfer: true, transfer_fallback: true, caller_recognition: true, spam_detection: true } },
 ];
 
 function SettingsSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
@@ -858,7 +858,7 @@ function AgencySettings() {
             {tab === 'demo' && (<div className="space-y-5">
               <div className="flex items-start justify-between gap-4"><div className="flex items-start gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/10"><Eye className="h-5 w-5 text-emerald-400" /></div><div><h3 className="text-base font-medium text-[#fafaf9]">Demo Mode</h3><p className="text-xs mt-0.5 text-[#fafaf9]/40">Preview your dashboard with realistic sample data.</p></div></div><SettingsSwitch on={true} onClick={() => {}} /></div>
               <div className="rounded-xl px-4 py-3 flex items-center gap-2 bg-emerald-500/[0.08] border border-emerald-500/20"><div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" /><span className="text-sm font-medium text-emerald-400">Demo mode is active, all pages show sample data</span></div>
-              <div className="rounded-xl p-4 bg-white/[0.03] border border-white/[0.06]"><p className="text-sm font-medium mb-3 text-[#fafaf9]">What demo mode shows:</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[{ l: 'Dashboard', d: '47 clients, $6,903 MRR, 2,847 total calls' }, { l: 'Clients', d: 'Realistic service businesses with plans and call data' }, { l: 'Call History', d: 'Calls with AI summaries, urgency levels, transcripts' }, { l: 'Analytics', d: 'Revenue charts, plan breakdown, payment history' }].map(f => (<div key={f.l} className="flex items-start gap-2"><Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="text-xs font-medium text-[#fafaf9]">{f.l}</p><p className="text-[10px] text-[#fafaf9]/40">{f.d}</p></div></div>))}</div></div>
+              <div className="rounded-xl p-4 bg-white/[0.03] border border-white/[0.06]"><p className="text-sm font-medium mb-3 text-[#fafaf9]">What demo mode shows:</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[{ l: 'Dashboard', d: '47 clients, $8,408 MRR, 2,847 total calls' }, { l: 'Clients', d: 'Realistic service businesses with plans and call data' }, { l: 'Call History', d: 'Calls with AI summaries, urgency levels, transcripts' }, { l: 'Analytics', d: 'Revenue charts, plan breakdown, payment history' }].map(f => (<div key={f.l} className="flex items-start gap-2"><Check className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="text-xs font-medium text-[#fafaf9]">{f.l}</p><p className="text-[10px] text-[#fafaf9]/40">{f.d}</p></div></div>))}</div></div>
             </div>)}
 
             {tab === 'support' && (<div className="space-y-5">
@@ -1432,7 +1432,7 @@ export default function DemoPage() {
   const TOUR_STEPS = [
     { target: 'sidebar-mrr', view: 'agency' as const, tab: 'dashboard', position: 'right' as const, pin: 'top' as const,
       title: 'Your Monthly Recurring Revenue',
-      body: 'Forty-seven local businesses on the platform, $6,903 landing in your account every month.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you add clients, so this number keeps climbing while your costs hold steady.' },
+      body: 'Forty-seven local businesses on the platform, $8,408 landing in your account every month.\n\nEvery active subscription rolls up here. Your platform fee stays flat as you add clients, so this number keeps climbing while your costs hold steady.' },
     { target: 'clients-table', view: 'agency' as const, tab: 'clients', position: 'top' as const,
       title: 'Every Row Is A Paying Client',
       body: 'Each one is a local business paying you every month for their AI receptionist.\n\nYou set the price. The platform handles provisioning, billing, and the day-to-day, so there are no setup calls and no fulfillment work on your end.' },
