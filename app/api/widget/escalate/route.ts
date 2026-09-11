@@ -4,27 +4,47 @@ import { NextRequest, NextResponse } from 'next/server';
    POST /api/widget/escalate
    Destination: app/api/widget/escalate/route.ts  (FULL REPLACEMENT)
 
-   FIXED 2026-08-17: this route previously forwarded to the backend's agency
-   inbox intake (/api/agency/support-requests/intake), which resolves an agency
-   from the request host. On the PLATFORM marketing site (myvoiceaiconnect.com)
-   there is no agency, so that intake always 404'd and every "Talk to a person"
-   submit failed with the email-fallback error.
+   Routes a "talk to a person" submit to the right queue based on WHERE it was
+   sent from:
 
-   It now forwards to the PLATFORM support path (/api/help/message), which
-   persists the request to support_requests (the admin Support queue) AND texts
-   the platform owner (SUPPORT_PHONE) so a prospect asking for a callback is
-   reachable fast. That backend endpoint accepts an anonymous prospect's
-   name / contact / message (no auth token required).
+     - Agency marketing site (a real agency host, or an explicit agencyId from
+       the agency support widget)  ->  backend AGENCY INBOX intake
+       (/api/agency/support-requests/intake). The backend resolves the agency
+       by agencyId first, then by host, and inserts an agency_support_requests
+       row (source 'marketing_site') that shows in that agency's dashboard Inbox.
+
+     - Platform marketing site (myvoiceaiconnect.com / previews / local)  ->
+       PLATFORM support (/api/help/message), which persists to the admin
+       Support queue and texts the platform owner.
+
+   HISTORY: a prior version forwarded ONLY to the agency intake, which resolved
+   by host and therefore 404'd on the platform site (no agency there), failing
+   every platform submit. The following version over-corrected and forwarded
+   EVERYTHING to the platform queue, so agency-site prospect messages silently
+   landed in VoiceAI Connect's admin queue instead of the agency's inbox. This
+   version branches so BOTH surfaces reach their correct destination.
 
    Server-to-server call, so no CORS and no client-visible backend URL beyond
-   the usual public API base. Returns a non-2xx when the backend cannot capture
+   the usual public API base. Returns non-2xx when the backend cannot capture
    the request, so the widget shows its error state (and the email fallback)
-   instead of claiming delivery that did not happen.
+   instead of claiming a delivery that did not happen.
    =========================================================================== */
+
+const PLATFORM_HOSTS = new Set(['myvoiceaiconnect.com', 'www.myvoiceaiconnect.com']);
+
+// True for the platform's own marketing site and non-agency dev/preview hosts,
+// where there is no owning agency to route an inbox message to.
+function isPlatformHost(host: string): boolean {
+  if (!host) return true;
+  const h = host.toLowerCase().split(':')[0].trim();
+  if (h === 'localhost' || h === '127.0.0.1') return true;
+  if (h.endsWith('.vercel.app')) return true;
+  return PLATFORM_HOSTS.has(h);
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, contact, message, conversationSummary } = await req.json();
+    const { name, contact, message, conversationSummary, agencyId } = await req.json();
 
     if (!contact || !String(contact).trim()) {
       return NextResponse.json({ error: 'Contact info is required' }, { status: 400 });
@@ -42,18 +62,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
 
-    const resp = await fetch(`${backendUrl}/api/help/message`, {
+    // The widget POSTs from the browser on whatever site it is embedded in, so
+    // this Host header is the agency's marketing host (subdomain or verified
+    // custom domain) on an agency site, or a platform host on ours.
+    const host = (req.headers.get('x-forwarded-host') || req.headers.get('host') || '')
+      .split(',')[0]
+      .trim();
+
+    // An explicit agencyId (sent by the agency support widget) or a non-platform
+    // host means this belongs in an agency inbox, not the platform admin queue.
+    const toAgencyInbox = Boolean(agencyId) || !isPlatformHost(host);
+
+    const url = toAgencyInbox
+      ? `${backendUrl}/api/agency/support-requests/intake`
+      : `${backendUrl}/api/help/message`;
+
+    const payload = toAgencyInbox
+      ? {
+          // Backend resolves the agency by agencyId first, then host.
+          agencyId: agencyId || undefined,
+          host: host || undefined,
+          name: name || undefined,
+          contact,
+          message: message || undefined,
+          conversationSummary: conversationSummary || undefined,
+        }
+      : {
+          name: name || undefined,
+          contact,
+          message: message || undefined,
+          conversationSummary: conversationSummary || undefined,
+        };
+
+    const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       // No Authorization header: this is an anonymous marketing-site prospect.
-      // /api/help/message treats a token-less request with name/contact as a
-      // prospect and composes the record + SMS from these fields.
-      body: JSON.stringify({
-        name: name || undefined,
-        contact,
-        message: message || undefined,
-        conversationSummary: conversationSummary || undefined,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!resp.ok) {
@@ -62,7 +107,7 @@ export async function POST(req: NextRequest) {
         'Support escalation forward failed:',
         resp.status,
         errText,
-        JSON.stringify({ name, contact, message: message || null })
+        JSON.stringify({ toAgencyInbox, host, name, contact, message: message || null })
       );
       return NextResponse.json({ error: 'Failed to send message' }, { status: 502 });
     }

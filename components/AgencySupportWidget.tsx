@@ -61,6 +61,7 @@ const PROSPECT_FAQS: FAQ[] = [
 ];
 
 interface AgencySupportWidgetProps {
+  agencyId?: string;
   agencyName: string;
   agencyLogo: string | null;
   primaryColor: string;
@@ -92,6 +93,7 @@ function isLightHex(hex: string): boolean {
 }
 
 export default function AgencySupportWidget({
+  agencyId,
   agencyName,
   agencyLogo,
   primaryColor,
@@ -290,6 +292,7 @@ export default function AgencySupportWidget({
           contact: escContact.trim(),
           message: escMessage.trim() || undefined,
           conversationSummary: summary || undefined,
+          agencyId,
           agencyEmail: supportEmail || undefined,
           agencyName,
         }),

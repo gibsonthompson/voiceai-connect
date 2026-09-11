@@ -313,6 +313,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     <>
       <TemplateComponent config={marketingConfig} />
       <AgencySupportWidget
+        agencyId={agency.id}
         agencyName={agency.name}
         agencyLogo={agency.logo_url}
         primaryColor={agency.primary_color || '#10b981'}
