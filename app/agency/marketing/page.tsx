@@ -38,6 +38,58 @@ const TEMPLATES: TemplateOption[] = [
   { id: 'editorial', name: 'Editorial', description: 'Handhold-inspired editorial layout with serif headlines, organic wave illustrations, alternating feature sections, and large testimonials.', style: 'Premium & Editorial', preview: { bgColor: '#FAFAF8', accentColor: '#0a0a0a', textColor: '#0a0a0a', sections: ['Serif Hero + Wave Art', 'Logo Bar', 'Alternating Features', 'Numbered Steps', 'Value Prop Cards', 'Single Testimonial', 'FAQ Accordion', 'Artistic Footer CTA'] } },
 ];
 
+// Distinct mini-mockup per template, rendered in the agency's own brand color so
+// the picker previews how *your* brand looks in each layout, not a generic skeleton.
+function TemplateThumb({ id, bg, accent, ink }: { id: string; bg: string; accent: string; ink: string }) {
+  const bar = (w: string, h: number, c: string, o: number, extra: React.CSSProperties = {}) => (
+    <div style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: c, opacity: o, ...extra }} />
+  );
+  if (id === 'beside') {
+    return (
+      <div style={{ backgroundColor: bg }} className="absolute inset-0 flex flex-col justify-center gap-2 p-4">
+        <div className="flex gap-3 items-stretch">
+          <div className="flex-1 flex flex-col gap-1.5 justify-center">
+            {bar('85%', 7, ink, 0.85)}{bar('60%', 7, ink, 0.85)}
+            <div style={{ width: '48%', height: 10, borderRadius: 5, backgroundColor: accent, marginTop: 3 }} />
+          </div>
+          <div style={{ width: '42%', borderRadius: 8, backgroundColor: accent, opacity: 0.12, minHeight: 52, position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: 8, borderRadius: 5, backgroundColor: accent, opacity: 0.55 }} />
+          </div>
+        </div>
+        <div className="flex gap-1.5 mt-1">{[0, 1, 2].map(i => (<div key={i} style={{ width: 30, height: 7, borderRadius: 4, backgroundColor: i === 0 ? accent : ink, opacity: i === 0 ? 0.35 : 0.08 }} />))}</div>
+      </div>
+    );
+  }
+  if (id === 'editorial') {
+    return (
+      <div style={{ backgroundColor: bg }} className="absolute inset-0 flex flex-col justify-center overflow-hidden">
+        <div className="px-4">
+          <div style={{ width: '62%', height: 11, borderRadius: 2, backgroundColor: ink, opacity: 0.85 }} />
+          <div style={{ width: '40%', height: 6, borderRadius: 2, backgroundColor: ink, opacity: 0.35, marginTop: 5 }} />
+          <div style={{ width: '32%', height: 10, borderRadius: 5, backgroundColor: accent, marginTop: 6 }} />
+        </div>
+        <svg viewBox="0 0 200 26" preserveAspectRatio="none" style={{ width: '100%', height: 22, margin: '8px 0' }}><path d="M0,14 C48,2 92,26 140,13 C176,3 200,15 200,15" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.5" /></svg>
+        <div className="flex gap-3 px-4">
+          <div className="flex-1 flex flex-col gap-1.5">{bar('80%', 5, ink, 0.5)}{bar('92%', 4, ink, 0.22)}</div>
+          <div style={{ width: '34%', height: 26, borderRadius: 4, backgroundColor: ink, opacity: 0.06 }} />
+        </div>
+      </div>
+    );
+  }
+  // classic (default): centered, symmetric, card grid
+  return (
+    <div style={{ backgroundColor: bg }} className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+      <div className="flex flex-col items-center gap-1.5 w-full">
+        <div style={{ width: '55%', height: 7, borderRadius: 4, backgroundColor: ink, opacity: 0.8 }} />
+        <div style={{ width: '38%', height: 5, borderRadius: 3, backgroundColor: ink, opacity: 0.2 }} />
+        <div style={{ width: '26%', height: 10, borderRadius: 5, backgroundColor: accent, marginTop: 3 }} />
+      </div>
+      <div className="flex justify-center gap-1.5 w-full">{[0, 1, 2].map(i => (<div key={i} style={{ width: 24, height: 11, borderRadius: 3, backgroundColor: ink, opacity: 0.08 }} />))}</div>
+      <div className="grid grid-cols-3 gap-1.5 w-full px-2">{[0, 1, 2].map(i => (<div key={i} style={{ height: 20, borderRadius: 4, backgroundColor: i === 1 ? accent : ink, opacity: i === 1 ? 0.15 : 0.06 }} />))}</div>
+    </div>
+  );
+}
+
 export default function MarketingWebsitePage() {
   const router = useRouter();
   const { agency, branding, loading: agencyLoading, refreshAgency, demoMode } = useAgency();
@@ -391,9 +443,26 @@ export default function MarketingWebsitePage() {
 
       {/* ══════════════ TEMPLATE ══════════════ */}
       {activeTab === 'template' && (<div className="space-y-4 sm:space-y-6">
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><h3 className="font-medium text-sm sm:text-base mb-1">Choose Your Template</h3><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Each template has a unique layout structure and visual style. Your content carries over between templates.</p></div>
-        <div className="grid grid-cols-1 gap-4">{TEMPLATES.map((template) => { const isActive = selectedTemplate === template.id; return (<div key={template.id} className="rounded-xl overflow-hidden transition-all" style={{ border: isActive ? `2px solid ${agencyPrimaryColor}` : `1px solid ${borderColor}`, backgroundColor: cardBg, boxShadow: isActive ? `0 0 0 3px ${agencyPrimaryColor}20` : 'none' }}><div className="flex flex-col sm:flex-row"><div className="sm:w-64 flex-shrink-0 p-4 flex flex-col items-center justify-center gap-3" style={{ backgroundColor: template.preview.bgColor, minHeight: '180px' }}><div className="w-full max-w-[200px] space-y-2"><div className="h-2 rounded-full w-3/4 mx-auto" style={{ backgroundColor: template.preview.accentColor, opacity: 0.7 }} /><div className="h-1.5 rounded-full w-1/2 mx-auto" style={{ backgroundColor: template.preview.textColor, opacity: 0.15 }} /><div className="h-8 rounded-lg mt-2" style={{ backgroundColor: template.preview.accentColor, opacity: 0.12 }} /><div className="grid grid-cols-3 gap-1.5 mt-1"><div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} /><div className="h-6 rounded" style={{ backgroundColor: template.preview.accentColor, opacity: 0.15 }} /><div className="h-6 rounded" style={{ backgroundColor: template.preview.textColor, opacity: 0.06 }} /></div></div></div><div className="flex-1 p-4 sm:p-5 flex flex-col justify-between"><div><div className="flex items-center gap-2 mb-1"><h3 className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>{template.name}</h3>{isActive && (<span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Active</span>)}</div><p className="text-xs font-medium mb-2" style={{ color: agencyPrimaryColor }}>{template.style}</p><p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>{template.description}</p><div className="flex flex-wrap gap-1.5 mb-3">{template.preview.sections.slice(0, 4).map(s => (<span key={s} className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>{s}</span>))}{template.preview.sections.length > 4 && (<span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>+{template.preview.sections.length - 4} more</span>)}</div></div><div className="flex gap-2">{isActive ? (<span className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><CheckCircle2 className="h-3.5 w-3.5" />Currently Active</span>) : (<button onClick={() => setSelectedTemplate(template.id)} className="text-xs font-medium px-4 py-2 rounded-lg text-white transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>Select Template</button>)}<a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}><ExternalLink className="h-3.5 w-3.5" />Preview</a></div></div></div></div>); })}</div>
-        {selectedTemplate !== (agency?.marketing_template || 'classic') && (<div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}` }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>You've selected <strong style={{ color: textColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name}</strong>. Save to apply it to your marketing website.</p><div className="flex items-center gap-3 w-full sm:w-auto">{templateSaved && (<span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveTemplate} disabled={savingTemplate} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Template</button></div></div>)}
+        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><h3 className="font-medium text-sm sm:text-base mb-1">Choose your template</h3><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Each template is a different layout and visual style. Your content and colors carry over, so you can switch anytime.</p></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">{TEMPLATES.map((template) => { const isActive = selectedTemplate === template.id; return (
+          <div key={template.id} onClick={() => setSelectedTemplate(template.id)} className="rounded-2xl overflow-hidden transition-all cursor-pointer group" style={{ border: isActive ? `2px solid ${agencyPrimaryColor}` : `1px solid ${borderColor}`, backgroundColor: cardBg, boxShadow: isActive ? `0 0 0 4px ${agencyPrimaryColor}1a` : '0 1px 2px rgba(0,0,0,0.04)' }}>
+            <div className="relative" style={{ height: 150, borderBottom: `1px solid ${borderColor}` }}>
+              <TemplateThumb id={template.id} bg={template.preview.bgColor} accent={agencyPrimaryColor} ink={template.preview.textColor} />
+              {isActive && (<span className="absolute top-2.5 right-2.5 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ backgroundColor: agencyPrimaryColor, color: '#fff' }}><CheckCircle2 className="h-3 w-3" />Active</span>)}
+            </div>
+            <div className="p-4 sm:p-5">
+              <h3 className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>{template.name}</h3>
+              <p className="text-[11px] font-medium mt-0.5" style={{ color: agencyPrimaryColor }}>{template.style}</p>
+              <p className="text-xs sm:text-sm mt-2" style={{ color: mutedTextColor }}>{template.description}</p>
+              <div className="flex flex-wrap gap-1.5 mt-3">{template.preview.sections.slice(0, 3).map(sec => (<span key={sec} className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>{sec}</span>))}{template.preview.sections.length > 3 && (<span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', color: mutedTextColor }}>+{template.preview.sections.length - 3}</span>)}</div>
+              <div className="flex gap-2 mt-4">
+                {isActive ? (<span className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Check className="h-3.5 w-3.5" />Selected</span>) : (<button onClick={(e) => { e.stopPropagation(); setSelectedTemplate(template.id); }} className="flex-1 text-xs font-medium px-4 py-2 rounded-lg text-white transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>Select</button>)}
+                <a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); if (demoMode) e.preventDefault(); }} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}><ExternalLink className="h-3.5 w-3.5" /></a>
+              </div>
+            </div>
+          </div>
+        ); })}</div>
+        {selectedTemplate !== (agency?.marketing_template || 'classic') && (<div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-4" style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>You've selected <strong style={{ color: textColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name}</strong>. Save to apply it to your marketing website.</p><div className="flex items-center gap-3 w-full sm:w-auto">{templateSaved && (<span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveTemplate} disabled={savingTemplate} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Template</button></div></div>)}
       </div>)}
 
       {/* ══════════════ SECTIONS ══════════════ */}

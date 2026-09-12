@@ -135,6 +135,13 @@ function priceString(cs: string, amount: number | string, pos?: 'before' | 'afte
   return pos === 'after' ? `${amount} ${cs}` : `${cs}${amount}`;
 }
 
+// Column count that never leaves a single item stranded on a row. If a leftover
+// item would sit alone, it spans the full row instead (wideLast).
+function balancedGrid(n: number): { cols: number; wideLast: boolean } {
+  const cols = n % 3 === 0 ? 3 : n % 2 === 0 ? 2 : 3;
+  return { cols, wideLast: n % cols === 1 };
+}
+
 // Organic wave illustration, the signature editorial device. Tinted with the
 // agency accent so the brand carries through the artwork.
 function Wave({ className, flip }: { className?: string; flip?: boolean }) {
@@ -223,7 +230,7 @@ function Features({ config }: { config: MarketingConfig }) {
         </div>
         <div className="ed-feat-grid">
           {features.map((f, i) => (
-            <article className={`ed-feat ${odd && i === features.length - 1 ? 'ed-feat-wide' : ''}`} key={i}>
+            <article className={`ed-feat ${odd && i === features.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-feat-ico">{featureIcon(f.icon)}</span>
               <div className="ed-feat-body">
                 <h3 className="ed-feat-title">{f.title}</h3>
@@ -274,12 +281,13 @@ function Steps({ config }: { config: MarketingConfig }) {
 function ValueCards({ config }: { config: MarketingConfig }) {
   const benefits = config.benefits || [];
   if (benefits.length === 0) return null;
+  const { cols, wideLast } = balancedGrid(benefits.length);
   return (
     <section className="ed-values">
       <div className="ed-container">
-        <div className="ed-value-grid">
+        <div className={`ed-value-grid ed-cols-${cols}`}>
           {benefits.map((b, i) => (
-            <article className="ed-value" key={i}>
+            <article className={`ed-value ${wideLast && i === benefits.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-value-ico ed-accent">{benefitIcon(b.icon)}</span>
               <h3 className="ed-h3">{b.title}</h3>
               <p>{b.description}</p>
@@ -319,13 +327,14 @@ function Pricing({ config }: { config: MarketingConfig }) {
   const cs = config.currencySymbol || '$';
   const pos = config.currencySymbolPosition;
   if (tiers.length === 0) return null;
+  const { cols, wideLast } = balancedGrid(tiers.length);
   return (
     <section className="ed-pricing" id="pricing">
       <div className="ed-container">
         <div className="ed-section-head"><h2 className="ed-h2">Simple pricing</h2></div>
-        <div className="ed-price-grid">
+        <div className={`ed-price-grid ed-cols-${cols}`}>
           {tiers.map((t, i) => (
-            <article className={`ed-price ${t.isPopular ? 'ed-price-pop' : ''}`} key={i}>
+            <article className={`ed-price ${t.isPopular ? 'ed-price-pop' : ''} ${wideLast && i === tiers.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               {t.isPopular && <span className="ed-price-flag ed-accent-bg">Most popular</span>}
               <h3 className="ed-price-name">{t.name}</h3>
               {t.subtitle && <p className="ed-price-sub">{t.subtitle}</p>}
