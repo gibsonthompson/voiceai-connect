@@ -207,44 +207,23 @@ function Hero({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
-// LOGO / PROOF BAR (quiet trust strip)
-// ============================================================================
-function ProofBar({ config }: { config: MarketingConfig }) {
-  const s = config.stats;
-  const items = [
-    { k: s.businessesServed, v: 'businesses answered' },
-    { k: s.responseTime, v: 'to pick up' },
-    { k: s.setupTime, v: 'to go live' },
-    { k: s.satisfaction, v: 'would recommend' },
-  ].filter(i => i.k);
-  if (items.length === 0) return null;
-  return (
-    <section className="ed-proof">
-      <div className="ed-container ed-proof-inner">
-        {items.map((i, idx) => (
-          <div className="ed-proof-item" key={idx}>
-            <span className="ed-proof-k">{i.k}</span>
-            <span className="ed-proof-v">{i.v}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// ALTERNATING FEATURES (magazine spreads, text/figure switch sides)
+// FEATURES (balanced editorial grid, icon-forward, never a lonely row)
 // ============================================================================
 function Features({ config }: { config: MarketingConfig }) {
   const features = config.features || [];
   if (features.length === 0) return null;
+  const odd = features.length % 2 === 1;
+  const lead = config.solution?.paragraphs?.[0];
   return (
     <section className="ed-features" id="features">
       <div className="ed-container">
-        <div className="ed-section-head"><h2 className="ed-h2">{config.solution?.headline || 'Everything the phone needs to do, handled'}</h2></div>
+        <div className="ed-feat-head">
+          <h2 className="ed-h2">{config.solution?.headline || 'Everything the phone needs to do'}</h2>
+          {lead && <p className="ed-feat-head-p">{lead}</p>}
+        </div>
         <div className="ed-feat-grid">
           {features.map((f, i) => (
-            <article className={`ed-feat ${i === 0 ? 'ed-feat-lead' : ''}`} key={i}>
+            <article className={`ed-feat ${odd && i === features.length - 1 ? 'ed-feat-wide' : ''}`} key={i}>
               <span className="ed-feat-ico">{featureIcon(f.icon)}</span>
               <div className="ed-feat-body">
                 <h3 className="ed-feat-title">{f.title}</h3>
@@ -474,7 +453,6 @@ export default function MarketingPageEditorial({ config: partial }: { config: Pa
       <AnalyticsScripts analytics={config.analytics} />
       <Nav config={config} />
       <Hero config={config} />
-      {config.showProofStrip !== false && <ProofBar config={config} />}
       {config.showFeatures !== false && <Features config={config} />}
       {config.showHowItWorks !== false && <Steps config={config} />}
       {config.showFeatures !== false && <ValueCards config={config} />}
