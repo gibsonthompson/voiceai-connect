@@ -124,6 +124,15 @@
 .ed-value-ico { margin-bottom: 1.1rem; }
 .ed-value p { color: var(--ed-muted); margin: 0.75rem 0 0; }
 
+/* Industries -------------------------------------------------------------- */
+.ed-industries { padding: clamp(4rem, 7vw, 6rem) 0; background: var(--ed-panel); }
+.ed-ind-grid { display: grid; gap: 1.5rem; }
+.ed-ind { border: 1px solid var(--ed-line); border-radius: 14px; padding: 1.75rem; background: var(--ed-bg); }
+.ed-ind .ed-feat-ico { margin-bottom: 1rem; }
+.ed-ind-sub { color: var(--ed-primary); font-size: 0.85rem; font-weight: 500; margin: 0.25rem 0 0; }
+.ed-ind-desc { color: var(--ed-muted); margin: 0.6rem 0 0; }
+.ed-ind-result { margin: 0.85rem 0 0; font-size: 0.88rem; color: var(--ed-ink); font-weight: 500; }
+
 /* Testimonial ------------------------------------------------------------- */
 .ed-quote { padding: clamp(4.5rem, 8vw, 7rem) 0; border-top: 1px solid var(--ed-line); border-bottom: 1px solid var(--ed-line); }
 .ed-quote-inner { max-width: 820px; text-align: center; }
@@ -186,14 +195,14 @@
 @media (max-width: 860px) {
   .ed-nav-links { display: none; }
   .ed-feat-head { grid-template-columns: 1fr; gap: 1rem; align-items: start; }
-  .ed-value-grid, .ed-price-grid { grid-template-columns: repeat(2, 1fr); }
+  .ed-value-grid, .ed-price-grid, .ed-ind-grid { grid-template-columns: repeat(2, 1fr); }
   .ed-footer-grid { grid-template-columns: 1fr 1fr; }
   .ed-footer-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 620px) {
   .editorial { font-size: 16px; }
   .ed-container { padding: 0 20px; }
-  .ed-feat-grid, .ed-value-grid, .ed-price-grid { grid-template-columns: 1fr; }
+  .ed-feat-grid, .ed-value-grid, .ed-price-grid, .ed-ind-grid { grid-template-columns: 1fr; }
   .ed-cell-wide { grid-column: auto; }
   .ed-step { grid-template-columns: 1fr; gap: 0.5rem; }
   .ed-footer-grid { grid-template-columns: 1fr; }

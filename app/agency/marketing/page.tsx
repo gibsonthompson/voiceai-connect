@@ -90,6 +90,14 @@ function TemplateThumb({ id, bg, accent, ink }: { id: string; bg: string; accent
   );
 }
 
+// Which section toggles each template actually renders. The Sections tab filters
+// to these so an agency never sees a toggle that does nothing on its template.
+const TEMPLATE_SECTIONS: Record<string, string[]> = {
+  classic: ['showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison'],
+  beside: ['showProofStrip', 'showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison'],
+  editorial: ['showFeatures', 'showHowItWorks', 'showIndustries', 'showTestimonials', 'showPricing', 'showFAQ', 'showFinalCTA'],
+};
+
 export default function MarketingWebsitePage() {
   const router = useRouter();
   const { agency, branding, loading: agencyLoading, refreshAgency, demoMode } = useAgency();
@@ -482,7 +490,7 @@ export default function MarketingWebsitePage() {
           <h3 className="text-sm sm:text-base font-semibold mb-1" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Website sections</h3>
           <p className="text-xs sm:text-sm mb-4" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Turn sections of your marketing site on or off. Changes save instantly and go live on your site.</p>
           <div className="space-y-2">
-            {SECTIONS.map((sec) => { const on = sectionIsOn(sec.key, sec.defaultOff); const saving = savingSection === sec.key; return (
+            {SECTIONS.filter((sec) => (TEMPLATE_SECTIONS[agency?.marketing_template || 'classic'] || []).includes(sec.key)).map((sec) => { const on = sectionIsOn(sec.key, sec.defaultOff); const saving = savingSection === sec.key; return (
               <div key={sec.key} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
                 <span className="text-sm flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>{sec.label}{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</span>
                 <button onClick={() => toggleSection(sec.key, sec.defaultOff)} disabled={saving || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0" style={{ backgroundColor: on ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={on} aria-label={`Toggle ${sec.label}`}>
@@ -564,7 +572,7 @@ export default function MarketingWebsitePage() {
 
   // Free plan: wrap the full marketing UI in the LockedFeatureOverlay so users
   // see the real page (templates, content, domains, SEO) dimmed behind the
-  // upgrade card instead of a blank screen. test
+  // upgrade card instead of a blank screen.
   if (!hasAccess) {
     return (
       <LockedFeature

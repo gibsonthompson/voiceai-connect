@@ -300,6 +300,33 @@ function ValueCards({ config }: { config: MarketingConfig }) {
 }
 
 // ============================================================================
+// INDUSTRIES (balanced grid; honors the Industries section toggle)
+// ============================================================================
+function Industries({ config }: { config: MarketingConfig }) {
+  const industries = config.industries || [];
+  if (industries.length === 0) return null;
+  const { cols, wideLast } = balancedGrid(industries.length);
+  return (
+    <section className="ed-industries">
+      <div className="ed-container">
+        <div className="ed-section-head"><h2 className="ed-h2">Built for how you work</h2></div>
+        <div className={`ed-ind-grid ed-cols-${cols}`}>
+          {industries.map((it, i) => (
+            <article className={`ed-ind ${wideLast && i === industries.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
+              <span className="ed-feat-ico">{featureIcon(it.icon)}</span>
+              <h3 className="ed-h3">{it.title}</h3>
+              {it.subtitle && <p className="ed-ind-sub">{it.subtitle}</p>}
+              {it.description && <p className="ed-ind-desc">{it.description}</p>}
+              {it.result && <p className="ed-ind-result">{it.result}</p>}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // SINGLE LARGE TESTIMONIAL
 // ============================================================================
 function Testimonial({ config }: { config: MarketingConfig }) {
@@ -465,6 +492,7 @@ export default function MarketingPageEditorial({ config: partial }: { config: Pa
       {config.showFeatures !== false && <Features config={config} />}
       {config.showHowItWorks !== false && <Steps config={config} />}
       {config.showFeatures !== false && <ValueCards config={config} />}
+      {config.showIndustries !== false && <Industries config={config} />}
       {config.showTestimonials !== false && <Testimonial config={config} />}
       {config.showPricing !== false && <Pricing config={config} />}
       {config.showFAQ !== false && <FAQ config={config} />}
