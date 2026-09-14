@@ -223,6 +223,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // p.features just like built-ins, but FEATURE_ORDER only lists built-ins, so a
   // toggled-on custom feature was being dropped from the card. Merge them in.
   const customFeatures: { key: string; label: string }[] = Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : [];
+  const featureOverrides: Record<string, { label?: string; hidden?: boolean }> = ((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {};
   const visiblePlans = agencyPlans.filter((p) => p && p.visible && p.price_cents != null);
   const planTiers = visiblePlans.map((p, i) => ({
     planKey: p.key,
@@ -232,7 +233,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     subtitle: (p.description || '').trim(),
     isPopular: visiblePlans.length >= 3 ? i === 1 : false,
     features: [
-      ...FEATURE_ORDER.filter((fk) => p.features && p.features[fk]).map((fk) => FEATURE_LABELS[fk]?.label || fk),
+      ...FEATURE_ORDER.filter((fk) => !featureOverrides[fk]?.hidden && p.features && p.features[fk]).map((fk) => featureOverrides[fk]?.label || FEATURE_LABELS[fk]?.label || fk),
       ...customFeatures.filter((cf) => cf && cf.key && p.features && p.features[cf.key]).map((cf) => cf.label),
     ],
   }));
