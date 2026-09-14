@@ -128,8 +128,8 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
   const fieldLabel = 'block text-[11px] font-medium mb-1';
 
   return (
-    <div>
-      <div className="overflow-x-auto pb-1">
+    <div className="min-w-0">
+      <div className="overflow-x-auto pb-1 min-w-0 w-full">
         <div style={gridStyle}>
           {/* ── Header band: intro + each plan's config column ── */}
           <div style={stickyLabel} className="p-4 flex items-end">
