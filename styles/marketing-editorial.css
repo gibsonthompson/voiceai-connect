@@ -155,6 +155,7 @@
 .ed-price-sub { font-size: 0.9rem; color: var(--ed-muted); margin: 0.35rem 0 0; }
 .ed-price-amt { font-family: var(--ed-serif); font-size: 2.75rem; margin: 1.25rem 0 1.5rem; }
 .ed-price-amt span { font-family: var(--ed-sans); font-size: 1rem; color: var(--ed-muted); }
+.ed-price-setup { font-size: 0.8rem; color: var(--ed-muted); margin: -1.1rem 0 1.5rem; }
 .ed-price-feats { list-style: none; margin: 0 0 1.75rem; padding: 0; display: grid; gap: 0.75rem; }
 .ed-price-feats li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.95rem; color: var(--ed-muted); }
 .ed-price-feats svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 2px; color: var(--ed-primary); }

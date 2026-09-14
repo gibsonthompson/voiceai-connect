@@ -219,6 +219,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // plan. Falls back to the template defaults only if there are no visible priced
   // plans, so the pricing section is never empty.
   const agencyPlans: any[] = Array.isArray((agency as any).plans) ? (agency as any).plans : [];
+  // Custom features live on the agency (key + label) and are toggled per plan in
+  // p.features just like built-ins, but FEATURE_ORDER only lists built-ins, so a
+  // toggled-on custom feature was being dropped from the card. Merge them in.
+  const customFeatures: { key: string; label: string }[] = Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : [];
   const visiblePlans = agencyPlans.filter((p) => p && p.visible && p.price_cents != null);
   const planTiers = visiblePlans.map((p, i) => ({
     planKey: p.key,
@@ -227,7 +231,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     price: Math.round(p.price_cents / 100),
     subtitle: (p.description || '').trim(),
     isPopular: visiblePlans.length >= 3 ? i === 1 : false,
-    features: FEATURE_ORDER.filter((fk) => p.features && p.features[fk]).map((fk) => FEATURE_LABELS[fk]?.label || fk),
+    features: [
+      ...FEATURE_ORDER.filter((fk) => p.features && p.features[fk]).map((fk) => FEATURE_LABELS[fk]?.label || fk),
+      ...customFeatures.filter((cf) => cf && cf.key && p.features && p.features[cf.key]).map((cf) => cf.label),
+    ],
   }));
   const resolvedPricing = (planTiers.length > 0 ? planTiers : defaultMarketingConfig.pricing) as typeof defaultMarketingConfig.pricing;
   // Cheapest VISIBLE tier for the hero subtitle (the first tier may be filtered out).

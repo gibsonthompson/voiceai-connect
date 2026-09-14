@@ -366,6 +366,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
               <h3 className="ed-price-name">{t.name}</h3>
               {t.subtitle && <p className="ed-price-sub">{t.subtitle}</p>}
               <p className="ed-price-amt">{priceString(cs, t.price, pos)}<span>/mo</span></p>
+              {t.setupFeeCents && t.setupFeeCents > 0 ? <p className="ed-price-setup">+ {priceString(cs, Math.round(t.setupFeeCents / 100), pos)} one-time setup fee</p> : null}
               <ul className="ed-price-feats">
                 {t.features.map((f, j) => <li key={j}><span className="ed-tick ed-accent">{Icons.check}</span>{f}</li>)}
               </ul>
