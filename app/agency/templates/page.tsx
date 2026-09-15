@@ -57,7 +57,7 @@ interface EventLogEntry {
 }
 
 interface Industry {
-  frontendKey: string; label: string; description: string; icon: string; hasCustomTemplate: boolean;
+  frontendKey: string; label: string; description: string; icon: string; hasCustomTemplate: boolean; isCustom?: boolean;
 }
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'ended';
@@ -231,6 +231,11 @@ export default function AILabPage() {
   const [phoneSwapped, setPhoneSwapped] = useState(false);
   const [phoneEditing, setPhoneEditing] = useState(false);
   const [industries, setIndustries] = useState<Industry[]>([]);
+  const [showAddIndustry, setShowAddIndustry] = useState(false);
+  const [newIndustryLabel, setNewIndustryLabel] = useState('');
+  const [newIndustryDesc, setNewIndustryDesc] = useState('');
+  const [addingIndustry, setAddingIndustry] = useState(false);
+  const [addIndustryError, setAddIndustryError] = useState('');
   const [copiedCompliance, setCopiedCompliance] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
   const [kbSaving, setKbSaving] = useState(false);
@@ -285,7 +290,29 @@ export default function AILabPage() {
 
   useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); }).catch(() => {}); }, [api]);
   useEffect(() => { if (!agency) return; setClientsLoading(true); fetch(`${api}/api/agency/${agency.id}/ai-playground/clients`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.json()).then(d => setClients(d.clients || [])).catch(() => {}).finally(() => setClientsLoading(false)); }, [agency, api]);
-  useEffect(() => { if (!agency || !canUseIndustryTemplates) return; fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {}); }, [agency, canUseIndustryTemplates, api]);
+  const loadIndustries = () => { if (!agency || !canUseIndustryTemplates) return; fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {}); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadIndustries(); }, [agency, canUseIndustryTemplates, api]);
+  const handleAddIndustry = async () => {
+    const label = newIndustryLabel.trim();
+    if (!label || !agency) return;
+    setAddingIndustry(true); setAddIndustryError('');
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/custom-industries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ label, description: newIndustryDesc.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setAddIndustryError(data.message || data.error || 'Could not add the industry.'); return; }
+      setNewIndustryLabel(''); setNewIndustryDesc(''); setShowAddIndustry(false); loadIndustries();
+    } catch { setAddIndustryError('Could not add the industry. Please try again.'); }
+    finally { setAddingIndustry(false); }
+  };
+  const handleDeleteIndustry = async (key: string) => {
+    if (!agency) return;
+    try { await fetch(`${api}/api/agency/${agency.id}/custom-industries/${key}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } }); loadIndustries(); } catch {}
+  };
 
   const playPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const a = new Audio(voice.previewUrl); audioRef.current = a; a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null); a.play(); setPlayingVoiceId(voice.id); };
   const filteredVoices = (voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter)).sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
@@ -409,7 +436,7 @@ export default function AILabPage() {
           <div>
             {canUseIndustryTemplates && industries.length > 0 && (
               <div className="mb-8"><div className="flex items-center gap-2 mb-2"><Package className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Packaged Receptionists</span><span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Scale</span></div><p className="text-xs mb-4" style={{ color: theme.textMuted }}>Configure the default AI receptionist for each industry. When a new client signs up, they inherit your voice, greeting, prompt, model, and knowledge base.</p>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; return (<Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div>{ind.hasCustomTemplate ? (<span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Check className="h-2.5 w-2.5" /> Custom</span>) : (<span className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Default</span>)}</div><p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p><p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>Configure package <ArrowUpRight className="h-2.5 w-2.5" /></p></Link>); })}</div></div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{industries.map(ind => { const Ic = ICON_MAP[ind.icon] || Building2; if (ind.isCustom) { return (<Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 relative transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + "60")} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}><button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteIndustry(ind.frontendKey); }} title="Remove custom industry" className="absolute top-3 right-3 p-1 rounded-md z-10" style={{ color: theme.textMuted }}><Trash2 className="h-3.5 w-3.5" /></button><div className="flex h-10 w-10 items-center justify-center rounded-lg mb-3" style={{ backgroundColor: theme.primary15 }}><Sparkles className="h-5 w-5" style={{ color: theme.primary }} /></div><p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p><span className="text-[9px] font-medium px-2 py-0.5 rounded-full inline-block mt-2" style={{ backgroundColor: theme.primary15, color: theme.primary }}>AI-built</span><p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>Configure package <ArrowUpRight className="h-2.5 w-2.5" /></p></Link>); } return (<Link key={ind.frontendKey} href={`/agency/templates/${ind.frontendKey}`} className="rounded-xl p-4 transition-all group" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: ind.hasCustomTemplate ? theme.primary15 : theme.hover }}><Ic className="h-5 w-5" style={{ color: ind.hasCustomTemplate ? theme.primary : theme.textMuted }} /></div>{ind.hasCustomTemplate ? (<span className="flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Check className="h-2.5 w-2.5" /> Custom</span>) : (<span className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Default</span>)}</div><p className="font-medium text-sm" style={{ color: theme.text }}>{ind.label}</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{ind.description}</p><p className="text-[10px] mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }}>Configure package <ArrowUpRight className="h-2.5 w-2.5" /></p></Link>); })}<button onClick={() => { setShowAddIndustry(true); setAddIndustryError(''); }} className="rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-center transition-all" style={{ border: `1px dashed ${theme.border}`, minHeight: '132px' }} onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')} onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: theme.hover }}><Plus className="h-5 w-5" style={{ color: theme.primary }} /></div><span className="text-sm font-medium" style={{ color: theme.text }}>Add industry</span><span className="text-[10px]" style={{ color: theme.textMuted }}>Create a custom vertical. AI builds the knowledge base.</span></button></div></div>
             )}
             {!clientsLoading && clients.length > 0 && (<p className="text-xs text-center" style={{ color: theme.textMuted }}>Select a client above to configure their AI receptionist</p>)}
           </div>
@@ -531,6 +558,23 @@ export default function AILabPage() {
           </div>
         )}
       </div>
+      {showAddIndustry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!addingIndustry) setShowAddIndustry(false); }}>
+          <div className="rounded-2xl p-5 sm:p-6 w-full max-w-md" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-1"><Sparkles className="h-5 w-5" style={{ color: theme.primary }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Add a custom industry</h3></div>
+            <p className="text-xs mb-4" style={{ color: theme.textMuted }}>Name your vertical and describe it in a sentence. We generate the receptionist knowledge base for it, and you can refine it after.</p>
+            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Industry name</label>
+            <input value={newIndustryLabel} onChange={e => setNewIndustryLabel(e.target.value)} maxLength={60} placeholder="e.g. Pool & Spa Service" disabled={addingIndustry} className="w-full rounded-lg px-3 py-2.5 text-sm mb-3" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
+            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Description (optional)</label>
+            <textarea value={newIndustryDesc} onChange={e => setNewIndustryDesc(e.target.value)} maxLength={300} rows={3} placeholder="What this business does and the kinds of calls it gets." disabled={addingIndustry} className="w-full rounded-lg px-3 py-2.5 text-sm mb-3 resize-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
+            {addIndustryError && (<p className="text-xs mb-3" style={{ color: '#ef4444' }}>{addIndustryError}</p>)}
+            <div className="flex items-center gap-2 justify-end">
+              <button onClick={() => setShowAddIndustry(false)} disabled={addingIndustry} className="px-4 py-2 text-sm rounded-lg disabled:opacity-50" style={{ color: theme.textMuted }}>Cancel</button>
+              <button onClick={handleAddIndustry} disabled={addingIndustry || !newIndustryLabel.trim()} className="px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{addingIndustry ? (<><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>) : 'Generate and add'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

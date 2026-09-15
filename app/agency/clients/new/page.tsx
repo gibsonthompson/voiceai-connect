@@ -110,6 +110,16 @@ interface FormData {
 export default function AddClientPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const router = useRouter();
+  const [customIndustries, setCustomIndustries] = useState<{ key: string; label: string }[]>([]);
+  useEffect(() => {
+    if (!agency?.id) return;
+    const token = localStorage.getItem('auth_token');
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${backendUrl}/api/agency/${agency.id}/custom-industries`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && Array.isArray(d.industries)) setCustomIndustries(d.industries.map((c: { key: string; label: string }) => ({ key: c.key, label: c.label }))); })
+      .catch(() => {});
+  }, [agency?.id]);
 
   const defaultCountry = agency?.country?.toUpperCase() || 'US';
 
@@ -618,7 +628,7 @@ export default function AddClientPage() {
                 <CustomSelect
                   value={form.industry}
                   onChange={(v) => updateForm('industry', v)}
-                  options={SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label }))}
+                  options={[...SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label })), ...customIndustries.map(ci => ({ value: ci.key, label: ci.label }))]}
                   placeholder="Select industry..."
                   disabled={submitting}
                   ui={ui}
