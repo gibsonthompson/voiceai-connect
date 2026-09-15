@@ -236,9 +236,9 @@ function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementTy
           color: step.completed ? theme.textMuted : step.loading ? theme.primary : theme.text,
           textDecoration: step.completed ? 'line-through' : 'none',
           opacity: step.completed ? 0.5 : 1,
-          textTransform: 'none'
+          textTransform: 'capitalize'
         }}>{step.loading ? 'Setting up your test client...' : step.title}</p>
-        {!step.completed && <p className="text-xs mt-0.5" style={{ color: step.loading ? theme.primary : theme.textMuted, textTransform: 'none' }}>{step.description}</p>}
+        {!step.completed && <p className="text-xs mt-0.5" style={{ color: step.loading ? theme.primary : theme.textMuted, textTransform: 'capitalize' }}>{step.description}</p>}
       </div>
       {!step.completed && !step.loading && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />}
     </div>
