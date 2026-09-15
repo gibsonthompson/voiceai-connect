@@ -73,10 +73,10 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
     },
     {
       id: 'pricing',
-      title: 'Set your client pricing',
+      title: 'Set client pricing',
       description: 'Choose what to charge clients per plan',
       icon: DollarSign,
-      completed: !!(agency && ((agency.price_starter ?? 9900) !== 9900 || (agency.price_pro ?? 14900) !== 14900 || (agency.price_growth ?? 29900) !== 29900)),
+      completed: !!(agency && ((agency as any).pricing_configured || (agency.price_starter ?? 9900) !== 9900 || (agency.price_pro ?? 14900) !== 14900 || (agency.price_growth ?? 29900) !== 29900)),
       href: '/agency/settings?tab=pricing',
     },
     {
@@ -118,10 +118,10 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
     },
     {
       id: 'pricing',
-      title: 'Configure client pricing',
-      description: 'Set prices for Starter, Pro, and Growth plans',
+      title: 'Set client pricing',
+      description: 'Choose what to charge clients per plan',
       icon: DollarSign,
-      completed: !!(agency && ((agency.price_starter ?? 9900) !== 9900 || (agency.price_pro ?? 14900) !== 14900 || (agency.price_growth ?? 29900) !== 29900)),
+      completed: !!(agency && ((agency as any).pricing_configured || (agency.price_starter ?? 9900) !== 9900 || (agency.price_pro ?? 14900) !== 14900 || (agency.price_growth ?? 29900) !== 29900)),
       href: '/agency/settings?tab=pricing',
     },
     {
