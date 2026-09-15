@@ -540,7 +540,7 @@ export default function DemoPhonePage() {
   // ==========================================================================
   const pollDemoStatus = async (token: string | null) => {
     const statusUrl = `${backendUrl}/api/agency/${agency?.id}/demo-phone/status`;
-    const maxAttempts = 40; // ~2 minutes at 3s intervals; international buys are slow
+    const maxAttempts = 100; // ~5 min at 3s; Telnyx orders can be slow and we may fail over across area codes
     const intervalMs = 3000;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -578,6 +578,37 @@ export default function DemoPhonePage() {
     setError('Your demo number is taking longer than expected to set up. Refresh this page in a minute to see it. If it does not appear, try creating it again.');
     setCreating(false);
   };
+
+  // On load, ask the server if a provision is in flight or failed for this
+  // agency, and resume that state. This is what makes a refresh mid-provision
+  // show the spinner (or the real error) instead of silently dropping back to
+  // "Create Your Demo Number", the case that looked like "nothing happened".
+  // Backed by the durable demo_provisioning marker, so it is reliable even when
+  // the provision is slow, the server restarted, or another instance ran it.
+  useEffect(() => {
+    if (demoMode || !agency?.id || hasDemo) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/demo-phone/status`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.status === 'provisioning') {
+          setCreating(true);
+          pollDemoStatus(token);
+        } else if (data?.status === 'error' && data.message) {
+          setError(data.message);
+        }
+      } catch {
+        /* ignore, fall back to the normal Create state */
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency?.id, hasDemo]);
 
   const handleCreate = async () => {
     if (demoMode) {

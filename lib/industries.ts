@@ -218,6 +218,14 @@ export const INDUSTRIES: Industry[] = [
     aliases: ['Professional Services (legal, accounting)', 'professional'],
   },
   {
+    value: 'septic',
+    label: 'Septic & Well',
+    icon: 'Droplets',
+    description: 'Septic pumping, drain fields, well pumps, and water systems',
+    intelligence: { services: 18, faqs: 10, terms: 22, features: ['Backup & No-Water Triage', 'Service Visit Booking', 'Real-Estate Inspection Booking'] },
+    aliases: ['septic_well', 'septic_tank', 'well', 'well_water', 'well_pump', 'water_systems'],
+  },
+  {
     value: 'general',
     label: 'General Business',
     icon: 'Building2',
