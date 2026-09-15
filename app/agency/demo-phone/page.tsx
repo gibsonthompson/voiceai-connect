@@ -1109,11 +1109,11 @@ function HowItWorksCard({ theme }: { theme: any }) {
 
       <div className="space-y-4 mb-6">
         {[
-          { step: '1', icon: Mic, title: 'AI greets the caller', desc: 'A warm, professional voice answers and explains this is a live demo of your AI receptionist service.' },
-          { step: '2', icon: Users, title: 'Gathers business context', desc: 'The AI asks "What type of business do you run?" — plumber, dentist, lawyer, restaurant, anything.' },
-          { step: '3', icon: Bot, title: 'Roleplays as their receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry — taking a service request, scheduling an appointment, handling an intake call, etc.' },
-          { step: '4', icon: Sparkles, title: 'Showcases key features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes — all within the conversation.' },
-          { step: '5', icon: MessageSquare, title: 'Follow-up SMS with signup link', desc: 'After the call ends, the caller automatically receives a text with your signup link so they can start their free trial.' },
+          { step: '1', icon: Mic, title: 'AI Greets The Caller', desc: 'A warm, professional voice answers and explains this is a live demo of your AI receptionist service.' },
+          { step: '2', icon: Users, title: 'Gathers Business Context', desc: 'The AI asks "What type of business do you run?" — plumber, dentist, lawyer, restaurant, anything.' },
+          { step: '3', icon: Bot, title: 'Roleplays As Their Receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry — taking a service request, scheduling an appointment, handling an intake call, etc.' },
+          { step: '4', icon: Sparkles, title: 'Showcases Key Features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes — all within the conversation.' },
+          { step: '5', icon: MessageSquare, title: 'Follow-Up SMS With Signup Link', desc: 'After the call ends, the caller automatically receives a text with your signup link so they can start their free trial.' },
         ].map((item) => (
           <div key={item.step} className="flex items-start gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}>
@@ -1130,9 +1130,9 @@ function HowItWorksCard({ theme }: { theme: any }) {
         ))}
       </div>
 
-      <div className="rounded-lg p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-        <p className="text-xs font-medium mb-2" style={{ color: theme.text }}>💡 Why this converts</p>
-        <p className="text-[10px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+      <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+        <p className="text-sm sm:text-base font-semibold mb-3" style={{ color: theme.text }}>💡 Why this converts</p>
+        <p className="text-sm sm:text-base leading-relaxed" style={{ color: theme.textMuted }}>
           Instead of explaining what an AI receptionist does, prospects <strong style={{ color: theme.text }}>experience it firsthand</strong>.
           They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry —
           all in a 60-second phone call. The follow-up text makes it effortless to convert from &quot;that was cool&quot; to &quot;I want this for my business.&quot;
