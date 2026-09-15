@@ -825,7 +825,7 @@ function ExitIntentModal({ config }: { config: MarketingConfig }) {
     document.addEventListener('mouseleave', onLeave);
     return () => document.removeEventListener('mouseleave', onLeave);
   }, []);
-  if (!show) return null;
+  if (!show || !hero.demoPhone) return null;
   return (
     <div className="bsd-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShow(false); }}>
       <div className="bsd-modal">

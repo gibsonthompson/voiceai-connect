@@ -711,6 +711,7 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
 function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose: () => void }) {
   const { hero, branding } = config;
   const demoPhone = hero.demoPhone;
+  if (!demoPhone) return null;
   return (
     <div className="exit-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="exit-modal" style={{ textAlign: 'center' }}>

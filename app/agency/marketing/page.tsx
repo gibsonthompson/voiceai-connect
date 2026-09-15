@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
@@ -34,7 +34,7 @@ interface TemplateOption {
 
 const TEMPLATES: TemplateOption[] = [
   { id: 'classic', name: 'Classic', description: 'Clean, professional layout with centered hero, card-based features, and standard pricing grid. Works for every industry.', style: 'Professional & Versatile', preview: { bgColor: '#f9f9f7', accentColor: '#10b981', textColor: '#1f2937', sections: ['Centered Hero', 'Stats Bar', 'Problem Cards', 'Solution Box', 'Step Cards', 'Feature Grid', 'Pricing Cards', 'FAQ Accordion'] } },
-  { id: 'beside', name: 'Beside', description: 'Product-led storytelling with split hero, floating UI mockups, warm gradient cards, and narrative flow. High-converting for service businesses.', style: 'Modern & Story-Driven', preview: { bgColor: '#ffffff', accentColor: '#e85d2a', textColor: '#0a0a0a', sections: ['Split Hero + UI Cards', 'Demo Phone Strip', 'Pill Tab Features', 'Phone Mockup', '3-Column Proof Row', 'Narrative Sections', 'Industry Cards', 'Pricing Tiers'] } },
+  { id: 'beside', name: 'Spotlight', description: 'Product-led storytelling with split hero, floating UI mockups, warm gradient cards, and narrative flow. High-converting for service businesses.', style: 'Modern & Story-Driven', preview: { bgColor: '#ffffff', accentColor: '#e85d2a', textColor: '#0a0a0a', sections: ['Split Hero + UI Cards', 'Demo Phone Strip', 'Pill Tab Features', 'Phone Mockup', '3-Column Proof Row', 'Narrative Sections', 'Industry Cards', 'Pricing Tiers'] } },
   { id: 'editorial', name: 'Editorial', description: 'Handhold-inspired editorial layout with serif headlines, organic wave illustrations, alternating feature sections, and large testimonials.', style: 'Premium & Editorial', preview: { bgColor: '#FAFAF8', accentColor: '#0a0a0a', textColor: '#0a0a0a', sections: ['Serif Hero + Wave Art', 'Logo Bar', 'Alternating Features', 'Numbered Steps', 'Value Prop Cards', 'Single Testimonial', 'FAQ Accordion', 'Artistic Footer CTA'] } },
 ];
 
@@ -97,6 +97,47 @@ const TEMPLATE_SECTIONS: Record<string, string[]> = {
   beside: ['showProofStrip', 'showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison'],
   editorial: ['showFeatures', 'showHowItWorks', 'showIndustries', 'showTestimonials', 'showPricing', 'showFAQ', 'showFinalCTA'],
 };
+
+const CURRENCY_OPTIONS = [
+  { value: '', symbol: '', label: 'Same as account currency' },
+  { value: 'USD', symbol: '$', label: 'US Dollar' },
+  { value: 'GBP', symbol: '£', label: 'British Pound' },
+  { value: 'EUR', symbol: '€', label: 'Euro' },
+  { value: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
+  { value: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+];
+
+// Custom currency dropdown (replaces the native select): shows the symbol, the
+// full name, and a check on the selected option, styled to the agency theme.
+function CurrencySelect({ value, onChange, theme }: { value: string; onChange: (v: string) => void; theme: { inputBg: string; inputBorder: string; textColor: string; cardBg: string; mutedTextColor: string; primary: string; isDark: boolean } }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+  const selected = CURRENCY_OPTIONS.find((o) => o.value === value) || CURRENCY_OPTIONS[0];
+  return (
+    <div ref={ref} className="relative flex-1 min-w-0">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none cursor-pointer" style={{ backgroundColor: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.textColor }}>
+        <span className="flex items-center gap-2 min-w-0">{selected.symbol && <span className="font-semibold" style={{ color: theme.primary }}>{selected.symbol}</span>}<span className="truncate">{selected.label}</span></span>
+        <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: theme.mutedTextColor }} />
+      </button>
+      {open && (
+        <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.inputBorder}`, boxShadow: theme.isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+          {CURRENCY_OPTIONS.map((o) => (
+            <button key={o.value || 'default'} type="button" onClick={() => { onChange(o.value); setOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:bg-black/[0.03]" style={{ color: theme.textColor, backgroundColor: o.value === value ? `${theme.primary}14` : 'transparent' }}>
+              <span className="font-semibold w-6 flex-shrink-0 text-center" style={{ color: o.value === value ? theme.primary : theme.mutedTextColor }}>{o.symbol || '–'}</span>
+              <span className="truncate">{o.label}</span>
+              {o.value === value && <Check className="h-4 w-4 ml-auto flex-shrink-0" style={{ color: theme.primary }} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MarketingWebsitePage() {
   const router = useRouter();
@@ -348,7 +389,7 @@ export default function MarketingWebsitePage() {
           <div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base">Pricing Currency</h3></div>
           <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>Controls the currency symbol shown on your marketing site pricing.</p>
           <div className="flex items-center gap-3">
-            <select value={displayCurrency} onChange={(e) => setDisplayCurrency(e.target.value)} className="flex-1 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none appearance-none cursor-pointer" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}><option value="">Same as account currency</option><option value="USD">$ — US Dollar</option><option value="GBP">£ — British Pound</option><option value="EUR">€ — Euro</option><option value="CAD">C$ — Canadian Dollar</option><option value="AUD">A$ — Australian Dollar</option></select>
+            <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} theme={{ inputBg, inputBorder, textColor, cardBg, mutedTextColor, primary: agencyPrimaryColor, isDark }} />
             <button onClick={handleSaveCurrency} disabled={savingCurrency} className="flex items-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor }}>{savingCurrency ? <Loader2 className="h-4 w-4 animate-spin" /> : currencySaved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{currencySaved ? 'Saved!' : 'Save'}</button>
           </div>
         </div>
@@ -392,7 +433,7 @@ export default function MarketingWebsitePage() {
                 <button onClick={() => copyToClipboard(loginButtonSnippet, 'login-btn')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'login-btn' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button>
               </div>
               <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{loginButtonSnippet}</pre>
-              <div className="mt-3 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><span className="inline-block px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'transparent', color: agencyPrimaryColor, border: `2px solid ${agencyPrimaryColor}` }}>Client Login</span></div>
+              <div className="mt-3 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><a href={loginUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '12px 28px', background: 'transparent', color: agencyPrimaryColor, border: `2px solid ${agencyPrimaryColor}`, borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '15px' }}>Client Login</a></div>
             </div>
           </details>
         </div>
@@ -443,7 +484,7 @@ export default function MarketingWebsitePage() {
               <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{embedButtonSnippet}</pre>
               <button onClick={() => copyToClipboard(embedButtonSnippet, 'embed-code')} className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: mutedTextColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
             </div>
-            <div className="mt-2 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><span className="inline-block px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' }}>Start Free Trial</span></div>
+            <div className="mt-2 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><a href={signupUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '14px 32px', background: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '16px' }}>Start Free Trial</a></div>
           </div>
         </div>
       </div>)}
