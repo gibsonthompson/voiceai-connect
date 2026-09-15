@@ -324,6 +324,20 @@ export default function AddClientPage() {
     return true;
   };
 
+  const pollProvisioning = async (agencyId: string, jobId: string, token: string | null) => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const maxAttempts = 100; // ~5 minutes at 3s (Telnyx can be slow; stays under the 6-min stale guard)
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/clients/provisioning-status/${jobId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const d = await res.json();
+        if (d && (d.status === 'done' || d.status === 'error')) return d;
+      } catch { /* transient, keep polling */ }
+    }
+    return null;
+  };
+
   const handleSubmit = async () => {
     if (!agency) return;
     if (!validate()) return;
@@ -370,6 +384,26 @@ export default function AddClientPage() {
 
       const data = await response.json();
 
+      // Provisioning is async: the backend answers 202 with a job id and
+      // finishes in the background, so poll until it is done or fails instead of
+      // holding the request open (which used to time out as a false network error).
+      if (response.status === 202 && data.jobId) {
+        const final = await pollProvisioning(agency.id, data.jobId, token);
+        if (!final) {
+          setError('Setting up the client is taking longer than usual. It may still finish, check your Clients list in a moment.');
+          return;
+        }
+        if (final.status === 'error') {
+          setError(final.result?.error || 'Failed to add client');
+          return;
+        }
+        const c = final.result?.client;
+        if (c) {
+          setSuccess({ clientId: c.id, businessName: c.business_name, phoneNumber: c.phone_number, email: c.email, tempPassword: form.tempPassword });
+        }
+        return;
+      }
+
       if (!response.ok) {
         if (data.error === 'billing_required') {
           setBillingRequired(true);
@@ -393,7 +427,7 @@ export default function AddClientPage() {
 
     } catch (err) {
       console.error('Add client error:', err);
-      setError('Network error. Please check your connection and try again.');
+      setError('Could not reach the server to add the client. Please try again in a moment.');
     } finally {
       setSubmitting(false);
     }
