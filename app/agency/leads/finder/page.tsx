@@ -20,7 +20,7 @@ import {
   ArrowLeft, Search, Download, Phone, Mail, Globe, MapPin,
   Star, ExternalLink, ChevronDown, ChevronUp, Loader2, Target,
   Save, Check, X, Filter, AlertTriangle, CheckSquare, Square,
-  Map, Briefcase,
+  Map, Briefcase, Info
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -574,6 +574,15 @@ export default function LeadFinderPage() {
         </p>
       </div>
 
+      {/* What it does */}
+      <div className="rounded-xl p-4 mb-6 flex items-start gap-3" style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}20` }}>
+        <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+        <div className="text-sm" style={{ color: theme.textMuted }}>
+          <p className="font-medium mb-1" style={{ color: theme.text }}>What the Lead Finder does</p>
+          <p>Pick an industry and a location. It pulls matching local businesses from Google Maps, enriches each one with phone, email, website and hours, then scores them by how likely they are to be missing calls and need an AI receptionist. Add the best-fit businesses straight to your leads, then work them from the Leads page.</p>
+        </div>
+      </div>
+
       {/* Search Card */}
       <div className="rounded-2xl overflow-hidden mb-6" style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
 
@@ -611,24 +620,74 @@ export default function LeadFinderPage() {
           {/* Indeed inputs */}
           {activeTab === "indeed" && (
             <>
-              <div className="flex gap-2 flex-wrap mb-4">
-                {INDEED_PRESETS.map((p) => (
-                  <button key={p.keywords} onClick={() => setKeywords(p.keywords)}
-                    className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
-                    style={{
-                      border: keywords === p.keywords ? "1px solid #003a9b" : `1px solid ${theme.inputBorder}`,
-                      background: keywords === p.keywords ? "#003a9b15" : "transparent",
-                      color: keywords === p.keywords ? "#003a9b" : theme.textMuted,
-                    }}>
-                    {p.label}
-                  </button>
-                ))}
+              {/* Industry picker: balanced grid, every row filled (22 items -> 2 or 4 cols, never a lone chip) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {MAPS_INDUSTRIES.map((ind) => {
+                  const active = mapsIndustry === ind.value && !mapsQuery;
+                  return (
+                    <button key={ind.value} onClick={() => { setMapsIndustry(ind.value); setMapsQuery(""); }}
+                      className="px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer text-center truncate"
+                      style={{
+                        border: active ? `1px solid ${theme.primary}` : `1px solid ${theme.inputBorder}`,
+                        background: active ? `${theme.primary}15` : "transparent",
+                        color: active ? theme.primary : theme.textMuted,
+                      }}>
+                      {ind.label}
+                    </button>
+                  );
+                })}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Job Title Keywords</label>
                   <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)}
                     placeholder='"receptionist", "front desk"' className={inputClass} style={inputStyle}
+                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Location</label>
+                  <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
+                    placeholder='"Atlanta, GA"' className={inputClass} style={inputStyle}
+                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
+                  <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
+                    className={`${inputClass} cursor-pointer`} style={inputStyle}>
+                    <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
+                  </select>
+                </div>
+                <button onClick={handleSearch} disabled={loading}
+                  className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all whitespace-nowrap"
+                  style={{ background: loading ? theme.border : "#003a9b", color: loading ? theme.textMuted : "#fff", cursor: loading ? "not-allowed" : "pointer" }}>
+                  {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
+                    : <span className="inline-flex items-center gap-2"><Search className="h-4 w-4" /> Search Indeed</span>}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Google Maps inputs */}
+          {activeTab === "google_maps" && (
+            <>
+              <div className="flex gap-2 flex-wrap mb-4">
+                {MAPS_INDUSTRIES.slice(0, 12).map((ind) => (
+                  <button key={ind.value} onClick={() => { setMapsIndustry(ind.value); setMapsQuery(""); }}
+                    className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
+                    style={{
+                      border: mapsIndustry === ind.value && !mapsQuery ? `1px solid ${theme.primary}` : `1px solid ${theme.inputBorder}`,
+                      background: mapsIndustry === ind.value && !mapsQuery ? `${theme.primary}15` : "transparent",
+                      color: mapsIndustry === ind.value && !mapsQuery ? theme.primary : theme.textMuted,
+                    }}>
+                    {ind.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Custom search (optional)</label>
+                  <input type="text" value={mapsQuery} onChange={(e) => setMapsQuery(e.target.value)}
+                    placeholder="e.g. med spa, franchise, urgent care..." className={inputClass} style={inputStyle}
                     onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
                 </div>
                 <div>

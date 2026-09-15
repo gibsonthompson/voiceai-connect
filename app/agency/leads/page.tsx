@@ -63,9 +63,9 @@ interface FollowUpItem {
 
 const LEAD_TIPS = [
   {
-    title: 'How to Find Leads on Google Maps',
-    description: 'Free method to find 50+ qualified leads per hour.',
-    url: '/blog/how-to-find-leads-google-maps',
+    title: 'Find Leads Automatically',
+    description: 'Pull local businesses by industry and location in seconds.',
+    url: '/agency/leads/finder',
     category: 'Prospecting',
   },
   {
