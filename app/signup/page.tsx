@@ -34,8 +34,6 @@ interface Agency {
   limit_starter: number;
   limit_pro: number;
   limit_growth: number;
-  require_card_for_trial?: boolean;
-  stripe_charges_enabled?: boolean;
 }
 
 // ============================================================================
@@ -349,10 +347,6 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const [error, setError] = useState('');
 
   const defaultCountry = agency.country?.toUpperCase() || 'US';
-
-  // A card is required at the plan step when the agency runs card-required trials
-  // and can accept charges. Mirror that here so step 1 does not promise "no card".
-  const isCardRequired = agency.require_card_for_trial === true && agency.stripe_charges_enabled === true;
   
   const [formData, setFormData] = useState({
     businessName: '', ownerName: '', email: '', phone: '',
@@ -823,7 +817,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
             </form>
 
             <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
-              {isCardRequired ? 'A card is required to start your trial' : 'No credit card required'} · By signing up, you agree to our{' '}
+              No credit card required · By signing up, you agree to our{' '}
               <a href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</a>
               {' '}and{' '}
               <a href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</a>
