@@ -46,6 +46,8 @@ interface Agency {
   // the auto-renew disclosure. Both come from the public agency shape.
   stripe_charges_enabled?: boolean;
   require_card_for_trial?: boolean;
+  bill_minutes_during_trial?: boolean;
+  client_minute_rate_cents?: number | null;
 }
 
 interface SignupData {
@@ -260,12 +262,21 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   // AND stripe_charges_enabled) so the checkbox shown matches the flow that runs.
   const isCardRequired = agency.require_card_for_trial === true && agency.stripe_charges_enabled === true;
 
+  // Bill-during-trial: the client is charged for their own minutes during the
+  // trial (subscription fee still free). Requires the card-required flow, so it
+  // is gated on isCardRequired. The consent must disclose the per-minute charge.
+  const billDuringTrial = isCardRequired && agency.bill_minutes_during_trial === true;
+  const minuteRate = agency.client_minute_rate_cents != null ? (agency.client_minute_rate_cents / 100).toFixed(2) : null;
+
   // The exact string recorded as consent (stored verbatim server-side via
   // consent_text). The rendered label below shows the same wording with
   // Terms/Privacy as links; the stored copy is plain text.
-  const consentText = isCardRequired
-    ? `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out). I understand that after my 7-day free trial, ${agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
-    : `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).`;
+  const trialDisclosure = billDuringTrial
+    ? ` I understand that during my 7-day free trial, ${agency.name} will charge my card for the call minutes my receptionist uses${minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial ${agency.name} will also charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
+    : isCardRequired
+    ? ` I understand that after my 7-day free trial, ${agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
+    : '';
+  const consentText = `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).${trialDisclosure}`;
 
   // Override body background to match — but go transparent in embed mode.
   useEffect(() => {
@@ -517,9 +528,11 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                 {' '}and{' '}
                 <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Privacy Policy</a>
                 {' '}and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).
-                {isCardRequired && (
+                {billDuringTrial ? (
+                  <> I understand that during my 7-day free trial, {agency.name} will charge my card for the call minutes my receptionist uses{minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial the monthly plan price will also apply unless I cancel before the trial ends.</>
+                ) : isCardRequired ? (
                   <> I understand that after my 7-day free trial, {agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.</>
-                )}
+                ) : null}
               </span>
             </label>
           </div>
