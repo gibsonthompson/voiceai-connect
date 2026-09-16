@@ -9,10 +9,11 @@ import { PLAN_NAMES } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER, CORE_CLIENT_FEATURES } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
+import ApiKeysTab from '@/components/agency/ApiKeysTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 import PlansEditor, { UiPlan } from '@/components/agency/PlansEditor';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support' | 'developer';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
@@ -252,7 +253,7 @@ function AgencySettingsContent() {
   const theme = useTheme();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
@@ -471,7 +472,7 @@ function AgencySettingsContent() {
     }
   };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }, { id: 'developer' as SettingsTab, label: 'API', icon: Code }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
 
   // If the requested tab (e.g. from a ?tab= URL) isn't one this member is
   // allowed to see, fall back to the first permitted tab so the gated content
@@ -1334,6 +1335,7 @@ function AgencySettingsContent() {
               </div>
             )}
 
+            {activeTab === 'developer' && <ApiKeysTab agency={agency} theme={theme} />}
             {activeTab === 'support' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Contact Support</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? Send us a message and our team will get back to you.</p></div>
