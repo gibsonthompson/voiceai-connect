@@ -234,6 +234,16 @@ export default function TermsOfService() {
               result in statutory damages of $500 to $1,500 per violation.
             </p>
 
+            <h3>5.5 Healthcare and Protected Health Information (PHI)</h3>
+            <p>
+              The Service is not, by default, configured or intended to process protected health information (PHI)
+              as defined by the Health Insurance Portability and Accountability Act (HIPAA). You agree not to use the
+              Service to collect, store, transmit, or otherwise process PHI unless you have first entered into a
+              separate written Business Associate Agreement (BAA) with VoiceAI Connect covering such use. Absent a
+              signed BAA, you represent and warrant that you will not use the Service for any HIPAA-regulated purpose,
+              and you are solely responsible for any use of the Service that involves PHI.
+            </p>
+
             <h2>6. Acceptable Use Policy</h2>
 
             <h3>6.1 Permitted Use</h3>
@@ -508,6 +518,35 @@ export default function TermsOfService() {
               Nothing in these Terms creates a partnership, joint venture, franchise, agency, fiduciary, or employment 
               relationship between VoiceAI Connect and the Agency. Neither party has authority to bind the other or to make 
               any representation on the other&apos;s behalf.
+            </p>
+
+            <h3>13.8 Representations About the Service and VoiceAI Connect</h3>
+            <p>
+              The Agency is responsible for the accuracy of everything it says about the Service in its own marketing,
+              sales, and client communications. The Agency will not, and will not permit its End Clients to:
+            </p>
+            <ul>
+              <li>
+                state or imply that the Service, the Agency, or VoiceAI Connect holds any certification, accreditation,
+                audit, or regulatory status (including SOC 2, HIPAA compliance, PCI DSS, ISO 27001, or similar) that
+                VoiceAI Connect has not confirmed to the Agency in writing;
+              </li>
+              <li>
+                misrepresent the Service&apos;s features, security, availability, or performance, or make any guarantee,
+                warranty, or promise about the Service on VoiceAI Connect&apos;s behalf; or
+              </li>
+              <li>
+                attribute to VoiceAI Connect any statement, endorsement, or commitment that VoiceAI Connect has not
+                authorized in writing.
+              </li>
+            </ul>
+            <p>
+              The Agency represents and warrants that its marketing and client-facing statements about the Service are,
+              and will remain, accurate and not misleading. If VoiceAI Connect notifies the Agency that a statement
+              violates this Section, the Agency will correct or remove it promptly. A violation of this Section is a
+              material breach of these Terms, and VoiceAI Connect may suspend or terminate the Agency&apos;s access under
+              Section 14 in addition to its other remedies. The Agency&apos;s indemnification obligations in Sections 12
+              and 13.6 apply to any claim, fine, or loss arising from a violation of this Section.
             </p>
 
             <h2>14. Term and Termination</h2>

@@ -391,7 +391,7 @@ export default function PrivacyPolicy() {
             
             <ul>
               <li>Encryption of data in transit (TLS 1.3) and at rest (AES-256)</li>
-              <li>Secure cloud infrastructure with SOC 2 certified providers</li>
+              <li>Encrypted, access-controlled cloud infrastructure hosted with established, reputable providers</li>
               <li>OAuth 2.0 for secure third-party authentication and Google Calendar integration</li>
               <li>Encrypted storage of all OAuth tokens and API credentials</li>
               <li>Access controls and authentication requirements</li>
