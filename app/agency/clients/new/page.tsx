@@ -569,6 +569,19 @@ export default function AddClientPage() {
         </p>
       </div>
 
+      {/* Billing-mode reminder: what actually happens to this client's billing. */}
+      <div className="rounded-xl p-4 mb-6 flex items-start gap-3" style={{ backgroundColor: `${primaryColor}15`, border: `1px solid ${primaryColor}30` }}>
+        <DollarSign className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+        <div>
+          <p className="text-sm font-semibold" style={{ color: primaryColor }}>{(agency as any)?.client_billing_mode === 'manual' ? 'You Bill This Client Yourself' : 'The Platform Bills This Client'}</p>
+          <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>
+            {(agency as any)?.client_billing_mode === 'manual'
+              ? <>They go live immediately with no card and no checkout, and you invoice them directly. Change this in <Link href="/agency/settings?tab=payments" className="underline" style={{ color: primaryColor }}>Payment Settings</Link>.</>
+              : <>They&apos;re charged through Stripe Connect and you keep the margin. Change this in <Link href="/agency/settings?tab=payments" className="underline" style={{ color: primaryColor }}>Payment Settings</Link>.</>}
+          </p>
+        </div>
+      </div>
+
       {/* Error display */}
       {(error || fieldErrors.length > 0) && (
         <div

@@ -844,6 +844,15 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
+                {clientBillingMode === 'manual' && (
+                  <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <Receipt className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold" style={{ color: theme.primary }}>You Bill Clients Yourself</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>These prices are for your own reference. The platform won&apos;t collect them, you invoice clients directly. Change this in <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payment Settings</a>.</p>
+                    </div>
+                  </div>
+                )}
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
@@ -1109,6 +1118,14 @@ function AgencySettingsContent() {
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+                {/* Client-billing-mode summary: the answer up top; the toggle control is below. */}
+                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                  <Receipt className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: theme.primary }}>{clientBillingMode === 'manual' ? 'Client Billing: You Bill Them Yourself' : 'Client Billing: Handled By The Platform'}</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them. Change this under "Bill My Clients Myself" below.' : 'The platform charges your clients through Stripe Connect and you keep the margin. Change this under "Bill My Clients Myself" below.'}</p>
+                  </div>
+                </div>
                 {clientBillingMode === 'manual' && (
                   <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
@@ -1173,11 +1190,14 @@ function AgencySettingsContent() {
 
                   <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: clientBillingMode === 'manual' ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${clientBillingMode === 'manual' ? theme.primary30 : theme.border}` }}>
                     <div className="flex-1 min-w-0 mr-3">
-                      <p className="text-sm font-medium" style={{ color: clientBillingMode === 'manual' ? theme.primary : theme.text }}>Bill my clients myself</p>
-                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />
+                        <p className="text-base sm:text-lg font-semibold tracking-tight" style={{ color: theme.primary }}>Bill My Clients Myself</p>
+                      </div>
+                      <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>
                         {clientBillingMode === 'manual'
-                          ? 'On. You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don\u2019t apply and are disabled below.'
-                          : 'Off. The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).'}
+                          ? <><span className="font-semibold" style={{ color: theme.primary }}>On.</span> You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don&apos;t apply and are disabled below.</>
+                          : <><span className="font-semibold" style={{ color: theme.text }}>Off.</span> The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).</>}
                       </p>
                     </div>
                     <button
