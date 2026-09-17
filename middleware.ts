@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 
 // Platform domain configuration
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -159,22 +159,16 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // Create Supabase client for middleware (only for subdomain/custom domain lookups)
-  const supabase = createServerClient(
+  // Service-role Supabase client for the agency lookup only. This runs
+  // server-side in edge middleware; the key is never sent to the browser.
+  // Using service role (which bypasses RLS) lets the `agencies` table stay
+  // locked under row-level security instead of relying on a public-readable
+  // policy. No auth/session work happens here, just a host -> agency lookup,
+  // so no cookie plumbing is needed on the client.
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
   // =========================================================================
