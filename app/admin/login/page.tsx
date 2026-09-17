@@ -9,8 +9,8 @@ import { Loader2, ArrowRight, Delete, KeyRound, Grid3x3 } from 'lucide-react';
 // dark gray + near-black do the rest. Kept local to this page so it can read
 // distinct from the emerald app theme without touching global tokens.
 const C = {
-  teal: '#00A19B',
-  tealBright: '#00D2BE',
+  teal: '#00B98C',
+  tealBright: '#1FE6A8',
   silver: '#C8CCCE',
   gray: '#565F64',
   bg: '#050505',
@@ -87,7 +87,7 @@ function TelemetryBackground() {
           const dx = a.x - b.x, dy = a.y - b.y;
           const dist = Math.hypot(dx, dy);
           if (dist < 130) {
-            ctx.strokeStyle = `rgba(0,210,190,${0.10 * (1 - dist / 130)})`;
+            ctx.strokeStyle = `rgba(31,230,168,${0.10 * (1 - dist / 130)})`;
             ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
           }
@@ -95,7 +95,7 @@ function TelemetryBackground() {
       }
       // nodes
       for (const p of pts) {
-        ctx.fillStyle = 'rgba(0,161,155,0.55)';
+        ctx.fillStyle = 'rgba(0,185,140,0.55)';
         ctx.beginPath(); ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2); ctx.fill();
       }
       raf = requestAnimationFrame(tick);
@@ -185,7 +185,7 @@ export default function AdminLoginPage() {
       {/* Background */}
       <TelemetryBackground />
       <div className="pointer-events-none absolute inset-0">
-        <div className="vac-glow absolute top-1/4 left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full blur-[130px]" style={{ backgroundColor: 'rgba(0,161,155,0.10)' }} />
+        <div className="vac-glow absolute top-1/4 left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full blur-[130px]" style={{ backgroundColor: 'rgba(0,185,140,0.10)' }} />
         <div className="absolute inset-x-0 top-0 h-px overflow-hidden">
           <div className="vac-sweep h-px w-1/3" style={{ background: `linear-gradient(90deg, transparent, ${C.tealBright}, transparent)` }} />
         </div>
@@ -197,7 +197,7 @@ export default function AdminLoginPage() {
         {/* Header */}
         <div className="text-center mb-8 vac-rise">
           <div className="inline-flex items-center justify-center mb-5 relative">
-            <div className="absolute inset-0 -m-4 blur-2xl rounded-full" style={{ backgroundColor: 'rgba(0,210,190,0.18)' }} />
+            <div className="absolute inset-0 -m-4 blur-2xl rounded-full" style={{ backgroundColor: 'rgba(31,230,168,0.18)' }} />
             <WaveformLogo size={46} />
           </div>
           <h1 className="text-[22px] font-semibold tracking-tight text-white">VoiceAI Connect</h1>
@@ -216,7 +216,7 @@ export default function AdminLoginPage() {
             backgroundColor: 'rgba(12,14,15,0.72)',
             border: `1px solid ${okFlash ? C.tealBright : 'rgba(200,204,206,0.10)'}`,
             boxShadow: okFlash
-              ? `0 0 0 1px ${C.tealBright}, 0 30px 80px rgba(0,210,190,0.18)`
+              ? `0 0 0 1px ${C.tealBright}, 0 30px 80px rgba(31,230,168,0.18)`
               : '0 30px 80px rgba(0,0,0,0.6)',
             transition: 'border-color .3s, box-shadow .3s',
           }}
@@ -256,9 +256,9 @@ export default function AdminLoginPage() {
                       disabled={loading}
                       className={`relative aspect-square rounded-xl flex items-center justify-center transition-colors ${lastIsThis ? 'vac-cell-on' : ''}`}
                       style={{
-                        backgroundColor: active ? 'rgba(0,161,155,0.16)' : 'rgba(255,255,255,0.02)',
+                        backgroundColor: active ? 'rgba(0,185,140,0.16)' : 'rgba(255,255,255,0.02)',
                         border: `1px solid ${active ? C.teal : 'rgba(200,204,206,0.09)'}`,
-                        boxShadow: active ? `0 0 18px rgba(0,210,190,0.25)` : 'none',
+                        boxShadow: active ? `0 0 18px rgba(31,230,168,0.25)` : 'none',
                       }}
                       aria-label={`cell ${i + 1}`}
                     >
