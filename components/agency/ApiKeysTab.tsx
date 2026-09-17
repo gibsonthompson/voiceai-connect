@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Key, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Terminal } from 'lucide-react';
+import UpgradeGate from './UpgradeGate';
 
 // Self-contained API-keys panel. Rendered from the agency Settings page as a tab:
 //   {activeTab === 'developer' && <ApiKeysTab agency={agency} theme={theme} />}
@@ -78,22 +79,8 @@ export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any 
 
   const copyKey = () => { if (freshKey) { navigator.clipboard.writeText(freshKey); setCopied(true); setTimeout(() => setCopied(false), 2000); } };
 
-  // Non-Scale: show what the API is + an upgrade path.
-  if (!isScale) {
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        <div><h3 className="text-base sm:text-lg font-medium mb-1">API Access</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage clients, pull call transcripts, and wire VoiceAI Connect into your own tools.</p></div>
-        <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-full mb-3" style={{ backgroundColor: theme.primary15 }}><Lock className="h-5 w-5" style={{ color: theme.primary }} /></div>
-          <p className="text-sm font-medium mb-1">The API is a Scale feature</p>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Upgrade to Scale to create API keys and integrate programmatically.</p>
-          <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade to Scale</a>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <UpgradeGate locked={!isScale} tier="scale" title="Unlock the API with Scale" description="Manage clients, pull call transcripts and analytics, and wire VoiceAI Connect into your own CRM, tools, and automations. Scale unlocks API keys so you can build on the platform programmatically instead of working only through the dashboard." theme={theme}>
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div><h3 className="text-base sm:text-lg font-medium mb-1">API Keys</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Authenticate requests to the VoiceAI Connect API. Keep keys secret, treat them like passwords.</p></div>
@@ -150,5 +137,6 @@ export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any 
         <code className="block rounded-lg px-3 py-2 text-[11px] font-mono break-all" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.3)' : '#fff', border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>curl {backendUrl}/api/v1/clients -H &quot;Authorization: Bearer YOUR_KEY&quot;</code>
       </div>
     </div>
+    </UpgradeGate>
   );
 }

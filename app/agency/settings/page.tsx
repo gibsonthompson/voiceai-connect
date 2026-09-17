@@ -236,12 +236,18 @@ function ProFeatureGate({ isFreePlan, title, description, theme, children }: { i
   return (
     <div className="relative">
       <div
-        className="opacity-40 pointer-events-none select-none"
-        style={{ filter: 'blur(1.5px)' }}
+        className="opacity-30 pointer-events-none select-none"
+        style={{ filter: 'blur(3px)' }}
         aria-hidden="true"
       >
         {children}
       </div>
+      {/* Scrim: separates the blurred preview from the card so the modal reads clearly. */}
+      <div
+        className="absolute inset-0 rounded-xl"
+        style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)' }}
+        aria-hidden="true"
+      />
       <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-10 px-4 pointer-events-none">
         <ProUpgradeCard title={title} description={description} theme={theme} />
       </div>
@@ -355,7 +361,7 @@ function AgencySettingsContent() {
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
-  const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
+  const planPrice = PLAN_PRICING[agency?.plan_type || 'free'] ?? 0;
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   // Card-required toggle is only meaningful when the agency has Stripe Connect

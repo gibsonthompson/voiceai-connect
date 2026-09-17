@@ -6,6 +6,7 @@ import {
   Check, AlertCircle, CheckCircle2, Circle, Phone, Mail, Copy,
   Lock, Bell, BellOff, ChevronDown, ChevronUp
 } from 'lucide-react';
+import UpgradeGate from './UpgradeGate';
 
 // ============================================================================
 // TYPES
@@ -267,6 +268,9 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
   const countText = isUnlimited
     ? `${limits.current} team members (Unlimited)`
     : `${limits.current} of ${limits.max} team members`;
+  // Free agencies come back with max 0 (blocked). Gate the whole panel so it
+  // reads the same as the API / white-label locks instead of an inline card.
+  const locked = limits.max === 0;
 
   // ============================================================================
   // RENDER
@@ -280,6 +284,13 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
   }
 
   return (
+    <UpgradeGate
+      locked={locked}
+      tier="pro"
+      title="Unlock team members with Pro"
+      description="Invite your staff into the agency dashboard with their own logins, decide exactly which pages each person can see, and route call notifications to the right people. Pro unlocks team members so you can delegate day-to-day work without handing out your own password."
+      theme={theme}
+    >
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -314,17 +325,6 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
         <div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
           <Check className="h-4 w-4" style={{ color: theme.primary }} />
           <p className="text-sm" style={{ color: theme.primary }}>{success}</p>
-        </div>
-      )}
-
-      {/* Plan gate message — only shows for Free agencies (limits.max=0) */}
-      {limits.max === 0 && (
-        <div className="rounded-xl p-4 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-          <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />
-          <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>Team members not available</p>
-          <p className="text-xs" style={{ color: theme.textMuted }}>
-            Upgrade to Pro or Scale to invite team members to your agency dashboard.
-          </p>
         </div>
       )}
 
@@ -567,7 +567,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       )}
 
       {/* Empty state — shows when the agency can add members but has none */}
-      {members.length === 0 && canAddMembers && !showAddForm && (
+      {members.length === 0 && (canAddMembers || locked) && !showAddForm && (
         <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
           <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>No team members yet</p>
@@ -582,5 +582,6 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
         </div>
       )}
     </div>
+    </UpgradeGate>
   );
 }
