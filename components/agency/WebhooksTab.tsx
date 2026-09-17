@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Webhook, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Send, Power } from 'lucide-react';
+import UpgradeGate from './UpgradeGate';
 
 // Self-contained webhooks panel. Rendered from Settings as a tab:
 //   {activeTab === 'webhooks' && <WebhooksTab agency={agency} theme={theme} />}
@@ -111,21 +112,8 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
 
   const copySecret = () => { if (freshSecret) { navigator.clipboard.writeText(freshSecret); setCopied(true); setTimeout(() => setCopied(false), 2000); } };
 
-  if (!isScale) {
-    return (
-      <div className="space-y-4 sm:space-y-6">
-        <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Get a POST to your server the moment a call finishes, an appointment is booked, or a client is provisioned.</p></div>
-        <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-full mb-3" style={{ backgroundColor: theme.primary15 }}><Lock className="h-5 w-5" style={{ color: theme.primary }} /></div>
-          <p className="text-sm font-medium mb-1">Webhooks are a Scale feature</p>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Upgrade to Scale to receive real-time events.</p>
-          <a href="/agency/settings?tab=billing" className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade to Scale</a>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <UpgradeGate locked={!isScale} tier="scale" title="Unlock webhooks with Scale" description="Get a signed POST to your server the moment a call finishes, an appointment is booked, or a client is provisioned, so VoiceAI Connect can drive your CRM, notifications, and automations in real time instead of you polling for changes. Scale unlocks webhook endpoints." theme={theme}>
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>We POST a signed event to your URL when things happen. Verify the signature with your secret.</p></div>
@@ -203,5 +191,6 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
         </div>
       )}
     </div>
+    </UpgradeGate>
   );
 }

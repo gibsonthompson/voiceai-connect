@@ -2,10 +2,11 @@
 
 import { Sparkles, ExternalLink } from 'lucide-react';
 
-// Shared locked-feature overlay, matching the settings ProFeatureGate exactly:
-// the real feature UI renders blurred behind a scrim, with an upgrade card
-// floating over it. Used by the API (Scale) and Team (Pro) locks so every gated
-// feature in the dashboard reads the same way. tier drives the plan copy.
+// Shared locked-feature overlay. The real feature UI shows through, blurred and
+// dimmed, so it's clear what's behind the lock. A dark, near-solid card floats
+// over it. The card itself carries the contrast (dark fill + backdrop blur +
+// shadow), NOT a scrim over the whole panel, so what's underneath stays visible.
+// Used by the API / Webhooks (Scale) and Team (Pro) locks. tier drives the copy.
 export default function UpgradeGate({
   locked,
   tier = 'pro',
@@ -25,25 +26,27 @@ export default function UpgradeGate({
   const tierLabel = tier === 'scale' ? 'Scale' : 'Pro';
   return (
     <div className="relative">
-      {/* Blurred preview of what the feature looks like, so it's clear what's behind the lock. */}
-      <div className="opacity-30 pointer-events-none select-none" style={{ filter: 'blur(3px)' }} aria-hidden="true">
+      {/* Blurred, dimmed preview of the real feature. Height-capped so the lock
+          never leaves a tall empty box around the card. */}
+      <div
+        className="pointer-events-none select-none overflow-hidden"
+        style={{ filter: 'blur(2px)', opacity: 0.5, maxHeight: 440 }}
+        aria-hidden="true"
+      >
         {children}
       </div>
-      {/* Scrim: separates the blurred preview from the card so the modal reads clearly. */}
-      <div
-        className="absolute inset-0 rounded-xl"
-        style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)' }}
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-10 px-4 pointer-events-none">
+      {/* Dark, near-solid card centered over the preview. No background scrim. */}
+      <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
         <div
           className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
           style={{
-            backgroundColor: theme.card,
-            border: `1px solid ${theme.border}`,
+            backgroundColor: theme.isDark ? 'rgba(10,12,14,0.97)' : 'rgba(255,255,255,0.98)',
+            border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.09)' : theme.border}`,
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             boxShadow: theme.isDark
-              ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
-              : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
+              ? '0 30px 70px rgba(0,0,0,0.78), 0 0 0 1px rgba(255,255,255,0.03)'
+              : '0 24px 60px rgba(0,0,0,0.16), 0 2px 6px rgba(0,0,0,0.05)',
           }}
         >
           <div className="flex items-center gap-3 mb-3">
