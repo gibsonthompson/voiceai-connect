@@ -8,9 +8,19 @@
 // Requires ELEVENLABS_API_KEY in this Vercel project's Environment Variables
 // (Production), and a REDEPLOY after adding it. Optional ELEVENLABS_TTS_MODEL
 // (defaults to eleven_flash_v2_5).
+//
+// UPDATED: 2026-09-17 - SECURITY: added the same per-IP rate limit the widget
+//   chat route uses (@/lib/rate-limit). This endpoint was unauthenticated with
+//   no request cap, so anyone could hammer it and run up the ElevenLabs bill on
+//   our API key (the 500-char text cap does not bound how many requests you can
+//   send, and varying the text/voice bypasses the response cache). The rate
+//   limit is server-side and per-IP, so a real user previewing a handful of
+//   voices is unaffected while automated abuse is throttled. This is the same
+//   pattern app/api/widget/chat already uses.
 // ----------------------------------------------------------------------------
 
 import { NextResponse } from 'next/server';
+import { isRateLimited } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +29,17 @@ const TTS_MODEL_ID = process.env.ELEVENLABS_TTS_MODEL || 'eleven_flash_v2_5';
 
 export async function POST(req: Request) {
   try {
+    // Per-IP rate limit (same limiter as the widget chat route). Blocks
+    // unauthenticated abuse of our ElevenLabs key without affecting normal
+    // dashboard voice previews.
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests. Please wait a moment and try again.' },
+        { status: 429 }
+      );
+    }
+
     const apiKey = (process.env.ELEVENLABS_API_KEY || '').trim();
     if (!apiKey) {
       return NextResponse.json({ success: false, error: 'ELEVENLABS_API_KEY missing in this environment' }, { status: 503 });

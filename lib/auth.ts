@@ -3,7 +3,24 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import type { JWTPayload, AuthUser, UserRole } from '@/types/database';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// SECURITY (2026-09-17): removed the hardcoded fallback secret that used to sit
+// after the `||` on this line. With a known/guessable fallback, anyone could
+// forge a valid session token if JWT_SECRET were ever unset. We now fail closed.
+//
+// We deliberately do NOT throw at module load the way the backend does. This
+// module is imported during `next build`, and a top-level throw would break the
+// build in any environment where JWT_SECRET is not present at build time.
+// Instead each function that needs the secret fails closed at call time:
+//   - verifyToken() returns null (no secret -> no valid session; users are
+//     treated as logged out, never forge-able)
+//   - generateToken() throws (we must never mint a token without a real secret;
+//     this only ever runs in a request handler, never at build)
+//
+// NOTE: this JWT_SECRET must be identical to the backend's. The frontend only
+// verifies tokens the backend issued, so a mismatch would make every session
+// fail to verify. Because sessions currently verify, the real secret is already
+// set here, so dropping the literal fallback cannot break working auth.
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d';
 
 // ============================================================================
@@ -38,6 +55,11 @@ export function generateToken(user: {
   agency_id?: string;
   client_id?: string;
 }): string {
+  // Fail closed: never mint a token without a configured secret.
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured; refusing to mint a token.');
+  }
+
   const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
     sub: user.id,
     email: user.email,
@@ -50,6 +72,13 @@ export function generateToken(user: {
 }
 
 export function verifyToken(token: string): JWTPayload | null {
+  // Fail closed: with no configured secret we cannot trust any token, so treat
+  // every request as unauthenticated rather than fall back to a guessable key.
+  if (!JWT_SECRET) {
+    console.error('JWT_SECRET is not configured; cannot verify tokens.');
+    return null;
+  }
+
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
   } catch {
