@@ -14,6 +14,7 @@ import ApiKeysTab from '@/components/agency/ApiKeysTab';
 import WebhooksTab from '@/components/agency/WebhooksTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 import PlansEditor, { UiPlan } from '@/components/agency/PlansEditor';
+import PlanUpgrade from '@/components/agency/PlanUpgrade';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support' | 'developer' | 'webhooks';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
@@ -1280,13 +1281,14 @@ function AgencySettingsContent() {
                   )}
                 </div>
 
-                {isFreePlan && (
-                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                    <div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="font-medium text-sm" style={{ color: theme.primary }}>Upgrade to Pro</p></div>
-                    <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Unlock white-label branding, custom domains, and full client customization.</p>
-                    <button onClick={() => handleUpgrade('pro')} disabled={upgradeLoading === 'pro'} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'pro' ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Upgrade to Pro</button>
-                  </div>
-                )}
+                {/* All-plan selector: Free -> paid (checkout), Pro <-> Scale (in-app change-plan). */}
+                <PlanUpgrade
+                  agencyId={agency?.id || ''}
+                  currentPlan={agency?.plan_type || 'free'}
+                  theme={theme}
+                  onChanged={() => window.location.reload()}
+                  onManageBilling={handleManageSubscription}
+                />
               </div>
             )}
 
