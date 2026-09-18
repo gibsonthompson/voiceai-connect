@@ -196,6 +196,74 @@ function CountrySelect({ value, onChange, theme }: { value: string; onChange: (c
   );
 }
 
+// Accepted-card brand marks. Small, recognisable SVG marks (not text pills) so
+// the payments UI reads as a real checkout. Decorative; labelled for a11y.
+function CardBrands({ className = '' }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`} aria-label="Visa, Mastercard, American Express and Discover accepted">
+      <svg width="30" height="20" viewBox="0 0 30 20" role="img" aria-label="Visa"><rect width="30" height="20" rx="3" fill="#1A1F71" /><text x="15" y="14" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="9" fontStyle="italic" fontWeight="700" fill="#fff" letterSpacing="0.5">VISA</text></svg>
+      <svg width="30" height="20" viewBox="0 0 30 20" role="img" aria-label="Mastercard"><rect width="30" height="20" rx="3" fill="#111" /><circle cx="12.5" cy="10" r="5.5" fill="#EB001B" /><circle cx="17.5" cy="10" r="5.5" fill="#F79E1B" /><path d="M15 5.6a5.5 5.5 0 0 1 0 8.8 5.5 5.5 0 0 1 0-8.8z" fill="#FF5F00" /></svg>
+      <svg width="30" height="20" viewBox="0 0 30 20" role="img" aria-label="American Express"><rect width="30" height="20" rx="3" fill="#2E77BC" /><text x="15" y="13.5" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="7" fontWeight="700" fill="#fff" letterSpacing="0.3">AMEX</text></svg>
+      <svg width="30" height="20" viewBox="0 0 30 20" role="img" aria-label="Discover"><rect width="30" height="20" rx="3" fill="#EFEFEF" /><text x="4" y="13" fontFamily="Arial, Helvetica, sans-serif" fontSize="7" fontWeight="800" fill="#231F20">DISC</text><circle cx="24" cy="10" r="4.5" fill="#F76B1C" /></svg>
+    </span>
+  );
+}
+
+// Themed custom select (replaces the native <select>, which renders the OS
+// picker on mobile). Same button + popover pattern as CountrySelect. Closes on
+// outside click or selection.
+function SelectMenu({ value, onChange, options, placeholder = 'Select...', theme }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; placeholder?: string; theme: any }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) || null;
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-colors"
+        style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: selected ? theme.text : theme.textMuted }}
+      >
+        <span>{selected ? selected.label : placeholder}</span>
+        <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+
+      {open && (
+        <div className="absolute z-30 mt-1.5 w-full rounded-xl overflow-hidden" style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.inputBorder}`, boxShadow: '0 16px 40px rgba(0,0,0,0.30)' }}>
+          <div className="max-h-60 overflow-y-auto py-1">
+            {options.map((o) => {
+              const active = o.value === value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => { onChange(o.value); setOpen(false); }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors"
+                  style={{ color: theme.text, backgroundColor: active ? theme.primary15 : 'transparent' }}
+                  onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; }}
+                  onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                >
+                  <span>{o.label}</span>
+                  {active && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode, hasPermission } = useAgency();
   const theme = useTheme();
@@ -1065,54 +1133,102 @@ function AgencySettingsContent() {
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
-                {/* Client-billing-mode summary: the answer up top; the toggle control is below. */}
-                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                  <Receipt className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+
+                {/* Client-billing-mode summary. The "change this" line sits on its
+                    own row so it doesn't crowd the status sentence. */}
+                <div className="rounded-xl px-4 py-3 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                  <Receipt className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: theme.primary }}>{clientBillingMode === 'manual' ? 'Client Billing: You Bill Them Yourself' : 'Client Billing: Handled By The Platform'}</p>
-                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them. Change this under "Bill My Clients Myself" below.' : 'The platform charges your clients through Stripe Connect and you keep the margin. Change this under "Bill My Clients Myself" below.'}</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them.' : 'The platform charges your clients through Stripe Connect and you keep the margin.'}</p>
+                    <p className="text-[11px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Change this under &ldquo;Bill My Clients Myself&rdquo; below.</p>
                   </div>
                 </div>
-                {clientBillingMode === 'manual' && (
-                  <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Not needed while you&apos;re billing clients yourself. Turn off &ldquo;Bill my clients myself&rdquo; below if you want the platform to charge your clients through Stripe.</p>
-                  </div>
-                )}
-                {loadingStripeStatus ? (
-                  <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>
-) : (
-                  <div className={`rounded-xl p-4 sm:p-5 ${clientBillingMode === 'manual' ? 'opacity-50 pointer-events-none select-none' : ''}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <div className="flex items-center gap-4">
-                      <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
-                        <div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stripeDisplay.color }} /><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{stripeDisplay.label}</p></div>
-                      </div>
-                      {stripeDisplay.status === 'active' ? (
-                        <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button>
-                      ) : stripeDisplay.status === 'restricted' ? (
-                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Finish Stripe setup" />
-                      ) : null}
-                    </div>
-                    {stripeDisplay.status === 'active' && (
-                      <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-                        <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Charges</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
-                        <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Payouts</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
-                {/* Client Billing Mode. How the agency bills its OWN clients.
-                    Default 'connect' routes new clients through Stripe Connect
-                    checkout. 'manual' onboards new clients with no Stripe step:
-                    the agency bills them itself (invoice / payment link), which
-                    is the option for agencies that cannot or will not use Stripe
-                    Connect OAuth. Own toggle action (the Payments tab has no
-                    shared Save). Only affects clients added afterward; existing
-                    clients keep their stamped billing mode, and the agency's own
-                    platform plan is billed the same either way. */}
+                {/* Stripe Connect group. This whole block is how the platform
+                    charges your clients, so it greys out when you switch to
+                    billing clients yourself (manual mode). Country picker sits at
+                    the top since choosing it is the first step of connecting. */}
+                <div className={clientBillingMode === 'manual' ? 'space-y-4 sm:space-y-6 opacity-50 pointer-events-none select-none' : 'space-y-4 sm:space-y-6'}>
+
+                  {/* Country + Connect. A connected account's country is fixed at
+                      creation and can't change later, so it's chosen BEFORE
+                      connecting. Shown only before an account exists. */}
+                  {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
+                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Globe className="h-4 w-4" style={{ color: theme.primary }} />
+                        <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
+                      </div>
+                      <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                        Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
+                      </p>
+                      <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
+                      <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
+                        <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
+                        This can't be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
+                      </p>
+                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
+                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stripe status card, with a compact funds note + accepted cards. */}
+                  {loadingStripeStatus ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>
+                  ) : (
+                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                      <div className="flex items-center gap-4">
+                        <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
+                          <div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stripeDisplay.color }} /><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{stripeDisplay.label}</p></div>
+                        </div>
+                        {stripeDisplay.status === 'active' ? (
+                          <button onClick={handleStripeDisconnect} disabled={disconnectingStripe} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>{disconnectingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Disconnect</button>
+                        ) : stripeDisplay.status === 'restricted' ? (
+                          <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Finish Stripe setup" />
+                        ) : null}
+                      </div>
+                      {stripeDisplay.status === 'active' && (
+                        <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Charges</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
+                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Payouts</span><span className="flex items-center gap-1" style={{ color: '#34d399' }}><Check className="h-3 w-3" />Enabled</span></div>
+                        </div>
+                      )}
+                      <div className="mt-3 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Client payments go straight to your Stripe account. We never hold your funds.</p>
+                        <CardBrands />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No-LLC reassurance, shown until Stripe is fully active. */}
+                  {stripeDisplay.status !== 'active' && !loadingStripeStatus && (
+                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                      <div className="flex items-start gap-3">
+                        <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.infoText }}>No company registration needed to start</p>
+                          <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                            {connectCountry === 'US' ? (
+                              <>You can connect as an individual and use your personal checking account, as long as the account is in your own name. Stripe asks for a US address and your SSN, or your EIN if you already have one. If you form an LLC later, you can update your business details in Stripe then.</>
+                            ) : (
+                              <>You can connect as an individual or sole trader with a bank account in your selected country, as long as the account is in your own name. Stripe asks for that country's standard identity and address details, not US details like an SSN. If you register a company later, you can update your business details in Stripe then.</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bill My Clients Myself. 'connect' (default) routes new clients
+                    through Stripe Connect checkout; 'manual' onboards them with no
+                    Stripe step so the agency invoices them directly. Only affects
+                    clients added afterward; existing clients keep their mode. */}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <Receipt className="h-4 w-4" style={{ color: theme.primary }} />
@@ -1143,8 +1259,8 @@ function AgencySettingsContent() {
                       </div>
                       <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>
                         {clientBillingMode === 'manual'
-                          ? <><span className="font-semibold" style={{ color: theme.primary }}>On.</span> You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don&apos;t apply and are disabled below.</>
-                          : <><span className="font-semibold" style={{ color: theme.text }}>Off.</span> The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).</>}
+                          ? <><span className="font-semibold" style={{ color: theme.primary }}>On.</span> You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don&apos;t apply and are disabled above.</>
+                          : <><span className="font-semibold" style={{ color: theme.text }}>Off.</span> The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (above).</>}
                       </p>
                     </div>
                     <button
@@ -1165,15 +1281,20 @@ function AgencySettingsContent() {
                   {clientBillingMode === 'manual' && (
                     <div className="mt-3">
                       <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>How do you bill your clients?</label>
-                      <select value={billingMethod} onChange={(e) => saveBillingMethod(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-                        <option value="">Select a method...</option>
-                        <option value="invoices">Manual invoices</option>
-                        <option value="own_stripe">My own Stripe account</option>
-                        <option value="quickbooks">QuickBooks / Xero</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="bank">Bank transfer / ACH</option>
-                        <option value="other">Other</option>
-                      </select>
+                      <SelectMenu
+                        value={billingMethod}
+                        onChange={saveBillingMethod}
+                        placeholder="Select a method..."
+                        theme={theme}
+                        options={[
+                          { value: 'invoices', label: 'Manual invoices' },
+                          { value: 'own_stripe', label: 'My own Stripe account' },
+                          { value: 'quickbooks', label: 'QuickBooks / Xero' },
+                          { value: 'paypal', label: 'PayPal' },
+                          { value: 'bank', label: 'Bank transfer / ACH' },
+                          { value: 'other', label: 'Other' },
+                        ]}
+                      />
                       <p className="text-[10px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>For our records only, this doesn&apos;t change anything today. We may use it to offer a direct integration with your billing tool down the line.</p>
                     </div>
                   )}
@@ -1185,60 +1306,6 @@ function AgencySettingsContent() {
                     </p>
                   </div>
                 </div>
-
-                {/* Country selector. A connected account's country is fixed at
-                    creation and cannot be changed later, so the agency picks it
-                    BEFORE connecting. Posted to /api/agency/connect/onboard,
-                    which creates the Stripe account in this country. Shown only
-                    before an account exists; once connected the country locks. */}
-                {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
-                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Globe className="h-4 w-4" style={{ color: theme.primary }} />
-                      <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
-                    </div>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
-                      Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
-                    </p>
-                    <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
-                    <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
-                      <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
-                      This cannot be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
-                    </p>
-                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                      <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
-                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* No-LLC reassurance. Shown until Stripe is fully active, since
-                    "I don't have an LLC yet" is the usual reason an agency owner
-                    stalls here. Sole proprietors can onboard as an individual
-                    with an SSN and a personal checking account. The account must
-                    be in their own name, which is the detail that actually
-                    causes failed payouts when it's wrong. Copy is country-aware:
-                    US agencies see SSN/EIN wording, everyone else sees generic
-                    individual/sole-trader wording. */}
-                {stripeDisplay.status !== 'active' && !loadingStripeStatus && (
-                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
-                    <div className="flex items-start gap-3">
-                      <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.infoText }}>No company registration needed to start</p>
-                        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                          {connectCountry === 'US' ? (
-                            <>You can connect as an individual and use your personal checking account, as long as the account is in your own name. Stripe asks for a US address and your SSN, or your EIN if you already have one. If you form an LLC later, you can update your business details in Stripe then.</>
-                          ) : (
-                            <>You can connect as an individual or sole trader with a bank account in your selected country, as long as the account is in your own name. Stripe asks for that country's standard identity and address details, not US details like an SSN. If you register a company later, you can update your business details in Stripe then.</>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
 
               </div>
             )}
@@ -1274,21 +1341,20 @@ function AgencySettingsContent() {
                   </div>
                 ) : null}
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}Manage Subscription</button>
-                  {(isOnTrial || agency?.subscription_status === 'active') && (
-                    <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel {isOnTrial ? 'Trial' : 'Subscription'}</button>
-                  )}
-                </div>
-
                 {/* All-plan selector: Free -> paid (checkout), Pro <-> Scale (in-app change-plan). */}
                 <PlanUpgrade
                   agencyId={agency?.id || ''}
                   currentPlan={agency?.plan_type || 'free'}
                   theme={theme}
                   onChanged={() => window.location.reload()}
-                  onManageBilling={handleManageSubscription}
                 />
+
+                {/* Cancel sits at the very bottom, separated from the plan options. */}
+                {(isOnTrial || agency?.subscription_status === 'active') && (
+                  <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel {isOnTrial ? 'Trial' : 'Subscription'}</button>
+                  </div>
+                )}
               </div>
             )}
 
