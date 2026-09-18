@@ -13,6 +13,8 @@
 //
 // UPDATED: 2026-07-31: Added Support link (support_requests queue) next to
 //          Messaging.
+// UPDATED: 2026-09-18: Added Concierge link (platform demo-line calls) under
+//          the Growth section, next to Demos.
 // ============================================================================
 
 import './admin-theme.css';
