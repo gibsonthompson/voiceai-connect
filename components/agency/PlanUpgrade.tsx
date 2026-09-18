@@ -101,7 +101,11 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
   async function startCheckout(plan: PlanKey) {
     const successUrl = window.location.origin + '/agency/settings?tab=billing&upgraded=' + plan;
     const cancelUrl = window.location.origin + '/agency/settings?tab=billing&canceled=true';
-    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, successUrl, cancelUrl });
+    // An in-app upgrade from the billing tab is an explicit purchase (the agency
+    // is already using the product), not a new signup, so charge immediately
+    // with no fresh trial. New-signup trials still happen via the signup flow.
+    // Drop skipTrial here if you'd rather offer the 14-day trial on upgrade.
+    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, successUrl, cancelUrl, skipTrial: true });
     if (json.url) { window.location.href = json.url; return; }
     throw new Error('Could not start checkout.');
   }
@@ -111,15 +115,15 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
     const name = planByKey(plan).name;
     if (onFree) {
       return {
-        title: 'Start your ' + name + ' subscription?',
-        body: 'You\u2019ll be taken to Stripe to enter payment details and start ' + name + '. Nothing changes until checkout is complete.',
-        cta: 'Continue to Stripe',
+        title: 'Start your ' + name + ' plan?',
+        body: 'Your plan changes to ' + name + ' right away. If you don\u2019t have a payment method on file yet, you\u2019ll add one on Stripe first.',
+        cta: 'Start ' + name,
       };
     }
     if (RANK[plan] > RANK[cur]) {
       return {
         title: 'Upgrade to ' + name + '?',
-        body: 'Your plan changes to ' + name + ' right away. Stripe prorates the difference, so you only pay for the rest of this billing cycle, and your per-client and per-minute rates drop to the ' + name + ' rates.',
+        body: 'Your plan changes to ' + name + ' right away. Stripe prorates the difference for the rest of this billing period and adds it to your next invoice, and your per-client and per-minute rates drop to the ' + name + ' rates.',
         cta: 'Upgrade to ' + name,
       };
     }
@@ -134,12 +138,17 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
     setBusy(true);
     setResult(null);
     try {
-      if (onFree) { await startCheckout(plan); return; } // redirects away
+      // Always ask the backend. It swaps the plan in place whenever there's an
+      // active subscription to switch (Pro <-> Scale, and a Free agency that
+      // already set up billing -> paid), and only returns needs_checkout when
+      // there is no subscription yet, in which case we run Stripe Checkout to
+      // create one. Routing Free -> paid straight to checkout would 409 an
+      // agency that already has a (Free, $0) subscription.
       const json = await post('/api/agency/change-plan', { agency_id: agencyId, plan });
-      if (json.needs_checkout) { await startCheckout(plan); return; }
+      if (json.needs_checkout) { await startCheckout(plan); return; } // redirects away
       setConfirm(null);
-      setResult({ ok: true, msg: 'You\u2019re now on ' + planByKey(plan).name + '. It can take a few seconds to update everywhere, refreshing now\u2026' });
-      setTimeout(() => { onChanged && onChanged(); }, 2200);
+      setResult({ ok: true, msg: 'You\u2019re now on ' + planByKey(plan).name + '. Refreshing\u2026' });
+      setTimeout(() => { onChanged && onChanged(); }, 1600);
     } catch (e: any) {
       setResult({ ok: false, msg: (e && e.message) || 'Something went wrong. Your plan was not changed.' });
       setBusy(false);
