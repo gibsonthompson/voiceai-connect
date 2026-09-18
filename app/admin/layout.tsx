@@ -22,7 +22,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
-  LifeBuoy,
+  LifeBuoy, Headphones,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
@@ -56,6 +56,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
     { href: '/admin/leads', label: 'Leads', icon: Target },
     { href: '/admin/outreach', label: 'Outreach', icon: Mail },
     { href: '/admin/growth', label: 'Demos', icon: Sparkles },
+    { href: '/admin/concierge', label: 'Concierge', icon: Headphones },
   ]},
   { section: null, items: [
     { href: '/admin/messaging', label: 'Messaging', icon: MessageSquare },
