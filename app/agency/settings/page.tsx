@@ -2,18 +2,20 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus} from 'lucide-react';
+import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus, Webhook} from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { PLAN_NAMES } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER, CORE_CLIENT_FEATURES } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
+import UpgradeGate from '@/components/agency/UpgradeGate';
+import ApiKeysTab from '@/components/agency/ApiKeysTab';
+import WebhooksTab from '@/components/agency/WebhooksTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 import PlansEditor, { UiPlan } from '@/components/agency/PlansEditor';
-import PlanUpgrade from '@/components/agency/PlanUpgrade';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support' | 'developer' | 'webhooks';
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
@@ -193,67 +195,12 @@ function CountrySelect({ value, onChange, theme }: { value: string; onChange: (c
   );
 }
 
-function ProUpgradeCard({ title, description, theme }: { title?: string; description: string; theme: any }) {
-  return (
-    <div
-      className="rounded-2xl p-5 sm:p-6 pointer-events-auto w-full max-w-md"
-      style={{
-        backgroundColor: theme.card,
-        border: `1px solid ${theme.border}`,
-        boxShadow: theme.isDark
-          ? '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)'
-          : '0 24px 60px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.04)',
-      }}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primary}cc 100%)` }}
-        >
-          <Sparkles className="h-5 w-5" style={{ color: theme.primaryText }} />
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{title || 'Unlock with Pro'}</p>
-          <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on Pro and above</p>
-        </div>
-      </div>
-      <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
-      <a
-        href="/agency/settings?tab=billing"
-        className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
-        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-      >
-        Upgrade to Pro
-        <ExternalLink className="h-3.5 w-3.5" />
-      </a>
-    </div>
-  );
-}
-
-function ProFeatureGate({ isFreePlan, title, description, theme, children }: { isFreePlan: boolean; title?: string; description: string; theme: any; children: React.ReactNode }) {
-  if (!isFreePlan) return <>{children}</>;
-  return (
-    <div className="relative">
-      <div
-        className="opacity-40 pointer-events-none select-none"
-        style={{ filter: 'blur(1.5px)' }}
-        aria-hidden="true"
-      >
-        {children}
-      </div>
-      <div className="absolute inset-0 flex items-start justify-center pt-6 sm:pt-10 px-4 pointer-events-none">
-        <ProUpgradeCard title={title} description={description} theme={theme} />
-      </div>
-    </div>
-  );
-}
-
 function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode, hasPermission } = useAgency();
   const theme = useTheme();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer', 'webhooks'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
@@ -346,13 +293,15 @@ function AgencySettingsContent() {
   const [embedCopied, setEmbedCopied] = useState(false);
   const [usageData, setUsageData] = useState<any>(null); const [usageLoading, setUsageLoading] = useState(false); const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [allowClientBranding, setAllowClientBranding] = useState(false);
+  const [billMinutesDuringTrial, setBillMinutesDuringTrial] = useState(false);
+  const [billTrialSaving, setBillTrialSaving] = useState(false);
   const [detectedWebsiteTheme, setDetectedWebsiteTheme] = useState<'light' | 'dark' | null>(null); const [detectedLogoBgColor, setDetectedLogoBgColor] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
-  const planPrice = PLAN_PRICING[agency?.plan_type || 'starter'] || 99;
+  const planPrice = PLAN_PRICING[agency?.plan_type || 'free'] ?? 0;
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   // Card-required toggle is only meaningful when the agency has Stripe Connect
@@ -374,7 +323,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -472,7 +421,7 @@ function AgencySettingsContent() {
     }
   };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }, { id: 'developer' as SettingsTab, label: 'API', icon: Code }, { id: 'webhooks' as SettingsTab, label: 'Webhooks', icon: Webhook }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
 
   // If the requested tab (e.g. from a ?tab= URL) isn't one this member is
   // allowed to see, fall back to the first permitted tab so the gated content
@@ -604,6 +553,23 @@ function AgencySettingsContent() {
   // succeeds, so a 400 (rate_required / stripe_not_ready) leaves it where it
   // was. On enable success the backend returns a sweep result (how many
   // existing clients got the metered item); surface it.
+  const handleToggleBillDuringTrial = async () => {
+    if (!agency) return;
+    const next = !billMinutesDuringTrial;
+    setBillTrialSaving(true);
+    setBillMinutesDuringTrial(next); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ bill_minutes_during_trial: next }),
+      });
+      if (!res.ok) setBillMinutesDuringTrial(!next);
+    } catch (e) { setBillMinutesDuringTrial(!next); }
+    finally { setBillTrialSaving(false); }
+  };
+
   const handleToggleMinutePassThrough = async () => {
     if (!agency) return;
     const next = !minutePassThrough;
@@ -730,10 +696,10 @@ function AgencySettingsContent() {
 
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
 
-            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><ProFeatureGate isFreePlan={isFreePlan} theme={theme} description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button>{logoPreview && (<button onClick={handleRemoveLogo} disabled={removingLogo} title="Remove logo and reset colors and favicon to default" className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ml-2 disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{removingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Remove</button>)}<p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted, saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Subdomain</label><p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Your white-label address. Lowercase letters, numbers, and hyphens, 3 to 63 characters.</p><p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Want a custom domain instead? Set one up in the <a href="/agency/marketing" className="underline" style={{ color: theme.primary }}>Website</a> tab.</p><div className="flex items-stretch rounded-xl overflow-hidden" style={{ border: `1px solid ${slugError ? theme.errorBorder : theme.inputBorder}` }}><input type="text" value={slugInput} onChange={(e) => { setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); setSlugError(null); setSlugSaved(false); }} spellCheck={false} autoCapitalize="none" autoCorrect="off" placeholder="your-agency" className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={{ backgroundColor: theme.input, border: 'none', color: theme.text }} /><div className="flex items-center px-3 text-xs sm:text-sm whitespace-nowrap" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', color: theme.textMuted, borderLeft: `1px solid ${theme.inputBorder}` }}>.{platformDomain}</div></div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>Preview: https://{slugNormalized || 'your-agency'}.{platformDomain}/signup</p>{slugError && (<div className="mt-2 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>{slugError}</p></div>)}{slugSaved && (<div className="mt-2 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} /><div className="text-xs sm:text-sm" style={{ color: theme.primary }}><p className="font-medium">Subdomain updated.</p><p style={{ color: theme.textMuted }}>Your old address stops working. Update it anywhere you shared it. Your embed code keeps working.</p></div></div>)}<button onClick={handleSaveSlug} disabled={savingSlug || !slugChanged || !slugFormatOk} className="mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{savingSlug ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save subdomain</>}</button></div><div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}><div className="flex items-start gap-2.5"><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} /><div><p className="text-sm font-medium mb-1" style={{ color: theme.text }}>How white-labeling works</p><p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>The logo, colors, and theme you set here are your agency default and automatically apply to every client dashboard. You can also brand each client individually, their own logo, colors, and light/dark theme, from that client&apos;s page (Clients &rarr; open a client &rarr; Branding). A client&apos;s own branding overrides your agency default for their dashboard, and their theme is auto-detected from the logo background. Client dashboards show the logo, not a text name.</p></div></div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></ProFeatureGate>
+            {activeTab === 'profile' && (<div className="space-y-4 sm:space-y-6"><div><h3 className="text-base sm:text-lg font-medium mb-1">Agency Profile</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Basic information about your agency.</p></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Agency Name</label><input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div><UpgradeGate locked={isFreePlan} tier="pro" theme={theme} title="Unlock with Pro" description="Brand the platform as your own. Upload your logo, set custom colors, get a branded subdomain at yourname.myvoiceaiconnect.com, and customize how your clients see their dashboard. Pro unlocks full white-label so prospects never see VoiceAI Connect."><div className="space-y-4 sm:space-y-6"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Logo</label><div className="flex items-center gap-3 sm:gap-4"><div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>{logoPreview ? (<img src={logoPreview} alt="Logo" className="h-full w-full object-contain" />) : (<Building className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} />)}</div><div className="min-w-0"><input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Upload className="h-4 w-4" />Upload</button>{logoPreview && (<button onClick={handleRemoveLogo} disabled={removingLogo} title="Remove logo and reset colors and favicon to default" className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ml-2 disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{removingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Remove</button>)}<p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>PNG, JPG up to 2MB</p></div></div>{extractingColors && (<div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /><span>Extracting brand colors...</span></div>)}{extractedColors && !extractingColors && (<div className="mt-4 rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Colors extracted, saved with profile</span></div><div className="flex items-center gap-4">{([['Primary', 'primary'], ['Secondary', 'secondary'], ['Accent', 'accent']] as const).map(([label, key]) => (<div key={key} className="flex items-center gap-2"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: brandColors[key], borderColor: theme.border }} /><input type="color" value={brandColors[key]} onChange={(e) => setBrandColors(prev => ({ ...prev, [key]: e.target.value }))} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{brandColors[key]}</p></div></div>))}</div>{detectedWebsiteTheme && (<div className="mt-3 flex items-center gap-2"><div className={`w-4 h-4 rounded border ${detectedWebsiteTheme === 'light' ? 'bg-white border-gray-300' : 'bg-[#050505] border-white/20'}`} /><p className="text-xs" style={{ color: theme.textMuted }}>Theme: <span className="font-medium" style={{ color: theme.primary }}>{detectedWebsiteTheme === 'light' ? 'Light' : 'Dark'}</span></p></div>)}<p className="text-xs mt-2" style={{ color: theme.textMuted }}>These update your Branding tab palette. Fine-tune there after saving.</p></div>)}</div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Subdomain</label><p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>Your white-label address. Lowercase letters, numbers, and hyphens, 3 to 63 characters.</p><p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Want a custom domain instead? Set one up in the <a href="/agency/marketing" className="underline" style={{ color: theme.primary }}>Website</a> tab.</p><div className="flex items-stretch rounded-xl overflow-hidden" style={{ border: `1px solid ${slugError ? theme.errorBorder : theme.inputBorder}` }}><input type="text" value={slugInput} onChange={(e) => { setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); setSlugError(null); setSlugSaved(false); }} spellCheck={false} autoCapitalize="none" autoCorrect="off" placeholder="your-agency" className="flex-1 min-w-0 px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={{ backgroundColor: theme.input, border: 'none', color: theme.text }} /><div className="flex items-center px-3 text-xs sm:text-sm whitespace-nowrap" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', color: theme.textMuted, borderLeft: `1px solid ${theme.inputBorder}` }}>.{platformDomain}</div></div><p className="mt-1.5 text-[10px] sm:text-xs break-all" style={{ color: theme.textMuted }}>Preview: https://{slugNormalized || 'your-agency'}.{platformDomain}/signup</p>{slugError && (<div className="mt-2 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>{slugError}</p></div>)}{slugSaved && (<div className="mt-2 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} /><div className="text-xs sm:text-sm" style={{ color: theme.primary }}><p className="font-medium">Subdomain updated.</p><p style={{ color: theme.textMuted }}>Your old address stops working. Update it anywhere you shared it. Your embed code keeps working.</p></div></div>)}<button onClick={handleSaveSlug} disabled={savingSlug || !slugChanged || !slugFormatOk} className="mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{savingSlug ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save subdomain</>}</button></div><div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}><div className="flex items-start gap-2.5"><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} /><div><p className="text-sm font-medium mb-1" style={{ color: theme.text }}>How white-labeling works</p><p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>The logo, colors, and theme you set here are your agency default and automatically apply to every client dashboard. You can also brand each client individually, their own logo, colors, and light/dark theme, from that client&apos;s page (Clients &rarr; open a client &rarr; Branding). A client&apos;s own branding overrides your agency default for their dashboard, and their theme is auto-detected from the logo background. Client dashboards show the logo, not a text name.</p></div></div></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Client Branding</label><p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Allow clients to customize their own logo, colors, and theme in their dashboard settings.</p><div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: allowClientBranding ? theme.primary15 : theme.input, border: `1px solid ${allowClientBranding ? theme.primary30 : theme.inputBorder}` }}><div><p className="text-sm font-medium" style={{ color: allowClientBranding ? theme.primary : theme.text }}>Allow client branding</p><p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Clients can upload their own logo and set custom colors</p></div><button type="button" onClick={() => setAllowClientBranding(!allowClientBranding)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: allowClientBranding ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: allowClientBranding ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button></div></div></div></UpgradeGate>
 
               {/* Change Password - self-service, available on every plan (account
-                  security, not a Pro feature, so it sits OUTSIDE ProFeatureGate).
+                  security, not a Pro feature, so it sits OUTSIDE the UpgradeGate).
                   POST /api/auth/change-password reads the caller from the Bearer
                   JWT and verifies currentPassword server-side, so this is safe
                   from an unlocked screen. Backend minimum is 6 characters. */}
@@ -824,6 +790,15 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
+                {clientBillingMode === 'manual' && (
+                  <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <Receipt className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold" style={{ color: theme.primary }}>You Bill Clients Yourself</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>These prices are for your own reference. The platform won&apos;t collect them, you invoice clients directly. Change this in <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payment Settings</a>.</p>
+                    </div>
+                  </div>
+                )}
                 <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
@@ -1033,6 +1008,22 @@ function AgencySettingsContent() {
                     </button>
                   </div>
 
+                  {minutePassThrough && (
+                    <div className="mt-3 flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: billMinutesDuringTrial ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${billMinutesDuringTrial ? theme.primary30 : theme.border}` }}>
+                      <div className="flex-1 min-w-0 mr-3">
+                        <p className="text-sm font-medium" style={{ color: billMinutesDuringTrial ? theme.primary : theme.text }}>Bill clients for minutes during their trial</p>
+                        <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                          {billMinutesDuringTrial
+                            ? "On. New card-required trial clients get a true 7-day trial: their subscription is free while they pay only for the minutes they use, so you never absorb trial minutes."
+                            : 'Off. Trial minutes are free and you absorb their cost during the trial.'}
+                        </p>
+                      </div>
+                      <button type="button" onClick={handleToggleBillDuringTrial} disabled={billTrialSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: billMinutesDuringTrial ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db'), cursor: billTrialSaving ? 'not-allowed' : 'pointer' }}>
+                        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: billMinutesDuringTrial ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                      </button>
+                    </div>
+                  )}
+
                   {minuteToggleLoading && (
                     <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
                   )}
@@ -1073,6 +1064,14 @@ function AgencySettingsContent() {
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+                {/* Client-billing-mode summary: the answer up top; the toggle control is below. */}
+                <div className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                  <Receipt className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: theme.primary }}>{clientBillingMode === 'manual' ? 'Client Billing: You Bill Them Yourself' : 'Client Billing: Handled By The Platform'}</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them. Change this under "Bill My Clients Myself" below.' : 'The platform charges your clients through Stripe Connect and you keep the margin. Change this under "Bill My Clients Myself" below.'}</p>
+                  </div>
+                </div>
                 {clientBillingMode === 'manual' && (
                   <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
@@ -1137,11 +1136,14 @@ function AgencySettingsContent() {
 
                   <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: clientBillingMode === 'manual' ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${clientBillingMode === 'manual' ? theme.primary30 : theme.border}` }}>
                     <div className="flex-1 min-w-0 mr-3">
-                      <p className="text-sm font-medium" style={{ color: clientBillingMode === 'manual' ? theme.primary : theme.text }}>Bill my clients myself</p>
-                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.primary }} />
+                        <p className="text-base sm:text-lg font-semibold tracking-tight" style={{ color: theme.primary }}>Bill My Clients Myself</p>
+                      </div>
+                      <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>
                         {clientBillingMode === 'manual'
-                          ? 'On. You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don\u2019t apply and are disabled below.'
-                          : 'Off. The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).'}
+                          ? <><span className="font-semibold" style={{ color: theme.primary }}>On.</span> You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don&apos;t apply and are disabled below.</>
+                          : <><span className="font-semibold" style={{ color: theme.text }}>Off.</span> The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (below).</>}
                       </p>
                     </div>
                     <button
@@ -1278,14 +1280,13 @@ function AgencySettingsContent() {
                   )}
                 </div>
 
-                {/* All-plan selector: Free -> paid (checkout), Pro <-> Scale (in-app change-plan). */}
-                <PlanUpgrade
-                  agencyId={agency?.id || ''}
-                  currentPlan={agency?.plan_type || 'free'}
-                  theme={theme}
-                  onChanged={() => window.location.reload()}
-                  onManageBilling={handleManageSubscription}
-                />
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <div className="flex items-center gap-2 mb-3"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><p className="font-medium text-sm" style={{ color: theme.primary }}>Upgrade to Pro</p></div>
+                    <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Unlock white-label branding, custom domains, and full client customization.</p>
+                    <button onClick={() => handleUpgrade('pro')} disabled={upgradeLoading === 'pro'} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{upgradeLoading === 'pro' ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Upgrade to Pro</button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1336,6 +1337,8 @@ function AgencySettingsContent() {
               </div>
             )}
 
+            {activeTab === 'developer' && <ApiKeysTab agency={agency} theme={theme} />}
+            {activeTab === 'webhooks' && <WebhooksTab agency={agency} theme={theme} />}
             {activeTab === 'support' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Contact Support</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? Send us a message and our team will get back to you.</p></div>
