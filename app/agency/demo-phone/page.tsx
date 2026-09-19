@@ -76,17 +76,18 @@ interface DemoCall {
 // ============================================================================
 function InterestBadge({ level, theme }: { level: string | null; theme: any }) {
   const config = {
-    high: { emoji: '🔥', label: 'Hot', bg: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.2)' },
-    medium: { emoji: '👀', label: 'Warm', bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)' },
-    low: { emoji: '❄️', label: 'Cold', bg: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', border: 'rgba(107, 114, 128, 0.2)' },
-  }[level || 'medium'] || { emoji: '—', label: level || 'Unknown', bg: theme.hover, color: theme.textMuted, border: theme.border };
+    high: { label: 'Hot', bg: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.2)' },
+    medium: { label: 'Warm', bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)' },
+    low: { label: 'Cold', bg: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', border: 'rgba(107, 114, 128, 0.2)' },
+  }[level || 'medium'] || { label: level || 'Unknown', bg: theme.hover, color: theme.textMuted, border: theme.border };
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
       style={{ backgroundColor: config.bg, color: config.color, border: `1px solid ${config.border}` }}
     >
-      {config.emoji} {config.label}
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: config.color }} />
+      {config.label}
     </span>
   );
 }
@@ -95,63 +96,31 @@ function InterestBadge({ level, theme }: { level: string | null; theme: any }) {
 // SIMPLE AUDIO PLAYER
 // ============================================================================
 function AudioPlayer({ url, theme }: { url: string; theme: any }) {
-  const [playing, setPlaying] = useState(false);
-  const [audio] = useState(() => typeof Audio !== 'undefined' ? new Audio(url) : null);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  useEffect(() => {
-    if (!audio) return;
-    const onTime = () => setProgress(audio.currentTime);
-    const onMeta = () => setDuration(audio.duration);
-    const onEnd = () => { setPlaying(false); setProgress(0); };
-    audio.addEventListener('timeupdate', onTime);
-    audio.addEventListener('loadedmetadata', onMeta);
-    audio.addEventListener('ended', onEnd);
-    return () => {
-      audio.removeEventListener('timeupdate', onTime);
-      audio.removeEventListener('loadedmetadata', onMeta);
-      audio.removeEventListener('ended', onEnd);
-      audio.pause();
-    };
-  }, [audio]);
-
-  const toggle = () => {
-    if (!audio) return;
-    if (playing) { audio.pause(); } else { audio.play(); }
-    setPlaying(!playing);
-  };
-
-  const pct = duration > 0 ? (progress / duration) * 100 : 0;
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-
+  // Native <audio> is the most reliable player and matches what the admin drawer
+  // uses. The previous custom player built `new Audio(url)` and called play()
+  // with no error handling, so when the recording URL failed to load it silently
+  // stalled at 0:00 with no way to tell why. If the browser can't load it inline,
+  // we now show an error and a direct "open in a new tab" link, which also lets
+  // you confirm whether the URL itself is the problem (e.g. a 403 / expired link).
+  const [failed, setFailed] = useState(false);
   return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={toggle}
-        className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0 transition-colors"
-        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-      >
-        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
-      </button>
-      <div className="flex-1">
-        <div
-          className="w-full h-1.5 rounded-full overflow-hidden cursor-pointer"
-          style={{ backgroundColor: theme.hover }}
-          onClick={(e) => {
-            if (!audio || !duration) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pctClick = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = pctClick * duration;
-          }}
-        >
-          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: theme.primary }} />
-        </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-[10px]" style={{ color: theme.textMuted }}>{fmt(progress)}</span>
-          <span className="text-[10px]" style={{ color: theme.textMuted }}>{duration > 0 ? fmt(duration) : '—'}</span>
-        </div>
-      </div>
+    <div>
+      <audio
+        controls
+        preload="metadata"
+        src={url}
+        className="w-full"
+        style={{ width: '100%' }}
+        onError={() => setFailed(true)}
+      />
+      {failed && (
+        <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>
+          This recording didn&apos;t load inline.{' '}
+          <a href={url} target="_blank" rel="noreferrer" style={{ color: theme.primary, textDecoration: 'underline' }}>
+            Open it in a new tab
+          </a>.
+        </p>
+      )}
     </div>
   );
 }
@@ -247,17 +216,17 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
           <div className="flex flex-wrap gap-2">
             {call.service_discussed && (
               <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
-                ✅ {call.service_discussed}
+                {call.service_discussed}
               </span>
             )}
             {call.asked_questions && (
               <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
-                ❓ Asked follow-up questions
+                Asked follow-up questions
               </span>
             )}
             {call.caller_name && call.caller_name !== 'Unknown' && (
               <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
-                👤 {call.caller_name}
+                {call.caller_name}
               </span>
             )}
           </div>
@@ -1131,7 +1100,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
       </div>
 
       <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-        <p className="text-sm sm:text-base font-semibold mb-3" style={{ color: theme.text }}>💡 Why this converts</p>
+        <p className="text-sm sm:text-base font-semibold mb-3" style={{ color: theme.text }}>Why this converts</p>
         <p className="text-sm sm:text-base leading-relaxed" style={{ color: theme.textMuted }}>
           Instead of explaining what an AI receptionist does, prospects <strong style={{ color: theme.text }}>experience it firsthand</strong>.
           They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry —
