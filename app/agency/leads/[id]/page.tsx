@@ -74,7 +74,7 @@ const STATUS_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-  { value: 'google_maps', label: 'Google Maps' },
+  { value: 'lead_finder_maps', label: 'Google Maps' },
   { value: 'google_search', label: 'Google Search' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'facebook', label: 'Facebook' },
@@ -85,7 +85,6 @@ const SOURCE_OPTIONS = [
   { value: 'referral', label: 'Referral' },
   { value: 'in_person', label: 'In Person' },
   { value: 'event', label: 'Event / Trade Show' },
-  { value: 'lead_finder_maps', label: 'Lead Finder (Maps)' },
   { value: 'csv_import', label: 'CSV Import' },
   { value: 'other', label: 'Other' },
 ];
@@ -474,21 +473,11 @@ export default function LeadDetailPage() {
         </Link>
         
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div 
-              className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0"
-              style={{ backgroundColor: theme.infoBg }}
-            >
-              <span className="text-lg sm:text-2xl font-medium" style={{ color: theme.info }}>
-                {lead?.business_name?.charAt(0) || '?'}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
-              <p className="text-sm" style={{ color: theme.textMuted }}>
-                Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '—'}
-              </p>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
+            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>
+              {lead?.industry ? `${lead.industry} · ` : ''}Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '\u2014'}
+            </p>
           </div>
           
           {!demoMode && (
@@ -577,21 +566,19 @@ export default function LeadDetailPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
           {[
-            { label: 'Emails', count: outreach?.email_count || 0, last: outreach?.last_email?.sent_at || null, Icon: Mail, color: theme.isDark ? '#a78bfa' : '#7c3aed', bg: 'rgba(168,85,247,0.10)', border: 'rgba(168,85,247,0.22)' },
-            { label: 'SMS', count: outreach?.sms_count || 0, last: outreach?.last_sms?.sent_at || null, Icon: MessageSquare, color: theme.isDark ? '#22d3ee' : '#0891b2', bg: 'rgba(6,182,212,0.10)', border: 'rgba(6,182,212,0.22)' },
-            { label: 'Calls', count: outreach?.call_count || 0, last: outreach?.last_call?.sent_at || null, Icon: PhoneCall, color: theme.isDark ? '#4ade80' : '#16a34a', bg: 'rgba(34,197,94,0.10)', border: 'rgba(34,197,94,0.22)' },
-            { label: 'Total', count: outreach?.total_count || 0, last: null, Icon: Hash, color: theme.text, bg: theme.hover, border: theme.border },
+            { label: 'Emails', count: outreach?.email_count || 0, last: outreach?.last_email?.sent_at || null, Icon: Mail, color: theme.isDark ? '#a78bfa' : '#7c3aed' },
+            { label: 'SMS', count: outreach?.sms_count || 0, last: outreach?.last_sms?.sent_at || null, Icon: MessageSquare, color: theme.isDark ? '#22d3ee' : '#0891b2' },
+            { label: 'Calls', count: outreach?.call_count || 0, last: outreach?.last_call?.sent_at || null, Icon: PhoneCall, color: theme.isDark ? '#4ade80' : '#16a34a' },
+            { label: 'Total', count: outreach?.total_count || 0, last: null, Icon: Hash, color: theme.textMuted },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl p-3 sm:p-3.5 transition-transform hover:-translate-y-0.5" style={{ backgroundColor: s.bg, border: `1px solid ${s.border}` }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.75)' }}>
-                  <s.Icon className="h-3.5 w-3.5" style={{ color: s.color }} />
-                </div>
-                <span className="text-2xl font-bold leading-none tabular-nums" style={{ color: s.color }}>{s.count}</span>
+            <div key={s.label} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)', border: `1px solid ${theme.border}` }}>
+              <div className="flex items-center gap-2 mb-2.5">
+                <s.Icon className="h-4 w-4" style={{ color: s.color }} />
+                <span className="text-xs font-medium" style={{ color: theme.textMuted }}>{s.label}</span>
               </div>
-              <p className="text-xs font-semibold" style={{ color: theme.text }}>{s.label}</p>
-              <p className="text-[10px] sm:text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                {s.last ? `Last ${timeAgo(s.last)}` : (s.label === 'Total' ? 'all channels' : 'None yet')}
+              <div className="text-2xl font-semibold leading-none tabular-nums" style={{ color: theme.text }}>{s.count}</div>
+              <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
+                {s.last ? `Last ${timeAgo(s.last)}` : (s.label === 'Total' ? 'All channels' : 'None yet')}
               </p>
             </div>
           ))}
@@ -912,11 +899,11 @@ export default function LeadDetailPage() {
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span style={{ color: theme.textMuted }}>Created</span>
-                <span style={{ color: theme.text }}>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '—'}</span>
+                <span style={{ color: theme.text }}>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '\u2014'}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: theme.textMuted }}>Last Updated</span>
-                <span style={{ color: theme.text }}>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '—'}</span>
+                <span style={{ color: theme.text }}>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '\u2014'}</span>
               </div>
               {outreach?.last_outreach && (
                 <div className="flex justify-between">

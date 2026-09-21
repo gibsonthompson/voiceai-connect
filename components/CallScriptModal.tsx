@@ -31,6 +31,31 @@ function formatPhoneNumber(phone: string): string {
   return phone;
 }
 
+// Friendly labels for stored lead source values. Both the Lead-Finder maps
+// value and the manual google_maps value read as "Google Maps" so the UI never
+// shows a raw slug like "lead_finder_maps".
+const SOURCE_LABELS: Record<string, string> = {
+  google_maps: 'Google Maps',
+  lead_finder_maps: 'Google Maps',
+  google_search: 'Google Search',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  linkedin: 'LinkedIn',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  yelp: 'Yelp',
+  referral: 'Referral',
+  in_person: 'In Person',
+  event: 'Event / Trade Show',
+  csv_import: 'CSV Import',
+  other: 'Other',
+};
+
+function sourceLabel(src?: string): string {
+  if (!src) return '';
+  return SOURCE_LABELS[src] || src.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -281,13 +306,15 @@ export default function CallScriptModal({
   // Refs
   const scriptRef = useRef<HTMLDivElement>(null);
 
-  // Tips visibility — persist dismissal in localStorage
+  // Tips visibility — collapsed by default so the script has the most room and
+  // needs the least scrolling. Only auto-open if the rep explicitly expanded
+  // them before (we store 'false' = shown, 'true' = dismissed).
   useEffect(() => {
     try {
       const dismissed = localStorage.getItem('voiceai_call_tips_dismissed');
-      setShowTips(dismissed !== 'true');
+      setShowTips(dismissed === 'false');
     } catch {
-      setShowTips(true);
+      setShowTips(false);
     }
   }, []);
 
@@ -507,7 +534,7 @@ export default function CallScriptModal({
 
       {/* Modal */}
       <div
-        className="relative w-full sm:max-w-6xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[97vh] sm:max-h-[92vh] flex flex-col"
+        className="relative w-full sm:max-w-6xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[98vh] sm:max-h-[95vh] flex flex-col"
         style={{
           backgroundColor: theme.bg,
           border: `1px solid ${theme.border}`,
@@ -634,10 +661,10 @@ export default function CallScriptModal({
           <div className="flex-1 flex flex-col min-w-0 lg:border-r" style={{ borderColor: theme.border }}>
 
             {/* Tips Banner (collapsible) */}
-            <div className="px-4 sm:px-6 pt-4">
+            <div className="px-4 sm:px-6 pt-3">
               <button
                 onClick={toggleTips}
-                className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors"
+                className="w-full flex items-center justify-between rounded-lg px-3 py-2 transition-colors"
                 style={{
                   backgroundColor: theme.isDark ? 'rgba(251,191,36,0.06)' : 'rgba(251,191,36,0.08)',
                   border: '1px solid rgba(251,191,36,0.15)',
@@ -671,7 +698,7 @@ export default function CallScriptModal({
             </div>
 
             {/* Script Selector */}
-            <div className="px-4 sm:px-6 pt-4">
+            <div className="px-4 sm:px-6 pt-3">
               <div className="relative">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>
                   Script
@@ -721,7 +748,7 @@ export default function CallScriptModal({
             </div>
 
             {/* Script Body */}
-            <div className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto" ref={scriptRef}>
+            <div className="flex-1 px-4 sm:px-6 py-3 overflow-y-auto" ref={scriptRef}>
               {composing && (
                 <div className="flex items-center gap-2 text-sm py-8 justify-center" style={{ color: theme.textMuted }}>
                   <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.primary }} />
@@ -730,14 +757,14 @@ export default function CallScriptModal({
               )}
               {!composing && composedBody && (
                 <div
-                  className="whitespace-pre-wrap leading-relaxed text-sm sm:text-[15px]"
-                  style={{ color: theme.text, lineHeight: '1.8' }}
+                  className="whitespace-pre-wrap text-sm sm:text-[15px]"
+                  style={{ color: theme.text, lineHeight: '1.6' }}
                 >
                   {composedBody.split('\n').map((line, i) => {
                     // Style [BRACKETED] instructions differently
                     if (line.trim().startsWith('[') && line.trim().endsWith(']')) {
                       return (
-                        <p key={i} className="my-2 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg" style={{
+                        <p key={i} className="my-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg" style={{
                           backgroundColor: theme.isDark ? 'rgba(96,165,250,0.08)' : 'rgba(59,130,246,0.08)',
                           color: theme.isDark ? '#93c5fd' : '#2563eb',
                           border: '1px solid rgba(59,130,246,0.15)',
@@ -749,7 +776,7 @@ export default function CallScriptModal({
                     // Style → response options
                     if (line.trim().startsWith('[IF') || line.trim().startsWith('[GET') || line.trim().startsWith('[LET') || line.trim().startsWith('[PAUSE')) {
                       return (
-                        <p key={i} className="my-2 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg" style={{
+                        <p key={i} className="my-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg" style={{
                           backgroundColor: theme.isDark ? 'rgba(251,191,36,0.06)' : 'rgba(251,191,36,0.08)',
                           color: '#fbbf24',
                           border: '1px solid rgba(251,191,36,0.15)',
@@ -796,7 +823,7 @@ export default function CallScriptModal({
                   <InfoRow icon={<Tag className="h-3.5 w-3.5" />} label="Industry" value={(lead as any).industry} theme={theme} />
                 )}
                 {(lead as any).source && (
-                  <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Source" value={(lead as any).source} theme={theme} />
+                  <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Source" value={sourceLabel((lead as any).source)} theme={theme} />
                 )}
                 {lead.estimated_value != null && lead.estimated_value > 0 && (
                   <InfoRow icon={<DollarSign className="h-3.5 w-3.5" />} label="Value" value={`$${lead.estimated_value.toLocaleString()}`} theme={theme} />

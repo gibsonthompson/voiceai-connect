@@ -90,6 +90,14 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
+function formatPhone(phone?: string | null): string {
+  if (!phone) return '';
+  const d = phone.replace(/\D/g, '');
+  const ten = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+  if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  return phone;
+}
+
 function isToday(dateStr: string): boolean {
   const date = new Date(dateStr);
   const today = new Date();
@@ -260,6 +268,7 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
   isLast: boolean;
 }) {
   const queueColor = queueItem && queueItem.urgency === 'overdue' ? 'text-[var(--lp-error)]' : 'text-[var(--lp-primary)]';
+  const phone = formatPhone(lead.phone);
   return (
     <Link
       href={`/agency/leads/${lead.id}`}
@@ -269,18 +278,13 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
       {/* Mobile */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 bg-[var(--lp-info-bg)]">
-              <span className="text-xs sm:text-sm font-medium text-[var(--lp-info)]">{lead.business_name?.charAt(0) || '?'}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm truncate text-[var(--lp-text)]">{lead.business_name}</p>
-              <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || 'No contact'}</p>
-            </div>
+          <div className="min-w-0">
+            <p className="font-medium text-sm truncate text-[var(--lp-text)]">{lead.business_name}</p>
+            <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || phone || lead.email || 'No contact info'}</p>
           </div>
           <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-[var(--lp-muted)]" />
         </div>
-        <div className="flex items-center justify-between text-xs sm:text-sm pl-11 sm:pl-[52px]">
+        <div className="flex items-center justify-between text-xs sm:text-sm">
           <div className="flex items-center gap-2">
             <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
             {followUpOverdue && <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--lp-error)]" />}
@@ -303,19 +307,32 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
 
       {/* Desktop */}
       <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
-        <div className="col-span-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--lp-info-bg)]">
-            <span className="text-sm font-medium text-[var(--lp-info)]">{lead.business_name?.charAt(0) || '?'}</span>
-          </div>
-          <div className="min-w-0">
-            <p className="font-medium truncate text-[var(--lp-text)]">{lead.business_name}</p>
-            <p className="text-sm capitalize truncate text-[var(--lp-muted)]">{lead.industry || 'No industry'}</p>
-          </div>
+        <div className="col-span-3 min-w-0">
+          <p className="font-medium truncate text-[var(--lp-text)]">{lead.business_name}</p>
+          {lead.industry && (
+            <span className="mt-1 inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize bg-[var(--lp-hover)] text-[var(--lp-muted)]">{lead.industry.replace(/_/g, ' ')}</span>
+          )}
         </div>
 
         <div className="col-span-3 min-w-0">
-          <p className="text-sm truncate text-[var(--lp-text)]">{lead.contact_name || '\u2013'}</p>
-          <p className="text-xs truncate text-[var(--lp-muted)]">{lead.email || '\u2013'}</p>
+          {(() => {
+            let primary = '', secondary = '', secondaryIsPhone = false;
+            if (lead.contact_name) { primary = lead.contact_name; secondary = phone || lead.email || ''; secondaryIsPhone = !!phone; }
+            else if (phone) { primary = phone; secondary = lead.email || ''; }
+            else if (lead.email) { primary = lead.email; }
+            if (!primary) return <p className="text-sm text-[var(--lp-muted)]">No contact info</p>;
+            return (
+              <>
+                <p className="text-sm truncate text-[var(--lp-text)]">{primary}</p>
+                {secondary && (
+                  <p className="text-xs truncate flex items-center gap-1 text-[var(--lp-muted)]">
+                    {secondaryIsPhone ? <Phone className="h-3 w-3 flex-shrink-0" /> : <Mail className="h-3 w-3 flex-shrink-0" />}
+                    {secondary}
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         <div className="col-span-2">

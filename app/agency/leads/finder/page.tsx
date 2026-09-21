@@ -617,56 +617,6 @@ export default function LeadFinderPage() {
               : "Search by job title to find businesses actively hiring for roles an AI receptionist can fill."}
           </p>
 
-          {/* Indeed inputs */}
-          {activeTab === "indeed" && (
-            <>
-              {/* Industry picker: balanced grid, every row filled (22 items -> 2 or 4 cols, never a lone chip) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                {MAPS_INDUSTRIES.map((ind) => {
-                  const active = mapsIndustry === ind.value && !mapsQuery;
-                  return (
-                    <button key={ind.value} onClick={() => { setMapsIndustry(ind.value); setMapsQuery(""); }}
-                      className="px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer text-center truncate"
-                      style={{
-                        border: active ? `1px solid ${theme.primary}` : `1px solid ${theme.inputBorder}`,
-                        background: active ? `${theme.primary}15` : "transparent",
-                        color: active ? theme.primary : theme.textMuted,
-                      }}>
-                      {ind.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Job Title Keywords</label>
-                  <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)}
-                    placeholder='"receptionist", "front desk"' className={inputClass} style={inputStyle}
-                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Location</label>
-                  <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                    placeholder='"Atlanta, GA"' className={inputClass} style={inputStyle}
-                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
-                  <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
-                    className={`${inputClass} cursor-pointer`} style={inputStyle}>
-                    <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
-                  </select>
-                </div>
-                <button onClick={handleSearch} disabled={loading}
-                  className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all whitespace-nowrap"
-                  style={{ background: loading ? theme.border : "#003a9b", color: loading ? theme.textMuted : "#fff", cursor: loading ? "not-allowed" : "pointer" }}>
-                  {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
-                    : <span className="inline-flex items-center gap-2"><Search className="h-4 w-4" /> Search Indeed</span>}
-                </button>
-              </div>
-            </>
-          )}
-
           {/* Google Maps inputs */}
           {activeTab === "google_maps" && (
             <>
@@ -705,60 +655,6 @@ export default function LeadFinderPage() {
                 </div>
                 <button onClick={handleSearch} disabled={loading}
                   className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all whitespace-nowrap"
-                  style={{ background: loading ? theme.border : "#003a9b", color: loading ? theme.textMuted : "#fff", cursor: loading ? "not-allowed" : "pointer" }}>
-                  {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
-                    : <span className="inline-flex items-center gap-2"><Search className="h-4 w-4" /> Search Indeed</span>}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Google Maps inputs */}
-          {activeTab === "google_maps" && (
-            <>
-              <div className="flex gap-2 flex-wrap mb-4">
-                {MAPS_INDUSTRIES.slice(0, 12).map((ind) => (
-                  <button key={ind.value} onClick={() => { setMapsIndustry(ind.value); setMapsQuery(""); }}
-                    className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
-                    style={{
-                      border: mapsIndustry === ind.value && !mapsQuery ? `1px solid ${theme.primary}` : `1px solid ${theme.inputBorder}`,
-                      background: mapsIndustry === ind.value && !mapsQuery ? `${theme.primary}15` : "transparent",
-                      color: mapsIndustry === ind.value && !mapsQuery ? theme.primary : theme.textMuted,
-                    }}>
-                    {ind.label}
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Industry or Custom Search</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select value={mapsQuery ? "" : mapsIndustry} onChange={(e) => { setMapsIndustry(e.target.value); setMapsQuery(""); }}
-                      className={`${inputClass} cursor-pointer`} style={inputStyle}>
-                      {MAPS_INDUSTRIES.map((ind) => (
-                        <option key={ind.value} value={ind.value}>{ind.label}</option>
-                      ))}
-                    </select>
-                    <input type="text" value={mapsQuery} onChange={(e) => setMapsQuery(e.target.value)}
-                      placeholder="or custom search..." className={inputClass} style={inputStyle}
-                      onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Location</label>
-                  <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                    placeholder='"Atlanta, GA"' className={inputClass} style={inputStyle}
-                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
-                  <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
-                    className={`${inputClass} cursor-pointer`} style={inputStyle}>
-                    <option value={10}>10</option><option value={25}>25</option><option value={40}>40</option>
-                  </select>
-                </div>
-                <button onClick={handleSearch} disabled={loading}
-                  className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all whitespace-nowrap"
                   style={{ background: loading ? theme.border : theme.primary, color: loading ? theme.textMuted : theme.primaryText, cursor: loading ? "not-allowed" : "pointer" }}>
                   {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
                     : <span className="inline-flex items-center gap-2"><Map className="h-4 w-4" /> Search Maps</span>}
@@ -766,6 +662,7 @@ export default function LeadFinderPage() {
               </div>
             </>
           )}
+
         </div>
       </div>
 
@@ -881,8 +778,7 @@ export default function LeadFinderPage() {
           </div>
           <div className="text-base font-medium mb-2" style={{ color: theme.text, opacity: 0.7 }}>Find Your Next Clients</div>
           <div className="text-sm max-w-md mx-auto leading-relaxed">
-            Use <strong>Google Maps</strong> to find businesses by industry, or <strong>Indeed</strong> to find businesses
-            actively hiring for roles an AI receptionist can fill.
+            Pick an industry and a location above to find local businesses that need an AI receptionist.
           </div>
         </div>
       )}
