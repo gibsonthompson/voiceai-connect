@@ -16,7 +16,7 @@ import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/ind
 import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; }
+interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
@@ -499,6 +499,9 @@ export default function AgencyClientDetailPage() {
   const callsUsed = client.calls_this_month || 0;
   const callLimit = client.monthly_call_limit;
   const callPercent = callLimit ? Math.min(100, (callsUsed / callLimit) * 100) : 0;
+  const minutesUsed = Math.round(Number((client as any).minutes_this_period) || 0);
+  const includedMin = (client as any).custom_included_minutes != null ? Number((client as any).custom_included_minutes) : null;
+  const minutesPercent = includedMin && includedMin > 0 ? Math.min(100, (minutesUsed / includedMin) * 100) : 0;
 
   // Manual free-access window state (manual-billing clients only). The window
   // ends at trial_ends_at; once it passes, or the agency suspends, the client
@@ -748,162 +751,179 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{client.trial_ends_at && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>{isManualClient ? 'Access ends' : 'Trial Ends'}</span><span className="text-sm">{new Date(client.trial_ends_at).toLocaleDateString()}</span></div>}</div></div></div>
 
           {/* Call Usage */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.textMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.textMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}</div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.textMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.textMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Minutes this month</span><span className="text-sm font-semibold">{minutesUsed}{includedMin ? ` of ${includedMin}` : ''}</span></div>{includedMin && includedMin > 0 ? (<div className="mt-2 w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${minutesPercent}%`, backgroundColor: minutesPercent > 90 ? '#ef4444' : minutesPercent > 70 ? '#f59e0b' : theme.primary }} /></div>) : null}</div></div></div>
 
           {/* Quick Info */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
         </div>
       </div>
 
-      {/* Manual billing — free-access window controls (manual-billing clients only) */}
-      {isManualClient && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
-          <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-2 mb-1">
-              <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
-              <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Manual billing</h3>
-            </div>
-            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>You bill this client directly (invoice or payment link), not through the platform. Cut off or restore their access below. Their phone number is always kept, releasing it is only done by canceling.</p>
-
-            {isManualSuspended ? (
-              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
-                <Ban className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.errorText }} />
-                <p className="text-xs" style={{ color: theme.errorText }}>Suspended — not taking calls. Their number is kept, so marking them paid restores service instantly.</p>
-              </div>
-            ) : manualHasWindow ? (
-              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
-                <p className="text-xs" style={{ color: theme.warningText }}>Free access window {manualWindowActive ? 'ends' : 'ended'} {manualWindowEnd!.toLocaleDateString()}. If unpaid, the client is auto-suspended (number kept); mark them paid once they pay to keep them live.</p>
-              </div>
-            ) : (
-              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                <p className="text-xs" style={{ color: theme.primary }}>Live — taking calls.</p>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 flex-wrap">
-              {(isManualSuspended || manualHasWindow) && (
-                <button onClick={handleReactivateManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                  {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Mark as paid
-                </button>
-              )}
-              {!isManualSuspended && (
-                <button onClick={handleSuspendManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
-                  {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspend
-                </button>
-              )}
-              {manualMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{manualMsg}</span>}
-            </div>
-          </div>
+      {/* Billing and plan */}
+      <div className="mt-6 sm:mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+          <h2 className="font-semibold text-sm sm:text-base">Billing and plan</h2>
         </div>
-      )}
+        <div className="space-y-4 sm:space-y-6">
 
-      {/* Custom pricing (white-glove, per-client override) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
-        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
-            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Custom pricing</h3>
-          </div>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only. They&apos;re billed exactly these amounts and never see your standard plans, use it for white-glove deals. Applies at their next checkout.</p>
-          <div className="inline-flex rounded-lg p-0.5 mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-            {(['plan', 'custom'] as const).map((m) => (
-              <button key={m} onClick={() => setPricingMode(m)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={pricingMode === m ? { backgroundColor: theme.primary, color: theme.primaryText } : { color: theme.textMuted }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
-            ))}
-          </div>
-          {pricingMode === 'custom' && (
-            <div className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2.5">
-                {[
-                  { label: 'Monthly fee ($)', val: cMonthly, set: setCMonthly, ph: '499' },
-                  { label: 'Setup fee ($)', val: cSetup, set: setCSetup, ph: '1000' },
-                  { label: 'Included minutes/mo', val: cIncluded, set: setCIncluded, ph: '2000' },
-                  { label: 'Per-minute after ($)', val: cRate, set: setCRate, ph: '0.15' },
-                  { label: 'Call limit/mo', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
-                ].map((f) => (
-                  <div key={f.label}>
-                    <label className="text-[11px]" style={{ color: theme.textMuted }}>{f.label}</label>
-                    <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" className="w-full mt-0.5 rounded-lg px-2.5 py-1.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+          {/* Manual billing — free-access window controls (manual-billing clients only) */}
+          {isManualClient && (
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h2 className="font-semibold text-sm sm:text-base">Manual billing</h2>
+                </div>
+                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>You bill this client directly (invoice or payment link), not through the platform. Cut off or restore their access below. Their phone number is always kept, releasing it is only done by canceling.</p>
+
+                {isManualSuspended ? (
+                  <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                    <Ban className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.errorText }} />
+                    <p className="text-xs" style={{ color: theme.errorText }}>Suspended — not taking calls. Their number is kept, so marking them paid restores service instantly.</p>
                   </div>
-                ))}
-              </div>
-              <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: theme.input, color: theme.textMuted }}>
-                <span className="font-medium" style={{ color: theme.text }}>This client pays: </span>
-                {cSetup && parseFloat(cSetup) > 0 ? `$${cSetup} setup once, then ` : ''}${cMonthly || '0'}/mo{cIncluded ? `, includes ${cIncluded} min` : ''}{cRate ? `, $${cRate}/min after` : ''}{cLimit && cLimit !== '-1' ? `, ${cLimit} calls/mo` : ''}.
+                ) : manualHasWindow ? (
+                  <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                    <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+                    <p className="text-xs" style={{ color: theme.warningText }}>Free access window {manualWindowActive ? 'ends' : 'ended'} {manualWindowEnd!.toLocaleDateString()}. If unpaid, the client is auto-suspended (number kept); mark them paid once they pay to keep them live.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                    <p className="text-xs" style={{ color: theme.primary }}>Live — taking calls.</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(isManualSuspended || manualHasWindow) && (
+                    <button onClick={handleReactivateManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                      {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Mark as paid
+                    </button>
+                  )}
+                  {!isManualSuspended && (
+                    <button onClick={handleSuspendManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
+                      {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspend
+                    </button>
+                  )}
+                  {manualMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{manualMsg}</span>}
+                </div>
               </div>
             </div>
           )}
-          <div className="flex items-center gap-2 mt-3">
-            <button onClick={saveCustomPricing} disabled={savingCustom} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              {savingCustom ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {pricingMode === 'custom' ? 'Save custom pricing' : 'Use plan pricing'}
-            </button>
-            {customMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{customMsg}</span>}
-          </div>
-        </div>
-      </div>
 
-      {/* Change plan — move this client to a different plan (prorates if billed) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
-        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
-            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Plan</h3>
-          </div>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Currently on {getPlanLabel(client.plan_type)}. Move this client to a different plan below. If they are on paid billing the difference is prorated on their next invoice.</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="min-w-[180px]">
-              <CustomSelect
-                value={targetPlan || client.plan_type}
-                onChange={(v) => setTargetPlan(v)}
-                options={availablePlans.map((p) => ({ value: p.key, label: p.name }))}
-                disabled={changingPlan}
-                ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
-              />
+          {/* Custom pricing (white-glove, per-client override) */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+                <h2 className="font-semibold text-sm sm:text-base">Custom pricing</h2>
+              </div>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only. They&apos;re billed exactly these amounts and never see your standard plans, use it for white-glove deals. Applies at their next checkout.</p>
+              <div className="inline-flex rounded-lg p-0.5 mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                {(['plan', 'custom'] as const).map((m) => (
+                  <button key={m} onClick={() => setPricingMode(m)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={pricingMode === m ? { backgroundColor: theme.primary, color: theme.primaryText } : { color: theme.textMuted }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
+                ))}
+              </div>
+              {pricingMode === 'custom' && (
+                <div className="space-y-2.5">
+                  {isManualClient && (
+                    <div className="rounded-lg px-3 py-2 flex items-start gap-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
+                      <p className="text-[11px]" style={{ color: theme.infoText }}>This client is billed manually, so the dollar amounts here are only your reference for invoicing. Only the call limit is enforced on the platform.</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { label: 'Monthly fee ($)', val: cMonthly, set: setCMonthly, ph: '499' },
+                      { label: 'Setup fee ($)', val: cSetup, set: setCSetup, ph: '1000' },
+                      { label: 'Included minutes/mo', val: cIncluded, set: setCIncluded, ph: '2000' },
+                      { label: 'Per-minute after ($)', val: cRate, set: setCRate, ph: '0.15' },
+                      { label: 'Call limit/mo', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
+                    ].map((f) => (
+                      <div key={f.label}>
+                        <label className="text-[11px]" style={{ color: theme.textMuted }}>{f.label}</label>
+                        <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" className="w-full mt-0.5 rounded-lg px-2.5 py-1.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: theme.input, color: theme.textMuted }}>
+                    <span className="font-medium" style={{ color: theme.text }}>{isManualClient ? 'You invoice this client: ' : 'This client pays: '}</span>
+                    {cSetup && parseFloat(cSetup) > 0 ? `$${cSetup} setup once, then ` : ''}${cMonthly || '0'}/mo{cIncluded ? `, includes ${cIncluded} min` : ''}{cRate ? `, $${cRate}/min after` : ''}{cLimit && cLimit !== '-1' ? `, ${cLimit} calls/mo` : ''}.
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2 mt-3">
+                <button onClick={saveCustomPricing} disabled={savingCustom} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {savingCustom ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {pricingMode === 'custom' ? 'Save custom pricing' : 'Use plan pricing'}
+                </button>
+                {customMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{customMsg}</span>}
+              </div>
             </div>
-            <button
-              onClick={handleChangePlan}
-              disabled={changingPlan || (targetPlan || client.plan_type) === client.plan_type}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-            >
-              {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
-            </button>
-            {planMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>}
           </div>
-        </div>
-      </div>
 
-      {/* Cancel subscription */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-4">
-        <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2 mb-1">
-            <Ban className="h-4 w-4" style={{ color: '#ef4444' }} />
-            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Cancel subscription</h3>
-          </div>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Cancels at the end of the current billing period — the client keeps service until then. Use &quot;Cancel now&quot; only to end service and release their number immediately.</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {cancelScheduled ? (
-              <button onClick={handleResume} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Resume subscription
-              </button>
-            ) : (
-              <>
-                <button onClick={handleCancel} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
-                  {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Cancel at period end
+          {/* Change plan — move this client to a different plan (prorates if billed) */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+                <h2 className="font-semibold text-sm sm:text-base">Plan</h2>
+              </div>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Currently on {getPlanLabel(client.plan_type)}. Move this client to a different plan below. If they are on paid billing the difference is prorated on their next invoice.</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="min-w-[180px]">
+                  <CustomSelect
+                    value={targetPlan || client.plan_type}
+                    onChange={(v) => setTargetPlan(v)}
+                    options={availablePlans.map((p) => ({ value: p.key, label: p.name }))}
+                    disabled={changingPlan}
+                    ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
+                  />
+                </div>
+                <button
+                  onClick={handleChangePlan}
+                  disabled={changingPlan || (targetPlan || client.plan_type) === client.plan_type}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                >
+                  {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
                 </button>
-                <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 hover:underline" style={{ color: theme.textMuted }}>
-                  Cancel now
-                </button>
-              </>
-            )}
-            {cancelMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{cancelMsg}</span>}
+                {planMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>}
+              </div>
+            </div>
           </div>
+
+          {/* Cancel subscription */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Ban className="h-4 w-4" style={{ color: '#ef4444' }} />
+                <h2 className="font-semibold text-sm sm:text-base">Cancel subscription</h2>
+              </div>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Cancels at the end of the current billing period — the client keeps service until then. Use &quot;Cancel now&quot; only to end service and release their number immediately.</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {cancelScheduled ? (
+                  <button onClick={handleResume} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                    {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Resume subscription
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={handleCancel} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
+                      {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Cancel at period end
+                    </button>
+                    <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 hover:underline" style={{ color: theme.textMuted }}>
+                      Cancel now
+                    </button>
+                  </>
+                )}
+                {cancelMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{cancelMsg}</span>}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       {/* Delete client — small, understated destructive action */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8 mb-2 flex justify-end">
+      <div className="mt-8 mb-2 flex justify-end">
         <button
           onClick={handleDeleteClient}
           disabled={deleting}

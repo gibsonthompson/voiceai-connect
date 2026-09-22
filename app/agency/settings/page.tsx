@@ -313,9 +313,10 @@ function AgencySettingsContent() {
   // to no-card trial so signups don't break).
   const [requireCardForTrial, setRequireCardForTrial] = useState(false);
 
-  // Configurable client trial length (days; 0 = no trial). Governs Connect
-  // signups only (both no-card and card-required); manual clients go live
-  // immediately regardless. Saved with the Pricing tab Save button
+  // Configurable client trial length (days; 0 = no trial). For Connect signups
+  // this is the trial length (no-card and card-required); for manual clients it
+  // is the free-access window (0 = go live immediately). Saved with the Pricing
+  // tab Save button
   // (client_trial_days). trialCustomActive tracks the "Custom" picker mode so a
   // typed value that happens to equal a preset still renders as custom.
   const [clientTrialDays, setClientTrialDays] = useState<number>(7);
@@ -890,9 +891,10 @@ function AgencySettingsContent() {
                     Trial Setup - trial length picker + require_card_for_trial.
                     Controls how long new embed-widget / marketing-site signups
                     trial for, and whether they must enter a card to start.
-                    Both apply to Connect signups only; manual clients go live
-                    immediately. The card toggle is gated on Stripe Connect being
-                    set up (canEnableCardRequired).
+                    The card toggle applies to Connect signups only. Trial length
+                    applies to both: for Connect it is the trial length, for
+                    manual it is the free-access window. The card toggle is gated
+                    on Stripe Connect being set up (canEnableCardRequired).
                 ───────────────────────────────────────────────────────── */}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-3">
@@ -905,8 +907,9 @@ function AgencySettingsContent() {
                     <strong style={{ color: theme.text }}>Affects only signups from your embed widget or marketing site</strong>, not clients you add manually from the dashboard.
                   </p>
 
-                  {/* Trial length picker. 0 = no trial. Governs Connect signups
-                      (no-card and card-required); manual clients ignore it. */}
+                  {/* Trial length picker. Connect: the trial length (no-card and
+                      card-required), 0 = no trial. Manual: the free-access
+                      window, 0 = go live immediately. */}
                   <div className="mb-4">
                     <label className="block text-xs sm:text-sm font-medium mb-2" style={{ color: theme.text }}>Trial length</label>
                     <div className="flex flex-wrap gap-2">
@@ -1453,11 +1456,13 @@ function AgencySettingsContent() {
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Embed Code</label>
                   <div className="relative">
-                    <pre className="rounded-xl p-3 sm:p-4 text-[10px] sm:text-xs overflow-x-auto" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{`<script src="https://${platformDomain}/embed.js" data-agency="${agency?.id}"></script>`}</pre>
-                    <button onClick={() => { navigator.clipboard.writeText(`<script src="https://${platformDomain}/embed.js" data-agency="${agency?.id}"></script>`); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); }} className="absolute top-2 right-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: embedCopied ? theme.primary : theme.text }}>{embedCopied ? <><Check className="h-3.5 w-3.5" />Copied</> : 'Copy'}</button>
+                    <pre className="rounded-xl p-3 sm:p-4 text-[10px] sm:text-xs overflow-x-auto" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{`<div data-voiceai-signup data-agency="${agency?.id}"></div>
+<script src="https://${platformDomain}/embed.js" async></script>`}</pre>
+                    <button onClick={() => { navigator.clipboard.writeText(`<div data-voiceai-signup data-agency="${agency?.id}"></div>
+<script src="https://${platformDomain}/embed.js" async></script>`); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 2000); }} className="absolute top-2 right-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: embedCopied ? theme.primary : theme.text }}>{embedCopied ? <><Check className="h-3.5 w-3.5" />Copied</> : 'Copy'}</button>
                   </div>
                 </div>
-                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Paste this snippet into your website&apos;s HTML, just before the closing body tag. It stays valid even if you change your subdomain.</p></div>
+                <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} /><p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Paste this into your website&apos;s HTML where you want the signup form to appear. It stays valid even if you change your subdomain.</p></div>
               </div>
             )}
 

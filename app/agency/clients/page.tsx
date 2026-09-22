@@ -238,10 +238,7 @@ export default function AgencyClientsPage() {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
-              <a href="/agency/settings?tab=payments" title="Change in Payment Settings" className="text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap" style={{ backgroundColor: theme.primary15, color: theme.primary, border: `1px solid ${theme.primary30}` }}>{(agency as any)?.client_billing_mode === 'manual' ? 'You invoice clients' : 'Platform bills via Stripe'}</a>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
               {testClients.length > 0 && (
