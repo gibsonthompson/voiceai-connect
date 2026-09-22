@@ -307,11 +307,19 @@ function AgencySettingsContent() {
   const [slugError, setSlugError] = useState<string | null>(null);
 
   // require_card_for_trial toggle. When true, /api/client/signup creates a
-  // Stripe Connect Checkout with trial_period_days=7 instead of inserting a
-  // DB-only trial. Requires stripe_charges_enabled=true to take effect.
-  // Backend silently no-ops if Stripe Connect isn't ready (falls back to
-  // no-card trial so signups don't break).
+  // Stripe Connect Checkout with trial_period_days=client_trial_days instead of
+  // inserting a DB-only trial. Requires stripe_charges_enabled=true to take
+  // effect. Backend silently no-ops if Stripe Connect isn't ready (falls back
+  // to no-card trial so signups don't break).
   const [requireCardForTrial, setRequireCardForTrial] = useState(false);
+
+  // Configurable client trial length (days; 0 = no trial). Governs Connect
+  // signups only (both no-card and card-required); manual clients go live
+  // immediately regardless. Saved with the Pricing tab Save button
+  // (client_trial_days). trialCustomActive tracks the "Custom" picker mode so a
+  // typed value that happens to equal a preset still renders as custom.
+  const [clientTrialDays, setClientTrialDays] = useState<number>(7);
+  const [trialCustomActive, setTrialCustomActive] = useState<boolean>(false);
 
   // Client per-minute billing (Payments tab). Rate is collected in dollars and
   // converted to cents on save. Included minutes are per-plan integers. The
@@ -392,7 +400,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -566,6 +574,7 @@ function AgencySettingsContent() {
         const _pf = Object.fromEntries(plans.filter((p) => p.key).map((p) => [p.key, p.features]));
         payload.calendar_enabled_plans = deriveCalendarEnabledPlans(_pf);
         payload.require_card_for_trial = !!requireCardForTrial;
+        payload.client_trial_days = clientTrialDays;
       }
 
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
@@ -878,10 +887,12 @@ function AgencySettingsContent() {
                 </div>
 
                 {/* ─────────────────────────────────────────────────────────
-                    Trial Setup - require_card_for_trial toggle.
-                    Controls whether new embed-widget signups must enter a
-                    card to start their 7-day trial. Toggle is gated on
-                    Stripe Connect being set up (canEnableCardRequired).
+                    Trial Setup - trial length picker + require_card_for_trial.
+                    Controls how long new embed-widget / marketing-site signups
+                    trial for, and whether they must enter a card to start.
+                    Both apply to Connect signups only; manual clients go live
+                    immediately. The card toggle is gated on Stripe Connect being
+                    set up (canEnableCardRequired).
                 ───────────────────────────────────────────────────────── */}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-3">
@@ -889,10 +900,63 @@ function AgencySettingsContent() {
                     <h4 className="font-medium text-sm sm:text-base">Client Trial Setup</h4>
                   </div>
                   <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
-                    Control whether new clients need to enter a credit card to start their 7-day trial.
+                    Control how long new clients trial for, and whether they need to enter a credit card to start.
                     <br />
                     <strong style={{ color: theme.text }}>Affects only signups from your embed widget or marketing site</strong>, not clients you add manually from the dashboard.
                   </p>
+
+                  {/* Trial length picker. 0 = no trial. Governs Connect signups
+                      (no-card and card-required); manual clients ignore it. */}
+                  <div className="mb-4">
+                    <label className="block text-xs sm:text-sm font-medium mb-2" style={{ color: theme.text }}>Trial length</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[{ v: 0, label: 'No trial' }, { v: 7, label: '7 days' }, { v: 14, label: '14 days' }, { v: 30, label: '30 days' }].map((opt) => {
+                        const active = !trialCustomActive && clientTrialDays === opt.v;
+                        return (
+                          <button
+                            key={opt.v}
+                            type="button"
+                            onClick={() => { setClientTrialDays(opt.v); setTrialCustomActive(false); }}
+                            className="rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+                            style={{ backgroundColor: active ? theme.primary : (theme.isDark ? '#050505' : '#f9fafb'), color: active ? theme.primaryText : theme.text, border: `1px solid ${active ? theme.primary : theme.inputBorder}` }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setTrialCustomActive(true)}
+                        className="rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+                        style={{ backgroundColor: trialCustomActive ? theme.primary : (theme.isDark ? '#050505' : '#f9fafb'), color: trialCustomActive ? theme.primaryText : theme.text, border: `1px solid ${trialCustomActive ? theme.primary : theme.inputBorder}` }}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    {trialCustomActive && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <input
+                          type="number" min="0" max="365" step="1"
+                          value={Number.isFinite(clientTrialDays) ? clientTrialDays : ''}
+                          onChange={(e) => { const n = parseInt(e.target.value, 10); setClientTrialDays(Number.isFinite(n) && n >= 0 ? Math.min(n, 365) : 0); }}
+                          className="w-24 rounded-xl px-3 py-2 text-sm"
+                          style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                        />
+                        <span className="text-sm" style={{ color: theme.textMuted }}>days (0 to 365)</span>
+                      </div>
+                    )}
+                    <p className="mt-2 text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                      {clientBillingMode === 'manual'
+                        ? 'While you bill clients yourself, new clients go live immediately and this length is ignored. It applies if you switch back to platform billing.'
+                        : (clientTrialDays === 0
+                            ? (requireCardForTrial
+                                ? 'No free trial: clients enter a card at signup and are charged right away.'
+                                : 'No free trial: clients must upgrade to activate before their service works.')
+                            : (requireCardForTrial
+                                ? `Clients get ${clientTrialDays} free ${clientTrialDays === 1 ? 'day' : 'days'}, then Stripe charges their card on day ${clientTrialDays}.`
+                                : `Clients get ${clientTrialDays} free ${clientTrialDays === 1 ? 'day' : 'days'}, then must upgrade to keep service.`))}
+                    </p>
+                  </div>
 
                   <div className="flex items-start justify-between rounded-xl px-4 py-3 mb-3" style={{ backgroundColor: requireCardForTrial && canEnableCardRequired ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${requireCardForTrial && canEnableCardRequired ? theme.primary30 : theme.border}`, opacity: canEnableCardRequired ? 1 : 0.6 }}>
                     <div className="flex-1 min-w-0 mr-3">
@@ -901,8 +965,12 @@ function AgencySettingsContent() {
                       </p>
                       <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
                         {requireCardForTrial
-                          ? 'Clients enter a card during signup, get a 7-day free trial, and Stripe auto-charges them at day 7. Best for filtering serious leads.'
-                          : 'Clients get a 7-day no-card trial via the embed widget. They must manually upgrade before or after trial ends to keep service.'}
+                          ? (clientTrialDays === 0
+                              ? 'Clients enter a card during signup and are charged immediately. Best for filtering serious leads.'
+                              : `Clients enter a card during signup, get a ${clientTrialDays}-day free trial, and Stripe auto-charges them on day ${clientTrialDays}. Best for filtering serious leads.`)
+                          : (clientTrialDays === 0
+                              ? 'Clients get a no-card signup and must upgrade to activate service.'
+                              : `Clients get a ${clientTrialDays}-day no-card trial via the embed widget. They must manually upgrade before or after trial ends to keep service.`)}
                       </p>
                     </div>
                     <button
@@ -953,8 +1021,14 @@ function AgencySettingsContent() {
                         <ol className="space-y-0.5 list-decimal list-inside" style={{ color: theme.textMuted }}>
                           <li>Client fills out signup form on your site</li>
                           <li>Redirected to Stripe to enter card details</li>
-                          <li>7-day free trial begins after card is on file</li>
-                          <li>Stripe auto-charges on day 7 (client can cancel anytime before)</li>
+                          {clientTrialDays === 0 ? (
+                            <li>Charged immediately once the card is on file</li>
+                          ) : (
+                            <>
+                              <li>{clientTrialDays}-day free trial begins after card is on file</li>
+                              <li>Stripe auto-charges on day {clientTrialDays} (client can cancel anytime before)</li>
+                            </>
+                          )}
                         </ol>
                       </div>
                     </div>
@@ -1083,7 +1157,7 @@ function AgencySettingsContent() {
                         <p className="text-sm font-medium" style={{ color: billMinutesDuringTrial ? theme.primary : theme.text }}>Bill clients for minutes during their trial</p>
                         <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
                           {billMinutesDuringTrial
-                            ? "On. New card-required trial clients get a true 7-day trial: their subscription is free while they pay only for the minutes they use, so you never absorb trial minutes."
+                            ? "On. New card-required trial clients get a true free trial: their subscription is free while they pay only for the minutes they use, so you never absorb trial minutes."
                             : 'Off. Trial minutes are free and you absorb their cost during the trial.'}
                         </p>
                       </div>
