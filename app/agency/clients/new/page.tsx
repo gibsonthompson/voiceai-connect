@@ -141,7 +141,7 @@ export default function AddClientPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
-  const [success, setSuccess] = useState<{ clientId: string; businessName: string; phoneNumber: string; email: string; tempPassword: string } | null>(null);
+  const [success, setSuccess] = useState<{ clientId: string; businessName: string; phoneNumber: string; email: string; tempPassword: string; subscriptionStatus?: string | null; trialEndsAt?: string | null } | null>(null);
   const [showPassword, setShowPassword] = useState(true);
   const [billingRequired, setBillingRequired] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
@@ -161,6 +161,24 @@ export default function AddClientPage() {
   const errorBorder = isDark ? 'rgba(239,68,68,0.2)' : '#fecaca';
   const errorText = isDark ? '#f87171' : '#dc2626';
   const successBg = isDark ? `${primaryColor}10` : `${primaryColor}08`;
+
+  // What actually happens to a newly added client, derived from the agency's
+  // real settings so the copy never contradicts the backend. A manual client
+  // gets the trial length as a free ACCESS window (auto-suspends at the end,
+  // number kept) when it is > 0, or goes live permanently when it is 0. A
+  // connect client gets it as a no-card trial.
+  const isManualBilling = (agency as any)?.client_billing_mode === 'manual';
+  const clientTrialDays = (() => {
+    const n = Number((agency as any)?.client_trial_days);
+    return Number.isFinite(n) && n >= 0 ? Math.min(Math.floor(n), 365) : 7;
+  })();
+  const trialSentence = isManualBilling
+    ? (clientTrialDays > 0
+        ? `They go live now on a ${clientTrialDays}-day free access window, then auto-suspend (keeping their number) until you mark them paid. No card, no checkout.`
+        : `They go live immediately with no card and no checkout, and you invoice them directly.`)
+    : (clientTrialDays > 0
+        ? `They'll start on a ${clientTrialDays}-day free trial with no credit card required.`
+        : `They go live now with no trial period.`);
 
   const isUS = form.businessCountry === 'US';
   const isCA = form.businessCountry === 'CA';
@@ -399,7 +417,7 @@ export default function AddClientPage() {
         }
         const c = final.result?.client;
         if (c) {
-          setSuccess({ clientId: c.id, businessName: c.business_name, phoneNumber: c.phone_number, email: c.email, tempPassword: form.tempPassword });
+          setSuccess({ clientId: c.id, businessName: c.business_name, phoneNumber: c.phone_number, email: c.email, tempPassword: form.tempPassword, subscriptionStatus: c.subscription_status, trialEndsAt: c.trial_ends_at });
         }
         return;
       }
@@ -422,7 +440,9 @@ export default function AddClientPage() {
         businessName: data.client.business_name,
         phoneNumber: data.client.phone_number,
         email: data.client.email,
-        tempPassword: form.tempPassword
+        tempPassword: form.tempPassword,
+        subscriptionStatus: data.client.subscription_status,
+        trialEndsAt: data.client.trial_ends_at
       });
 
     } catch (err) {
@@ -442,6 +462,17 @@ export default function AddClientPage() {
   }
 
   if (success) {
+    const trialEnd = success.trialEndsAt ? new Date(success.trialEndsAt) : null;
+    const manualClient = success.subscriptionStatus === 'manual';
+    const successStatusLabel = manualClient ? (trialEnd ? 'Free access window' : 'Live') : (trialEnd ? 'Trial' : 'Active');
+    const successStatusColor = trialEnd ? '#f59e0b' : primaryColor;
+    const successSummary = manualClient
+      ? (trialEnd
+          ? <>is now live on a free access window through <span className="font-medium" style={{ color: textColor }}>{trialEnd.toLocaleDateString()}</span>. If they are not paid by then, they auto-suspend, keeping their number, until you mark them paid.</>
+          : <>is now live. You invoice them directly, so there is no trial countdown.</>)
+      : (trialEnd
+          ? <>is now set up with a free trial through <span className="font-medium" style={{ color: textColor }}>{trialEnd.toLocaleDateString()}</span>.</>
+          : <>is now set up and active.</>);
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
         <div
@@ -460,7 +491,7 @@ export default function AddClientPage() {
           </h2>
 
           <p className="text-sm mb-1" style={{ color: mutedTextColor }}>
-            <span className="font-medium" style={{ color: textColor }}>{success.businessName}</span> is now set up with a 7-day free trial.
+            <span className="font-medium" style={{ color: textColor }}>{success.businessName}</span> {successSummary}
           </p>
 
           <div
@@ -473,7 +504,7 @@ export default function AddClientPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: mutedTextColor }}>Status</span>
-              <span className="font-medium" style={{ color: '#f59e0b' }}>7-Day Trial</span>
+              <span className="font-medium" style={{ color: successStatusColor }}>{successStatusLabel}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: mutedTextColor }}>Welcome SMS</span>
@@ -576,7 +607,7 @@ export default function AddClientPage() {
           <p className="text-sm font-semibold" style={{ color: primaryColor }}>{(agency as any)?.client_billing_mode === 'manual' ? 'You Bill This Client Yourself' : 'The Platform Bills This Client'}</p>
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>
             {(agency as any)?.client_billing_mode === 'manual'
-              ? <>They go live immediately with no card and no checkout, and you invoice them directly. Change this in <Link href="/agency/settings?tab=payments" className="underline" style={{ color: primaryColor }}>Payment Settings</Link>.</>
+              ? <>No card and no checkout, you invoice them directly. Change this in <Link href="/agency/settings?tab=payments" className="underline" style={{ color: primaryColor }}>Payment Settings</Link>.</>
               : <>They&apos;re charged through Stripe Connect and you keep the margin. Change this in <Link href="/agency/settings?tab=payments" className="underline" style={{ color: primaryColor }}>Payment Settings</Link>.</>}
           </p>
         </div>
@@ -954,7 +985,7 @@ export default function AddClientPage() {
             <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
             <p className="text-xs leading-relaxed" style={{ color: mutedTextColor }}>
               This will provision an AI receptionist with a local phone number, create the client&apos;s account,
-              and send them a welcome SMS. They&apos;ll start on a 7-day free trial with no credit card required.
+              and send them a welcome SMS. {trialSentence}
               This may take up to 30 seconds.
             </p>
           </div>
