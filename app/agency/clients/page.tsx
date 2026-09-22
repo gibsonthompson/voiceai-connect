@@ -181,7 +181,20 @@ export default function AgencyClientsPage() {
       case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder };
       case 'suspended':
       case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
+      case 'manual': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
+      case 'manual_suspended': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
       default: return { bg: theme.hover, text: theme.textMuted, border: theme.border };
+    }
+  };
+
+  // Friendly badge label so a manually-billed client reads cleanly: a live one
+  // shows "Manual", a cut-off one shows "Suspended" (not the raw
+  // "manual_suspended" with an underscore). Other statuses pass through.
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case 'manual': return 'Manual';
+      case 'manual_suspended': return 'Suspended';
+      default: return status;
     }
   };
 
@@ -533,7 +546,7 @@ export default function AgencyClientsPage() {
                           className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
                           style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
                         >
-                          {client.subscription_status || client.status}
+                          {formatStatus(client.subscription_status || client.status)}
                         </span>
                         <div className="flex items-center gap-3" style={{ color: theme.textMuted }}>
                           {!isTest && <span className="capitalize">{client.plan_type || 'starter'}</span>}
@@ -593,7 +606,7 @@ export default function AgencyClientsPage() {
                           className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize"
                           style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
                         >
-                          {client.subscription_status || client.status}
+                          {formatStatus(client.subscription_status || client.status)}
                         </span>
                       </div>
                       

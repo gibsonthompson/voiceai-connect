@@ -305,6 +305,38 @@ export default function AgencyClientDetailPage() {
   };
   const handleResume = () => postCancel({ resume: true });
 
+  // ── Manual free-access window (mark paid / suspend) ──
+  // Manual-billing clients can be granted a free access window; when it ends
+  // (or you suspend them) they stop taking calls but KEEP their number, so
+  // "Mark as paid" restores service instantly. reactivate clears the window so
+  // they stay live permanently; suspend cuts them off keeping the number.
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualMsg, setManualMsg] = useState<string | null>(null);
+  const postManualAction = async (action: 'reactivate' | 'suspend', confirmMsg: string) => {
+    if (!clientId || !client) return;
+    if (!confirm(confirmMsg)) return;
+    setManualBusy(true); setManualMsg(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: clientId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Action failed');
+      setManualMsg(action === 'reactivate' ? 'Marked paid — client is live.' : 'Client suspended (number kept).');
+      fetchClientData();
+      setTimeout(() => setManualMsg(null), 4000);
+    } catch (err: any) {
+      setManualMsg(err.message || 'Action failed');
+    } finally {
+      setManualBusy(false);
+    }
+  };
+  const handleReactivateManual = () => postManualAction('reactivate', `Mark ${client?.business_name} as paid and make them live? This clears the free-access window, so they stay live until you suspend or cancel.`);
+  const handleSuspendManual = () => postManualAction('suspend', `Suspend ${client?.business_name}? They stop taking calls immediately but keep their number, so you can reactivate after they pay.`);
+
   // ── Custom (white-glove) pricing ──
   const [pricingMode, setPricingMode] = useState<'plan' | 'custom'>('plan');
   const [cMonthly, setCMonthly] = useState(''); const [cSetup, setCSetup] = useState('');
@@ -442,7 +474,11 @@ export default function AgencyClientDetailPage() {
   const formatPhone = (phone: string) => { if (!phone) return '-'; const digits = phone.replace(/\D/g, ''); if (digits.length === 11 && digits.startsWith('1')) return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`; if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`; return phone; };
   const getPlanLabel = (plan: string) => { switch (plan) { case 'starter': return 'Starter'; case 'pro': return 'Professional'; case 'growth': return 'Growth'; default: return plan || 'Starter'; } };
   const getPlanPrice = (planType: string) => { if (!agency) return 0; switch (planType) { case 'starter': return agency.price_starter || 9900; case 'pro': return agency.price_pro || 14900; case 'growth': return agency.price_growth || 29900; default: return 0; } };
-  const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'suspended': case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
+  const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'suspended': case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; case 'manual': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'manual_suspended': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
+  // Friendly badge label. Raw subscription_status values like 'manual_suspended'
+  // would otherwise render with an underscore; map the manual ones to clean
+  // words (a live manual client reads "Manual", a cut-off one reads "Suspended").
+  const formatStatus = (status: string) => { switch (status) { case 'manual': return 'Manual'; case 'manual_suspended': return 'Suspended'; default: return status; } };
 
   const industryEntry = client?.industry ? getIndustry(client.industry) : null;
   const intelligence = industryEntry ? { label: industryEntry.label, ...industryEntry.intelligence } : null;
@@ -464,6 +500,17 @@ export default function AgencyClientDetailPage() {
   const callLimit = client.monthly_call_limit;
   const callPercent = callLimit ? Math.min(100, (callsUsed / callLimit) * 100) : 0;
 
+  // Manual free-access window state (manual-billing clients only). The window
+  // ends at trial_ends_at; once it passes, or the agency suspends, the client
+  // is subscription_status='manual_suspended'. A permanent manual client has no
+  // window (trial_ends_at null). billing_mode isn't on the Client type but the
+  // API returns it (select *), so read it loosely like the other extra fields.
+  const isManualClient = (client as any).billing_mode === 'manual';
+  const isManualSuspended = client.subscription_status === 'manual_suspended';
+  const manualWindowEnd = client.trial_ends_at ? new Date(client.trial_ends_at) : null;
+  const manualHasWindow = client.subscription_status === 'manual' && !!manualWindowEnd;
+  const manualWindowActive = manualHasWindow && manualWindowEnd!.getTime() > Date.now();
+
   // Reusable status indicator for the inline-editable rows
   const FieldStatus = ({ field }: { field: string }) => {
     if (savingField === field) return <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.primary }} />;
@@ -475,7 +522,7 @@ export default function AgencyClientDetailPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
 
-      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{client.subscription_status || client.status}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
+      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -698,7 +745,7 @@ export default function AgencyClientDetailPage() {
           </div>
 
           {/* Subscription */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{client.subscription_status || client.status}</span></div>{client.trial_ends_at && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Trial Ends</span><span className="text-sm">{new Date(client.trial_ends_at).toLocaleDateString()}</span></div>}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{client.trial_ends_at && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>{isManualClient ? 'Access ends' : 'Trial Ends'}</span><span className="text-sm">{new Date(client.trial_ends_at).toLocaleDateString()}</span></div>}</div></div></div>
 
           {/* Call Usage */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.textMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.textMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}</div></div>
@@ -707,6 +754,50 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Calendar className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Quick Info</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
         </div>
       </div>
+
+      {/* Manual billing — free-access window controls (manual-billing clients only) */}
+      {isManualClient && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+          <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+              <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Manual billing</h3>
+            </div>
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>You bill this client directly (invoice or payment link), not through the platform. Cut off or restore their access below. Their phone number is always kept, releasing it is only done by canceling.</p>
+
+            {isManualSuspended ? (
+              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
+                <Ban className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.errorText }} />
+                <p className="text-xs" style={{ color: theme.errorText }}>Suspended — not taking calls. Their number is kept, so marking them paid restores service instantly.</p>
+              </div>
+            ) : manualHasWindow ? (
+              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+                <p className="text-xs" style={{ color: theme.warningText }}>Free access window {manualWindowActive ? 'ends' : 'ended'} {manualWindowEnd!.toLocaleDateString()}. If unpaid, the client is auto-suspended (number kept); mark them paid once they pay to keep them live.</p>
+              </div>
+            ) : (
+              <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                <p className="text-xs" style={{ color: theme.primary }}>Live — taking calls.</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {(isManualSuspended || manualHasWindow) && (
+                <button onClick={handleReactivateManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Mark as paid
+                </button>
+              )}
+              {!isManualSuspended && (
+                <button onClick={handleSuspendManual} disabled={manualBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
+                  {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspend
+                </button>
+              )}
+              {manualMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{manualMsg}</span>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom pricing (white-glove, per-client override) */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">

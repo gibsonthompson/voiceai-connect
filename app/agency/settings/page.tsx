@@ -947,7 +947,9 @@ function AgencySettingsContent() {
                     )}
                     <p className="mt-2 text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
                       {clientBillingMode === 'manual'
-                        ? 'While you bill clients yourself, new clients go live immediately and this length is ignored. It applies if you switch back to platform billing.'
+                        ? (clientTrialDays === 0
+                            ? 'While you bill clients yourself, new clients go live immediately with no free-access window.'
+                            : `While you bill clients yourself, new clients get ${clientTrialDays} free ${clientTrialDays === 1 ? 'day' : 'days'} of access, then are auto-suspended until you mark them paid on their client page. They keep their number the whole time, so reactivating is instant.`)
                         : (clientTrialDays === 0
                             ? (requireCardForTrial
                                 ? 'No free trial: clients enter a card at signup and are charged right away.'
@@ -996,7 +998,7 @@ function AgencySettingsContent() {
                         <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                         <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
                           <p className="font-medium mb-0.5" style={{ color: theme.infoText }}>You bill your clients yourself</p>
-                          <p>Card-on-trial and Stripe checkout don&apos;t apply, new clients go live immediately with no card and you invoice them directly. Switch this off in the <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payments tab</a> if you want the platform to charge them.</p>
+                          <p>Card-on-trial and Stripe checkout don&apos;t apply, new clients are set up with no card and you invoice them directly. Any trial length you set above becomes their free access window. Switch this off in the <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payments tab</a> if you want the platform to charge them.</p>
                         </div>
                       </div>
                     ) : (
