@@ -64,23 +64,6 @@ function SourceBadge({ source, theme }: { source: string; theme: any }) {
   );
 }
 
-// ── Fit Score Badge ─────────────────────────────────────────────────────
-function FitBadge({ score }: { score: number }) {
-  let color: string, label: string;
-  if (score >= 70) { color = "#10b981"; label = "Hot Lead"; }
-  else if (score >= 50) { color = "#f59e0b"; label = "Warm"; }
-  else if (score >= 30) { color = "#6b7280"; label = "Cool"; }
-  else { color = "#374151"; label = "Low"; }
-
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-      style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      {score} — {label}
-    </span>
-  );
-}
-
 // ── Industry Tag ────────────────────────────────────────────────────────
 function IndustryTag({ industry }: { industry: string }) {
   const colors: Record<string, string> = {
@@ -125,7 +108,7 @@ function StatsRow({ stats, theme }: { stats: any; theme: any }) {
     { label: "Enriched", value: stats.enriched },
     { label: "With Phone", value: stats.withPhone },
     { label: "With Email", value: stats.withEmail },
-    { label: "Avg Score", value: stats.avgFitScore },
+    { label: "With Website", value: stats.withWebsite },
     { label: "Time", value: `${stats.durationSeconds}s` },
   ];
   return (
@@ -174,7 +157,6 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
 
             <div className="flex items-center gap-2 flex-wrap">
               <IndustryTag industry={lead.industry} />
-              <FitBadge score={lead.fitScore} />
               {lead.phone && (
                 <a href={`tel:${lead.phone}`} onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium no-underline"
@@ -315,7 +297,7 @@ const MAPS_INDUSTRIES = [
   { value: "insurance", label: "Insurance" },
   { value: "accounting", label: "Accounting / CPA" },
   { value: "beauty_salon", label: "Salons / Spas" },
-  { value: "automotive", label: "Auto Repair" },
+  { value: "automotive", label: "Automotive" },
   { value: "chiropractic", label: "Chiropractic" },
   { value: "therapy", label: "Therapy / Counseling" },
   { value: "optometry", label: "Optometry" },
@@ -360,8 +342,7 @@ export default function LeadFinderPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterIndustry, setFilterIndustry] = useState("all");
-  const [filterMinScore, setFilterMinScore] = useState(0);
-  const [sortBy, setSortBy] = useState("fitScore");
+  const [sortBy, setSortBy] = useState("relevance");
   const [savingLeads, setSavingLeads] = useState<Set<string>>(new Set());
   const [savedLeads, setSavedLeads] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -374,6 +355,8 @@ export default function LeadFinderPage() {
   // Google Maps state
   const [mapsIndustry, setMapsIndustry] = useState("dental");
   const [mapsQuery, setMapsQuery] = useState("");
+  const [findAll, setFindAll] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<any>(null);
 
   const getAgencyId = () => {
     if (typeof window === "undefined") return null;
@@ -396,12 +379,12 @@ export default function LeadFinderPage() {
     setStats(null);
     setSavedLeads(new Set());
     setSelectedLeads(new Set());
+    setLimitInfo(null);
     setProgress({ stage: "starting", message: "Initializing...", percent: 0 });
 
     const body: any = {
       source: activeTab,
       location: location.trim(),
-      maxPages: activeTab === "google_maps" ? 2 : 1,
       maxLeads,
       agencyId: getAgencyId(),
     };
@@ -414,6 +397,7 @@ export default function LeadFinderPage() {
       } else {
         body.industry = mapsIndustry;
       }
+      body.findAll = findAll;
     }
 
     try {
@@ -425,6 +409,7 @@ export default function LeadFinderPage() {
 
       const data = await res.json();
       if (res.status === 429) { setError(data.error); setLoading(false); return; }
+      if (data.limitReached) { setLimitInfo(data); setLoading(false); return; }
       if (!data.jobId) throw new Error(data.error || "Failed to start search");
 
       const evtSource = new EventSource(`${API_BASE}/api/leads/search/stream/${data.jobId}`);
@@ -449,7 +434,7 @@ export default function LeadFinderPage() {
 
       evtSource.onerror = () => { evtSource.close(); pollForResults(data.jobId); };
     } catch (err: any) { setError(err.message); setLoading(false); }
-  }, [activeTab, keywords, location, maxLeads, mapsIndustry, mapsQuery]);
+  }, [activeTab, keywords, location, maxLeads, mapsIndustry, mapsQuery, findAll]);
 
   const pollForResults = async (jobId: string) => {
     const interval = setInterval(async () => {
@@ -545,11 +530,10 @@ export default function LeadFinderPage() {
   const industries = [...new Set(leads.map((l) => l.industry))].sort();
   const filteredLeads = leads
     .filter((l) => filterIndustry === "all" || l.industry === filterIndustry)
-    .filter((l) => l.fitScore >= filterMinScore)
     .sort((a, b) => {
-      if (sortBy === "fitScore") return b.fitScore - a.fitScore;
       if (sortBy === "company") return a.companyName.localeCompare(b.companyName);
       if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === "reviews") return (b.reviewCount || 0) - (a.reviewCount || 0);
       return 0;
     });
 
@@ -570,7 +554,7 @@ export default function LeadFinderPage() {
           <h1 className="text-xl font-bold" style={{ color: theme.text }}>Lead Finder</h1>
         </div>
         <p className="text-sm pl-12" style={{ color: theme.textMuted }}>
-          Find businesses that need an AI receptionist — enrich with phone, email, website, and score by fit.
+          Find local businesses in a vertical and enrich each with phone, email, website, and hours.
         </p>
       </div>
 
@@ -579,7 +563,7 @@ export default function LeadFinderPage() {
         <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
         <div className="text-sm" style={{ color: theme.textMuted }}>
           <p className="font-medium mb-1" style={{ color: theme.text }}>What the Lead Finder does</p>
-          <p>Pick an industry and a location. It pulls matching local businesses from Google Maps, enriches each one with phone, email, website and hours, then scores them by how likely they are to be missing calls and need an AI receptionist. Add the best-fit businesses straight to your leads, then work them from the Leads page.</p>
+          <p>Pick an industry (or type a custom search) and a location. It pulls matching local businesses from Google Maps and enriches each one with phone, email, website and hours. Google returns up to 60 businesses per search. Add the ones you want straight to your leads, then work them from the Leads page.</p>
         </div>
       </div>
 
@@ -621,7 +605,7 @@ export default function LeadFinderPage() {
           {activeTab === "google_maps" && (
             <>
               <div className="flex gap-2 flex-wrap mb-4">
-                {MAPS_INDUSTRIES.slice(0, 12).map((ind) => (
+                {MAPS_INDUSTRIES.map((ind) => (
                   <button key={ind.value} onClick={() => { setMapsIndustry(ind.value); setMapsQuery(""); }}
                     className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
                     style={{
@@ -632,6 +616,16 @@ export default function LeadFinderPage() {
                     {ind.label}
                   </button>
                 ))}
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <button type="button" role="switch" aria-checked={findAll} onClick={() => setFindAll((v) => !v)}
+                  className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
+                  style={{ background: findAll ? theme.primary : theme.border }}>
+                  <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform"
+                    style={{ transform: findAll ? "translateX(18px)" : "translateX(2px)" }} />
+                </button>
+                <span className="text-xs font-medium" style={{ color: findAll ? theme.primary : theme.textMuted }}>Find every business in this area</span>
+                <span className="text-xs hidden sm:inline" style={{ color: theme.textMuted }}>sweeps the whole market, not just the top 60</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
                 <div>
@@ -648,16 +642,20 @@ export default function LeadFinderPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
-                  <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
-                    className={`${inputClass} cursor-pointer`} style={inputStyle}>
-                    <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
-                  </select>
+                  {findAll ? (
+                    <div className={inputClass} style={{ ...inputStyle, opacity: 0.55, textAlign: "center" }}>All</div>
+                  ) : (
+                    <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
+                      className={`${inputClass} cursor-pointer`} style={inputStyle}>
+                      <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={60}>60</option>
+                    </select>
+                  )}
                 </div>
                 <button onClick={handleSearch} disabled={loading}
                   className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all whitespace-nowrap"
                   style={{ background: loading ? theme.border : theme.primary, color: loading ? theme.textMuted : theme.primaryText, cursor: loading ? "not-allowed" : "pointer" }}>
                   {loading ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
-                    : <span className="inline-flex items-center gap-2"><Map className="h-4 w-4" /> Search Maps</span>}
+                    : <span className="inline-flex items-center gap-2"><Map className="h-4 w-4" /> {findAll ? "Find All" : "Search Maps"}</span>}
                 </button>
               </div>
             </>
@@ -679,6 +677,24 @@ export default function LeadFinderPage() {
           }}>
           <span>{error}</span>
           <button onClick={() => setError(null)} className="ml-2 cursor-pointer" style={{ color: "inherit" }}><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {/* Monthly limit reached (no search ran) */}
+      {limitInfo && (
+        <div className="rounded-xl px-4 py-3 mb-4 text-sm flex items-center justify-between"
+          style={{ background: `${theme.primary}10`, border: `1px solid ${theme.primary}30`, color: theme.primary }}>
+          <span>{limitInfo.message || `Monthly lead limit reached (${limitInfo.used}/${limitInfo.cap}).`}</span>
+          <button onClick={() => setLimitInfo(null)} className="ml-2 cursor-pointer" style={{ color: "inherit" }}><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {/* Partial results notice (hit cap or area too large) */}
+      {stats && stats.findAll && ((stats.usage && stats.usage.limitReached) || stats.partialArea) && (
+        <div className="rounded-xl px-4 py-3 mb-4 text-sm" style={{ background: "#f59e0b15", border: "1px solid #f59e0b30", color: "#fbbf24" }}>
+          {stats.partialArea
+            ? `This area is very large, so this shows the first ${stats.uniqueCompanies} businesses found. Search a smaller area to go deeper.`
+            : `You've reached your monthly lead limit, so this shows ${stats.uniqueCompanies} of the matches found. Upgrade to Scale for unlimited leads.`}
         </div>
       )}
 
@@ -705,24 +721,16 @@ export default function LeadFinderPage() {
                 {industries.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
               </select>
 
-              <select value={filterMinScore} onChange={(e) => setFilterMinScore(Number(e.target.value))}
-                className="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer" style={inputStyle}>
-                <option value={0}>All Scores</option>
-                <option value={30}>30+ (Cool)</option>
-                <option value={50}>50+ (Warm)</option>
-                <option value={70}>70+ (Hot)</option>
-              </select>
-
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
                 className="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer" style={inputStyle}>
-                <option value="fitScore">Sort: Fit Score</option>
+                <option value="relevance">Sort: Relevance</option>
                 <option value="company">Sort: Company A-Z</option>
                 <option value="rating">Sort: Rating</option>
+                <option value="reviews">Sort: Reviews</option>
               </select>
 
               <span className="text-xs" style={{ color: theme.textMuted }}>
                 {filteredLeads.length} of {leads.length} leads
-                {stats?.duplicatesRemoved > 0 && ` (${stats.duplicatesRemoved} dupes filtered)`}
               </span>
             </div>
 
