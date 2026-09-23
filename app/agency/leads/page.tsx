@@ -283,7 +283,7 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
         <div
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
-          className="fixed z-[100] min-w-[150px] rounded-lg py-1 shadow-xl bg-[var(--lp-input)] border border-[var(--lp-input-border)]"
+          className="fixed z-[100] min-w-[150px] rounded-lg py-1 shadow-xl bg-[var(--lp-card)] border border-[var(--lp-border)]"
           style={{ top: coords.top, left: coords.left }}
         >
           {options.map((o) => (
