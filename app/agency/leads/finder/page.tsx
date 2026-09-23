@@ -15,6 +15,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useAgency } from "../../context";
+import { areaCodeToCity } from "./areaCodeCity";
 import Link from "next/link";
 import {
   ArrowLeft, Search, Download, Phone, Mail, Globe, MapPin,
@@ -86,15 +87,28 @@ function IndustryTag({ industry }: { industry: string }) {
 // ── Progress Bar ────────────────────────────────────────────────────────
 function ProgressBar({ progress, theme }: { progress: any; theme: any }) {
   if (!progress) return null;
+  const pct = Math.max(0, Math.min(100, Math.round(progress.percent || 0)));
+  const found = typeof progress.found === "number" ? progress.found : null;
+  const sub = found !== null
+    ? `${found} ${found === 1 ? "business" : "businesses"} found so far`
+    : progress.current && progress.total
+      ? `${progress.current} of ${progress.total}`
+      : "Keep this tab open while it runs";
   return (
-    <div className="py-5">
-      <div className="flex justify-between mb-2 text-xs" style={{ color: theme.textMuted }}>
-        <span>{progress.message}</span>
-        {progress.current && progress.total && <span>{progress.current}/{progress.total}</span>}
+    <div className="rounded-xl p-4 mb-4" style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}20` }}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center justify-center h-9 w-9 rounded-full shrink-0" style={{ background: `${theme.primary}18` }}>
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold truncate" style={{ color: theme.primary }}>{progress.message || "Working..."}</div>
+          <div className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{sub}</div>
+        </div>
+        <div className="text-lg font-bold tabular-nums shrink-0" style={{ color: theme.primary }}>{pct}%</div>
       </div>
-      <div className="h-1 rounded-full overflow-hidden" style={{ background: theme.border }}>
-        <div className="h-full rounded-full transition-all duration-400"
-          style={{ width: `${progress.percent || 0}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}cc)` }} />
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.border }}>
+        <div className="h-full rounded-full animate-pulse"
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}aa)`, transition: "width 500ms ease" }} />
       </div>
     </div>
   );
@@ -301,6 +315,7 @@ const MAPS_INDUSTRIES = [
   { value: "chiropractic", label: "Chiropractic" },
   { value: "therapy", label: "Therapy / Counseling" },
   { value: "optometry", label: "Optometry" },
+  { value: "plastic_surgery", label: "Plastic Surgery" },
   { value: "property_management", label: "Property Mgmt" },
   { value: "cleaning", label: "Cleaning Services" },
   { value: "towing", label: "Towing" },
@@ -348,6 +363,13 @@ export default function LeadFinderPage() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Prefill location from the agency's number on file (area code -> city).
+  // Defaults on load; user can clear it (X) or tap the chip to refill.
+  const homeCity = areaCodeToCity(agency?.phone);
+  useEffect(() => {
+    if (homeCity) setLocation((prev) => (prev ? prev : homeCity));
+  }, [homeCity]);
 
   // Indeed state
   const [keywords, setKeywords] = useState("receptionist");
@@ -636,9 +658,23 @@ export default function LeadFinderPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Location</label>
-                  <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                    placeholder='"Atlanta, GA"' className={inputClass} style={inputStyle}
-                    onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
+                  <div className="relative">
+                    <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
+                      placeholder='"Atlanta, GA"' className={inputClass} style={{ ...inputStyle, paddingRight: "2rem" }}
+                      onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
+                    {location && (
+                      <button type="button" onClick={() => setLocation("")} aria-label="Clear location"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer" style={{ color: theme.textMuted }}>
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {homeCity && location !== homeCity && (
+                    <button type="button" onClick={() => setLocation(homeCity)}
+                      className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium cursor-pointer" style={{ color: theme.primary }}>
+                      <MapPin className="h-3 w-3" /> Use {homeCity}
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
