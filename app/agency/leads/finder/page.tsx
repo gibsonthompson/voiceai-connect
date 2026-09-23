@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useAgency } from "../../context";
@@ -321,7 +322,6 @@ const MAPS_INDUSTRIES = [
   { value: "medical", label: "Medical / Clinics" },
   { value: "veterinary", label: "Veterinary" },
   { value: "legal", label: "Legal / Law Firms" },
-  { value: "home_services", label: "Home Services" },
   { value: "plumbing", label: "Plumbing" },
   { value: "hvac", label: "HVAC" },
   { value: "roofing", label: "Roofing" },
@@ -491,26 +491,48 @@ function areaCodeToCity(phone?: string | null): string | null {
 
 type DropOption = { value: string; label: string };
 
-function Dropdown({ value, options, onChange, theme, buttonClassName, buttonStyle, align = "left" }:
-  { value: string; options: DropOption[]; onChange: (v: string) => void; theme: any; buttonClassName: string; buttonStyle: any; align?: "left" | "right" }) {
+function Dropdown({ value, options, onChange, theme, buttonClassName, buttonStyle }:
+  { value: string; options: DropOption[]; onChange: (v: string) => void; theme: any; buttonClassName: string; buttonStyle: any }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const openMenu = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setCoords({ top: r.bottom + 4, left: r.left, width: r.width });
+    setOpen(true);
+  };
+
   useEffect(() => {
-    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return;
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const onMove = () => setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [open]);
+
   const selected = options.find((o) => o.value === value);
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)}
+    <>
+      <button ref={btnRef} type="button" onClick={() => (open ? setOpen(false) : openMenu())}
         className={`inline-flex items-center justify-between gap-2 ${buttonClassName}`} style={buttonStyle}>
         <span className="truncate">{selected ? selected.label : ""}</span>
         <ChevronDown className="h-3.5 w-3.5 shrink-0" style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
       </button>
-      {open && (
-        <div className={`absolute z-50 mt-1 ${align === "right" ? "right-0" : "left-0"} min-w-full max-h-64 overflow-auto rounded-lg py-1 shadow-lg`}
-          style={{ background: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+      {open && coords && typeof document !== "undefined" && createPortal(
+        <div ref={menuRef} className="fixed z-[100] max-h-64 overflow-auto rounded-lg py-1 shadow-xl"
+          style={{ top: coords.top, left: coords.left, minWidth: coords.width, background: theme.input, border: `1px solid ${theme.inputBorder}` }}>
           {options.map((o) => (
             <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
               className="block w-full text-left px-3 py-2 text-xs cursor-pointer whitespace-nowrap transition-colors"
@@ -518,9 +540,10 @@ function Dropdown({ value, options, onChange, theme, buttonClassName, buttonStyl
               {o.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -990,6 +1013,12 @@ export default function LeadFinderPage() {
 
       {/* Stats */}
       {stats && <StatsRow stats={stats} theme={theme} />}
+
+      {stats && stats.findAll && typeof stats.tilesSearched === "number" && (
+        <div className="text-xs mt-2 mb-1" style={{ color: theme.textMuted }}>
+          Swept {stats.tilesSearched} zone{stats.tilesSearched === 1 ? "" : "s"}{stats.areaLabel ? ` across ${stats.areaLabel}` : ""}, found {stats.businessesFound} matching {stats.businessesFound === 1 ? "business" : "businesses"}.
+        </div>
+      )}
 
       {/* Results */}
       {leads.length > 0 && (
