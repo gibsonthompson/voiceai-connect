@@ -570,6 +570,8 @@ export default function LeadFinderPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterIndustry, setFilterIndustry] = useState("all");
   const [sortBy, setSortBy] = useState("relevance");
+  const [filterWebsite, setFilterWebsite] = useState("all");
+  const [filterRating, setFilterRating] = useState("any");
   const [savingLeads, setSavingLeads] = useState<Set<string>>(new Set());
   const [savedLeads, setSavedLeads] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -802,6 +804,8 @@ export default function LeadFinderPage() {
   const industries = [...new Set(leads.map((l) => l.industry))].sort();
   const filteredLeads = leads
     .filter((l) => filterIndustry === "all" || l.industry === filterIndustry)
+    .filter((l) => filterWebsite === "all" || (filterWebsite === "with" ? !!l.website : !l.website))
+    .filter((l) => filterRating === "any" || (Number(l.rating) || 0) >= Number(filterRating))
     .sort((a, b) => {
       if (sortBy === "company") return a.companyName.localeCompare(b.companyName);
       if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
@@ -1041,6 +1045,14 @@ export default function LeadFinderPage() {
               <Dropdown value={sortBy} onChange={setSortBy} theme={theme}
                 buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[150px]" buttonStyle={inputStyle}
                 options={[{ value: "relevance", label: "Sort: Relevance" }, { value: "company", label: "Sort: Company A-Z" }, { value: "rating", label: "Sort: Rating" }, { value: "reviews", label: "Sort: Reviews" }]} />
+
+              <Dropdown value={filterWebsite} onChange={setFilterWebsite} theme={theme}
+                buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[130px]" buttonStyle={inputStyle}
+                options={[{ value: "all", label: "Website: Any" }, { value: "with", label: "Has website" }, { value: "without", label: "No website" }]} />
+
+              <Dropdown value={filterRating} onChange={setFilterRating} theme={theme}
+                buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[120px]" buttonStyle={inputStyle}
+                options={[{ value: "any", label: "Rating: Any" }, { value: "4", label: "4.0+ stars" }, { value: "4.5", label: "4.5+ stars" }, { value: "5", label: "5.0 stars" }]} />
 
               <span className="text-xs" style={{ color: theme.textMuted }}>
                 {filteredLeads.length} of {leads.length} leads

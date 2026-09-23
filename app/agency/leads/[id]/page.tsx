@@ -402,9 +402,9 @@ export default function LeadDetailPage() {
   };
 
   const handleOutreachSent = () => {
-    setActivityKey(prev => prev + 1);
-    fetchLead();
-    fetchSequenceInfo();
+    // After logging a call (or sending an email/SMS), return to the leads list
+    // rather than staying on the lead just worked.
+    router.push('/agency/leads');
   };
 
   if (contextLoading || loading) {

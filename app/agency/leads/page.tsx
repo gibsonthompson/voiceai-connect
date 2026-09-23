@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, type CSSProperties, type ComponentType, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type ComponentType, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { 
   Users, Search, Plus, ChevronRight, ChevronDown, Loader2, ArrowUpRight,
@@ -232,30 +233,79 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
   options: { value: string; label: string; color: string }[];
   onChange: (status: string) => void;
 }) {
-  // Native <select> on purpose: the leads list uses overflow-hidden for its
-  // rounded corners, which would clip a custom dropdown. The browser renders a
-  // native select's menu in its own layer, so it never gets clipped, and it
-  // works on touch. The trigger is styled as a coloured status pill.
+  // Custom pill dropdown rendered through a portal so it can't be clipped by the
+  // list card's overflow, and so the tap never bubbles into the row's link.
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (btnRef.current?.contains(e.target as Node)) return;
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const onMove = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', onMove, true);
+      window.removeEventListener('resize', onMove);
+    };
+  }, [open]);
+
+  const current = options.find((o) => o.value === value);
   return (
-    <span className="relative inline-flex" onClick={(e) => e.stopPropagation()}>
-      <select
-        value={value}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none cursor-pointer rounded-full pl-3 pr-6 py-1 text-xs font-medium focus:outline-none"
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const r = btnRef.current?.getBoundingClientRect();
+          if (r) setCoords({ top: r.bottom + 4, left: r.left });
+          setOpen((v) => !v);
+        }}
+        className="inline-flex items-center gap-1 rounded-full pl-3 pr-2 py-1 text-xs font-medium focus:outline-none cursor-pointer"
         style={{ backgroundColor: bg, color: text }}
         aria-label="Change lead status"
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value} style={{ background: '#ffffff', color: '#111827' }}>{o.label}</option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 opacity-70" style={{ color: text }} />
-    </span>
+        {current ? current.label : value}
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+      {open && coords && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          onClick={(e) => e.stopPropagation()}
+          className="fixed z-[100] min-w-[150px] rounded-lg py-1 shadow-xl bg-[var(--lp-input)] border border-[var(--lp-input-border)]"
+          style={{ top: coords.top, left: coords.left }}
+        >
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(o.value); setOpen(false); }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-[var(--lp-hover)] cursor-pointer"
+            >
+              <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: o.color }} />
+              <span style={{ color: 'var(--lp-text)', fontWeight: value === o.value ? 600 : 400 }}>{o.label}</span>
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
-function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, onComposer, followUpToday, followUpOverdue, queueItem, isLast }: {
+function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, followUpToday, followUpOverdue, queueItem, isLast }: {
   lead: Lead;
   statusBg: string;
   statusText: string;
@@ -292,14 +342,6 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
             {!followUpOverdue && !followUpToday && queueItem && <Mail className={`h-3 w-3 sm:h-4 sm:w-4 ${queueColor}`} />}
             {!lead.next_follow_up && !queueItem && (
               <span className="text-[10px] text-[var(--lp-muted)] truncate">{lead.outreach?.last_contacted ? `Contacted ${timeSince(lead.outreach.last_contacted)}` : 'Never contacted'}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {lead.email && (
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'email'); }} className="p-1 rounded-md transition-colors hover:bg-[var(--lp-hover)]" title="Send email" aria-label="Send email"><Mail className="h-4 w-4 text-[var(--lp-muted)]" /></button>
-            )}
-            {lead.phone && (
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'sms'); }} className="p-1 rounded-md transition-colors hover:bg-[var(--lp-hover)]" title="Send SMS" aria-label="Send SMS"><MessageSquare className="h-4 w-4 text-[var(--lp-muted)]" /></button>
             )}
           </div>
         </div>
@@ -369,15 +411,7 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, on
         </div>
 
         <div className="col-span-1 flex justify-end items-center">
-          <ChevronRight className="h-4 w-4 text-[var(--lp-muted)] group-hover:hidden" />
-          <div className="hidden group-hover:flex items-center gap-0.5">
-            {lead.email && (
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'email'); }} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--lp-hover)]" title="Send email" aria-label="Send email"><Mail className="h-3.5 w-3.5 text-[var(--lp-muted)]" /></button>
-            )}
-            {lead.phone && (
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onComposer(lead, 'sms'); }} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--lp-hover)]" title="Send SMS" aria-label="Send SMS"><MessageSquare className="h-3.5 w-3.5 text-[var(--lp-muted)]" /></button>
-            )}
-          </div>
+          <ChevronRight className="h-4 w-4 text-[var(--lp-muted)]" />
         </div>
       </div>
     </Link>
@@ -519,6 +553,23 @@ export default function AgencyLeadsPage() {
     }
   };
 
+  // Working order: due/overdue follow-ups and untouched leads rise; a lead you
+  // just contacted sinks to the bottom (unless a follow-up is due).
+  const leadSortKey = (l: Lead): [number, number] => {
+    if (l.status === 'won' || l.status === 'lost') return [5, 0];
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    if (l.next_follow_up) {
+      const nfDay = new Date(l.next_follow_up); nfDay.setHours(0, 0, 0, 0);
+      const nfTime = new Date(l.next_follow_up).getTime();
+      if (nfDay.getTime() < startOfToday.getTime()) return [0, nfTime];
+      if (nfDay.getTime() === startOfToday.getTime()) return [1, 0];
+      return [3, nfTime];
+    }
+    const lc = l.outreach?.last_contacted ? new Date(l.outreach.last_contacted).getTime() : null;
+    if (lc == null) return [2, 0];
+    return [4, lc];
+  };
+
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = !searchQuery || 
       lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -539,6 +590,10 @@ export default function AgencyLeadsPage() {
     }
     
     return matchesSearch && matchesStatus && matchesFilterMode;
+  }).sort((a, b) => {
+    const ka = leadSortKey(a), kb = leadSortKey(b);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    return ka[1] - kb[1];
   });
 
   const clearFilters = () => {
@@ -669,9 +724,8 @@ export default function AgencyLeadsPage() {
 
       {/* Stats */}
       {stats && stats.total > 0 && (
-        <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-8">
+        <div className={`grid gap-2 sm:gap-4 ${followUpSummary && followUpSummary.total > 0 ? 'grid-cols-3' : 'grid-cols-2'} mb-4 sm:mb-8`}>
           <StatCard label="Active" value={stats.total - stats.won - stats.lost} icon={Target} tone="info" active={filterMode === 'active'} onClick={() => handleStatClick('active')} />
-          <StatCard label="Qualified" value={stats.qualified + stats.proposal} icon={TrendingUp} tone="primary" active={statusFilter === 'qualified'} onClick={() => { setFilterMode('all'); setStatusFilter(statusFilter === 'qualified' ? null : 'qualified'); }} />
           {followUpSummary && followUpSummary.total > 0 && (
             <StatCard label="Sequence Due" value={followUpSummary.total} icon={Mail} tone={followUpSummary.overdue > 0 ? 'error' : 'primary'} active={filterMode === 'sequence-due'} onClick={() => handleStatClick('sequence-due')} />
           )}

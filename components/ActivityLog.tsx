@@ -194,10 +194,7 @@ export default function ActivityLog({ agencyId, entityType, entityId }: Activity
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors"
-      >
+      <div className="w-full flex items-center justify-between p-5">
         <div className="flex items-center gap-3">
           <Clock className="h-4 w-4 text-[#fafaf9]/50" />
           <h3 className="font-medium">Activity</h3>
@@ -205,10 +202,7 @@ export default function ActivityLog({ agencyId, entityType, entityId }: Activity
             {activities.length} events
           </span>
         </div>
-        <ChevronDown 
-          className={`h-4 w-4 text-[#fafaf9]/30 transition-transform ${expanded ? 'rotate-180' : ''}`} 
-        />
-      </button>
+      </div>
       
       {expanded && (
         <div className="px-5 pb-5">
@@ -238,7 +232,7 @@ export default function ActivityLog({ agencyId, entityType, entityId }: Activity
                                 {getActionDescription(activity)}
                               </p>
                               <p className="text-xs text-[#fafaf9]/40 mt-0.5">
-                                {formatRelativeTime(activity.created_at)}
+                                {new Date(activity.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                 {activity.performer && (
                                   <span>
                                     {' '}by {activity.performer.first_name} {activity.performer.last_name}

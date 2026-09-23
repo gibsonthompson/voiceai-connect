@@ -448,8 +448,8 @@ export default function CallScriptModal({
         setScripts(loadedScripts);
         // Auto-select: sequence-based or first
         if (loadedScripts.length > 0) {
-          const target = callCount + 1;
-          const match = loadedScripts.find(s => s.sequence_order === target)
+          // Default to the intro script (sequence 1 / first non-follow-up).
+          const match = loadedScripts.find(s => s.sequence_order === 1)
             || loadedScripts.find(s => !s.is_follow_up)
             || loadedScripts[0];
           handleScriptSelect(match.id, loadedScripts);
@@ -541,7 +541,7 @@ export default function CallScriptModal({
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const outcomeData = selectedOutcome ? CALL_OUTCOMES.find(o => o.value === selectedOutcome) : null;
 
-      await fetch(`${getApiBase()}/outreach/log`, {
+      const resp = await fetch(`${getApiBase()}/outreach/log`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -561,6 +561,7 @@ export default function CallScriptModal({
         }),
       });
 
+      if (!resp.ok) throw new Error('Failed to log call');
       setLoggedSuccess(true);
       onSent?.();
       setTimeout(() => onClose(), 1500);
