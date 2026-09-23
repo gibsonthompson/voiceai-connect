@@ -122,7 +122,7 @@ function StatsRow({ stats, theme }: { stats: any; theme: any }) {
     { label: "With Phone", value: stats.withPhone },
     { label: "With Email", value: stats.withEmail },
     { label: "With Website", value: stats.withWebsite },
-    { label: "Time", value: `${stats.durationSeconds}s` },
+    { label: "Time", value: (() => { const t = Number(stats.durationSeconds) || 0; return t < 60 ? `${t}s` : `${Math.floor(t / 60)}m ${t % 60}s`; })() },
   ];
   return (
     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 py-4">
@@ -260,18 +260,40 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
 
           {/* Social + Save */}
           <div>
-            {Object.keys(lead.socialLinks || {}).length > 0 && (
-              <>
-                <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Social</div>
-                {Object.entries(lead.socialLinks).map(([platform, url]) => (
-                  <a key={platform} href={url as string} target="_blank" rel="noopener"
-                    onClick={(e) => e.stopPropagation()}
-                    className="block mb-1 text-xs capitalize no-underline hover:underline" style={{ color: theme.textMuted }}>
-                    {platform} →
-                  </a>
-                ))}
-              </>
-            )}
+            {Object.entries(lead.socialLinks || {}).filter(([, u]) => u).length > 0 && (() => {
+              const SOCIAL_META: Record<string, { slug: string; color: string; label: string }> = {
+                facebook: { slug: "facebook", color: "0866FF", label: "Facebook" },
+                instagram: { slug: "instagram", color: "E4405F", label: "Instagram" },
+                linkedin: { slug: "linkedin", color: "0A66C2", label: "LinkedIn" },
+                twitter: { slug: "x", color: "000000", label: "X" },
+                x: { slug: "x", color: "000000", label: "X" },
+                yelp: { slug: "yelp", color: "FF1A1A", label: "Yelp" },
+                tiktok: { slug: "tiktok", color: "000000", label: "TikTok" },
+                youtube: { slug: "youtube", color: "FF0000", label: "YouTube" },
+                pinterest: { slug: "pinterest", color: "BD081C", label: "Pinterest" },
+              };
+              const entries = Object.entries(lead.socialLinks || {}).filter(([, u]) => u);
+              return (
+                <>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Social</div>
+                  <div className="flex flex-wrap gap-2 mb-1">
+                    {entries.map(([platform, url]) => {
+                      const meta = SOCIAL_META[String(platform).toLowerCase()];
+                      return (
+                        <a key={platform} href={url as string} target="_blank" rel="noopener"
+                          onClick={(e) => e.stopPropagation()} title={meta ? meta.label : platform}
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-full transition-transform hover:scale-110"
+                          style={{ background: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                          {meta
+                            ? <img src={`https://cdn.simpleicons.org/${meta.slug}/${meta.color}`} alt={meta.label} className="h-4 w-4" />
+                            : <Globe className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                        </a>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
             <button onClick={(e) => { e.stopPropagation(); onSave(lead); }}
               disabled={saving || saved}
               className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all"
@@ -315,7 +337,7 @@ const MAPS_INDUSTRIES = [
   { value: "therapy", label: "Therapy / Counseling" },
   { value: "optometry", label: "Optometry" },
   { value: "plastic_surgery", label: "Plastic Surgery" },
-  { value: "property_management", label: "Property Mgmt" },
+  { value: "property_management", label: "Property Management" },
   { value: "cleaning", label: "Cleaning Services" },
   { value: "towing", label: "Towing" },
 ];
@@ -467,6 +489,41 @@ function areaCodeToCity(phone?: string | null): string | null {
   return AREA_CODE_CITY[areaCode] || null;
 }
 
+type DropOption = { value: string; label: string };
+
+function Dropdown({ value, options, onChange, theme, buttonClassName, buttonStyle, align = "left" }:
+  { value: string; options: DropOption[]; onChange: (v: string) => void; theme: any; buttonClassName: string; buttonStyle: any; align?: "left" | "right" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center justify-between gap-2 ${buttonClassName}`} style={buttonStyle}>
+        <span className="truncate">{selected ? selected.label : ""}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0" style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
+      </button>
+      {open && (
+        <div className={`absolute z-50 mt-1 ${align === "right" ? "right-0" : "left-0"} min-w-full max-h-64 overflow-auto rounded-lg py-1 shadow-lg`}
+          style={{ background: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+          {options.map((o) => (
+            <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
+              className="block w-full text-left px-3 py-2 text-xs cursor-pointer whitespace-nowrap transition-colors"
+              style={{ background: o.value === value ? `${theme.primary}15` : "transparent", color: o.value === value ? theme.primary : theme.text }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LeadFinderPage() {
   const theme = useTheme();
   const { canUseLeadFinder } = usePlanFeatures();
@@ -493,6 +550,7 @@ export default function LeadFinderPage() {
   const [savingLeads, setSavingLeads] = useState<Set<string>>(new Set());
   const [savedLeads, setSavedLeads] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [confirmSearch, setConfirmSearch] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -522,7 +580,29 @@ export default function LeadFinderPage() {
   };
 
   // ── Search ──────────────────────────────────────────────────────────────
-  const handleSearch = useCallback(async () => {
+  const connectToJob = (jobId: string) => {
+    try { localStorage.setItem("lead_finder_job", jobId); } catch {}
+    const evtSource = new EventSource(`${API_BASE}/api/leads/search/stream/${jobId}`);
+    eventSourceRef.current = evtSource;
+    evtSource.onmessage = (event) => {
+      try {
+        const update = JSON.parse(event.data);
+        setProgress(update.progress);
+        if (update.status === "complete") {
+          setLeads(update.leads || []); setStats(update.stats); setLoading(false);
+          try { localStorage.removeItem("lead_finder_job"); } catch {}
+          evtSource.close();
+        } else if (update.status === "error") {
+          setError(update.error || "Pipeline failed"); setLoading(false);
+          try { localStorage.removeItem("lead_finder_job"); } catch {}
+          evtSource.close();
+        }
+      } catch {}
+    };
+    evtSource.onerror = () => { evtSource.close(); pollForResults(jobId); };
+  };
+
+  const doSearch = useCallback(async () => {
     if (!location.trim()) { setError("Enter a location"); return; }
     if (activeTab === "indeed" && !keywords.trim()) { setError("Enter search keywords"); return; }
     if (activeTab === "google_maps" && !mapsIndustry && !mapsQuery.trim()) { setError("Select an industry or enter a search query"); return; }
@@ -565,44 +645,46 @@ export default function LeadFinderPage() {
       if (res.status === 429) { setError(data.error); setLoading(false); return; }
       if (data.limitReached) { setLimitInfo(data); setLoading(false); return; }
       if (!data.jobId) throw new Error(data.error || "Failed to start search");
-
-      const evtSource = new EventSource(`${API_BASE}/api/leads/search/stream/${data.jobId}`);
-      eventSourceRef.current = evtSource;
-
-      evtSource.onmessage = (event) => {
-        try {
-          const update = JSON.parse(event.data);
-          setProgress(update.progress);
-          if (update.status === "complete" && update.leads) {
-            setLeads(update.leads || []);
-            setStats(update.stats);
-            setLoading(false);
-            evtSource.close();
-          } else if (update.status === "error") {
-            setError(update.error || "Pipeline failed");
-            setLoading(false);
-            evtSource.close();
-          }
-        } catch {}
-      };
-
-      evtSource.onerror = () => { evtSource.close(); pollForResults(data.jobId); };
+      connectToJob(data.jobId);
     } catch (err: any) { setError(err.message); setLoading(false); }
   }, [activeTab, keywords, location, maxLeads, mapsIndustry, mapsQuery, findAll]);
+
+  const hasUnsaved = leads.length > 0 && leads.some((l: any) => !savedLeads.has(l.companyName));
+
+  const handleSearch = useCallback(() => {
+    if (!location.trim()) { setError("Enter a location"); return; }
+    if (activeTab === "indeed" && !keywords.trim()) { setError("Enter search keywords"); return; }
+    if (activeTab === "google_maps" && !mapsIndustry && !mapsQuery.trim()) { setError("Select an industry or enter a search query"); return; }
+    if (hasUnsaved) { setConfirmSearch(true); return; }
+    doSearch();
+  }, [location, activeTab, keywords, mapsIndustry, mapsQuery, hasUnsaved, doSearch]);
 
   const pollForResults = async (jobId: string) => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(`${API_BASE}/api/leads/search/status/${jobId}`);
+        if (res.status === 404) { clearInterval(interval); setLoading(false); try { localStorage.removeItem("lead_finder_job"); } catch {} return; }
         const data = await res.json();
         setProgress(data.progress);
-        if (data.status === "complete") { setLeads(data.leads || []); setStats(data.stats); setLoading(false); clearInterval(interval); }
-        else if (data.status === "error") { setError(data.error); setLoading(false); clearInterval(interval); }
+        if (data.status === "complete") { setLeads(data.leads || []); setStats(data.stats); setLoading(false); clearInterval(interval); try { localStorage.removeItem("lead_finder_job"); } catch {} }
+        else if (data.status === "error") { setError(data.error); setLoading(false); clearInterval(interval); try { localStorage.removeItem("lead_finder_job"); } catch {} }
       } catch { clearInterval(interval); setError("Lost connection"); setLoading(false); }
     }, 1000);
   };
 
   useEffect(() => { return () => { eventSourceRef.current?.close(); }; }, []);
+
+  // Resume an in-progress search after a page refresh.
+  useEffect(() => {
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("lead_finder_job"); } catch {}
+    if (saved) {
+      setLoading(true);
+      setProgress({ stage: "resuming", message: "Reconnecting to your search...", percent: 5 });
+      connectToJob(saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Save ────────────────────────────────────────────────────────────────
   const handleSaveLead = async (lead: any) => {
@@ -620,6 +702,19 @@ export default function LeadFinderPage() {
       if (data.skipped > 0) setError(`${lead.companyName} already exists in your CRM`);
     } catch (err: any) { setError("Failed to save: " + err.message); }
     finally { setSavingLeads((prev) => { const n = new Set(prev); n.delete(key); return n; }); }
+  };
+
+  const saveAllLeads = async () => {
+    const agencyId = getAgencyId();
+    const toSave = leads.filter((l: any) => !savedLeads.has(l.companyName));
+    if (!agencyId || toSave.length === 0) return;
+    try {
+      await fetch(`${API_BASE}/api/leads/save-to-crm`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leads: toSave, agencyId }),
+      });
+      setSavedLeads(new Set(leads.map((l: any) => l.companyName)));
+    } catch {}
   };
 
   const handleSaveSelected = async () => {
@@ -813,10 +908,9 @@ export default function LeadFinderPage() {
                   {findAll ? (
                     <div className={inputClass} style={{ ...inputStyle, opacity: 0.55, textAlign: "center" }}>All</div>
                   ) : (
-                    <select value={maxLeads} onChange={(e) => setMaxLeads(Number(e.target.value))}
-                      className={`${inputClass} cursor-pointer`} style={inputStyle}>
-                      <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={60}>60</option>
-                    </select>
+                    <Dropdown value={String(maxLeads)} onChange={(v) => setMaxLeads(Number(v))} theme={theme}
+                      buttonClassName={`${inputClass} cursor-pointer`} buttonStyle={inputStyle}
+                      options={[{ value: "10", label: "10" }, { value: "25", label: "25" }, { value: "50", label: "50" }, { value: "60", label: "60" }]} />
                   )}
                 </div>
                 <button onClick={handleSearch} disabled={loading}
@@ -834,6 +928,34 @@ export default function LeadFinderPage() {
 
       {/* Progress */}
       {loading && <ProgressBar progress={progress} theme={theme} />}
+
+      {/* Confirm before a new search when there are unsaved leads */}
+      {confirmSearch && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setConfirmSearch(false)}>
+          <div className="w-full max-w-sm rounded-xl p-5" style={{ background: theme.card || theme.input, border: `1px solid ${theme.inputBorder}` }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Save your current leads first?</div>
+            <div className="text-xs mb-4" style={{ color: theme.textMuted }}>
+              You have {leads.filter((l: any) => !savedLeads.has(l.companyName)).length} unsaved lead{leads.filter((l: any) => !savedLeads.has(l.companyName)).length === 1 ? "" : "s"}. Starting a new search clears the current results.
+            </div>
+            <div className="flex flex-col gap-2">
+              <button type="button" onClick={async () => { setConfirmSearch(false); await saveAllLeads(); doSearch(); }}
+                className="rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer" style={{ background: theme.primary, color: theme.primaryText }}>
+                Save to CRM, then search
+              </button>
+              <button type="button" onClick={() => { setConfirmSearch(false); doSearch(); }}
+                className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer" style={{ border: `1px solid ${theme.inputBorder}`, color: theme.text, background: "transparent" }}>
+                Discard and search
+              </button>
+              <button type="button" onClick={() => setConfirmSearch(false)}
+                className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer" style={{ color: theme.textMuted, background: "transparent" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error / Success */}
       {error && (
@@ -883,19 +1005,13 @@ export default function LeadFinderPage() {
                 {selectedLeads.size > 0 ? `${selectedLeads.size} selected` : "Select all"}
               </button>
 
-              <select value={filterIndustry} onChange={(e) => setFilterIndustry(e.target.value)}
-                className="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer" style={inputStyle}>
-                <option value="all">All Industries</option>
-                {industries.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
-              </select>
+              <Dropdown value={filterIndustry} onChange={setFilterIndustry} theme={theme}
+                buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[128px]" buttonStyle={inputStyle}
+                options={[{ value: "all", label: "All Industries" }, ...industries.map((ind) => ({ value: ind, label: ind }))]} />
 
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer" style={inputStyle}>
-                <option value="relevance">Sort: Relevance</option>
-                <option value="company">Sort: Company A-Z</option>
-                <option value="rating">Sort: Rating</option>
-                <option value="reviews">Sort: Reviews</option>
-              </select>
+              <Dropdown value={sortBy} onChange={setSortBy} theme={theme}
+                buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[150px]" buttonStyle={inputStyle}
+                options={[{ value: "relevance", label: "Sort: Relevance" }, { value: "company", label: "Sort: Company A-Z" }, { value: "rating", label: "Sort: Rating" }, { value: "reviews", label: "Sort: Reviews" }]} />
 
               <span className="text-xs" style={{ color: theme.textMuted }}>
                 {filteredLeads.length} of {leads.length} leads
