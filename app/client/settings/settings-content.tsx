@@ -72,7 +72,16 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [savingHipaa, setSavingHipaa] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
-  const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || null;
+  const [supportPhone, setSupportPhone] = useState<string | null>(process.env.NEXT_PUBLIC_SUPPORT_PHONE || null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${backendUrl}/api/support-line`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d && d.number) setSupportPhone(d.number); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [backendUrl]);
 
   const { user } = useClient();
   const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
