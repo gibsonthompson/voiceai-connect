@@ -72,16 +72,10 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [savingHipaa, setSavingHipaa] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
-  const [supportPhone, setSupportPhone] = useState<string | null>(process.env.NEXT_PUBLIC_SUPPORT_PHONE || null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${backendUrl}/api/support-line`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d && d.number) setSupportPhone(d.number); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [backendUrl]);
+  // The single platform-wide AI support line. One global number that changes
+  // rarely, so it is hardcoded rather than fetched. If it ever changes, update
+  // this one line.
+  const supportPhone = '+14042017505';
 
   const { user } = useClient();
   const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
