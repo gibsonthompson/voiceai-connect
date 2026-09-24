@@ -273,15 +273,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {isOwner && (<>
         {/* Contact Information */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><User className="w-4 h-4" style={{ color: theme.primary }} />Contact Information</h2>
-          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+        <SectionCard icon={User} title="Contact Information" theme={theme} primaryColor={theme.primary}>
+          <div className="space-y-3 sm:space-y-4">
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Your name</label><input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="e.g. Mike Johnson" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Shown in your dashboard greeting. Your business name is set separately.</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Owner SMS notifications are sent here, and this is the default number the AI transfers to when a caller needs a person. Team members get SMS on their own number, set under Users.</p></div>
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
             <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
           </div>
-        </section>
+        </SectionCard>
         </>)}
 
         {/* Team-member SMS clarification (shown when the account-level sections are hidden) */}
@@ -295,9 +294,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         )}
 
         {/* Your Login — the signed-in user's own credentials */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Lock className="w-4 h-4" style={{ color: theme.primary }} />Your Login</h2>
-          <div className="rounded-xl border p-3 sm:p-4 space-y-2.5 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+        <SectionCard icon={Lock} title="Your Login" theme={theme} primaryColor={theme.primary}>
+          <div className="space-y-2.5">
             <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>The email and password you use to sign in to this dashboard.</p>
             <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
               <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
@@ -320,12 +318,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               )}
             </div>
           </div>
-        </section>
+        </SectionCard>
 
         {/* Change Password */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Lock className="w-4 h-4" style={{ color: theme.primary }} />Change Password</h2>
-          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+        <SectionCard icon={Lock} title="Change Password" theme={theme} primaryColor={theme.primary}>
+          <div className="space-y-3 sm:space-y-4">
             {passwordMessage && (<div className="p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(passwordMessage)}>{passwordMessage}</div>)}
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label><div className="relative"><input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Enter current password" /><button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
             {myCreds?.has_custom_password && (isOwner
@@ -338,7 +335,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
             <button onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasPasswordChanges ? theme.primary : theme.bg, color: hasPasswordChanges ? theme.primaryText : theme.textMuted4, border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}` }}>{changingPassword ? 'Changing...' : 'Change Password'}</button>
           </div>
-        </section>
+        </SectionCard>
 
         {/* Users — dashboard login accounts (owner only) */}
         {isOwner && (
@@ -371,16 +368,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Support */}
         {supportPhone && (
-          <section className="mb-4 sm:mb-6">
-            <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Headphones className="w-4 h-4" style={{ color: theme.primary }} />Support</h2>
-            <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0"><div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}><Headphones className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.primary }} /></div><div className="min-w-0"><p className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>AI Support Line</p><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Available 24/7</p></div></div>
-                <a href={`tel:${supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Call</a>
-              </div>
-              <div className="mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${theme.border}` }}><a href={`tel:${supportPhone}`} className="font-semibold text-sm sm:text-lg" style={{ color: theme.primary }}>{formatPhoneNumber(supportPhone)}</a></div>
-            </div>
-          </section>
+          <SectionCard icon={Headphones} title="AI Support Line" subtitle="Available 24/7" action={<a href={`tel:${supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Call</a>} theme={theme} primaryColor={theme.primary}>
+            <a href={`tel:${supportPhone}`} className="font-semibold text-sm sm:text-lg" style={{ color: theme.primary }}>{formatPhoneNumber(supportPhone)}</a>
+          </SectionCard>
         )}
       </div>
 
