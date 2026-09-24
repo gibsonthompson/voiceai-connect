@@ -31,6 +31,7 @@ interface Props {
   clientId: string;
   theme: any;
   compact?: boolean;
+  hideHeader?: boolean;
   industry?: string;
 }
 
@@ -54,7 +55,7 @@ const DEFAULT_STAFF = { name: 'e.g. Jane Smith', role: 'e.g. Manager, Associate,
 
 const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '' };
 
-export default function StaffMembersSection({ clientId, theme, compact, industry }: Props) {
+export default function StaffMembersSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -154,7 +155,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
           People your AI knows about — for call routing, scheduling, and referrals
         </p>
       )}
-      {compact && (
+      {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-4 h-4" style={{ color: theme.primary }} />
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Staff Directory</span>

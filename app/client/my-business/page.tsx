@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Building2, Clock, BookOpen, Globe, HelpCircle, FileText, MapPin,
-  Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles
+  Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles, Briefcase, Users
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { CustomSelect } from '@/components/ui/custom-select';
@@ -308,7 +308,7 @@ export default function MyBusinessPage() {
     return days.map(d => { const day = businessHours[d as keyof BusinessHours]; const n = d.charAt(0).toUpperCase() + d.slice(1,3); return day.closed ? `${n}: Closed` : `${n}: ${day.open.replace(' ','')}-${day.close.replace(' ','')}`; });
   };
 
-  const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
+  const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}` };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
   const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', accent: primaryColor, isDark: theme.isDark };
   const timeOptions = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
@@ -531,14 +531,14 @@ export default function MyBusinessPage() {
         </div>
 
         {/* Services */}
-        <div className="mb-4 sm:mb-5">
-          <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} />
-        </div>
+        <SectionCard icon={Briefcase} title="Services" subtitle="What you offer, so your AI can ask callers what they need.">
+          <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} compact hideHeader />
+        </SectionCard>
 
-        {/* Staff Directory — people the AI knows about for routing and scheduling */}
-        <div className="mb-4 sm:mb-5">
-          <StaffMembersSection clientId={client.id} theme={theme} industry={client.industry} />
-        </div>
+        {/* Staff Directory */}
+        <SectionCard icon={Users} title="Staff directory" subtitle="People your AI knows about, for routing calls, scheduling, and referrals.">
+          <StaffMembersSection clientId={client.id} theme={theme} industry={client.industry} compact hideHeader />
+        </SectionCard>
 
         {/* Knowledge Base */}
         <div id="kb-section" className="fu fu4">

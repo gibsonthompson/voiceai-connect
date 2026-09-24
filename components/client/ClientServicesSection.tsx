@@ -30,6 +30,7 @@ interface Props {
   clientId: string;
   theme: any;
   compact?: boolean;
+  hideHeader?: boolean;
   industry?: string;
 }
 
@@ -63,7 +64,7 @@ const DEFAULT_SERVICE_EXAMPLE = 'e.g. Consultation, Follow-up, Service Call';
 
 const EMPTY_FORM = { name: '', duration_minutes: 30, buffer_minutes: 0, booking_mode: 'auto_book', assigned_staff: [] as string[] };
 
-export default function ClientServicesSection({ clientId, theme, compact, industry }: Props) {
+export default function ClientServicesSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [staffMap, setStaffMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -202,7 +203,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
           <Briefcase className="w-4 h-4" style={{ color: theme.primary }} />Services
         </h2>
       )}
-      {compact && (
+      {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
           <Briefcase className="w-4 h-4" style={{ color: theme.primary }} />
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Services</span>
