@@ -490,8 +490,8 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r3} className="fade-up grid lg:grid-cols-12 gap-10 lg:gap-16 mb-16 lg:mb-20">
             <div className="lg:col-span-6">
-              <p className="t-eyebrow text-em mb-6">Infrastructure</p>
-              <h2 className="t-h2 text-white">Sixteen enterprise vendors. One platform interface.</h2>
+              <p className="t-eyebrow text-em mb-6">What we run for you</p>
+              <h2 className="t-h2 text-white">You never touch the infrastructure. We run all of it.</h2>
             </div>
             <div className="lg:col-span-6 lg:pt-2">
               <p className="t-body max-w-lg">
@@ -500,6 +500,9 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* WHITE-LABEL ANIMATION SLOT: the grand scroll animation (value chain:
+              infrastructure -> platform -> your agency -> end client) will replace
+              this static value-chain diagram. See the animation concept doc. */}
           <div className="arch-stack">
             <div className="arch-tier">
               <div className="arch-tier-head">
@@ -544,10 +547,10 @@ export default function HomePage() {
       <section ref={towerSectionRef} className="bg-ink relative border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-28 lg:pt-40">
           <div className="max-w-2xl">
-            <p className="t-eyebrow text-em mb-6">Platform architecture</p>
-            <h2 className="t-h2 text-white">Eight platform layers. Delivered in a single onboarding.</h2>
+            <p className="t-eyebrow text-em mb-6">How it comes together</p>
+            <h2 className="t-h2 text-white">Your entire agency, live in one onboarding.</h2>
             <p className="t-body mt-6 max-w-xl">
-              When an agency activates a workspace on VoiceAI Connect, eight independently-developed products go live at once, integrated end to end, white-labeled to the agency&apos;s brand, and packaged as a single product to sell to local businesses.
+              Activate your workspace and everything you need to sell AI receptionists goes live at once: your brand, your marketing site, client onboarding, the AI receptionist, client and agency dashboards, Stripe billing, and lead generation. Integrated end to end, white-labeled to your brand, and packaged as one product to sell to local businesses.
             </p>
           </div>
         </div>
@@ -612,11 +615,10 @@ export default function HomePage() {
 
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pt-12 lg:pt-20 pb-28 lg:pb-40">
           <div className="border-t border-white/[0.06] pt-10 max-w-3xl">
-            <p className="font-mono text-[11px] text-white/35 mb-3 uppercase tracking-[0.16em]">Outcome</p>
             <p className="font-display text-[22px] sm:text-[26px] font-medium text-white leading-tight tracking-tight max-w-2xl">
-              Eight independent products. Integrated end to end. <span className="text-em">Sold under your brand.</span>
+              One platform to run. <span className="text-em">Your brand on it, your price, your recurring revenue.</span>
             </p>
-            <Link href="/signup" className="btn btn-em mt-7">Activate a workspace <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+            <Link href="/signup" className="btn btn-em mt-7">Start free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
           </div>
         </div>
       </section>
@@ -625,38 +627,18 @@ export default function HomePage() {
       <section id="platform" className="bg-ink py-28 lg:py-40 border-t border-white/[0.04] scroll-mt-24">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r4} className="fade-up max-w-3xl mb-16">
-            <p className="t-eyebrow text-em mb-6">Platform capabilities</p>
-            <h2 className="t-h2 text-white">A complete operating system for AI agencies.</h2>
+            <p className="t-eyebrow text-em mb-6">Also included</p>
+            <h2 className="t-h2 text-white">The rest of the operating system, included.</h2>
           </div>
 
           <div className="bento">
-            <div className="bento-cell bento-c4 bento-r2">
-              <div className="bento-cell-content">
-                <p className="t-eyebrow text-em">White-label</p>
-                <h3 className="t-h3 text-white mt-4 max-w-md font-medium">Your brand, end to end.</h3>
-                <p className="text-[14px] text-white/55 mt-3 max-w-md leading-relaxed">Logo, color palette, custom domain, transactional emails, and the client phone experience are all configured per agency. VoiceAI Connect remains invisible to the businesses you serve.</p>
-                <div className="mt-7 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                  <div className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.025]"><span className="w-2 h-2 rounded-full bg-red-400/60" /><span className="w-2 h-2 rounded-full bg-yellow-400/60" /><span className="w-2 h-2 rounded-full bg-emerald-400/60" /><span className="ml-3 font-mono text-[10px] text-white/40">your-brand.com</span></div>
-                  <div className="px-4 py-5"><div className="flex items-center gap-2 mb-2.5"><div className="w-5 h-5 rounded" style={{ background: 'linear-gradient(135deg, #4aeabc, #047857)' }} /><span className="font-display font-medium text-white text-[12px]">Acme Receptionist</span></div><p className="font-display text-[15px] text-white leading-tight font-medium">Never miss<br />another call.</p></div>
-                </div>
-                <div className="mt-auto pt-7 flex items-end justify-between">
-                  <div className="flex flex-wrap gap-1.5">{['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ef4444', '#0a0a0a'].map(c => (<span key={c} className="brand-swatch" style={{ background: c }} />))}</div>
-                  <code className="font-mono text-[11px] text-white/40">your-brand.com</code>
-                </div>
-              </div>
-            </div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em">Onboarding</p><p className="t-stat text-white mt-3 t-numeric">60<span className="text-em text-2xl align-top font-display">s</span></p><p className="text-[12px] text-white/45 mt-3 leading-relaxed">From client signup to a provisioned AI agent and live phone number. No A2P registration delay.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em">Margin</p><p className="t-stat text-white mt-3 t-numeric">90<span className="text-em text-2xl align-top font-display">%+</span></p><p className="text-[12px] text-white/45 mt-3 leading-relaxed">Usage-based platform pricing. Your margin compounds as you add clients.</p></div></div>
-            <div className="bento-cell bento-c3"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><CreditCard className="w-3 h-3" />Stripe Connect</p><h3 className="font-display text-lg text-white mt-3 font-medium">The money lands in your bank.</h3><p className="text-[13px] text-white/50 mt-2 leading-relaxed">Subscription revenue flows from each client&apos;s card straight to your account. No middleman, no holdbacks, no revenue share.</p><div className="mt-auto pt-5 space-y-2">{[['Client pays', 'Your bank, direct'], ['Platform fee', 'Flat + per client'], ['Revenue share', '0%']].map(([k, v]) => (<div key={k} className="flex items-center justify-between font-mono text-[11px]"><span className="text-white/40">{k}</span><span className="text-white/85">{v}</span></div>))}</div></div></div>
-            <div className="bento-cell bento-c3"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Smartphone className="w-3 h-3" />Mobile-first</p><h3 className="font-display text-lg text-white mt-3 font-medium">Run the agency from your phone.</h3><p className="text-[13px] text-white/50 mt-2 leading-relaxed">Everything the desktop does, in your pocket. GoHighLevel still requires a desktop for most of its agency workflow.</p><div className="mt-auto pt-5 flex flex-wrap gap-1.5">{['Add clients', 'Swap branding', 'Play recordings', 'Review revenue'].map(x => (<span key={x} className="font-mono text-[10px] text-white/55 rounded-md border border-white/[0.07] bg-white/[0.012] px-2 py-1">{x}</span>))}</div></div></div>
-            <div className="bento-cell bento-c3"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Map className="w-3 h-3" />Lead generation</p><h3 className="font-display text-lg text-white mt-3 font-medium">Built-in prospecting and outreach.</h3><p className="text-[13px] text-white/50 mt-2 leading-relaxed">Pull local businesses straight from Google Maps, run them through outreach sequences, and track replies, all in one workflow.</p><div className="mt-auto pt-5 grid grid-cols-3 gap-2">{[['13', 'Templates'], ['Maps', 'Prospecting'], ['Auto', 'Reply tracking']].map(([n, s]) => (<div key={s} className="rounded-lg p-2.5 border border-white/[0.07] bg-white/[0.012]"><p className="font-display text-[16px] font-medium text-white">{n}</p><p className="font-mono text-[9px] tracking-[0.12em] text-white/40 mt-0.5 uppercase">{s}</p></div>))}</div></div></div>
-            <div className="bento-cell bento-c3"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Phone className="w-3 h-3" />AI demo line</p><h3 className="font-display text-lg text-white mt-3 font-medium">A self-demonstrating sales tool.</h3><p className="text-[13px] text-white/50 mt-2 leading-relaxed">The Pro tier gives each agency a branded demo phone number. Your prospects call it, hear the AI receptionist firsthand, and convert without a sales call.</p><div className="mt-auto pt-5 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.012] px-3.5 py-3"><Phone className="w-3.5 h-3.5 text-em flex-shrink-0" /><span className="font-mono text-[11px] text-white/65">your-brand demo line</span><div className="ml-auto waveform">{Array.from({ length: 12 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 75}ms` }} />))}</div></div></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Lock className="w-3 h-3" />Security</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Postgres row-level security. Encrypted, reputable cloud infrastructure. PII never persisted in logs.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Globe className="w-3 h-3" />Multilingual</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Automatic English and Spanish with real-time language detection. The AI switches mid-call.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Wand2 className="w-3 h-3" />Automation</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Booked appointments flow from Google Calendar into your clients&apos; connected CRMs and tools automatically.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Calendar className="w-3 h-3" />Google Calendar</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">The AI books appointments to your client&apos;s calendar during live calls. Included on all plans.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><ShieldCheck className="w-3 h-3" />Spam filtering</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Robocalls and telemarketers are detected and ended automatically. Spam never counts against a client&apos;s limit.</p></div></div>
             <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><PhoneCall className="w-3 h-3" />Concurrent calls</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Unlimited simultaneous calls. No busy signals, no hold music, no missed calls at peak hours.</p></div></div>
+            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Wand2 className="w-3 h-3" />Automation</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Booked appointments flow from Google Calendar into your clients&apos; connected CRMs and tools automatically.</p></div></div>
+            <div className="bento-cell bento-c6"><div className="bento-cell-content"><p className="t-eyebrow text-em mb-5">Also included on every plan</p><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3.5">{['Run it all from your phone', 'Google Calendar booking on every plan', 'Direct Stripe Connect payouts, no revenue share', '60-second client onboarding, no A2P delay', 'Branded AI demo phone line (Pro)', 'White-label marketing website'].map(x => (<div key={x} className="flex items-center gap-2.5 text-[13px] text-white/70"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</div>))}</div></div></div>
           </div>
         </div>
       </section>
@@ -880,9 +862,9 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <div ref={r9} className="fade-up max-w-3xl">
             <p className="t-eyebrow text-em mb-6">Get started</p>
-            <h2 className="t-h1 text-white">Launch your AI receptionist agency this week.</h2>
+            <h2 className="t-h1 text-white">Put your brand on it. Start free.</h2>
             <p className="t-body mt-7 max-w-lg">
-              Start free. No card required to begin. By Friday you can have a fully branded platform live, Stripe Connect authorized, and a public signup link ready to distribute to local businesses.
+              No card to begin. Set up your branding, connect Stripe Connect, and share your signup link with local businesses whenever you&apos;re ready. Add your first client today.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
