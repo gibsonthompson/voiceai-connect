@@ -318,7 +318,7 @@ export default function MyBusinessPage() {
 
   const aiKnowledge = parseAiKnowledge(aiKnowsContent);
 
-  const SectionCard = ({ icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle: string; children: React.ReactNode; className?: string }) => (
+  const SectionCard = ({ icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle?: string; children: React.ReactNode; className?: string }) => (
     <SharedSectionCard icon={icon} title={title} subtitle={subtitle} className={className} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
   );
 

@@ -41,7 +41,7 @@ export function SectionCard({
   theme: any;
   primaryColor: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const borderColor = accent ? primaryColor : theme.border;
   const bg = accent ? hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.02) : theme.card;

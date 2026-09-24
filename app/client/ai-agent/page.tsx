@@ -43,7 +43,7 @@ const GoogleCalendarIcon = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
-const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
+const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle?: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
   <SharedSectionCard icon={icon} title={title} subtitle={subtitle} live={live} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
 );
 
