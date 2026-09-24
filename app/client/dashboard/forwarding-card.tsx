@@ -74,6 +74,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   const [liveOpen, setLiveOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [carrier, setCarrier] = useState<Carrier | null>(null);
   const [mode, setMode] = useState<Mode>('all');
@@ -349,19 +350,28 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
 
   // Shared header explaining the number relationship
   const intro = (
-    <div className="flex items-start gap-3">
-      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
-        <Phone className="h-5 w-5" style={{ color: theme.primary }} />
-      </div>
-      <div className="min-w-0">
-        <h3 className="text-lg sm:text-xl font-bold leading-tight" style={{ color: theme.text }}>
-          Turn on call forwarding
-        </h3>
-        <p className="mt-1 text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-          Your customers keep calling your usual business number. This sends those calls to your AI line so it can answer them. Your number never changes.
+    <>
+      <button onClick={() => setSetupOpen((v) => !v)} className="flex w-full items-start gap-3 text-left">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
+          <Phone className="h-5 w-5" style={{ color: theme.primary }} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg sm:text-xl font-bold leading-tight" style={{ color: theme.text }}>
+            Turn on call forwarding
+          </h3>
+          <p className="mt-1 text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+            Your customers keep calling your usual business number. This sends those calls to your AI line so it can answer them. Your number never changes.
+          </p>
+        </div>
+        <ChevronDown className={`mt-1 h-5 w-5 flex-shrink-0 transition-transform ${setupOpen ? 'rotate-180' : ''}`} style={{ color: theme.textMuted4 }} />
+      </button>
+      <div className="mt-3 flex items-start gap-2.5 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.hover }}>
+        <PhoneCall className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+        <p className="text-[12px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
+          <span style={{ color: theme.text, fontWeight: 600 }}>Two ways to use your AI.</span> Set up forwarding here to keep your existing business number, or just hand out your AI number, <span style={{ color: theme.text, fontWeight: 600 }}>{formatted}</span>, and it answers directly with nothing to set up. Using it as your main line? You can collapse this section.
         </p>
       </div>
-    </div>
+    </>
   );
 
   const stepRow = (n: number, text: string) => (
@@ -524,6 +534,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu2" style={card}>
       {intro}
 
+      {setupOpen && (<>
       {/* Selected carrier + change */}
       <div className="mt-3 flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
         <span className="text-[12px] font-medium" style={{ color: theme.textMuted }}>Carrier: <span style={{ color: theme.text }}>{carrierLabel}</span></span>
@@ -655,6 +666,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
           Enter the code on the keypad with no spaces or dashes, on cellular signal (not Wi-Fi calling), then wait for the confirmation. If it still fails, your plan may not include call forwarding. Call your carrier and ask them to enable forwarding to an outside number.
         </p>
       )}
+      </>)}
     </div>
   );
 }
