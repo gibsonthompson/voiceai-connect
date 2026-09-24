@@ -11,6 +11,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
+import { SectionCard } from '@/components/client/SectionCard';
 import { Toast } from '@/components/ui/toast';
 import { useClient } from '@/lib/client-context';
 
@@ -222,9 +223,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* HIPAA Mode — only shown for healthcare-related industries */}
         {['medical_practice','dental','mental_health','veterinary','healthcare','chiropractic','optometry','physical_therapy'].includes(client.industry) && (
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Shield className="w-4 h-4" style={{ color: theme.primary }} />HIPAA Compliance</h2>
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: hipaaMode ? theme.primary : theme.border, backgroundColor: hipaaMode ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : theme.card }}>
+        <SectionCard icon={Shield} title="HIPAA Compliance" accent={hipaaMode} theme={theme} primaryColor={theme.primary}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -250,20 +249,16 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                 <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> AI collects name, phone, and general visit type only</div>
               </div>
             )}
-          </div>
-        </section>
+        </SectionCard>
         )}
 
         {/* AI Phone Number */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><Phone className="w-4 h-4" style={{ color: theme.primary }} />AI Phone Number</h2>
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+        <SectionCard icon={Phone} title="AI Phone Number" theme={theme} primaryColor={theme.primary}>
             <div className="flex items-center justify-between gap-3 sm:gap-4">
               <div className="min-w-0"><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label><div className="text-base sm:text-xl font-bold truncate" style={{ color: theme.primary }}>{client.vapi_phone_number ? formatPhoneNumber(client.vapi_phone_number) : 'Setting up...'}</div></div>
               <button onClick={handleCopyNumber} disabled={!client.vapi_phone_number} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>{isCopied ? <Check className="w-4 h-4" style={{ color: theme.success }} /> : <Copy className="w-4 h-4" />}{isCopied ? 'Copied!' : 'Copy'}</button>
             </div>
-          </div>
-        </section>
+        </SectionCard>
 
         {/* Add to Home Screen */}
         <section className="mb-4 sm:mb-6">
@@ -355,9 +350,8 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         )}
 
         {/* Subscription & Billing */}
-        <section className="mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}><CreditCard className="w-4 h-4" style={{ color: theme.primary }} />Subscription</h2>
-          <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+        <SectionCard icon={CreditCard} title="Subscription" theme={theme} primaryColor={theme.primary}>
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{(client as any).pricing_mode === 'custom' ? 'Custom' : (client.plan_type || 'Trial')}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
             {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
             <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
@@ -373,7 +367,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
             )}
           </div>
-        </section>
+        </SectionCard>
 
         {/* Support */}
         {supportPhone && (

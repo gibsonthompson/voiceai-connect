@@ -348,12 +348,9 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
             </a>
           )}
-          <div className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ backgroundColor: nav.poweredByBg, border: `1px solid ${nav.border}` }}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold flex-shrink-0" style={{ backgroundColor: nav.activeItemColor, color: theme.primaryText }}>{(branding.agencyName || 'A').charAt(0).toUpperCase()}</div>
-            <div className="min-w-0">
-              <p className="text-[11px] leading-tight" style={{ color: nav.textMuted }}>Powered by</p>
-              <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: nav.text }}>{branding.agencyName}</p>
-            </div>
+          <div className="rounded-xl px-3 py-2.5" style={{ backgroundColor: nav.poweredByBg, border: `1px solid ${nav.border}` }}>
+            <p className="text-[11px] leading-tight" style={{ color: nav.textMuted }}>Powered by</p>
+            <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: nav.text }}>{branding.agencyName}</p>
           </div>
           <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}><LogOut className="h-5 w-5" /> Sign Out</button>
         </div>
