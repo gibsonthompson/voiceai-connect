@@ -396,18 +396,30 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 mt-24 lg:mt-32 relative">
           <p className="t-eyebrow text-white/35 mb-8 text-center">Built on enterprise infrastructure</p>
           <div className="trust-row">
-            {[
-              { n: 'Anthropic', i: 'anthropic' }, { n: 'ElevenLabs', i: 'elevenlabs' },
-              { n: 'Deepgram', i: 'deepgram' }, { n: 'OpenAI', i: 'openai' },
-              { n: 'Telnyx', i: 'telnyx' }, { n: 'Twilio', i: 'twilio' },
-              { n: 'Stripe', i: 'stripe' }, { n: 'Supabase', i: 'supabase' },
-              { n: 'Google', i: 'google' }, { n: 'Vercel', i: 'vercel' },
-              { n: 'Cloudflare', i: 'cloudflare' }, { n: 'Sentry', i: 'sentry' },
-              { n: 'PostHog', i: 'posthog' }, { n: 'Brevo', i: 'brevo' },
-              { n: 'Make', i: 'make' }, { n: 'n8n', i: 'n8n' },
-            ].map(b => (
+            {([
+              { n: 'Anthropic', s: 'anthropic', c: 'e8e8e8' },
+              { n: 'ElevenLabs', s: 'elevenlabs', c: 'e8e8e8' },
+              { n: 'Deepgram', s: 'deepgram' },
+              { n: 'OpenAI', s: 'openai', c: 'e8e8e8' },
+              { n: 'Telnyx', img: '/telnyx.png' },
+              { n: 'Twilio', s: 'twilio' },
+              { n: 'Stripe', s: 'stripe' },
+              { n: 'Supabase', s: 'supabase' },
+              { n: 'Google', s: 'google' },
+              { n: 'Vercel', s: 'vercel', c: 'e8e8e8' },
+              { n: 'Cloudflare', s: 'cloudflare' },
+              { n: 'Sentry', s: 'sentry', c: 'e8e8e8' },
+              { n: 'PostHog', s: 'posthog', c: 'e8e8e8' },
+              { n: 'Brevo', s: 'brevo' },
+              { n: 'Make', s: 'make' },
+              { n: 'n8n', s: 'n8n' },
+            ] as { n: string; s?: string; c?: string; img?: string }[]).map(b => (
               <div key={b.n} className="trust-item">
-                <BrandIcon name={b.i} />
+                {b.s ? (
+                  <img src={`https://cdn.simpleicons.org/${b.s}${b.c ? '/' + b.c : ''}`} alt={`${b.n} logo`} width={20} height={20} loading="lazy" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                ) : (
+                  <img src={b.img} alt={`${b.n} logo`} width={20} height={20} loading="lazy" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                )}
                 <span className="trust-item-name">{b.n}</span>
               </div>
             ))}
@@ -563,10 +575,10 @@ export default function HomePage() {
                   <div className="max-w-md">
                     <div className="flex items-center gap-3 mb-6">
                       <span className="font-mono text-[10px] text-em tracking-[0.16em] uppercase">Layer {l.n}</span>
-                      <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(74, 234, 188, 0.35), transparent)' }} />
+                      <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(0, 227, 170, 0.35), transparent)' }} />
                     </div>
                     <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.18)' }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.18)' }}>
                         <l.icon className="w-4 h-4 text-em" strokeWidth={1.7} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -618,7 +630,7 @@ export default function HomePage() {
             <p className="font-display text-[22px] sm:text-[26px] font-medium text-white leading-tight tracking-tight max-w-2xl">
               One platform to run. <span className="text-em">Your brand on it, your price, your recurring revenue.</span>
             </p>
-            <Link href="/signup" className="btn btn-em mt-7">Start free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+            <Link href="/signup" className="btn btn-em mt-7">Get started <ArrowUpRight className="w-3.5 h-3.5" /></Link>
           </div>
         </div>
       </section>
@@ -767,7 +779,7 @@ export default function HomePage() {
             ].map(([f, v, g, a, e]) => (
               <div key={f as string} className="compare-row text-[13.5px] text-black/72">
                 <div className="pr-4">{f as string}</div>
-                <div className="text-center compare-cell-em px-3 py-3">{v ? <Check className="w-4 h-4 mx-auto" style={{ color: '#10b981' }} strokeWidth={2.5} /> : <XIcon className="w-3.5 h-3.5 text-black/20 mx-auto" />}</div>
+                <div className="text-center compare-cell-em px-3 py-3">{v ? <Check className="w-4 h-4 mx-auto" style={{ color: '#00c596' }} strokeWidth={2.5} /> : <XIcon className="w-3.5 h-3.5 text-black/20 mx-auto" />}</div>
                 <div className="text-center">{g ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
                 <div className="text-center compare-hide-sm">{a ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
                 <div className="text-center compare-hide-md">{e ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
@@ -794,7 +806,7 @@ export default function HomePage() {
               <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
                 {t.popular && (
                   <div className="absolute -top-3 left-7">
-                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#4aeabc' }}>Most popular</span>
+                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#00e3aa' }}>Most popular</span>
                   </div>
                 )}
                 <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
@@ -819,7 +831,7 @@ export default function HomePage() {
                     <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#4aeabc' } : undefined}>
+                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#00e3aa' } : undefined}>
                   {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
                 </Link>
               </div>
@@ -862,9 +874,9 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <div ref={r9} className="fade-up max-w-3xl">
             <p className="t-eyebrow text-em mb-6">Get started</p>
-            <h2 className="t-h1 text-white">Put your brand on it. Start free.</h2>
+            <h2 className="t-h1 text-white">Your brand, your clients, your recurring revenue.</h2>
             <p className="t-body mt-7 max-w-lg">
-              No card to begin. Set up your branding, connect Stripe Connect, and share your signup link with local businesses whenever you&apos;re ready. Add your first client today.
+              Start free with usage-based billing and no card, then unlock full white-label branding, your own domain, and a marketing site on a 14-day Pro trial. Connect Stripe Connect, share your signup link, and add your first client whenever you&apos;re ready.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
