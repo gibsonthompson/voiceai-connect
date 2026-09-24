@@ -11,6 +11,7 @@ import { Toast } from '@/components/ui/toast';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
+import { SectionCard as SharedSectionCard } from '@/components/client/SectionCard';
 import { detectBrowserTimezone } from '@/lib/timezones';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 
@@ -317,23 +318,8 @@ export default function MyBusinessPage() {
 
   const aiKnowledge = parseAiKnowledge(aiKnowsContent);
 
-  const SectionCard = ({ icon: Icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle: string; children: React.ReactNode; className?: string }) => (
-    <section className={`mb-4 sm:mb-5 ${className}`}>
-      <div className="rounded-2xl overflow-hidden" style={glass}>
-        <div className="p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
-              <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
-              <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{subtitle}</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 sm:p-5">{children}</div>
-      </div>
-    </section>
+  const SectionCard = ({ icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle: string; children: React.ReactNode; className?: string }) => (
+    <SharedSectionCard icon={icon} title={title} subtitle={subtitle} className={className} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
   );
 
   const SaveButton = ({ onClick, disabled, loading: btnLoading, label }: { onClick: () => void; disabled: boolean; loading: boolean; label: string }) => (

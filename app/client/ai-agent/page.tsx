@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  Phone, Loader2, Bot, Mic, MessageSquare, Calendar,
+  Phone, Loader2, Bot, Mic, MessageSquare, Calendar, Shield,
   Play, Pause, Check, RotateCcw, AlertCircle, Link2
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import UpgradePrompt from '@/components/client/UpgradePrompt';
+import { SectionCard as SharedSectionCard } from '@/components/client/SectionCard';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 
@@ -42,26 +43,8 @@ const GoogleCalendarIcon = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
-const SectionCard = ({ icon: Icon, title, subtitle, live, children, theme, primaryColor, glass }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass: any }) => (
-  <section className="mb-4 sm:mb-5">
-    <div className="rounded-2xl overflow-hidden" style={glass}>
-      <div className="p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06) }}>
-            <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
-              {live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>Live</span>}
-            </div>
-            <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{subtitle}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-4 sm:p-5">{children}</div>
-    </div>
-  </section>
+const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
+  <SharedSectionCard icon={icon} title={title} subtitle={subtitle} live={live} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
 );
 
 const SaveButton = ({ onClick, disabled, loading: btnLoading, label, primaryColor, theme }: { onClick: () => void; disabled: boolean; loading: boolean; label: string; primaryColor: string; theme: any }) => (
@@ -470,20 +453,16 @@ export default function ClientAIAgentPage() {
 
         {/* AI Behavior */}
         <div className="fu fu3">
-          <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
-            <div className="p-4 sm:p-5">
-              <AISettingsSection clientId={client.id} theme={theme} />
-            </div>
-          </div>
+          <SectionCard icon={Bot} title="AI Personality & Behavior" theme={theme} primaryColor={primaryColor}>
+            <AISettingsSection clientId={client.id} theme={theme} compact />
+          </SectionCard>
         </div>
 
         {/* AI Tools */}
         <div className="fu fu4">
-          <div className="mb-4 sm:mb-5 rounded-2xl overflow-hidden" style={glass}>
-            <div className="p-4 sm:p-5">
-              <ToolConfigSection clientId={client.id} theme={theme} />
-            </div>
-          </div>
+          <SectionCard icon={Shield} title="AI Tools" theme={theme} primaryColor={primaryColor}>
+            <ToolConfigSection clientId={client.id} theme={theme} compact />
+          </SectionCard>
         </div>
 
         {/* Tip */}

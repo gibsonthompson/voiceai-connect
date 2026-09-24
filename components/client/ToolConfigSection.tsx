@@ -29,6 +29,7 @@ interface ToolConfig {
 interface Props {
   clientId: string;
   theme: any;
+  compact?: boolean;
 }
 
 const DEFAULT_CONFIG: ToolConfig = {
@@ -54,7 +55,7 @@ const SMS_PRESETS: { key: string; label: string; desc: string; placeholder: stri
   { key: 'payment', label: 'Payment link', desc: 'When a caller needs to pay', placeholder: 'https://...', icon: DollarSign },
 ];
 
-export default function ToolConfigSection({ clientId, theme }: Props) {
+export default function ToolConfigSection({ clientId, theme, compact }: Props) {
   const [config, setConfig] = useState<ToolConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -237,7 +238,8 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
   ];
 
   return (
-    <section className="mb-4 sm:mb-6">
+    <section className={compact ? '' : 'mb-4 sm:mb-6'}>
+      {!compact && (
       <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
         <Shield className="w-4 h-4" style={{ color: theme.primary }} />
         AI Tools
@@ -247,7 +249,8 @@ export default function ToolConfigSection({ clientId, theme }: Props) {
           </span>
         )}
       </h2>
-      <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+      )}
+      <div className={compact ? 'overflow-hidden' : 'rounded-xl border shadow-sm overflow-hidden'} style={compact ? {} : { borderColor: theme.border, backgroundColor: theme.card }}>
         <div className="p-3 sm:p-4 space-y-2">
           {tools.map((tool) => {
             const Icon = tool.icon;

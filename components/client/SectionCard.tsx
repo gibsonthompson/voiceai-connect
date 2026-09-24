@@ -26,6 +26,7 @@ export function SectionCard({
   subtitle,
   action,
   accent,
+  live,
   theme,
   primaryColor,
   className = '',
@@ -36,6 +37,7 @@ export function SectionCard({
   subtitle?: string;
   action?: ReactNode;
   accent?: boolean;
+  live?: boolean;
   theme: any;
   primaryColor: string;
   className?: string;
@@ -58,7 +60,10 @@ export function SectionCard({
               <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" style={{ color: primaryColor }} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm tracking-tight" style={{ color: theme.text }}>{title}</h3>
+                {live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>Live</span>}
+              </div>
               {subtitle && <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted4 }}>{subtitle}</p>}
             </div>
             {action && <div className="flex-shrink-0">{action}</div>}
