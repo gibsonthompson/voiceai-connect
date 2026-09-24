@@ -397,29 +397,33 @@ export default function HomePage() {
           <p className="t-eyebrow text-white/35 mb-8 text-center">Built on enterprise infrastructure</p>
           <div className="trust-row">
             {([
-              { n: 'Anthropic', s: 'anthropic', c: 'e8e8e8' },
-              { n: 'ElevenLabs', s: 'elevenlabs', c: 'e8e8e8' },
-              { n: 'Deepgram', s: 'deepgram' },
-              { n: 'OpenAI', s: 'openai', c: 'e8e8e8' },
+              { n: 'Anthropic', d: 'anthropic.com' },
+              { n: 'ElevenLabs', d: 'elevenlabs.io' },
+              { n: 'Deepgram', d: 'deepgram.com' },
+              { n: 'OpenAI', d: 'openai.com' },
               { n: 'Telnyx', img: '/telnyx.png' },
-              { n: 'Twilio', s: 'twilio' },
-              { n: 'Stripe', s: 'stripe' },
-              { n: 'Supabase', s: 'supabase' },
-              { n: 'Google', s: 'google' },
-              { n: 'Vercel', s: 'vercel', c: 'e8e8e8' },
-              { n: 'Cloudflare', s: 'cloudflare' },
-              { n: 'Sentry', s: 'sentry', c: 'e8e8e8' },
-              { n: 'PostHog', s: 'posthog', c: 'e8e8e8' },
-              { n: 'Brevo', s: 'brevo' },
-              { n: 'Make', s: 'make' },
-              { n: 'n8n', s: 'n8n' },
-            ] as { n: string; s?: string; c?: string; img?: string }[]).map(b => (
+              { n: 'Twilio', d: 'twilio.com' },
+              { n: 'Stripe', d: 'stripe.com' },
+              { n: 'Supabase', d: 'supabase.com' },
+              { n: 'Google', d: 'google.com' },
+              { n: 'Vercel', d: 'vercel.com' },
+              { n: 'Cloudflare', d: 'cloudflare.com' },
+              { n: 'Sentry', d: 'sentry.io' },
+              { n: 'PostHog', d: 'posthog.com' },
+              { n: 'Brevo', d: 'brevo.com' },
+              { n: 'Make', d: 'make.com' },
+              { n: 'n8n', d: 'n8n.io' },
+            ] as { n: string; d?: string; img?: string }[]).map(b => (
               <div key={b.n} className="trust-item">
-                {b.s ? (
-                  <img src={`https://cdn.simpleicons.org/${b.s}${b.c ? '/' + b.c : ''}`} alt={`${b.n} logo`} width={20} height={20} loading="lazy" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-                ) : (
-                  <img src={b.img} alt={`${b.n} logo`} width={20} height={20} loading="lazy" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-                )}
+                <img
+                  src={b.img ?? `https://icons.duckduckgo.com/ip3/${b.d}.ico`}
+                  alt={`${b.n} logo`}
+                  width={22}
+                  height={22}
+                  loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  style={{ width: 22, height: 22, objectFit: 'contain' }}
+                />
                 <span className="trust-item-name">{b.n}</span>
               </div>
             ))}
