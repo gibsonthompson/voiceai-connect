@@ -90,10 +90,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   }, [initialClient]);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
-  // The single platform-wide AI support line. One global number that changes
-  // rarely, so it is hardcoded rather than fetched. If it ever changes, update
-  // this one line.
-  const supportPhone = '+14042017505';
+  // The single platform-wide AI support line, fetched live from the backend
+  // (platform_settings.support_line_number) so it always tracks the number that
+  // is actually provisioned. Null until loaded; the Support card renders only
+  // once it resolves.
+  const [supportPhone, setSupportPhone] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${backendUrl}/api/support-line`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d?.number) setSupportPhone(d.number); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [backendUrl]);
 
   const { user } = useClient();
   const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
