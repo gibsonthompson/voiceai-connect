@@ -493,7 +493,8 @@ export default function TemplateEditorPage() {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block space-y-6 lg:sticky lg:top-6 self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+        <div className="hidden lg:block">
+          <div className="space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
           {showVariables && variables && (
             <div 
               className="rounded-xl p-6"
@@ -570,6 +571,7 @@ export default function TemplateEditorPage() {
                 </ul>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
