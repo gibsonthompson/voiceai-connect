@@ -48,7 +48,7 @@ export function SectionCard({
       <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: bg, border: `1px solid ${borderColor}` }}>
         <div
           className="p-4 sm:p-5"
-          style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}
+          style={children ? { borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` } : undefined}
         >
           <div className="flex items-center gap-3">
             <div
@@ -64,7 +64,7 @@ export function SectionCard({
             {action && <div className="flex-shrink-0">{action}</div>}
           </div>
         </div>
-        <div className="p-4 sm:p-5">{children}</div>
+        {children && <div className="p-4 sm:p-5">{children}</div>}
       </div>
     </section>
   );

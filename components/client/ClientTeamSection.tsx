@@ -10,7 +10,7 @@ import { useClient } from '@/lib/client-context';
 
 interface TeamMember { id: string; display_name: string; phone: string | null; email: string | null; visible_password: string | null; permissions: Record<string, boolean>; notification_prefs: Record<string, boolean>; status: 'active' | 'invited' | 'disabled'; last_login: string | null; created_at: string; }
 interface TeamLimits { allowed: boolean; current: number; max: number; }
-interface Props { clientId: string; theme: any; }
+interface Props { clientId: string; theme: any; hideHeader?: boolean; }
 
 const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; sensitive?: boolean }> = {
   dashboard: { label: 'Dashboard', description: 'View dashboard stats' },
@@ -25,7 +25,7 @@ const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; s
 
 const NOTIFICATION_LABELS: Record<string, string> = { sms_new_call: 'Call notifications' };
 
-export default function ClientTeamSection({ clientId, theme }: Props) {
+export default function ClientTeamSection({ clientId, theme, hideHeader }: Props) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [limits, setLimits] = useState<TeamLimits>({ allowed: true, current: 0, max: 0 });
   const [loading, setLoading] = useState(true);
@@ -93,10 +93,12 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
   if (limits.max === 0) {
     return (
       <div className="space-y-3">
+        {!hideHeader && (
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4" style={{ color: theme.primary }} />
           <h2 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>Users</h2>
         </div>
+        )}
         <div className="rounded-xl border-2 border-dashed p-5 text-center" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
           <Lock className="w-5 h-5 mx-auto mb-2" style={{ color: theme.textMuted }} />
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>Dashboard Users</p>
@@ -112,13 +114,15 @@ export default function ClientTeamSection({ clientId, theme }: Props) {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center ${hideHeader ? 'justify-end' : 'justify-between'}`}>
+        {!hideHeader && (
         <div>
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
             <Users className="w-4 h-4" style={{ color: theme.primary }} />Users
           </h2>
           <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts — {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
         </div>
+        )}
         <button onClick={() => setShowAddForm(!showAddForm)} disabled={!limits.allowed} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" />Add</button>
       </div>
 

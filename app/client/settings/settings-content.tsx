@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Phone, Loader2, User, CreditCard, Link2,
   Check, Copy, Lock, Eye, EyeOff, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
@@ -205,7 +205,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Account identity — who you are and which account you're in */}
         <section className="mb-4 sm:mb-6">
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
+          <div className="rounded-2xl border p-4 sm:p-5 flex items-center justify-between gap-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.18 : 0.1), color: theme.primary }}>{(user?.first_name || user?.email || client.business_name || '?').charAt(0).toUpperCase()}</div>
               <div className="min-w-0">
@@ -261,15 +261,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </SectionCard>
 
         {/* Add to Home Screen */}
-        <section className="mb-4 sm:mb-6">
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}><Smartphone className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.primary }} /></div>
-              <div className="min-w-0"><p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Add to Home Screen</p><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Get instant access — works like a native app</p></div>
-            </div>
-            <button onClick={() => setShowPwaModal(true)} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Install</button>
-          </div>
-        </section>
+        <SectionCard icon={Smartphone} title="Add to Home Screen" subtitle="Get instant access, works like a native app" action={<button onClick={() => setShowPwaModal(true)} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Install</button>} theme={theme} primaryColor={theme.primary} />
 
         {isOwner && (<>
         {/* Contact Information */}
@@ -339,11 +331,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
         {/* Users — dashboard login accounts (owner only) */}
         {isOwner && (
-        <section className="mb-4 sm:mb-6">
-          <div className="rounded-xl border p-3 sm:p-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <ClientTeamSection clientId={client.id} theme={theme} />
-          </div>
-        </section>
+        <SectionCard icon={Users} title="Users" subtitle="Dashboard login accounts for your team" theme={theme} primaryColor={theme.primary}>
+          <ClientTeamSection clientId={client.id} theme={theme} hideHeader />
+        </SectionCard>
         )}
 
         {/* Subscription & Billing */}
