@@ -525,7 +525,7 @@ export default function OutreachPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-4 sm:space-y-6">
+        <div className={typeFilter ? 'space-y-4 sm:space-y-6' : 'grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-start'}>
           {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
             <div>
               <div className="flex items-center gap-2 mb-2 sm:mb-3">

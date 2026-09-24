@@ -237,6 +237,11 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
   // list card's overflow, and so the tap never bubbles into the row's link.
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  // The menu is portaled to document.body, OUTSIDE the leads-page root where the
+  // --lp-* vars are defined, so they resolve to nothing there and the menu paints
+  // see-through. Capture the resolved surface colors from the in-scope trigger
+  // button and re-apply them as vars on the portal element below.
+  const [surface, setSurface] = useState({ card: '#ffffff', border: '#e5e7eb', hover: 'rgba(0,0,0,0.05)', text: '#111827' });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -268,8 +273,18 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          const r = btnRef.current?.getBoundingClientRect();
+          const el = btnRef.current;
+          const r = el?.getBoundingClientRect();
           if (r) setCoords({ top: r.bottom + 4, left: r.left });
+          if (el) {
+            const cs = getComputedStyle(el);
+            setSurface({
+              card: cs.getPropertyValue('--lp-card').trim() || '#ffffff',
+              border: cs.getPropertyValue('--lp-border').trim() || '#e5e7eb',
+              hover: cs.getPropertyValue('--lp-hover').trim() || 'rgba(0,0,0,0.05)',
+              text: cs.getPropertyValue('--lp-text').trim() || '#111827',
+            });
+          }
           setOpen((v) => !v);
         }}
         className="inline-flex items-center gap-1 rounded-full pl-3 pr-2 py-1 text-xs font-medium focus:outline-none cursor-pointer"
@@ -284,7 +299,7 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
           ref={menuRef}
           onClick={(e) => e.stopPropagation()}
           className="fixed z-[100] min-w-[150px] rounded-lg py-1 shadow-xl bg-[var(--lp-card)] border border-[var(--lp-border)]"
-          style={{ top: coords.top, left: coords.left }}
+          style={{ top: coords.top, left: coords.left, '--lp-card': surface.card, '--lp-border': surface.border, '--lp-hover': surface.hover, '--lp-text': surface.text } as CSSProperties}
         >
           {options.map((o) => (
             <button
