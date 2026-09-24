@@ -289,7 +289,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('client');
         localStorage.removeItem('user');
-        router.push('/client/login');
+        router.push('/client/login?reason=expired');
         return;
       }
 
@@ -302,6 +302,18 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       try { localStorage.setItem('client', JSON.stringify(fetchedClient)); } catch {}
+
+      // Persist a compact agency brand so the login page stays white-labeled
+      // after logout/expiry. This key is intentionally NOT removed on sign-out.
+      try {
+        const a = data.agency;
+        if (a) localStorage.setItem('voiceai_agency_brand', JSON.stringify({
+          id: a.id, name: a.name, slug: a.slug, logo_url: a.logo_url,
+          primary_color: a.primary_color, secondary_color: a.secondary_color,
+          accent_color: a.accent_color, website_theme: a.website_theme,
+          logo_background_color: a.logo_background_color ?? null,
+        }));
+      } catch {}
 
       const storedUser = localStorage.getItem('user');
       if (storedUser) setUser(JSON.parse(storedUser));

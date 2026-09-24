@@ -45,6 +45,7 @@ function ClientLoginContent() {
   // Handoff from the embedded signup: welcome=1 shows a "you're all set" banner
   // and we prefill the email so the client only types their new password.
   const welcome = searchParams?.get('welcome') === '1';
+  const sessionExpired = searchParams?.get('reason') === 'expired';
   const prefillEmail = searchParams?.get('email') || '';
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -75,6 +76,7 @@ function ClientLoginContent() {
     const client = localStorage.getItem('client');
     if (token && client) { window.location.href = '/client/dashboard'; return; }
     const detectContext = async () => {
+      let resolved = false;
       try {
         const host = window.location.host;
         const pd = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -83,16 +85,32 @@ function ClientLoginContent() {
           const r = await fetch(`${getBackendUrl()}/api/agency/by-host?host=${host}`);
           if (r.ok) {
             const d = await r.json();
-            setAgency(d.agency);
-            // Cache the resolved theme so the next launch (root blocking script
-            // and this loader) paints the right background with no flash.
-            try {
-              const dark = d.agency?.website_theme !== 'light';
-              localStorage.setItem('voiceai_ui_theme', dark ? 'dark' : 'light');
-            } catch {}
+            if (d.agency) {
+              setAgency(d.agency);
+              resolved = true;
+              // Cache the brand + theme so the next launch (root blocking script
+              // and this loader) paints the right look with no flash, and so a
+              // signed-out return still shows this agency's login.
+              try {
+                localStorage.setItem('voiceai_agency_brand', JSON.stringify(d.agency));
+                const dark = d.agency?.website_theme !== 'light';
+                localStorage.setItem('voiceai_ui_theme', dark ? 'dark' : 'light');
+              } catch {}
+            }
           }
         }
-      } catch {} finally { setPageLoading(false); }
+      } catch {}
+      // Fallback: on the platform host, or if the lookup failed, use the agency
+      // brand this browser cached on a previous signed-in visit. That key is not
+      // cleared on logout, so a returning client keeps their agency's branding
+      // instead of dropping to the generic platform login.
+      if (!resolved) {
+        try {
+          const cached = localStorage.getItem('voiceai_agency_brand');
+          if (cached) setAgency(JSON.parse(cached));
+        } catch {}
+      }
+      setPageLoading(false);
     };
     detectContext();
   }, []);
@@ -242,7 +260,7 @@ function ClientLoginContent() {
           }}>
             <div className="text-center mb-8">
               <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-              <p className="mt-2 text-[15px]" style={{ color: t.textMuted }}>Sign in to access your dashboard</p>
+              <p className="mt-2 text-[15px]" style={{ color: t.textMuted }}>{sessionExpired ? 'Your session expired. Please sign in again.' : 'Sign in to access your dashboard'}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

@@ -1226,33 +1226,9 @@ function AgencySettingsContent() {
 
                 {/* Stripe Connect group. This whole block is how the platform
                     charges your clients, so it greys out when you switch to
-                    billing clients yourself (manual mode). Country picker sits at
-                    the top since choosing it is the first step of connecting. */}
+                    billing clients yourself (manual mode). The Stripe status card
+                    and funds note sit at the top; the country picker follows. */}
                 <div className={clientBillingMode === 'manual' ? 'space-y-4 sm:space-y-6 opacity-50 pointer-events-none select-none' : 'space-y-4 sm:space-y-6'}>
-
-                  {/* Country + Connect. A connected account's country is fixed at
-                      creation and can't change later, so it's chosen BEFORE
-                      connecting. Shown only before an account exists. */}
-                  {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
-                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Globe className="h-4 w-4" style={{ color: theme.primary }} />
-                        <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
-                      </div>
-                      <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
-                        Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
-                      </p>
-                      <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
-                      <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
-                        <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
-                        This can't be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
-                      </p>
-                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
-                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Stripe status card, with a compact funds note + accepted cards. */}
                   {loadingStripeStatus ? (
@@ -1280,6 +1256,30 @@ function AgencySettingsContent() {
                       <div className="mt-3 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                         <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Client payments go straight to your Stripe account. We never hold your funds.</p>
                         <CardBrands />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Country + Connect. A connected account's country is fixed at
+                      creation and can't change later, so it's chosen BEFORE
+                      connecting. Shown only before an account exists. */}
+                  {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
+                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Globe className="h-4 w-4" style={{ color: theme.primary }} />
+                        <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
+                      </div>
+                      <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                        Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
+                      </p>
+                      <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
+                      <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
+                        <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
+                        This can't be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
+                      </p>
+                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
+                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
                       </div>
                     </div>
                   )}

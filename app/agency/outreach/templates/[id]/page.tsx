@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Loader2, Mail, MessageSquare, PhoneCall, Save, Info,
-  Copy, Check
+  Copy, Check, Plus
 } from 'lucide-react';
 import { useAgency } from '../../../context';
 import { useTheme } from '../../../../../hooks/useTheme';
@@ -184,16 +184,37 @@ export default function TemplateEditorPage() {
     }
   };
 
-  const copyVariable = (variable: string) => {
-    navigator.clipboard.writeText(variable);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const activeFieldRef = useRef<'subject' | 'body'>('body');
+
+  // Insert the variable at the cursor of whichever field is focused, instead of
+  // copying to the clipboard. onMouseDown preventDefault on the buttons keeps
+  // the field focused so its selection survives the click; the caret is restored
+  // right after the value updates so you can keep typing after the token.
+  const insertVariable = (variable: string) => {
+    let field: 'subject' | 'body' = activeFieldRef.current;
+    if (field === 'subject' && formData.type !== 'email') field = 'body';
+    const el = field === 'subject' ? subjectRef.current : bodyRef.current;
+    const current = (formData[field] || '') as string;
+    const start = el && el.selectionStart != null ? el.selectionStart : current.length;
+    const end = el && el.selectionEnd != null ? el.selectionEnd : current.length;
+    const next = current.slice(0, start) + variable + current.slice(end);
+    const caret = start + variable.length;
+    setFormData(prev => ({ ...prev, [field]: next }));
     setCopiedVar(variable);
-    setTimeout(() => setCopiedVar(null), 1500);
+    setTimeout(() => setCopiedVar(null), 1200);
+    requestAnimationFrame(() => {
+      const target = field === 'subject' ? subjectRef.current : bodyRef.current;
+      if (target) { target.focus(); target.setSelectionRange(caret, caret); }
+    });
   };
 
   const renderVariableButton = (v: TemplateVariable, accentColor: string) => (
     <button
       key={v.key}
-      onClick={() => copyVariable(v.key)}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => insertVariable(v.key)}
       className="px-2 py-1 rounded text-[10px] font-mono transition-colors"
       style={{
         backgroundColor: copiedVar === v.key ? theme.primary15 : theme.hover,
@@ -207,7 +228,8 @@ export default function TemplateEditorPage() {
   const renderVariableRow = (v: TemplateVariable, accentColor: string) => (
     <button
       key={v.key}
-      onClick={() => copyVariable(v.key)}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => insertVariable(v.key)}
       className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-left group"
       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -219,7 +241,7 @@ export default function TemplateEditorPage() {
       {copiedVar === v.key ? (
         <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primary }} />
       ) : (
-        <Copy className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100" style={{ color: theme.textMuted }} />
+        <Plus className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100" style={{ color: theme.textMuted }} />
       )}
     </button>
   );
@@ -396,8 +418,10 @@ export default function TemplateEditorPage() {
                     Subject <span style={{ color: theme.error }}>*</span>
                   </label>
                   <input
+                    ref={subjectRef}
                     type="text"
                     value={formData.subject}
+                    onFocus={() => { activeFieldRef.current = 'subject'; }}
                     onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
                     placeholder="Quick question about {lead_business_name}"
                     className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-mono focus:outline-none"
@@ -411,8 +435,10 @@ export default function TemplateEditorPage() {
                   {isCallScript ? 'Script' : 'Body'} <span style={{ color: theme.error }}>*</span>
                 </label>
                 <textarea
+                  ref={bodyRef}
                   id="template-body"
                   value={formData.body}
+                  onFocus={() => { activeFieldRef.current = 'body'; }}
                   onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))}
                   placeholder={getBodyPlaceholder()}
                   rows={getBodyRows()}
@@ -440,7 +466,7 @@ export default function TemplateEditorPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium text-sm mb-3" style={{ color: theme.text }}>Variables</h3>
-              <p className="text-[10px] mb-3" style={{ color: theme.textMuted }}>Tap to copy</p>
+              <p className="text-[10px] mb-3" style={{ color: theme.textMuted }}>Tap to insert at your cursor</p>
               
               <div className="space-y-3">
                 <div>
@@ -475,7 +501,7 @@ export default function TemplateEditorPage() {
             >
               <h3 className="font-medium mb-4" style={{ color: theme.text }}>Available Variables</h3>
               <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-                Click to copy, then paste into your template
+                Click to insert it at your cursor
               </p>
               
               <div className="space-y-4">
