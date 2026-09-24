@@ -234,6 +234,14 @@ export default function ClientAIAgentPage() {
   const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
   const getFilteredVoices = () => { let f: VoiceOption[]; if (voiceFilter === 'female') f = voices.female || []; else if (voiceFilter === 'male') f = voices.male || []; else f = getAllVoices(); if (accentFilter !== 'all') f = f.filter(v => v.accent === accentFilter); return f; };
 
+  // Always show a voice as selected. If the client hasn't saved one yet, default
+  // the picker to the first available voice so nothing renders unselected.
+  useEffect(() => {
+    if (currentVoiceId || selectedVoiceId) return;
+    const all = [...(voices.female || []), ...(voices.male || [])];
+    if (all.length > 0) setSelectedVoiceId(all[0].id);
+  }, [voices, currentVoiceId]);
+
   const hasVoiceChanges = selectedVoiceId !== currentVoiceId;
   const hasGreetingChanges = greetingMessage !== originalGreeting;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
@@ -320,9 +328,14 @@ export default function ClientAIAgentPage() {
                 </div>
               </div>
             ) : (
-              <button onClick={handleConnectCalendar} className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-                <Calendar className="w-4 h-4 inline mr-1.5" />Connect Google Calendar
-              </button>
+              <>
+                <button onClick={handleConnectCalendar} className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+                  <Calendar className="w-4 h-4 inline mr-1.5" />Connect Google Calendar
+                </button>
+                <p className="text-[11px] sm:text-xs mt-2.5 leading-relaxed" style={{ color: theme.textMuted4 }}>
+                  Calendar sync is powered by our scheduling partner, VoiceAI Connect. When you approve access, Google shows their name, that&apos;s expected. Your calendar stays private, and you can disconnect anytime.
+                </p>
+              </>
             )}
           </SectionCard>
         </div>

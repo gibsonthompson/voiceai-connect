@@ -43,7 +43,7 @@ export default function TemplateEditorPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [variables, setVariables] = useState<VariableGroup | null>(null);
-  const [showVariables, setShowVariables] = useState(false);
+  const [showVariables, setShowVariables] = useState(true);
   const [copiedVar, setCopiedVar] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -493,7 +493,7 @@ export default function TemplateEditorPage() {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block space-y-6">
+        <div className="hidden lg:block space-y-6 lg:sticky lg:top-6 self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
           {showVariables && variables && (
             <div 
               className="rounded-xl p-6"

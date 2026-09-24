@@ -320,7 +320,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               href={item.href}
               prefetch={false}
               onClick={() => setSidebarOpen(false)}
-              className="w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-all"
+              className="relative w-full flex items-center justify-between rounded-xl px-3 py-3 lg:py-2.5 text-sm font-medium transition-all"
               style={active
                 ? { backgroundColor: nav.activeItemBg, color: nav.activeItemColor }
                 : { color: nav.textMuted }
@@ -328,6 +328,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = nav.hoverBg; }}
               onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
             >
+              {active && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full" style={{ backgroundColor: nav.activeItemColor }} />}
               <div className="flex items-center gap-3"><item.icon className="h-5 w-5" />{item.label}</div>
               {active && <ChevronRight className="h-4 w-4 lg:hidden" style={{ color: nav.textMuted }} />}
             </Link>
@@ -347,9 +348,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
             </a>
           )}
-          <div className="rounded-xl border p-3" style={{ borderColor: nav.border, backgroundColor: nav.poweredByBg }}>
-            <p className="text-[10px] uppercase tracking-wider font-medium" style={{ color: nav.textMuted }}>Powered by</p>
-            <p className="text-sm font-semibold" style={{ color: nav.text }}>{branding.agencyName}</p>
+          <div className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ backgroundColor: nav.poweredByBg, border: `1px solid ${nav.border}` }}>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold flex-shrink-0" style={{ backgroundColor: nav.activeItemColor, color: theme.primaryText }}>{(branding.agencyName || 'A').charAt(0).toUpperCase()}</div>
+            <div className="min-w-0">
+              <p className="text-[11px] leading-tight" style={{ color: nav.textMuted }}>Powered by</p>
+              <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: nav.text }}>{branding.agencyName}</p>
+            </div>
           </div>
           <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}><LogOut className="h-5 w-5" /> Sign Out</button>
         </div>

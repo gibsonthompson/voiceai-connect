@@ -903,7 +903,13 @@ export default function AgencyClientDetailPage() {
                 >
                   {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
                 </button>
-                {planMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>}
+                {planMsg && (
+                  /Stripe Connect/i.test(planMsg) ? (
+                    <span className="text-xs" style={{ color: theme.textMuted }}>You haven&apos;t finished setting up Stripe Connect. <a href="/agency/settings?tab=payments" className="font-medium underline" style={{ color: theme.primary }}>Connect your Stripe account</a> to change a billed client&apos;s plan.</span>
+                  ) : (
+                    <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>
+                  )
+                )}
               </div>
             </div>
           </div>
