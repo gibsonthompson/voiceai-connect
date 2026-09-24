@@ -15,6 +15,7 @@ import { getDemoClientDetail } from '../../demoData';
 import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/industries';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; }
@@ -173,6 +174,14 @@ export default function AgencyClientDetailPage() {
   // FIX: Derive dark mode for colorScheme on native <select> popups
   const isDark = agency?.website_theme !== 'light';
 
+  // Reusable confirm dialog. Named askConfirm so it does not shadow the native
+  // window.confirm() still used by the other actions on this page.
+  const { confirm: askConfirm, confirmDialog } = useConfirm({
+    card: theme.card, border: theme.border, text: theme.text, textMuted: theme.textMuted,
+    primary: theme.primary, primaryText: theme.primaryText, hover: theme.hover,
+    overlay: 'rgba(0,0,0,0.75)',
+  });
+
   const [client, setClient] = useState<Client | null>(null);
   const [recentCalls, setRecentCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
@@ -248,7 +257,15 @@ export default function AgencyClientDetailPage() {
     const newPlan = targetPlan || client?.plan_type;
     if (!clientId || !client || !newPlan || newPlan === client.plan_type) return;
     const label = availablePlans.find((p) => p.key === newPlan)?.name || newPlan;
-    if (!confirm(`Move ${client.business_name} to ${label}? If this client is on paid billing, Stripe prorates the difference on their next invoice.`)) return;
+    const noCharge = (client as any).billing_mode === 'manual' || client.is_test_client;
+    const ok = await askConfirm({
+      title: `Move ${client.business_name} to ${label}?`,
+      message: noCharge
+        ? 'This updates their plan and monthly call limit right away. No charge and no proration, since this client is not on Stripe billing.'
+        : 'The new plan and call limit apply right away, and Stripe prorates the difference on their next invoice.',
+      confirmLabel: 'Change plan',
+    });
+    if (!ok) return;
     setChangingPlan(true); setPlanMsg(null);
     try {
       const token = localStorage.getItem('auth_token');
@@ -937,6 +954,8 @@ export default function AgencyClientDetailPage() {
           {deleting ? 'Deleting\u2026' : 'Delete client'}
         </button>
       </div>
+
+      {confirmDialog}
 
       {/* Knowledge Base Modal */}
       {kbModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={(e) => { if (e.target === e.currentTarget && !kbHasChanges) setKbModalOpen(false); }}><div className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}` }}><div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}><div><div className="flex items-center gap-2"><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /><h2 className="text-lg font-semibold">Knowledge Base</h2></div><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{client.business_name} - {intelligence?.label || 'Custom'}</p></div><div className="flex items-center gap-2">{!kbEditing && !kbLoading && <button onClick={() => setKbEditing(true)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text }}><Brain className="h-4 w-4" />Edit</button>}<button onClick={() => { if (kbHasChanges) { if (confirm('You have unsaved changes. Close anyway?')) { setKbModalOpen(false); setKbEditing(false); } } else { setKbModalOpen(false); setKbEditing(false); } }} className="flex items-center justify-center h-9 w-9 rounded-lg transition-colors" style={{ backgroundColor: theme.hover }}><X className="h-5 w-5" style={{ color: theme.textMuted }} /></button></div></div><div className="flex-1 overflow-y-auto p-6">{kbError && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{kbError}</p></div>}{kbSaved && <div className="mb-4 rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-xs" style={{ color: theme.primary }}>Knowledge base updated - changes are live on the next call.</p></div>}{kbLoading ? (<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>) : kbEditing ? (<textarea value={kbContent} onChange={(e) => setKbContent(e.target.value)} className="w-full h-full min-h-[50vh] rounded-xl px-4 py-3 text-sm font-mono transition-colors resize-y focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />) : (<div className="rounded-xl px-5 py-4 text-sm font-mono whitespace-pre-wrap leading-relaxed overflow-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, minHeight: '50vh' }}>{kbContent || 'No knowledge base content found.'}</div>)}</div>{kbEditing && !kbLoading && (<div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}><button onClick={handleResetKb} disabled={kbResetting || kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>{kbResetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Reset to Default</button><div className="flex items-center gap-2"><button onClick={() => { setKbContent(kbOriginalContent); setKbEditing(false); }} disabled={kbSaving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>Cancel</button><button onClick={handleSaveKb} disabled={kbSaving || kbResetting || !kbHasChanges} className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{kbSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Save Changes</>}</button></div></div>)}</div></div>)}

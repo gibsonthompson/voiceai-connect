@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Phone, Loader2, User, CreditCard, Link2,
@@ -11,6 +11,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
+import { Toast } from '@/components/ui/toast';
 import { useClient } from '@/lib/client-context';
 
 interface Client {
@@ -71,6 +72,22 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [hipaaMode, setHipaaMode] = useState(client.hipaa_mode || false);
   const [savingHipaa, setSavingHipaa] = useState(false);
 
+  // The client context hydrates instantly from the localStorage cache, then
+  // refetches fresh data in the background. Fields seeded once at mount from a
+  // stale cache would otherwise never pick up the real values, so a saved change
+  // looks like it did not persist on the next load. When fresh server data
+  // arrives, advance the local copy and any field the user has not edited.
+  const serverSnapshot = useRef(initialClient);
+  useEffect(() => {
+    const prev = serverSnapshot.current;
+    setEmail(cur => (cur === (prev.email || '') ? (initialClient.email || '') : cur));
+    setOwnerPhone(cur => (cur === (prev.owner_phone || '') ? (initialClient.owner_phone || '') : cur));
+    setOwnerName(cur => (cur === (prev.owner_name || '') ? (initialClient.owner_name || '') : cur));
+    setHipaaMode(cur => (cur === (prev.hipaa_mode || false) ? (initialClient.hipaa_mode || false) : cur));
+    setClient(initialClient);
+    serverSnapshot.current = initialClient;
+  }, [initialClient]);
+
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   // The single platform-wide AI support line. One global number that changes
   // rarely, so it is hardcoded rather than fetched. If it ever changes, update
@@ -101,7 +118,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone, owner_name: ownerName }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone, owner_name: ownerName }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
 
-  const handleChangePassword = async () => { setPasswordMessage(''); if (!currentPassword) { setPasswordMessage('Current password is required'); return; } if (!newPassword || newPassword.length < 6) { setPasswordMessage('New password must be at least 6 characters'); return; } if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; } setChangingPassword(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ currentPassword, newPassword }) }); const data = await response.json(); if (data.success) { setPasswordMessage('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setTimeout(() => setPasswordMessage(''), 3000); } else { setPasswordMessage(data.error || 'Failed to change password'); } } catch (error) { setPasswordMessage('Error changing password'); } finally { setChangingPassword(false); } };
+  const handleChangePassword = async () => { setPasswordMessage(''); if (!currentPassword) { setPasswordMessage('Current password is required'); return; } if (!newPassword || newPassword.length < 8) { setPasswordMessage('New password must be at least 8 characters'); return; } if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; } setChangingPassword(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ currentPassword, newPassword }) }); const data = await response.json(); if (data.success) { setPasswordMessage('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setTimeout(() => setPasswordMessage(''), 3000); } else { setPasswordMessage(data.error || 'Failed to change password'); } } catch (error) { setPasswordMessage('Error changing password'); } finally { setChangingPassword(false); } };
 
   const handleCopyNumber = async () => { if (!client.vapi_phone_number) return; const digitsOnly = client.vapi_phone_number.replace(/\D/g, ''); try { await navigator.clipboard.writeText(`+${digitsOnly}`); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch (error) { console.error('Failed to copy:', error); } };
 
@@ -176,7 +193,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      {message && (<div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto" style={getMessageStyle(message)}>{message}</div>)}
+      <Toast message={message} isError={!/success|enabled|updated/i.test(message)} style={getMessageStyle(message)} />
 
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
@@ -192,7 +209,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.18 : 0.1), color: theme.primary }}>{(user?.first_name || user?.email || client.business_name || '?').charAt(0).toUpperCase()}</div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm font-semibold truncate" style={{ color: theme.text }}>{[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'Signed in'}</p>
-                <p className="text-[10px] sm:text-xs truncate" style={{ color: theme.textMuted4 }}>{user?.email}{client.business_name ? ` · ${client.business_name}` : ''}</p>
+                <p className="text-[10px] sm:text-xs truncate" style={{ color: theme.textMuted4 }}>{[[user?.first_name, user?.last_name].filter(Boolean).join(' ') ? user?.email : null, client.business_name].filter(Boolean).join(' · ')}</p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: isOwner ? hexToRgba(theme.primary, 0.12) : (theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), color: isOwner ? theme.primary : theme.textMuted }}>{isOwner ? 'Account Owner' : 'Team Member'}</span>
@@ -316,8 +333,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           <div className="rounded-xl border p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             {passwordMessage && (<div className="p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(passwordMessage)}>{passwordMessage}</div>)}
             <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label><div className="relative"><input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Enter current password" /><button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
+            {myCreds?.has_custom_password && (isOwner
+              ? (<div className="text-right"><a href="/auth/forgot-password?scope=client" className="text-[11px] sm:text-xs font-medium hover:underline" style={{ color: theme.primary }}>Forgot your current password?</a></div>)
+              : (<p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted4 }}>Forgot it? Ask your account owner to reset your password.</p>)
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label><div className="relative"><input type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Min 6 characters" /><button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
+              <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label><div className="relative"><input type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Min 8 characters" /><button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
               <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Confirm New Password</label><input type={showNewPassword ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Confirm new password" /></div>
             </div>
             <button onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasPasswordChanges ? theme.primary : theme.bg, color: hasPasswordChanges ? theme.primaryText : theme.textMuted4, border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}` }}>{changingPassword ? 'Changing...' : 'Change Password'}</button>

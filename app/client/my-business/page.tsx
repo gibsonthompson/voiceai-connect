@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { Toast } from '@/components/ui/toast';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
@@ -219,6 +220,7 @@ export default function MyBusinessPage() {
   const formatBusinessHoursForSave = (): string => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => { const day = businessHours[d as keyof BusinessHours]; return day.closed ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Closed` : `${d.charAt(0).toUpperCase() + d.slice(1)}: ${day.open} - ${day.close}`; }).join('\n');
 
   const showMsg = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 3000); };
+  const scrollToKb = () => document.getElementById('kb-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   // The AI checks the structured business_hours JSONB, not the KB text, so the
   // save must write BOTH. Convert the editor state (12-hour + closed flag) to the
@@ -344,12 +346,7 @@ export default function MyBusinessPage() {
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
-      {message && (
-        <div className="mb-4 p-3 rounded-xl text-center font-medium text-sm max-w-3xl mx-auto"
-          style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
-          {message}
-        </div>
-      )}
+      <Toast message={message} isError={!message.includes('✅')} style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }} />
 
       {/* Hero */}
       <div className="mb-5 sm:mb-7 text-center fu fu1">
@@ -459,7 +456,7 @@ export default function MyBusinessPage() {
               </div>
             ) : aiKnowsContent ? (
               <div className="space-y-3">
-                <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI is set up with a starter knowledge base for your industry. Add your website in the Knowledge Base section below and save to personalize what it knows about your business.</p>
+                <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI is set up with a starter knowledge base for your industry. Add your website in the <button onClick={scrollToKb} className="underline font-medium" style={{ color: primaryColor }}>Knowledge Base section</button> below and save to personalize what it knows about your business.</p>
                 <button onClick={() => setAiKnowsOpen(v => !v)} className="flex items-center gap-1 text-[12px] font-medium" style={{ color: primaryColor }}>
                   {aiKnowsOpen ? 'Hide' : 'View'} the full document your AI reads
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiKnowsOpen ? 'rotate-180' : ''}`} />
@@ -469,7 +466,7 @@ export default function MyBusinessPage() {
                 )}
               </div>
             ) : (
-              <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI does not have a website-based knowledge base yet. Add your website in the Knowledge Base section below and save, and it will learn your hours, services, and more.</p>
+              <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI does not have a website-based knowledge base yet. Add your website in the <button onClick={scrollToKb} className="underline font-medium" style={{ color: primaryColor }}>Knowledge Base section</button> below and save, and it will learn your hours, services, and more.</p>
             )}
           </SectionCard>
         </div>
@@ -544,7 +541,7 @@ export default function MyBusinessPage() {
         </div>
 
         {/* Knowledge Base */}
-        <div className="fu fu4">
+        <div id="kb-section" className="fu fu4">
           <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
             <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="text-[13px]" style={{ color: theme.textMuted }}>
