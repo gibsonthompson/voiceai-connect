@@ -244,6 +244,10 @@ export default function ClientAIAgentPage() {
   const hasGreetingChanges = greetingMessage !== originalGreeting;
   const totalVoices = (voices.female?.length || 0) + (voices.male?.length || 0);
   const filteredVoices = getFilteredVoices();
+  const activeVoiceId = selectedVoiceId || currentVoiceId;
+  const shownVoices: VoiceOption[] = (activeVoiceId && !getAllVoices().some(v => v.id === activeVoiceId))
+    ? ([{ id: activeVoiceId, name: 'Current voice', gender: 'female', accent: 'Active', style: '', description: 'Set on this assistant but not in the standard list \u2014 pick one below to change it.', recommended: false } as any, ...filteredVoices])
+    : filteredVoices;
   const availableAccents = getAvailableAccents();
   const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected;
   const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
@@ -380,7 +384,7 @@ export default function ClientAIAgentPage() {
                 )}
                 {filteredVoices.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2.5">
-                    {filteredVoices.map(voice => { const sel = selectedVoiceId === voice.id; const cur = currentVoiceId === voice.id; const playing = playingVoiceId === voice.id; return (
+                    {shownVoices.map((voice: any) => { const sel = selectedVoiceId === voice.id; const cur = currentVoiceId === voice.id; const playing = playingVoiceId === voice.id; return (
                       <div key={voice.id} onClick={() => setSelectedVoiceId(voice.id)}
                         className="relative p-3 rounded-xl cursor-pointer transition-all"
                         style={{ ...glass, borderColor: sel ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), borderWidth: '2px', backgroundColor: sel ? hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) : glass.backgroundColor }}>
