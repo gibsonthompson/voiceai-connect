@@ -1193,3 +1193,27 @@ details[open] .faq-chev { transform: rotate(45deg); }
   .bento-cell, .calc-shell, .btn { transition: none !important; }
   .bento-cell:hover, .btn:hover { transform: none !important; }
 }
+
+
+/* ═══ White-label stack (the scroll set-piece) ═══
+   Animated only on desktop with motion allowed; otherwise a static diagram. */
+.wls-anim { display: none; }
+.wls-static { display: block; }
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .wls-anim { display: block; }
+  .wls-static { display: none; }
+}
+.wls-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.wls-slab {
+  border-radius: 14px;
+  background: var(--graphite-2);
+  border: 1px solid var(--hairline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 48px -28px rgba(0, 0, 0, 0.85);
+  padding: 1.1rem 1.35rem;
+}

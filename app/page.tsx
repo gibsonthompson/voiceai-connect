@@ -12,124 +12,8 @@ import { usePrice } from '@/hooks/usePrice';
 import { AGENCY_PLAN_TIER_LIST } from '@/lib/plan-features';
 import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
+import WhiteLabelStack from '@/components/white-label-stack';
 
-/* ─── Brand icons, monochrome, currentColor, 24x24 viewBox ─────────────── */
-
-const BRAND_ICONS: Record<string, React.ReactNode> = {
-  elevenlabs: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <rect x="6" y="3" width="4.2" height="18" rx="0.4" />
-      <rect x="13.8" y="3" width="4.2" height="18" rx="0.4" />
-    </svg>
-  ),
-  anthropic: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <rect
-          key={i}
-          x="11.4"
-          y="2.4"
-          width="1.2"
-          height="9.5"
-          rx="0.6"
-          transform={`rotate(${i * 30} 12 12)`}
-        />
-      ))}
-    </svg>
-  ),
-  openai: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden>
-      <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z" />
-      <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  telnyx: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <rect x="3" y="4" width="18" height="3.6" rx="0.4" />
-      <rect x="10.2" y="4" width="3.6" height="16" rx="0.4" />
-    </svg>
-  ),
-  twilio: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 2.4a9.6 9.6 0 1 0 0 19.2 9.6 9.6 0 0 0 0-19.2zm0 17.4a7.8 7.8 0 1 1 0-15.6 7.8 7.8 0 0 1 0 15.6z" />
-      <circle cx="9" cy="9" r="1.6" />
-      <circle cx="15" cy="9" r="1.6" />
-      <circle cx="9" cy="15" r="1.6" />
-      <circle cx="15" cy="15" r="1.6" />
-    </svg>
-  ),
-  stripe: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M13.5 9.9c-1.6-.6-2.5-1-2.5-1.7 0-.6.5-.9 1.3-.9 1.5 0 3 .6 4 1.1L17 4.8c-1-.4-2.9-.8-4.8-.8C9 4 6.7 5.7 6.7 8.5c0 5 6.9 4.2 6.9 6.3 0 .7-.7 1.1-1.6 1.1-1.6 0-3.7-.7-5.2-1.5l-.6 4.1c1.2.6 3.5 1.2 5.7 1.2 3.4 0 5.7-1.7 5.7-4.5 0-3.1-3.1-3.7-4.1-4.2z" />
-    </svg>
-  ),
-  supabase: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M11.6 2.5c.4-.5 1.2-.2 1.2.5v8h6.5c.6 0 1 .7.6 1.2l-7.5 9.3c-.4.5-1.2.2-1.2-.5v-8H4.7c-.6 0-1-.7-.6-1.2l7.5-9.3z" />
-    </svg>
-  ),
-  make: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-      <path d="M3 17a9 9 0 0 1 18 0" />
-      <path d="M6.5 17a5.5 5.5 0 0 1 11 0" />
-      <path d="M10 17a2 2 0 0 1 4 0" />
-    </svg>
-  ),
-  n8n: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-      <circle cx="4.5" cy="12" r="2" fill="currentColor" />
-      <circle cx="12" cy="6" r="2" fill="currentColor" />
-      <circle cx="12" cy="18" r="2" fill="currentColor" />
-      <circle cx="19.5" cy="12" r="2" fill="currentColor" />
-      <path d="M6.3 11.2 10.4 7M6.3 12.8 10.4 17M13.6 7l4.1 4.2M13.6 17l4.1-4.2" />
-    </svg>
-  ),
-  vercel: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 3.5 22 20.5H2L12 3.5z" />
-    </svg>
-  ),
-  cloudflare: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M16.7 12.5c-.4 0-.8.05-1.2.15A6 6 0 0 0 4 14a3.5 3.5 0 0 0-3 3.5A3.5 3.5 0 0 0 4.5 21h13a4 4 0 0 0 4-4 4 4 0 0 0-4.8-3.95v-.55z" />
-    </svg>
-  ),
-  brevo: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M5 3h6.5c2.6 0 4.7 1.9 4.7 4.4 0 1.4-.7 2.7-1.7 3.5 1.6.7 2.8 2.4 2.8 4.3 0 2.7-2.3 4.8-5.1 4.8H5V3zm2.7 2.5v4.7h3.6c1.4 0 2.5-1 2.5-2.35S12.7 5.5 11.3 5.5H7.7zm0 7.2v5.5h4.4c1.7 0 3-1.2 3-2.75s-1.3-2.75-3-2.75H7.7z" />
-    </svg>
-  ),
-  deepgram: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M3.5 4h6.5c4.7 0 8.5 3.6 8.5 8s-3.8 8-8.5 8H3.5V4zm3 3v10h3.5c2.8 0 5-2.2 5-5s-2.2-5-5-5h-3.5z" />
-      <rect x="14" y="10.4" width="1.3" height="3.2" rx="0.4" />
-      <rect x="16.4" y="9" width="1.3" height="6" rx="0.4" />
-      <rect x="18.8" y="10.4" width="1.3" height="3.2" rx="0.4" />
-    </svg>
-  ),
-  sentry: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden>
-      <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z" />
-      <path d="M8 17h8L12 9z" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  posthog: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <rect x="3.5" y="14" width="4" height="6.5" rx="0.6" />
-      <rect x="10" y="9" width="4" height="11.5" rx="0.6" />
-      <rect x="16.5" y="3.5" width="4" height="17" rx="0.6" />
-    </svg>
-  ),
-  google: (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-    </svg>
-  ),
-};
-
-function BrandIcon({ name }: { name: string }) {
-  return <>{BRAND_ICONS[name] ?? null}</>;
-}
 
 /* ─── Hooks ─────────────────────────────────────────────────────────────── */
 
@@ -375,26 +259,7 @@ export default function HomePage() {
       {/* ════════ HERO ════════ */}
       <section className="canvas-dot relative pt-40 lg:pt-48 pb-20 lg:pb-32 overflow-hidden">
         <div className="hero-aurora" />
-        <div className="hero-video-placeholder" aria-hidden />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
-          {/* Telemetry readout: the AI booking a job, live. The single graphic that floats over the hero video. */}
-          <div className="hidden lg:block absolute right-10 top-6 w-[300px] calc-shell p-5" aria-hidden>
-            <div className="flex items-center justify-between">
-              <span className="telemetry text-[10px] uppercase"><span className="telemetry-dot" /> Incoming call</span>
-              <span className="telemetry text-[10px]">00:14</span>
-            </div>
-            <div className="mt-4 rounded-lg border border-white/[0.07] bg-black/40 px-3 py-2.5 font-mono text-[11px]" style={{ color: 'var(--steel-300)' }}>
-              &quot;Sure, I can get you in Thursday at 2.&quot;
-            </div>
-            <div className="mt-3 flex items-center gap-3 rounded-lg border px-3 py-2.5" style={{ borderColor: 'rgba(0,227,170,0.25)', background: 'rgba(0,227,170,0.06)' }}>
-              <Calendar className="w-4 h-4 text-em flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="font-display text-[12.5px] text-white font-medium">Appointment booked</p>
-                <p className="telemetry text-[10px]">Thu 2:00 PM, Google Calendar</p>
-              </div>
-              <Check className="w-4 h-4 text-em ml-auto flex-shrink-0" strokeWidth={2.5} />
-            </div>
-          </div>
           <div ref={r1} className="fade-up max-w-4xl">
             <span className="racing-line" />
             <h1 className="t-h1 text-white max-w-[18ch]">
@@ -537,46 +402,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* WHITE-LABEL ANIMATION SLOT: the grand scroll animation (value chain:
-              infrastructure -> platform -> your agency -> end client) will replace
-              this static value-chain diagram. See the animation concept doc. */}
-          <div className="arch-stack">
-            <div className="arch-tier">
-              <div className="arch-tier-head">
-                <span className="arch-tier-label">Tier 1 · Agency</span>
-                <span className="arch-tier-tag">Your brand</span>
-              </div>
-              <p className="arch-tier-title">Your brand, your domain, your clients</p>
-              <p className="arch-tier-sub">White-labeled marketing site, dashboards, and phone experience, VoiceAI Connect remains invisible to your end clients.</p>
-            </div>
-            <div className="arch-arrow"><span className="arch-arrow-line" /><span className="arch-arrow-label">orchestrated by</span><span className="arch-arrow-line" /></div>
-            <div className="arch-tier arch-tier-em">
-              <div className="arch-tier-head">
-                <span className="arch-tier-label arch-tier-label-em">Tier 2 · Platform</span>
-                <span className="arch-tier-tag arch-tier-tag-em">Multi-tenant orchestration</span>
-              </div>
-              <p className="arch-tier-title">VoiceAI Connect</p>
-              <p className="arch-tier-sub">Agency dashboard · client onboarding · lead generation CRM · Stripe Connect billing · branding engine</p>
-            </div>
-            <div className="arch-arrow"><span className="arch-arrow-line" /><span className="arch-arrow-label">powered by</span><span className="arch-arrow-line" /></div>
-            <div className="arch-base">
-              {[
-                { label: 'Voice & reasoning', vendors: [{ n: 'Anthropic', r: 'Claude reasoning', i: 'anthropic' }, { n: 'ElevenLabs', r: 'Voice synthesis', i: 'elevenlabs' }, { n: 'Deepgram', r: 'Real-time STT', i: 'deepgram' }, { n: 'OpenAI', r: 'Whisper batch STT', i: 'openai' }] },
-                { label: 'Telephony & scheduling', vendors: [{ n: 'Telnyx', r: 'US numbers + SIP', i: 'telnyx' }, { n: 'Twilio', r: 'UK + international', i: 'twilio' }, { n: 'Google', r: 'Calendar booking', i: 'google' }] },
-                { label: 'Backend & observability', vendors: [{ n: 'Supabase', r: 'Postgres + auth', i: 'supabase' }, { n: 'Stripe', r: 'Connect + billing', i: 'stripe' }, { n: 'Brevo', r: 'Transactional email', i: 'brevo' }, { n: 'Sentry', r: 'Error monitoring', i: 'sentry' }, { n: 'PostHog', r: 'Product analytics', i: 'posthog' }] },
-                { label: 'Edge & automation', vendors: [{ n: 'Vercel', r: 'Edge hosting', i: 'vercel' }, { n: 'Cloudflare', r: 'CDN + WAF', i: 'cloudflare' }, { n: 'Make', r: 'Workflow automation', i: 'make' }, { n: 'n8n', r: 'Custom integrations', i: 'n8n' }] },
-              ].map(group => (
-                <div key={group.label} className="arch-base-card">
-                  <p className="arch-base-label">{group.label}</p>
-                  <div className="arch-vendor-list">
-                    {group.vendors.map(v => (
-                      <div key={v.n} className="arch-vendor"><BrandIcon name={v.i} /><div className="min-w-0"><p className="arch-vendor-name">{v.n}</p><p className="arch-vendor-role">{v.r}</p></div></div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <WhiteLabelStack />
         </div>
       </section>
 
@@ -739,37 +565,23 @@ export default function HomePage() {
       {/* ════════ TIME BACK (human) ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-
-          {/* Editorial split: one large human moment beside the thesis */}
-          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="photo-placeholder ratio-45">
-                <p className="photo-placeholder-label">Photo 4:5<br />Owner at dinner with family. Phone face-down on the table. It lights up, they glance, they keep eating.</p>
-              </div>
-            </div>
-            <div className="lg:col-span-7 order-1 lg:order-2">
-              <p className="t-eyebrow text-em mb-4">What you&apos;re really selling</p>
-              <span className="racing-line" />
-              <h2 className="t-h2 text-white">You&apos;re not selling AI. You&apos;re selling their time back.</h2>
-              <p className="t-body mt-6 max-w-xl">
-                The businesses you sign up stop dropping everything to answer the phone. The AI knows their calendar and books the estimate, the appointment, the callback, while they&apos;re on a job, mid-haircut, or at dinner. And when a call genuinely needs the owner, it escalates and transfers, so they&apos;re only interrupted when it actually matters.
-              </p>
-            </div>
+          <div className="max-w-2xl mb-14">
+            <p className="t-eyebrow text-em mb-4">What you&apos;re really selling</p>
+            <span className="racing-line" />
+            <h2 className="t-h2 text-white">You&apos;re not selling AI. You&apos;re selling their time back.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              The businesses you sign up stop dropping everything to answer the phone. The AI knows their calendar and books the estimate, the appointment, the callback, while they&apos;re on a job, mid-haircut, or at dinner. And when a call genuinely needs the owner, it escalates and transfers, so they&apos;re only interrupted when it actually matters.
+            </p>
           </div>
-
-          {/* Three moments: a real photo each, with a precise caption */}
-          <div className="grid md:grid-cols-3 gap-5 mt-16 lg:mt-20">
+          <div className="grid md:grid-cols-3 gap-4">
             {[
-              { shot: 'Tradesperson under a sink, hands full, phone ringing in a pocket, unbothered.', t: 'Books straight to their calendar', d: 'Estimates, appointments, and callbacks land on their Google Calendar in real time, during the call.' },
-              { shot: 'Stylist mid-cut, scissors in hand, not stopping.', t: 'Handles the calls they used to stop for', d: 'The repetitive questions and bookings get answered 24/7, so they never drop what they are doing to pick up.' },
-              { shot: 'The one call that IS urgent, ringing through. The owner answers. It clearly matters.', t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
-            ].map((c, i) => (
-              <div key={c.t}>
-                <div className="photo-placeholder ratio-32">
-                  <p className="photo-placeholder-label">Photo 3:2<br />{c.shot}</p>
-                </div>
-                <div className="mt-5 flex items-center gap-2 telemetry text-[10px] uppercase"><span className="telemetry-dot" />{String(i + 1).padStart(2, '0')}</div>
-                <h3 className="font-display text-[16px] text-white mt-2 font-medium">{c.t}</h3>
+              { Icon: Calendar, t: 'Books straight to their calendar', d: 'Estimates, appointments, and callbacks land on their Google Calendar in real time, during the call.' },
+              { Icon: PhoneCall, t: 'Handles the calls they used to stop for', d: 'The repetitive questions and bookings get answered 24/7, so they never drop what they are doing to pick up.' },
+              { Icon: ArrowUpRight, t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
+            ].map(c => (
+              <div key={c.t} className="bento-cell">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.2)' }}><c.Icon className="w-5 h-5 text-em" /></div>
+                <h3 className="font-display text-[16px] text-white mt-4 font-medium">{c.t}</h3>
                 <p className="text-[13px] mt-2 leading-relaxed" style={{ color: 'var(--steel-300)' }}>{c.d}</p>
               </div>
             ))}
