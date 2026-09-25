@@ -151,6 +151,11 @@ function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
 
 const SITE_URL = 'https://www.myvoiceaiconnect.com';
 
+// Platform demo line: the callable number a prospect dials to hear the AI live.
+// SET BOTH to the real provisioned platform demo number before deploy.
+const PLATFORM_DEMO_NUMBER = '(404) 671-9089';
+const PLATFORM_DEMO_TEL = '+14046719089';
+
 const FAQ_ITEMS = [
                 { q: 'What is VoiceAI Connect?', a: 'VoiceAI Connect is a white-label AI receptionist platform built for agencies and resellers. Agencies use the platform to brand and resell AI receptionist subscriptions to local service businesses for $99 to $299 per month. The platform automatically provisions the AI voice agent, dedicated phone number, and client-facing dashboard at signup. Subscription payments flow directly to the agency through Stripe Connect, and the underlying infrastructure, voice synthesis, telephony, payments, database, hosting, is operated by VoiceAI Connect as a single integrated product.' },
                 { q: 'Do my clients get their own dashboard?', a: 'Yes. Every business you onboard receives their own fully branded dashboard, call recordings, time-coded transcripts, AI-generated summaries, contact management, and configurable SMS and email alerts. They never see your other clients or your agency backend. You get a separate agency dashboard where you manage all clients, revenue, branding, and operations from one interface.' },
@@ -167,14 +172,10 @@ const FAQ_ITEMS = [
                 { q: 'Does the AI work in Spanish?', a: 'Yes, automatic English and Spanish on every plan, no configuration required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends the business owner a summary in English. This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.' },
                 { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee, agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial, you add a card to start it and aren&apos;t charged until the trial ends. On the client side, every plan includes a 7-day free trial for the businesses you onboard, giving your clients a risk-free way to experience the AI receptionist before their first billing cycle. Google Calendar integration is included on all tiers.' },
                 { q: 'How many team members can I add to my agency?', a: 'Team-member capacity scales with your plan. The Free plan is solo, just you as the agency owner. The Pro plan includes up to 3 team members, which is enough for most operators to bring on a sales partner, a client success manager, and a virtual assistant for outreach. The Scale plan includes unlimited team members for high-volume agencies running larger operations. Each member gets their own login and configurable permissions: dashboard, clients, leads, outreach, analytics, marketing, settings, and billing can all be toggled per member, so you can give a VA access to outreach without exposing your Stripe revenue, or give a sales rep client management without settings access. Separately, the businesses you onboard each receive their own team-member slots, included on Pro (2 per client) and unlimited on Scale, so your clients can give their own employees dashboard access without an additional charge.' },
-                { q: 'How do free trials work, for agencies and for clients?', a: 'There are two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial. You add a card to start it and aren&apos;t charged until day 14, you get full access to white-label branding, marketing site, CRM, and all platform features for two weeks, and you can cancel anytime before the trial ends at no cost. The Free plan has no trial because there is no platform fee to trial against, you start immediately with no card. At the client level, every plan (Free, Pro, and Scale) includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins. This gives your clients a risk-free way to experience the product, which increases conversion rates from prospect to paying subscriber.' },
-                { q: 'Why is a credit card required to start a Pro or Scale trial?', a: 'It keeps the 14-day trial reserved for operators who are seriously building an agency. Trials cost real money to run, phone numbers, voice minutes, and infrastructure, so requiring a card lets us avoid subsidizing tire-kickers and keep platform pricing low for everyone who is actually building. You are never charged during the trial and can cancel anytime before it ends at no cost; if you continue, billing simply begins at day 14. And the Free plan always needs no card, if you would rather start with zero commitment, that option is always open.' },
-                { q: 'Does VoiceAI Connect support international phone numbers?', a: 'Yes. The default integration uses Telnyx for US-based phone numbers and provisions them automatically. For UK, Canadian, or other international numbers, agencies connect their own Twilio account by adding their API credentials in the dashboard. The platform then routes calls for those clients through Twilio automatically, the AI receptionist behavior, client dashboards, billing, and onboarding flow all function identically. No additional configuration is required beyond pasting in the Twilio key.' },
-                { q: 'Can VoiceAI Connect be used from outside the United States?', a: 'Yes. The platform is available globally, agency operators in any country can sign up, build a brand, and run a workspace. End-client coverage is available in the United States, United Kingdom, and Canada. An operator based in India, the Philippines, or anywhere else can run a US-focused agency remotely, selling AI receptionist subscriptions to American local businesses without leaving their home country. Stripe Connect supports payouts to most major countries.' },
+                { q: 'How do free trials work, and why is a card required?', a: 'There are two separate trials. At the agency level, the Pro and Scale plans include a 14-day free trial: you add a card to start it and are not charged until day 14, with full access to white-label branding, the marketing site, CRM, and every feature, and you can cancel anytime before day 14 at no cost. The card keeps the trial reserved for operators seriously building an agency, since trials cost real money to run, phone numbers, voice minutes, and infrastructure, and it lets us keep platform pricing low. The Free plan needs no card and starts immediately, there is no platform fee to trial against. At the client level, every plan (Free, Pro, and Scale) includes a 7-day free trial for the businesses you onboard: when a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins, which increases conversion from prospect to paying subscriber.' },
+                { q: 'Can VoiceAI Connect be used internationally?', a: 'Yes, both the operator and the phone numbers. Agency operators in any country can sign up and run a workspace, an operator based in India, the Philippines, or anywhere else can run a US-focused agency remotely, and Stripe Connect supports payouts to most major countries. For numbers, US lines are provisioned automatically via Telnyx; for UK, Canadian, or other international numbers, agencies connect their own Twilio account by pasting their API credentials in the dashboard, and the platform routes those clients through Twilio automatically. End-client coverage is available in the United States, United Kingdom, and Canada, with identical AI behavior, dashboards, billing, and onboarding.' },
                 { q: 'How do agencies acquire clients on the platform?', a: 'The platform includes a built-in lead generation CRM with thirteen pre-written outreach templates, a Google Maps business prospecting tool, sales scripts, and reply tracking. The strongest conversion tool is the interactive AI demo phone line, included on the Pro tier, prospects call the demo number, experience the AI receptionist firsthand, and typically convert without requiring a sales call.' },
                 { q: 'Are technical skills required to operate the platform?', a: 'No. Configuration is point-and-click: upload a logo, select a color palette, set pricing tiers, share a signup link. The platform handles AI agent configuration, phone number provisioning, billing setup, and ongoing operations automatically. There is no code to write and no infrastructure to manage.' },
-                { q: 'Can local businesses realistically be charged $99 to $299 per month?', a: 'Yes. Industry research places the cost of a single missed call at approximately $500 in lost revenue for a small service business. A full-time human receptionist costs roughly $3,000 per month inclusive of payroll taxes and benefits. AI receptionist coverage at $149 per month delivers 24/7 availability for a fraction of either alternative, making it a clear yes for most local service businesses.' },
-                { q: 'Is this another &quot;make money with AI&quot; product?', a: 'No. VoiceAI Connect is software infrastructure, not a course or a coaching program. The platform functions as the operating system for an actual service business, comparable to how Shopify functions as the operating system for an actual e-commerce business. There are no upsells, community fees, or playbooks to purchase. Operators do real sales work and provide a real service to local businesses.' },
                 { q: 'What integrations and infrastructure power the platform?', a: 'VoiceAI Connect orchestrates sixteen enterprise infrastructure providers behind a single application: Anthropic Claude for reasoning, ElevenLabs for voice synthesis, Deepgram for real-time speech-to-text, OpenAI Whisper for batch transcription, Telnyx for US phone numbers and SIP trunking, Twilio for UK and international numbers, Google Calendar for real-time appointment booking, Stripe Connect for subscription billing, Supabase for Postgres and authentication, Make and n8n for workflow automation, Vercel and Cloudflare for the edge layer, Brevo for transactional email, Sentry for error monitoring, and PostHog for product analytics.' },
                 { q: 'What happens if I cancel my subscription?', a: 'Cancellation is available at any time, with no holdback period or penalty. Operators retain ownership of their client list, custom domain, Stripe Connect account, and all client data. Existing clients can be migrated to another platform or terminated at the operator&apos;s discretion.' },
 ];
@@ -659,6 +660,87 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ════════ PLATFORM DEMO ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="max-w-2xl mb-14">
+            <p className="t-eyebrow text-em mb-6">Try it yourself</p>
+            <h2 className="t-h2 text-white">Two ways to see exactly what you would sell.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              No signup, no sales call. Call the live line to hear the AI answer like a real receptionist, or click through the actual dashboards your clients would use.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-5">
+            {/* Call the demo line */}
+            <div className="calc-shell p-8 lg:p-10 flex flex-col">
+              <p className="t-eyebrow text-em mb-5">Call the demo line</p>
+              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Hear the AI answer, live.</h3>
+              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
+                Call and talk to it, it&apos;s the same voice AI your clients get. Ask it anything, and it will connect you to a live receptionist demo so you hear exactly what a caller experiences. Sixty seconds, from your own phone.
+              </p>
+              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-6 py-5 hover:border-white/25 transition-colors self-start">
+                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
+                <span>
+                  <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">Tap to call, no signup</span>
+                  <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight">{PLATFORM_DEMO_NUMBER}</span>
+                </span>
+                <span className="ml-2 waveform">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
+              </a>
+              <div className="mt-auto pt-8 flex flex-wrap gap-x-6 gap-y-2">
+                {['Answers 24/7', 'Natural, human-sounding voice', 'Connects you to a live demo'].map(x => (
+                  <span key={x} className="flex items-center gap-2 text-[12.5px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Explore the dashboard */}
+            <Link href="/interactive-demo" className="calc-shell p-8 lg:p-10 flex flex-col">
+              <p className="t-eyebrow text-em mb-5">Explore the dashboard</p>
+              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Click through the real product.</h3>
+              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
+                Walk the agency and client dashboards with live sample data. Add a client, watch the AI book an appointment, then toggle into the white-labeled client view to see what you are selling.
+              </p>
+              <div className="mt-7 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                <div className="flex items-center gap-1.5 px-3 py-2.5 bg-white/[0.025]"><span className="w-2 h-2 rounded-full bg-red-400/60" /><span className="w-2 h-2 rounded-full bg-yellow-400/60" /><span className="w-2 h-2 rounded-full bg-emerald-400/60" /><span className="ml-3 font-mono text-[10px] text-white/40">app.your-brand.com</span></div>
+                <div className="p-4 grid grid-cols-3 gap-2.5">
+                  {[['MRR', '$12,480'], ['Clients', '34'], ['Calls', '2,911']].map(([k, v]) => (
+                    <div key={k} className="rounded-lg border border-white/[0.07] bg-white/[0.012] p-2.5"><p className="font-mono text-[8px] tracking-[0.12em] text-white/40 uppercase">{k}</p><p className="font-display text-[15px] font-medium text-white mt-0.5 t-numeric">{v}</p></div>
+                  ))}
+                </div>
+              </div>
+              <span className="mt-auto pt-8 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] uppercase text-em">Open the interactive demo <ArrowRight className="w-3 h-3" /></span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ TIME BACK (human) ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="max-w-2xl mb-14">
+            <p className="t-eyebrow text-em mb-6">What you&apos;re really selling</p>
+            <h2 className="t-h2 text-white">You&apos;re not selling AI. You&apos;re selling their time back.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              The businesses you sign up stop dropping everything to answer the phone. The AI knows their calendar and books the estimate, the appointment, the callback, while they&apos;re on a job, mid-haircut, or at dinner. And when a call genuinely needs the owner, it escalates and transfers, so they&apos;re only interrupted when it actually matters.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { Icon: Calendar, t: 'Books straight to their calendar', d: 'Estimates, appointments, and callbacks land on their Google Calendar in real time, during the call.' },
+              { Icon: PhoneCall, t: 'Handles the calls they used to stop for', d: 'The repetitive questions and bookings get answered 24/7, so they never drop what they are doing to pick up.' },
+              { Icon: ArrowUpRight, t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
+            ].map(c => (
+              <div key={c.t} className="rounded-2xl border border-white/[0.07] bg-white/[0.012] p-6">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.2)' }}><c.Icon className="w-5 h-5 text-em" /></div>
+                <h3 className="font-display text-[16px] text-white mt-4 font-medium">{c.t}</h3>
+                <p className="text-[13px] text-white/55 mt-2 leading-relaxed">{c.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ════════ GOOGLE CALENDAR + INTEGRATIONS ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -757,36 +839,50 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r6} className="fade-up max-w-3xl mb-14">
             <p className="t-eyebrow text-em-deep mb-6">Comparison</p>
-            <h2 className="t-h2 text-black">Purpose-built for AI receptionist resale.</h2>
-            <p className="t-body mt-6 max-w-xl">Most platforms in this space retrofit white-labeling onto products designed for direct sale. VoiceAI Connect was architected for agency-to-client resale from day one, and the difference shows in every feature comparison.</p>
+            <h2 className="t-h2 text-black">Most platforms make white-label expensive. We make it the entry point.</h2>
+            <p className="t-body mt-6 max-w-xl">White-label starts at $99 a month here. Synthflow gates it behind a roughly $2,000 a month add-on, and general agency tools bolt receptionist resale onto a product built for direct sale. VoiceAI Connect was built for agency-to-client resale from day one.</p>
           </div>
 
-          <div className="bg-paper rounded-3xl border border-black/[0.05] overflow-hidden">
+          {/* Desktop table (hidden on smaller screens, it does not fit) */}
+          <div className="hidden lg:block bg-paper rounded-3xl border border-black/[0.05] overflow-hidden">
             <div className="compare-row compare-row-head">
               <div className="font-mono text-[10px] tracking-[0.16em] text-black/40 uppercase">Feature</div>
               <div className="text-center compare-cell-em font-display text-[14px] font-medium text-black px-3 py-2">VoiceAI Connect</div>
+              <div className="text-center font-display text-[13px] text-black/55">Synthflow</div>
               <div className="text-center font-display text-[13px] text-black/55">GoHighLevel</div>
-              <div className="text-center font-display text-[13px] text-black/55 compare-hide-sm">Autocalls</div>
-              <div className="text-center font-display text-[13px] text-black/55 compare-hide-md">echowin</div>
+              <div className="text-center font-display text-[13px] text-black/55">Vapi / Retell</div>
             </div>
             {[
-              ['Branded client-facing dashboard for end businesses', true, false, false, false],
-              ['Sub-60-second automated client onboarding', true, false, false, false],
-              ['No A2P registration required (per client)', true, false, true, true],
-              ['Built-in lead generation CRM with templates', true, false, false, false],
-              ['Mobile-first agency interface', true, false, true, true],
-              ['Interactive AI demo phone line included', true, false, false, false],
-              ['Google Calendar appointment booking', true, false, false, false],
-              ['Usage-based pricing, pay as you grow', true, false, true, false],
-              ['White-label marketing website included', true, false, true, true],
-              ['Direct Stripe Connect payouts to agency', true, true, false, false],
-            ].map(([f, v, g, a, e]) => (
+              ['White-label from $99/mo, not a $2,000 add-on', true, false, false, false],
+              ['Each end client gets their own branded dashboard', true, false, false, false],
+              ['Client live in under 60 seconds, no per-client A2P', true, false, false, false],
+              ['Subscriptions pay you directly via Stripe Connect', true, false, true, false],
+              ['Built-in lead-gen CRM (Maps prospecting + outreach)', true, false, true, false],
+              ['Purpose-built for AI receptionist resale', true, false, false, false],
+              ['Turnkey, no engineering required', true, true, true, false],
+            ].map(([f, v, sy, g, b]) => (
               <div key={f as string} className="compare-row text-[13.5px] text-black/72">
                 <div className="pr-4">{f as string}</div>
                 <div className="text-center compare-cell-em px-3 py-3">{v ? <Check className="w-4 h-4 mx-auto" style={{ color: '#00c596' }} strokeWidth={2.5} /> : <XIcon className="w-3.5 h-3.5 text-black/20 mx-auto" />}</div>
+                <div className="text-center">{sy ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
                 <div className="text-center">{g ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
-                <div className="text-center compare-hide-sm">{a ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
-                <div className="text-center compare-hide-md">{e ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
+                <div className="text-center">{b ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: the full table does not fit, so show the wedge as bullets */}
+          <div className="lg:hidden space-y-3">
+            {[
+              'White-label from $99/mo, not a $2,000 add-on',
+              'Every end client gets their own branded dashboard',
+              'First client live today, no per-client A2P delay',
+              'Subscriptions pay you directly via Stripe Connect',
+              'Purpose-built for AI receptionist resale, not a bolted-on feature',
+            ].map(x => (
+              <div key={x} className="flex items-start gap-3 rounded-xl border border-black/[0.06] bg-paper px-4 py-3.5">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#00c596' }} strokeWidth={2.5} />
+                <span className="text-[14px] text-black/72 leading-snug">{x}</span>
               </div>
             ))}
           </div>
@@ -842,6 +938,37 @@ export default function HomePage() {
             ))}
           </div>
           <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · 7-day client trials</p>
+        </div>
+      </section>
+
+      {/* ════════ DEVELOPERS ════════ */}
+      <section className="bg-ink py-24 lg:py-32 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-20">
+            <div className="lg:col-span-5">
+              <p className="t-eyebrow text-em mb-6">For developers</p>
+              <h2 className="t-h2 text-white">Wire it into your own stack.</h2>
+              <p className="t-body mt-6 max-w-md">
+                Beyond the no-code dashboard, VoiceAI Connect gives you a REST API and signed webhooks, so you can automate client onboarding and push call and booking data into your own systems. Available on the Scale plan.
+              </p>
+            </div>
+            <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.012] p-6 flex flex-col">
+                <p className="t-eyebrow text-em mb-3">REST API</p>
+                <p className="text-[14px] text-white/70 leading-relaxed">Generate scoped API keys (read or read and write) from your dashboard and manage clients, calls, and leads programmatically.</p>
+                <div className="mt-auto pt-5 font-mono text-[11px] text-white/55 rounded-lg border border-white/[0.07] bg-black/40 px-3 py-2.5">Authorization: Bearer vac_live_...</div>
+              </div>
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.012] p-6 flex flex-col">
+                <p className="t-eyebrow text-em mb-3">Signed webhooks</p>
+                <p className="text-[14px] text-white/70 leading-relaxed">Subscribe an endpoint to real-time events. Every payload is HMAC-SHA256 signed, so you can verify it came from us.</p>
+                <div className="mt-auto pt-5 flex flex-wrap gap-1.5">
+                  {['call.completed', 'call.transferred', 'appointment.booked', 'client.provisioned'].map(e => (
+                    <span key={e} className="font-mono text-[10px] text-white/60 rounded-md border border-white/[0.07] bg-white/[0.012] px-2 py-1">{e}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
