@@ -375,8 +375,28 @@ export default function HomePage() {
       {/* ════════ HERO ════════ */}
       <section className="canvas-dot relative pt-40 lg:pt-48 pb-20 lg:pb-32 overflow-hidden">
         <div className="hero-aurora" />
+        <div className="hero-video-placeholder" aria-hidden />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          {/* Telemetry readout: the AI booking a job, live. The single graphic that floats over the hero video. */}
+          <div className="hidden lg:block absolute right-10 top-6 w-[300px] calc-shell p-5" aria-hidden>
+            <div className="flex items-center justify-between">
+              <span className="telemetry text-[10px] uppercase"><span className="telemetry-dot" /> Incoming call</span>
+              <span className="telemetry text-[10px]">00:14</span>
+            </div>
+            <div className="mt-4 rounded-lg border border-white/[0.07] bg-black/40 px-3 py-2.5 font-mono text-[11px]" style={{ color: 'var(--steel-300)' }}>
+              &quot;Sure, I can get you in Thursday at 2.&quot;
+            </div>
+            <div className="mt-3 flex items-center gap-3 rounded-lg border px-3 py-2.5" style={{ borderColor: 'rgba(0,227,170,0.25)', background: 'rgba(0,227,170,0.06)' }}>
+              <Calendar className="w-4 h-4 text-em flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-display text-[12.5px] text-white font-medium">Appointment booked</p>
+                <p className="telemetry text-[10px]">Thu 2:00 PM, Google Calendar</p>
+              </div>
+              <Check className="w-4 h-4 text-em ml-auto flex-shrink-0" strokeWidth={2.5} />
+            </div>
+          </div>
           <div ref={r1} className="fade-up max-w-4xl">
+            <span className="racing-line" />
             <h1 className="t-h1 text-white max-w-[18ch]">
               The white-label AI receptionist platform for agencies.
             </h1>
@@ -587,7 +607,7 @@ export default function HomePage() {
                         <l.icon className="w-4 h-4 text-em" strokeWidth={1.7} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-display text-[22px] sm:text-[28px] lg:text-[32px] font-medium text-white leading-[1.1] tracking-tight break-words">{l.title}</h3>
+                        <h3 className="font-display text-[22px] sm:text-[28px] lg:text-[32px] font-medium text-white leading-[1.1] tracking-tight break-words capitalize">{l.title}</h3>
                         <p className="text-[14px] text-white/60 mt-3 leading-relaxed">{l.sub}</p>
                       </div>
                     </div>
@@ -664,7 +684,8 @@ export default function HomePage() {
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div className="max-w-2xl mb-14">
-            <p className="t-eyebrow text-em mb-6">Try it yourself</p>
+            <p className="t-eyebrow text-em mb-4">Try it yourself</p>
+            <span className="racing-line" />
             <h2 className="t-h2 text-white">Two ways to see exactly what you would sell.</h2>
             <p className="t-body mt-6 max-w-xl">
               No signup, no sales call. Call the live line to hear the AI answer like a real receptionist, or click through the actual dashboards your clients would use.
@@ -718,23 +739,38 @@ export default function HomePage() {
       {/* ════════ TIME BACK (human) ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <div className="max-w-2xl mb-14">
-            <p className="t-eyebrow text-em mb-6">What you&apos;re really selling</p>
-            <h2 className="t-h2 text-white">You&apos;re not selling AI. You&apos;re selling their time back.</h2>
-            <p className="t-body mt-6 max-w-xl">
-              The businesses you sign up stop dropping everything to answer the phone. The AI knows their calendar and books the estimate, the appointment, the callback, while they&apos;re on a job, mid-haircut, or at dinner. And when a call genuinely needs the owner, it escalates and transfers, so they&apos;re only interrupted when it actually matters.
-            </p>
+
+          {/* Editorial split: one large human moment beside the thesis */}
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            <div className="lg:col-span-5 order-2 lg:order-1">
+              <div className="photo-placeholder ratio-45">
+                <p className="photo-placeholder-label">Photo 4:5<br />Owner at dinner with family. Phone face-down on the table. It lights up, they glance, they keep eating.</p>
+              </div>
+            </div>
+            <div className="lg:col-span-7 order-1 lg:order-2">
+              <p className="t-eyebrow text-em mb-4">What you&apos;re really selling</p>
+              <span className="racing-line" />
+              <h2 className="t-h2 text-white">You&apos;re not selling AI. You&apos;re selling their time back.</h2>
+              <p className="t-body mt-6 max-w-xl">
+                The businesses you sign up stop dropping everything to answer the phone. The AI knows their calendar and books the estimate, the appointment, the callback, while they&apos;re on a job, mid-haircut, or at dinner. And when a call genuinely needs the owner, it escalates and transfers, so they&apos;re only interrupted when it actually matters.
+              </p>
+            </div>
           </div>
-          <div className="grid md:grid-cols-3 gap-4">
+
+          {/* Three moments: a real photo each, with a precise caption */}
+          <div className="grid md:grid-cols-3 gap-5 mt-16 lg:mt-20">
             {[
-              { Icon: Calendar, t: 'Books straight to their calendar', d: 'Estimates, appointments, and callbacks land on their Google Calendar in real time, during the call.' },
-              { Icon: PhoneCall, t: 'Handles the calls they used to stop for', d: 'The repetitive questions and bookings get answered 24/7, so they never drop what they are doing to pick up.' },
-              { Icon: ArrowUpRight, t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
-            ].map(c => (
-              <div key={c.t} className="rounded-2xl border border-white/[0.07] bg-white/[0.012] p-6">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.2)' }}><c.Icon className="w-5 h-5 text-em" /></div>
-                <h3 className="font-display text-[16px] text-white mt-4 font-medium">{c.t}</h3>
-                <p className="text-[13px] text-white/55 mt-2 leading-relaxed">{c.d}</p>
+              { shot: 'Tradesperson under a sink, hands full, phone ringing in a pocket, unbothered.', t: 'Books straight to their calendar', d: 'Estimates, appointments, and callbacks land on their Google Calendar in real time, during the call.' },
+              { shot: 'Stylist mid-cut, scissors in hand, not stopping.', t: 'Handles the calls they used to stop for', d: 'The repetitive questions and bookings get answered 24/7, so they never drop what they are doing to pick up.' },
+              { shot: 'The one call that IS urgent, ringing through. The owner answers. It clearly matters.', t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
+            ].map((c, i) => (
+              <div key={c.t}>
+                <div className="photo-placeholder ratio-32">
+                  <p className="photo-placeholder-label">Photo 3:2<br />{c.shot}</p>
+                </div>
+                <div className="mt-5 flex items-center gap-2 telemetry text-[10px] uppercase"><span className="telemetry-dot" />{String(i + 1).padStart(2, '0')}</div>
+                <h3 className="font-display text-[16px] text-white mt-2 font-medium">{c.t}</h3>
+                <p className="text-[13px] mt-2 leading-relaxed" style={{ color: 'var(--steel-300)' }}>{c.d}</p>
               </div>
             ))}
           </div>
@@ -742,7 +778,7 @@ export default function HomePage() {
       </section>
 
       {/* ════════ GOOGLE CALENDAR + INTEGRATIONS ════════ */}
-      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+      <section className="section-graphite py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r10} className="fade-up grid lg:grid-cols-12 gap-12 lg:gap-20 items-start">
             <div className="lg:col-span-5">
@@ -838,7 +874,8 @@ export default function HomePage() {
       <section id="compare" className="bg-paper-soft py-28 lg:py-40 scroll-mt-24">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r6} className="fade-up max-w-3xl mb-14">
-            <p className="t-eyebrow text-em-deep mb-6">Comparison</p>
+            <p className="t-eyebrow text-em-deep mb-4">Comparison</p>
+            <span className="racing-line" />
             <h2 className="t-h2 text-black">Most platforms make white-label expensive. We make it the entry point.</h2>
             <p className="t-body mt-6 max-w-xl">White-label starts at $99 a month here. Synthflow gates it behind a roughly $2,000 a month add-on, and general agency tools bolt receptionist resale onto a product built for direct sale. VoiceAI Connect was built for agency-to-client resale from day one.</p>
           </div>
