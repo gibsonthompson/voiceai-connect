@@ -1203,17 +1203,85 @@ details[open] .faq-chev { transform: rotate(45deg); }
   .wls-anim { display: block; }
   .wls-static { display: none; }
 }
+
+.wls-scene { padding: 3rem 0 3.5rem; }
+
 .wls-stack {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 26px;
   transform-style: preserve-3d;
   will-change: transform;
+  z-index: 2;
 }
 .wls-slab {
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--graphite-2);
   border: 1px solid var(--hairline);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 48px -28px rgba(0, 0, 0, 0.85);
-  padding: 1.1rem 1.35rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  padding: 1.6rem 2rem;
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Blueprint ground the pile sits on: a faint grid with a horizon, edges masked */
+.wls-ground {
+  position: absolute;
+  inset: -2rem -3rem -1rem -3rem;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 75% 80% at 50% 55%, black 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 80% at 50% 55%, black 30%, transparent 78%);
+}
+.wls-ground::after {
+  content: '';
+  position: absolute;
+  left: 10%; right: 10%; bottom: 3rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+}
+
+/* Shadow pool under the pile, deepens as layers stack */
+.wls-pool {
+  position: absolute;
+  left: 8%; right: 8%; bottom: 1.25rem;
+  height: 90px;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.9), transparent 70%);
+  filter: blur(18px);
+}
+
+/* Teal bloom behind the agency layer at the brand moment */
+.wls-bloom {
+  position: absolute;
+  left: 15%; right: 15%; top: 28%;
+  height: 46%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 227, 170, 0.32), transparent 65%);
+  filter: blur(28px);
+  transform-origin: center;
+}
+
+/* A slow band of light crossing the pile */
+.wls-sheen-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: 20px;
+}
+.wls-sheen {
+  position: absolute;
+  top: -20%; bottom: -20%;
+  width: 26%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
 }
