@@ -37,11 +37,11 @@ const VENDORS = [
 ];
 
 const BEATS = [
-  { k: 'Sixteen enterprise vendors.', s: 'The foundation. Raw capability, unbranded, and complex. This is what VoiceAI Connect stands on.' },
-  { k: 'One platform. The complexity disappears.', s: 'VoiceAI Connect turns sixteen vendors into one clean, brandable product: onboarding, billing, dashboards, the receptionist itself.' },
-  { k: 'Your brand. Your pricing. Your margin.', s: 'You paint it. Your logo, your domain, your price. VoiceAI Connect disappears from the surface your clients see.' },
-  { k: 'Their phone gets answered.', s: 'The business you sign up sees only you. Calls answered around the clock, appointments booked while they work.' },
-  { k: 'That is the whole business. You own the middle.', s: 'Money flows up to you. Your brand flows down to them. The infrastructure underneath is never your problem.' },
+  { k: 'Sixteen enterprise vendors.', s: 'The foundation. Raw capability: models, voices, telephony, payments. Powerful, unbranded, and complex.' },
+  { k: 'One platform. The complexity disappears.', s: 'VoiceAI Connect turns sixteen vendors into a single product: onboarding, billing, dashboards, and the receptionist itself. Built to carry your name.' },
+  { k: 'Your brand. Your pricing. Your margin.', s: 'You put your logo, your domain, and your price on it. VoiceAI Connect vanishes from everything your clients see.' },
+  { k: 'Their phone gets answered.', s: 'The business you sign up sees only you. Every call answered, every appointment booked, around the clock.' },
+  { k: 'The whole business. Under your name.', s: 'Revenue flows up to you. Your brand flows down to your clients. Everything underneath, we run.' },
 ];
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -313,7 +313,7 @@ export default function WhiteLabelStack() {
             </div>
           ))}
         </div>
-        <p className="telemetry text-[11px] mt-6" style={{ color: 'var(--steel-500)' }}>Money flows up to you. Brand flows down to them.</p>
+        <p className="telemetry text-[11px] mt-6" style={{ color: 'var(--steel-500)' }}>Revenue flows up to you. Your brand flows down to your clients. Everything underneath, we run.</p>
       </div>
     </>
   );

@@ -265,7 +265,10 @@ export default function HomePage() {
             <h1 className="t-h1 text-white max-w-[18ch]">
               The white-label AI receptionist platform for agencies.
             </h1>
-            <p className="t-body mt-8 max-w-2xl text-[1rem]">
+            <p className="font-display text-[19px] lg:text-[23px] font-medium mt-7 max-w-2xl leading-snug" style={{ color: 'var(--steel-100)' }}>
+              Buy it at $99 a month. Sell it at your price. Keep the margin.
+            </p>
+            <p className="t-body mt-6 max-w-2xl text-[1rem]">
               VoiceAI Connect is a multi-tenant voice AI platform purpose-built for agencies and resellers. Brand the product as your own, onboard local businesses in under sixty seconds, and collect monthly recurring revenue while we operate the underlying infrastructure. Sixteen enterprise vendors integrated and shipped as a single agency-ready application.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
@@ -314,6 +317,25 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ════════ INFRASTRUCTURE ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div ref={r3} className="fade-up grid lg:grid-cols-12 gap-10 lg:gap-16 mb-16 lg:mb-20">
+            <div className="lg:col-span-6">
+              <p className="t-eyebrow text-em mb-6">The whole business, in one scroll</p>
+              <h2 className="t-h2 text-white">You never touch the infrastructure. We run all of it.</h2>
+            </div>
+            <div className="lg:col-span-6 lg:pt-2">
+              <p className="t-body max-w-lg">
+                VoiceAI Connect orchestrates sixteen specialized infrastructure providers behind a single agency-facing application. Anthropic&apos;s Claude handles reasoning. ElevenLabs synthesizes voice. Deepgram transcribes calls in real time. Telnyx routes US numbers, Twilio handles UK and international. Stripe Connect, Supabase, Vercel, and Cloudflare run the platform layer. Google Calendar powers real-time appointment booking. Sentry and PostHog cover monitoring and analytics, billed to you as a single flat fee.
+              </p>
+            </div>
+          </div>
+
+          <WhiteLabelStack />
         </div>
       </section>
 
@@ -384,25 +406,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ════════ INFRASTRUCTURE ════════ */}
-      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <div ref={r3} className="fade-up grid lg:grid-cols-12 gap-10 lg:gap-16 mb-16 lg:mb-20">
-            <div className="lg:col-span-6">
-              <p className="t-eyebrow text-em mb-6">What we run for you</p>
-              <h2 className="t-h2 text-white">You never touch the infrastructure. We run all of it.</h2>
-            </div>
-            <div className="lg:col-span-6 lg:pt-2">
-              <p className="t-body max-w-lg">
-                VoiceAI Connect orchestrates sixteen specialized infrastructure providers behind a single agency-facing application. Anthropic&apos;s Claude handles reasoning. ElevenLabs synthesizes voice. Deepgram transcribes calls in real time. Telnyx routes US numbers, Twilio handles UK and international. Stripe Connect, Supabase, Vercel, and Cloudflare run the platform layer. Google Calendar powers real-time appointment booking. Sentry and PostHog cover monitoring and analytics, billed to you as a single flat fee.
-              </p>
-            </div>
-          </div>
-
-          <WhiteLabelStack />
         </div>
       </section>
 
