@@ -19,6 +19,7 @@ interface Client {
   id: string; business_name: string; owner_name?: string; email: string; owner_phone: string; industry: string;
   business_city: string; business_state: string; vapi_phone_number: string; subscription_status: string;
   plan_type: string; trial_ends_at: string | null; monthly_call_limit: number; calls_this_month: number;
+  billing_mode?: string; pricing_mode?: string;
   google_calendar_connected: boolean; call_mode?: string; ring_timeout?: number; created_at: string;
   hipaa_mode?: boolean;
   forwarding_confirmed?: boolean;
@@ -169,6 +170,34 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     } catch { setMessage('Error opening billing portal'); }
   };
 
+  const [showPlanPicker, setShowPlanPicker] = useState(false);
+  const [changingPlan, setChangingPlan] = useState<string | null>(null);
+  const canChangePlan = !!(client.agency as any)?.allow_client_plan_changes && client.billing_mode !== 'manual' && !(client as any).is_test_client;
+  const agencyPlans = (() => {
+    const ag = client.agency as any;
+    // Prefer the agency's actual configured plans (custom / Path B). These carry
+    // the real plan keys changeClientPlan validates against; falling back to the
+    // legacy starter/pro/growth only when no custom plans exist.
+    const custom = Array.isArray(ag?.plans) ? ag.plans.filter((p: any) => p && p.key && p.visible !== false) : [];
+    if (custom.length > 0) return custom.map((p: any) => ({ key: p.key, name: p.name || p.key, price: p.price_cents, limit: p.call_limit }));
+    return [
+      { key: 'starter', name: ag?.plan_starter_name || 'Starter', price: ag?.price_starter, limit: ag?.limit_starter },
+      { key: 'pro', name: ag?.plan_pro_name || 'Professional', price: ag?.price_pro, limit: ag?.limit_pro },
+      { key: 'growth', name: ag?.plan_growth_name || 'Growth', price: ag?.price_growth, limit: ag?.limit_growth },
+    ];
+  })();
+  const handleChangePlan = async (plan: string) => {
+    setChangingPlan(plan);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/client/change-plan`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: client.id, plan }) });
+      const d = await r.json();
+      if (d.url) { window.location.href = d.url; return; }
+      if (r.ok && d.success) { setMessage(d.unchanged ? 'You are already on this plan.' : 'Plan updated.'); setShowPlanPicker(false); setTimeout(() => window.location.reload(), 1200); }
+      else { setMessage(d.message || 'Unable to change plan.'); }
+    } catch { setMessage('Error changing plan.'); }
+    finally { setChangingPlan(null); }
+  };
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState('');
   const handleCancelSubscription = async () => {
@@ -354,11 +383,33 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             {(client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
             ) : client.subscription_status === 'active' ? (
-              <>
-                <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Manage Subscription</button>
-                <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
-                {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
-              </>
+              client.billing_mode === 'manual' ? (
+                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                  <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billed by {client.agency?.name || 'your provider'}</div>
+                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Your plan and payments are handled directly by {client.agency?.name || 'your provider'}. To change your plan or update payment, reach out to them{client.agency?.support_email ? ` at ${client.agency.support_email}` : ''}.</div>
+                </div>
+              ) : (
+                <>
+                  {canChangePlan && (
+                    <>
+                      <button onClick={() => setShowPlanPicker(v => !v)} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{showPlanPicker ? 'Hide plans' : 'Change Plan'}</button>
+                      {showPlanPicker && (
+                        <div className="space-y-2">
+                          {agencyPlans.map(pl => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
+                            <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
+                              <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `$${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
+                              <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
+                            </div>
+                          ); })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: canChangePlan ? theme.bg : theme.primary, color: canChangePlan ? theme.textMuted : theme.primaryText, border: canChangePlan ? `1px solid ${theme.border}` : 'none' }}>Manage Subscription</button>
+                  <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
+                  {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
+                </>
+              )
             ) : (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
             )}
