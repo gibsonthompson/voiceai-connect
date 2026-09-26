@@ -33,10 +33,10 @@ export default function MarketingNav() {
     <>
       <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/85 backdrop-blur-xl border-b border-white/[0.05]' : ''}`}>
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5">
             <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-8 h-8 rounded-md" />
             <span className="font-display font-medium text-[15px] text-white tracking-tight">VoiceAI Connect</span>
-          </Link>
+          </a>
           <div className="hidden lg:flex items-center gap-9 text-[13px] text-white/60">
             {NAV_LINKS.map(([n, h]) => (
               <Link key={n} href={h} className="hover:text-white transition-colors">{n}</Link>

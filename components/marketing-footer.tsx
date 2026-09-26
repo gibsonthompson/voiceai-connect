@@ -54,7 +54,12 @@ export default function MarketingFooter() {
             <p className="text-[13px] text-black/55 max-w-xs leading-relaxed">
               The white-label AI receptionist platform purpose-built for agencies and resellers.
             </p>
-            <p className="font-mono text-[11px] text-black/30 mt-7">© 2026 VoiceAI Connect</p>
+            <div className="mt-7 flex items-center gap-3">
+              <span className="block w-6 h-[2px]" style={{ background: '#00e3aa' }} aria-hidden />
+              <p className="font-mono text-[11px] tracking-[0.14em] uppercase text-black/45">Atlanta, GA</p>
+              <span className="block w-1 h-1 rounded-full bg-black/20" aria-hidden />
+              <p className="font-mono text-[11px] text-black/30">© 2026 VoiceAI Connect</p>
+            </div>
           </div>
           {COLUMNS.map(c => (
             <div key={c.t}>

@@ -64,6 +64,23 @@ const FAQ_ITEMS = [
                 { q: 'What happens if I cancel my subscription?', a: 'Cancellation is available at any time, with no holdback period or penalty. Operators retain ownership of their client list, custom domain, Stripe Connect account, and all client data. Existing clients can be migrated to another platform or terminated at the operator&apos;s discretion.' },
 ];
 
+// The ten most important, shown on the homepage. The full set lives on /faq.
+const HOME_FAQ_KEYS = [
+  'What is VoiceAI Connect?',
+  'Do my clients get their own dashboard?',
+  'How does the white-label experience work?',
+  'What information do I need from each client',
+  'What does it cost to start',
+  'How do free trials work',
+  'How is VoiceAI Connect different from GoHighLevel?',
+  'Does the AI receptionist integrate with Google Calendar?',
+  'What happens if the AI transfers a call',
+  'What happens if I cancel',
+];
+const HOME_FAQ = HOME_FAQ_KEYS
+  .map((k) => FAQ_ITEMS.find((f) => f.q.startsWith(k)))
+  .filter((f): f is (typeof FAQ_ITEMS)[number] => Boolean(f));
+
 const decodeEntities = (s: string) =>
   s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&');
 
@@ -107,7 +124,7 @@ const HOME_JSONLD = {
     {
       '@type': 'FAQPage',
       '@id': `${SITE_URL}/#faq`,
-      mainEntity: FAQ_ITEMS.map((item) => ({
+      mainEntity: HOME_FAQ.map((item) => ({
         '@type': 'Question',
         name: decodeEntities(item.q),
         acceptedAnswer: { '@type': 'Answer', text: decodeEntities(item.a) },
@@ -120,7 +137,7 @@ export default function HomePage() {
   const { formatPrice } = usePrice();
 
   const [clients, setClients] = useState(50);
-  const [pricePerClient, setPricePerClient] = useState(149);
+  const [pricePerClient, setPricePerClient] = useState(249);
   const monthlyPlatformFee = 99;
   const perClientCost = 9.99;
   const monthlyRevenue = clients * pricePerClient;
@@ -244,10 +261,10 @@ export default function HomePage() {
     { n: '01', icon: Palette, title: 'Your brand on every surface', sub: 'Logo, color palette, custom domain, transactional emails, and the client phone experience are all configured per agency. End clients see your business at every touchpoint, VoiceAI Connect remains invisible from signup through ongoing usage.', features: ['Token-level color customization across the entire interface', 'Custom domain with auto-provisioned SSL certificates', 'Branded transactional emails and notification SMS'] },
     { n: '02', icon: Globe, title: 'A marketing website that closes for you', sub: 'Each agency receives a complete white-label marketing site, hero, pricing tiers, testimonials, and FAQ, with an interactive AI demo phone line that lets prospects experience the product before they ever speak to a human.', features: ['Conversion-optimized landing page deployed on signup', 'Dedicated AI demo phone number per agency', 'SEO metadata, Open Graph, and sitemap auto-generated'] },
     { n: '03', icon: Rocket, title: 'From signup to live AI in sixty seconds', sub: 'Local businesses fill out a branded form. The platform provisions everything in under a minute: AI voice agent configured for their business, dedicated phone number, dashboard credentials, and welcome sequence triggered. No A2P registration delay, no manual setup.', features: ['White-labeled signup flow tied to your domain', 'Automatic phone number provisioning, no A2P delay', 'Triggered welcome and activation email sequence'] },
-    { n: '04', icon: Mic, title: 'An AI receptionist that never sleeps', sub: "The voice agent answers calls 24/7, automatically detects English or Spanish callers and responds in their language, books appointments directly to the client's Google Calendar, transfers urgent matters to the business owner in real time, and writes a summary on every interaction.", features: ['Sub-two-second response latency on every call', 'Google Calendar integration, books appointments in real time', 'Automatic English & Spanish with real-time detection'] },
-    { n: '05', icon: MonitorSmartphone, title: 'What end clients log in to every day', sub: 'Each business receives a fully branded dashboard showing call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, lead categorization, and configurable SMS or email alerts on every interaction.', features: ['Full call recordings and time-coded transcripts', 'AI summary with intent and sentiment per call', 'SMS and email alerts on configurable triggers'] },
+    { n: '04', icon: Mic, title: 'An AI receptionist that never sleeps', sub: "The voice agent answers calls 24/7, automatically detects English or Spanish callers and responds in their language, books appointments directly to the client's Google Calendar, transfers urgent matters to the business owner in real time, and writes a summary on every interaction. Spam and robocalls are filtered automatically, and unlimited concurrent calls mean no caller ever hears a busy signal.", features: ['Sub-two-second responses, unlimited concurrent calls', 'Google Calendar integration, books appointments in real time', 'English & Spanish detection, spam and robocalls filtered'] },
+    { n: '05', icon: MonitorSmartphone, title: 'What end clients log in to every day', sub: 'Each business receives a fully branded dashboard showing call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, lead categorization, and configurable SMS or email alerts on every interaction. Every account is isolated with Postgres row-level security, PII is never persisted in logs, and every call and booking can flow into your own CRM or tools via webhooks.', features: ['Full call recordings and time-coded transcripts', 'AI summary with intent and sentiment per call', 'SMS and email alerts on configurable triggers'] },
     { n: '06', icon: BarChart3, title: 'Run the entire agency from your phone', sub: 'The agency control surface shows every client, every call, and every dollar in a mobile-first interface. Add clients, modify branding, listen to recordings, and review revenue from anywhere, without ever opening a laptop.', features: ['Real-time MRR, churn, and revenue analytics', 'Per-client call volume and conversion tracking', 'Mobile-optimized layout with offline-capable PWA'] },
-    { n: '07', icon: CreditCard, title: 'Money lands in your bank, not ours', sub: 'Stripe Connect routes every client subscription directly into your account at the price tier you set. Zero revenue share, zero holdbacks, zero middleman. The platform never sees the money, your clients pay you.', features: ['Direct-to-agency Stripe Connect deposits', 'Configurable subscription pricing per tier', 'Automated invoicing on every client signup'] },
+    { n: '07', icon: CreditCard, title: 'Money lands in your bank, not ours', sub: 'Stripe Connect routes every client subscription directly into your account at the price tier you set. No revenue share, no holdbacks. The platform never sees the money, your clients pay you. And because platform pricing is usage-based, your margin compounds as you add clients, most agencies run 90% or better.', features: ['Direct-to-agency Stripe Connect deposits', 'Configurable subscription pricing per tier', 'Automated invoicing on every client signup'] },
     { n: '08', icon: Map, title: 'Find clients before your competition does', sub: 'The built-in CRM pulls local businesses directly from Google Maps, runs them through outreach sequences using thirteen conversion-tested email templates, and tracks every reply through a visual pipeline, all without leaving the platform.', features: ['Google Maps prospecting by category and radius', '13 conversion-tested outreach email templates', 'Visual pipeline with reply detection and follow-ups'] },
   ];
 
@@ -489,26 +506,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════ BENTO PLATFORM ════════ */}
-      <section id="platform" className="bg-ink py-28 lg:py-40 border-t border-white/[0.04] scroll-mt-24">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <div ref={r4} className="fade-up max-w-3xl mb-16">
-            <p className="t-eyebrow text-em mb-6">Also included</p>
-            <h2 className="t-h2 text-white">The rest of the operating system, included.</h2>
-          </div>
-
-          <div className="bento">
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em">Margin</p><p className="t-stat text-white mt-3 t-numeric">90<span className="text-em text-2xl align-top font-display">%+</span></p><p className="text-[12px] text-white/45 mt-3 leading-relaxed">Usage-based platform pricing. Your margin compounds as you add clients.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Lock className="w-3 h-3" />Security</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Postgres row-level security. Encrypted, reputable cloud infrastructure. PII never persisted in logs.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Globe className="w-3 h-3" />Multilingual</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Automatic English and Spanish with real-time language detection. The AI switches mid-call.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><ShieldCheck className="w-3 h-3" />Spam filtering</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Robocalls and telemarketers are detected and ended automatically. Spam never counts against a client&apos;s limit.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><PhoneCall className="w-3 h-3" />Concurrent calls</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Unlimited simultaneous calls. No busy signals, no hold music, no missed calls at peak hours.</p></div></div>
-            <div className="bento-cell bento-c2"><div className="bento-cell-content"><p className="t-eyebrow text-em flex items-center gap-2"><Wand2 className="w-3 h-3" />Automation</p><p className="font-display text-[15px] text-white mt-3 leading-snug font-medium">Booked appointments flow from Google Calendar into your clients&apos; connected CRMs and tools automatically.</p></div></div>
-            <div className="bento-cell bento-c6"><div className="bento-cell-content"><p className="t-eyebrow text-em mb-5">Also included on every plan</p><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3.5">{['Run it all from your phone', 'Google Calendar booking on every plan', 'Direct Stripe Connect payouts, no revenue share', '60-second client onboarding, no A2P delay', 'Branded AI demo phone line (Pro)', 'White-label marketing website'].map(x => (<div key={x} className="flex items-center gap-2.5 text-[13px] text-white/70"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</div>))}</div></div></div>
-          </div>
-        </div>
-      </section>
-
       {/* ════════ PLATFORM DEMO ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -592,72 +589,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════ GOOGLE CALENDAR + INTEGRATIONS ════════ */}
-      <section className="section-graphite py-28 lg:py-40 border-t border-white/[0.04]">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <div ref={r10} className="fade-up grid lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-            <div className="lg:col-span-5">
-              <p className="t-eyebrow text-em mb-6">Scheduling &amp; integrations</p>
-              <h2 className="t-h2 text-white">Every appointment booked. Straight to Google Calendar.</h2>
-              <p className="t-body mt-6 max-w-md">
-                When a caller says &quot;I need to schedule an appointment,&quot; the AI checks the business owner&apos;s Google Calendar in real time, offers available slots, and books it on the spot. The event appears instantly, complete with the caller&apos;s name, phone number, and reason for the visit.
-              </p>
-              <p className="t-body mt-4 max-w-md">
-                No back-and-forth. No missed bookings. No third-party scheduling tool required. Google Calendar integration is <strong className="text-white">included on every plan, including Free.</strong>
-              </p>
-              <Link href="/signup" className="btn btn-em mt-9">Start free, includes calendar <ArrowUpRight className="w-3.5 h-3.5" /></Link>
-            </div>
-
-            <div className="lg:col-span-7">
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
-                  <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-6">How it works during a call</p>
-                  <div className="space-y-5">
-                    {[
-                      { step: '01', label: 'Caller requests appointment', detail: '"I\'d like to schedule a consultation for next week"' },
-                      { step: '02', label: 'AI checks Google Calendar', detail: 'Reads real-time availability across all connected calendars' },
-                      { step: '03', label: 'Offers available slots', detail: '"I have Tuesday at 10am or Thursday at 2pm, which works better?"' },
-                      { step: '04', label: 'Books and confirms', detail: 'Event created with caller name, phone, and reason, owner notified instantly' },
-                    ].map(s => (
-                      <div key={s.step} className="flex gap-4 items-start">
-                        <span className="font-mono text-[11px] text-em mt-1 w-6 flex-shrink-0">{s.step}</span>
-                        <div>
-                          <p className="font-display text-[15px] text-white font-medium">{s.label}</p>
-                          <p className="text-[13px] text-white/50 mt-1">{s.detail}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 lg:p-8">
-                  <p className="font-mono text-[10px] text-em tracking-[0.16em] uppercase mb-3">Beyond the calendar</p>
-                  <p className="text-[14px] text-white/60 leading-relaxed mb-6">
-                    Google Calendar is the hub. Every appointment the AI books automatically flows into the business owner&apos;s existing tools, CRM records created, follow-up emails triggered, team notifications sent. The phone call becomes the start of a complete digital pipeline.
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {[
-                      { name: 'HubSpot', desc: 'Auto-create CRM contacts' },
-                      { name: 'Salesforce', desc: 'Sync deals and activities' },
-                      { name: 'Zapier', desc: 'Connect 6,000+ apps' },
-                      { name: 'Make', desc: 'Visual workflow automation' },
-                      { name: 'Google Meet', desc: 'Auto-add video links' },
-                      { name: 'Slack', desc: 'Team booking notifications' },
-                    ].map(int => (
-                      <div key={int.name} className="rounded-lg p-3 border border-white/[0.06] bg-white/[0.008]">
-                        <p className="font-display text-[13px] text-white font-medium">{int.name}</p>
-                        <p className="text-[11px] text-white/40 mt-0.5">{int.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[12px] text-white/35 mt-4">Google Calendar syncs natively with these platforms. Appointments booked by the AI flow through automatically, no additional configuration required from your clients.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ════════ HOW IT WORKS ════════ */}
       <section className="bg-paper py-28 lg:py-40">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -682,6 +613,58 @@ export default function HomePage() {
             ))}
           </div>
           <p className="font-mono text-[11px] text-black/30 mt-6 uppercase tracking-[0.16em]">→ scroll for steps 02 to 04</p>
+        </div>
+      </section>
+
+      {/* ════════ PRICING ════════ */}
+      <section id="pricing" className="bg-ink py-28 lg:py-40 scroll-mt-24 border-t border-white/[0.04] relative overflow-hidden">
+        <div className="pricing-wash" />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div ref={r7} className="fade-up max-w-2xl mb-14">
+            <p className="t-eyebrow text-em mb-6">Pricing</p>
+            <h2 className="t-h2 text-white">Start free. Scale when ready.</h2>
+            <p className="t-body mt-6 max-w-lg">
+              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. Every plan includes a 7-day free trial for the clients you onboard. No revenue share, no hidden fees.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
+            {AGENCY_PLAN_TIER_LIST.map(t => (
+              <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
+                {t.popular && (
+                  <div className="absolute -top-3 left-7">
+                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#00e3aa' }}>Most popular</span>
+                  </div>
+                )}
+                <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
+                <p className="font-display text-lg font-medium mt-1.5 text-white">{t.name}</p>
+                {t.trial && <p className="font-mono text-[11px] text-em mt-3 tracking-[0.04em]">{t.trial}</p>}
+                <div className="my-6 flex items-baseline gap-1">
+                  {t.price === 0 ? (
+                    <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>Free</span>
+                  ) : (
+                    <>
+                      <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>{formatPrice(t.price)}</span>
+                      <span className="text-base text-white/45">/mo</span>
+                    </>
+                  )}
+                </div>
+                <ul className="space-y-2.5 mb-7">
+                  {t.features.map(f => (
+                    <li key={f} className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{f}</span></li>
+                  ))}
+                  <li className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{t.rate}</span></li>
+                  {t.limitations.map(l => (
+                    <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
+                  ))}
+                </ul>
+                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#00e3aa' } : undefined}>
+                  {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · 7-day client trials</p>
         </div>
       </section>
 
@@ -741,58 +724,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════ PRICING ════════ */}
-      <section id="pricing" className="bg-ink py-28 lg:py-40 scroll-mt-24 border-t border-white/[0.04] relative overflow-hidden">
-        <div className="pricing-wash" />
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
-          <div ref={r7} className="fade-up max-w-2xl mb-14">
-            <p className="t-eyebrow text-em mb-6">Pricing</p>
-            <h2 className="t-h2 text-white">Start free. Scale when ready.</h2>
-            <p className="t-body mt-6 max-w-lg">
-              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. Every plan includes a 7-day free trial for the clients you onboard. No revenue share, no hidden fees.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
-            {AGENCY_PLAN_TIER_LIST.map(t => (
-              <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
-                {t.popular && (
-                  <div className="absolute -top-3 left-7">
-                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#00e3aa' }}>Most popular</span>
-                  </div>
-                )}
-                <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
-                <p className="font-display text-lg font-medium mt-1.5 text-white">{t.name}</p>
-                {t.trial && <p className="font-mono text-[11px] text-em mt-3 tracking-[0.04em]">{t.trial}</p>}
-                <div className="my-6 flex items-baseline gap-1">
-                  {t.price === 0 ? (
-                    <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>Free</span>
-                  ) : (
-                    <>
-                      <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>{formatPrice(t.price)}</span>
-                      <span className="text-base text-white/45">/mo</span>
-                    </>
-                  )}
-                </div>
-                <ul className="space-y-2.5 mb-7">
-                  {t.features.map(f => (
-                    <li key={f} className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{f}</span></li>
-                  ))}
-                  <li className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{t.rate}</span></li>
-                  {t.limitations.map(l => (
-                    <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
-                  ))}
-                </ul>
-                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#00e3aa' } : undefined}>
-                  {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
-                </Link>
-              </div>
-            ))}
-          </div>
-          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · 7-day client trials</p>
-        </div>
-      </section>
-
       {/* ════════ DEVELOPERS ════════ */}
       <section className="bg-ink py-24 lg:py-32 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -837,7 +768,7 @@ export default function HomePage() {
             </aside>
 
             <div className="lg:col-span-8">
-              {FAQ_ITEMS.map((item, i) => (
+              {HOME_FAQ.map((item, i) => (
                 <details key={i} className="faq-item">
                   <summary className="flex items-start justify-between gap-6 py-6 cursor-pointer select-none">
                     <span className="font-display text-[17px] sm:text-[18px] text-white/90 leading-snug font-medium" dangerouslySetInnerHTML={{ __html: item.q }} />
@@ -846,6 +777,9 @@ export default function HomePage() {
                   <div className="pb-6 -mt-1 max-w-2xl"><p className="text-[14px] text-white/55 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.a }} /></div>
                 </details>
               ))}
+              <Link href="/faq" className="inline-flex items-center gap-2 mt-8 font-mono text-[11px] tracking-[0.14em] uppercase text-em hover:text-white transition-colors">
+                See all questions <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </div>
         </div>

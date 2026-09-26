@@ -32,12 +32,12 @@ const STEPS = [
     intro: 'Activate a workspace, then walk through the branding wizard.',
     details: [
       'Upload your logo (SVG or PNG, transparent background recommended)',
-      'Define your color palette via hex tokens — primary, accent, surface',
+      'Define your color palette via hex tokens: primary, accent, surface',
       'Set your subscription tiers and per-client pricing',
-      'Connect your custom domain — we handle SSL automatically',
+      'Connect your custom domain, we handle SSL automatically',
       'Customize transactional email sender name and reply-to address',
     ],
-    note: 'Every surface your end clients touch — signup form, dashboard, marketing site, alert emails, phone hold music — uses these tokens automatically.',
+    note: 'Every surface your end clients touch (signup form, dashboard, marketing site, alert emails, phone hold music) uses these tokens automatically.',
   },
   {
     n: '02',
@@ -48,11 +48,11 @@ const STEPS = [
     details: [
       'Authorize Stripe Connect via the standard OAuth flow',
       'Set monthly subscription pricing per tier (e.g. $99 / $149 / $249)',
-      'Configure trial period — 7, 14, or 30 days',
+      'Configure trial period, 7, 14, or 30 days',
       'Enable optional setup fee or annual billing discount',
       'Stripe Tax auto-applies if enabled in your account',
     ],
-    note: 'Subscriptions deposit directly to your bank on Stripe&apos;s schedule. Zero revenue share, zero holdbacks, zero middleman.',
+    note: 'Subscriptions deposit directly to your bank on Stripe&apos;s schedule. No revenue share and no holdbacks. And because platform pricing is usage-based, your margin compounds as you add clients, most agencies run 90% or better.',
   },
   {
     n: '03',
@@ -63,9 +63,9 @@ const STEPS = [
     details: [
       'Built-in lead generation CRM with Google Maps prospecting',
       '13 conversion-tested outreach email templates',
-      'Interactive AI demo phone line (Pro tier) — prospects experience the AI live',
+      'Interactive AI demo phone line (Pro tier), prospects experience the AI live',
       'Pre-built marketing site with hero, pricing, testimonials, FAQ',
-      'Webhook on every signup — fire any downstream automation',
+      'Webhooks on every signup, call, and booking, so appointments flow into your own CRM or tools automatically',
     ],
     note: 'Most agencies use the demo phone line as their primary close. A 30-second call with the AI converts better than a sales deck.',
   },
@@ -79,6 +79,7 @@ const STEPS = [
       'Stripe charges the first month and starts the subscription',
       'Telnyx (or Twilio for non-US) provisions a dedicated phone number',
       'AI voice agent is configured for the client&apos;s business',
+      'The AI answers every call and books appointments straight into the client&apos;s Google Calendar, during the call',
       'Welcome and activation emails fire from your sender domain',
       'Client receives dashboard credentials and a phone number to test',
     ],
@@ -88,10 +89,11 @@ const STEPS = [
 
 const PROVISIONING = [
   { t: '+0s', label: 'Stripe charges first month', desc: 'Subscription starts. Charge confirmation hits the agency&apos;s Stripe dashboard.' },
-  { t: '+8s', label: 'Phone number assigned', desc: 'Telnyx or Twilio issues a real local number — area code based on the client&apos;s business.' },
+  { t: '+8s', label: 'Phone number assigned', desc: 'Telnyx or Twilio issues a real local number, area code based on the client&apos;s business.' },
   { t: '+22s', label: 'AI agent provisioned', desc: 'Voice agent configured per the signup answers. Knowledge base seeded with business name, hours, services.' },
   { t: '+38s', label: 'Dashboard ready', desc: 'Client workspace created. Credentials emailed. End-client portal ready under the agency&apos;s domain.' },
   { t: '+52s', label: 'Welcome sequence triggers', desc: 'Onboarding email fires. SMS test invitation sent. AI is ready to take its first call.' },
+  { t: '+60s', label: 'First call, first booking', desc: 'The AI picks up, checks the client&apos;s Google Calendar, and books the appointment live. Robocalls and spam are filtered before they ever count against the client.' },
 ];
 
 export default function HowItWorksPage() {
@@ -112,7 +114,7 @@ export default function HowItWorksPage() {
             <p className="t-eyebrow text-em mb-7">How it works</p>
             <h1 className="t-h1 text-white max-w-[14ch]">From signup to revenue. In a weekend.</h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
-              Four steps to launch a fully branded AI receptionist agency. The first three are setup — they take about an hour. The fourth runs forever, on autopilot. Below: every detail of what happens at each step.
+              Four steps to launch a fully branded AI receptionist agency. The first three are setup, they take about an hour. The fourth runs forever, on autopilot. Below: every detail of what happens at each step.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
@@ -138,10 +140,10 @@ export default function HowItWorksPage() {
                   <div className="lg:col-span-4">
                     <div className="flex items-center gap-3">
                       <div className="font-mono text-[12px] tracking-[0.14em] text-white/35">STEP {step.n}</div>
-                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(74, 234, 188, 0.35), transparent)' }} />
+                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(0, 227, 170, 0.35), transparent)' }} />
                     </div>
                     <div className="mt-5 flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.2)' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
                         <step.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                       </div>
                       <div>
@@ -184,7 +186,7 @@ export default function HowItWorksPage() {
           <div className="space-y-3 max-w-3xl">
             {PROVISIONING.map(s => (
               <div key={s.t} className="rounded-xl border border-black/[0.07] bg-white p-5 lg:p-6 flex gap-5 items-start">
-                <div className="font-mono text-[13px] tracking-[0.04em] text-black shrink-0 pt-0.5 w-12" style={{ color: '#047857' }}>
+                <div className="font-mono text-[13px] tracking-[0.04em] text-black shrink-0 pt-0.5 w-12" style={{ color: '#05795b' }}>
                   {s.t}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -210,12 +212,12 @@ export default function HowItWorksPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {[
-              { icon: Users, eyebrow: 'You (the agency)', title: 'Agency dashboard', desc: 'Add clients, modify branding, listen to recordings, review revenue. Designed mobile-first.' },
-              { icon: Smartphone, eyebrow: 'Your end client', title: 'Branded client portal', desc: 'Each business gets a dashboard under your domain — calls, transcripts, summaries, alerts.' },
-              { icon: Phone, eyebrow: 'Their callers', title: 'The phone experience', desc: 'Customers call the dedicated number and speak to the AI agent — sub-2-second responses, multilingual, 24/7.' },
+              { icon: Users, eyebrow: 'You (the agency)', title: 'Agency dashboard', desc: 'Add clients, modify branding, listen to recordings, review revenue. Designed mobile-first, on Postgres row-level security, with PII never persisted in logs.' },
+              { icon: Smartphone, eyebrow: 'Your end client', title: 'Branded client portal', desc: 'Each business gets a dashboard under your domain: calls, transcripts, summaries, alerts, and every appointment the AI booked to their Google Calendar.' },
+              { icon: Phone, eyebrow: 'Their callers', title: 'The phone experience', desc: 'Customers call the dedicated number and speak to the AI: sub-2-second responses, automatic English and Spanish with mid-call switching, unlimited concurrent calls so no one hears a busy signal, and spam filtered out. 24/7.' },
             ].map(c => (
               <div key={c.title} className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.2)' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
                   <c.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                 </div>
                 <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-em">{c.eyebrow}</p>

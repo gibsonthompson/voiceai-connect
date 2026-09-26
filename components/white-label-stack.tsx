@@ -29,7 +29,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { Phone, Calendar, Check } from 'lucide-react';
+import { Phone, Calendar, Check, MessageSquare } from 'lucide-react';
 
 const VENDORS = [
   'Anthropic', 'ElevenLabs', 'Deepgram', 'OpenAI', 'Telnyx', 'Twilio', 'Stripe', 'Supabase',
@@ -83,65 +83,73 @@ export default function WhiteLabelStack() {
       const r = refs.current;
 
       // Beat headlines crossfade
-      fade(r.l0, win(p, 0.00, 0.03, 0.18, 0.25));
-      fade(r.l1, win(p, 0.22, 0.29, 0.42, 0.49));
-      fade(r.l2, win(p, 0.46, 0.53, 0.70, 0.77));
-      fade(r.l3, win(p, 0.72, 0.79, 0.86, 0.92));
-      fade(r.l4, win(p, 0.90, 0.97, 1.01, 1.02));
+      fade(r.l0, win(p, 0.00, 0.03, 0.16, 0.22));
+      fade(r.l1, win(p, 0.20, 0.26, 0.38, 0.44));
+      fade(r.l2, win(p, 0.42, 0.48, 0.62, 0.68));
+      fade(r.l3, win(p, 0.68, 0.74, 0.90, 0.94));
+      fade(r.l4, win(p, 0.93, 0.98, 1.01, 1.02));
 
       // Beat counter (large, faint telemetry)
-      const beat = p < 0.22 ? 0 : p < 0.46 ? 1 : p < 0.72 ? 2 : 3;
+      const beat = p < 0.20 ? 0 : p < 0.42 ? 1 : p < 0.68 ? 2 : 3;
       if (beat !== lastBeat && r.counter) { r.counter.textContent = `0${beat + 1}`; lastBeat = beat; }
-      fade(r.counter, eo(seg(p, 0.0, 0.08)) * (1 - 0.6 * eo(seg(p, 0.88, 1.0))));
+      fade(r.counter, eo(seg(p, 0.0, 0.08)) * (1 - 0.6 * eo(seg(p, 0.92, 1.0))));
 
       // Weight: layers beneath compress briefly as each new layer lands
-      const press0 = 1 - 0.014 * (bump(p, 0.42) + bump(p, 0.60) + bump(p, 0.84));
-      const press1 = 1 - 0.014 * (bump(p, 0.60) + bump(p, 0.84));
-      const press2 = 1 - 0.014 * bump(p, 0.84);
+      const press0 = 1 - 0.014 * (bump(p, 0.38) + bump(p, 0.54) + bump(p, 0.78));
+      const press1 = 1 - 0.014 * (bump(p, 0.54) + bump(p, 0.78));
+      const press2 = 1 - 0.014 * bump(p, 0.78);
 
       // Slabs drop in, one per beat
-      drop(r.s0, seg(p, 0.02, 0.20), OFFX[0], press0);
-      drop(r.s1, seg(p, 0.24, 0.42), OFFX[1], press1);
-      drop(r.s2, seg(p, 0.46, 0.60), OFFX[2], press2);
-      drop(r.s3, seg(p, 0.72, 0.84), OFFX[3], 1);
+      drop(r.s0, seg(p, 0.02, 0.18), OFFX[0], press0);
+      drop(r.s1, seg(p, 0.22, 0.38), OFFX[1], press1);
+      drop(r.s2, seg(p, 0.42, 0.54), OFFX[2], press2);
+      drop(r.s3, seg(p, 0.68, 0.78), OFFX[3], 1);
 
       // Foundation dims; vendor names are absorbed upward into the platform
-      const dim = eo(seg(p, 0.30, 0.44));
-      if (r.s0 && p > 0.24) r.s0.style.opacity = String(1 - 0.45 * dim);
+      const dim = eo(seg(p, 0.28, 0.40));
+      if (r.s0 && p > 0.22) r.s0.style.opacity = String(1 - 0.45 * dim);
       if (r.vendors) { r.vendors.style.opacity = String(1 - dim); r.vendors.style.transform = `translateY(${-16 * dim}px)`; }
 
       // Ground grid and shadow pool build as the pile grows
       fade(r.ground, eo(seg(p, 0.0, 0.16)) * 0.9);
-      fade(r.pool, 0.25 + 0.55 * eo(seg(p, 0.2, 0.84)));
+      fade(r.pool, 0.25 + 0.55 * eo(seg(p, 0.2, 0.78)));
 
       // The white-label swap: teal paints the agency slab, a bloom swells, the platform wordmark dissolves
-      const wash = eo(seg(p, 0.54, 0.70));
+      const wash = eo(seg(p, 0.50, 0.64));
       if (r.wash) r.wash.style.transform = `scaleX(${wash})`;
-      if (r.bloom) { r.bloom.style.opacity = String(wash * 0.55 * (1 - 0.5 * eo(seg(p, 0.86, 1.0)))); r.bloom.style.transform = `scale(${0.8 + 0.3 * wash})`; }
-      fade(r.platformMark, 1 - eo(seg(p, 0.56, 0.66)));
-      fade(r.platformGone, eo(seg(p, 0.60, 0.70)));
-      fade(r.agencyName, eo(seg(p, 0.60, 0.70)));
-      fade(r.agencyDim, 1 - eo(seg(p, 0.56, 0.66)));
-      fade(r.cost, 1 - eo(seg(p, 0.64, 0.74)));
-      fade(r.price, eo(seg(p, 0.64, 0.74)));
+      if (r.bloom) { r.bloom.style.opacity = String(wash * 0.55 * (1 - 0.5 * eo(seg(p, 0.90, 1.0)))); r.bloom.style.transform = `scale(${0.8 + 0.3 * wash})`; }
+      fade(r.platformMark, 1 - eo(seg(p, 0.52, 0.62)));
+      fade(r.platformGone, eo(seg(p, 0.56, 0.64)));
+      fade(r.agencyName, eo(seg(p, 0.56, 0.64)));
+      fade(r.agencyDim, 1 - eo(seg(p, 0.52, 0.62)));
+      fade(r.cost, 1 - eo(seg(p, 0.58, 0.68)));
+      fade(r.price, eo(seg(p, 0.58, 0.68)));
 
-      // End business: phone pulses, gets answered, calendar fills
-      const ring = seg(p, 0.76, 0.86);
-      if (r.phone) r.phone.style.transform = `scale(${1 + 0.07 * Math.sin(ring * Math.PI * 3) * (1 - eo(seg(p, 0.84, 0.88)))})`;
-      fade(r.ringing, 1 - eo(seg(p, 0.82, 0.88)));
-      fade(r.answered, eo(seg(p, 0.82, 0.88)));
-      const cal = eo(seg(p, 0.84, 0.90));
-      if (r.cal) { r.cal.style.opacity = String(cal); r.cal.style.transform = `scale(${0.9 + 0.1 * cal})`; }
+      // End business: the call completes. Ring, answer, book, summarize, notify.
+      const ring = seg(p, 0.74, 0.82);
+      if (r.phone) r.phone.style.transform = `scale(${1 + 0.07 * Math.sin(ring * Math.PI * 3) * (1 - eo(seg(p, 0.80, 0.84)))})`;
+      fade(r.ringing, 1 - eo(seg(p, 0.80, 0.85)));
+      fade(r.answered, win(p, 0.80, 0.85, 0.87, 0.91));
+      fade(r.done, eo(seg(p, 0.88, 0.92)));
+      const chip = (el: HTMLElement | null, a: number, b: number) => {
+        if (!el) return;
+        const t = eo(seg(p, a, b));
+        el.style.opacity = String(t);
+        el.style.transform = `translateY(${(1 - t) * 6}px) scale(${0.94 + 0.06 * t})`;
+      };
+      chip(r.cal, 0.82, 0.87);
+      chip(r.summary, 0.85, 0.90);
+      chip(r.notified, 0.88, 0.93);
 
       // A slow light sheen crosses the pile with scroll
       if (r.sheen) r.sheen.style.transform = `translateX(${-60 + 200 * p}%) skewX(-18deg)`;
 
       // Pull back: the whole pile eases out to reveal the flows
-      const back = eo(seg(p, 0.88, 1.0));
+      const back = eo(seg(p, 0.92, 1.0));
       if (r.stack) r.stack.style.transform = `perspective(1500px) rotateX(${12 - 6 * back}deg) scale(${1 - 0.12 * back}) translateY(${-14 * back}px)`;
       fade(r.flows, back);
-      if (r.flowA) r.flowA.style.transform = `scaleX(${eo(seg(p, 0.90, 0.97))})`;
-      if (r.flowB) r.flowB.style.transform = `scaleX(${eo(seg(p, 0.93, 1.0))})`;
+      if (r.flowA) r.flowA.style.transform = `scaleX(${eo(seg(p, 0.93, 0.98))})`;
+      if (r.flowB) r.flowB.style.transform = `scaleX(${eo(seg(p, 0.96, 1.0))})`;
 
       // Progress rail
       if (r.rail) r.rail.style.transform = `scaleX(${p})`;
@@ -178,7 +186,7 @@ export default function WhiteLabelStack() {
   return (
     <>
       {/* ───────── Animated (desktop, motion allowed) ───────── */}
-      <div ref={wrapRef} className="wls-anim relative" style={{ height: '420vh' }}>
+      <div ref={wrapRef} className="wls-anim relative" style={{ height: '460vh' }}>
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
           <div className="w-full grid lg:grid-cols-12 gap-16 items-center">
 
@@ -209,7 +217,7 @@ export default function WhiteLabelStack() {
 
               <div ref={set('stack')} className="wls-stack relative" style={{ transform: 'perspective(1500px) rotateX(12deg)' }}>
 
-                {/* 4: End business (top of the pile) */}
+                {/* 4: End business (top of the pile). The call completes: ring, answer, book, summarize, notify. */}
                 <div ref={set('s3')} className="wls-slab" style={{ opacity: 0 }}>
                   <div className="flex items-center gap-5">
                     <div ref={set('phone')} className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}>
@@ -218,14 +226,21 @@ export default function WhiteLabelStack() {
                     <div className="min-w-0 flex-1">
                       <p className="telemetry text-[11px] uppercase">End business</p>
                       <div className="relative h-8 mt-2">
-                        <p ref={set('ringing')} className="absolute inset-0 font-display text-[19px] text-white font-medium">Incoming call, ringing</p>
-                        <p ref={set('answered')} className="absolute inset-0 font-display text-[19px] text-white font-medium" style={{ opacity: 0 }}>Answered. Job booked.</p>
+                        <p ref={set('ringing')} className="absolute inset-0 font-display text-[19px] text-white font-medium whitespace-nowrap">Incoming call, ringing</p>
+                        <p ref={set('answered')} className="absolute inset-0 font-display text-[19px] text-white font-medium whitespace-nowrap" style={{ opacity: 0 }}>Answered. Job booked.</p>
+                        <p ref={set('done')} className="absolute inset-0 font-display text-[19px] text-white font-medium whitespace-nowrap" style={{ opacity: 0 }}>Summary texted. No interruption.</p>
                       </div>
-                    </div>
-                    <div ref={set('cal')} className="flex items-center gap-2.5 rounded-xl border px-4 py-3" style={{ opacity: 0, borderColor: 'rgba(0,227,170,0.25)', background: 'rgba(0,227,170,0.06)' }}>
-                      <Calendar className="w-4 h-4 text-em" />
-                      <span className="telemetry text-[11px]">Thu 2:00 PM</span>
-                      <Check className="w-4 h-4 text-em" strokeWidth={2.5} />
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <div ref={set('cal')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'rgba(0,227,170,0.25)', background: 'rgba(0,227,170,0.06)' }}>
+                          <Calendar className="w-3.5 h-3.5 text-em" /><span className="telemetry text-[10px]">Thu 2:00 PM</span>
+                        </div>
+                        <div ref={set('summary')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'var(--hairline-strong)', background: 'rgba(255,255,255,0.03)' }}>
+                          <MessageSquare className="w-3.5 h-3.5" style={{ color: 'var(--steel-300)' }} /><span className="telemetry text-[10px]">Summary texted</span>
+                        </div>
+                        <div ref={set('notified')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'var(--hairline-strong)', background: 'rgba(255,255,255,0.03)' }}>
+                          <Check className="w-3.5 h-3.5 text-em" strokeWidth={2.5} /><span className="telemetry text-[10px]">Owner never picked up</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
