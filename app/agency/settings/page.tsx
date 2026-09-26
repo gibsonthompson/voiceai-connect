@@ -343,6 +343,12 @@ function AgencySettingsContent() {
   // afterward; existing clients keep their stamped billing mode.
   const [clientBillingMode, setClientBillingMode] = useState<'connect' | 'manual'>('connect');
   const [allowClientPlanChanges, setAllowClientPlanChanges] = useState(false);
+  const [paystackConnected, setPaystackConnected] = useState(false);
+  const [paystackCurrency, setPaystackCurrency] = useState<string | null>(null);
+  const [paystackKey, setPaystackKey] = useState('');
+  const [paystackCurrencyInput, setPaystackCurrencyInput] = useState('NGN');
+  const [paystackBusy, setPaystackBusy] = useState(false);
+  const [paystackError, setPaystackError] = useState('');
   const [planChangesToggleSaving, setPlanChangesToggleSaving] = useState(false);
   const [billingMethod, setBillingMethod] = useState('');
   const [billingModeLoading, setBillingModeLoading] = useState(false);
@@ -403,7 +409,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -649,6 +655,28 @@ function AgencySettingsContent() {
       if (!res.ok) setBillMinutesDuringTrial(!next);
     } catch (e) { setBillMinutesDuringTrial(!next); }
     finally { setBillTrialSaving(false); }
+  };
+
+  const handleConnectPaystack = async () => {
+    if (!agency || !paystackKey.trim()) return;
+    setPaystackBusy(true); setPaystackError('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/paystack/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ secret_key: paystackKey.trim(), currency: paystackCurrencyInput }) });
+      const d = await r.json();
+      if (r.ok && d.success) { setPaystackConnected(true); setPaystackCurrency(d.currency || paystackCurrencyInput); setPaystackKey(''); }
+      else { setPaystackError(d.error || 'Could not connect Paystack.'); }
+    } catch { setPaystackError('Could not connect Paystack.'); }
+    finally { setPaystackBusy(false); }
+  };
+  const handleDisconnectPaystack = async () => {
+    if (!agency) return;
+    setPaystackBusy(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/paystack/disconnect`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) { setPaystackConnected(false); setPaystackCurrency(null); }
+    } catch {} finally { setPaystackBusy(false); }
   };
 
   const handleTogglePlanChanges = async () => {
@@ -1243,6 +1271,32 @@ function AgencySettingsContent() {
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+
+                {/* Paystack: for agencies whose country Stripe Connect does not cover. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="mb-2">
+                    <h4 className="font-semibold text-sm sm:text-base flex items-center gap-2" style={{ color: theme.text }}>Paystack{paystackConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>Connected</span>}</h4>
+                    <p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>For agencies in Nigeria, Ghana, South Africa, Kenya, or Cote d&apos;Ivoire, where Stripe isn&apos;t available. Bill your clients in your local currency.</p>
+                  </div>
+                  {paystackConnected ? (
+                    <div className="flex items-center justify-between gap-3 mt-2">
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
+                      <button onClick={handleDisconnectPaystack} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-2">
+                      <input type="password" value={paystackKey} onChange={e => setPaystackKey(e.target.value)} placeholder="Paystack secret key (sk_live_...)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <div className="flex gap-2">
+                        <select value={paystackCurrencyInput} onChange={e => setPaystackCurrencyInput(e.target.value)} className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
+                          <option value="NGN">NGN</option><option value="GHS">GHS</option><option value="ZAR">ZAR</option><option value="KES">KES</option><option value="XOF">XOF</option>
+                        </select>
+                        <button onClick={handleConnectPaystack} disabled={paystackBusy || !paystackKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackBusy ? 'Connecting...' : 'Connect Paystack'}</button>
+                      </div>
+                      {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Client-billing-mode summary. The "change this" line sits on its
                     own row so it doesn't crowd the status sentence. */}
