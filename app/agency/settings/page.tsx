@@ -209,6 +209,21 @@ function CardBrands({ className = '' }: { className?: string }) {
   );
 }
 
+// Paystack settlement currencies (an agency bills its clients in one of these).
+// The symbol is shown wherever a Paystack agency's prices appear, so "$" never
+// misleads them into pricing in dollars.
+const PAYSTACK_CURRENCIES = [
+  { value: 'NGN', label: 'NGN (\u20a6)', symbol: '\u20a6' },
+  { value: 'GHS', label: 'GHS (GH\u20b5)', symbol: 'GH\u20b5' },
+  { value: 'ZAR', label: 'ZAR (R)', symbol: 'R' },
+  { value: 'KES', label: 'KES (KSh)', symbol: 'KSh' },
+  { value: 'XOF', label: 'XOF (CFA)', symbol: 'CFA' },
+];
+function paystackSymbol(code: string | null | undefined): string {
+  const c = PAYSTACK_CURRENCIES.find((x) => x.value === code);
+  return c ? c.symbol : (code || '');
+}
+
 // Themed custom select (replaces the native <select>, which renders the OS
 // picker on mobile). Same button + popover pattern as CountrySelect. Closes on
 // outside click or selection.
@@ -669,12 +684,19 @@ function AgencySettingsContent() {
     } catch { setPaystackError('Could not connect Paystack.'); }
     finally { setPaystackBusy(false); }
   };
-  const handleDisconnectPaystack = async () => {
+  const handleDisconnectPaystack = async (force = false) => {
     if (!agency) return;
     setPaystackBusy(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/paystack/disconnect`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/paystack/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ force }) });
+      if (r.status === 409) {
+        const d = await r.json().catch(() => ({}));
+        const ok = confirm((d.message || 'Some clients are still billed through Paystack.') + '\n\nDisconnect anyway? They will stop being charged until you set them up with another billing method.');
+        setPaystackBusy(false);
+        if (ok) return handleDisconnectPaystack(true);
+        return;
+      }
       if (r.ok) { setPaystackConnected(false); setPaystackCurrency(null); }
     } catch {} finally { setPaystackBusy(false); }
   };
@@ -916,6 +938,15 @@ function AgencySettingsContent() {
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
+                {paystackConnected && paystackCurrency && (
+                  <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Prices are charged in {paystackCurrency} ({paystackSymbol(paystackCurrency)}), not US dollars</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>You bill through Paystack, so the number you enter is what your clients pay in {paystackCurrency}. A price of 50000 means {paystackSymbol(paystackCurrency)}50,000, not $50,000.</p>
+                    </div>
+                  </div>
+                )}
                 {clientBillingMode === 'manual' && (
                   <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
                     <Receipt className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
@@ -1463,15 +1494,15 @@ function AgencySettingsContent() {
                   {paystackConnected ? (
                     <div className="flex items-center justify-between gap-3 mt-2">
                       <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
-                      <button onClick={handleDisconnectPaystack} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
+                      <button onClick={() => handleDisconnectPaystack()} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
                     </div>
                   ) : (
                     <div className="space-y-2 mt-2">
                       <input type="password" value={paystackKey} onChange={e => setPaystackKey(e.target.value)} placeholder="Paystack secret key (sk_live_...)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       <div className="flex gap-2">
-                        <select value={paystackCurrencyInput} onChange={e => setPaystackCurrencyInput(e.target.value)} className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-                          <option value="NGN">NGN</option><option value="GHS">GHS</option><option value="ZAR">ZAR</option><option value="KES">KES</option><option value="XOF">XOF</option>
-                        </select>
+                        <div className="w-32 flex-shrink-0">
+                          <SelectMenu value={paystackCurrencyInput} onChange={setPaystackCurrencyInput} options={PAYSTACK_CURRENCIES} theme={theme} />
+                        </div>
                         <button onClick={handleConnectPaystack} disabled={paystackBusy || !paystackKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackBusy ? 'Connecting...' : 'Connect Paystack'}</button>
                       </div>
                       {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}

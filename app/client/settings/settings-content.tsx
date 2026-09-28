@@ -191,6 +191,11 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [showPlanPicker, setShowPlanPicker] = useState(false);
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
   const canChangePlan = !!(client.agency as any)?.allow_client_plan_changes && client.billing_mode !== 'manual' && !(client as any).is_test_client;
+  const paystackCurrencySymbol = (() => {
+    const code = (client.billing_mode === 'paystack' && (client.agency as any)?.paystack_currency) || '';
+    const m: Record<string, string> = { NGN: '\u20a6', GHS: 'GH\u20b5', ZAR: 'R', KES: 'KSh', XOF: 'CFA' };
+    return m[code] || '$';
+  })();
   const agencyPlans = (() => {
     const ag = client.agency as any;
     // Prefer the agency's actual configured plans (custom / Path B). These carry
@@ -447,7 +452,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                           <div className="space-y-2">
                             {agencyPlans.map((pl: any) => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
                               <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
-                                <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `$${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
+                                <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `${paystackCurrencySymbol}${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
                                 <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
                               </div>
                             ); })}
@@ -476,7 +481,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                         <div className="space-y-2">
                           {agencyPlans.map((pl: any) => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
                             <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
-                              <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `$${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
+                              <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `${paystackCurrencySymbol}${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
                               <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
                             </div>
                           ); })}
