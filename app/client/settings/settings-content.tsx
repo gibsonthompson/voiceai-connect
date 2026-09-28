@@ -156,6 +156,24 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const handleUpgrade = () => { window.location.href = '/client/upgrade-required'; };
 
+  const [paystackSetupBusy, setPaystackSetupBusy] = useState(false);
+  const [paystackSetupError, setPaystackSetupError] = useState('');
+  const handleSetupPaystack = async () => {
+    setPaystackSetupBusy(true); setPaystackSetupError('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/client/paystack/init`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: client.id }) });
+      const d = await r.json();
+      if (d.authorization_url) { window.location.href = d.authorization_url; return; }
+      setPaystackSetupError(d.error || 'Could not start Paystack checkout.');
+    } catch { setPaystackSetupError('Could not start Paystack checkout.'); }
+    finally { setPaystackSetupBusy(false); }
+  };
+  useEffect(() => {
+    const bp = new URLSearchParams(window.location.search).get('billing');
+    if (bp === 'paystack_success') setMessage('Billing set up. You are subscribed via Paystack.');
+    else if (bp === 'paystack_failed') setMessage('That payment did not complete. Please try again.');
+  }, []);
   const handleManageSubscription = async () => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -380,10 +398,21 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{(client as any).pricing_mode === 'custom' ? 'Custom' : (client.plan_type || 'Trial')}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
             {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
             <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
-            {(client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
+            {(client.billing_mode === 'paystack' && (client as any).paystack_status !== 'active') ? (
+              <div className="space-y-2">
+                <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a card to start your subscription. You&apos;re billed monthly and can cancel anytime.</p>
+                <button onClick={handleSetupPaystack} disabled={paystackSetupBusy} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackSetupBusy ? 'Starting...' : 'Set up billing'}</button>
+                {paystackSetupError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackSetupError}</p>}
+              </div>
+            ) : (client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
             ) : client.subscription_status === 'active' ? (
-              client.billing_mode === 'manual' ? (
+              client.billing_mode === 'paystack' ? (
+                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                  <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billing active via Paystack</div>
+                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Your card is charged monthly in your provider&apos;s currency. To change or cancel your plan, contact your provider.</div>
+                </div>
+              ) : client.billing_mode === 'manual' ? (
                 <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
                   <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billed by {client.agency?.name || 'your provider'}</div>
                   <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Your plan and payments are handled directly by {client.agency?.name || 'your provider'}. To change your plan or update payment, reach out to them{client.agency?.support_email ? ` at ${client.agency.support_email}` : ''}.</div>

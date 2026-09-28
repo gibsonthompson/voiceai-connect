@@ -43,12 +43,13 @@ export default function PlatformPage() {
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <div ref={r1} className="fade-up max-w-4xl">
-            <p className="t-eyebrow text-em mb-7">The platform</p>
+            <p className="t-eyebrow text-em mb-4">The platform</p>
+            <span className="racing-line" />
             <h1 className="t-h1 text-white max-w-[18ch]">
               Everything you need to run an AI receptionist agency.
             </h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
-              The Platform tier is what an agency operator actually receives at signup. White-label branding, automated client onboarding, end-client dashboards, payment processing, lead generation, and the AI receptionist itself — wired together and shipped as a single multi-tenant application. You manage the business; the platform manages the work.
+              This is what an agency operator actually receives at signup. White-label branding, automated client onboarding, end-client dashboards, payment processing, lead generation, and the AI receptionist itself, wired together and shipped as a single multi-tenant application. You manage the business; the platform manages the work.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
@@ -57,12 +58,12 @@ export default function PlatformPage() {
             <Link href="/interactive-demo" className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] uppercase text-em mt-6 hover:opacity-80 transition-opacity">
               Or try the interactive demo <ArrowRight className="w-3 h-3" />
             </Link>
-            <p className="font-mono text-[11px] text-white/35 mt-7">14-day free trial · no credit card required · cancel anytime</p>
+            <p className="font-mono text-[11px] text-white/35 mt-7">14-day free trial on Pro and Scale, card required to start · cancel anytime</p>
           </div>
         </div>
       </section>
 
-      {/* ════════ TWO TRACKS — agency vs end client ════════ */}
+      {/* ════════ TWO TRACKS, agency vs end client ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r2} className="fade-up max-w-3xl mb-14">
@@ -75,9 +76,9 @@ export default function PlatformPage() {
 
           <div className="grid lg:grid-cols-2 gap-5">
             {/* Agency owner card */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-9">
+            <div className="bento-cell p-7 lg:p-9">
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(74, 234, 188, 0.1)', border: '1px solid rgba(74, 234, 188, 0.22)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0, 227, 170, 0.1)', border: '1px solid rgba(0, 227, 170, 0.22)' }}>
                   <Users className="w-4 h-4 text-em" strokeWidth={2} />
                 </div>
                 <p className="font-mono text-[11px] tracking-[0.16em] uppercase text-em">For the agency owner</p>
@@ -86,12 +87,12 @@ export default function PlatformPage() {
                 Run a real business from one screen.
               </h3>
               <p className="text-[14px] text-white/55 leading-relaxed mt-4">
-                Configure your brand, set pricing, share a signup link, and watch new clients deploy themselves. The agency dashboard shows every client, every call, every dollar — designed to fit on a phone.
+                Configure your brand, set pricing, share a signup link, and watch new clients deploy themselves. The agency dashboard shows every client, every call, every dollar, designed to fit on a phone.
               </p>
               <ul className="mt-7 space-y-2.5">
                 {[
-                  'Branding engine — logo, palette, custom domain',
-                  'Stripe Connect — clients pay you direct',
+                  'Branding engine, logo, palette, custom domain',
+                  'Stripe Connect, clients pay you direct',
                   'Self-serve onboarding flow under your domain',
                   'Lead generation CRM with Maps prospecting',
                   'Real-time MRR, churn, and per-client analytics',
@@ -106,7 +107,7 @@ export default function PlatformPage() {
             </div>
 
             {/* End client card */}
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-9">
+            <div className="bento-cell p-7 lg:p-9">
               <div className="flex items-center gap-2.5 mb-5">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <Phone className="w-4 h-4 text-white/70" strokeWidth={2} />
@@ -117,16 +118,16 @@ export default function PlatformPage() {
                 A receptionist that never closes.
               </h3>
               <p className="text-[14px] text-white/55 leading-relaxed mt-4">
-                Each end client (the local business you sold to) receives a fully branded dashboard, dedicated phone number, and AI voice agent trained on their specific business — provisioned the moment they finish your signup form.
+                Each end client (the local business you sold to) receives a fully branded dashboard, dedicated phone number, and AI voice agent trained on their specific business, provisioned the moment they finish your signup form.
               </p>
               <ul className="mt-7 space-y-2.5">
                 {[
                   'Dedicated phone number provisioned on signup',
-                  'AI voice agent answers 24/7 in 4 languages',
-                  'Branded dashboard — under your domain',
+                  'AI voice agent answers 24/7 in English and Spanish',
+                  'Branded dashboard, under your domain',
                   'Recording, transcript, and summary on every call',
                   'SMS and email alerts on configurable triggers',
-                  'Calendar booking and CRM hooks',
+                  'Google Calendar booking, webhooks into your tools',
                 ].map(line => (
                   <li key={line} className="flex items-start gap-2.5 text-[13.5px] text-white/70">
                     <Check className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2.5} />
@@ -139,14 +140,14 @@ export default function PlatformPage() {
         </div>
       </section>
 
-      {/* ════════ AGENCY CAPABILITIES — bento on light ════════ */}
+      {/* ════════ AGENCY CAPABILITIES, bento on light ════════ */}
       <section className="bg-paper py-28 lg:py-40">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r3} className="fade-up max-w-3xl mb-14">
             <p className="t-eyebrow text-em-deep mb-6">Agency control surface</p>
             <h2 className="t-h2 text-black">The tools you operate the business with.</h2>
             <p className="t-body mt-6 max-w-xl">
-              These are the modules an agency owner uses every week. They&apos;re not optional add-ons or tier-locked extras — they ship with the workspace at signup.
+              These are the modules an agency owner uses every week. They&apos;re not optional add-ons or tier-locked extras, they ship with the workspace at signup.
             </p>
           </div>
 
@@ -155,16 +156,16 @@ export default function PlatformPage() {
               { icon: Palette, title: 'White-label branding', desc: 'Logo, color palette, custom domain with auto-provisioned SSL, transactional emails, and the entire client surface re-skinned per agency.' },
               { icon: Rocket, title: 'Self-serve onboarding', desc: 'Branded signup page tied to your domain. Local businesses fill out a form; the platform provisions everything in under 60 seconds.' },
               { icon: CreditCard, title: 'Stripe Connect billing', desc: 'OAuth-connected Stripe account. Subscriptions deposit directly into your bank. Zero revenue share, zero holdbacks.' },
-              { icon: BarChart3, title: 'Agency dashboard', desc: 'Real-time MRR, churn, per-client call volume. Designed mobile-first — manage clients from a coffee shop.' },
+              { icon: BarChart3, title: 'Agency dashboard', desc: 'Real-time MRR, churn, per-client call volume. Designed mobile-first, manage clients from a coffee shop.' },
               { icon: Map, title: 'Lead generation CRM', desc: 'Google Maps prospecting by category and radius. 13 outreach templates. Visual pipeline with reply detection.' },
               { icon: Globe, title: 'Marketing website', desc: 'Pre-built conversion-tuned site with hero, pricing, testimonials, FAQ, and an interactive AI demo phone line.' },
               { icon: Smartphone, title: 'Mobile-first PWA', desc: 'Add clients, change branding, listen to call recordings, and review revenue from anywhere. No desktop required.' },
-              { icon: Users, title: 'Team members', desc: 'Invite agency teammates and shared client-side users on Pro and Enterprise tiers.' },
-              { icon: Wand2, title: 'Workflow automation', desc: 'Make and n8n event hooks fire on every platform action — onboarding, billing, calls, churn.' },
+              { icon: Users, title: 'Team members', desc: 'Invite agency teammates and shared client-side users on the Pro and Scale plans.' },
+              { icon: Wand2, title: 'Workflow automation', desc: 'Signed webhooks fire on every signup, call, and booking, so you can drive Make, n8n, or your own tools with real events.' },
             ].map(c => (
-              <div key={c.title} className="rounded-2xl border border-black/[0.06] bg-white p-6 transition-colors hover:border-black/[0.16]">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.18)' }}>
-                  <c.icon className="w-4 h-4" style={{ color: '#047857' }} strokeWidth={1.9} />
+              <div key={c.title} className="rounded-[14px] border border-black/[0.06] bg-white p-6 transition-colors hover:border-black/[0.16]">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.06)', border: '1px solid rgba(0, 227, 170, 0.18)' }}>
+                  <c.icon className="w-4 h-4" style={{ color: '#05795b' }} strokeWidth={1.9} />
                 </div>
                 <h3 className="font-display text-[16px] font-medium text-black tracking-tight">{c.title}</h3>
                 <p className="text-[13.5px] text-black/60 leading-relaxed mt-2">{c.desc}</p>
@@ -174,31 +175,31 @@ export default function PlatformPage() {
         </div>
       </section>
 
-      {/* ════════ CLIENT EXPERIENCE — bento on dark ════════ */}
+      {/* ════════ CLIENT EXPERIENCE, bento on dark ════════ */}
       <section className="bg-ink py-28 lg:py-40">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r4} className="fade-up max-w-3xl mb-14">
             <p className="t-eyebrow text-em mb-6">End-client experience</p>
             <h2 className="t-h2 text-white">What the local business actually sees.</h2>
             <p className="t-body mt-6 max-w-xl">
-              The end client never logs into VoiceAI Connect. Every surface they touch — the signup form, the dashboard, the phone experience, the alert emails — is branded as your agency. We&apos;re invisible.
+              The end client never logs into VoiceAI Connect. Every surface they touch, the signup form, the dashboard, the phone experience, the alert emails, is branded as your agency. We&apos;re invisible.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { icon: Mic, title: 'AI voice receptionist', desc: 'Sub-2-second response. Answers, books appointments, transfers urgent calls, writes a summary on every interaction.' },
+              { icon: Mic, title: 'AI voice receptionist', desc: 'Sub-2-second response. Answers, books appointments, transfers urgent calls, writes a summary on every interaction. Filters spam and robocalls, and takes unlimited concurrent calls.' },
               { icon: Phone, title: 'Dedicated phone number', desc: 'A real local number per client, provisioned at signup. Telnyx for US, Twilio for UK and international.' },
               { icon: MonitorSmartphone, title: 'Branded dashboard', desc: 'Each client logs into a workspace under your domain. Recent calls, transcripts, summaries, lead categorization.' },
               { icon: FileText, title: 'Call recordings + transcripts', desc: 'Full audio archive plus time-coded transcripts. Searchable, exportable, and tied to the original phone number.' },
               { icon: Zap, title: 'AI call summaries', desc: 'Every call ends with an AI-written summary capturing intent, sentiment, key requests, and recommended follow-up.' },
-              { icon: Bell, title: 'SMS + email alerts', desc: 'Configurable triggers — urgent call, new lead, missed appointment. Delivered via the agency&apos;s sender domain.' },
-              { icon: Globe, title: 'Multilingual voice', desc: 'English, Spanish, French, and German voice synthesis included. The agent matches the caller automatically.' },
-              { icon: MessageSquare, title: 'Calendar + CRM hooks', desc: 'Native integration with Google Calendar, Cal.com, and HubSpot for appointment booking and lead routing.' },
-              { icon: Lock, title: 'Encrypted by default', desc: 'Postgres row-level security per agency. SOC2-compliant infrastructure. PII never written to logs.' },
+              { icon: Bell, title: 'SMS + email alerts', desc: 'Configurable triggers, urgent call, new lead, missed appointment. Delivered via the agency&apos;s sender domain.' },
+              { icon: Globe, title: 'Multilingual voice', desc: 'English and Spanish, with automatic language detection and mid-call switching. The agent matches the caller without being asked.' },
+              { icon: MessageSquare, title: 'Calendar + webhooks', desc: 'Google Calendar booking built in. Route every call and appointment into your own CRM or tools through signed webhooks and the API.' },
+              { icon: Lock, title: 'Encrypted by default', desc: 'Postgres row-level security per agency. Built on SOC 2 certified providers. PII never written to logs.' },
             ].map(c => (
-              <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.022] p-6 transition-colors hover:border-white/[0.18]">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(74, 234, 188, 0.08)', border: '1px solid rgba(74, 234, 188, 0.2)' }}>
+              <div key={c.title} className="bento-cell p-6">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
                   <c.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                 </div>
                 <h3 className="font-display text-[16px] font-medium text-white tracking-tight">{c.title}</h3>
@@ -226,9 +227,9 @@ export default function PlatformPage() {
               { n: '02', title: 'They complete the form in under 90 seconds', desc: 'Business name, phone style, hours, calendar integration. The platform validates, charges the first month via Stripe, and starts provisioning.', meta: '~90s' },
               { n: '03', title: 'Platform provisions everything in under a minute', desc: 'Telnyx (or Twilio, for non-US) issues a phone number. The AI agent is configured for their specific business. Welcome email sequence triggers. Dashboard credentials sent.', meta: '<60s · automated' },
               { n: '04', title: 'AI receptionist goes live on the new number', desc: 'Calls flow into the AI agent, get transcribed by Deepgram, reasoned by Claude, summarized, and written to the client dashboard in real time.', meta: '24/7 coverage' },
-              { n: '05', title: 'Stripe deposits land in your account monthly', desc: 'Subscription renewals process automatically. The platform never custodies funds — Stripe Connect routes payment directly to the agency&apos;s bank.', meta: 'Direct to your bank' },
+              { n: '05', title: 'Stripe deposits land in your account monthly', desc: 'Subscription renewals process automatically. The platform never custodies funds, Stripe Connect routes payment directly to the agency&apos;s bank.', meta: 'Direct to your bank' },
             ].map(step => (
-              <div key={step.n} className="rounded-2xl border border-black/[0.07] bg-white p-6 lg:p-7 flex gap-5 lg:gap-7 items-start">
+              <div key={step.n} className="rounded-[14px] border border-black/[0.07] bg-white p-6 lg:p-7 flex gap-5 lg:gap-7 items-start">
                 <div className="font-mono text-[12px] tracking-[0.14em] text-black/35 shrink-0 pt-1.5 w-10">{step.n}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-baseline gap-3 justify-between">
@@ -248,24 +249,25 @@ export default function PlatformPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r6} className="fade-up grid lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-6">
-              <p className="t-eyebrow text-em mb-6">Infrastructure</p>
-              <h2 className="t-h2 text-white">Fifteen vendors. One bill.</h2>
+              <p className="t-eyebrow text-em mb-4">What we run for you</p>
+              <span className="racing-line" />
+              <h2 className="t-h2 text-white">You never touch the infrastructure. We run all of it.</h2>
               <p className="t-body mt-6 max-w-lg">
-                Anthropic Claude for reasoning. ElevenLabs for voice synthesis. Deepgram for real-time transcription. Telnyx and Twilio for telephony. Stripe Connect for billing. Supabase for data. Vercel and Cloudflare for the edge. Sentry and PostHog for monitoring. Make and n8n for automation. Brevo for transactional email.
+                Anthropic Claude and OpenAI for reasoning. ElevenLabs for voice synthesis. Deepgram for real-time transcription. Telnyx and Twilio for telephony. Stripe Connect for billing. Supabase for data. Google for calendar. Vercel and Cloudflare for the edge. Sentry and PostHog for monitoring. Make and n8n for automation. Brevo for transactional email.
               </p>
               <p className="t-body mt-4 max-w-lg">
-                Each one is the category leader. Together they would cost an agency thousands per month and a quarter of engineering time to integrate. You get them as one product, billed as one flat fee.
+                Each one is the category leader. Together they would cost an agency thousands per month and a quarter of engineering time to integrate. You get them as one product, on one platform subscription.
               </p>
-              <Link href="/#platform" className="btn btn-ghost-dark mt-9">See the full stack <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/how-it-works" className="btn btn-ghost-dark mt-9">See how it works <ArrowUpRight className="w-3.5 h-3.5" /></Link>
             </div>
 
             <div className="lg:col-span-6">
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-8">
-                <div className="grid grid-cols-3 gap-2.5">
+              <div className="bento-cell p-7 lg:p-8">
+                <div className="grid grid-cols-4 gap-2.5">
                   {[
                     'Anthropic', 'ElevenLabs', 'Deepgram', 'OpenAI', 'Telnyx', 'Twilio',
-                    'Stripe', 'Supabase', 'Brevo', 'Vercel', 'Cloudflare', 'Sentry',
-                    'PostHog', 'Make', 'n8n',
+                    'Stripe', 'Supabase', 'Google', 'Vercel', 'Cloudflare', 'Sentry',
+                    'PostHog', 'Brevo', 'Make', 'n8n',
                   ].map(name => (
                     <div key={name} className="rounded-lg border border-white/[0.06] bg-white/[0.012] px-3 py-3 text-center">
                       <p className="font-display text-[12px] font-medium text-white/85 tracking-tight">{name}</p>
@@ -274,7 +276,7 @@ export default function PlatformPage() {
                 </div>
                 <div className="mt-5 pt-5 border-t border-white/[0.06] grid grid-cols-3 gap-3">
                   <div>
-                    <p className="font-display text-[20px] font-medium text-white t-numeric">15</p>
+                    <p className="font-display text-[20px] font-medium text-white t-numeric">16</p>
                     <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 mt-1">Vendors</p>
                   </div>
                   <div>
@@ -298,9 +300,9 @@ export default function PlatformPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <div ref={r7} className="fade-up max-w-3xl">
             <p className="t-eyebrow text-em mb-6">Get started</p>
-            <h2 className="t-h1 text-white">Ship your white-label agency this week.</h2>
+            <h2 className="t-h1 text-white">Your brand, your clients, your recurring revenue.</h2>
             <p className="t-body mt-7 max-w-lg">
-              14-day free trial. No credit card. No setup fee. Activate a workspace, brand it, hook up Stripe, and your signup link is ready to share by Friday.
+              Start free with usage-based billing and no card, or unlock full white-label branding on a 14-day Pro trial. No setup fee. Brand it, connect Stripe, and share your signup link whenever you are ready.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
