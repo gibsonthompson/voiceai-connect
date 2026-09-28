@@ -1272,32 +1272,6 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
 
-                {/* Paystack: for agencies whose country Stripe Connect does not cover. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="mb-2">
-                    <h4 className="font-semibold text-sm sm:text-base flex items-center gap-2" style={{ color: theme.text }}>Paystack{paystackConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>Connected</span>}</h4>
-                    <p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>For agencies in Nigeria, Ghana, South Africa, Kenya, or Cote d&apos;Ivoire, where Stripe isn&apos;t available. Bill your clients in your local currency.</p>
-                  </div>
-                  {paystackConnected ? (
-                    <div className="flex items-center justify-between gap-3 mt-2">
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
-                      <button onClick={handleDisconnectPaystack} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 mt-2">
-                      <input type="password" value={paystackKey} onChange={e => setPaystackKey(e.target.value)} placeholder="Paystack secret key (sk_live_...)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      <div className="flex gap-2">
-                        <select value={paystackCurrencyInput} onChange={e => setPaystackCurrencyInput(e.target.value)} className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-                          <option value="NGN">NGN</option><option value="GHS">GHS</option><option value="ZAR">ZAR</option><option value="KES">KES</option><option value="XOF">XOF</option>
-                        </select>
-                        <button onClick={handleConnectPaystack} disabled={paystackBusy || !paystackKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackBusy ? 'Connecting...' : 'Connect Paystack'}</button>
-                      </div>
-                      {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}
-                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
-                    </div>
-                  )}
-                </div>
-
                 {/* Client-billing-mode summary. The "change this" line sits on its
                     own row so it doesn't crowd the status sentence. */}
                 <div className="rounded-xl px-4 py-3 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
@@ -1469,6 +1443,41 @@ function AgencySettingsContent() {
                       This only changes clients you add from now on. Clients you already have keep their current billing. You are still billed by the platform the same either way.
                     </p>
                   </div>
+                </div>
+
+                {/* Paystack: alternative processor for agencies Stripe Connect does not cover. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <svg width="15" height="18" viewBox="0 0 20 24" fill="none" aria-hidden="true">
+                        <rect x="0" y="1" width="12" height="3.5" rx="1.75" fill="#00C3F7" />
+                        <rect x="0" y="7" width="20" height="3.5" rx="1.75" fill="#00C3F7" />
+                        <rect x="0" y="13" width="15" height="3.5" rx="1.75" fill="#00C3F7" />
+                        <rect x="0" y="19" width="8" height="3.5" rx="1.75" fill="#00C3F7" />
+                      </svg>
+                      <span className="font-bold text-base sm:text-lg tracking-tight" style={{ color: theme.text }}>paystack</span>
+                    </span>
+                    {paystackConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>Connected</span>}
+                  </div>
+                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>An alternative to Stripe for collecting from your clients. Bill them in your local currency.</p>
+                  {paystackConnected ? (
+                    <div className="flex items-center justify-between gap-3 mt-2">
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
+                      <button onClick={handleDisconnectPaystack} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-2">
+                      <input type="password" value={paystackKey} onChange={e => setPaystackKey(e.target.value)} placeholder="Paystack secret key (sk_live_...)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <div className="flex gap-2">
+                        <select value={paystackCurrencyInput} onChange={e => setPaystackCurrencyInput(e.target.value)} className="rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
+                          <option value="NGN">NGN</option><option value="GHS">GHS</option><option value="ZAR">ZAR</option><option value="KES">KES</option><option value="XOF">XOF</option>
+                        </select>
+                        <button onClick={handleConnectPaystack} disabled={paystackBusy || !paystackKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackBusy ? 'Connecting...' : 'Connect Paystack'}</button>
+                      </div>
+                      {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
+                    </div>
+                  )}
                 </div>
 
               </div>
