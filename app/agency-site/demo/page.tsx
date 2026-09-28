@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import '@/styles/marketing.css';
+import { telHref } from '@/lib/phone';
 
 // ============================================================================
 // TYPES
@@ -225,7 +226,7 @@ export default function DemoPage() {
   const textOnPrimary = pcLight ? '#1f2937' : '#ffffff';
   const rawDemo = agency.demo_phone || agency.demo_phone_number || '';
   const demoPhone = formatPhoneDisplay(rawDemo);
-  const demoHref = `tel:+1${rawDemo.replace(/\D/g, '')}`;
+  const demoHref = telHref(rawDemo);
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
   const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
   const homeUrl = resolveHomepageUrl(agency);

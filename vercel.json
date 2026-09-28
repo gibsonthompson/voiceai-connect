@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/onboarding-emails",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/paystack-recurring",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/flutterwave-recurring",
+      "schedule": "30 13 * * *"
     }
   ]
 }

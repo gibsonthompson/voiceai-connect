@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
+import { telHref } from '@/lib/phone';
 import '@/styles/marketing-aurora.css';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
@@ -175,7 +176,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                 Start Free Trial — 7 Days Free
               </a>
               {hero.demoPhone ? (
-                <a href={`tel:+1${hero.demoPhone.replace(/\D/g,'')}`} className="a-btn a-btn-ghost a-btn-large">
+                <a href={telHref(hero.demoPhone)} className="a-btn a-btn-ghost a-btn-large">
                   <span style={{width:'1rem',height:'1rem',display:'inline-flex'}}><PhoneIcon/></span>
                   Try Live Demo
                 </a>
@@ -186,7 +187,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
             {hero.demoPhone && (
               <div className="a-demo-box">
                 <p className="a-demo-label">Hear it in action — call now</p>
-                <a href={`tel:+1${hero.demoPhone.replace(/\D/g,'')}`} className="a-demo-phone">
+                <a href={telHref(hero.demoPhone)} className="a-demo-phone">
                   <PhoneIcon />
                   {hero.demoPhone}
                 </a>
@@ -370,7 +371,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                 Start Your 7-Day Free Trial
               </a>
               {hero.demoPhone && (
-                <a href={`tel:+1${hero.demoPhone.replace(/\D/g,'')}`} style={{
+                <a href={telHref(hero.demoPhone)} style={{
                   fontSize:'0.875rem',fontWeight:600,color:primaryText,opacity:0.8,
                   display:'inline-flex',alignItems:'center',gap:'0.375rem',
                 }}>

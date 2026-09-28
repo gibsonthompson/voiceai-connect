@@ -224,6 +224,17 @@ function paystackSymbol(code: string | null | undefined): string {
   return c ? c.symbol : (code || '');
 }
 
+// Flutterwave settlement currencies (wider African coverage than Paystack).
+const FLUTTERWAVE_CURRENCIES = [
+  { value: 'NGN', label: 'NGN (\u20a6)', symbol: '\u20a6' },
+  { value: 'GHS', label: 'GHS (GH\u20b5)', symbol: 'GH\u20b5' },
+  { value: 'KES', label: 'KES (KSh)', symbol: 'KSh' },
+  { value: 'ZAR', label: 'ZAR (R)', symbol: 'R' },
+  { value: 'UGX', label: 'UGX (USh)', symbol: 'USh' },
+  { value: 'TZS', label: 'TZS (TSh)', symbol: 'TSh' },
+  { value: 'USD', label: 'USD ($)', symbol: '$' },
+];
+
 // Themed custom select (replaces the native <select>, which renders the OS
 // picker on mobile). Same button + popover pattern as CountrySelect. Closes on
 // outside click or selection.
@@ -364,6 +375,13 @@ function AgencySettingsContent() {
   const [paystackCurrencyInput, setPaystackCurrencyInput] = useState('NGN');
   const [paystackBusy, setPaystackBusy] = useState(false);
   const [paystackError, setPaystackError] = useState('');
+  const [flutterwaveConnected, setFlutterwaveConnected] = useState(false);
+  const [flutterwaveCurrency, setFlutterwaveCurrency] = useState<string | null>(null);
+  const [flutterwaveKey, setFlutterwaveKey] = useState('');
+  const [flutterwaveHash, setFlutterwaveHash] = useState('');
+  const [flutterwaveCurrencyInput, setFlutterwaveCurrencyInput] = useState('NGN');
+  const [flutterwaveBusy, setFlutterwaveBusy] = useState(false);
+  const [flutterwaveError, setFlutterwaveError] = useState('');
   const [planChangesToggleSaving, setPlanChangesToggleSaving] = useState(false);
   const [billingMethod, setBillingMethod] = useState('');
   const [billingModeLoading, setBillingModeLoading] = useState(false);
@@ -424,7 +442,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
   useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
@@ -699,6 +717,34 @@ function AgencySettingsContent() {
       }
       if (r.ok) { setPaystackConnected(false); setPaystackCurrency(null); }
     } catch {} finally { setPaystackBusy(false); }
+  };
+  const handleConnectFlutterwave = async () => {
+    if (!agency || !flutterwaveKey.trim()) return;
+    setFlutterwaveBusy(true); setFlutterwaveError('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/flutterwave/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ secret_key: flutterwaveKey.trim(), webhook_hash: flutterwaveHash.trim() || undefined, currency: flutterwaveCurrencyInput }) });
+      const d = await r.json();
+      if (r.ok && d.success) { setFlutterwaveConnected(true); setFlutterwaveCurrency(d.currency || flutterwaveCurrencyInput); setFlutterwaveKey(''); setFlutterwaveHash(''); }
+      else { setFlutterwaveError(d.error || 'Could not connect Flutterwave.'); }
+    } catch { setFlutterwaveError('Could not connect Flutterwave.'); }
+    finally { setFlutterwaveBusy(false); }
+  };
+  const handleDisconnectFlutterwave = async (force = false) => {
+    if (!agency) return;
+    setFlutterwaveBusy(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/flutterwave/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ force }) });
+      if (r.status === 409) {
+        const d = await r.json().catch(() => ({}));
+        const ok = confirm((d.message || 'Some clients are still billed through Flutterwave.') + '\n\nDisconnect anyway? They will stop being charged until you set them up with another billing method.');
+        setFlutterwaveBusy(false);
+        if (ok) return handleDisconnectFlutterwave(true);
+        return;
+      }
+      if (r.ok) { setFlutterwaveConnected(false); setFlutterwaveCurrency(null); }
+    } catch {} finally { setFlutterwaveBusy(false); }
   };
 
   const handleTogglePlanChanges = async () => {
@@ -1135,6 +1181,7 @@ function AgencySettingsContent() {
                 <PlansEditor
                   plans={plans}
                   setPlans={setPlans}
+                  currencySymbol={paystackConnected && paystackCurrency ? paystackSymbol(paystackCurrency) : '$'}
                   featureKeys={[...FEATURE_ORDER.filter((k) => !featureOverrides[k]?.hidden), ...customFeatures.map((f) => f.key)]}
                   featureLabels={{ ...Object.fromEntries(FEATURE_ORDER.map((k) => [k, builtinLabel(k)])), ...Object.fromEntries(customFeatures.map((f) => [f.key, f.label])) }}
                   theme={{ text: theme.text, textMuted: theme.textMuted, input: theme.input, inputBorder: theme.inputBorder, primary: theme.primary, isDark: theme.isDark, card: theme.isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', cardBorder: theme.inputBorder }}
@@ -1507,6 +1554,40 @@ function AgencySettingsContent() {
                       </div>
                       {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}
                       <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Flutterwave: wider-coverage African processor (card tokenization for recurring). */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect width="24" height="24" rx="6" fill="#FF9B00" />
+                        <path d="M6.5 16.5c3.4 0 4.9-2.2 6-4.4 1.1-2.2 2.1-3.1 4.9-3.1" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" fill="none" />
+                      </svg>
+                      <span className="font-bold text-base sm:text-lg tracking-tight" style={{ color: theme.text }}>flutterwave</span>
+                    </span>
+                    {flutterwaveConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(52,211,153,0.15)', color: '#34d399' }}>Connected</span>}
+                  </div>
+                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Another alternative to Stripe, with wider African coverage (30+ countries, plus mobile money). Bill clients in your local currency.</p>
+                  {flutterwaveConnected ? (
+                    <div className="flex items-center justify-between gap-3 mt-2">
+                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{flutterwaveCurrency ? ` (${flutterwaveCurrency})` : ''}. Clients are billed through your Flutterwave account.</p>
+                      <button onClick={() => handleDisconnectFlutterwave()} disabled={flutterwaveBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-2">
+                      <input type="password" value={flutterwaveKey} onChange={e => setFlutterwaveKey(e.target.value)} placeholder="Flutterwave secret key (FLWSECK-...)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <input type="password" value={flutterwaveHash} onChange={e => setFlutterwaveHash(e.target.value)} placeholder="Webhook secret hash (optional, recommended)" className="w-full rounded-lg px-3 py-2.5 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <div className="flex gap-2">
+                        <div className="w-32 flex-shrink-0">
+                          <SelectMenu value={flutterwaveCurrencyInput} onChange={setFlutterwaveCurrencyInput} options={FLUTTERWAVE_CURRENCIES} theme={theme} />
+                        </div>
+                        <button onClick={handleConnectFlutterwave} disabled={flutterwaveBusy || !flutterwaveKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{flutterwaveBusy ? 'Connecting...' : 'Connect Flutterwave'}</button>
+                      </div>
+                      {flutterwaveError && <p className="text-xs" style={{ color: '#ef4444' }}>{flutterwaveError}</p>}
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Flutterwave dashboard: Settings, then API Keys. Set a webhook secret hash under Settings, then Webhooks, and paste it above. For hands-off monthly billing, ask Flutterwave support to enable NOAUTH subsequent charges on your account. Your key is stored encrypted and never shown again.</p>
                     </div>
                   )}
                 </div>

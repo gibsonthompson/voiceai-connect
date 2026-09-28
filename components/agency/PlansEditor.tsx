@@ -47,6 +47,7 @@ interface Props {
   featureKeys: string[];
   featureLabels: Record<string, string>;
   maxPlans?: number;
+  currencySymbol?: string;
 }
 
 function newUid() {
@@ -70,7 +71,7 @@ export function makeEmptyPlan(): UiPlan {
   };
 }
 
-export default function PlansEditor({ plans, setPlans, theme, featureKeys, featureLabels, maxPlans = 12 }: Props) {
+export default function PlansEditor({ plans, setPlans, theme, featureKeys, featureLabels, maxPlans = 12, currencySymbol = '$' }: Props) {
   const update = (uid: string, patch: Partial<UiPlan>) =>
     setPlans((prev) => prev.map((p) => (p._uid === uid ? { ...p, ...patch } : p)));
 
@@ -159,11 +160,11 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
                   className="p-1.5 disabled:opacity-30" style={{ color: theme.textMuted }}><Trash2 className="h-4 w-4" /></button>
               </div>
 
-              <label className={fieldLabel} style={{ color: theme.textMuted }}>Price ($/mo)</label>
+              <label className={fieldLabel} style={{ color: theme.textMuted }}>Price ({currencySymbol}/mo)</label>
               <div className="relative mb-3.5">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: theme.textMuted }}>$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: theme.textMuted }}>{currencySymbol}</span>
                 <input type="number" min="0" value={p.price} onChange={(e) => update(p._uid, { price: e.target.value })}
-                  placeholder="—" className="w-full rounded-lg pl-7 pr-3 py-2.5 text-base font-semibold" style={inputStyle} />
+                  placeholder="—" className={`w-full rounded-lg ${currencySymbol.length > 1 ? 'pl-12' : 'pl-7'} pr-3 py-2.5 text-base font-semibold`} style={inputStyle} />
               </div>
 
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Calls / mo</label>
