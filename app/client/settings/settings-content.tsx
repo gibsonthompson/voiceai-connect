@@ -211,7 +211,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       const r = await fetch(`${backendUrl}/api/client/change-plan`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: client.id, plan }) });
       const d = await r.json();
       if (d.url) { window.location.href = d.url; return; }
-      if (r.ok && d.success) { setMessage(d.unchanged ? 'You are already on this plan.' : 'Plan updated.'); setShowPlanPicker(false); setTimeout(() => window.location.reload(), 1200); }
+      if (r.ok && d.success) { setMessage(d.unchanged ? 'You are already on this plan.' : (d.note || 'Plan updated.')); setShowPlanPicker(false); setTimeout(() => window.location.reload(), 1200); }
       else { setMessage(d.message || 'Unable to change plan.'); }
     } catch { setMessage('Error changing plan.'); }
     finally { setChangingPlan(null); }
@@ -231,6 +231,27 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
       setCancelMsg(data.cancels_at ? `Your subscription will cancel on ${new Date(data.cancels_at).toLocaleDateString()}. You keep access until then.` : 'Your subscription will cancel at the end of your billing period.');
+      setTimeout(() => window.location.reload(), 1800);
+    } catch (err: any) {
+      setCancelMsg(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleResumePaystack = async () => {
+    setCanceling(true); setCancelMsg('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ client_id: client.id, resume: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to resume');
+      setCancelMsg('Your subscription has been resumed.');
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       setCancelMsg(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -398,7 +419,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{(client as any).pricing_mode === 'custom' ? 'Custom' : (client.plan_type || 'Trial')}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
             {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
             <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
-            {(client.billing_mode === 'paystack' && (client as any).paystack_status !== 'active') ? (
+            {(client.billing_mode === 'paystack' && !['active', 'canceling', 'past_due'].includes((client as any).paystack_status)) ? (
               <div className="space-y-2">
                 <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a card to start your subscription. You&apos;re billed monthly and can cancel anytime.</p>
                 <button onClick={handleSetupPaystack} disabled={paystackSetupBusy} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackSetupBusy ? 'Starting...' : 'Set up billing'}</button>
@@ -408,10 +429,39 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
             ) : client.subscription_status === 'active' ? (
               client.billing_mode === 'paystack' ? (
-                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                  <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billing active via Paystack</div>
-                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Your card is charged monthly in your provider&apos;s currency. To change or cancel your plan, contact your provider.</div>
-                </div>
+                (client as any).paystack_status === 'canceling' ? (
+                  <div className="space-y-3">
+                    <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                      <div className="text-sm font-semibold mb-1" style={{ color: theme.warningText }}>Subscription canceled</div>
+                      <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.warningText }}>{(client as any).paystack_next_charge_at ? `You keep full access until ${formatDate((client as any).paystack_next_charge_at)}. After that, billing stops and your service ends.` : 'You keep full access until the end of your current billing period.'}</div>
+                    </div>
+                    <button onClick={handleResumePaystack} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{canceling ? 'Working\u2026' : 'Resume subscription'}</button>
+                    {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
+                  </div>
+                ) : (
+                  <>
+                    {canChangePlan && (
+                      <>
+                        <button onClick={() => setShowPlanPicker(v => !v)} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{showPlanPicker ? 'Hide plans' : 'Change Plan'}</button>
+                        {showPlanPicker && (
+                          <div className="space-y-2">
+                            {agencyPlans.map((pl: any) => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
+                              <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
+                                <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `$${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
+                                <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
+                              </div>
+                            ); })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                      <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Billed monthly via Paystack{(client as any).paystack_next_charge_at ? `. Next charge ${formatDate((client as any).paystack_next_charge_at)}` : ''}.{canChangePlan ? ' Plan changes take effect on your next billing date.' : ''}</div>
+                    </div>
+                    <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
+                    {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
+                  </>
+                )
               ) : client.billing_mode === 'manual' ? (
                 <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
                   <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billed by {client.agency?.name || 'your provider'}</div>
@@ -439,6 +489,15 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                   {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
                 </>
               )
+            ) : client.billing_mode === 'paystack' ? (
+              <div className="space-y-3">
+                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                  <div className="text-sm font-semibold mb-1" style={{ color: theme.warningText }}>Payment issue</div>
+                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.warningText }}>Your last payment didn&apos;t go through. We&apos;ll retry automatically over the next few days. To fix it now, add a card below.</div>
+                </div>
+                <button onClick={handleSetupPaystack} disabled={paystackSetupBusy} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackSetupBusy ? 'Starting...' : 'Update payment method'}</button>
+                {paystackSetupError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackSetupError}</p>}
+              </div>
             ) : (
               <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
             )}
