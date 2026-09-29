@@ -493,8 +493,8 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                 <span style={{ color: primaryColor }}>7-day free trial</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Get Your AI Receptionist</h1>
-              <p className="mt-2" style={{ color: mutedTextColor }}>Start your free trial with {agency.name}</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{(agency as any).signup_headline || 'Get Your AI Receptionist'}</h1>
+              <p className="mt-2" style={{ color: mutedTextColor }}>{(agency as any).signup_subtitle || `Start your free trial with ${agency.name}`}</p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
