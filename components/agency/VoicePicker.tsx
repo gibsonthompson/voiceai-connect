@@ -85,7 +85,7 @@ export default function VoicePicker({ theme, voices, value, onChange, filter, on
                   <p className="text-[11px]" style={{ color: theme.textMuted }}>{v.accent || v.gender}{v.style ? ` · ${v.style}` : ''}</p>
                 </div>
               </div>
-              {v.description && <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{v.description}</p>}
+              {v.description && <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}>{v.description}</p>}
             </div>
           );
         })}

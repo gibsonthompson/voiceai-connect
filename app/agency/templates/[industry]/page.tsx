@@ -226,7 +226,7 @@ export default function TemplateEditorPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" style={{ zoom: 0.9 }}>
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
         <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
           <ArrowLeft className="h-4 w-4" /> Back to AI Lab
@@ -271,24 +271,24 @@ export default function TemplateEditorPage() {
         <div className="flex-1 space-y-4 min-w-0">
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="mb-3">
-              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
               <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
-              {selectedModelObj && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
+              {selectedModelObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Temperature: {temperature}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Temperature: {temperature}</label>
                 <input type="range" min="0" max="1" step="0.1" value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-[11px] mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
               </div>
               <div>
-                <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice Speed: {speed.toFixed(2)}x</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice Speed: {speed.toFixed(2)}x</label>
                 <input type="range" min="0.7" max="1.2" step="0.05" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-[11px] mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Opening Greeting</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Opening Greeting</label>
               <textarea value={firstMessage} onChange={e => setFirstMessage(e.target.value)} rows={2}
                 className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={inputStyle} placeholder="Hi, you've reached {businessName}..." />
             </div>
@@ -301,15 +301,15 @@ export default function TemplateEditorPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-3.5 w-3.5" style={{ color: theme.primary }} />
-                <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Knowledge Base</span>
+                <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Knowledge Base</span>
               </div>
-              <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-[10px] font-medium transition" style={{ color: theme.primary }}>
+              <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-xs font-medium transition" style={{ color: theme.primary }}>
                 {kbExpanded ? 'Hide' : 'Edit'}
                 <ChevronDown className={`h-3 w-3 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
               </button>
             </div>
             {!kbExpanded ? (
-              <p className="text-[10px]" style={{ color: theme.textMuted }}>
+              <p className="text-xs" style={{ color: theme.textMuted }}>
                 {kbServices.filter(s => s.name.trim()).length} services · {kbFaqs.filter(f => f.question.trim()).length} FAQs{kbAdditionalInfo ? ' · Has additional info' : ''}
                 {!kbServices.some(s => s.name.trim()) && !kbFaqs.some(f => f.question.trim()) && !kbAdditionalInfo ? 'No KB data — clients inherit industry default.' : ''}
               </p>
@@ -317,39 +317,39 @@ export default function TemplateEditorPage() {
               <div className="space-y-3 mt-2">
                 <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04) }}>
                   <Info className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                  <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
+                  <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.primary }} /> Website</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.primary }} /> Website</label>
                   <input type="url" value={kbWebsite} onChange={e => setKbWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full rounded-lg px-2.5 py-1.5 text-xs" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.primary }} /> Services</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.primary }} /> Services</label>
                   {kbServices.map(s => (
                     <div key={s.id} className="flex gap-1.5 mb-1.5">
-                      <input type="text" value={s.name} onChange={e => updateService(s.id, 'name', e.target.value)} placeholder="Service" className="flex-1 rounded-lg px-2 py-1 text-[11px] min-w-0" style={inputStyle} />
-                      <input type="text" value={s.price} onChange={e => updateService(s.id, 'price', e.target.value)} placeholder="$" className="w-16 rounded-lg px-2 py-1 text-[11px]" style={inputStyle} />
+                      <input type="text" value={s.name} onChange={e => updateService(s.id, 'name', e.target.value)} placeholder="Service" className="flex-1 rounded-lg px-2 py-1 text-sm min-w-0" style={inputStyle} />
+                      <input type="text" value={s.price} onChange={e => updateService(s.id, 'price', e.target.value)} placeholder="$" className="w-20 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
                       <button onClick={() => removeService(s.id)} disabled={kbServices.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.textMuted }}><Trash2 className="w-3 h-3" /></button>
                     </div>
                   ))}
-                  <button onClick={addService} className="flex items-center gap-1 text-[11px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
+                  <button onClick={addService} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.primary }} /> FAQs</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.primary }} /> FAQs</label>
                   {kbFaqs.map(f => (
                     <div key={f.id} className="mb-1.5 space-y-1">
                       <div className="flex gap-1.5">
-                        <input type="text" value={f.question} onChange={e => updateFaq(f.id, 'question', e.target.value)} placeholder="Q:" className="flex-1 rounded-lg px-2 py-1 text-[11px] min-w-0" style={inputStyle} />
+                        <input type="text" value={f.question} onChange={e => updateFaq(f.id, 'question', e.target.value)} placeholder="Q:" className="flex-1 rounded-lg px-2 py-1 text-sm min-w-0" style={inputStyle} />
                         <button onClick={() => removeFaq(f.id)} disabled={kbFaqs.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.textMuted }}><Trash2 className="w-3 h-3" /></button>
                       </div>
-                      <textarea value={f.answer} onChange={e => updateFaq(f.id, 'answer', e.target.value)} placeholder="A:" rows={1} className="w-full rounded-lg px-2 py-1 text-[11px] resize-none" style={inputStyle} />
+                      <textarea value={f.answer} onChange={e => updateFaq(f.id, 'answer', e.target.value)} placeholder="A:" rows={1} className="w-full rounded-lg px-2 py-1 text-sm resize-none" style={inputStyle} />
                     </div>
                   ))}
-                  <button onClick={addFaq} className="flex items-center gap-1 text-[11px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
+                  <button onClick={addFaq} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.primary }} /> Additional Info</label>
-                  <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas..." rows={2} className="w-full rounded-lg px-2.5 py-1.5 text-[11px] resize-none" style={inputStyle} />
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.primary }} /> Additional Info</label>
+                  <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas..." rows={2} className="w-full rounded-lg px-2.5 py-1.5 text-sm resize-none" style={inputStyle} />
                 </div>
               </div>
             )}
@@ -372,15 +372,15 @@ export default function TemplateEditorPage() {
         <div className="lg:w-[45%] xl:w-[50%] flex-shrink-0">
           <div className="rounded-xl p-4 lg:sticky lg:top-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
-              <span className="text-[10px] font-mono" style={{ color: theme.textMuted }}>{systemPrompt.length.toLocaleString()} chars</span>
+              <label className="text-sm font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
+              <span className="text-xs font-mono" style={{ color: theme.textMuted }}>{systemPrompt.length.toLocaleString()} chars</span>
             </div>
             <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
               className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed"
               style={{ ...inputStyle, resize: 'vertical', minHeight: '500px', height: '70vh', maxHeight: '80vh' }}
               placeholder="Enter the system prompt..." />
-            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
-              Use <code className="px-1 py-0.5 rounded text-[11px]" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> — auto-replaced at signup.
+            <p className="text-sm mt-1.5" style={{ color: theme.textMuted }}>
+              Use <code className="px-1 py-0.5 rounded text-sm" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> — auto-replaced at signup.
             </p>
           </div>
         </div>

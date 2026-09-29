@@ -454,7 +454,8 @@ export default function AILabPage() {
         )}
 
         {selectedClient && (
-          <div>
+          <div style={{ zoom: 0.9 }}>
+            <button onClick={() => { setSelectedClient(null); setConfig(null); }} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-80" style={{ color: theme.textMuted }}><ChevronLeft className="h-4 w-4" /> Back to packaged receptionists</button>
             <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0"><div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Building className="h-6 w-6" style={{ color: theme.primary }} /></div><div className="min-w-0"><p className="font-semibold text-base truncate" style={{ color: theme.text }}>{selectedClient.business_name}</p><p className="text-sm flex items-center gap-1.5 flex-wrap" style={{ color: theme.textMuted }}>{(() => { const ind = INDUSTRIES.find(i => i.value === selectedClient.industry); const Ic = ind ? ICON_MAP[ind.icon] : null; return (<>{Ic && <Ic className="h-4 w-4" style={{ color: theme.primary }} />}<span className="font-medium" style={{ color: theme.text }}>{ind?.label || selectedClient.industry}</span> · {selectedClient.business_city}, {selectedClient.business_state}</>); })()}</p><p className="text-sm mt-1 flex items-center gap-1.5" style={{ color: theme.textMuted }}><Building2 className="h-3 w-3" /> Agency: <span className="font-medium" style={{ color: theme.text }}>{agency?.name}</span></p></div></div>
