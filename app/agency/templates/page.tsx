@@ -17,6 +17,7 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import DashboardAccessSelector from '@/components/agency/DashboardAccessSelector';
+import VoicePicker from '@/components/agency/VoicePicker';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
 import { INDUSTRY_ICON_MAP as ICON_MAP, INDUSTRIES } from '@/lib/industries';
@@ -317,7 +318,6 @@ export default function AILabPage() {
   };
 
   const playPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const a = new Audio(voice.previewUrl); audioRef.current = a; a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null); a.play(); setPlayingVoiceId(voice.id); };
-  const filteredVoices = (voiceFilter === 'all' ? allVoices : allVoices.filter(v => v.gender === voiceFilter)).sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
 
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
@@ -391,9 +391,6 @@ export default function AILabPage() {
 
   const filtered = clientSearch.trim() ? clients.filter(c => c.business_name.toLowerCase().includes(clientSearch.toLowerCase()) || c.industry.toLowerCase().includes(clientSearch.toLowerCase())) : clients;
   const selectedVoice = allVoices.find(v => v.id === editVoice);
-  const shownVoices: any[] = editVoice && !allVoices.some(v => v.id === editVoice)
-    ? [{ id: editVoice, name: 'Current voice', accent: 'Active', style: '', description: 'Set on this assistant but not in the standard list — pick one below to change it.', recommended: false }, ...filteredVoices]
-    : filteredVoices;
   const selectedModelObj = MODEL_OPTIONS.find(m => m.id === editModel);
 
   if (ctxLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
@@ -477,10 +474,7 @@ export default function AILabPage() {
                     <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Temperature: {editTemp}</label><input type="range" min="0" max="1" step="0.1" value={editTemp} onChange={e => setEditTemp(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[11px] mt-1" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div></div><div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Voice Speed: {editSpeed.toFixed(2)}x</label><input type="range" min="0.7" max="1.2" step="0.05" value={editSpeed} onChange={e => setEditSpeed(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[11px] mt-1" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div></div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Voice</label>{editVoice && allVoices.length > 0 && !allVoices.find(v => v.id === editVoice) && <span className="text-sm" style={{ color: '#f59e0b' }}>Live voice not in list — pick one to set it</span>}</div><div className="flex gap-1">{(['all', 'female', 'male'] as const).map(f => (<button key={f} onClick={() => setVoiceFilter(f)} className="px-2.5 py-1 rounded-md text-sm font-medium transition" style={{ backgroundColor: voiceFilter === f ? theme.primary : theme.hover, color: voiceFilter === f ? theme.primaryText : theme.textMuted }}>{f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}</button>))}</div></div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">{shownVoices.map((v: any) => { const isSelected = editVoice === v.id; const isPlaying = playingVoiceId === v.id; return (<div key={v.id} onClick={() => setEditVoice(v.id)} className="relative rounded-xl p-3 cursor-pointer transition-all border-2" style={{ borderColor: isSelected ? theme.primary : theme.border, backgroundColor: isSelected ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : theme.card }}>{v.recommended && <span className="absolute -top-1.5 -right-1.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}<div className="flex items-center gap-2 mb-1.5"><button onClick={e => { e.stopPropagation(); playPreview(v); }} className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition" style={{ backgroundColor: isPlaying ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: isPlaying ? theme.primaryText : theme.textMuted }}>{isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3 ml-0.5" />}</button><div className="min-w-0"><div className="flex items-center gap-1"><span className="font-semibold text-sm truncate" style={{ color: theme.text }}>{v.name}</span>{isSelected && <Check className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} />}</div><p className="text-[11px]" style={{ color: theme.textMuted }}>{v.accent} · {v.style}</p></div></div><p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{v.description}</p></div>); })}</div>
-                  </div>
+                  <VoicePicker theme={theme} voices={allVoices} value={editVoice} onChange={setEditVoice} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
 
                   <div>
                     <div className="flex items-center justify-between mb-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label><button onClick={copyCompliance} className="flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded transition" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>{copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}</button></div>
