@@ -226,7 +226,7 @@ export default function TemplateEditorPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" style={{ zoom: 0.9 }}>
       <div className="mb-6">
         <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
           <ArrowLeft className="h-4 w-4" /> Back to AI Lab
