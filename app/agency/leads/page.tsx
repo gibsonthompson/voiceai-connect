@@ -99,14 +99,23 @@ function formatPhone(phone?: string | null): string {
   return phone;
 }
 
+// Parse a date-only string ("YYYY-MM-DD") as LOCAL midnight. Plain new Date()
+// treats it as UTC midnight, which renders (and sorts) as the previous day in
+// western timezones, so a follow-up set for tomorrow shows up as due today.
+function parseLocalDate(dateStr: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Date(dateStr);
+}
+
 function isToday(dateStr: string): boolean {
-  const date = new Date(dateStr);
+  const date = parseLocalDate(dateStr);
   const today = new Date();
   return date.toDateString() === today.toDateString();
 }
 
 function isOverdue(dateStr: string): boolean {
-  const date = new Date(dateStr);
+  const date = parseLocalDate(dateStr);
   date.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -402,7 +411,7 @@ function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, fo
               {followUpOverdue && <AlertCircle className="h-4 w-4 flex-shrink-0 text-[var(--lp-error)]" />}
               {followUpToday && !followUpOverdue && <Calendar className="h-4 w-4 flex-shrink-0 text-[var(--lp-warning)]" />}
               <div>
-                <p className={`text-sm ${followUpOverdue ? 'text-[var(--lp-error)]' : followUpToday ? 'text-[var(--lp-warning)]' : 'text-[var(--lp-text)]'}`}>{new Date(lead.next_follow_up).toLocaleDateString()}</p>
+                <p className={`text-sm ${followUpOverdue ? 'text-[var(--lp-error)]' : followUpToday ? 'text-[var(--lp-warning)]' : 'text-[var(--lp-text)]'}`}>{parseLocalDate(lead.next_follow_up).toLocaleDateString()}</p>
                 {followUpOverdue && <p className="text-xs text-[var(--lp-error)]">Overdue</p>}
                 {followUpToday && !followUpOverdue && <p className="text-xs text-[var(--lp-warning)]">Today</p>}
               </div>
@@ -574,8 +583,8 @@ export default function AgencyLeadsPage() {
     if (l.status === 'won' || l.status === 'lost') return [5, 0];
     const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
     if (l.next_follow_up) {
-      const nfDay = new Date(l.next_follow_up); nfDay.setHours(0, 0, 0, 0);
-      const nfTime = new Date(l.next_follow_up).getTime();
+      const nfDay = parseLocalDate(l.next_follow_up); nfDay.setHours(0, 0, 0, 0);
+      const nfTime = parseLocalDate(l.next_follow_up).getTime();
       if (nfDay.getTime() < startOfToday.getTime()) return [0, nfTime];
       if (nfDay.getTime() === startOfToday.getTime()) return [1, 0];
       return [3, nfTime];

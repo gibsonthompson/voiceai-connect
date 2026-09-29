@@ -549,6 +549,7 @@ export default function CallScriptModal({
         },
         body: JSON.stringify({
           leadId: lead.id,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
           templateId: selectedScriptId || null,
           type: 'call',
           toPhone: lead.phone,
@@ -896,7 +897,7 @@ export default function CallScriptModal({
                   <InfoRow
                     icon={<Calendar className="h-3.5 w-3.5" />}
                     label="Follow-up"
-                    value={new Date(lead.next_follow_up).toLocaleDateString()}
+                    value={new Date(lead.next_follow_up + 'T00:00:00').toLocaleDateString()}
                     theme={theme}
                   />
                 )}

@@ -395,6 +395,7 @@ export default function ComposerModal({
         },
         body: JSON.stringify({
           leadId: lead.id,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
           templateId: selectedTemplate || null,
           type,
           toAddress: type === 'email' ? (lead.email || recipientOverride.trim()) : (type === 'linkedin' ? lead.linkedin_url : (lead.phone || recipientOverride.trim())),
