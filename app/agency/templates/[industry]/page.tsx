@@ -10,6 +10,8 @@ import {
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
+import VoicePicker from '@/components/agency/VoicePicker';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 interface Voice {
   id: string; name: string; description: string; gender: string;
@@ -18,7 +20,7 @@ interface Voice {
 
 interface TemplateData {
   id: string | null; isCustom: boolean; isActive: boolean;
-  system_prompt: string; first_message: string; voice_id: string; voice: Voice | null;
+  system_prompt: string; first_message: string; voice_id: string; voice_speed: number; voice: Voice | null;
   model: string; temperature: number; knowledge_base_data: KBData | null; updated_at: string | null;
 }
 
@@ -31,7 +33,7 @@ interface IndustryInfo {
 }
 
 interface Defaults {
-  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number;
+  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number;
 }
 
 interface ServiceRow { id: string; name: string; price: string; description: string; }
@@ -119,6 +121,7 @@ export default function TemplateEditorPage() {
   const [voiceId, setVoiceId] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
   const [temperature, setTemperature] = useState(0.7);
+  const [speed, setSpeed] = useState(1);
 
   const [kbWebsite, setKbWebsite] = useState('');
   const [kbServices, setKbServices] = useState<ServiceRow[]>([{ id: '1', name: '', price: '', description: '' }]);
@@ -146,7 +149,7 @@ export default function TemplateEditorPage() {
       const data = await r.json();
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature);
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1);
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -171,8 +174,6 @@ export default function TemplateEditorPage() {
     a.play(); setPlayingVoiceId(voice.id);
   };
 
-  const filteredVoices = (voiceFilter === 'all' ? voices : voices.filter(v => v.gender === voiceFilter))
-    .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
 
   const handleSave = async () => {
     if (!agency) return;
@@ -182,7 +183,7 @@ export default function TemplateEditorPage() {
       const hasKb = kbData.services || kbData.faqs || kbData.additionalInfo || kbData.websiteUrl;
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, temperature, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
+        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, temperature, voice_speed: speed, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
       });
       if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed'); }
       setSaved(true); setTimeout(() => setSaved(false), 3000); await fetchTemplateData();
@@ -196,7 +197,7 @@ export default function TemplateEditorPage() {
     try {
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
       if (!r.ok) throw new Error('Failed');
-      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); }
+      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setSpeed(defaults.voice_speed ?? 1); }
       setKbWebsite(''); setKbServices([{ id: '1', name: '', price: '', description: '' }]);
       setKbFaqs([{ id: '1', question: '', answer: '' }]); setKbAdditionalInfo('');
       await fetchTemplateData();
@@ -213,7 +214,7 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || temperature !== template.temperature ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
@@ -269,18 +270,21 @@ export default function TemplateEditorPage() {
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 space-y-4 min-w-0">
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
-                <select value={model} onChange={e => setModel(e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle}>
-                  {MODEL_OPTIONS.map(m => <option key={m.id} value={m.id}>{m.name}{m.tag ? ` (${m.tag})` : ''}</option>)}
-                </select>
-                {selectedModelObj && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
-              </div>
+            <div className="mb-3">
+              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
+              <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              {selectedModelObj && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Temperature: {temperature}</label>
                 <input type="range" min="0" max="1" step="0.1" value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-[9px] mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
+                <div className="flex justify-between text-[11px] mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice Speed: {speed.toFixed(2)}x</label>
+                <input type="range" min="0.7" max="1.2" step="0.05" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
+                <div className="flex justify-between text-[11px] mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
               </div>
             </div>
             <div>
@@ -291,46 +295,8 @@ export default function TemplateEditorPage() {
           </div>
 
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Voice</label>
-              <div className="flex gap-1">
-                {(['all', 'female', 'male'] as const).map(f => (
-                  <button key={f} onClick={() => setVoiceFilter(f)} className="px-2 py-0.5 rounded-md text-[10px] font-medium transition"
-                    style={{ backgroundColor: voiceFilter === f ? theme.primary : theme.hover, color: voiceFilter === f ? theme.primaryText : theme.textMuted }}>
-                    {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {filteredVoices.map(v => {
-                const isSelected = voiceId === v.id;
-                const isPlaying = playingVoiceId === v.id;
-                return (
-                  <div key={v.id} onClick={() => setVoiceId(v.id)}
-                    className="relative rounded-lg p-2 cursor-pointer transition-all border"
-                    style={{ borderColor: isSelected ? theme.primary : theme.border, backgroundColor: isSelected ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : 'transparent' }}>
-                    {v.recommended && <span className="absolute -top-1 -right-1 text-[7px] font-bold px-1 py-0.5 rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={e => { e.stopPropagation(); playPreview(v); }}
-                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition"
-                        style={{ backgroundColor: isPlaying ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6'), color: isPlaying ? theme.primaryText : theme.textMuted }}>
-                        {isPlaying ? <Pause className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5 ml-0.5" />}
-                      </button>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="font-medium text-[11px] truncate" style={{ color: theme.text }}>{v.name}</span>
-                          {isSelected && <Check className="h-2.5 w-2.5 flex-shrink-0" style={{ color: theme.primary }} />}
-                        </div>
-                        <p className="text-[8px]" style={{ color: theme.textMuted }}>{v.accent || v.gender} · {v.style || ''}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <VoicePicker theme={theme} voices={voices} value={voiceId} onChange={setVoiceId} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
           </div>
-
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -351,7 +317,7 @@ export default function TemplateEditorPage() {
               <div className="space-y-3 mt-2">
                 <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04) }}>
                   <Info className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                  <p className="text-[9px] leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
                 </div>
                 <div>
                   <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.primary }} /> Website</label>
@@ -366,7 +332,7 @@ export default function TemplateEditorPage() {
                       <button onClick={() => removeService(s.id)} disabled={kbServices.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.textMuted }}><Trash2 className="w-3 h-3" /></button>
                     </div>
                   ))}
-                  <button onClick={addService} className="flex items-center gap-1 text-[9px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
+                  <button onClick={addService} className="flex items-center gap-1 text-[11px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
                   <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.primary }} /> FAQs</label>
@@ -379,7 +345,7 @@ export default function TemplateEditorPage() {
                       <textarea value={f.answer} onChange={e => updateFaq(f.id, 'answer', e.target.value)} placeholder="A:" rows={1} className="w-full rounded-lg px-2 py-1 text-[11px] resize-none" style={inputStyle} />
                     </div>
                   ))}
-                  <button onClick={addFaq} className="flex items-center gap-1 text-[9px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
+                  <button onClick={addFaq} className="flex items-center gap-1 text-[11px] font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
                   <label className="flex items-center gap-1 text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.primary }} /> Additional Info</label>
@@ -413,8 +379,8 @@ export default function TemplateEditorPage() {
               className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed"
               style={{ ...inputStyle, resize: 'vertical', minHeight: '500px', height: '70vh', maxHeight: '80vh' }}
               placeholder="Enter the system prompt..." />
-            <p className="text-[9px] mt-1.5" style={{ color: theme.textMuted }}>
-              Use <code className="px-1 py-0.5 rounded text-[9px]" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> — auto-replaced at signup.
+            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
+              Use <code className="px-1 py-0.5 rounded text-[11px]" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> — auto-replaced at signup.
             </p>
           </div>
         </div>
