@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign } from 'lucide-react';
 import { useAgency } from '../../context';
@@ -110,6 +110,8 @@ interface FormData {
 export default function AddClientPage() {
   const { agency, branding, loading: contextLoading } = useAgency();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromLead = searchParams.get('fromLead');
   const [customIndustries, setCustomIndustries] = useState<{ key: string; label: string }[]>([]);
   useEffect(() => {
     if (!agency?.id) return;
@@ -142,6 +144,33 @@ export default function AddClientPage() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<{ clientId: string; businessName: string; phoneNumber: string; email: string; tempPassword: string; subscriptionStatus?: string | null; trialEndsAt?: string | null } | null>(null);
+
+  // Prefill from a lead when converting (add-client opened with ?fromLead=<id>).
+  // Runs once: a later agency-context re-render must not clobber the agency's edits.
+  const didPrefill = useRef(false);
+  useEffect(() => {
+    if (!fromLead || !agency || didPrefill.current) return;
+    didPrefill.current = true;
+    const token = localStorage.getItem('auth_token');
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${backendUrl}/api/agency/${agency.id}/leads/${fromLead}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        const l = d && d.lead;
+        if (!l) return;
+        const parts = (l.contact_name || '').trim().split(/\s+/).filter(Boolean);
+        setForm(prev => ({
+          ...prev,
+          businessName: l.business_name || prev.businessName,
+          firstName: parts[0] || prev.firstName,
+          lastName: parts.slice(1).join(' ') || prev.lastName,
+          email: l.email || prev.email,
+          phone: l.phone || prev.phone,
+          websiteUrl: l.website || prev.websiteUrl,
+        }));
+      })
+      .catch(() => {});
+  }, [fromLead, agency]);
   const [showPassword, setShowPassword] = useState(true);
   const [billingRequired, setBillingRequired] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
@@ -418,6 +447,7 @@ export default function AddClientPage() {
         const c = final.result?.client;
         if (c) {
           setSuccess({ clientId: c.id, businessName: c.business_name, phoneNumber: c.phone_number, email: c.email, tempPassword: form.tempPassword, subscriptionStatus: c.subscription_status, trialEndsAt: c.trial_ends_at });
+          if (fromLead) { fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/agency/${agency.id}/leads/${fromLead}/convert`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: c.id }) }).catch(() => {}); }
         }
         return;
       }
@@ -444,6 +474,7 @@ export default function AddClientPage() {
         subscriptionStatus: data.client.subscription_status,
         trialEndsAt: data.client.trial_ends_at
       });
+      if (fromLead) { fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/agency/${agency.id}/leads/${fromLead}/convert`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: data.client.id }) }).catch(() => {}); }
 
     } catch (err) {
       console.error('Add client error:', err);

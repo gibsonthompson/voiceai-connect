@@ -31,6 +31,7 @@ interface Lead {
   notes: string;
   estimated_value: number;
   next_follow_up: string | null;
+  converted_client_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -482,6 +483,15 @@ export default function LeadDetailPage() {
           
           {!demoMode && (
             <div className="flex flex-wrap items-center gap-2">
+              {lead?.converted_client_id ? (
+                <button onClick={() => router.push(`/agency/clients/${lead?.converted_client_id}`)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: theme.isDark ? '#4ade80' : '#16a34a' }}>
+                  <CheckCircle className="h-4 w-4" /><span className="hidden sm:inline">View client</span>
+                </button>
+              ) : (
+                <button onClick={() => router.push(`/agency/clients/new?fromLead=${lead?.id}`)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium text-white transition-colors" style={{ backgroundColor: theme.primary }}>
+                  <User className="h-4 w-4" /><span className="hidden sm:inline">Convert to client</span>
+                </button>
+              )}
               <button
                 onClick={handleDelete}
                 disabled={deleting}
