@@ -222,7 +222,7 @@ export default function SupportWidget() {
 
   // Hide the FAB on the interactive demo in mobile view. The demo has its own
   // in-frame controls on phones and the floating button overlaps them.
-  if (pathname === '/interactive-demo' && isNarrow) return null;
+  if ((pathname === '/interactive-demo' || pathname === '/signup') && isNarrow) return null;
 
   // Never leak into the embedded widget or a client-scoped signup/auth surface
   if (hideForClientSurface) return null;
