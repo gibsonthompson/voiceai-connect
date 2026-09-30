@@ -1285,3 +1285,9 @@ details[open] .faq-chev { transform: rotate(45deg); }
   width: 26%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
 }
+
+
+/* Signup page renders 10% smaller on mobile only (zoom reflows, unlike transform). */
+@media (max-width: 767px) {
+  .signup-mobile-zoom { zoom: 0.9; }
+}

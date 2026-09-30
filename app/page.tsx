@@ -364,7 +364,7 @@ export default function HomePage() {
               <p className="t-eyebrow text-em mb-6">Earnings model</p>
               <h2 className="t-h2 text-white">Project your monthly recurring revenue.</h2>
               <p className="t-body mt-6 max-w-md">
-                Industry data places the cost of a single missed call at roughly <span className="font-mono text-white/85">$500</span> for a small service business. A full-time human receptionist runs approximately <span className="font-mono text-white/85">$3,000</span> per month. AI receptionist coverage at <span className="font-mono text-em">$149</span> is a clear yes for most local businesses.
+                Industry data places the cost of a single missed call at roughly <span className="font-mono text-white/85">$500</span> for a small service business. A full-time human receptionist runs approximately <span className="font-mono text-white/85">$3,000</span> per month. AI receptionist coverage at <span className="font-mono text-em">$99-499</span> is a clear yes for most local businesses.
               </p>
               <Link href="/signup" className="btn btn-em mt-9">Start a free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
             </div>
@@ -526,13 +526,13 @@ export default function HomePage() {
               <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
                 Call and talk to it, it&apos;s the same voice AI your clients get. Ask it anything, and it will connect you to a live receptionist demo so you hear exactly what a caller experiences. Sixty seconds, from your own phone.
               </p>
-              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-6 py-5 hover:border-white/25 transition-colors self-start">
+              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-4 sm:px-6 py-4 sm:py-5 hover:border-white/25 transition-colors self-start">
                 <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
                 <span>
                   <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">Tap to call, no signup</span>
-                  <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight">{PLATFORM_DEMO_NUMBER}</span>
+                  <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
                 </span>
-                <span className="ml-2 waveform">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
+                <span className="ml-2 waveform max-sm:hidden">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
               </a>
               <div className="mt-auto pt-8 flex flex-wrap gap-x-6 gap-y-2">
                 {['Answers 24/7', 'Natural, human-sounding voice', 'Connects you to a live demo'].map(x => (

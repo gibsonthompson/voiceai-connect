@@ -448,7 +448,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
-    <div className={isEmbed ? '' : 'min-h-screen'} style={wrapperStyle}>
+    <div className={`${isEmbed ? '' : 'min-h-screen'} signup-mobile-zoom`} style={wrapperStyle}>
       {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -726,7 +726,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
-    <div className={isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]'} style={wrapperStyle}>
+    <div className={`${isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]'} signup-mobile-zoom`} style={wrapperStyle}>
       {!isEmbed && (
         <>
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
