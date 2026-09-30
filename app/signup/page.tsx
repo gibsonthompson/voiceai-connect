@@ -442,7 +442,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   // only needs to be as tall as the form itself.
   const wrapperStyle: React.CSSProperties = isEmbed
     ? { backgroundColor: bgColor, color: textColor }
-    : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
+    : { backgroundColor: bgColor, color: textColor };
   const mainPaddingClass = isEmbed
     ? 'relative min-h-0 py-2 px-2 sm:px-4'
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
@@ -720,7 +720,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
 
   const wrapperStyle: React.CSSProperties = isEmbed
     ? { backgroundColor: 'transparent', color: '#fafaf9' }
-    : { zoom: 0.8 };
+    : {};
   const mainPaddingClass = isEmbed
     ? 'relative min-h-0 py-2 px-2 sm:px-4'
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
