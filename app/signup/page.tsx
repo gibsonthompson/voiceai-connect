@@ -110,11 +110,11 @@ function applyPhoneMask(value: string): string {
   return `(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}`;
 }
 
-// Ships the mobile zoom rule with the page itself so it can't be left behind by a
-// separate globals.css deploy. Desktop (>767px) is untouched; mobile renders 10%
-// smaller. zoom reflows the layout (unlike transform, which would leave gaps).
+// Desktop keeps the original 0.8 zoom (works on desktop; nav stays put). Mobile
+// browsers ignore CSS `zoom`, so the phone view uses transform:scale instead,
+// sized to fill the viewport with no overflow. Scoped to this page via the class.
 function SignupMobileZoomStyle() {
-  return <style dangerouslySetInnerHTML={{ __html: '@media (max-width:767px){.signup-mobile-zoom{zoom:0.9}}' }} />;
+  return <style dangerouslySetInnerHTML={{ __html: '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.9);transform-origin:top left;width:111.111%;min-height:111.111vh}}' }} />;
 }
 
 function setFavicon(url: string) {
@@ -455,7 +455,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
-    <div className={`${isEmbed ? '' : 'min-h-screen'} signup-mobile-zoom`} style={wrapperStyle}>
+    <div className={isEmbed ? '' : 'min-h-screen signup-mobile-zoom'} style={wrapperStyle}>
       <SignupMobileZoomStyle />
       {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -734,7 +734,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
-    <div className={`${isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9]'} signup-mobile-zoom`} style={wrapperStyle}>
+    <div className={isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9] signup-mobile-zoom'} style={wrapperStyle}>
       <SignupMobileZoomStyle />
       {!isEmbed && (
         <>
