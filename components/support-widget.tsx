@@ -131,6 +131,7 @@ export default function SupportWidget() {
   const [escErr, setEscErr] = useState('');
   const [isAllowedDomain, setIsAllowedDomain] = useState(false);
   const [hideForClientSurface, setHideForClientSurface] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +139,7 @@ export default function SupportWidget() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
   useEffect(() => { if (sessionStorage.getItem('w-t')) return; const t = setTimeout(() => setTeaser(true), 5000); return () => clearTimeout(t); }, []);
   useEffect(() => { const h = window.location.hostname; if (h === 'myvoiceaiconnect.com' || h === 'www.myvoiceaiconnect.com' || h === 'localhost') setIsAllowedDomain(true); }, []);
+  useEffect(() => { const mq = window.matchMedia('(max-width: 1023px)'); const u = () => setIsNarrow(mq.matches); u(); mq.addEventListener('change', u); return () => mq.removeEventListener('change', u); }, []);
 
   // Never render inside the embedded signup widget or on any client-scoped
   // signup/auth surface. The embed iframe loads /signup on the platform origin,
@@ -217,6 +219,10 @@ export default function SupportWidget() {
 
   // Hide on dashboard routes
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
+
+  // Hide the FAB on the interactive demo in mobile view. The demo has its own
+  // in-frame controls on phones and the floating button overlaps them.
+  if (pathname === '/interactive-demo' && isNarrow) return null;
 
   // Never leak into the embedded widget or a client-scoped signup/auth surface
   if (hideForClientSurface) return null;

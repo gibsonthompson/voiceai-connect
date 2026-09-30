@@ -122,7 +122,7 @@ function AgencyOverview() {
           { label: 'Calls This Month', value: AGENCY.stats.calls, icon: PhoneCall, color: '#3b82f6' },
           { label: 'MRR', value: AGENCY.stats.mrr, icon: TrendingUp, color: '#a78bfa' },
         ] as const).map((s) => (
-          <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4">
+          <div key={s.label} data-tour={s.label === 'MRR' ? 'sidebar-mrr' : undefined} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${s.color}18` }}><s.icon className="h-5 w-5" style={{ color: s.color }} /></div>
               <div><p className="text-[10px] sm:text-xs text-[#fafaf9]/50">{s.label}</p><p className="text-lg sm:text-xl font-semibold text-[#fafaf9]">{s.value}</p></div>
@@ -1472,11 +1472,9 @@ export default function DemoPage() {
   // Navigate view/tab when tour step changes
   useEffect(() => {
     if (!tourActive || !currentStep) return;
-    // On mobile, sidebar-targeted steps need the drawer open so the tour can
-    // anchor to elements that would otherwise be off-screen.
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
-    const targetInSidebar = currentStep.target === 'sidebar-mrr';
-    setSidebarOpen(isMobile && targetInSidebar);
+    // Close the mobile drawer on any step change. On mobile the MRR step anchors
+    // to the dashboard stat at the top of the page, so no step needs the drawer.
+    setSidebarOpen(false);
     if (currentStep.view !== view) setView(currentStep.view);
     if (currentStep.view === 'agency' && currentStep.tab !== agencyTab) setAgencyTab(currentStep.tab);
     if (currentStep.view === 'client' && currentStep.tab !== clientTab) setClientTab(currentStep.tab);
@@ -1554,12 +1552,12 @@ export default function DemoPage() {
 
       {/* Mobile Sidebar Overlay, matches real layout */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Mobile Sidebar Drawer, matches real layout: w-72, slides from left */}
       <aside
-        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`lg:hidden absolute inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ backgroundColor: view === 'client' ? 'rgb(17,78,60)' : '#050505', borderRight: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)', paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Drawer Header, "Menu" + X close, matches real layout */}
