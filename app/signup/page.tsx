@@ -12,6 +12,7 @@ import { getCountryFromCookie } from '@/lib/geo';
 import { useEmbedMessaging } from '@/lib/embed-messaging';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 import HowDidYouHear from '@/components/how-did-you-hear';
+import { isValidPhone } from '@/lib/phone';
 
 // ============================================================================
 // TYPES
@@ -404,8 +405,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     if (!formData.businessName.trim()) { setError('Please enter your business name'); setLoading(false); return; }
     if (!formData.ownerName.trim()) { setError('Please enter your name'); setLoading(false); return; }
     if (!formData.email.trim() || !formData.email.includes('@')) { setError('Please enter a valid email address'); setLoading(false); return; }
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 7 || phoneDigits.length > 15) { setError('Please enter a valid phone number'); setLoading(false); return; }
+    if (!isValidPhone(formData.phone, formData.country)) { setError('Please enter a valid phone number'); setLoading(false); return; }
     if (!formData.city.trim()) { setError('Please enter your city'); setLoading(false); return; }
     if (!formData.state.trim()) { setError('Please select your state or region'); setLoading(false); return; }
 

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { PLAN_PRICES, PLAN_RATES } from '@/lib/plan-limits';
 import { AGENCY_PLAN_TIERS } from '@/lib/plan-features';
+import { isValidPhone } from '@/lib/phone';
 
 const REFERRAL_OPTIONS = [
   { value: '', label: 'Select an option...' },
@@ -85,24 +86,6 @@ const SUPPORTED_COUNTRIES: Country[] = [
 
 function getCountry(iso: string): Country {
   return SUPPORTED_COUNTRIES.find((c) => c.iso === iso) || SUPPORTED_COUNTRIES[0];
-}
-
-// Gate junk phone numbers at signup. A fake or malformed entry (an 11-digit US
-// number, "0000000", "idonthaveone") silently breaks every downstream SMS: the
-// activation cron can't send, marks the agency complete, and they never hear
-// from us. The dial code comes from the country selector, so this field holds
-// the national number only.
-function isValidAgencyPhone(rawPhone: string, iso: string): boolean {
-  let digits = String(rawPhone || '').replace(/\D/g, '');
-  if (!digits) return false;
-  if (/^(\d)\1+$/.test(digits)) return false; // all identical: 0000000, 5555555
-  if (iso === 'US' || iso === 'CA') {
-    if (digits.length === 11 && digits[0] === '1') digits = digits.slice(1);
-    // NANP: 10 digits, area code and exchange code both start 2-9
-    return /^[2-9]\d{2}[2-9]\d{2}\d{4}$/.test(digits);
-  }
-  // Other countries: plausible national-number length.
-  return digits.length >= 6 && digits.length <= 14;
 }
 
 // Custom, searchable country picker. Deliberately NOT a native <select>: a
@@ -360,7 +343,7 @@ function OnboardingContent() {
   const handleStep1Next = async () => {
     if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
     if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
-    if (!isValidAgencyPhone(agencyDetails.phone, agencyDetails.country)) { setError('Please enter a valid phone number'); return; }
+    if (!isValidPhone(agencyDetails.phone, agencyDetails.country)) { setError('Please enter a valid phone number'); return; }
     if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
     const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource, country: agencyDetails.country });
     if (result?.success) {
