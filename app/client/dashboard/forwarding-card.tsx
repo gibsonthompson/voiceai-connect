@@ -547,63 +547,51 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
       {/* When a caller needs a person */}
       {handoffPicker}
 
-      {/* VERIZON / US CELLULAR: tap-to-dial (*72 all / *71 missed) */}
+      {/* VERIZON / US CELLULAR: code always visible + one-tap dial (*72/*71, no #) */}
       {carrier === 'verizon' && (
         <>
-          <div className="mt-4 space-y-2.5">
-            {stepRow(1, isMissed
-              ? `Tap "Turn on forwarding" below. Your phone dials *71 then your AI number, ${formatted}. Your phone keeps ringing first; missed calls roll to the AI.`
-              : `Tap "Turn on forwarding" below. Your phone dials *72 then your AI number, ${formatted}.`)}
-            {stepRow(2, 'Wait for the confirmation tone, then hang up.')}
-            {stepRow(3, 'Tap the confirm button below so your dashboard shows you as live.')}
+          <div className="mt-4 rounded-xl px-4 py-3.5" style={{ backgroundColor: theme.hover }}>
+            <p className="text-[10px] uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted4 }}>Your forwarding code</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-lg sm:text-xl font-mono font-bold break-all" style={{ color: theme.text }}>{isMissed ? '*71' : '*72'} {digits}</p>
+              <button onClick={() => copyText(vzCode, 'vz')}
+                className="flex-shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: theme.card, color: copied === 'vz' ? theme.success : theme.textMuted, border: `1px solid ${theme.border}` }}>
+                {copied === 'vz' ? <Check className="h-3.5 w-3.5" style={{ color: theme.success }} /> : <Copy className="h-3.5 w-3.5" />}
+                {copied === 'vz' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
           </div>
 
           <a href={vzTel}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-base font-bold transition-all hover:scale-[1.01] active:scale-[0.99]"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-base font-bold transition-all hover:scale-[1.01] active:scale-[0.99]"
             style={{ backgroundColor: theme.primary, color: theme.buttonText }}>
             <Phone className="h-5 w-5" />
             Turn on forwarding
           </a>
-          <p className="mt-2 text-center text-[12px] sm:text-[13px]" style={{ color: theme.textMuted }}>
-            Just press call when your dialer opens.
-          </p>
-
-          <button onClick={() => copyText(vzCode, 'vz')}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium transition hover:opacity-90"
-            style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
-            {copied === 'vz' ? <Check className="h-4 w-4" style={{ color: theme.success }} /> : <Copy className="h-4 w-4" />}
-            {copied === 'vz' ? 'Copied' : 'Copy the code for another phone'}
-          </button>
-          <p className="mt-1.5 text-center text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
-            Setting up a landline or a different phone? Copy the code and dial it on that phone instead.
+          <p className="mt-2.5 text-center text-[12px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
+            On this phone, tap the button (your dialer opens with the code) and press call. On a landline or a different phone, dial the code above yourself. Either way, wait for the confirmation tone, then hang up and confirm below.
           </p>
         </>
       )}
 
-      {/* AT&T / T-MOBILE: copy the code, type it on the keypad (**21*# all / **61*# missed) */}
+      {/* AT&T / T-MOBILE: code box + copy; explain why there is no one-tap (# breaks auto-dial) */}
       {carrier === 'gsm' && (
         <>
-          <div className="mt-4 space-y-2.5">
-            {stepRow(1, 'Copy the code below.')}
-            {stepRow(2, isMissed
-              ? 'Open your phone keypad, paste or type the code, and press call. Your phone keeps ringing first; missed calls roll to the AI.'
-              : 'Open your phone keypad, paste or type the code, and press call.')}
-            {stepRow(3, 'Wait for the confirmation, then tap the confirm button below.')}
+          <div className="mt-4 rounded-xl px-4 py-3.5" style={{ backgroundColor: theme.hover }}>
+            <p className="text-[10px] uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted4 }}>Your forwarding code</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-lg sm:text-xl font-mono font-bold break-all" style={{ color: theme.text }}>{gsmCode}</p>
+              <button onClick={() => copyText(gsmCode, 'gsm')}
+                className="flex-shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: theme.card, color: copied === 'gsm' ? theme.success : theme.textMuted, border: `1px solid ${theme.border}` }}>
+                {copied === 'gsm' ? <Check className="h-3.5 w-3.5" style={{ color: theme.success }} /> : <Copy className="h-3.5 w-3.5" />}
+                {copied === 'gsm' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
           </div>
-
-          <div className="mt-4 rounded-xl px-4 py-3 text-center" style={{ backgroundColor: theme.hover }}>
-            <p className="text-[10px] uppercase tracking-wide mb-1" style={{ color: theme.textMuted4 }}>Forwarding code</p>
-            <p className="text-base sm:text-lg font-mono font-bold break-all" style={{ color: theme.text }}>{gsmCode}</p>
-          </div>
-
-          <button onClick={() => copyText(gsmCode, 'gsm')}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-base font-bold transition-all hover:scale-[1.01] active:scale-[0.99]"
-            style={{ backgroundColor: theme.primary, color: theme.buttonText }}>
-            {copied === 'gsm' ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-            {copied === 'gsm' ? 'Copied' : 'Copy forwarding code'}
-          </button>
-          <p className="mt-2 text-center text-[12px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
-            Type or paste this on your phone keypad, then press call. On most phones these codes cannot be dialed automatically from an app, so enter it on the keypad yourself.
+          <p className="mt-2.5 text-center text-[12px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
+            Copy the code, then type it on your phone&apos;s keypad and press call. (On AT&amp;T and T-Mobile the code ends in <span className="font-mono font-semibold">#</span>, which phones won&apos;t auto-dial from an app, so you enter it yourself, that&apos;s why there&apos;s no one-tap button like Verizon.) Wait for the confirmation, then hang up and confirm below.
           </p>
         </>
       )}
