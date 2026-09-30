@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/flutterwave-recurring",
       "schedule": "30 13 * * *"
+    },
+    {
+      "path": "/api/cron/jarvis-briefing",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/jarvis-briefing-est",
+      "schedule": "0 15 * * *"
     }
   ]
 }
