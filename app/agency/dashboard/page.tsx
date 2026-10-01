@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
+import PlatformUnreadNudge from '@/components/agency/PlatformUnreadNudge';
 import { DEMO_DASHBOARD } from '../demoData';
 import SetupChecklist from '@/components/agency/SetupChecklist';
 
@@ -214,6 +215,8 @@ export default function AgencyDashboardPage() {
           <LifeBuoy className="h-4 w-4" /><span className="hidden sm:inline">Support</span>
         </button>
       </div>
+
+      <PlatformUnreadNudge agencyId={agency?.id} />
 
       {/* Setup Checklist — uses billable count so test client doesn't satisfy "add first client" */}
       <SetupChecklist

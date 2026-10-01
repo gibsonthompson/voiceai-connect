@@ -166,6 +166,14 @@ export default function AgencyInboxPage() {
     })();
   }, [agencyId, backendUrl]);
 
+  // Deep link from the dashboard nudge: /agency/inbox?channel=platform opens
+  // straight on the VoiceAI Connect channel.
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get('channel') === 'platform') setChannel('platform');
+    } catch { /* ignore */ }
+  }, []);
+
   const totalPages = Math.ceil(total / limit);
 
   const toggleRow = (req: SupportRequest) => {
