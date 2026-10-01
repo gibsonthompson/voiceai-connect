@@ -24,6 +24,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import AdminSupportThread from '@/components/admin/AdminSupportThread';
 import {
   LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
   User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X, AlertTriangle} from 'lucide-react';
@@ -401,6 +402,9 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                                       })}
                                       {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
                                     </div>
+                                  </div>
+                                  <div>
+                                    <AdminSupportThread requestId={req.id} agencyId={req.agency_id} />
                                   </div>
                                   <div>
                                     <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>

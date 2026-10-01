@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
+import PlatformMessages from '@/components/agency/PlatformMessages';
 
 interface SupportRequest {
   id: string;
@@ -95,6 +96,8 @@ export default function AgencyInboxPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const limit = 30;
+  const [channel, setChannel] = useState<'clients' | 'platform'>('clients');
+  const [platformUnread, setPlatformUnread] = useState(0);
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const agencyId = agency?.id;
@@ -150,6 +153,19 @@ export default function AgencyInboxPage() {
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
   useEffect(() => { setPage(0); }, [statusFilter, sourceFilter, search]);
 
+  // Platform (VoiceAI Connect) unread, for the channel toggle badge. Kept in
+  // sync by PlatformMessages via onUnreadChange once that channel is open.
+  useEffect(() => {
+    if (!agencyId) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/platform-threads`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) { const d = await res.json(); setPlatformUnread(d.unread_total || 0); }
+      } catch { /* non-blocking */ }
+    })();
+  }, [agencyId, backendUrl]);
+
   const totalPages = Math.ceil(total / limit);
 
   const toggleRow = (req: SupportRequest) => {
@@ -202,10 +218,43 @@ export default function AgencyInboxPage() {
       <div className="mb-5 max-w-[1400px]">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Inbox</h1>
         <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-          Messages from your clients and website visitors. Reach out to them directly to follow up.
+          Messages from your clients and website visitors, and from VoiceAI Connect.
         </p>
       </div>
 
+      {/* Channel toggle: client/prospect inbox vs two-way platform threads */}
+      <div className="mb-5 flex items-center gap-2 max-w-[1400px]">
+        {([
+          { key: 'clients', label: 'From clients' },
+          { key: 'platform', label: 'VoiceAI Connect' },
+        ] as const).map((opt) => {
+          const active = channel === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setChannel(opt.key)}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+              style={active
+                ? { backgroundColor: theme.primary, color: '#fff' }
+                : { backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${theme.border}` }}
+            >
+              {opt.label}
+              {opt.key === 'platform' && platformUnread > 0 && (
+                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[11px] font-semibold"
+                  style={{ backgroundColor: active ? 'rgba(255,255,255,0.25)' : theme.primary, color: '#fff' }}>
+                  {platformUnread}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {channel === 'platform' && (
+        <PlatformMessages agencyId={agencyId as string} backendUrl={backendUrl} onUnreadChange={setPlatformUnread} />
+      )}
+
+      {channel === 'clients' && (<>
       {/* Summary line */}
       <div className="mb-5 text-sm max-w-[1400px]" style={{ color: theme.textMuted }}>
         {counts.total} message{counts.total !== 1 ? 's' : ''}
@@ -451,6 +500,7 @@ export default function AgencyInboxPage() {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }
