@@ -519,9 +519,11 @@ export default function AdminYouTubePage() {
               {generating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating...</> : <><Sparkles className="w-3.5 h-3.5" />Generate</>}
             </button>
           </div>
-          <input type="text" value={genContext} onChange={e => setGenContext(e.target.value)}
-            placeholder="Optional context (trends, angles, specific topics)..."
-            className="a-input" />
+          <label className="block text-[11px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Custom prompt (steers this batch)</label>
+          <textarea value={genContext} onChange={e => setGenContext(e.target.value)}
+            rows={3}
+            placeholder="Steer the generation: a niche to focus on (dental, HVAC, lawyers), an angle or trend to lean into, specific hooks to try, a tone, topics to avoid. Layered on top of the built-in content strategy, not a replacement."
+            className="a-input w-full resize-y" />
         </div>
 
         {/* Filters */}
