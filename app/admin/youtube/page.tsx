@@ -390,6 +390,10 @@ export default function AdminYouTubePage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [teleprompterIdea, setTeleprompterIdea] = useState<Idea | null>(null);
   const [copiedScript, setCopiedScript] = useState<string | null>(null);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteTitle, setPasteTitle] = useState('');
+  const [pasteScript, setPasteScript] = useState('');
+  const [creatingPaste, setCreatingPaste] = useState(false);
 
   // Generate panel
   const [genPillar, setGenPillar] = useState('mixed');
@@ -457,6 +461,29 @@ export default function AdminYouTubePage() {
     } catch (err) { console.error('Delete failed:', err); }
   };
 
+  const handleCreateFromPaste = async () => {
+    if (!pasteScript.trim() && !pasteTitle.trim()) return;
+    setCreatingPaste(true);
+    try {
+      const res = await fetch(`${API}/api/yt/ideas`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: pasteTitle.trim() || undefined, script: pasteScript }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPasteTitle(''); setPasteScript(''); setShowPaste(false);
+        await Promise.all([fetchIdeas(), fetchStats()]);
+      } else {
+        alert(data.error || 'Failed to create script');
+      }
+    } catch (e) {
+      console.error('Create from paste error:', e);
+      alert('Failed to create script');
+    } finally {
+      setCreatingPaste(false);
+    }
+  };
+
   const generateScript = async (id: string) => {
     setScriptingId(id);
     try {
@@ -480,10 +507,49 @@ export default function AdminYouTubePage() {
         <Teleprompter script={teleprompterIdea.script} title={teleprompterIdea.title} onClose={() => setTeleprompterIdea(null)} />
       )}
 
+      {/* Paste-a-script modal: + button -> paste text -> new script entry */}
+      {showPaste && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !creatingPaste && setShowPaste(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--a-line)]">
+              <h3 className="text-sm font-semibold text-[var(--a-ink)]">New script</h3>
+              <button onClick={() => setShowPaste(false)} className="p-1 rounded-lg text-[var(--a-dim)] hover:text-[var(--a-ink)] transition-colors"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 space-y-3 overflow-y-auto">
+              <input type="text" value={pasteTitle} onChange={e => setPasteTitle(e.target.value)}
+                placeholder="Title (optional — uses the first line if left blank)"
+                className="a-input w-full" />
+              <textarea value={pasteScript} onChange={e => setPasteScript(e.target.value)}
+                placeholder="Paste your script here..."
+                rows={16}
+                className="a-input w-full resize-y font-mono text-[13px] leading-relaxed"
+                style={{ whiteSpace: 'pre-wrap' }}
+                autoFocus />
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--a-line)]">
+              <button onClick={() => setShowPaste(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--a-muted)] transition-colors">Cancel</button>
+              <button onClick={handleCreateFromPaste} disabled={creatingPaste || !pasteScript.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40" style={SOFT.em}>
+                {creatingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {creatingPaste ? 'Creating...' : 'Create script'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Content</h1>
-          <p className="text-sm text-[var(--a-muted)] mt-1">Generate ideas, write scripts, record with the teleprompter</p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Content</h1>
+            <p className="text-sm text-[var(--a-muted)] mt-1">Generate ideas, write scripts, record with the teleprompter</p>
+          </div>
+          <button onClick={() => setShowPaste(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shrink-0"
+            style={SOFT.em}>
+            <Plus className="w-4 h-4" />Paste script
+          </button>
         </div>
 
         {/* Stats */}
