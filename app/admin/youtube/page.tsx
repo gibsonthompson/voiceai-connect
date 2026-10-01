@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Sparkles, ChevronDown, ChevronRight, Trash2, Check, Archive,
-  FileText, Loader2, Filter, RefreshCw, Lightbulb, Target, BookOpen,
+  FileText, Copy, Loader2, Filter, RefreshCw, Lightbulb, Target, BookOpen,
   Building2, ShieldQuestion, ArrowLeftRight, PenLine, X, Play, Pause,
   Maximize2, Minus, Plus, RotateCcw, Type, Gauge, Monitor,
 } from 'lucide-react';
@@ -389,6 +389,7 @@ export default function AdminYouTubePage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [teleprompterIdea, setTeleprompterIdea] = useState<Idea | null>(null);
+  const [copiedScript, setCopiedScript] = useState<string | null>(null);
 
   // Generate panel
   const [genPillar, setGenPillar] = useState('mixed');
@@ -623,11 +624,19 @@ export default function AdminYouTubePage() {
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Script</p>
-                            <button onClick={() => setTeleprompterIdea(idea)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                              style={SOFT.em}>
-                              <Maximize2 className="w-3 h-3" />Teleprompter
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => { navigator.clipboard.writeText(idea.script || ''); setCopiedScript(idea.id); setTimeout(() => setCopiedScript(c => c === idea.id ? null : c), 2000); }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                style={SOFT.em}>
+                                {copiedScript === idea.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                {copiedScript === idea.id ? 'Copied' : 'Copy script'}
+                              </button>
+                              <button onClick={() => setTeleprompterIdea(idea)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                                style={SOFT.em}>
+                                <Maximize2 className="w-3 h-3" />Teleprompter
+                              </button>
+                            </div>
                           </div>
                           <InlineEdit value={idea.script} onSave={v => updateIdea(idea.id, { script: v })}
                             multiline className="text-[13px] text-[var(--a-muted)] font-mono leading-relaxed"
