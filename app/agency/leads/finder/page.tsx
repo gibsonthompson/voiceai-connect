@@ -118,22 +118,30 @@ function ProgressBar({ progress, theme }: { progress: any; theme: any }) {
 function StatsRow({ stats, theme }: { stats: any; theme: any }) {
   if (!stats) return null;
   const items = [
-    { label: "Found", value: stats.uniqueCompanies || stats.businessesFound || 0 },
-    { label: "Enriched", value: stats.enriched },
-    { label: "With Phone", value: stats.withPhone },
-    { label: "With Email", value: stats.withEmail },
-    { label: "With Website", value: stats.withWebsite },
-    { label: "Time", value: (() => { const t = Number(stats.durationSeconds) || 0; return t < 60 ? `${t}s` : `${Math.floor(t / 60)}m ${t % 60}s`; })() },
+    { label: "Found", value: stats.uniqueCompanies || stats.businessesFound || 0, hint: "Businesses the search discovered in this area." },
+    { label: "Enriched", value: stats.enriched, hint: "Businesses we pulled extra contact detail for (phone, email, website, socials) beyond the basic listing." },
+    { label: "With Phone", value: stats.withPhone, hint: "Businesses we found a phone number for." },
+    { label: "With Email", value: stats.withEmail, hint: "Businesses we found an email for." },
+    { label: "With Website", value: stats.withWebsite, hint: "Businesses we found a website for." },
+    { label: "Time", value: (() => { const t = Number(stats.durationSeconds) || 0; return t < 60 ? `${t}s` : `${Math.floor(t / 60)}m ${t % 60}s`; })(), hint: "How long the search took." },
   ];
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 py-4">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-xl p-3 text-center"
-          style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="text-lg font-bold" style={{ color: theme.text }}>{item.value}</div>
-          <div className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>{item.label}</div>
-        </div>
-      ))}
+    <div className="py-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        {items.map((item) => (
+          <div key={item.label} title={item.hint} className="rounded-xl p-3 text-center cursor-help"
+            style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="text-lg font-bold" style={{ color: theme.text }}>{item.value}</div>
+            <div className="text-[10px] mt-0.5 inline-flex items-center gap-1" style={{ color: theme.textMuted }}>
+              {item.label}
+              <Info className="h-2.5 w-2.5 opacity-60" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] mt-2 px-1" style={{ color: theme.textMuted }}>
+        <span className="font-medium">Found</span> is every business the search discovered. <span className="font-medium">Enriched</span> is how many of those we pulled extra contact detail for (phone, email, website, socials) beyond the basic listing.
+      </p>
     </div>
   );
 }
@@ -578,6 +586,7 @@ export default function LeadFinderPage() {
   const [confirmSearch, setConfirmSearch] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
   const eventSourceRef = useRef<EventSource | null>(null);
+  const jobIdRef = useRef<string | null>(null);
 
   // Prefill location from the agency's number on file (area code -> city).
   // Defaults on load; user can clear it (X) or tap the chip to refill.
@@ -606,6 +615,7 @@ export default function LeadFinderPage() {
 
   // ── Search ──────────────────────────────────────────────────────────────
   const connectToJob = (jobId: string) => {
+    jobIdRef.current = jobId;
     try { localStorage.setItem("lead_finder_job", jobId); } catch {}
     const evtSource = new EventSource(`${API_BASE}/api/leads/search/stream/${jobId}`);
     eventSourceRef.current = evtSource;
@@ -615,6 +625,10 @@ export default function LeadFinderPage() {
         setProgress(update.progress);
         if (update.status === "complete") {
           setLeads(update.leads || []); setStats(update.stats); setLoading(false);
+          try { localStorage.removeItem("lead_finder_job"); } catch {}
+          evtSource.close();
+        } else if (update.status === "cancelled") {
+          setLoading(false);
           try { localStorage.removeItem("lead_finder_job"); } catch {}
           evtSource.close();
         } else if (update.status === "error") {
@@ -633,6 +647,9 @@ export default function LeadFinderPage() {
     if (activeTab === "google_maps" && !mapsIndustry && !mapsQuery.trim()) { setError("Select an industry or enter a search query"); return; }
 
     setLoading(true);
+    // A new search supersedes any still-running one; drop the old stream so we
+    // switch cleanly (the backend cancels the old pipeline).
+    eventSourceRef.current?.close();
     setError(null);
     setLeads([]);
     setStats(null);
@@ -684,6 +701,25 @@ export default function LeadFinderPage() {
     doSearch();
   }, [location, activeTab, keywords, mapsIndustry, mapsQuery, hasUnsaved, doSearch]);
 
+  const handleStop = useCallback(async () => {
+    const jobId = jobIdRef.current;
+    // Free the UI immediately, then tell the server to halt the pipeline.
+    eventSourceRef.current?.close();
+    setLoading(false);
+    setProgress(null);
+    jobIdRef.current = null;
+    try { localStorage.removeItem("lead_finder_job"); } catch {}
+    if (jobId) {
+      try {
+        await fetch(`${API_BASE}/api/leads/search/cancel/${jobId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agencyId: getAgencyId() }),
+        });
+      } catch {}
+    }
+  }, []);
+
   const pollForResults = async (jobId: string) => {
     const interval = setInterval(async () => {
       try {
@@ -692,6 +728,7 @@ export default function LeadFinderPage() {
         const data = await res.json();
         setProgress(data.progress);
         if (data.status === "complete") { setLeads(data.leads || []); setStats(data.stats); setLoading(false); clearInterval(interval); try { localStorage.removeItem("lead_finder_job"); } catch {} }
+        else if (data.status === "cancelled") { setLoading(false); clearInterval(interval); try { localStorage.removeItem("lead_finder_job"); } catch {} }
         else if (data.status === "error") { setError(data.error); setLoading(false); clearInterval(interval); try { localStorage.removeItem("lead_finder_job"); } catch {} }
       } catch { clearInterval(interval); setError("Lost connection"); setLoading(false); }
     }, 1000);
@@ -954,7 +991,20 @@ export default function LeadFinderPage() {
       </div>
 
       {/* Progress */}
-      {loading && <ProgressBar progress={progress} theme={theme} />}
+      {loading && (
+        <div>
+          <ProgressBar progress={progress} theme={theme} />
+          <div className="mt-2 flex justify-center">
+            <button
+              onClick={handleStop}
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={{ color: "#ef4444", backgroundColor: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}
+            >
+              <X className="h-4 w-4" /> Stop search
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Confirm before a new search when there are unsaved leads */}
       {confirmSearch && (
