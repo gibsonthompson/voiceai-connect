@@ -37,6 +37,8 @@ export async function GET() {
   let logoUrl: string | null = null;
   let logoBg: string | null = null;
   let ogImageUrl: string | null = null;
+  let ogTitle: string | null = null;
+  let ogDescription: string | null = null;
 
   try {
     const h = await headers();
@@ -60,10 +62,15 @@ export async function GET() {
           logoUrl = a.logo_url || null;
           logoBg = a.logo_background_color || null;
           ogImageUrl = a.og_image_url || null;
+          ogTitle = a.og_title || null;
+          ogDescription = a.og_description || null;
         }
       }
     }
   } catch {}
+
+  const headline = (ogTitle && ogTitle.trim()) || name;
+  const subtitle = (ogDescription && ogDescription.trim()) || tagline;
 
   // 1. Re-serve the agency's own uploaded OG image verbatim if they have one.
   if (ogImageUrl) {
@@ -94,7 +101,7 @@ export async function GET() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a0a',
+          background: `linear-gradient(140deg, ${primary}3a 0%, #0b0b11 48%, #07070b 100%)`,
           position: 'relative',
         }}
       >
@@ -159,7 +166,7 @@ export async function GET() {
             display: 'flex',
           }}
         >
-          {name}
+          {headline}
         </div>
         <div
           style={{
@@ -171,7 +178,7 @@ export async function GET() {
             display: 'flex',
           }}
         >
-          {tagline}
+          {subtitle}
         </div>
       </div>
     ),

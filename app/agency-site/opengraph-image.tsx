@@ -28,6 +28,8 @@ export default async function Image() {
   let tagline = 'Never miss another call';
   let primary = '#6366f1';
   let ogImageUrl: string | null = null;
+  let ogTitle: string | null = null;
+  let ogDescription: string | null = null;
 
   try {
     const h = await headers();
@@ -46,10 +48,15 @@ export default async function Image() {
           tagline = a.company_tagline || tagline;
           primary = a.primary_color || primary;
           ogImageUrl = a.og_image_url || null;
+          ogTitle = a.og_title || null;
+          ogDescription = a.og_description || null;
         }
       }
     }
   } catch {}
+
+  const headline = (ogTitle && ogTitle.trim()) || name;
+  const subtitle = (ogDescription && ogDescription.trim()) || tagline;
 
   // 1. Re-serve the agency's own uploaded OG image verbatim if they have one.
   if (ogImageUrl) {
@@ -80,7 +87,7 @@ export default async function Image() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a0a',
+          background: `linear-gradient(140deg, ${primary}3a 0%, #0b0b11 48%, #07070b 100%)`,
           position: 'relative',
         }}
       >
@@ -124,7 +131,7 @@ export default async function Image() {
             display: 'flex',
           }}
         >
-          {name}
+          {headline}
         </div>
         <div
           style={{
@@ -136,7 +143,7 @@ export default async function Image() {
             display: 'flex',
           }}
         >
-          {tagline}
+          {subtitle}
         </div>
       </div>
     ),
