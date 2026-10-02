@@ -25,7 +25,6 @@ const BACKEND_URL =
 
 export default async function Image() {
   let name = 'AI Phone Answering';
-  let tagline = '';
   let primary = '#6366f1';
   let ogImageUrl: string | null = null;
   let ogTitle: string | null = null;
@@ -46,7 +45,6 @@ export default async function Image() {
         const a = (await res.json())?.agency;
         if (a) {
           name = a.name || name;
-          tagline = a.company_tagline || tagline;
           primary = a.primary_color || primary;
           ogImageUrl = a.og_image_url || null;
           ogTitle = a.og_title || null;
@@ -58,7 +56,8 @@ export default async function Image() {
   } catch {}
 
   const headline = (ogTitle && ogTitle.trim()) || name;
-  const subtitle = (ogDescription && ogDescription.trim()) || (tagline && tagline.trim()) || 'Professional AI receptionist that answers every call 24/7.';
+  const descText = (ogDescription || '').trim();
+  const showDesc = !!descText;
   const dark = (websiteTheme || 'light') === 'dark';
   const cardBg = dark ? '#0a0a0a' : '#ffffff';
   const cardFg = dark ? '#fafafa' : '#111827';
@@ -127,18 +126,20 @@ export default async function Image() {
         >
           {headline}
         </div>
-        <div
-          style={{
-            marginTop: '20px',
-            fontSize: '30px',
-            color: cardSub,
-            textAlign: 'center',
-            maxWidth: '900px',
-            display: 'flex',
-          }}
-        >
-          {subtitle}
-        </div>
+        {showDesc && (
+          <div
+            style={{
+              marginTop: '20px',
+              fontSize: '30px',
+              color: cardSub,
+              textAlign: 'center',
+              maxWidth: '900px',
+              display: 'flex',
+            }}
+          >
+            {descText}
+          </div>
+        )}
       </div>
     ),
     { ...size }

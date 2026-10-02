@@ -32,7 +32,6 @@ const SIZE = { width: 1200, height: 630 };
 
 export async function GET() {
   let name = 'AI Phone Answering';
-  let tagline = '';
   let primary = '#6366f1';
   let logoUrl: string | null = null;
   let ogImageUrl: string | null = null;
@@ -57,7 +56,6 @@ export async function GET() {
         const a = (await res.json())?.agency;
         if (a) {
           name = a.name || name;
-          tagline = a.company_tagline || tagline;
           primary = a.primary_color || primary;
           logoUrl = a.logo_url || null;
           ogImageUrl = a.og_image_url || null;
@@ -69,8 +67,15 @@ export async function GET() {
     }
   } catch {}
 
-  const headline = (ogTitle && ogTitle.trim()) || name;
-  const subtitle = (ogDescription && ogDescription.trim()) || (tagline && tagline.trim()) || 'Professional AI receptionist that answers every call 24/7.';
+  const titleText = (ogTitle || '').trim();
+  const descText = (ogDescription || '').trim();
+  // The logo carries the brand. Only show the name as text when there's no logo,
+  // and only show title/description when the agency actually wrote them.
+  const headlineText = titleText || (logoUrl ? '' : name);
+  const showHeadline = !!headlineText;
+  const showDesc = !!descText;
+  const logoMb = (showHeadline || showDesc) ? '36px' : '0';
+  const descMt = showHeadline ? '20px' : '0';
   const dark = (websiteTheme || 'light') === 'dark';
   const cardBg = dark ? '#0a0a0a' : '#ffffff';
   const cardFg = dark ? '#fafafa' : '#111827';
@@ -111,7 +116,7 @@ export async function GET() {
       >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} width={240} height={240} style={{ objectFit: 'contain', marginBottom: '36px' }} alt="" />
+          <img src={logoUrl} width={240} height={240} style={{ objectFit: 'contain', marginBottom: logoMb }} alt="" />
         ) : (
           <div
             style={{
@@ -125,38 +130,42 @@ export async function GET() {
               color: '#ffffff',
               fontSize: '64px',
               fontWeight: 700,
-              marginBottom: '40px',
+              marginBottom: logoMb,
             }}
           >
             {initial}
           </div>
         )}
 
-        <div
-          style={{
-            fontSize: '64px',
-            fontWeight: 700,
-            color: cardFg,
-            textAlign: 'center',
-            maxWidth: '980px',
-            lineHeight: 1.1,
-            display: 'flex',
-          }}
-        >
-          {headline}
-        </div>
-        <div
-          style={{
-            marginTop: '20px',
-            fontSize: '30px',
-            color: cardSub,
-            textAlign: 'center',
-            maxWidth: '900px',
-            display: 'flex',
-          }}
-        >
-          {subtitle}
-        </div>
+        {showHeadline && (
+          <div
+            style={{
+              fontSize: '64px',
+              fontWeight: 700,
+              color: cardFg,
+              textAlign: 'center',
+              maxWidth: '980px',
+              lineHeight: 1.1,
+              display: 'flex',
+            }}
+          >
+            {headlineText}
+          </div>
+        )}
+        {showDesc && (
+          <div
+            style={{
+              marginTop: descMt,
+              fontSize: '30px',
+              color: cardSub,
+              textAlign: 'center',
+              maxWidth: '900px',
+              display: 'flex',
+            }}
+          >
+            {descText}
+          </div>
+        )}
       </div>
     ),
     { ...SIZE }
