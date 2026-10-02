@@ -164,6 +164,32 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
 
+  // Global safety net: any agency API call returning 401 means the session is
+  // dead (invalid/expired token). End it and go to login cleanly, instead of
+  // letting pages degrade (e.g. Team showing "upgrade to Pro" because its own
+  // fetch 401'd). Installed once per tab.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if ((window as any).__agencyAuthGuard) return;
+    (window as any).__agencyAuthGuard = true;
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async (...args: Parameters<typeof fetch>) => {
+      const res = await origFetch(...args);
+      try {
+        const input = args[0];
+        const url = typeof input === 'string' ? input : (input instanceof Request ? input.url : String(input));
+        if (res.status === 401 && url.includes('/api/agency/') && !url.includes('/auth/')) {
+          const path = window.location.pathname || '';
+          if (!path.includes('/login')) {
+            try { localStorage.removeItem('auth_token'); localStorage.removeItem('user'); localStorage.removeItem('agency'); } catch {}
+            window.location.href = '/agency/login?expired=true';
+          }
+        }
+      } catch {}
+      return res;
+    };
+  }, []);
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem('voiceai_demo_mode');
