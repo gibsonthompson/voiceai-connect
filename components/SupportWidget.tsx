@@ -32,6 +32,7 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
   const [selectedArticle, setSelectedArticle] = useState<KBArticle | null>(null);
 
   // Chat state
+  const [sessionId] = useState(() => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`));
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -123,6 +124,7 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           message: msg,
+          sessionId,
           history: chatMessages.filter(m => m.role !== 'assistant' || chatMessages.indexOf(m) > 0).slice(-10),
         }),
       });
@@ -153,7 +155,7 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
       const res = await fetch(`${backendUrl}/api/help/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({ message: msg, sessionId }),
       });
 
       if (!res.ok) {
