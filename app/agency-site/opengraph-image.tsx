@@ -25,11 +25,12 @@ const BACKEND_URL =
 
 export default async function Image() {
   let name = 'AI Phone Answering';
-  let tagline = 'Never miss another call';
+  let tagline = '';
   let primary = '#6366f1';
   let ogImageUrl: string | null = null;
   let ogTitle: string | null = null;
   let ogDescription: string | null = null;
+  let websiteTheme: string | null = null;
 
   try {
     const h = await headers();
@@ -50,13 +51,18 @@ export default async function Image() {
           ogImageUrl = a.og_image_url || null;
           ogTitle = a.og_title || null;
           ogDescription = a.og_description || null;
+          websiteTheme = a.website_theme || null;
         }
       }
     }
   } catch {}
 
   const headline = (ogTitle && ogTitle.trim()) || name;
-  const subtitle = (ogDescription && ogDescription.trim()) || tagline;
+  const subtitle = (ogDescription && ogDescription.trim()) || (tagline && tagline.trim()) || 'Professional AI receptionist that answers every call 24/7.';
+  const dark = (websiteTheme || 'light') === 'dark';
+  const cardBg = dark ? '#0a0a0a' : '#ffffff';
+  const cardFg = dark ? '#fafafa' : '#111827';
+  const cardSub = dark ? 'rgba(250,250,250,0.65)' : '#6b7280';
 
   // 1. Re-serve the agency's own uploaded OG image verbatim if they have one.
   if (ogImageUrl) {
@@ -87,22 +93,10 @@ export default async function Image() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: `linear-gradient(140deg, ${primary}3a 0%, #0b0b11 48%, #07070b 100%)`,
+          background: cardBg,
           position: 'relative',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-120px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '680px',
-            height: '440px',
-            background: `radial-gradient(circle, ${primary}33 0%, transparent 70%)`,
-            borderRadius: '50%',
-          }}
-        />
         <div
           style={{
             width: '132px',
@@ -124,7 +118,7 @@ export default async function Image() {
           style={{
             fontSize: '64px',
             fontWeight: 700,
-            color: '#fafafa',
+            color: cardFg,
             textAlign: 'center',
             maxWidth: '980px',
             lineHeight: 1.1,
@@ -137,7 +131,7 @@ export default async function Image() {
           style={{
             marginTop: '20px',
             fontSize: '30px',
-            color: 'rgba(250,250,250,0.6)',
+            color: cardSub,
             textAlign: 'center',
             maxWidth: '900px',
             display: 'flex',
