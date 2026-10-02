@@ -15,7 +15,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Loader2, ArrowLeft, Send, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, MessageSquare, ShieldCheck, Plus } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 interface ThreadRow {
@@ -72,6 +72,8 @@ export default function PlatformMessages({
   const [threadLoading, setThreadLoading] = useState(false);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [composeText, setComposeText] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
@@ -95,6 +97,27 @@ export default function PlatformMessages({
   }, [agencyId, backendUrl, onUnreadChange]);
 
   useEffect(() => { loadThreads(); }, [loadThreads]);
+
+  const sendNew = async () => {
+    const body = composeText.trim();
+    if (!body || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/platform-threads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) throw new Error('send failed');
+      setComposeText('');
+      setComposing(false);
+      await loadThreads();
+    } catch (e) {
+      console.error('New platform message error:', e);
+    } finally {
+      setSending(false);
+    }
+  };
   useEffect(() => { if (openId) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, openId]);
 
   const openThread = async (id: string) => {
@@ -151,6 +174,33 @@ export default function PlatformMessages({
     return (
       <div className="max-w-[1400px] p-12 flex items-center justify-center" style={panel}>
         <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+      </div>
+    );
+  }
+
+  // ---- Compose a new message to the platform ----
+  if (composing) {
+    return (
+      <div className="max-w-[1400px]" style={panel}>
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <button onClick={() => { setComposing(false); setComposeText(''); }} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
+            <ArrowLeft className="h-4 w-4" /> All messages
+          </button>
+          <span className="text-sm font-medium" style={{ color: theme.text }}>Message VoiceAI Connect</span>
+        </div>
+        <div className="p-4 space-y-3">
+          <textarea value={composeText} onChange={(e) => setComposeText(e.target.value)} rows={5} autoFocus
+            placeholder="What do you need help with? The VoiceAI Connect team will see this and reply right here."
+            className="w-full rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none"
+            style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : theme.card, border: `1px solid ${theme.border}`, color: theme.text }} />
+          <div className="flex justify-end">
+            <button onClick={sendNew} disabled={!composeText.trim() || sending}
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+              style={{ backgroundColor: theme.primary, color: '#fff' }}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -232,12 +282,22 @@ export default function PlatformMessages({
         <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
           Replies to your support requests and platform updates will show up here.
         </p>
+        <button onClick={() => setComposing(true)} className="mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: '#fff' }}>
+          <Plus className="h-4 w-4" /> New message to VoiceAI Connect
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1400px] divide-y" style={{ ...panel, borderColor: theme.border }}>
+    <div className="max-w-[1400px]" style={panel}>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
+        <span className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</span>
+        <button onClick={() => setComposing(true)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: rgba(theme.primary, 0.1), border: `1px solid ${rgba(theme.primary, 0.3)}`, color: theme.primary }}>
+          <Plus className="h-3.5 w-3.5" /> New message
+        </button>
+      </div>
+      <div className="divide-y" style={{ borderColor: theme.border }}>
       {threads.map(t => {
         const unread = (t.agency_unread || 0) > 0;
         const last = t.last_reply_at || t.created_at;
@@ -263,6 +323,7 @@ export default function PlatformMessages({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
