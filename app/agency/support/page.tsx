@@ -60,6 +60,14 @@ export default function SupportPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Prefill from the dashboard command bar handoff: /agency/support?q=...
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('q');
+      if (q) { setInput(q); inputRef.current?.focus(); }
+    } catch { /* ignore */ }
+  }, []);
+
   const sendMessage = async (content: string) => {
     if (!content.trim() || sending || !agency) return;
 
