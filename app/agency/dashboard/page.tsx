@@ -9,6 +9,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import PlatformUnreadNudge from '@/components/agency/PlatformUnreadNudge';
+import NeedToSearch from '@/components/agency/NeedToSearch';
 import { DEMO_DASHBOARD } from '../demoData';
 import SetupChecklist from '@/components/agency/SetupChecklist';
 
@@ -204,6 +205,9 @@ export default function AgencyDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* "I need to..." command bar: jump to any action or hand off to support */}
+      <NeedToSearch />
 
       {/* Header */}
       <div className="mb-6 sm:mb-8 flex items-start justify-between">

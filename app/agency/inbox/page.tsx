@@ -27,6 +27,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import PlatformMessages from '@/components/agency/PlatformMessages';
+import AgencyClientThread from '@/components/agency/AgencyClientThread';
 
 interface SupportRequest {
   id: string;
@@ -478,6 +479,11 @@ export default function AgencyInboxPage() {
                                   )}
                                 </div>
                               </div>
+                              {req.user_type === 'client' && (
+                                <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${cardBorder}` }}>
+                                  <AgencyClientThread agencyId={agencyId as string} backendUrl={backendUrl} requestId={req.id} requesterName={req.requester_name} onReplied={fetchRequests} />
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>

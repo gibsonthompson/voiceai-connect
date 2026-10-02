@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import ClientAgencyMessages from '@/components/client/ClientAgencyMessages';
 
 interface Conversation {
   id: string; client_id: string; caller_phone: string; caller_name: string | null;
@@ -56,6 +57,12 @@ const ANIM = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opa
 export default function MessagesPage() {
   const { client, loading } = useClient();
   const theme = useClientTheme();
+  const [channel, setChannel] = useState<'customers' | 'agency'>('customers');
+  const [agencyUnread, setAgencyUnread] = useState(0);
+  const agencyName = client?.agency?.name || 'Your provider';
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('channel') === 'agency') setChannel('agency');
+  }, []);
   const primaryColor = theme?.primary || '#3b82f6';
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -203,7 +210,26 @@ export default function MessagesPage() {
   const showThread = !!activeConv;
 
   return (
-    <div className="flex h-[calc(100vh-64px)]" style={{ backgroundColor: theme.bg }}>
+    <div className="flex flex-col h-[calc(100vh-64px)]" style={{ backgroundColor: theme.bg }}>
+      <div className="px-4 pt-3 pb-2 flex items-center gap-2 shrink-0">
+        {([{ key: 'customers', label: 'Customers' }, { key: 'agency', label: agencyName }] as const).map((opt) => {
+          const active = channel === opt.key;
+          return (
+            <button key={opt.key} onClick={() => setChannel(opt.key as 'customers' | 'agency')}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{ backgroundColor: active ? theme.primary15 : 'transparent', border: `1px solid ${active ? theme.primary30 : theme.border}`, color: active ? theme.primary : theme.textMuted }}>
+              {opt.label}
+              {opt.key === 'agency' && agencyUnread > 0 && (
+                <span className="inline-flex items-center justify-center rounded-full text-[10px] font-semibold" style={{ minWidth: 16, height: 16, padding: '0 4px', backgroundColor: theme.primary, color: theme.primaryText }}>{agencyUnread}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {channel === 'agency' ? (
+        <div className="flex-1 overflow-y-auto p-4"><div className="max-w-2xl mx-auto"><ClientAgencyMessages onUnreadChange={setAgencyUnread} /></div></div>
+      ) : (
+      <div className="flex flex-1 min-h-0">
       <style dangerouslySetInnerHTML={{ __html: ANIM }} />
 
       {/* Conversation List */}
@@ -395,6 +421,8 @@ export default function MessagesPage() {
             <p className="text-[10px] mt-2 text-center" style={{ color: theme.textMuted4 }}>To text an existing contact, open Contacts and tap the message icon.</p>
           </div>
         </div>
+      )}
+      </div>
       )}
     </div>
   );
