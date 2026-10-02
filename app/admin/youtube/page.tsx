@@ -175,17 +175,20 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
 
   const restart = () => { setWordIndex(-1); setPlaying(false); };
 
+  // Mercedes-AMG Petronas palette: teal, bright teal, silver, graphite.
+  const TEAL = '#00D2BE';
   const segmentColors: Record<string, string> = {
-    hook: '#10b981', context: '#3b82f6', payload: '#8b5cf6',
-    bridge: '#f59e0b', default: '#6b7280',
+    hook: '#00D2BE', context: '#9CA3AF', payload: '#27F4D2',
+    bridge: '#6B7280', default: '#C7C9CC',
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#030303] flex flex-col">
+    <div className="fixed inset-0 z-[200] flex flex-col" style={{ backgroundColor: '#0A0A0A', fontFamily: "'Rajdhani', system-ui, sans-serif" }}>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" />
       {/* Countdown overlay */}
       {countdown !== null && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80">
-          <span className="text-[120px] font-bold text-white/90 animate-pulse">{countdown}</span>
+          <span className="text-[160px] font-bold animate-pulse" style={{ color: TEAL }}>{countdown}</span>
         </div>
       )}
 
@@ -196,12 +199,12 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
             <X className="w-5 h-5" />
           </button>
           <div>
-            <p className="text-xs text-white/30 font-mono uppercase tracking-wider">Teleprompter</p>
-            <p className="text-sm text-white/70 font-medium truncate max-w-md">{title}</p>
+            <p className="text-xs uppercase tracking-[0.25em] font-bold" style={{ color: TEAL }}>VoiceAI Connect<span className="text-white/25 ml-2.5 font-medium tracking-wider">TELEPROMPTER</span></p>
+            <p className="text-sm text-white/80 font-semibold truncate max-w-md">{title}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setMirrored(!mirrored)} className={`p-2 rounded-lg transition-colors ${mirrored ? 'bg-emerald-500/15 text-emerald-400' : 'text-white/30 hover:text-white/60 hover:bg-white/[0.06]'}`} title="Mirror mode">
+          <button onClick={() => setMirrored(!mirrored)} className="p-2 rounded-lg transition-colors text-white/30 hover:text-white/60 hover:bg-white/[0.06]" style={mirrored ? { backgroundColor: 'rgba(0,210,190,0.15)', color: TEAL } : undefined} title="Mirror mode">
             <Monitor className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2 py-1">
@@ -221,7 +224,7 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
 
       {/* Progress bar */}
       <div className="h-0.5 bg-white/[0.04] flex-shrink-0">
-        <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="h-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #00D2BE, #27F4D2)' }} />
       </div>
 
       {/* Script body */}
@@ -274,7 +277,7 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
         </button>
         <button onClick={handlePlayPause}
           className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
-          style={{ backgroundColor: playing ? 'rgba(255,255,255,0.1)' : '#10b981', color: playing ? '#ffffff' : '#000000' }}>
+          style={{ backgroundColor: playing ? 'rgba(255,255,255,0.1)' : '#00D2BE', color: playing ? '#ffffff' : '#0A0A0A' }}>
           {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
         </button>
         <div className="text-[11px] font-mono text-white/30 w-24 text-center">
@@ -360,6 +363,7 @@ function parseScript(text: string): { type: string; label: string; words: { text
 // BADGES
 // ═══════════════════════════════════════════════════════════════════
 function PillarBadge({ pillar }: { pillar: string }) {
+  if (!pillar) return null;
   const meta = PILLAR_META[pillar] || { label: pillar, color: '#5A6E62', icon: Lightbulb };
   return (
     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
@@ -511,19 +515,18 @@ export default function AdminYouTubePage() {
       {showPaste && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !creatingPaste && setShowPaste(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="relative w-full max-w-5xl h-[88vh] rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--a-line)]">
               <h3 className="text-sm font-semibold text-[var(--a-ink)]">New script</h3>
               <button onClick={() => setShowPaste(false)} className="p-1 rounded-lg text-[var(--a-dim)] hover:text-[var(--a-ink)] transition-colors"><X className="w-4 h-4" /></button>
             </div>
-            <div className="p-5 space-y-3 overflow-y-auto">
+            <div className="p-5 flex-1 flex flex-col gap-3 min-h-0">
               <input type="text" value={pasteTitle} onChange={e => setPasteTitle(e.target.value)}
-                placeholder="Title (optional — uses the first line if left blank)"
-                className="a-input w-full" />
+                placeholder="Title (optional, uses the first line if left blank)"
+                className="a-input w-full shrink-0" />
               <textarea value={pasteScript} onChange={e => setPasteScript(e.target.value)}
                 placeholder="Paste your script here..."
-                rows={16}
-                className="a-input w-full resize-y font-mono text-[13px] leading-relaxed"
+                className="a-input w-full flex-1 resize-none font-mono text-sm leading-relaxed min-h-0"
                 style={{ whiteSpace: 'pre-wrap' }}
                 autoFocus />
             </div>
@@ -729,12 +732,6 @@ export default function AdminYouTubePage() {
                           <button onClick={() => setTeleprompterIdea(idea)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.em}>
                             <Play className="w-3 h-3" />Record Mode
-                          </button>
-                        )}
-                        {idea.status === 'scripted' && (
-                          <button onClick={() => updateIdea(idea.id, { status: 'recorded' })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.cyan}>
-                            <Check className="w-3 h-3" />Mark Recorded
                           </button>
                         )}
                         <button onClick={() => updateIdea(idea.id, { status: 'archived' })}
