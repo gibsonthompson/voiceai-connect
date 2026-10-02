@@ -35,7 +35,6 @@ export async function GET() {
   let tagline = '';
   let primary = '#6366f1';
   let logoUrl: string | null = null;
-  let logoBg: string | null = null;
   let ogImageUrl: string | null = null;
   let ogTitle: string | null = null;
   let ogDescription: string | null = null;
@@ -61,7 +60,6 @@ export async function GET() {
           tagline = a.company_tagline || tagline;
           primary = a.primary_color || primary;
           logoUrl = a.logo_url || null;
-          logoBg = a.logo_background_color || null;
           ogImageUrl = a.og_image_url || null;
           ogTitle = a.og_title || null;
           ogDescription = a.og_description || null;
@@ -77,7 +75,6 @@ export async function GET() {
   const cardBg = dark ? '#0a0a0a' : '#ffffff';
   const cardFg = dark ? '#fafafa' : '#111827';
   const cardSub = dark ? 'rgba(250,250,250,0.65)' : '#6b7280';
-  const chipBorder = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
 
   // 1. Re-serve the agency's own uploaded OG image verbatim if they have one.
   if (ogImageUrl) {
@@ -113,23 +110,8 @@ export async function GET() {
         }}
       >
         {logoUrl ? (
-          <div
-            style={{
-              width: '132px',
-              height: '132px',
-              borderRadius: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: logoBg || '#ffffff',
-              border: `1px solid ${chipBorder}`,
-              marginBottom: '40px',
-              overflow: 'hidden',
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoUrl} width={108} height={108} style={{ objectFit: 'contain' }} alt="" />
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} width={240} height={240} style={{ objectFit: 'contain', marginBottom: '36px' }} alt="" />
         ) : (
           <div
             style={{
