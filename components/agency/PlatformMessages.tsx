@@ -74,6 +74,7 @@ export default function PlatformMessages({
   const [sending, setSending] = useState(false);
   const [composing, setComposing] = useState(false);
   const [composeText, setComposeText] = useState('');
+  const [composeError, setComposeError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
@@ -102,18 +103,22 @@ export default function PlatformMessages({
     const body = composeText.trim();
     if (!body || sending) return;
     setSending(true);
+    setComposeError('');
     try {
       const res = await fetch(`${backendUrl}/api/agency/${agencyId}/platform-threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
         body: JSON.stringify({ body }),
       });
-      if (!res.ok) throw new Error('send failed');
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) throw new Error((data && data.error) || `Couldn't send your message (${res.status}).`);
       setComposeText('');
       setComposing(false);
       await loadThreads();
-    } catch (e) {
-      console.error('New platform message error:', e);
+      // Open the new thread so the send is visibly confirmed.
+      if (data && data.request && data.request.id) openThread(data.request.id);
+    } catch (e: any) {
+      setComposeError((e && e.message) || 'Could not send your message. Please try again.');
     } finally {
       setSending(false);
     }
@@ -183,7 +188,7 @@ export default function PlatformMessages({
     return (
       <div className="max-w-[1400px]" style={panel}>
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <button onClick={() => { setComposing(false); setComposeText(''); }} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
+          <button onClick={() => { setComposing(false); setComposeText(''); setComposeError(''); }} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
             <ArrowLeft className="h-4 w-4" /> All messages
           </button>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Message VoiceAI Connect</span>
@@ -193,7 +198,8 @@ export default function PlatformMessages({
             placeholder="What do you need help with? The VoiceAI Connect team will see this and reply right here."
             className="w-full rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none"
             style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : theme.card, border: `1px solid ${theme.border}`, color: theme.text }} />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs" style={{ color: '#ef4444' }}>{composeError}</span>
             <button onClick={sendNew} disabled={!composeText.trim() || sending}
               className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50"
               style={{ backgroundColor: theme.primary, color: '#fff' }}>
@@ -282,7 +288,7 @@ export default function PlatformMessages({
         <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
           Replies to your support requests and platform updates will show up here.
         </p>
-        <button onClick={() => setComposing(true)} className="mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: '#fff' }}>
+        <button onClick={() => { setComposing(true); setComposeError(''); }} className="mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: '#fff' }}>
           <Plus className="h-4 w-4" /> New message to VoiceAI Connect
         </button>
       </div>
@@ -293,7 +299,7 @@ export default function PlatformMessages({
     <div className="max-w-[1400px]" style={panel}>
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <span className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</span>
-        <button onClick={() => setComposing(true)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: rgba(theme.primary, 0.1), border: `1px solid ${rgba(theme.primary, 0.3)}`, color: theme.primary }}>
+        <button onClick={() => { setComposing(true); setComposeError(''); }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: rgba(theme.primary, 0.1), border: `1px solid ${rgba(theme.primary, 0.3)}`, color: theme.primary }}>
           <Plus className="h-3.5 w-3.5" /> New message
         </button>
       </div>
