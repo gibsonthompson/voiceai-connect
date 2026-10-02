@@ -41,6 +41,7 @@ export default function AdminCallsPage() {
   const [appliedSearch, setAppliedSearch] = useState('');
   const [agencyId, setAgencyId] = useState('');
   const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; business_name: string }[]>([]);
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const [openAgencyId, setOpenAgencyId] = useState<string | null>(null);
@@ -55,6 +56,12 @@ export default function AdminCallsPage() {
     return m;
   }, [agencies]);
   const resolveAgencyId = (name: string | null) => (name ? agencyIdByName[name.toLowerCase()] || null : null);
+  const clientIdByName = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of clients) if (c.business_name) m[c.business_name.toLowerCase()] = c.id;
+    return m;
+  }, [clients]);
+  const resolveClientId = (name: string | null) => (name ? clientIdByName[name.toLowerCase()] || null : null);
 
   const openCall = (c: CallRow) => { setOpenId(c.id); setOpenAgencyId(resolveAgencyId(c.agency_name)); };
 
@@ -85,6 +92,8 @@ export default function AdminCallsPage() {
       try {
         const data = await adminGet('/api/admin/agencies?limit=200');
         setAgencies((data.agencies || []).map((a: any) => ({ id: a.id, name: a.name })));
+        const cdata = await adminGet('/api/admin/clients?limit=1000');
+        setClients((cdata.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name })));
       } catch (e) {
         console.error(e);
       }
@@ -160,6 +169,7 @@ export default function AdminCallsPage() {
                 calls.map((c) => {
                   const o = deriveCallOutcome(c);
                   const aid = resolveAgencyId(c.agency_name);
+                  const cid = resolveClientId(c.business_name);
                   return (
                     <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
                       <td>
@@ -168,7 +178,11 @@ export default function AdminCallsPage() {
                       </td>
                       <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
                       <td>
-                        <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
+                        {cid ? (
+                          <Link href={`/admin/clients/${cid}`} onClick={(e) => e.stopPropagation()} className="block text-[var(--a-ink)] hover:text-[var(--a-em-deep)] transition-colors">{c.business_name || 'Unknown client'}</Link>
+                        ) : (
+                          <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
+                        )}
                         {aid ? (
                           <Link href={`/admin/agencies?expand=${aid}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-[11.5px] text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors">
                             <Building2 className="h-3 w-3" />{c.agency_name}
