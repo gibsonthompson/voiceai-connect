@@ -75,6 +75,7 @@ export async function GET() {
   const showHeadline = !!headlineText;
   const showDesc = !!descText;
   const logoMb = (showHeadline || showDesc) ? '36px' : '0';
+  const logoSize = (showHeadline || showDesc) ? 300 : 480;
   const descMt = showHeadline ? '20px' : '0';
   const dark = (websiteTheme || 'light') === 'dark';
   const cardBg = dark ? '#0a0a0a' : '#ffffff';
@@ -116,7 +117,7 @@ export async function GET() {
       >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} width={240} height={240} style={{ objectFit: 'contain', marginBottom: logoMb }} alt="" />
+          <img src={logoUrl} width={logoSize} height={logoSize} style={{ objectFit: 'contain', marginBottom: logoMb }} alt="" />
         ) : (
           <div
             style={{

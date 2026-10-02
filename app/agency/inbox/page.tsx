@@ -479,9 +479,9 @@ export default function AgencyInboxPage() {
                                   )}
                                 </div>
                               </div>
-                              {req.user_type === 'client' && (
+                              {(req.user_type === 'client' || req.client_id || (req.contact && !isEmail(req.contact))) && (
                                 <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${cardBorder}` }}>
-                                  <AgencyClientThread agencyId={agencyId as string} backendUrl={backendUrl} requestId={req.id} requesterName={req.requester_name} onReplied={fetchRequests} />
+                                  <AgencyClientThread agencyId={agencyId as string} backendUrl={backendUrl} requestId={req.id} requesterName={req.requester_name} recipientKind={(req.user_type === 'client' || req.client_id) ? 'client' : 'visitor'} onReplied={fetchRequests} />
                                 </div>
                               )}
                             </div>

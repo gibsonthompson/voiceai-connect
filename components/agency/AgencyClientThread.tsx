@@ -29,6 +29,7 @@ interface Props {
   backendUrl: string;
   requestId: string;
   requesterName?: string | null;
+  recipientKind?: 'client' | 'visitor';
   onReplied?: () => void;
 }
 
@@ -38,7 +39,7 @@ function fmt(iso: string): string {
   } catch { return ''; }
 }
 
-export default function AgencyClientThread({ agencyId, backendUrl, requestId, requesterName, onReplied }: Props) {
+export default function AgencyClientThread({ agencyId, backendUrl, requestId, requesterName, recipientKind = 'client', onReplied }: Props) {
   const theme = useTheme();
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
 
@@ -89,7 +90,7 @@ export default function AgencyClientThread({ agencyId, backendUrl, requestId, re
     }
   };
 
-  const theirLabel = requesterName || 'Client';
+  const theirLabel = requesterName || (recipientKind === 'visitor' ? 'visitor' : 'Client');
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
@@ -138,7 +139,9 @@ export default function AgencyClientThread({ agencyId, backendUrl, requestId, re
         </button>
       </div>
       <div className="px-4 pb-3 text-[11px]" style={{ color: theme.textMuted }}>
-        Your reply is sent to the client in their dashboard and they get a text to check it.
+        {recipientKind === 'visitor'
+          ? 'This visitor has no dashboard, so your reply is texted straight to their number.'
+          : 'Your reply is sent to the client in their dashboard and they get a text to check it.'}
       </div>
     </div>
   );
