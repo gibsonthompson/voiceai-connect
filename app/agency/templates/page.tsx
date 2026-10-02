@@ -197,6 +197,9 @@ export default function AILabPage() {
   const { agency, loading: ctxLoading } = useAgency();
   const theme = useTheme();
   const { canUseAiLab, canUseIndustryTemplates } = usePlanFeatures();
+  const _subStatus = agency?.subscription_status;
+  const isTrial = _subStatus === 'trial' || _subStatus === 'trialing';
+  const showScaleTrialNote = canUseAiLab && isTrial && agency?.plan_type !== 'scale';
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 
@@ -420,6 +423,16 @@ export default function AILabPage() {
       )}
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between mb-6"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-sm sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div></div>
+
+        {showScaleTrialNote && (
+          <div className="mb-6 rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
+            <Sparkles className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: theme.text }}>AI Lab is a Scale feature</p>
+              <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>You have full access while you're on your free trial. It's included on the Scale plan, upgrade before your trial ends to keep it.</p>
+            </div>
+          </div>
+        )}
 
         {!vapiKey && (<div className="mb-6 rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.08)' : '#fffbeb', border: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.2)' : '#fde68a'}` }}><AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} /><div><p className="font-medium text-sm" style={{ color: theme.text }}>Live calling requires VAPI Public Key</p><p className="text-sm mt-1" style={{ color: theme.textMuted }}>Add <code className="px-1.5 py-0.5 rounded text-sm" style={{ backgroundColor: theme.hover }}>NEXT_PUBLIC_VAPI_PUBLIC_KEY</code> to Vercel.</p></div></div>)}
 
