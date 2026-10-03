@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import {
-  MessageSquare, Search, Loader2, Save, RotateCcw, Check, AlertCircle, X,
+  MessageSquare, Search, Loader2, Save, RotateCcw, Check, AlertCircle, X, Send,
   ChevronDown, ChevronRight, Eye, EyeOff, Phone, Building2, Clock,
   ArrowLeft, ArrowRight,
 } from 'lucide-react';
@@ -50,6 +50,9 @@ function SmsLogTab() {
   const [threadPhone, setThreadPhone] = useState<string | null>(null);
   const [threadData, setThreadData] = useState<{ phone: string; agency_name: string | null; messages: any[] } | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   const [typeFilter, setTypeFilter] = useState('');
   const [recipientFilter, setRecipientFilter] = useState('');
@@ -106,13 +109,29 @@ function SmsLogTab() {
   };
   const openThread = async (phone: string) => {
     if (!phone) return;
-    setThreadPhone(phone); setThreadData(null); setThreadLoading(true);
+    setThreadPhone(phone); setThreadData(null); setThreadLoading(true); setReplyText(''); setReplyError('');
     try {
       const res = await fetch(`${backendUrl()}/api/admin/sms-log/thread?phone=${encodeURIComponent(phone)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
       const data = await res.json();
       setThreadData(res.ok ? data : { phone, agency_name: null, messages: [] });
     } catch { setThreadData({ phone, agency_name: null, messages: [] }); }
     finally { setThreadLoading(false); }
+  };
+  const sendReply = async () => {
+    const text = replyText.trim();
+    if (!text || !threadPhone) return;
+    setSendingReply(true); setReplyError('');
+    try {
+      const res = await fetch(`${backendUrl()}/api/admin/sms-log/thread/reply`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ phone: threadPhone, message: text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      setThreadData((prev) => prev ? { ...prev, messages: [...prev.messages, data.message] } : prev);
+      setReplyText('');
+    } catch (e: any) { setReplyError(e?.message || 'Could not send reply'); }
+    finally { setSendingReply(false); }
   };
 
   return (
@@ -366,6 +385,23 @@ function SmsLogTab() {
                   );
                 })
               )}
+            </div>
+            <div className="p-3" style={{ borderTop: '1px solid var(--a-line)' }}>
+              <div className="flex items-center gap-2">
+                <input
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                  placeholder="Reply from the platform number..."
+                  disabled={sendingReply}
+                  className="flex-1 rounded-lg px-3 py-2 text-sm"
+                  style={{ backgroundColor: '#fff', border: '1px solid var(--a-line)', color: 'var(--a-ink)' }}
+                />
+                <button onClick={sendReply} disabled={sendingReply || !replyText.trim()} className="rounded-lg px-3.5 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5" style={{ backgroundColor: 'var(--a-em-deep)', color: '#fff' }}>
+                  {sendingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+              {replyError && <p className="text-[11px] mt-1" style={{ color: '#dc2626' }}>{replyError}</p>}
             </div>
           </div>
         </div>
