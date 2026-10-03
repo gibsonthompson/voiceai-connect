@@ -248,6 +248,14 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     ? agency.logo_background_color
     : 'transparent';
 
+  // Derived signup claims: reflect the agency's real billing settings so the
+  // marketing copy never contradicts them. cardRequired hides "no credit card
+  // required"; trialDays replaces the hardcoded 7. setupTime stays agency-editable
+  // through stats.setupTime, so it is not computed here.
+  const _cardRequired = (agency as any).require_card_for_trial === true && (agency as any).stripe_charges_enabled === true;
+  const _rawTrial = Number((agency as any).client_trial_days);
+  const _trialDays = Number.isFinite(_rawTrial) ? Math.max(0, Math.min(365, _rawTrial)) : 7;
+
   // Build marketing config
   const marketingConfig: Partial<MarketingConfig> = {
     theme: agency.website_theme || 'light',
@@ -256,6 +264,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     currencyRate,
     currencySymbolPosition,
     homepageUrl,
+    signup: { cardRequired: _cardRequired, trialDays: _trialDays },
     branding: {
       name: agency.name,
       logoUrl: agency.logo_url || '',

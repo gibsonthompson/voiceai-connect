@@ -170,6 +170,10 @@ export interface MarketingConfig {
   clientLoginPath?: string;
   // Agency-defined external links rendered in the marketing header + footer.
   customNavLinks?: CustomNavLink[];
+  // Derived at render from the agency's billing settings (NOT user-edited): lets
+  // templates reflect the real trial length and hide "no credit card required"
+  // when a card is actually required. setupTime stays editable via stats.setupTime.
+  signup?: { cardRequired: boolean; trialDays: number };
 }
 
 // ============================================================================

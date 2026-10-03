@@ -39,13 +39,21 @@ function buildFaqCategories(agency: Agency) {
   const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
   const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 99;
   const highestPrice = agency.price_growth ? Math.round(agency.price_growth / 100) : 299;
+  // Billing-aware FAQ copy so answers never contradict the agency's real offer.
+  const _cardRequired = (agency as any).require_card_for_trial === true && (agency as any).stripe_charges_enabled === true;
+  const _rawTrial = Number((agency as any).client_trial_days);
+  const _trialDays = Number.isFinite(_rawTrial) ? Math.max(0, Math.min(365, _rawTrial)) : 7;
+  const _setupTime = ((agency as any).marketing_config?.stats?.setupTime || '10 minutes');
+  const _trialAnswer = _trialDays > 0
+    ? `Yes! New accounts include a ${_trialDays}-day free trial so you can experience the AI receptionist with real calls before committing. ${_cardRequired ? 'A card is required to start your trial.' : 'No credit card is required to start.'}`
+    : `New accounts are set up to start right away. ${_cardRequired ? 'A card is required when you sign up.' : 'No credit card is required to get started.'}`;
 
   return [
   {
     name: 'Getting Started',
     faqs: [
       { q: 'What is an AI receptionist?', a: 'An AI receptionist is a virtual phone agent that answers your business calls 24/7. It sounds natural, can answer questions about your business, take messages, book appointments to your Google Calendar, and send you a text summary after every call. It works just like a human receptionist, except it never misses a call, handles unlimited simultaneous calls, and costs a fraction of the price.' },
-      { q: 'How do I get set up?', a: 'Setup takes about 10 minutes. You\'ll enter your business name, industry, phone number, and some details about your services and hours. If you have a website, the AI can scan it automatically to learn about your business. Once you\'re set up, you just forward your existing phone number to your new AI number and you\'re live.' },
+      { q: 'How do I get set up?', a: 'Setup takes about ' + _setupTime + '. You\'ll enter your business name, industry, phone number, and some details about your services and hours. If you have a website, the AI can scan it automatically to learn about your business. Once you\'re set up, you just forward your existing phone number to your new AI number and you\'re live.' },
       { q: 'Do I need a website for this to work?', a: 'No. All you need is a phone number. You can forward your existing business line to your AI number, or use the AI number directly on your website, business cards, and ads. If you do have a website, the AI can scan it to learn about your business, but it\'s completely optional.' },
       { q: 'What information do I need to provide?', a: 'Just the basics: your business name, industry, phone number, and information about your services, hours, and common questions. Everything is entered through your dashboard, no files to send. The more detail you provide about your services and FAQs, the better the AI handles calls.' },
     ],
@@ -113,7 +121,7 @@ function buildFaqCategories(agency: Agency) {
     name: 'Pricing & Billing',
     faqs: [
       { q: 'How much does this cost?', a: `Plans range from ${cs}${lowestPrice} to ${cs}${highestPrice}/month for 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking. Visit our pricing page for current plan details.` },
-      { q: 'Is there a free trial?', a: 'Yes! New accounts include a free trial period so you can experience the AI receptionist with real calls before committing. No credit card is required to start.' },
+      { q: 'Is there a free trial?', a: _trialAnswer },
       { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified when you\'re approaching your limit. Depending on your plan, you can upgrade mid-cycle or pay a small per-call overage fee. No surprise bills, you\'ll always know before it happens.' },
       { q: 'Can I cancel anytime?', a: 'Yes. There are no long-term contracts or cancellation fees. You can cancel from your dashboard settings at any time.' },
     ],

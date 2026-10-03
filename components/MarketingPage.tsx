@@ -283,8 +283,8 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="cta-box">
-          <a href="/signup" className="btn-large btn-primary">Start Your 7-Day Free Trial</a>
-          <p className="cta-subtext">No credit card required. Your AI receptionist is ready in 10 minutes.</p>
+          <a href="/signup" className="btn-large btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>
+          <p className="cta-subtext">{config.signup?.cardRequired ? '' : 'No credit card required. '}Your AI receptionist is ready{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}.</p>
         </div>
       </div>
     </section>
@@ -478,7 +478,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
   const oursLowest = pos === 'after' ? `${lowestPrice} ${cs}` : `${cs}${lowestPrice}`;
   const comparisonData = [
     { label: 'Monthly Cost', ours: oursMonthly, human: moneyRange(3000, 4500), ruby: moneyRange(299, 600), vm: money(0) },
-    { label: 'Setup Time', ours: '10 min', human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant' },
+    { label: 'Setup Time', ours: (config.stats?.setupTime || '10 min'), human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant' },
     { label: 'Available', ours: '24/7/365', human: 'Business hours', ruby: '24/7', vm: '24/7' },
     { label: 'Books to Google Calendar', ours: '✓', human: '✓', ruby: '✓', vm: '✗' },
     { label: 'Google Calendar', ours: '✓', human: '✓', ruby: '✗', vm: '✗' },
@@ -625,7 +625,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="pricing-guarantee">
-          <p><strong>All plans include:</strong> 7-day free trial (no credit card required) • Cancel anytime • Setup in under 10 minutes</p>
+          <p><strong>All plans include:</strong> {[config.signup?.trialDays !== 0 ? `${config.signup?.trialDays ?? 7}-day free trial${config.signup?.cardRequired ? '' : ' (no credit card required)'}` : null, 'Cancel anytime', config.stats?.setupTime ? `Setup in ${config.stats.setupTime}` : null].filter(Boolean).join(' • ')}</p>
           {config.footer.email && <p className="pricing-custom">Have 500+ calls per month? <a href={`mailto:${config.footer.email}`}>Contact us for custom pricing →</a></p>}
         </div>
       </div>
@@ -690,11 +690,11 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
             )}
             <div className="cta-box-secondary" style={{ background: contrastColors.buttonBg }}>
               <a href="/signup" className="btn-large btn-primary" style={{ background: contrastColors.isLight ? branding.primaryHoverColor : 'white', color: contrastColors.isLight ? 'white' : branding.primaryColor }}>
-                Start Your 7-Day Free Trial
+                {config.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${config.signup?.trialDays ?? 7}-Day Free Trial`}
               </a>
               <div className="cta-benefits">
-                <span style={{ color: contrastColors.text }}>✓ Setup in 10 minutes</span>
-                <span style={{ color: contrastColors.text }}>✓ No credit card required</span>
+                {config.stats?.setupTime && <span style={{ color: contrastColors.text }}>✓ Setup in {config.stats.setupTime}</span>}
+                {!config.signup?.cardRequired && <span style={{ color: contrastColors.text }}>✓ No credit card required</span>}
                 <span style={{ color: contrastColors.text }}>✓ Cancel anytime</span>
               </div>
             </div>

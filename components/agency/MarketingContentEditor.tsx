@@ -359,6 +359,9 @@ export default function MarketingContentEditor({
       {/* ── STATS ─────────────────────────────────────────────────────── */}
       <Section title="Stats Bar" icon={BarChart3} description="Key numbers shown below the hero"
         isOpen={openSections.has('stats')} onToggle={() => toggleSection('stats')} {...sectionTheme}>
+        <p style={{ fontSize: '0.75rem', color: mutedTextColor, marginBottom: '0.75rem', lineHeight: 1.5 }}>
+          &quot;Setup Time&quot; also sets the &quot;Setup in [X]&quot; wording across your site (hero, pricing, and the final call-to-action). Clear it to hide those. Your trial length and the &quot;No credit card required&quot; line show automatically from your billing settings (Settings &rarr; Billing), so there is nothing to edit for those here.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           {([
             { key: 'setupTime' as const, label: 'Setup Time', placeholder: '10 min' },

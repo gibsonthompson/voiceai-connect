@@ -200,7 +200,7 @@ function Nav({ config }: { config: MarketingConfig }) {
         <div className="bsd-nav-actions">
           {config.clientLoginPath && <a href={config.clientLoginPath} className="bsd-nav-login">Client login</a>}
           {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="bsd-btn bsd-btn-ghost bsd-btn-sm bsd-nav-call">Call us</a>}
-          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
         </div>
       </div>
     </nav>
@@ -226,7 +226,7 @@ function Hero({ config }: { config: MarketingConfig }) {
           <p className="bsd-hero-price">{subtitle}</p>
           <p className="bsd-hero-desc">{hero.description}</p>
           <div className="bsd-hero-ctas">
-            <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start free trial, 7 days free</a>
+            <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">{config.signup?.trialDays === 0 ? 'Get Started' : `Start free trial, ${config.signup?.trialDays ?? 7} days free`}</a>
             {hero.demoPhone
               ? <a href="/demo" className="bsd-btn bsd-btn-ghost bsd-btn-lg">{Icons.phone}Try live demo</a>
               : <a href="#how" className="bsd-btn bsd-btn-ghost bsd-btn-lg">See how it works</a>}
@@ -355,7 +355,7 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">How it works</span>
-          <h2>From signup to your first call in under 10 minutes</h2>
+          <h2>From signup to your first call{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}</h2>
           <p>No, really. We timed it.</p>
         </div>
         <div className="bsd-steps bsd-stagger">
@@ -370,7 +370,7 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
         </div>
         <div className="bsd-steps-cta">
           <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your 7-day free trial</a>
-          <p>No credit card required. Your AI receptionist is ready in 10 minutes.</p>
+          <p>{config.signup?.cardRequired ? '' : 'No credit card required. '}Your AI receptionist is ready{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}.</p>
         </div>
       </div>
     </section>
@@ -539,7 +539,7 @@ function Comparison({ config }: { config: MarketingConfig }) {
 
   const rows = [
     { label: 'Monthly cost', us: ours, human: moneyRange(3000, 4500), svc: moneyRange(299, 600), vm: money(0) },
-    { label: 'Setup time', us: '10 min', human: '2-4 weeks', svc: '3-5 days', vm: 'Instant' },
+    { label: 'Setup time', us: (config.stats?.setupTime || '10 min'), human: '2-4 weeks', svc: '3-5 days', vm: 'Instant' },
     { label: 'Available', us: '24/7/365', human: 'Business hours', svc: '24/7', vm: '24/7' },
     { label: 'Books appointments', us: 'Yes', human: 'Yes', svc: 'Yes', vm: 'No' },
     { label: 'Text summaries', us: 'Yes', human: 'No', svc: 'No', vm: 'No' },
@@ -683,7 +683,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="bsd-pricing-foot">
-          <p>7-day free trial, no credit card required. Cancel anytime. Setup in under 10 minutes.</p>
+          <p>{[config.signup?.trialDays !== 0 ? `${config.signup?.trialDays ?? 7}-day free trial${config.signup?.cardRequired ? '' : ', no credit card required'}` : null, 'Cancel anytime', config.stats?.setupTime ? `Setup in ${config.stats.setupTime}` : null].filter(Boolean).join('. ')}.</p>
           {config.footer.email && <p style={{ marginTop: '0.5rem' }}>Have 500+ calls per month? <a href={`mailto:${config.footer.email}`}>Contact us for custom pricing</a></p>}
         </div>
       </div>
@@ -734,7 +734,7 @@ function FinalCTA({ config, textOnPrimary, mutedOnPrimary }: { config: Marketing
           <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">Start your 7-day free trial</a>
           {hero.demoPhone && <a href={telHref(hero.demoPhone)} className="bsd-final-demo">{Icons.phone}or call the live demo: {hero.demoPhone}</a>}
           <div className="bsd-final-trust">
-            <span>Setup in 10 minutes</span>
+            {config.stats?.setupTime && <span>Setup in {config.stats.setupTime}</span>}
             <span>No credit card required</span>
             <span>Cancel anytime</span>
           </div>
@@ -801,7 +801,7 @@ function StickyCTA({ config }: { config: MarketingConfig }) {
   }, []);
   return (
     <div className={`bsd-sticky${show ? ' show' : ''}`}>
-      <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">Start free trial</a>
+      <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
     </div>
   );
 }

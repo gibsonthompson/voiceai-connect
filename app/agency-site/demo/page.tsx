@@ -224,6 +224,12 @@ export default function DemoPage() {
   const isDark = theme === 'dark';
   const pcLight = isLightColor(pc);
   const textOnPrimary = pcLight ? '#1f2937' : '#ffffff';
+  // Signup claims reflect the agency's real billing settings (same logic as the
+  // marketing templates), so the demo CTA never contradicts their offer.
+  const _cardRequired = (agency as any)?.require_card_for_trial === true && (agency as any)?.stripe_charges_enabled === true;
+  const _rawTrial = Number((agency as any)?.client_trial_days);
+  const _trialDays = Number.isFinite(_rawTrial) ? Math.max(0, Math.min(365, _rawTrial)) : 7;
+  const _setupTime = ((agency as any)?.marketing_config?.stats?.setupTime || '10 minutes');
   const rawDemo = agency.demo_phone || agency.demo_phone_number || '';
   const demoPhone = formatPhoneDisplay(rawDemo);
   const demoHref = telHref(rawDemo);
@@ -277,7 +283,7 @@ export default function DemoPage() {
             </a>
             <div className="nav-actions">
               <a href={homeUrl} className="btn-ghost btn-small">← Back to site</a>
-              <a href="/signup" className="btn-primary btn-small">Start Free Trial</a>
+              <a href="/signup" className="btn-primary btn-small">{_trialDays === 0 ? 'Get Started' : 'Start Free Trial'}</a>
             </div>
           </div>
         </div>
@@ -392,7 +398,7 @@ export default function DemoPage() {
                 <h2 style={{ color: textOnPrimary }}>Ready to Get Started?</h2>
                 <p className="final-cta-text" style={{ color: textOnPrimary, opacity: 0.85 }}>
                   You just experienced what every caller to your business will hear — 24/7, no missed calls, no voicemail.
-                  Start your 7-day free trial and have your own AI receptionist live in under 10 minutes.
+                  {_trialDays === 0 ? 'Get started' : `Start your ${_trialDays}-day free trial`} and have your own AI receptionist live in {_setupTime}.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginTop: '1.5rem' }}>
                   <a href="/signup" className="btn-large" style={{
@@ -401,12 +407,12 @@ export default function DemoPage() {
                     borderRadius: 'var(--radius-full)', fontWeight: 700, textDecoration: 'none',
                     display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                   }}>
-                    Start Your 7-Day Free Trial
+                    {_trialDays === 0 ? 'Get Started' : `Start Your ${_trialDays}-Day Free Trial`}
                     <Icon size="1.25rem"><ArrowRightIcon /></Icon>
                   </a>
                   <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-                    <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ Setup in 10 minutes</span>
-                    <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ No credit card required</span>
+                    <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ Setup in {_setupTime}</span>
+                    {!_cardRequired && <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ No credit card required</span>}
                     <span style={{ color: textOnPrimary, fontWeight: 500, fontSize: '0.875rem' }}>✓ Cancel anytime</span>
                   </div>
                 </div>
@@ -434,11 +440,11 @@ export default function DemoPage() {
                     <a href="/signup" className="btn-large btn-primary" style={{
                       background: pcLight ? sc : 'white', color: pcLight ? 'white' : pc,
                     }}>
-                      Start Your 7-Day Free Trial
+                      {_trialDays === 0 ? 'Get Started' : `Start Your ${_trialDays}-Day Free Trial`}
                     </a>
                     <div className="cta-benefits">
-                      <span style={{ color: textOnPrimary }}>✓ Setup in 10 minutes</span>
-                      <span style={{ color: textOnPrimary }}>✓ No credit card required</span>
+                      <span style={{ color: textOnPrimary }}>✓ Setup in {_setupTime}</span>
+                      {!_cardRequired && <span style={{ color: textOnPrimary }}>✓ No credit card required</span>}
                       <span style={{ color: textOnPrimary }}>✓ Cancel anytime</span>
                     </div>
                   </div>
@@ -480,7 +486,7 @@ export default function DemoPage() {
       <div className={`sticky-cta ${stickyVisible ? 'visible' : ''}`}>
         <span className="sticky-cta-text">Ready to try {agency.name}?</span>
         <div className="sticky-cta-actions">
-          <a href="/signup" className="btn-primary btn-small">Start Free Trial</a>
+          <a href="/signup" className="btn-primary btn-small">{_trialDays === 0 ? 'Get Started' : 'Start Free Trial'}</a>
         </div>
       </div>
 

@@ -176,7 +176,7 @@ function Nav({ config }: { config: MarketingConfig }) {
         </ul>
         <div className="ed-nav-actions">
           {config.clientLoginPath && <a href={config.clientLoginPath} className="ed-nav-login">Client login</a>}
-          <a href="/signup" className="ed-btn ed-btn-primary ed-btn-sm">Start free trial</a>
+          <a href="/signup" className="ed-btn ed-btn-primary ed-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
         </div>
       </div>
     </nav>
@@ -197,7 +197,7 @@ function Hero({ config }: { config: MarketingConfig }) {
         {hero.subtitle && <p className="ed-hero-sub">{hero.subtitle}</p>}
         {hero.description && <p className="ed-hero-desc">{hero.description}</p>}
         <div className="ed-hero-cta">
-          <a href="/signup" className="ed-btn ed-btn-primary">Start free trial</a>
+          <a href="/signup" className="ed-btn ed-btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo
             ? <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-line">{hero.demoInstructions || `Hear it: ${hero.demoPhone}`}</a>
             : <a href="#how" className="ed-btn ed-btn-line">See how it works</a>}
@@ -418,9 +418,9 @@ function FinalCTA({ config }: { config: MarketingConfig }) {
       <div className="ed-final-wave"><Wave /></div>
       <div className="ed-container ed-final-inner">
         <h2 className="ed-final-title">Never miss another call</h2>
-        <p className="ed-final-sub">Set up {branding.name} in minutes. Your AI answers the very next ring.</p>
+        <p className="ed-final-sub">Set up {branding.name}{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.</p>
         <div className="ed-final-cta">
-          <a href="/signup" className="ed-btn ed-btn-on-accent">Start free trial</a>
+          <a href="/signup" className="ed-btn ed-btn-on-accent">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo && <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-on-accent-line">{hero.demoInstructions || `Call ${hero.demoPhone}`}</a>}
         </div>
       </div>
