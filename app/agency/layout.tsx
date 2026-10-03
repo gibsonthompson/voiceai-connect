@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -11,6 +11,9 @@ import { PLAN_PRICES, PLAN_NAMES, PLAN_RATES } from '../../lib/plan-limits';
 import { AGENCY_PLAN_TIER_LIST } from '../../lib/plan-features';
 import DynamicFavicon from '@/components/DynamicFavicon';
 import SupportWidget from '@/components/SupportWidget';
+import { TourProvider, useTour } from '@/components/agency/tour/TourProvider';
+import TourOverlay from '@/components/agency/tour/TourOverlay';
+import { buildAgencyTourSteps } from '@/components/agency/tour/agencyTourSteps';
 
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
   return (<svg viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /><rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} /><rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} /><rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} /><rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /></svg>);
@@ -55,6 +58,16 @@ function AgencyFavicon() {
   const { branding } = useAgency();
   if (!branding.logoUrl) return null;
   return <DynamicFavicon logoUrl={branding.logoUrl} />;
+}
+
+function TourLauncher({ theme }: { theme: any }) {
+  const tour = useTour();
+  if (!tour) return null;
+  return (
+    <button onClick={tour.start} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
+      <Compass className="h-5 w-5" /> Take a tour
+    </button>
+  );
 }
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
@@ -109,6 +122,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     if (!item.permissionKey) return true;
     return hasPermission(item.permissionKey);
   });
+
+  const tourSteps = buildAgencyTourSteps(filteredNavItems);
 
   // Whether the current path is allowed for this member's Page Access. Owners
   // and super_admins pass everything via hasPermission.
@@ -340,6 +355,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // ── MAIN LAYOUT ─────────────────────────────────────────────────────
   return (
+    <TourProvider steps={tourSteps} storageKey={agency?.id || 'x'}>
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/manifest.json" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
@@ -370,7 +386,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
         <nav className="p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
-            <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
+            <Link key={item.href} data-tour={'nav-' + item.href.replace('/agency/', '')} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
               <div className="flex items-center gap-3"><IconComponent className="h-5 w-5" /><span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
               {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
               {isLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
@@ -381,6 +397,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
           {hasPaymentIssue && (<Link href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></Link>)}
           {agency?.subscription_status === 'active' && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}><p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p><p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Free'}</p></div>)}
+          <TourLauncher theme={theme} />
           <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4" style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><LogOut className="h-5 w-5" />Sign Out</button>
         </div>
       </aside>
@@ -393,6 +410,8 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       </main>
       <SupportWidget theme={theme} userType="agency" />
     </div>
+    <TourOverlay />
+    </TourProvider>
   );
 }
 
