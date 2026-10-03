@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import {
-  MessageSquare, Search, Loader2, Save, RotateCcw, Check, AlertCircle,
+  MessageSquare, Search, Loader2, Save, RotateCcw, Check, AlertCircle, X,
   ChevronDown, ChevronRight, Eye, EyeOff, Phone, Building2, Clock,
   ArrowLeft, ArrowRight,
 } from 'lucide-react';
@@ -47,6 +47,9 @@ function SmsLogTab() {
   const [total, setTotal] = useState(0);
   const [types, setTypes] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [threadPhone, setThreadPhone] = useState<string | null>(null);
+  const [threadData, setThreadData] = useState<{ phone: string; agency_name: string | null; messages: any[] } | null>(null);
+  const [threadLoading, setThreadLoading] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState('');
   const [recipientFilter, setRecipientFilter] = useState('');
@@ -96,6 +99,21 @@ function SmsLogTab() {
 
   const sentCount = logs.filter(l => l.delivery_status === 'sent' || l.delivery_status === 'delivered').length;
   const failedCount = logs.filter(l => l.delivery_status === 'failed').length;
+
+  const personPhoneFor = (log: SmsLogEntry) => {
+    const inbound = log.metadata?.direction === 'inbound' || (log.message_type || '').includes('inbound');
+    return inbound ? (log.metadata?.from || log.recipient_phone) : log.recipient_phone;
+  };
+  const openThread = async (phone: string) => {
+    if (!phone) return;
+    setThreadPhone(phone); setThreadData(null); setThreadLoading(true);
+    try {
+      const res = await fetch(`${backendUrl()}/api/admin/sms-log/thread?phone=${encodeURIComponent(phone)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json();
+      setThreadData(res.ok ? data : { phone, agency_name: null, messages: [] });
+    } catch { setThreadData({ phone, agency_name: null, messages: [] }); }
+    finally { setThreadLoading(false); }
+  };
 
   return (
     <div>
@@ -233,6 +251,9 @@ function SmsLogTab() {
                                 <pre className="text-[12px] text-[var(--a-muted)] font-mono leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
                                   {log.message_body}
                                 </pre>
+                                <button onClick={() => openThread(personPhoneFor(log))} className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold" style={{ backgroundColor: 'var(--a-em-deep)', color: '#fff' }}>
+                                  <MessageSquare className="h-3 w-3" /> View full conversation
+                                </button>
                               </div>
 
                               {/* Details */}
@@ -314,6 +335,38 @@ function SmsLogTab() {
             >
               Next <ArrowRight className="h-3.5 w-3.5" />
             </button>
+          </div>
+        </div>
+      )}
+      {threadPhone && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setThreadPhone(null)}>
+          <div className="w-full max-w-lg max-h-[80vh] flex flex-col rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--a-card)', border: '1px solid var(--a-line)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--a-line)' }}>
+              <div>
+                <p className="text-sm font-semibold text-[var(--a-ink)]">Conversation</p>
+                <p className="text-[11px] text-[var(--a-dim)] a-num">{formatPhone(threadPhone)}{threadData?.agency_name ? ` \u00b7 ${threadData.agency_name}` : ''}</p>
+              </div>
+              <button onClick={() => setThreadPhone(null)} className="p-1 text-[var(--a-dim)]"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+              {threadLoading ? (
+                <div className="py-10 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-[var(--a-dim)]" /></div>
+              ) : !threadData || threadData.messages.length === 0 ? (
+                <p className="text-sm text-center text-[var(--a-dim)] py-10">No messages found for this number.</p>
+              ) : (
+                threadData.messages.map((m: any) => {
+                  const inbound = m.direction === 'inbound';
+                  return (
+                    <div key={m.id} className={`flex ${inbound ? 'justify-start' : 'justify-end'}`}>
+                      <div className="max-w-[80%] rounded-2xl px-3.5 py-2" style={{ backgroundColor: inbound ? '#F1F5F4' : 'var(--a-em-deep)', color: inbound ? 'var(--a-ink)' : '#fff', border: inbound ? '1px solid var(--a-line)' : 'none' }}>
+                        <p className="text-[13px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                        <p className="text-[9px] mt-1" style={{ color: inbound ? 'var(--a-dim)' : 'rgba(255,255,255,0.7)' }}>{inbound ? 'Them' : 'Platform'} {'\u00b7'} {formatDateTime(m.created_at)}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       )}
