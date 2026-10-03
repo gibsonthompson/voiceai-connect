@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Phone, Loader2, User, CreditCard, Link2,
   Check, Copy, Lock, Eye, EyeOff, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users, Download
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
@@ -91,6 +91,39 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   }, [initialClient]);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+
+  const [exporting, setExporting] = useState(false);
+  const csvEscape = (v: any) => { const str = v == null ? '' : String(v); return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str; };
+  const handleExportCalls = async () => {
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/${client.id}/calls`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await res.json();
+      const calls: any[] = Array.isArray(d.calls) ? d.calls : [];
+      const cols: { h: string; get: (c: any) => any }[] = [
+        { h: 'Date', get: c => c.created_at ? new Date(c.created_at).toLocaleString() : '' },
+        { h: 'Caller Name', get: c => c.customer_name || '' },
+        { h: 'Caller Phone', get: c => c.customer_phone || c.caller_phone || '' },
+        { h: 'Service Requested', get: c => c.service_requested || '' },
+        { h: 'Duration (sec)', get: c => c.duration_seconds ?? '' },
+        { h: 'Status', get: c => c.call_status || '' },
+        { h: 'Urgency', get: c => c.urgency_level || '' },
+        { h: 'Appointment Booked', get: c => c.appointment_booked ? 'Yes' : 'No' },
+        { h: 'Spam', get: c => (c.is_spam || c.call_status === 'spam') ? 'Yes' : 'No' },
+        { h: 'Summary', get: c => c.summary || c.call_summary || '' },
+      ];
+      const lines = [cols.map(c => c.h).join(',')];
+      for (const call of calls) lines.push(cols.map(c => csvEscape(c.get(call))).join(','));
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(client.business_name || 'calls').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-calls-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch { setMessage('Could not export your calls. Please try again.'); setTimeout(() => setMessage(''), 3000); }
+    finally { setExporting(false); }
+  };
   // The single platform-wide AI support line, fetched live from the backend
   // (platform_settings.support_line_number) so it always tracks the number that
   // is actually provisioned. Null until loaded; the Support card renders only
@@ -343,6 +376,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </SectionCard>
 
         {/* Add to Home Screen */}
+        <SectionCard icon={Download} title="Export your data" subtitle="Download your call log as a CSV, opens in Excel or Google Sheets" theme={theme} primaryColor={theme.primary}>
+          <button onClick={handleExportCalls} disabled={exporting} className="px-4 py-2 rounded-lg text-sm font-medium transition hover:opacity-90 disabled:opacity-50 flex items-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            {exporting ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><Download className="w-4 h-4" /> Download call log (CSV)</>}
+          </button>
+        </SectionCard>
+
         <SectionCard icon={Smartphone} title="Add to Home Screen" subtitle="Get instant access, works like a native app" action={<button onClick={() => setShowPwaModal(true)} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Install</button>} theme={theme} primaryColor={theme.primary} />
 
         {isOwner && (<>

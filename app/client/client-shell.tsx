@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare, BarChart3
+  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -127,7 +127,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
-    { href: '/client/reports', label: 'Reports', icon: BarChart3, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
     { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
     { href: '/client/messages', label: 'Messages', icon: MessageSquare, permissionKey: 'messages' },
