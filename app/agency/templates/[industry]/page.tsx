@@ -29,7 +29,7 @@ interface KBData {
 }
 
 interface IndustryInfo {
-  frontendKey: string; backendKey: string; label: string; description: string; icon: string; kb_status?: string;
+  frontendKey: string; backendKey: string; label: string; description: string; icon: string; kb_status?: string; documents?: { id: string; name: string; uploaded_at: string }[];
 }
 
 interface Defaults {
@@ -128,6 +128,10 @@ export default function TemplateEditorPage() {
   const [kbFaqs, setKbFaqs] = useState<FaqRow[]>([{ id: '1', question: '', answer: '' }]);
   const [kbAdditionalInfo, setKbAdditionalInfo] = useState('');
   const [kbExpanded, setKbExpanded] = useState(false);
+  const [documents, setDocuments] = useState<{ id: string; name: string; uploaded_at: string }[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docError, setDocError] = useState('');
+  const docFileRef = useRef<HTMLInputElement>(null);
 
   const [voices, setVoices] = useState<Voice[]>([]);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
@@ -155,6 +159,7 @@ export default function TemplateEditorPage() {
       if (!r.ok) { if (r.status === 403) { router.push('/agency/templates'); return; } throw new Error('Failed'); }
       const data = await r.json();
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
+      setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
       setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1);
       const kb = data.template.knowledge_base_data;
@@ -231,6 +236,37 @@ export default function TemplateEditorPage() {
   if (contextLoading || loading) {
     return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
   }
+
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!file || !agency) return;
+    if (file.size > 6 * 1024 * 1024) { setDocError('Document is too large (max 6MB).'); return; }
+    setDocError(''); setUploadingDoc(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => { const r = new FileReader(); r.onloadend = () => resolve(r.result as string); r.onerror = () => reject(new Error('read failed')); r.readAsDataURL(file); });
+      const res = await fetch(`${api}/api/agency/${agency.id}/custom-industries/${industry}/documents`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ name: file.name, dataUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setDocuments(data.documents || []);
+      await fetchTemplateData();
+    } catch (err: any) { setDocError(err?.message || 'Could not attach the document.'); }
+    finally { setUploadingDoc(false); }
+  };
+  const handleDeleteDoc = async (docId: string) => {
+    if (!agency) return;
+    setDocError('');
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/custom-industries/${industry}/documents/${docId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      setDocuments(data.documents || []);
+      await fetchTemplateData();
+    } catch (err: any) { setDocError(err?.message || 'Could not remove the document.'); }
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -370,6 +406,33 @@ export default function TemplateEditorPage() {
               </div>
             )}
           </div>
+
+          {industry.startsWith('custom_') && industryInfo?.kb_status !== 'generating' && (
+            <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: theme.primary }} /> Knowledge documents</label>
+                <input ref={docFileRef} type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={handleUploadDoc} className="hidden" />
+                <button onClick={() => docFileRef.current?.click()} disabled={uploadingDoc} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), border: `1px solid ${hexToRgba(theme.primary, 0.3)}`, color: theme.primary }}>
+                  {uploadingDoc ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading...</> : <><Plus className="h-3.5 w-3.5" /> Attach document</>}
+                </button>
+              </div>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Upload reference docs (what this business does, policies, service details). The AI reads them as part of this industry's knowledge base. PDF, Word, text, or markdown, up to 6MB each.</p>
+              {docError && <p className="text-xs mb-2" style={{ color: '#ef4444' }}>{docError}</p>}
+              {documents.length === 0 ? (
+                <p className="text-xs" style={{ color: theme.textMuted }}>No documents attached yet.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {documents.map((d) => (
+                    <div key={d.id} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
+                      <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.primary }} />
+                      <span className="text-sm truncate flex-1" style={{ color: theme.text }}>{d.name}</span>
+                      <button onClick={() => handleDeleteDoc(d.id)} className="p-1" style={{ color: theme.textMuted }} title="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-3">
             <button onClick={handleReset} disabled={resetting || !template?.isCustom}
