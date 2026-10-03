@@ -85,6 +85,22 @@ function parseAiKnowledge(content: string | null): AiKnowledge | null {
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
 
+// Hoisted to module scope so they keep a stable identity across renders. When
+// these were defined inside the component, every keystroke gave them a new
+// identity, remounting the section and knocking focus out of the input after
+// one character.
+function SectionCard({ icon, title, subtitle, children, className = '', theme, primaryColor }: { icon: any; title: string; subtitle?: string; children: React.ReactNode; className?: string; theme: any; primaryColor: string }) {
+  return <SharedSectionCard icon={icon} title={title} subtitle={subtitle} className={className} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>;
+}
+
+function SaveButton({ onClick, disabled, loading: btnLoading, label, theme, primaryColor }: { onClick: () => void; disabled: boolean; loading: boolean; label: string; theme: any; primaryColor: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+      {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
+    </button>
+  );
+}
+
 export default function MyBusinessPage() {
   const { client, branding, loading, hasPermission } = useClient();
   const theme = useClientTheme();
@@ -318,16 +334,6 @@ export default function MyBusinessPage() {
 
   const aiKnowledge = parseAiKnowledge(aiKnowsContent);
 
-  const SectionCard = ({ icon, title, subtitle, children, className = '' }: { icon: any; title: string; subtitle?: string; children: React.ReactNode; className?: string }) => (
-    <SharedSectionCard icon={icon} title={title} subtitle={subtitle} className={className} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
-  );
-
-  const SaveButton = ({ onClick, disabled, loading: btnLoading, label }: { onClick: () => void; disabled: boolean; loading: boolean; label: string }) => (
-    <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
-      {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
-    </button>
-  );
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
@@ -347,7 +353,7 @@ export default function MyBusinessPage() {
 
         {/* Business Details */}
         <div className="fu fu1">
-          <SectionCard icon={Building2} title="Business Details" subtitle="Your business information">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={Building2} title="Business Details" subtitle="Your business information">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[10px] sm:text-xs block mb-1" style={{ color: theme.textMuted4 }}>Business Name</label>
@@ -386,7 +392,7 @@ export default function MyBusinessPage() {
 
         {/* What Your AI Knows — read-only view of the live KB the AI uses */}
         <div className="fu fu2">
-          <SectionCard icon={Sparkles} title="What Your AI Knows" subtitle="Pulled from your website, this is what your receptionist already knows about you">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={Sparkles} title="What Your AI Knows" subtitle="Pulled from your website, this is what your receptionist already knows about you">
             {aiKnowsLoading ? (
               <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
             ) : aiKnowledge ? (
@@ -459,7 +465,7 @@ export default function MyBusinessPage() {
 
         {/* Business Hours */}
         <div className="fu fu2">
-          <SectionCard icon={Clock} title="Business Hours" subtitle="When your business is open">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={Clock} title="Business Hours" subtitle="When your business is open">
             <div className="mb-3">
               <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted4 }}>Time zone</label>
               <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#1c1c1b' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
@@ -488,7 +494,7 @@ export default function MyBusinessPage() {
                     )}
                   </div>
                 ))}
-                <SaveButton onClick={handleSaveBusinessHours} disabled={savingHours} loading={savingHours} label="Save Hours" />
+                <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveBusinessHours} disabled={savingHours} loading={savingHours} label="Save Hours" />
               </div>
             )}
           </SectionCard>
@@ -496,7 +502,7 @@ export default function MyBusinessPage() {
 
         {/* Service Areas */}
         <div className="fu fu2">
-          <SectionCard icon={MapPin} title="Service Areas" subtitle="Cities or regions your AI tells callers you cover">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={MapPin} title="Service Areas" subtitle="Cities or regions your AI tells callers you cover">
             <p className="text-[11px] mb-2" style={{ color: theme.textMuted4 }}>Your AI lets callers know if their location is within your coverage area.</p>
             {serviceAreas.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -512,23 +518,23 @@ export default function MyBusinessPage() {
               <input type="text" value={newArea} onChange={e => setNewArea(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }} placeholder="e.g. Atlanta, Marietta, Decatur" className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
               <button onClick={addArea} disabled={!newArea.trim()} className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}><Plus className="w-4 h-4" /> Add</button>
             </div>
-            {hasAreaChanges && <SaveButton onClick={handleSaveServiceAreas} disabled={savingAreas} loading={savingAreas} label="Save Service Areas" />}
+            {hasAreaChanges && <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveServiceAreas} disabled={savingAreas} loading={savingAreas} label="Save Service Areas" />}
           </SectionCard>
         </div>
 
         {/* Services */}
-        <SectionCard icon={Briefcase} title="Services" subtitle="What you offer, so your AI can ask callers what they need.">
+        <SectionCard theme={theme} primaryColor={primaryColor} icon={Briefcase} title="Services" subtitle="What you offer, so your AI can ask callers what they need.">
           <ClientServicesSection clientId={client.id} theme={theme} industry={client.industry} compact hideHeader />
         </SectionCard>
 
         {/* Staff Directory */}
-        <SectionCard icon={Users} title="Staff directory" subtitle="People your AI knows about, for routing calls, scheduling, and referrals.">
+        <SectionCard theme={theme} primaryColor={primaryColor} icon={Users} title="Staff directory" subtitle="People your AI knows about, for routing calls, scheduling, and referrals.">
           <StaffMembersSection clientId={client.id} theme={theme} industry={client.industry} compact hideHeader />
         </SectionCard>
 
         {/* Knowledge Base */}
         <div id="kb-section" className="fu fu4">
-          <SectionCard icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
             <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="text-[13px]" style={{ color: theme.textMuted }}>
                 {kbLoading ? 'Loading...' : `${faqs.filter(f => f.question.trim()).length} FAQs · ${additionalInfo ? 'Has additional info' : 'No additional info'}`}
@@ -562,7 +568,7 @@ export default function MyBusinessPage() {
                   <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: primaryColor }} /> Additional Info</label>
                   <textarea value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} placeholder="Policies, payment methods, parking info..." rows={3} className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none resize-none" style={inputStyle} />
                 </div>
-                <SaveButton onClick={handleSaveKnowledgeBase} disabled={savingKB} loading={savingKB} label="Update Knowledge Base" />
+                <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveKnowledgeBase} disabled={savingKB} loading={savingKB} label="Update Knowledge Base" />
               </div>
             )}
           </SectionCard>

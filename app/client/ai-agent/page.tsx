@@ -127,7 +127,7 @@ export default function ClientAIAgentPage() {
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
-  const fetchVoices = async () => { setVoicesLoading(true); setVoicesError(null); try { const r = await fetch(`${getBackendUrl()}/api/voices`); if (!r.ok) throw new Error('Failed'); const d = await r.json(); if (d.success && d.grouped) setVoices(d.grouped); else throw new Error('Invalid'); } catch (e: any) { setVoicesError(e.message); } finally { setVoicesLoading(false); } };
+  const fetchVoices = async () => { if (!client) return; setVoicesLoading(true); setVoicesError(null); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voices`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (!r.ok) throw new Error('Failed'); const d = await r.json(); if (d.success && d.grouped) setVoices(d.grouped); else throw new Error('Invalid'); } catch (e: any) { setVoicesError(e.message); } finally { setVoicesLoading(false); } };
   const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); } } } catch {} };
   const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
 
@@ -401,8 +401,9 @@ export default function ClientAIAgentPage() {
                             <div className="flex items-center gap-1">
                               <span className="font-semibold text-[13px] truncate" style={{ color: theme.text }}>{voice.name}</span>
                               {sel && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primaryColor }} />}
+                              {voice.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>CUSTOM</span>}
                             </div>
-                            <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.accent} · {voice.style}</p>
+                            <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>{voice.custom ? 'Custom voice' : `${voice.accent}${voice.accent && voice.style ? ' · ' : ''}${voice.style}`}</p>
                           </div>
                         </div>
                       </div>

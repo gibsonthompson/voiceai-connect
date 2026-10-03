@@ -136,10 +136,17 @@ export default function TemplateEditorPage() {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const [showAddVoice, setShowAddVoice] = useState(false);
+  const [newVoiceId, setNewVoiceId] = useState('');
+  const [newVoiceName, setNewVoiceName] = useState('');
+  const [newVoiceGender, setNewVoiceGender] = useState<'female' | 'male' | ''>('');
+  const [addingVoice, setAddingVoice] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const getToken = () => localStorage.getItem('auth_token') || '';
+  const isScalePlan = ['trialing', 'trial'].includes(agency?.subscription_status || '') || String(agency?.plan_type || '').toLowerCase() === 'scale';
   const inputStyle = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text };
 
   useEffect(() => { if (agency && industry) { fetchTemplateData(); fetchVoices(); } }, [agency, industry]);
@@ -174,7 +181,8 @@ export default function TemplateEditorPage() {
   };
 
   const fetchVoices = async () => {
-    try { const r = await fetch(`${api}/api/voices`); if (r.ok) { const d = await r.json(); setVoices(d.voices || []); } } catch {}
+    if (!agency) return;
+    try { const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices`, { headers: { Authorization: `Bearer ${getToken()}` } }); if (r.ok) { const d = await r.json(); setVoices(d.voices || []); } } catch {}
   };
 
   const playPreview = (voice: Voice) => {
@@ -268,6 +276,34 @@ export default function TemplateEditorPage() {
     } catch (err: any) { setDocError(err?.message || 'Could not remove the document.'); }
   };
 
+  const handleAddVoice = async () => {
+    if (!agency || !newVoiceId.trim()) return;
+    setVoiceError(''); setAddingVoice(true);
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ voiceId: newVoiceId.trim(), name: newVoiceName.trim(), gender: newVoiceGender || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not add that voice.');
+      setVoices(data.voices || []);
+      if (data.voice?.id) setVoiceId(data.voice.id);
+      setNewVoiceId(''); setNewVoiceName(''); setNewVoiceGender(''); setShowAddVoice(false);
+    } catch (err: any) { setVoiceError(err?.message || 'Could not add that voice.'); }
+    finally { setAddingVoice(false); }
+  };
+  const handleDeleteCustomVoice = async (id: string) => {
+    if (!agency) return;
+    setVoiceError('');
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not remove that voice.');
+      setVoices(data.voices || []);
+      if (voiceId === id && defaults) setVoiceId(defaults.voice_id);
+    } catch (err: any) { setVoiceError(err?.message || 'Could not remove that voice.'); }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
@@ -347,7 +383,42 @@ export default function TemplateEditorPage() {
           </div>
 
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <VoicePicker theme={theme} voices={voices} value={voiceId} onChange={setVoiceId} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
+            <VoicePicker theme={theme} voices={voices} value={voiceId} onChange={setVoiceId} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} onDeleteCustom={isScalePlan ? handleDeleteCustomVoice : undefined} />
+            {voiceError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{voiceError}</p>}
+            <div className="mt-3">
+              {isScalePlan ? (
+                !showAddVoice ? (
+                  <button onClick={() => { setShowAddVoice(true); setVoiceError(''); }} className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.primary }}>
+                    <Plus className="h-3.5 w-3.5" /> Add a custom voice
+                  </button>
+                ) : (
+                  <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Paste an ElevenLabs voice ID. It has to live in the ElevenLabs account the platform uses, a public/shared voice, or one added to that account.</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input value={newVoiceId} onChange={e => setNewVoiceId(e.target.value)} placeholder="ElevenLabs voice ID" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
+                      <input value={newVoiceName} onChange={e => setNewVoiceName(e.target.value)} placeholder="Label (optional)" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex gap-1">
+                        {(['', 'female', 'male'] as const).map(g => (
+                          <button key={g || 'unset'} onClick={() => setNewVoiceGender(g)} className="px-2.5 py-1 rounded-md text-xs font-medium transition" style={{ backgroundColor: newVoiceGender === g ? theme.primary : theme.hover, color: newVoiceGender === g ? theme.primaryText : theme.textMuted }}>
+                            {g === '' ? 'No tag' : g.charAt(0).toUpperCase() + g.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} className="text-xs font-medium px-2.5 py-1.5" style={{ color: theme.textMuted }}>Cancel</button>
+                        <button onClick={handleAddVoice} disabled={addingVoice || !newVoiceId.trim()} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                          {addingVoice ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking...</> : <><Plus className="h-3.5 w-3.5" /> Add voice</>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <p className="text-xs" style={{ color: theme.textMuted }}>Want to use your own ElevenLabs voice? Custom voices are available on the Scale plan.</p>
+              )}
+            </div>
           </div>
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
@@ -410,7 +481,7 @@ export default function TemplateEditorPage() {
           {industry.startsWith('custom_') && industryInfo?.kb_status !== 'generating' && (
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between gap-3 mb-1">
-                <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: theme.primary }} /> Knowledge documents</label>
+                <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: theme.primary }} /> Documents</label>
                 <input ref={docFileRef} type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={handleUploadDoc} className="hidden" />
                 <button onClick={() => docFileRef.current?.click()} disabled={uploadingDoc} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), border: `1px solid ${hexToRgba(theme.primary, 0.3)}`, color: theme.primary }}>
                   {uploadingDoc ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading...</> : <><Plus className="h-3.5 w-3.5" /> Attach document</>}
