@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, Pause, Check } from 'lucide-react';
+import { Play, Pause, Check, X } from 'lucide-react';
 
 // Shared voice picker for the AI receptionist editors (client config + industry
 // templates). Extracted from the client editor so both pages render the exact
@@ -25,9 +25,10 @@ interface VoicePickerProps {
   onFilter: (f: 'all' | 'female' | 'male') => void;
   playingVoiceId: string | null;
   onPlay: (v: any) => void;
+  onDeleteCustom?: (id: string) => void;
 }
 
-export default function VoicePicker({ theme, voices, value, onChange, filter, onFilter, playingVoiceId, onPlay }: VoicePickerProps) {
+export default function VoicePicker({ theme, voices, value, onChange, filter, onFilter, playingVoiceId, onPlay, onDeleteCustom }: VoicePickerProps) {
   const filtered = (filter === 'all' ? voices : voices.filter(v => v.gender === filter))
     .slice()
     .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
@@ -69,6 +70,7 @@ export default function VoicePicker({ theme, voices, value, onChange, filter, on
               style={{ borderColor: isSelected ? theme.primary : theme.border, backgroundColor: isSelected ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : theme.card }}
             >
               {v.recommended && <span className="absolute -top-1.5 -right-1.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}
+              {v.custom && onDeleteCustom && <button onClick={e => { e.stopPropagation(); onDeleteCustom(v.id); }} title="Remove voice" className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}><X className="h-3 w-3" /></button>}
               <div className="flex items-center gap-2 mb-1.5">
                 <button
                   onClick={e => { e.stopPropagation(); onPlay(v); }}
@@ -81,6 +83,7 @@ export default function VoicePicker({ theme, voices, value, onChange, filter, on
                   <div className="flex items-center gap-1">
                     <span className="font-semibold text-sm truncate" style={{ color: theme.text }}>{v.name}</span>
                     {isSelected && <Check className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} />}
+                    {v.custom && <span className="text-[9px] font-semibold px-1 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>Custom</span>}
                   </div>
                   <p className="text-[11px]" style={{ color: theme.textMuted }}>{v.accent || v.gender}{v.style ? ` · ${v.style}` : ''}</p>
                 </div>
