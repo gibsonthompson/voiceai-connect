@@ -185,13 +185,32 @@ export default function TemplateEditorPage() {
     try { const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices`, { headers: { Authorization: `Bearer ${getToken()}` } }); if (r.ok) { const d = await r.json(); setVoices(d.voices || []); } } catch {}
   };
 
-  const playPreview = (voice: Voice) => {
-    if (!voice.previewUrl) return;
-    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; }
+  const playFromUrl = (voiceId: string, url: string) => {
     if (audioRef.current) audioRef.current.pause();
-    const a = new Audio(voice.previewUrl); audioRef.current = a;
+    const a = new Audio(url); audioRef.current = a;
     a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null);
-    a.play(); setPlayingVoiceId(voice.id);
+    a.play().catch(() => setPlayingVoiceId(null)); setPlayingVoiceId(voiceId);
+  };
+
+  // Synthesize a sample in the selected voice (same path the client editor uses),
+  // so every voice previews, presets and custom alike, not just ones with a
+  // stock sample URL. Falls back to a stored previewUrl if synthesis fails.
+  const playPreview = async (voice: Voice) => {
+    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); audioRef.current = null; setPlayingVoiceId(null); return; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setPlayingVoiceId(voice.id);
+    try {
+      const r = await fetch(`/api/voice-preview`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: voice.id, text: "Hi, thanks for calling! How can I help you today?" }),
+      });
+      if (!r.ok) throw new Error('preview failed');
+      const blob = await r.blob();
+      playFromUrl(voice.id, URL.createObjectURL(blob));
+    } catch {
+      if (voice.previewUrl) playFromUrl(voice.id, voice.previewUrl);
+      else setPlayingVoiceId(null);
+    }
   };
 
 
@@ -393,7 +412,7 @@ export default function TemplateEditorPage() {
                   </button>
                 ) : (
                   <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Paste an ElevenLabs voice ID. It has to live in the ElevenLabs account the platform uses, a public/shared voice, or one added to that account.</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>Paste an ElevenLabs voice ID and we'll add it to your voice options.</p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input value={newVoiceId} onChange={e => setNewVoiceId(e.target.value)} placeholder="ElevenLabs voice ID" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
                       <input value={newVoiceName} onChange={e => setNewVoiceName(e.target.value)} placeholder="Label (optional)" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
