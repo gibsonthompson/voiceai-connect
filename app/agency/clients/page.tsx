@@ -238,7 +238,7 @@ export default function AgencyClientsPage() {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
+            <h1 data-tour="tour-clients" className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
               {testClients.length > 0 && (

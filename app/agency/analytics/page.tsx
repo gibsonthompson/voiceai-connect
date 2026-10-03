@@ -145,7 +145,7 @@ export default function AgencyAnalyticsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Analytics & Revenue</h1>
+        <h1 data-tour="tour-analytics" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Analytics & Revenue</h1>
         <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Track your earnings and client metrics.</p>
       </div>
 
