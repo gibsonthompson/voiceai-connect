@@ -29,7 +29,7 @@ interface KBData {
 }
 
 interface IndustryInfo {
-  frontendKey: string; backendKey: string; label: string; description: string; icon: string;
+  frontendKey: string; backendKey: string; label: string; description: string; icon: string; kb_status?: string;
 }
 
 interface Defaults {
@@ -140,6 +140,13 @@ export default function TemplateEditorPage() {
 
   useEffect(() => { if (agency && industry) { fetchTemplateData(); fetchVoices(); } }, [agency, industry]);
   useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }; }, []);
+  // While the custom-industry KB is still generating, poll until it's ready so
+  // the seeded prompt + knowledge base appear without a manual refresh.
+  useEffect(() => {
+    if (industryInfo?.kb_status !== 'generating') return;
+    const t = setInterval(() => { fetchTemplateData(); }, 4000);
+    return () => clearInterval(t);
+  }, [industryInfo?.kb_status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTemplateData = async () => {
     if (!agency) return;
@@ -247,6 +254,15 @@ export default function TemplateEditorPage() {
         </div>
       </div>
 
+      {industryInfo?.kb_status === 'generating' && (
+        <div className="mb-6 rounded-xl p-5 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+          <Loader2 className="h-5 w-5 flex-shrink-0 mt-0.5 animate-spin" style={{ color: theme.primary }} />
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.text }}>Building your {industryInfo.label} receptionist…</p>
+            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="mb-6 rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
           <AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} />
@@ -361,7 +377,7 @@ export default function TemplateEditorPage() {
               style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
               {resetting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Reset
             </button>
-            <button onClick={handleSave} disabled={saving || !hasChanges}
+            <button onClick={handleSave} disabled={saving || !hasChanges || industryInfo?.kb_status === 'generating'}
               className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-xs font-medium transition disabled:opacity-40"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : <><Save className="h-3.5 w-3.5" /> Save Template</>}
