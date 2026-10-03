@@ -271,7 +271,7 @@ function SmsLogTab() {
                                   {log.message_body}
                                 </pre>
                                 <button onClick={() => openThread(personPhoneFor(log))} className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold" style={{ backgroundColor: 'var(--a-em-deep)', color: '#fff' }}>
-                                  <MessageSquare className="h-3 w-3" /> View full conversation
+                                  <MessageSquare className="h-3 w-3" /> View conversation & reply
                                 </button>
                               </div>
 
