@@ -1634,6 +1634,13 @@ function AgencySettingsContent() {
                   onChanged={() => window.location.reload()}
                 />
 
+                {agency?.stripe_subscription_id && (
+                  <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}Update payment method</button>
+                    <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Add or change the card on file and manage billing in Stripe.</p>
+                  </div>
+                )}
+
                 {/* Cancel sits at the very bottom, separated from the plan options. */}
                 {(isOnTrial || agency?.subscription_status === 'active') && (
                   <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
