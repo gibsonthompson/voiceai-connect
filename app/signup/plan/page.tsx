@@ -366,7 +366,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.errors?.join(', ') || 'Failed to create account');
+        throw new Error(data.message || data.error || data.errors?.join(', ') || 'Failed to create account');
       }
 
       sessionStorage.removeItem('client_signup_data');
@@ -648,7 +648,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
           body: JSON.stringify({ agencyId, planType }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to start trial');
+        if (!response.ok) throw new Error(data.message || data.error || 'Failed to start trial');
         window.location.href = '/signup/success';
         return;
       }
@@ -680,7 +680,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
         window.location.href = data.url;
         return;
       }
-      throw new Error(data.error || 'Could not start checkout. Please try again.');
+      throw new Error(data.message || data.error || 'Could not start checkout. Please try again.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setSelectedPlan(null);
