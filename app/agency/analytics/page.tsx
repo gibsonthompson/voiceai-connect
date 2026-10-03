@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   TrendingUp, DollarSign, Users, Wallet, CreditCard, 
-  ChevronRight, Loader2
+  ChevronRight, Loader2, Phone, CalendarCheck, PhoneForwarded, Moon, ShieldX, Clock
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -62,6 +62,24 @@ function formatMonth(monthStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 
+// Module-level so it keeps a stable identity across renders (a component
+// defined inside the page would remount on every state change).
+function CallStat({ icon: Icon, label, value, theme }: { icon: any; label: string; value: number; theme: any }) {
+  return (
+    <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.primary }} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>{label}</p>
+          <p className="text-lg sm:text-2xl font-semibold" style={{ color: theme.text }}>{(value || 0).toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AgencyAnalyticsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
@@ -74,6 +92,9 @@ export default function AgencyAnalyticsPage() {
     totalClients: 0,
   });
   const [revenueByMonth, setRevenueByMonth] = useState<{ month: string; amount: number }[]>([]);
+  const [callStats, setCallStats] = useState({ callsThisMonth: 0, appointmentsBooked: 0, callsTransferred: 0, spamBlocked: 0, afterHoursCalls: 0, talkMinutes: 0 });
+  const [callsByMonth, setCallsByMonth] = useState<{ month: string; count: number }[]>([]);
+  const [callsByClient, setCallsByClient] = useState<{ business_name: string; count: number }[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +132,9 @@ export default function AgencyAnalyticsPage() {
         const data = await response.json();
         setStats(data.stats || stats);
         setRevenueByMonth(data.revenueByMonth || []);
+        if (data.callStats) setCallStats(data.callStats);
+        setCallsByMonth(data.callsByMonth || []);
+        setCallsByClient(data.callsByClient || []);
         setPayments(data.payments || []);
         setClients(data.clients || []);
       }
@@ -132,6 +156,7 @@ export default function AgencyAnalyticsPage() {
   };
 
   const maxRevenue = Math.max(...revenueByMonth.map(r => r.amount), 1);
+  const maxCalls = Math.max(...callsByMonth.map(c => c.count), 1);
 
   if (contextLoading || loading) {
     return (
@@ -150,6 +175,59 @@ export default function AgencyAnalyticsPage() {
       </div>
 
       {/* Stats Grid */}
+      {/* ── CALLS & PERFORMANCE — what the AI actually did for your clients ── */}
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Calls &amp; performance (this month)</h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 mb-4 sm:mb-6">
+          <CallStat icon={Phone} label="Calls answered" value={callStats.callsThisMonth} theme={theme} />
+          <CallStat icon={CalendarCheck} label="Appointments booked" value={callStats.appointmentsBooked} theme={theme} />
+          <CallStat icon={PhoneForwarded} label="Transferred to you" value={callStats.callsTransferred} theme={theme} />
+          <CallStat icon={Moon} label="After-hours caught" value={callStats.afterHoursCalls} theme={theme} />
+          <CallStat icon={ShieldX} label="Spam blocked" value={callStats.spamBlocked} theme={theme} />
+          <CallStat icon={Clock} label="Talk time (min)" value={callStats.talkMinutes} theme={theme} />
+        </div>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium mb-4 sm:mb-6 text-sm sm:text-base" style={{ color: theme.text }}>Calls over time</h3>
+            {callsByMonth.length === 0 || maxCalls <= 0 ? (
+              <div className="h-32 sm:h-48 flex items-center justify-center"><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>
+            ) : (
+              <div className="h-32 sm:h-48">
+                <div className="flex items-end justify-between h-full gap-1 sm:gap-2">
+                  {callsByMonth.map((item, index) => {
+                    const height = maxCalls > 0 ? (item.count / maxCalls) * 100 : 0;
+                    return (
+                      <div key={item.month} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
+                        <div className="w-full flex flex-col items-center justify-end h-24 sm:h-36">
+                          <span className="text-[9px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>{item.count}</span>
+                          <div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg transition-all duration-300" style={{ height: `${Math.max(height, 2)}%`, backgroundColor: theme.primary, opacity: 0.6 + (index / callsByMonth.length) * 0.4 }} title={`${item.count} calls`} />
+                        </div>
+                        <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>{formatMonth(item.month)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base" style={{ color: theme.text }}>Busiest clients</h3>
+            {callsByClient.length === 0 ? (
+              <p className="text-sm" style={{ color: theme.textMuted }}>No calls yet this month</p>
+            ) : (
+              <div className="space-y-2.5">
+                {callsByClient.map((c) => (
+                  <div key={c.business_name} className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate" style={{ color: theme.text }}>{c.business_name}</span>
+                    <span className="text-sm font-semibold flex-shrink-0" style={{ color: theme.primary }}>{c.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
         {/* MRR */}
         <div 
