@@ -865,6 +865,14 @@ export default function DemoPhonePage() {
             </button>
           </div>
 
+          {/* What the demo is for + using your own number */}
+          <div className="rounded-xl p-3.5 mb-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+            <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.text }}>How to use this</p>
+            <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+              Share this number with prospects. When they call it, they reach a live AI receptionist and hear exactly what their own would sound like, as if they were a customer calling a home service business. It's a hands-on test drive of what they'd be buying from you. Want prospects to reach it on a number you already own? Just forward that number's incoming calls to this one.
+            </p>
+          </div>
+
           {/* Info tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>

@@ -240,7 +240,7 @@ function CodeStep({
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Enter Verification Code</h1>
         <p className="mt-3 text-sm" style={{ color: textMuted }}>
-          We sent a 6-digit code to {maskedContact || contactFallback}
+          We {(maskedContact || contactFallback || '').includes('@') ? 'emailed' : 'texted'} a 6-digit code to {maskedContact || contactFallback}
         </p>
       </div>
 
