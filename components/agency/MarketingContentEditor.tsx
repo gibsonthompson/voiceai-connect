@@ -95,7 +95,7 @@ const DEFAULT_CONFIG: EditorConfig = {
     demoInstructions: 'Takes 30 seconds. Free to call.',
     trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
   },
-  stats: { setupTime: '10 min', responseTime: '< 1 sec', businessesServed: '200+', satisfaction: '96%' },
+  stats: { setupTime: '10 min', responseTime: '< 1 sec', businessesServed: '24/7', satisfaction: '100%' },
   problems: [
     { title: 'Missed Calls = Lost Revenue', description: 'I was on another call when a $5,000 job went to voicemail. They called my competitor instead.' },
     { title: "Can't Answer While Working", description: "I'm elbow-deep in a project when the phone rings. Answer and lose focus, or ignore and lose business?" },
@@ -366,8 +366,8 @@ export default function MarketingContentEditor({
           {([
             { key: 'setupTime' as const, label: 'Setup Time', placeholder: '10 min' },
             { key: 'responseTime' as const, label: 'Response Time', placeholder: '< 1 sec' },
-            { key: 'businessesServed' as const, label: 'Businesses Served', placeholder: '200+' },
-            { key: 'satisfaction' as const, label: 'Satisfaction Rate', placeholder: '96%' },
+            { key: 'businessesServed' as const, label: 'Availability', placeholder: '24/7' },
+            { key: 'satisfaction' as const, label: 'Calls Answered', placeholder: '100%' },
           ]).map(s => (
             <div key={s.key}>
               <label className={labelClass} style={labelStyle}>{s.label}</label>

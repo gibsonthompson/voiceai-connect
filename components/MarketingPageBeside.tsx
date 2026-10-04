@@ -297,8 +297,8 @@ function ProofStrip({ config }: { config: MarketingConfig }) {
   const items = [
     { value: s.setupTime, label: 'Setup time' },
     { value: s.responseTime, label: 'Response time' },
-    { value: s.businessesServed, label: 'Businesses served' },
-    { value: s.satisfaction, label: 'Satisfaction rate' },
+    { value: s.businessesServed, label: 'Availability' },
+    { value: s.satisfaction, label: 'Calls answered' },
   ];
   return (
     <section className="bsd-proof">
@@ -369,7 +369,7 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
           ))}
         </div>
         <div className="bsd-steps-cta">
-          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">Start your 7-day free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">{config.signup?.trialDays === 0 ? 'Get started' : `Start your ${config.signup?.trialDays ?? 7}-day free trial`}</a>
           <p>{config.signup?.cardRequired ? '' : 'No credit card required. '}Your AI receptionist is ready{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}.</p>
         </div>
       </div>
@@ -657,7 +657,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Pricing</span>
           <h2>Simple pricing. No hidden fees.</h2>
-          <p>All plans include the {branding.name} app, text summaries, call recordings, and a 7-day free trial.</p>
+          <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
         <div className="bsd-pricing bsd-stagger">
           {pricing.map((tier, i) => (
@@ -731,11 +731,11 @@ function FinalCTA({ config, textOnPrimary, mutedOnPrimary }: { config: Marketing
         <h2 style={{ color: textOnPrimary }}>Stop losing customers to voicemail</h2>
         <p style={{ color: mutedOnPrimary }}>Every missed call is money out the door. While you are on the job or closed for the night, your competitors are answering their phones.</p>
         <div className="bsd-final-actions">
-          <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">Start your 7-day free trial</a>
+          <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">{config.signup?.trialDays === 0 ? 'Get started' : `Start your ${config.signup?.trialDays ?? 7}-day free trial`}</a>
           {hero.demoPhone && <a href={telHref(hero.demoPhone)} className="bsd-final-demo">{Icons.phone}or call the live demo: {hero.demoPhone}</a>}
           <div className="bsd-final-trust">
             {config.stats?.setupTime && <span>Setup in {config.stats.setupTime}</span>}
-            <span>No credit card required</span>
+            {!config.signup?.cardRequired && <span>No credit card required</span>}
             <span>Cancel anytime</span>
           </div>
         </div>
