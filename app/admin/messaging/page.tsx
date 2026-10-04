@@ -186,6 +186,23 @@ function SmsLogTab() {
 // ============================================================================
 // SMS TEMPLATES TAB
 // ============================================================================
+interface SmsTemplate {
+  id: string;
+  key: string;
+  category: string;
+  description: string;
+  message: string;
+  default_message: string;
+  variables: string[];
+  is_customized: boolean;
+  updated_at: string;
+}
+
+interface Category {
+  label: string;
+  templates: SmsTemplate[];
+}
+
 function SmsTemplatesTab() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Record<string, Category>>({});
