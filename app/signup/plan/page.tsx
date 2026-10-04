@@ -234,6 +234,9 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   // to Terms/Privacy + SMS consent, and for card-required trials to the
   // auto-renew disclosure, before any signup POST fires.
   const [consentAgreed, setConsentAgreed] = useState(false);
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountStatus, setDiscountStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
+  const [discountMsg, setDiscountMsg] = useState('');
   
   const isMountedRef = React.useRef(true);
   
@@ -318,6 +321,28 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
     }
   };
 
+  const validateDiscount = async () => {
+    const code = discountCode.trim();
+    if (!code) { setDiscountStatus('idle'); setDiscountMsg(''); return; }
+    setDiscountStatus('checking'); setDiscountMsg('');
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/discount-codes/validate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agency_id: agency.id, code }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        const bits: string[] = [];
+        if (data.discount?.percent_off) bits.push(`${data.discount.percent_off}% off`);
+        if (data.discount?.waive_setup) bits.push('setup fee waived');
+        setDiscountStatus('valid'); setDiscountMsg(`${bits.join(' + ')} applied`);
+      } else {
+        setDiscountStatus('invalid'); setDiscountMsg(data.error || 'Invalid code');
+      }
+    } catch { setDiscountStatus('invalid'); setDiscountMsg('Could not check that code'); }
+  };
+
   const handleSelectPlan = async (planType: string) => {
     if (loading || redirecting) return;
 
@@ -355,6 +380,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         // card-required flow in handleClientSignup.
         consent_agreed: consentAgreed,
         consent_text: consentText,
+        ...(discountCode.trim() ? { discount_code: discountCode.trim() } : {}),
       };
       
       const response = await fetch(`${backendUrl}/api/client/signup`, {
@@ -515,6 +541,19 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
               consent is captured for every signup; for card-required agencies
               the text also carries the auto-renew disclosure. The stored
               consent_text mirrors this wording (links rendered as plain text). */}
+          <div className="max-w-2xl mx-auto mb-4">
+            <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
+            <div className="flex gap-2">
+              <input value={discountCode} onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountStatus('idle'); setDiscountMsg(''); }} onBlur={validateDiscount}
+                placeholder="Enter a code" className="flex-1 rounded-xl border px-3 py-2.5 text-sm"
+                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: cardBorder, color: isDark ? '#fafafa' : '#111827' }} />
+              <button type="button" onClick={validateDiscount} className="rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Apply</button>
+            </div>
+            {discountStatus === 'checking' && <p className="text-xs mt-1.5" style={{ color: mutedTextColor }}>Checking...</p>}
+            {discountStatus === 'valid' && <p className="text-xs mt-1.5" style={{ color: primaryColor }}>{discountMsg}</p>}
+            {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
+          </div>
+
           <div className="max-w-2xl mx-auto mb-8">
             <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
               style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>

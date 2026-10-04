@@ -38,16 +38,16 @@ const ACTION_ICONS: Record<string, any> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  created: 'text-emerald-400 bg-emerald-500/10',
-  status_change: 'text-blue-400 bg-blue-500/10',
-  note_added: 'text-amber-400 bg-amber-500/10',
-  note_updated: 'text-amber-400 bg-amber-500/10',
-  email_sent: 'text-purple-400 bg-purple-500/10',
-  sms_sent: 'text-cyan-400 bg-cyan-500/10',
-  call_logged: 'text-green-400 bg-green-500/10',
-  follow_up_set: 'text-orange-400 bg-orange-500/10',
-  updated: 'text-gray-400 bg-gray-500/10',
-  converted: 'text-emerald-400 bg-emerald-500/10',
+  created: 'text-emerald-500 bg-emerald-500/10',
+  status_change: 'text-blue-500 bg-blue-500/10',
+  note_added: 'text-amber-500 bg-amber-500/10',
+  note_updated: 'text-amber-500 bg-amber-500/10',
+  email_sent: 'text-purple-500 bg-purple-500/10',
+  sms_sent: 'text-cyan-500 bg-cyan-500/10',
+  call_logged: 'text-green-500 bg-green-500/10',
+  follow_up_set: 'text-orange-500 bg-orange-500/10',
+  updated: 'text-gray-500 bg-gray-500/10',
+  converted: 'text-emerald-500 bg-emerald-500/10',
 };
 
 function getActionDescription(activity: Activity): string {
@@ -180,85 +180,100 @@ export default function ActivityLog({ agencyId, entityType, entityId }: Activity
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
+      <div className="rounded-xl border p-6" style={{ borderColor: 'var(--lp-border)', backgroundColor: 'var(--lp-card)' }}>
         <div className="flex items-center gap-3 mb-4">
-          <Clock className="h-4 w-4 text-[#fafaf9]/50" />
-          <h3 className="font-medium">Activity</h3>
+          <Clock className="h-4 w-4" style={{ color: 'var(--lp-muted)' }} />
+          <h3 className="font-medium" style={{ color: 'var(--lp-text)' }}>Activity</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-[#fafaf9]/30" />
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--lp-muted)' }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-      <div className="w-full flex items-center justify-between p-5">
-        <div className="flex items-center gap-3">
-          <Clock className="h-4 w-4 text-[#fafaf9]/50" />
-          <h3 className="font-medium">Activity</h3>
-          <span className="text-xs text-[#fafaf9]/40">
-            {activities.length} events
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--lp-border)', backgroundColor: 'var(--lp-card)' }}>
+      <div className="w-full flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--lp-border-subtle)' }}>
+        <div className="flex items-center gap-2.5">
+          <Clock className="h-4 w-4" style={{ color: 'var(--lp-muted)' }} />
+          <h3 className="font-medium" style={{ color: 'var(--lp-text)' }}>Activity</h3>
+          <span className="text-xs rounded-full px-2 py-0.5" style={{ color: 'var(--lp-muted)', backgroundColor: 'var(--lp-hover)' }}>
+            {activities.length} {activities.length === 1 ? 'event' : 'events'}
           </span>
         </div>
       </div>
-      
+
       {expanded && (
-        <div className="px-5 pb-5">
+        <div className="p-5">
           {activities.length === 0 ? (
-            <div className="text-center py-8">
-              <Clock className="h-8 w-8 text-[#fafaf9]/20 mx-auto mb-2" />
-              <p className="text-sm text-[#fafaf9]/40">No activity yet</p>
+            <div className="text-center py-10">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--lp-hover)' }}>
+                <Clock className="h-5 w-5" style={{ color: 'var(--lp-muted)' }} />
+              </div>
+              <p className="text-sm" style={{ color: 'var(--lp-text)' }}>No activity yet</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--lp-muted)' }}>Status changes, calls, notes and emails show up here.</p>
             </div>
           ) : (
             <>
               <div className="space-y-6">
                 {Object.entries(displayGroups).map(([date, dateActivities]) => (
                   <div key={date}>
-                    <p className="text-xs font-medium text-[#fafaf9]/40 mb-3">{date}</p>
-                    <div className="space-y-3">
-                      {dateActivities.map((activity) => {
-                        const Icon = ACTION_ICONS[activity.action_type] || RefreshCw;
-                        const colorClass = ACTION_COLORS[activity.action_type] || 'text-gray-400 bg-gray-500/10';
-                        
-                        return (
-                          <div key={activity.id} className="flex gap-3">
-                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${colorClass}`}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm">
-                                {getActionDescription(activity)}
-                              </p>
-                              <p className="text-xs text-[#fafaf9]/40 mt-0.5">
-                                {new Date(activity.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                                {activity.performer && (
-                                  <span>
-                                    {' '}by {activity.performer.first_name} {activity.performer.last_name}
-                                  </span>
-                                )}
-                              </p>
-                              {activity.action_type === 'note_added' && activity.action_data?.note && (
-                                <p className="text-xs text-[#fafaf9]/50 mt-1 line-clamp-2 italic">
-                                  "{truncate(activity.action_data.note, 100)}"
+                    <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--lp-muted)' }}>{date}</p>
+                    <div className="relative">
+                      <div className="absolute left-[15px] top-1 bottom-1 w-px" style={{ backgroundColor: 'var(--lp-border)' }} />
+                      <div className="space-y-4">
+                        {dateActivities.map((activity) => {
+                          const Icon = ACTION_ICONS[activity.action_type] || RefreshCw;
+                          const colorClass = ACTION_COLORS[activity.action_type] || 'text-gray-500 bg-gray-500/10';
+
+                          return (
+                            <div key={activity.id} className="flex gap-3 relative">
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${colorClass}`} style={{ boxShadow: '0 0 0 3px var(--lp-card)' }}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0 pt-0.5">
+                                <p className="text-sm" style={{ color: 'var(--lp-text)' }}>
+                                  {getActionDescription(activity)}
                                 </p>
-                              )}
+                                <div className="flex flex-wrap items-center gap-x-1.5 mt-0.5">
+                                  <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>
+                                    {new Date(activity.created_at).toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                  </span>
+                                  <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>&middot;</span>
+                                  <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>{formatRelativeTime(activity.created_at)}</span>
+                                  {activity.performer && (
+                                    <>
+                                      <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>&middot;</span>
+                                      <span className="text-xs" style={{ color: 'var(--lp-muted)' }}>{activity.performer.first_name} {activity.performer.last_name}</span>
+                                    </>
+                                  )}
+                                </div>
+                                {(activity.action_type === 'note_added' || activity.action_type === 'note_updated') && activity.action_data?.note && (
+                                  <div className="mt-2 rounded-lg border px-3 py-2" style={{ borderColor: 'var(--lp-border-subtle)', backgroundColor: 'var(--lp-hover)' }}>
+                                    <p className="text-xs leading-relaxed" style={{ color: 'var(--lp-text)' }}>{truncate(activity.action_data.note, 160)}</p>
+                                  </div>
+                                )}
+                                {activity.action_type === 'email_sent' && activity.action_data?.subject && (
+                                  <p className="text-xs mt-1 truncate" style={{ color: 'var(--lp-muted)' }}>Subject: {activity.action_data.subject}</p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-              
+
               {activities.length > 10 && (
                 <button
                   onClick={() => setShowAll(!showAll)}
-                  className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                  className="mt-5 text-sm font-medium transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--lp-primary)' }}
                 >
-                  {showAll ? 'Show less' : `Show all ${activities.length} activities`}
+                  {showAll ? 'Show less' : `Show all ${activities.length} events`}
                 </button>
               )}
             </>

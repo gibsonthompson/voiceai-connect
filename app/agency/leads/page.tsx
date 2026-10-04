@@ -452,6 +452,7 @@ export default function AgencyLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState('priority');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [showTips, setShowTips] = useState(true);
   const [showCSVImport, setShowCSVImport] = useState(false);
@@ -615,6 +616,17 @@ export default function AgencyLeadsPage() {
     
     return matchesSearch && matchesStatus && matchesFilterMode;
   }).sort((a, b) => {
+    if (sortBy === 'industry') {
+      const ia = (a.industry || '').toLowerCase(), ib = (b.industry || '').toLowerCase();
+      if (ia !== ib) { if (!ia) return 1; if (!ib) return -1; return ia.localeCompare(ib); }
+    } else if (sortBy === 'name') {
+      const na = (a.business_name || '').toLowerCase(), nb = (b.business_name || '').toLowerCase();
+      if (na !== nb) return na.localeCompare(nb);
+    } else if (sortBy === 'newest') {
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (ta !== tb) return tb - ta;
+    }
     const ka = leadSortKey(a), kb = leadSortKey(b);
     if (ka[0] !== kb[0]) return ka[0] - kb[0];
     return ka[1] - kb[1];
@@ -806,6 +818,20 @@ export default function AgencyLeadsPage() {
                 { value: 'proposal', label: 'Proposal' },
                 { value: 'won', label: 'Won' },
                 { value: 'lost', label: 'Lost' },
+              ]}
+              ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+            />
+          </div>
+
+          <div className="flex-1 sm:flex-none sm:w-44">
+            <CustomSelect
+              value={sortBy}
+              onChange={(v) => setSortBy(v || 'priority')}
+              options={[
+                { value: 'priority', label: 'Sort: Priority' },
+                { value: 'industry', label: 'Sort: Industry' },
+                { value: 'name', label: 'Sort: Name (A to Z)' },
+                { value: 'newest', label: 'Sort: Newest' },
               ]}
               ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
