@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus, Webhook} from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
+import DiscountCodesManager from '@/components/agency/DiscountCodesManager';
 import { PLAN_NAMES } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER, CORE_CLIENT_FEATURES } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
@@ -1342,6 +1343,8 @@ function AgencySettingsContent() {
                     </p>
                   </div>
                 </div>
+
+                <DiscountCodesManager theme={theme} agencyId={agency?.id} isPaid={!isFreePlan} />
 
               </div>
             )}
