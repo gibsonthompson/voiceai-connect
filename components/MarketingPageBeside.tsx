@@ -192,9 +192,9 @@ function Nav({ config }: { config: MarketingConfig }) {
           {(config.customNavLinks || []).map((link, i) => (
             <li key={`nav-custom-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
           ))}
-          <li><a href="#features">Features</a></li>
+          {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
           <li><a href="#how">How it works</a></li>
-          <li><a href="#pricing">Pricing</a></li>
+          {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
           <li><a href="/faq">FAQ</a></li>
         </ul>
         <div className="bsd-nav-actions">

@@ -143,9 +143,9 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
           <span>{branding.name}</span>
         </a>
         <ul className="a-nav-links">
-          <li><a href="#features">Features</a></li>
+          {c.showFeatures !== false && <li><a href="#features">Features</a></li>}
           {c.showHowItWorks !== false && <li><a href="#how-it-works">How It Works</a></li>}
-          <li><a href="#pricing">Pricing</a></li>
+          {c.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
           <li><a href="/faq">FAQ</a></li>
         </ul>
         <div className="a-nav-actions">
