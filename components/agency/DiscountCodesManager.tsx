@@ -8,6 +8,7 @@ interface DiscountCode {
   code: string;
   percent_off: number | null;
   waive_setup: boolean;
+  setup_fee_percent_off?: number | null;
   duration: string;
   duration_months: number | null;
   max_redemptions: number | null;
@@ -26,7 +27,7 @@ interface Props {
 const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
 
-const emptyForm = { code: '', percent_off: '', waive_setup: false, duration: 'forever', duration_months: '3', max_redemptions: '', expires_at: '' };
+const emptyForm = { code: '', percent_off: '', waive_setup: false, setup_fee_percent_off: '', duration: 'forever', duration_months: '3', max_redemptions: '', expires_at: '' };
 
 // Quiet, tucked-away discount-codes manager. Lives at the bottom of the Pricing
 // tab in agency Settings (no standalone page, no nav item) so discounts stay a
@@ -58,6 +59,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
         code: form.code,
         percent_off: form.percent_off === '' ? null : Number(form.percent_off),
         waive_setup: form.waive_setup,
+        setup_fee_percent_off: form.setup_fee_percent_off === '' ? null : Number(form.setup_fee_percent_off),
         duration: form.duration,
         duration_months: form.duration === 'repeating' ? Number(form.duration_months) : null,
         max_redemptions: form.max_redemptions === '' ? null : Number(form.max_redemptions),
@@ -100,6 +102,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
       parts.push(p);
     }
     if (c.waive_setup) parts.push('setup fee waived');
+    else if (c.setup_fee_percent_off) parts.push(`${c.setup_fee_percent_off}% off setup fee`);
     return parts.join(' + ') || 'No discount set';
   };
 
@@ -134,33 +137,42 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                   <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="LAUNCH10" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent off monthly</label>
+                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent Off Monthly</label>
                   <input type="number" min={1} max={100} value={form.percent_off} onChange={(e) => setForm({ ...form, percent_off: e.target.value })} placeholder="e.g. 10" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent-off duration</label>
+                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent-Off Duration</label>
                   <select value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle}>
-                    <option value="forever">Ongoing (forever)</option>
-                    <option value="once">First month only</option>
-                    <option value="repeating">A set number of months</option>
+                    <option value="forever">Ongoing (Forever)</option>
+                    <option value="once">First Month Only</option>
+                    <option value="repeating">A Set Number Of Months</option>
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Number of months {form.duration !== 'repeating' && '(repeating only)'}</label>
+                  <label className={labelClass} style={{ color: theme.textMuted }}>Number Of Months {form.duration !== 'repeating' && '(repeating only)'}</label>
                   <input type="number" min={1} max={36} value={form.duration_months} disabled={form.duration !== 'repeating'} onChange={(e) => setForm({ ...form, duration_months: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm disabled:opacity-40" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Max redemptions</label>
+                  <label className={labelClass} style={{ color: theme.textMuted }}>Max Redemptions</label>
                   <input type="number" min={1} value={form.max_redemptions} onChange={(e) => setForm({ ...form, max_redemptions: e.target.value })} placeholder="Unlimited" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Expires (optional)</label>
+                  <label className={labelClass} style={{ color: theme.textMuted }}>Expires (Optional)</label>
                   <input type="date" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
-                <label className="flex items-center gap-2 text-sm sm:col-span-2 mt-0.5" style={{ color: theme.text }}>
-                  <input type="checkbox" checked={form.waive_setup} onChange={(e) => setForm({ ...form, waive_setup: e.target.checked })} />
-                  Waive the setup fee for this code
-                </label>
+                <div className="sm:col-span-2 mt-0.5 space-y-2">
+                  <label className="flex items-center gap-2 text-sm" style={{ color: theme.text }}>
+                    <input type="checkbox" checked={form.waive_setup} onChange={(e) => setForm({ ...form, waive_setup: e.target.checked, setup_fee_percent_off: e.target.checked ? '' : form.setup_fee_percent_off })} />
+                    Waive The Entire Setup Fee
+                  </label>
+                  {!form.waive_setup && (
+                    <div className="ml-6">
+                      <label className={labelClass} style={{ color: theme.textMuted }}>Or, Percent Off The Setup Fee</label>
+                      <input type="number" min={1} max={100} value={form.setup_fee_percent_off} onChange={(e) => setForm({ ...form, setup_fee_percent_off: e.target.value })} placeholder="e.g. 50" className="w-full sm:w-40 rounded-lg px-3 py-2 text-sm" style={inputStyle} />
+                    </div>
+                  )}
+                  <p className="text-[11px] ml-6" style={{ color: theme.textMuted }}>Waive removes the setup fee entirely; a percent takes that much off it. Only applies if you charge a setup fee. The monthly percent above is separate.</p>
+                </div>
               </div>
               {error && <p className="text-xs mt-2" style={{ color: theme.errorText || '#dc2626' }}>{error}</p>}
               <div className="mt-3 flex justify-end">
