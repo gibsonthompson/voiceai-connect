@@ -439,6 +439,7 @@ export default function DemoPhonePage() {
   const { planName } = usePlanFeatures();
 
   const [creating, setCreating] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [areaCode, setAreaCode] = useState('');
   const [error, setError] = useState('');
@@ -868,13 +869,20 @@ export default function DemoPhonePage() {
 
           {/* What the demo is for + using your own number */}
           <div className="rounded-xl p-3.5 mb-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-            <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: theme.text }}>How to use this</p>
-            <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
-              Share this number with prospects. When they call it, they reach a live AI receptionist and hear exactly what their own would sound like, as if they were a customer calling a home service business. It's a hands-on test drive of what they'd be buying from you. Want prospects to reach it on a number you already own? Just forward that number's incoming calls to this one.
-            </p>
-            <p className="text-[11px] sm:text-xs leading-relaxed mt-2" style={{ color: theme.textMuted }}>
-              <span style={{ color: theme.text, fontWeight: 500 }}>To forward a number here:</span> on most phones you dial *72, then this number, then press call to turn it on (*73 turns it off). On a business or VoIP line, set call forwarding to this number in your provider's settings. Exact steps vary by carrier.
-            </p>
+            <button onClick={() => setShowHowTo((v) => !v)} className="w-full flex items-center justify-between gap-2 text-left">
+              <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>How to use this</p>
+              <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-transform ${showHowTo ? 'rotate-90' : ''}`} style={{ color: theme.textMuted }} />
+            </button>
+            {showHowTo && (
+              <div className="mt-2">
+                <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  Share this number with prospects. When they call it, they reach a live AI receptionist and hear exactly what their own would sound like, as if they were a customer calling a home service business. It's a hands-on test drive of what they'd be buying from you. Want prospects to reach it on a number you already own? Just forward that number's incoming calls to this one.
+                </p>
+                <p className="text-[11px] sm:text-xs leading-relaxed mt-2" style={{ color: theme.textMuted }}>
+                  <span style={{ color: theme.text, fontWeight: 500 }}>To forward a number here:</span> on most phones you dial *72, then this number, then press call to turn it on (*73 turns it off). On a business or VoIP line, set call forwarding to this number in your provider's settings. Exact steps vary by carrier.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Info tiles */}
@@ -931,6 +939,10 @@ export default function DemoPhonePage() {
         {/* ══════════════════════════════════════════════════════════════════
             DEMO CALLS SECTION — Shows call history with full detail access
            ══════════════════════════════════════════════════════════════════ */}
+        <HowItWorksCard theme={theme} />
+
+        {agency?.id && <DemoCustomizer agencyId={agency.id} theme={theme} />}
+
         <div
           className="rounded-xl overflow-hidden mb-6"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
@@ -942,11 +954,8 @@ export default function DemoPhonePage() {
             </div>
           </div>
 
-          {agency?.id && <DemoCustomizer agencyId={agency.id} theme={theme} />}
           {agency?.id && <DemoCallsList agencyId={agency.id} theme={theme} />}
         </div>
-
-        <HowItWorksCard theme={theme} />
 
         {error && (
           <div

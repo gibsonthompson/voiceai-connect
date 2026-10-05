@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Play, Pause, Loader2, Check, Sparkles } from 'lucide-react';
+import { Mic, Loader2, Check } from 'lucide-react';
+import VoicePicker from '@/components/agency/VoicePicker';
 
 interface Voice {
   id: string;
@@ -21,11 +22,13 @@ interface Props {
 
 const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
+const PLATFORM_DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Sarah, the demo default
 const DEFAULT_PREVIEW = "Hi, thanks for calling! I'm the AI receptionist, how can I help you today?";
 
 export default function DemoCustomizer({ agencyId, theme }: Props) {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [voiceFilter, setVoiceFilter] = useState<'all' | 'male' | 'female'>('all');
   const [selectedVoiceId, setSelectedVoiceId] = useState('');
   const [greeting, setGreeting] = useState('');
   const [promptAdditions, setPromptAdditions] = useState('');
@@ -33,8 +36,7 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -51,13 +53,13 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
         const cData = cRes.ok ? await cRes.json() : {};
         if (cancelled) return;
         setVoices(Array.isArray(list) ? list : []);
-        const vid = cData.demo_voice_id || '';
+        const vid = cData.demo_voice_id || PLATFORM_DEFAULT_VOICE_ID;
         setSelectedVoiceId(vid);
         setGreeting(cData.demo_greeting || '');
         setPromptAdditions(cData.demo_prompt_additions || '');
         setInitial({ voice: vid, greeting: cData.demo_greeting || '', additions: cData.demo_prompt_additions || '' });
       } catch {
-        if (!cancelled) setError('Could not load voice options');
+        if (!cancelled) setError('Could not load voices');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -67,23 +69,23 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
 
   const stopAudio = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    setPlayingId(null);
+    setPlayingVoiceId(null);
   };
+  useEffect(() => () => stopAudio(), []);
 
   const playVoice = useCallback(async (voice: Voice) => {
-    if (playingId === voice.id) { stopAudio(); return; }
+    if (playingVoiceId === voice.id) { stopAudio(); return; }
     stopAudio();
     const text = (greeting.trim() || DEFAULT_PREVIEW).slice(0, 280);
     const playUrl = (url: string, isBlob: boolean) => {
       const a = new Audio(url);
       audioRef.current = a;
-      setPlayingId(voice.id);
-      const done = () => { setPlayingId(null); if (isBlob) { try { URL.revokeObjectURL(url); } catch {} } };
+      setPlayingVoiceId(voice.id);
+      const done = () => { setPlayingVoiceId(null); if (isBlob) { try { URL.revokeObjectURL(url); } catch {} } };
       a.onended = done;
       a.onerror = done;
       a.play().catch(done);
     };
-    setPreviewLoadingId(voice.id);
     try {
       const r = await fetch(`${backendUrl}/api/voices/preview`, {
         method: 'POST',
@@ -100,12 +102,8 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
       }
     } catch {
       if (voice.previewUrl) playUrl(voice.previewUrl, false);
-    } finally {
-      setPreviewLoadingId(null);
     }
-  }, [playingId, greeting]);
-
-  useEffect(() => () => stopAudio(), []);
+  }, [playingVoiceId, greeting]);
 
   const dirty = selectedVoiceId !== initial.voice || greeting !== initial.greeting || promptAdditions !== initial.additions;
 
@@ -131,55 +129,14 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
   const labelCls = 'block text-xs sm:text-sm font-medium mb-1.5';
   const inputStyle = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text };
 
-  const VoiceRow = ({ voice, isDefault }: { voice?: Voice; isDefault?: boolean }) => {
-    const id = isDefault ? '' : voice!.id;
-    const selected = selectedVoiceId === id;
-    return (
-      <div
-        onClick={() => setSelectedVoiceId(id)}
-        className="flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors"
-        style={{ backgroundColor: selected ? theme.primary15 : theme.input, border: `1px solid ${selected ? theme.primary30 : theme.inputBorder}` }}
-      >
-        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ border: `2px solid ${selected ? theme.primary : theme.inputBorder}`, backgroundColor: selected ? theme.primary : 'transparent' }}>
-          {selected && <Check className="h-3 w-3" style={{ color: theme.primaryText || '#fff' }} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium" style={{ color: theme.text }}>{isDefault ? 'Platform default' : voice!.name}</span>
-            {!isDefault && voice!.recommended && (
-              <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Sparkles className="h-2.5 w-2.5" />Recommended</span>
-            )}
-            {!isDefault && (voice!.accent || voice!.style) && (
-              <span className="text-[11px]" style={{ color: theme.textMuted }}>{[voice!.accent, voice!.style].filter(Boolean).join(' · ')}</span>
-            )}
-          </div>
-          <p className="text-[11px] truncate mt-0.5" style={{ color: theme.textMuted }}>
-            {isDefault ? 'Use the standard demo voice' : (voice!.description || '')}
-          </p>
-        </div>
-        {!isDefault && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); playVoice(voice!); }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
-            style={{ backgroundColor: theme.primary15, color: theme.primary }}
-            aria-label="Preview voice"
-          >
-            {previewLoadingId === voice!.id ? <Loader2 className="h-4 w-4 animate-spin" /> : playingId === voice!.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+    <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Mic className="h-4 w-4" style={{ color: theme.primary }} />
         <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize your demo</h3>
       </div>
       <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
-        Pick the voice callers hear and, if you want, tweak the greeting and add a few instructions. The demo works great as-is, this is optional.
+        Pick the voice callers hear and, if you want, tweak the greeting and add a few instructions. Optional, the demo works great as-is.
       </p>
 
       {loading ? (
@@ -187,12 +144,16 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
       ) : (
         <>
           <div className="mb-5">
-            <label className={labelCls} style={{ color: theme.text }}>Demo voice</label>
-            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-              <VoiceRow isDefault />
-              {voices.map((v) => <VoiceRow key={v.id} voice={v} />)}
-            </div>
-            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Tap a voice to hear it say your greeting.</p>
+            <VoicePicker
+              theme={theme}
+              voices={voices}
+              value={selectedVoiceId}
+              onChange={setSelectedVoiceId}
+              filter={voiceFilter}
+              onFilter={setVoiceFilter}
+              playingVoiceId={playingVoiceId}
+              onPlay={(v: Voice) => playVoice(v)}
+            />
           </div>
 
           <div className="mb-5">
