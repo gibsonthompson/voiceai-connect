@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Rocket, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -100,6 +100,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
+    { href: '/agency/get-clients', label: 'Get Clients', icon: Rocket },
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
