@@ -45,6 +45,18 @@ const MODEL_OPTIONS = [
   { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower — use for complex industries', tag: 'Premium' },
 ];
 
+const TTS_MODEL_OPTIONS = [
+  { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most human and expressive, best for sounding natural (slightly higher latency)', tag: 'Most human' },
+  { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural and reliable, a great all-rounder', tag: 'Natural' },
+  { id: 'eleven_turbo_v2_5', name: 'Turbo v2.5', desc: 'Balanced, natural and fast', tag: 'Balanced' },
+  { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest, lowest latency but least expressive', tag: 'Fastest' },
+];
+
+const TRANSCRIBER_OPTIONS = [
+  { id: 'nova-3', name: 'Nova-3', desc: 'Best accuracy, recommended for phone calls, accents, and multiple languages', tag: 'Recommended' },
+  { id: 'nova-2', name: 'Nova-2', desc: 'Standard accuracy', tag: 'Standard' },
+];
+
 function hexToRgba(hex: string, alpha: number): string {
   try {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -120,6 +132,8 @@ export default function TemplateEditorPage() {
   const [firstMessage, setFirstMessage] = useState('');
   const [voiceId, setVoiceId] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
+  const [ttsModel, setTtsModel] = useState('eleven_turbo_v2_5');
+  const [transcriberModel, setTranscriberModel] = useState('nova-3');
   const [temperature, setTemperature] = useState(0.7);
   const [speed, setSpeed] = useState(1);
 
@@ -168,7 +182,7 @@ export default function TemplateEditorPage() {
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1);
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_turbo_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3');
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -222,7 +236,7 @@ export default function TemplateEditorPage() {
       const hasKb = kbData.services || kbData.faqs || kbData.additionalInfo || kbData.websiteUrl;
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, temperature, voice_speed: speed, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
+        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, tts_model: ttsModel, transcriber_model: transcriberModel, temperature, voice_speed: speed, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
       });
       if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed'); }
       setSaved(true); setTimeout(() => setSaved(false), 3000); await fetchTemplateData();
@@ -236,7 +250,7 @@ export default function TemplateEditorPage() {
     try {
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
       if (!r.ok) throw new Error('Failed');
-      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setSpeed(defaults.voice_speed ?? 1); }
+      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_turbo_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); }
       setKbWebsite(''); setKbServices([{ id: '1', name: '', price: '', description: '' }]);
       setKbFaqs([{ id: '1', question: '', answer: '' }]); setKbAdditionalInfo('');
       await fetchTemplateData();
@@ -253,12 +267,14 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_turbo_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
 
   const selectedModelObj = MODEL_OPTIONS.find(m => m.id === model);
+  const selectedTtsObj = TTS_MODEL_OPTIONS.find(m => m.id === ttsModel);
+  const selectedTranscriberObj = TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel);
 
   if (contextLoading || loading) {
     return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
@@ -378,9 +394,19 @@ export default function TemplateEditorPage() {
         <div className="flex-1 space-y-4 min-w-0">
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Model</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Response model</label>
               <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedModelObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice engine</label>
+              <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTtsObj.desc}</p>}
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speech recognition</label>
+              <CustomSelect value={transcriberModel} onChange={(v) => setTranscriberModel(v)} options={[...TRANSCRIBER_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel) ? [] : [{ value: transcriberModel, label: transcriberModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              {selectedTranscriberObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTranscriberObj.desc}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
