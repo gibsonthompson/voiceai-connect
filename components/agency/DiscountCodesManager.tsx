@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Loader2, Trash2, Tag, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, Loader2, Trash2, Tag, X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DiscountCode {
   id: string;
@@ -32,6 +32,119 @@ const emptyForm = { code: '', percent_off: '', waive_setup: false, setup_fee_per
 // Quiet, tucked-away discount-codes manager. Lives at the bottom of the Pricing
 // tab in agency Settings (no standalone page, no nav item) so discounts stay a
 // low-key tool rather than a headline feature.
+function ThemedDropdown({ value, onChange, options, theme, disabled }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; theme: any; disabled?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc); document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+  const selected = options.find((o) => o.value === value);
+  const menuBg = theme.card || theme.input || '#ffffff';
+  const hover = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const selBg = (theme.primary || '#10b981') + '22';
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" disabled={disabled} onClick={() => setOpen((o) => !o)}
+        className="w-full rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed"
+        style={{ backgroundColor: theme.input || theme.bg, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}>
+        <span>{selected ? selected.label : 'Select'}</span>
+        <svg className={`h-4 w-4 flex-shrink-0 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: theme.textMuted }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-lg border shadow-lg overflow-hidden" style={{ backgroundColor: menuBg, borderColor: theme.inputBorder || theme.border }}>
+          {options.map((o) => {
+            const isSel = o.value === value;
+            return (
+              <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-sm transition-colors"
+                style={{ color: theme.text, background: isSel ? selBg : 'transparent' }}
+                onMouseEnter={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = hover; }}
+                onMouseLeave={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThemedDatePicker({ value, onChange, theme, placeholder = 'No expiry' }: { value: string; onChange: (v: string) => void; theme: any; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const parsed = value ? new Date(value + 'T00:00:00') : null;
+  const [view, setView] = useState<Date>(() => parsed || new Date());
+  useEffect(() => { if (value) setView(new Date(value + 'T00:00:00')); }, [value]);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc); document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const display = parsed ? parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : placeholder;
+  const year = view.getFullYear(); const month = view.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const selStr = parsed ? fmt(parsed) : '';
+  const menuBg = theme.card || theme.input || '#ffffff';
+  const prim = theme.primary || '#10b981';
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)}
+        className="w-full rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between"
+        style={{ backgroundColor: theme.input || theme.bg, border: `1px solid ${theme.inputBorder || theme.border}`, color: value ? theme.text : theme.textMuted }}>
+        <span>{display}</span>
+        <Calendar className="h-4 w-4 flex-shrink-0 ml-2" style={{ color: theme.textMuted }} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 rounded-xl border shadow-xl p-3" style={{ backgroundColor: menuBg, borderColor: theme.inputBorder || theme.border, width: '15rem' }}>
+          <div className="flex items-center justify-between mb-2">
+            <button type="button" onClick={() => setView(new Date(year, month - 1, 1))} className="p-1 rounded-md" style={{ color: theme.text }}><ChevronLeft className="h-4 w-4" /></button>
+            <span className="text-sm font-medium" style={{ color: theme.text }}>{view.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
+            <button type="button" onClick={() => setView(new Date(year, month + 1, 1))} className="p-1 rounded-md" style={{ color: theme.text }}><ChevronRight className="h-4 w-4" /></button>
+          </div>
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((w, i) => <div key={i} className="text-center text-[10px] font-medium" style={{ color: theme.textMuted }}>{w}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-0.5">
+            {cells.map((d, i) => {
+              if (d === null) return <div key={i} />;
+              const cell = new Date(year, month, d);
+              const cellStr = fmt(cell);
+              const isSel = cellStr === selStr;
+              const isToday = cell.getTime() === today.getTime();
+              return (
+                <button key={i} type="button" onClick={() => { onChange(cellStr); setOpen(false); }}
+                  className="h-7 rounded-md text-xs transition-colors"
+                  style={{ color: isSel ? (theme.primaryText || '#ffffff') : theme.text, backgroundColor: isSel ? prim : 'transparent', fontWeight: isToday ? 700 : 400, border: isToday && !isSel ? `1px solid ${prim}` : '1px solid transparent' }}
+                  onMouseEnter={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
+                  onMouseLeave={(e) => { if (!isSel) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${theme.inputBorder || theme.border}` }}>
+            <button type="button" onClick={() => { onChange(''); setOpen(false); }} className="text-xs font-medium" style={{ color: theme.textMuted }}>Clear</button>
+            <button type="button" onClick={() => { onChange(fmt(today)); setOpen(false); }} className="text-xs font-medium" style={{ color: prim }}>Today</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props) {
   const [codes, setCodes] = useState<DiscountCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,11 +255,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                 </div>
                 <div>
                   <label className={labelClass} style={{ color: theme.textMuted }}>Percent-Off Duration</label>
-                  <select value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle}>
-                    <option value="forever">Ongoing (Forever)</option>
-                    <option value="once">First Month Only</option>
-                    <option value="repeating">A Set Number Of Months</option>
-                  </select>
+                  <ThemedDropdown value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} theme={theme} options={[{ value: 'forever', label: 'Ongoing (Forever)' }, { value: 'once', label: 'First Month Only' }, { value: 'repeating', label: 'A Set Number Of Months' }]} />
                 </div>
                 <div>
                   <label className={labelClass} style={{ color: theme.textMuted }}>Number Of Months {form.duration !== 'repeating' && '(repeating only)'}</label>
@@ -158,7 +267,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                 </div>
                 <div>
                   <label className={labelClass} style={{ color: theme.textMuted }}>Expires (Optional)</label>
-                  <input type="date" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
+                  <ThemedDatePicker value={form.expires_at} onChange={(v) => setForm({ ...form, expires_at: v })} theme={theme} placeholder="No expiry" />
                 </div>
                 <div className="sm:col-span-2 mt-0.5 space-y-2">
                   <label className="flex items-center gap-2 text-sm" style={{ color: theme.text }}>
