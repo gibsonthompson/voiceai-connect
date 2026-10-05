@@ -228,6 +228,8 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   useEmbedMessaging(isEmbed, 2);
 
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState(0);
+  useEffect(() => { if (!loading) { setLoadingMsg(0); return; } const id = setInterval(() => setLoadingMsg((m) => (m + 1) % 4), 2200); return () => clearInterval(id); }, [loading]);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [redirecting, setRedirecting] = useState(false);
@@ -468,13 +470,14 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
     icon: PLAN_ICON[tile.id] || Shield,
   }));
 
-  const wrapperClass = isEmbed ? '' : 'min-h-screen';
+  const wrapperClass = isEmbed ? '' : 'min-h-screen signup-mobile-zoom';
   const mainPaddingClass = isEmbed
     ? 'relative min-h-0 py-2 px-2 sm:px-4'
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
   return (
     <div className={wrapperClass} style={{ backgroundColor: bgColor, color: textColor }}>
+      {!isEmbed && <style dangerouslySetInnerHTML={{ __html: '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.9);transform-origin:top left;width:111.111%;min-height:111.111vh}}' }} />}
       {isDark && !isEmbed && (
         <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
@@ -512,6 +515,21 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             <a href={buildEmbedAwareUrl('/signup', isEmbed)} className="inline-flex items-center gap-2 text-sm transition-colors mb-6 sm:mb-8" style={{ color: mutedTextColor }}>
               <ArrowLeft className="h-4 w-4" /><span>Back to signup</span>
             </a>
+          )}
+
+          {loading && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: isDark ? 'rgba(5,5,5,0.94)' : 'rgba(255,255,255,0.96)', backdropFilter: 'blur(6px)' }}>
+              <div className="text-center max-w-sm w-full">
+                <div className="mx-auto mb-5 h-14 w-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${primaryColor}15` }}>
+                  <Loader2 className="h-7 w-7 animate-spin" style={{ color: primaryColor }} />
+                </div>
+                <p className="text-lg font-semibold" style={{ color: textColor }}>{['Creating your account', 'Setting up your AI receptionist', 'Configuring your phone line', 'Preparing secure checkout'][loadingMsg]}&hellip;</p>
+                <p className="text-sm mt-2" style={{ color: mutedTextColor }}>This can take up to a minute. Please keep this page open.</p>
+                <div className="mt-5 h-1.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+                  <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${(loadingMsg + 1) * 25}%`, backgroundColor: primaryColor }} />
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="mb-8 sm:mb-10">
@@ -617,7 +635,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
               consent is captured for every signup; for card-required agencies
               the text also carries the auto-renew disclosure. The stored
               consent_text mirrors this wording (links rendered as plain text). */}
-          <div className="max-w-md mx-auto mt-16 mb-4">
+          <div className="max-w-sm mx-auto mt-14 mb-3">
             <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
             <div className="flex gap-2">
               <input value={discountCode} onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountStatus('idle'); setDiscountMsg(''); setDiscount(null); }} onBlur={validateDiscount}
@@ -630,14 +648,14 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
           </div>
 
-          <div className="max-w-md mx-auto mb-8">
-            <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
+          <div className="max-w-sm mx-auto mb-8">
+            <label className="flex items-start gap-2.5 rounded-xl border p-3.5 cursor-pointer transition-colors"
               style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>
               <input type="checkbox" checked={consentAgreed}
                 onChange={(e) => { setConsentAgreed(e.target.checked); if (e.target.checked) setError(''); }}
-                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer"
                 style={{ accentColor: primaryColor }} />
-              <span className="text-sm leading-relaxed" style={{ color: mutedTextColor }}>
+              <span className="text-xs leading-relaxed" style={{ color: mutedTextColor }}>
                 I agree to the{' '}
                 <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Terms of Service</a>
                 {' '}and{' '}
