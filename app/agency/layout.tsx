@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Rocket, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -100,7 +100,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
-    { href: '/agency/get-clients', label: 'Get Clients', icon: Rocket },
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
@@ -381,11 +380,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
-        <nav className="p-4 space-y-1">
+        <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
             <Link key={item.href} data-tour={'nav-' + item.href.replace('/agency/', '')} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
               <div className="flex items-center gap-3"><IconComponent className="h-5 w-5" /><span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
@@ -394,7 +393,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             </Link>); })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
+        <div className="flex-shrink-0 p-4 space-y-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 1rem)' : '1rem' }}>
           {agency?.access_plan && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}><p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Plan</p><p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Scale'}</p><p className="text-xs mt-1" style={{ color: theme.primary, opacity: 0.6 }}>Complimentary access</p></div>)}
           {!agency?.access_plan && isOnTrial && trialDaysLeft !== null && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs" style={{ color: theme.infoText, opacity: 0.8 }}>Trial Period</p><p className="text-sm font-medium" style={{ color: theme.infoText }}>{trialDaysLeft} days remaining</p><p className="text-xs mt-1" style={{ color: theme.infoText, opacity: 0.6 }}>{agency?.stripe_subscription_id ? 'Your card will be charged automatically' : 'Subscribe before your trial ends to keep access'}</p></div>)}
           {hasPaymentIssue && (<Link href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></Link>)}
