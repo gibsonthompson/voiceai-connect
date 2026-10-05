@@ -299,6 +299,7 @@ function SetPasswordContent() {
   if (success) {
     return (
       <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6'} style={wrapperStyle}>
+        {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}`}</style>}
         {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
         {isDark && !isEmbed && (
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -333,6 +334,7 @@ function SetPasswordContent() {
 
   return (
     <div className={isEmbed ? 'overflow-hidden' : 'min-h-screen overflow-hidden'} style={wrapperStyle}>
+      {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}`}</style>}
       {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
 
       {isDark && !isEmbed && (
@@ -354,8 +356,8 @@ function SetPasswordContent() {
             <div className="flex h-16 sm:h-20 items-center justify-between">
               <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
                 {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-contain"
-                    style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5"
+                    style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
                 ) : (
                   <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
                 )}
