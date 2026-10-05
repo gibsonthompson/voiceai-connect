@@ -129,6 +129,17 @@
 .admin-scope .a-table tbody tr { transition: background .12s; }
 .admin-scope .a-table tbody tr:hover { background: #F6FCF9; }
 
+/* Mobile: let data tables scroll horizontally inside their overflow-x-auto
+   wrapper instead of cramming every column into the phone viewport, which
+   forced ugly multi-line wrapping (caller numbers over 3 lines, names stacked).
+   Cells stay on one line; the wrapper owns the horizontal scroll. Affects every
+   admin page built on .a-table (calls, money, clients, leads, growth, etc.). */
+@media (max-width: 767px) {
+  .admin-scope .a-table { min-width: 560px; }
+  .admin-scope .a-table thead th,
+  .admin-scope .a-table tbody td { white-space: nowrap; }
+}
+
 /* number styling helper, pair with the Space Grotesk font class on the element */
 .admin-scope .a-num { font-feature-settings: "tnum"; letter-spacing: -.02em; }
 

@@ -195,7 +195,7 @@ export default function AdminExpensesPage() {
           <div className="p-16 text-center text-sm text-white/40">No usage data yet</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[720px] whitespace-nowrap">
               <thead>
                 <tr className="border-b border-white/[0.06]">
                   <th className="text-left text-[10px] font-medium text-white/40 uppercase tracking-[0.1em] px-6 py-3.5">Agency</th>

@@ -26,7 +26,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AdminSupportThread from '@/components/admin/AdminSupportThread';
 import {
-  LifeBuoy, MessageSquare, Search, Loader2, Loader, Clock, Building2,
+  LifeBuoy, Search, Loader2, Loader, Clock, Building2,
   User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X, AlertTriangle} from 'lucide-react';
 
 
@@ -62,7 +62,7 @@ function formatDateTime(date: string): string {
 // PAGE (tab shell + badge counts)
 // ============================================================================
 export default function AdminSupportPage() {
-  const [tab, setTab] = useState<'support' | 'feedback' | 'errors'>('support');
+  const [tab, setTab] = useState<'support' | 'errors'>('support');
   const [supportOpen, setSupportOpen] = useState<number | null>(null);
   const [feedbackNew, setFeedbackNew] = useState<number | null>(null);
   const [errorsOpen, setErrorsOpen] = useState<number | null>(null);
@@ -86,7 +86,7 @@ export default function AdminSupportPage() {
 
   useEffect(() => { reloadBadges(); }, [reloadBadges]);
 
-  const tabBtn = (id: 'support' | 'feedback' | 'errors', label: string, Icon: any, badge: number | null) => {
+  const tabBtn = (id: 'support' | 'errors', label: string, Icon: any, badge: number | null) => {
     const active = tab === id;
     return (
       <button
@@ -115,17 +115,16 @@ export default function AdminSupportPage() {
   return (
     <div className="p-5 lg:p-8 max-w-[1400px]">
       <div className="mb-5">
-        <h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Support &amp; Feedback</h1>
+        <h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Support</h1>
         <p className="mt-1 text-sm text-[var(--a-muted)]">Inbound help-widget escalations and feedback submissions</p>
       </div>
 
       <div className="flex items-center gap-2 mb-6">
-        {tabBtn('support', 'Support Requests', LifeBuoy, supportOpen)}
-        {tabBtn('feedback', 'Feedback', MessageSquare, feedbackNew)}
+        {tabBtn('support', 'Support', LifeBuoy, (supportOpen || 0) + (feedbackNew || 0))}
         {tabBtn('errors', 'Backend Errors', AlertTriangle, errorsOpen)}
       </div>
 
-      {tab === 'support' ? <SupportTab onChanged={reloadBadges} /> : tab === 'feedback' ? <FeedbackTab onChanged={reloadBadges} /> : <ErrorsTab onChanged={reloadBadges} />}
+      {tab === 'errors' ? <ErrorsTab onChanged={reloadBadges} /> : <SupportTab onChanged={reloadBadges} />}
     </div>
   );
 }
@@ -170,78 +169,170 @@ function typeStyle(userType: string | null) {
 
 function SupportTab({ onChanged }: { onChanged: () => void }) {
   const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState<SupportRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState({ open: 0, in_progress: 0, resolved: 0, total: 0 });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const limit = 30;
 
-  const fetchRequests = useCallback(async () => {
+  // Feedback has its own status words; map them onto the support vocabulary so the
+  // whole queue reads as one Support list (new -> open, reviewed -> in progress,
+  // archived -> resolved). Status writes map back to the right value per source.
+  const FB_TO_UNIFIED: Record<string, string> = { new: 'open', reviewed: 'in_progress', archived: 'resolved' };
+  const UNIFIED_TO_FB: Record<string, string> = { open: 'new', in_progress: 'reviewed', resolved: 'archived' };
+
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      params.set('limit', limit.toString());
-      params.set('offset', (page * limit).toString());
-      if (statusFilter) params.set('status', statusFilter);
-      if (userTypeFilter) params.set('user_type', userTypeFilter);
-      if (search) params.set('search', search);
-      const res = await fetch(`${getBackendUrl()}/api/admin/support-requests?${params}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch support requests');
-      const data = await res.json();
-      setRequests(data.requests || []);
-      setTotal(data.total || 0);
-      if (data.counts) setCounts(data.counts);
+      const headers = { Authorization: `Bearer ${getToken()}` };
+      const [sRes, fRes] = await Promise.all([
+        fetch(`${getBackendUrl()}/api/admin/support-requests?limit=200`, { headers }),
+        fetch(`${getBackendUrl()}/api/admin/feedback?limit=200`, { headers }),
+      ]);
+      const sData = sRes.ok ? await sRes.json() : {};
+      const fData = fRes.ok ? await fRes.json() : {};
+      const support = (sData.requests || []).map((r: any) => ({
+        _kind: 'support', id: r.id, agency_id: r.agency_id, message: r.message,
+        created_at: r.created_at, display_name: r.display_name, user_email: r.user_email,
+        user_type: r.user_type, unified_status: r.status || 'open', admin_notes: r.admin_notes,
+        source: r.source || 'widget', resolved_at: r.resolved_at,
+      }));
+      const feedback = (fData.feedback || fData.items || []).map((f: any) => ({
+        _kind: 'feedback', id: f.id, agency_id: f.agency_id, message: f.message,
+        created_at: f.created_at, display_name: f.agency_name, user_email: f.agency_email,
+        user_type: 'agency', unified_status: FB_TO_UNIFIED[f.status || 'new'] || 'open',
+        admin_notes: f.admin_notes, source: 'feedback', resolved_at: f.reviewed_at,
+      }));
+      const merged = [...support, ...feedback].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setItems(merged);
     } catch (e) {
-      console.error('Support requests error:', e);
+      console.error('Support queue error:', e);
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, userTypeFilter, search]);
+  }, []);
 
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => { setPage(0); }, [statusFilter, userTypeFilter, search]);
 
-  const totalPages = Math.ceil(total / limit);
-
-  const toggleRow = (req: SupportRequest) => {
-    if (expandedId === req.id) setExpandedId(null);
-    else { setExpandedId(req.id); setNoteDraft(req.admin_notes || ''); }
+  const counts = {
+    total: items.length,
+    open: items.filter(i => i.unified_status === 'open').length,
+    in_progress: items.filter(i => i.unified_status === 'in_progress').length,
+    resolved: items.filter(i => i.unified_status === 'resolved').length,
   };
 
-  const patchRequest = async (id: string, body: { status?: string; admin_notes?: string }) => {
-    setSavingId(id);
+  const q = search.trim().toLowerCase();
+  const filtered = items.filter(i => {
+    if (statusFilter && i.unified_status !== statusFilter) return false;
+    if (userTypeFilter && i.user_type !== userTypeFilter) return false;
+    if (q && !`${i.message || ''} ${i.display_name || ''} ${i.user_email || ''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const totalPages = Math.ceil(filtered.length / limit);
+  const pageItems = filtered.slice(page * limit, page * limit + limit);
+
+  const keyOf = (it: any) => `${it._kind}-${it.id}`;
+  const toggleRow = (it: any) => {
+    const k = keyOf(it);
+    if (expandedKey === k) setExpandedKey(null);
+    else { setExpandedKey(k); setNoteDraft(it.admin_notes || ''); }
+  };
+
+  const patchItem = async (it: any, body: { status?: string; admin_notes?: string }) => {
+    const k = keyOf(it);
+    setSavingKey(k);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/admin/support-requests/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify(body),
-      });
+      const url = it._kind === 'feedback'
+        ? `${getBackendUrl()}/api/admin/feedback/${it.id}`
+        : `${getBackendUrl()}/api/admin/support-requests/${it.id}`;
+      const payload: any = {};
+      if (body.status) payload.status = it._kind === 'feedback' ? (UNIFIED_TO_FB[body.status] || 'new') : body.status;
+      if (body.admin_notes !== undefined) payload.admin_notes = body.admin_notes;
+      const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error('Failed to update');
-      const data = await res.json();
-      setRequests(prev => prev.map(r => (r.id === id ? data.request : r)));
-      await fetchRequests();
+      await fetchAll();
       onChanged();
     } catch (e) {
-      console.error('Update support request error:', e);
+      console.error('Update support item error:', e);
     } finally {
-      setSavingId(null);
+      setSavingKey(null);
     }
   };
+
+  function renderDetail(it: any, isSaving: boolean) {
+    const ss = supportStatusStyle(it.unified_status);
+    return (
+      <div className="py-4 border-t border-[var(--a-line)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <div>
+              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Message</h4>
+              <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">{it.message}</pre>
+            </div>
+            <div>
+              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
+              <div className="flex flex-wrap items-center gap-2">
+                {SUPPORT_STATUS_OPTIONS.map(opt => {
+                  const s = supportStatusStyle(opt.value);
+                  const active = it.unified_status === opt.value;
+                  return (
+                    <button key={opt.value} onClick={(e) => { e.stopPropagation(); if (!active) patchItem(it, { status: opt.value }); }} disabled={isSaving || active} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default" style={{ backgroundColor: active ? s.bg : 'transparent', borderColor: active ? s.border : 'var(--a-line-2)', color: active ? s.color : 'var(--a-muted)' }}>
+                      {active && <Check className="h-3 w-3" />}{opt.label}
+                    </button>
+                  );
+                })}
+                {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
+              </div>
+            </div>
+            {it._kind === 'support' && (
+              <div><AdminSupportThread requestId={it.id} agencyId={it.agency_id} /></div>
+            )}
+            <div>
+              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
+              <textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} onClick={(e) => e.stopPropagation()} rows={3} placeholder="Notes for your own reference (not shown to the user)..." className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none" />
+              <div className="mt-2 flex justify-end">
+                <button onClick={(e) => { e.stopPropagation(); patchItem(it, { admin_notes: noteDraft }); }} disabled={isSaving || noteDraft === (it.admin_notes || '')} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default">
+                  {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}Save Notes
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(it.created_at)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Channel</span><span className="text-[var(--a-ink)]">{it._kind === 'feedback' ? 'Feedback form' : 'Help widget'}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User Type</span><span className="text-[var(--a-ink)] capitalize">{it.user_type || 'unknown'}</span></div>
+              {it.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{it.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{it.display_name}</span></div>}
+              {it.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{it.user_email}</span></div>}
+              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
+              {it.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{it._kind === 'feedback' ? 'Reviewed' : 'Resolved'}</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(it.resolved_at)}</span></div>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {it.agency_id && (
+                <Link href={`/admin/agencies?expand=${it.agency_id}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]"><Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" /></Link>
+              )}
+              {it.user_email && (
+                <a href={gmailComposeUrl(it.user_email, 'Re: your message to VoiceAI Connect', `Hi ${it.display_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]"><Mail className="h-3 w-3" /> Reply by email</a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
         <div className="text-sm text-[var(--a-muted)]">
-          {counts.total} request{counts.total !== 1 ? 's' : ''}
+          {counts.total} item{counts.total !== 1 ? 's' : ''}
           {counts.open > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.open} open</span></span>}
           {counts.in_progress > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.in_progress} in progress</span></span>}
           {counts.resolved > 0 && <span> · <span className="text-[var(--a-em-deep)]">{counts.resolved} resolved</span></span>}
@@ -252,38 +343,21 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
       </div>
 
       {createOpen && (
-        <CreateTicketModal
-          onClose={() => setCreateOpen(false)}
-          onCreated={async () => { setCreateOpen(false); setPage(0); await fetchRequests(); onChanged(); }}
-        />
+        <CreateTicketModal onClose={() => setCreateOpen(false)} onCreated={async () => { setCreateOpen(false); setPage(0); await fetchAll(); onChanged(); }} />
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
-          <input
-            type="text"
-            placeholder="Search message, email, name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
-          />
+          <input type="text" placeholder="Search message, email, name..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors" />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]">
           <option value="">All Statuses</option>
           <option value="open">Open</option>
           <option value="in_progress">In Progress</option>
           <option value="resolved">Resolved</option>
         </select>
-        <select
-          value={userTypeFilter}
-          onChange={(e) => setUserTypeFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
+        <select value={userTypeFilter} onChange={(e) => setUserTypeFilter(e.target.value)} className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]">
           <option value="">All Users</option>
           <option value="agency">Agency</option>
           <option value="client">Client</option>
@@ -292,507 +366,101 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
 
       <div className="a-panel">
         {loading ? (
-          <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
-          </div>
-        ) : requests.length === 0 ? (
+          <div className="p-12 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>
+        ) : filtered.length === 0 ? (
           <div className="p-16 text-center">
             <div className="relative inline-flex mb-4">
               <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
-                <LifeBuoy className="h-7 w-7 text-[var(--a-dim)]" />
-              </div>
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]"><LifeBuoy className="h-7 w-7 text-[var(--a-dim)]" /></div>
             </div>
-            <p className="text-sm text-[var(--a-muted)]">No support requests found</p>
-            <p className="text-xs text-[var(--a-dim)] mt-1">Escalations from the help widget will appear here</p>
+            <p className="text-sm text-[var(--a-muted)]">No support items found</p>
+            <p className="text-xs text-[var(--a-dim)] mt-1">Help-widget escalations and feedback submissions appear here</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">User</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
-                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--a-line)]">
-                {requests.map((req) => {
-                  const ss = supportStatusStyle(req.status);
-                  const ts = typeStyle(req.user_type);
-                  const isExpanded = expandedId === req.id;
-                  const isSaving = savingId === req.id;
-                  return (
-                    <>
-                      <tr
-                        key={req.id}
-                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
-                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
-                        onClick={() => toggleRow(req)}
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(req.created_at)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            {req.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
-                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{req.display_name || 'Unknown'}</span>
-                            {req.source === 'admin' && <span className="text-[8.5px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Manual</span>}
-                          </div>
-                          {req.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{req.user_email}</span>}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: ts.bg, borderColor: ts.border, color: ts.color }}>
-                            {ts.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[280px]">
-                            {req.message?.slice(0, 90)}{req.message?.length > 90 ? '...' : ''}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>
-                            {ss.label}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {isExpanded && (
-                        <tr key={`${req.id}-detail`} style={{ background: '#F6FCF9' }}>
-                          <td colSpan={5} className="px-5 py-0">
-                            <div className="py-4 border-t border-[var(--a-line)]">
-                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <div className="lg:col-span-2 space-y-4">
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Message</h4>
-                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
-                                      {req.message}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {SUPPORT_STATUS_OPTIONS.map(opt => {
-                                        const s = supportStatusStyle(opt.value);
-                                        const active = req.status === opt.value;
-                                        return (
-                                          <button
-                                            key={opt.value}
-                                            onClick={(e) => { e.stopPropagation(); if (!active) patchRequest(req.id, { status: opt.value }); }}
-                                            disabled={isSaving || active}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
-                                            style={{
-                                              backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'var(--a-line-2)',
-                                              color: active ? s.color : 'var(--a-muted)',
-                                            }}
-                                          >
-                                            {active && <Check className="h-3 w-3" />}
-                                            {opt.label}
-                                          </button>
-                                        );
-                                      })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <AdminSupportThread requestId={req.id} agencyId={req.agency_id} />
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
-                                    <textarea
-                                      value={noteDraft}
-                                      onChange={(e) => setNoteDraft(e.target.value)}
-                                      onClick={(e) => e.stopPropagation()}
-                                      rows={3}
-                                      placeholder="Notes for your own reference (not shown to the user)..."
-                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
-                                    />
-                                    <div className="mt-2 flex justify-end">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); patchRequest(req.id, { admin_notes: noteDraft }); }}
-                                        disabled={isSaving || noteDraft === (req.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
-                                      >
-                                        {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                        Save Notes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
-                                  <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.created_at)}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User Type</span><span className="text-[var(--a-ink)] capitalize">{req.user_type || 'unknown'}</span></div>
-                                    {req.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{req.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.display_name}</span></div>}
-                                    {req.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{req.user_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Source</span><span className="text-[var(--a-ink)]">{req.source || 'widget'}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
-                                    {req.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Resolved</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(req.resolved_at)}</span></div>}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    {req.agency_id && (
-                                      <Link href={`/admin/agencies?expand=${req.agency_id}`} onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
-                                        <Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" />
-                                      </Link>
-                                    )}
-                                    {req.user_email && (
-                                      <a href={gmailComposeUrl(req.user_email, 'Re: your VoiceAI Connect support request', `Hi ${req.display_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                        <Mail className="h-3 w-3" /> Reply by email
-                                      </a>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+          <>
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
+                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
+                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">User</th>
+                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
+                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
+                    <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--a-line)]">
+                  {pageItems.map((it) => {
+                    const ss = supportStatusStyle(it.unified_status);
+                    const ts = typeStyle(it.user_type);
+                    const k = keyOf(it);
+                    const isExpanded = expandedKey === k;
+                    const isSaving = savingKey === k;
+                    return (
+                      <>
+                        <tr key={k} className="hover:bg-[#F6FCF9] transition-colors cursor-pointer" style={isExpanded ? { background: '#F6FCF9' } : undefined} onClick={() => toggleRow(it)}>
+                          <td className="px-5 py-3.5"><div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-[var(--a-dim)]" /><span className="text-xs text-[var(--a-muted)]">{timeAgo(it.created_at)}</span></div></td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-1.5">
+                              {it.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
+                              <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{it.display_name || 'Unknown'}</span>
+                              {it.source === 'admin' && <span className="text-[8.5px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Manual</span>}
                             </div>
+                            {it.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{it.user_email}</span>}
                           </td>
+                          <td className="px-4 py-3.5"><span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: ts.bg, borderColor: ts.border, color: ts.color }}>{ts.label}</span></td>
+                          <td className="px-4 py-3.5"><p className="text-xs text-[var(--a-muted)] truncate max-w-[280px]">{it.message?.slice(0, 90)}{it.message?.length > 90 ? '...' : ''}</p></td>
+                          <td className="px-4 py-3.5 text-center"><span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>{ss.label}</span></td>
                         </tr>
-                      )}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {isExpanded && (
+                          <tr key={`${k}-d`} style={{ background: '#F6FCF9' }}>
+                            <td colSpan={5} className="px-5 py-0">{renderDetail(it, isSaving)}</td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden divide-y divide-[var(--a-line)]">
+              {pageItems.map((it) => {
+                const ss = supportStatusStyle(it.unified_status);
+                const k = keyOf(it);
+                const isExpanded = expandedKey === k;
+                const isSaving = savingKey === k;
+                return (
+                  <div key={k}>
+                    <button onClick={() => toggleRow(it)} className="w-full text-left px-4 py-3.5" style={isExpanded ? { background: '#F6FCF9' } : undefined}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {it.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)] shrink-0" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)] shrink-0" />}
+                            <span className="text-[13px] font-medium text-[var(--a-ink)] truncate">{it.display_name || 'Unknown'}</span>
+                          </div>
+                          {it.user_email && <p className="text-[10px] text-[var(--a-dim)] truncate mt-0.5">{it.user_email}</p>}
+                        </div>
+                        <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium shrink-0" style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>{ss.label}</span>
+                      </div>
+                      <p className="text-xs text-[var(--a-muted)] mt-1.5 line-clamp-2">{it.message}</p>
+                      <p className="text-[10px] text-[var(--a-dim)] mt-1">{timeAgo(it.created_at)}</p>
+                    </button>
+                    {isExpanded && <div className="px-4">{renderDetail(it, isSaving)}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
+          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {filtered.length} total</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              <ArrowLeft className="h-3 w-3" /> Prev
-            </button>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              Next <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-// ============================================================================
-// FEEDBACK TAB
-// ============================================================================
-interface Feedback {
-  id: string;
-  agency_id: string | null;
-  message: string;
-  status: string | null;
-  admin_notes: string | null;
-  created_at: string;
-  reviewed_at: string | null;
-  agency_name: string | null;
-  agency_email: string | null;
-}
-
-const FEEDBACK_STATUS_OPTIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'reviewed', label: 'Reviewed' },
-  { value: 'archived', label: 'Archived' },
-];
-
-function feedbackStatusStyle(status: string | null) {
-  switch (status || 'new') {
-    case 'new': return { color: 'var(--a-amber)', bg: 'var(--a-amber-soft)', border: 'var(--a-amber)', label: 'New' };
-    case 'reviewed': return { color: 'var(--a-cyan)', bg: 'var(--a-cyan-soft)', border: 'var(--a-cyan)', label: 'Reviewed' };
-    case 'archived': return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: 'Archived' };
-    default: return { color: 'var(--a-muted)', bg: '#F1F5F3', border: 'var(--a-line-2)', label: status || 'new' };
-  }
-}
-
-function FeedbackTab({ onChanged }: { onChanged: () => void }) {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<Feedback[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState({ new: 0, reviewed: 0, archived: 0, total: 0 });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const limit = 30;
-
-  const fetchFeedback = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('limit', limit.toString());
-      params.set('offset', (page * limit).toString());
-      if (statusFilter) params.set('status', statusFilter);
-      if (search) params.set('search', search);
-      const res = await fetch(`${getBackendUrl()}/api/admin/feedback?${params}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch feedback');
-      const data = await res.json();
-      setItems(data.feedback || []);
-      setTotal(data.total || 0);
-      if (data.counts) setCounts(data.counts);
-    } catch (e) {
-      console.error('Feedback error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, search]);
-
-  useEffect(() => { fetchFeedback(); }, [fetchFeedback]);
-  useEffect(() => { setPage(0); }, [statusFilter, search]);
-
-  const totalPages = Math.ceil(total / limit);
-
-  const toggleRow = (fb: Feedback) => {
-    if (expandedId === fb.id) setExpandedId(null);
-    else { setExpandedId(fb.id); setNoteDraft(fb.admin_notes || ''); }
-  };
-
-  const patchFeedback = async (id: string, body: { status?: string; admin_notes?: string }) => {
-    setSavingId(id);
-    try {
-      const res = await fetch(`${getBackendUrl()}/api/admin/feedback/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      const data = await res.json();
-      setItems(prev => prev.map(f => (f.id === id ? { ...f, ...data.feedback } : f)));
-      await fetchFeedback();
-      onChanged();
-    } catch (e) {
-      console.error('Update feedback error:', e);
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  return (
-    <>
-      <div className="mb-5 text-sm text-[var(--a-muted)]">
-        {counts.total} submission{counts.total !== 1 ? 's' : ''}
-        {counts.new > 0 && <span> · <span className="text-[var(--a-amber)]">{counts.new} new</span></span>}
-        {counts.reviewed > 0 && <span> · <span className="text-[var(--a-cyan)]">{counts.reviewed} reviewed</span></span>}
-        {counts.archived > 0 && <span> · <span className="text-[var(--a-muted)]">{counts.archived} archived</span></span>}
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
-          <input
-            type="text"
-            placeholder="Search feedback message..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] pl-10 pr-4 py-2.5 text-sm text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] transition-colors"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="appearance-none rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-4 py-2.5 text-sm text-[var(--a-ink)] focus:outline-none focus:border-[var(--a-em-line)]"
-        >
-          <option value="">All Statuses</option>
-          <option value="new">New</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div className="a-panel">
-        {loading ? (
-          <div className="p-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]">
-                <MessageSquare className="h-7 w-7 text-[var(--a-dim)]" />
-              </div>
-            </div>
-            <p className="text-sm text-[var(--a-muted)]">No feedback found</p>
-            <p className="text-xs text-[var(--a-dim)] mt-1">Submissions from Settings &gt; Feedback will appear here</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Agency</th>
-                  <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Feedback</th>
-                  <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--a-line)]">
-                {items.map((fb) => {
-                  const fs = feedbackStatusStyle(fb.status);
-                  const isExpanded = expandedId === fb.id;
-                  const isSaving = savingId === fb.id;
-                  return (
-                    <>
-                      <tr
-                        key={fb.id}
-                        className="hover:bg-[#F6FCF9] transition-colors cursor-pointer"
-                        style={isExpanded ? { background: '#F6FCF9' } : undefined}
-                        onClick={() => toggleRow(fb)}
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-muted)]">{timeAgo(fb.created_at)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="h-3 w-3 text-[var(--a-dim)]" />
-                            <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{fb.agency_name || 'Unknown'}</span>
-                          </div>
-                          {fb.agency_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{fb.agency_email}</span>}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs text-[var(--a-muted)] truncate max-w-[320px]">
-                            {fb.message?.slice(0, 100)}{fb.message?.length > 100 ? '...' : ''}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium"
-                            style={{ backgroundColor: fs.bg, borderColor: fs.border, color: fs.color }}>
-                            {fs.label}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {isExpanded && (
-                        <tr key={`${fb.id}-detail`} style={{ background: '#F6FCF9' }}>
-                          <td colSpan={4} className="px-5 py-0">
-                            <div className="py-4 border-t border-[var(--a-line)]">
-                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <div className="lg:col-span-2 space-y-4">
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Feedback</h4>
-                                    <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">
-                                      {fb.message}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {FEEDBACK_STATUS_OPTIONS.map(opt => {
-                                        const s = feedbackStatusStyle(opt.value);
-                                        const active = (fb.status || 'new') === opt.value;
-                                        return (
-                                          <button
-                                            key={opt.value}
-                                            onClick={(e) => { e.stopPropagation(); if (!active) patchFeedback(fb.id, { status: opt.value }); }}
-                                            disabled={isSaving || active}
-                                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
-                                            style={{
-                                              backgroundColor: active ? s.bg : 'transparent',
-                                              borderColor: active ? s.border : 'var(--a-line-2)',
-                                              color: active ? s.color : 'var(--a-muted)',
-                                            }}
-                                          >
-                                            {active && <Check className="h-3 w-3" />}
-                                            {opt.label}
-                                          </button>
-                                        );
-                                      })}
-                                      {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
-                                    <textarea
-                                      value={noteDraft}
-                                      onChange={(e) => setNoteDraft(e.target.value)}
-                                      onClick={(e) => e.stopPropagation()}
-                                      rows={3}
-                                      placeholder="Notes for your own reference..."
-                                      className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
-                                    />
-                                    <div className="mt-2 flex justify-end">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); patchFeedback(fb.id, { admin_notes: noteDraft }); }}
-                                        disabled={isSaving || noteDraft === (fb.admin_notes || '')}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default"
-                                      >
-                                        {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                        Save Notes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
-                                  <div className="space-y-1.5 text-xs">
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.created_at)}</span></div>
-                                    {fb.agency_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Agency</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_name}</span></div>}
-                                    {fb.agency_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{fb.agency_email}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: fs.color }}>{fs.label}</span></div>
-                                    {fb.reviewed_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Reviewed</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(fb.reviewed_at)}</span></div>}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    {fb.agency_id && (
-                                      <Link href={`/admin/agencies?expand=${fb.agency_id}`} onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]">
-                                        <Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" />
-                                      </Link>
-                                    )}
-                                    {fb.agency_email && (
-                                      <a href={gmailComposeUrl(fb.agency_email, 'Re: your feedback', `Hi ${fb.agency_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]">
-                                        <Mail className="h-3 w-3" /> Reply by email
-                                      </a>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {total} total</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              <ArrowLeft className="h-3 w-3" /> Prev
-            </button>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              Next <ArrowRight className="h-3 w-3" />
-            </button>
+            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ArrowLeft className="h-3 w-3" /> Prev</button>
+            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Next <ArrowRight className="h-3 w-3" /></button>
           </div>
         </div>
       )}

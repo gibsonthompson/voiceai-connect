@@ -100,7 +100,14 @@ function SmsLogTab() {
   });
 
   return (
-    <div className="flex rounded-2xl overflow-hidden h-[calc(100vh-210px)] min-h-[480px]" style={{ border: '1px solid var(--a-line)' }}>
+    <>
+      <div className="mb-4 rounded-xl px-4 py-3 flex items-start gap-2.5" style={{ background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)' }}>
+        <MessageSquare className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'var(--a-em-deep)' }} />
+        <div className="text-[12px] leading-relaxed" style={{ color: 'var(--a-muted)' }}>
+          <span className="font-semibold text-[var(--a-ink)]">Every SMS the platform sent or received</span>, grouped by contact, one row per phone number, newest first. A <span className="font-medium text-[var(--a-ink)]">&quot;You:&quot;</span> prefix means the platform sent it (activation nudges, new-call alerts, agency notifications); no prefix means they replied. Tap a conversation to read the full thread and reply, your reply sends from the platform number.
+        </div>
+      </div>
+    <div className="flex rounded-2xl overflow-hidden h-[calc(100dvh-270px)] min-h-[440px]" style={{ border: '1px solid var(--a-line)' }}>
       {/* Conversations list */}
       <div className={`${activePhone ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col shrink-0`} style={{ borderRight: '1px solid var(--a-line)', backgroundColor: 'var(--a-card)' }}>
         <div className="p-3" style={{ borderBottom: '1px solid var(--a-line)' }}>
@@ -180,6 +187,7 @@ function SmsLogTab() {
         )}
       </div>
     </div>
+    </>
   );
 }
 

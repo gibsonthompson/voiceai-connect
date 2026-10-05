@@ -112,7 +112,7 @@ export default function AdminRepliesPage() {
   const totalUnread = conversations.reduce((n, c) => n + c.unread, 0);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
+    <div className="flex h-[calc(100dvh-4rem)] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
       {/* Conversation list */}
       <aside
         className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`}
