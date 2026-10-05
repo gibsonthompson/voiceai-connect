@@ -93,7 +93,7 @@ function ClientLoginContent() {
               // signed-out return still shows this agency's login.
               try {
                 localStorage.setItem('voiceai_agency_brand', JSON.stringify(d.agency));
-                const dark = d.agency?.website_theme !== 'light';
+                const dark = d.agency?.website_theme === 'dark';
                 localStorage.setItem('voiceai_ui_theme', dark ? 'dark' : 'light');
               } catch {}
             }
@@ -168,7 +168,7 @@ function ClientLoginContent() {
 
   const primaryColor = agency?.primary_color || '#2563eb';
   const primaryText = getContrastColor(primaryColor);
-  const isDark = agency?.website_theme !== 'light';
+  const isDark = agency?.website_theme === 'dark';
 
   const t = isDark ? {
     bg: '#050505', text: '#f5f5f0', textMuted: 'rgba(245,245,240,0.5)', textSubtle: 'rgba(245,245,240,0.3)',
@@ -220,9 +220,7 @@ function ClientLoginContent() {
           <div className="flex h-16 items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3 min-w-0">
               {agency?.logo_url ? (
-                <div className="flex items-center justify-center rounded-xl overflow-hidden flex-shrink-0" style={{ backgroundColor: agency.logo_background_color || 'transparent', padding: agency.logo_background_color ? '6px' : '0' }}>
-                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 object-contain" />
-                </div>
+                <img src={agency.logo_url} alt={agency.name} className="h-11 sm:h-12 w-auto max-w-[200px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
               ) : (
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: primaryColor }}><Phone className="h-4 w-4" style={{ color: primaryText }} /></div>
               )}
