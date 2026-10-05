@@ -21,7 +21,7 @@ interface Voice {
 interface TemplateData {
   id: string | null; isCustom: boolean; isActive: boolean;
   system_prompt: string; first_message: string; voice_id: string; voice_speed: number; voice: Voice | null;
-  model: string; temperature: number; knowledge_base_data: KBData | null; updated_at: string | null;
+  model: string; temperature: number; tts_model?: string; transcriber_model?: string; knowledge_base_data: KBData | null; updated_at: string | null;
 }
 
 interface KBData {
