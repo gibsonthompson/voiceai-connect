@@ -295,6 +295,7 @@ function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode, hasPermission } = useAgency();
   const theme = useTheme();
   const searchParams = useSearchParams();
+  const cardAdded = searchParams.get('card_added') === 'true';
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer', 'webhooks'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
@@ -305,7 +306,7 @@ function AgencySettingsContent() {
   // immutable, so it is chosen before connecting and posted to the onboard
   // endpoint. Initialized from the agency's stored country, else US.
   const [connectCountry, setConnectCountry] = useState('US');
-  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false); const [addCardLoading, setAddCardLoading] = useState(false);
   const [agencyName, setAgencyName] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null); const [removingLogo, setRemovingLogo] = useState(false);
   const [extractingColors, setExtractingColors] = useState(false); const [extractedColors, setExtractedColors] = useState<{ primary: string; secondary: string; accent: string } | null>(null);
   const [brandColors, setBrandColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
@@ -843,6 +844,7 @@ function AgencySettingsContent() {
   const handleStripeConnect = async () => { if (!agency) return; setConnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/onboard`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, country: connectCountry }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.message || data.error || 'Failed to start Stripe onboarding'); } const data = await response.json(); window.location.href = data.url; } catch (err) { setError(err instanceof Error ? err.message : 'Failed to connect Stripe'); setConnectingStripe(false); } };
   const handleStripeDisconnect = async () => { if (!agency) return; if (!confirm('Disconnect Stripe? You won\'t receive payments until you reconnect.')) return; setDisconnectingStripe(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/connect/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to disconnect Stripe'); } await refreshAgency(); setStripeStatus(null); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to disconnect Stripe'); } finally { setDisconnectingStripe(false); } };
   const handleManageSubscription = async () => { if (!agency) return; setPortalLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to open billing portal'); } const data = await response.json(); if (data.url) window.location.href = data.url; else if (data.needs_payment_method) setError('Add a payment method first. Use the upgrade options below.'); else setError('Failed to open billing portal'); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to open billing portal'); } finally { setPortalLoading(false); } };
+  const handleAddPaymentMethod = async () => { if (!agency) return; setAddCardLoading(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/add-payment-method`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) }); const data = await response.json(); if (data.url) window.location.href = data.url; else setError(data.error || 'Could not start payment setup'); } catch { setError('Failed to connect to billing'); } finally { setAddCardLoading(false); } };
 
   if (contextLoading) return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
 
@@ -1614,6 +1616,30 @@ function AgencySettingsContent() {
                     <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium text-sm sm:text-base" style={{ color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</p></div>
                   </div>
                 </div>
+
+                {isFreePlan && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                    <div className="flex items-start gap-3">
+                      <CreditCard className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+                      <div className="flex-1 min-w-0">
+                        {cardAdded ? (
+                          <>
+                            <p className="text-sm font-semibold" style={{ color: theme.text }}>Payment method added</p>
+                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>You&apos;re all set. You can now sign up your first client. If the signup page still says it isn&apos;t accepting signups, give it a few seconds and refresh.</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-semibold" style={{ color: theme.text }}>Add a payment method to start signing up clients</p>
+                            <p className="text-xs mt-1 mb-3" style={{ color: theme.textMuted }}>On the Free plan you pay per client. Add a card and you can sign up your first client, no plan upgrade required.</p>
+                            <button onClick={handleAddPaymentMethod} disabled={addCardLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                              {addCardLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}Add payment method
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {usageLoading ? (
                   <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>

@@ -24,7 +24,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
-  LifeBuoy, Headphones, Bot,
+  LifeBuoy, Headphones, Bot, AlertTriangle,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
@@ -63,6 +63,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
   { section: null, items: [
     { href: '/admin/messaging', label: 'Messaging', icon: MessageSquare },
     { href: '/admin/support', label: 'Support', icon: LifeBuoy },
+    { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
     { href: '/admin/faq-chats', label: 'FAQ Chats', icon: Bot },
   ]},
   { section: 'Content', items: [
@@ -166,17 +167,17 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar (deep emerald) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[238px] transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-50 w-[238px] flex flex-col overflow-hidden transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
         style={{ background: 'var(--a-sidebar)', paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
       >
-        <div className="flex md:hidden items-center justify-between h-14 px-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex md:hidden items-center justify-between h-14 px-4 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <span className="text-sm font-medium text-white/80">Menu</span>
           <button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-9 h-9 rounded-lg text-white/60 hover:bg-white/5">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-3 px-5 h-[72px]">
+        <div className="flex items-center gap-3 px-5 h-[72px] shrink-0">
           <WaveformLogo size={26} />
           <div>
             <span className="text-[15px] font-semibold text-white tracking-tight leading-none block">VoiceAI Connect</span>
@@ -184,7 +185,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <nav className="px-3 pb-2 space-y-0.5 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 168px)' }}>
+        <nav className="px-3 pb-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
           {NAV.map((group, gi) => (
             <div key={gi}>
               {group.section && (
@@ -198,7 +199,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* User + sign out */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
+        <div className="p-3 space-y-2 shrink-0" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
           <div className="rounded-[10px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'var(--a-em)' }}>

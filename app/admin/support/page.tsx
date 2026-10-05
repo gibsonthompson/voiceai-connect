@@ -27,7 +27,7 @@ import Link from 'next/link';
 import AdminSupportThread from '@/components/admin/AdminSupportThread';
 import {
   LifeBuoy, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X, AlertTriangle} from 'lucide-react';
+  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X} from 'lucide-react';
 
 
 // Gmail compose deep link so "Reply by email" opens Gmail with the message
@@ -121,10 +121,9 @@ export default function AdminSupportPage() {
 
       <div className="flex items-center gap-2 mb-6">
         {tabBtn('support', 'Support', LifeBuoy, (supportOpen || 0) + (feedbackNew || 0))}
-        {tabBtn('errors', 'Backend Errors', AlertTriangle, errorsOpen)}
       </div>
 
-      {tab === 'errors' ? <ErrorsTab onChanged={reloadBadges} /> : <SupportTab onChanged={reloadBadges} />}
+      <SupportTab onChanged={reloadBadges} />
     </div>
   );
 }
