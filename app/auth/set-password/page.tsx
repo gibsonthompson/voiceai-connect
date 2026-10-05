@@ -291,7 +291,7 @@ function SetPasswordContent() {
 
   const wrapperStyle: React.CSSProperties = isEmbed
     ? { backgroundColor: bgColor, color: textColor }
-    : { backgroundColor: bgColor, color: textColor, zoom: 0.8 };
+    : { backgroundColor: bgColor, color: textColor, zoom: 1 };
 
   // ============================================================================
   // SUCCESS STATE: honest message, link to sign in
@@ -305,7 +305,7 @@ function SetPasswordContent() {
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
         )}
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-lg">
           <div className="rounded-2xl p-8 text-center"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
             <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: `${primaryColor}1A` }}>
@@ -370,7 +370,7 @@ function SetPasswordContent() {
 
       {/* Main Content */}
       <main className={isEmbed ? 'relative min-h-0 py-2 px-2 sm:px-4' : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32'}>
-        <div className="relative w-full max-w-md mx-auto">
+        <div className="relative w-full max-w-lg mx-auto">
           <div className="rounded-2xl p-6 sm:p-8"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
             <div className="text-center mb-8">
