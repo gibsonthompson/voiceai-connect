@@ -1428,7 +1428,7 @@ function AgencySettingsContent() {
                   )}
 
                   {/* No-LLC reassurance, shown until Stripe is fully active. */}
-                  {stripeDisplay.status !== 'active' && !loadingStripeStatus && (
+                  {stripeDisplay.status === 'not_connected' && !loadingStripeStatus && (
                     <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                       <div className="flex items-start gap-3">
                         <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
