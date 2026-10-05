@@ -26,6 +26,7 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  client_trial_days?: number | null;
   country: string | null;
   price_starter: number;
   price_pro: number;
@@ -237,6 +238,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const [discountCode, setDiscountCode] = useState('');
   const [discountStatus, setDiscountStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [discountMsg, setDiscountMsg] = useState('');
+  const [discount, setDiscount] = useState<{ percent_off?: number | null; waive_setup?: boolean } | null>(null);
   
   const isMountedRef = React.useRef(true);
   
@@ -270,14 +272,16 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   // is gated on isCardRequired. The consent must disclose the per-minute charge.
   const billDuringTrial = isCardRequired && agency.bill_minutes_during_trial === true;
   const minuteRate = agency.client_minute_rate_cents != null ? (agency.client_minute_rate_cents / 100).toFixed(2) : null;
+  const trialDays = (agency.client_trial_days ?? 7) as number;
+  const trialLabel = trialDays > 0 ? `${trialDays}-day free trial` : 'free trial';
 
   // The exact string recorded as consent (stored verbatim server-side via
   // consent_text). The rendered label below shows the same wording with
   // Terms/Privacy as links; the stored copy is plain text.
   const trialDisclosure = billDuringTrial
-    ? ` I understand that during my 7-day free trial, ${agency.name} will charge my card for the call minutes my receptionist uses${minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial ${agency.name} will also charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
+    ? ` I understand that during my ${trialLabel}, ${agency.name} will charge my card for the call minutes my receptionist uses${minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial ${agency.name} will also charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
     : isCardRequired
-    ? ` I understand that after my 7-day free trial, ${agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
+    ? ` I understand that after my ${trialLabel}, ${agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.`
     : '';
   const consentText = `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).${trialDisclosure}`;
 
@@ -323,7 +327,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
   const validateDiscount = async () => {
     const code = discountCode.trim();
-    if (!code) { setDiscountStatus('idle'); setDiscountMsg(''); return; }
+    if (!code) { setDiscountStatus('idle'); setDiscountMsg(''); setDiscount(null); return; }
     setDiscountStatus('checking'); setDiscountMsg('');
     try {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -336,11 +340,11 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         const bits: string[] = [];
         if (data.discount?.percent_off) bits.push(`${data.discount.percent_off}% off`);
         if (data.discount?.waive_setup) bits.push('setup fee waived');
-        setDiscountStatus('valid'); setDiscountMsg(`${bits.join(' + ')} applied`);
+        setDiscount(data.discount || null); setDiscountStatus('valid'); setDiscountMsg(`${bits.join(' + ')} applied`);
       } else {
-        setDiscountStatus('invalid'); setDiscountMsg(data.error || 'Invalid code');
+        setDiscount(null); setDiscountStatus('invalid'); setDiscountMsg(data.error || 'Invalid code');
       }
-    } catch { setDiscountStatus('invalid'); setDiscountMsg('Could not check that code'); }
+    } catch { setDiscount(null); setDiscountStatus('invalid'); setDiscountMsg('Could not check that code'); }
   };
 
   const handleSelectPlan = async (planType: string) => {
@@ -488,8 +492,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             <div className="flex h-16 sm:h-20 items-center justify-between">
               <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
                 {agency.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
-                    style={{ backgroundColor: agency.logo_background_color || 'transparent', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
                 ) : (
                   <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
                     style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
@@ -519,7 +522,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm mb-4"
               style={{ backgroundColor: `${primaryColor}15`, border: `1px solid ${primaryColor}30` }}>
               <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
-              <span style={{ color: primaryColor }}>7-day free trial included</span>
+              <span style={{ color: primaryColor }}>{trialDays > 0 ? `${trialDays}-day free trial included` : 'Free trial included'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">Choose Your Plan</h1>
             <p className="mt-3 text-base sm:text-lg max-w-xl mx-auto" style={{ color: mutedTextColor }}>
@@ -537,52 +540,13 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
-          {/* CONSENT (required). Gates plan selection. Always shown so TCPA/SMS
-              consent is captured for every signup; for card-required agencies
-              the text also carries the auto-renew disclosure. The stored
-              consent_text mirrors this wording (links rendered as plain text). */}
-          <div className="max-w-2xl mx-auto mb-4">
-            <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
-            <div className="flex gap-2">
-              <input value={discountCode} onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountStatus('idle'); setDiscountMsg(''); }} onBlur={validateDiscount}
-                placeholder="Enter a code" className="flex-1 rounded-xl border px-3 py-2.5 text-sm"
-                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: cardBorder, color: isDark ? '#fafafa' : '#111827' }} />
-              <button type="button" onClick={validateDiscount} className="rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Apply</button>
-            </div>
-            {discountStatus === 'checking' && <p className="text-xs mt-1.5" style={{ color: mutedTextColor }}>Checking...</p>}
-            {discountStatus === 'valid' && <p className="text-xs mt-1.5" style={{ color: primaryColor }}>{discountMsg}</p>}
-            {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
-          </div>
-
-          <div className="max-w-2xl mx-auto mb-8">
-            <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
-              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>
-              <input type="checkbox" checked={consentAgreed}
-                onChange={(e) => { setConsentAgreed(e.target.checked); if (e.target.checked) setError(''); }}
-                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
-                style={{ accentColor: primaryColor }} />
-              <span className="text-sm leading-relaxed" style={{ color: mutedTextColor }}>
-                I agree to the{' '}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Terms of Service</a>
-                {' '}and{' '}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Privacy Policy</a>
-                {' '}and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).
-                {billDuringTrial ? (
-                  <> I understand that during my 7-day free trial, {agency.name} will charge my card for the call minutes my receptionist uses{minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial the monthly plan price will also apply unless I cancel before the trial ends.</>
-                ) : isCardRequired ? (
-                  <> I understand that after my 7-day free trial, {agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.</>
-                ) : null}
-              </span>
-            </label>
-          </div>
-
-          <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-3xl md:grid-cols-2' : 'md:grid-cols-3'}`}>
+          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-2xl md:grid-cols-2' : 'max-w-5xl md:grid-cols-3'}`}>
             {plans.map((plan) => (
-              <div key={plan.id} className="relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300"
+              <div key={plan.id} className="relative rounded-2xl border p-5 transition-all duration-300"
                 style={{
                   backgroundColor: plan.popular ? cardBg : (isDark ? 'rgba(10,10,10,0.5)' : '#fafafa'),
                   borderColor: plan.popular ? (isDark ? `${primaryColor}40` : primaryColor) : cardBorder,
-                  transform: plan.popular ? 'scale(1.02)' : undefined,
+                  transform: undefined,
                   boxShadow: plan.popular ? (isDark ? `0 0 60px ${primaryColor}10` : '0 25px 50px -12px rgba(0,0,0,0.1)') : undefined,
                 }}>
                 {plan.popular && (
@@ -593,17 +557,24 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                     </span>
                   </div>
                 )}
-                <div className="text-center mb-6">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl mb-4"
+                <div className="text-center mb-5">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3"
                     style={{ backgroundColor: plan.popular ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)') }}>
-                    <plan.icon className="h-6 w-6" style={{ color: plan.popular ? primaryColor : textColor }} />
+                    <plan.icon className="h-5 w-5" style={{ color: plan.popular ? primaryColor : textColor }} />
                   </div>
                   <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
                   {plan.description && (
                     <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>{plan.description}</p>
                   )}
                   <div className="mt-3">
-                    <span className="text-3xl sm:text-4xl font-bold">{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                    {discount?.percent_off ? (
+                      <>
+                        <span className="text-lg line-through mr-2" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                        <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor }}>{formatAgencyPrice(Math.round(plan.price * (1 - (discount.percent_off as number) / 100)), agencyCountry)}</span>
+                      </>
+                    ) : (
+                      <span className="text-2xl sm:text-3xl font-bold">{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                    )}
                     <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
                   </div>
                   <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
@@ -642,9 +613,48 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             ))}
           </div>
 
+          {/* CONSENT (required). Gates plan selection. Always shown so TCPA/SMS
+              consent is captured for every signup; for card-required agencies
+              the text also carries the auto-renew disclosure. The stored
+              consent_text mirrors this wording (links rendered as plain text). */}
+          <div className="max-w-2xl mx-auto mb-4">
+            <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
+            <div className="flex gap-2">
+              <input value={discountCode} onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountStatus('idle'); setDiscountMsg(''); setDiscount(null); }} onBlur={validateDiscount}
+                placeholder="Enter a code" className="flex-1 rounded-xl border px-3 py-2.5 text-sm"
+                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: cardBorder, color: isDark ? '#fafafa' : '#111827' }} />
+              <button type="button" onClick={validateDiscount} className="rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Apply</button>
+            </div>
+            {discountStatus === 'checking' && <p className="text-xs mt-1.5" style={{ color: mutedTextColor }}>Checking...</p>}
+            {discountStatus === 'valid' && <p className="text-xs mt-1.5" style={{ color: primaryColor }}>{discountMsg}</p>}
+            {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
+          </div>
+
+          <div className="max-w-2xl mx-auto mb-8">
+            <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>
+              <input type="checkbox" checked={consentAgreed}
+                onChange={(e) => { setConsentAgreed(e.target.checked); if (e.target.checked) setError(''); }}
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                style={{ accentColor: primaryColor }} />
+              <span className="text-sm leading-relaxed" style={{ color: mutedTextColor }}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" style={{ color: primaryColor }}>Privacy Policy</a>
+                {' '}and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).
+                {billDuringTrial ? (
+                  <> I understand that during my {trialLabel}, {agency.name} will charge my card for the call minutes my receptionist uses{minuteRate ? ` at $${minuteRate} per minute` : ''}, and that after the trial the monthly plan price will also apply unless I cancel before the trial ends.</>
+                ) : isCardRequired ? (
+                  <> I understand that after my {trialLabel}, {agency.name} will automatically charge my card the monthly price of the plan I select unless I cancel before the trial ends.</>
+                ) : null}
+              </span>
+            </label>
+          </div>
+
           <div className="mt-10 sm:mt-12 text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
-              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />7-day free trial</span>
+              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />{trialLabel}</span>
               <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Cancel anytime</span>
               <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Setup in minutes</span>
             </div>

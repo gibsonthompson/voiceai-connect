@@ -29,6 +29,7 @@ interface Agency {
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
   country: string | null;
+  client_trial_days?: number | null;
   price_starter: number;
   price_pro: number;
   price_growth: number;
@@ -256,7 +257,11 @@ function ThemedSelect({
   children: React.ReactNode; isDark?: boolean; primaryColor?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const typeBuf = useRef('');
+  const typeTimer = useRef<any>(null);
 
   // Parse the <option> children into data so we can render a fully custom,
   // consistent dropdown instead of the native OS picker (the iOS wheel on
@@ -267,15 +272,33 @@ function ThemedSelect({
 
   const selected = options.find((o) => o.value === String(value));
   const placeholder = options.find((o) => o.value === '');
+  const visible = options.filter((o) => o.value !== '');
+  const optText = (lbl: any) => String(lbl ?? '').replace(/^[^a-zA-Z0-9]+/, '').toLowerCase();
+  const scrollActive = (idx: number) => { const el = listRef.current?.querySelector('[data-oi="' + idx + '"]') as HTMLElement | null; if (el) el.scrollIntoView({ block: 'nearest' }); };
 
   useEffect(() => {
     if (!open) return;
+    const sel = visible.findIndex((o) => o.value === String(value));
+    setActiveIndex(sel >= 0 ? sel : 0);
     const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setOpen(false); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => { const n = Math.min((i < 0 ? -1 : i) + 1, visible.length - 1); scrollActive(n); return n; }); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex((i) => { const n = Math.max((i < 0 ? 1 : i) - 1, 0); scrollActive(n); return n; }); return; }
+      if (e.key === 'Enter') { e.preventDefault(); setActiveIndex((i) => { const o = visible[i]; if (o && !o.disabled) { setOpen(false); onChange({ target: { name, value: o.value } } as any); } return i; }); return; }
+      if (e.key.length === 1 && e.key.trim()) {
+        typeBuf.current += e.key.toLowerCase();
+        if (typeTimer.current) clearTimeout(typeTimer.current);
+        typeTimer.current = setTimeout(() => { typeBuf.current = ''; }, 700);
+        const buf = typeBuf.current;
+        const idx = visible.findIndex((o) => optText(o.label).startsWith(buf));
+        if (idx >= 0) { setActiveIndex(idx); scrollActive(idx); }
+      }
+    };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); if (typeTimer.current) clearTimeout(typeTimer.current); };
+  }, [open, value]);
 
   const pick = (val: string) => { setOpen(false); onChange({ target: { name, value: val } } as any); };
 
@@ -315,22 +338,23 @@ function ThemedSelect({
         )}
 
         {open && (
-          <div role="listbox" className="absolute z-50 mt-1.5 w-full rounded-xl border shadow-xl overflow-hidden"
+          <div ref={listRef} role="listbox" className="absolute z-50 mt-1.5 w-full rounded-xl border shadow-xl overflow-hidden"
             style={{ backgroundColor: menuBg, borderColor: menuBorder, maxHeight: '16rem', overflowY: 'auto' }}>
-            {options.filter((o) => o.value !== '').map((o, i) => {
+            {visible.map((o, i) => {
               const isSel = o.value === String(value);
+              const isActive = i === activeIndex;
               return (
                 <button
                   key={`${o.value}-${i}`}
                   type="button"
                   role="option"
+                  data-oi={i}
                   aria-selected={isSel}
                   disabled={o.disabled}
                   onClick={() => !o.disabled && pick(o.value)}
+                  onMouseMove={() => setActiveIndex(i)}
                   className="w-full text-left px-4 py-2.5 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ color: isDark ? '#fafaf9' : '#111', background: isSel ? `${primaryColor}22` : 'transparent' }}
-                  onMouseEnter={(e) => { if (!o.disabled && !isSel) e.currentTarget.style.background = itemHover; }}
-                  onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                  style={{ color: isDark ? '#fafaf9' : '#111', background: isSel ? `${primaryColor}22` : (isActive ? itemHover : 'transparent') }}
                 >
                   {o.label}
                 </button>
@@ -361,6 +385,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     city: '', state: '', country: defaultCountry, industry: 'general',
   });
 
+  const trialDays = (agency.client_trial_days ?? 7) as number;
   const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
@@ -473,8 +498,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
             <div className="flex h-16 sm:h-20 items-center justify-between">
               <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
                 {agency.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain"
-                    style={{ border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)' }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
                 ) : (
                   <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
                     style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
@@ -499,7 +523,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm mb-4"
                 style={{ backgroundColor: `${primaryColor}15`, border: `1px solid ${primaryColor}30` }}>
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
-                <span style={{ color: primaryColor }}>7-day free trial</span>
+                <span style={{ color: primaryColor }}>{trialDays > 0 ? `${trialDays}-day free trial` : 'Free trial'}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{(agency as any).signup_headline || 'Get Your AI Receptionist'}</h1>
               <p className="mt-2" style={{ color: mutedTextColor }}>{(agency as any).signup_subtitle || `Start your free trial with ${agency.name}`}</p>
