@@ -164,7 +164,7 @@ function Navigation({ config }: { config: MarketingConfig }) {
               <li key={`custom-nav-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
             ))}
             <li><a href="#features">Features</a></li>
-            <li><a href="#how-it-works">How It Works</a></li>
+            {config.showHowItWorks !== false && <li><a href="#how-it-works">How It Works</a></li>}
             {config.hero?.demoPhone && <li><a href="/demo">Demo</a></li>}
             <li><a href="#pricing">Pricing</a></li>
             <li><a href="/faq">FAQ</a></li>
@@ -200,7 +200,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
               <a href="/demo" className="btn-large btn-ghost">
                 <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
               </a>
-            ) : (<a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a>)}
+            ) : (config.showHowItWorks !== false ? <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a> : null)}
           </div>
           <div className="trust-bar">
             {hero.trustItems.map((item, i) => (<div key={i} className="trust-item">✓ {item}</div>))}
@@ -270,7 +270,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
   return (
     <section id="how-it-works" className="how-it-works">
       <div className="container">
-        <div className="section-header"><h2>From Signup to Your First Call: Under 10 Minutes</h2><p className="subtitle">No, Really. We Timed It.</p></div>
+        <div className="section-header"><h2>From Signup to Your First Call{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}</h2><p className="subtitle">No, Really. We Timed It.</p></div>
         <div className="steps-grid">
           {steps.map((step, i) => (
             <div key={i} className="step-card">
@@ -606,7 +606,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
       <div className="container">
         <div className="section-header">
           <h2>Simple Pricing. No Hidden Fees.</h2>
-          <p>All plans include the {branding.name} app, text summaries, call recordings, and 7-day free trial.</p>
+          <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
         <div className="pricing-grid">
           {pricing.map((tier, i) => (
@@ -727,7 +727,7 @@ function ExitIntentModal({ config, onClose }: { config: MarketingConfig; onClose
             </a>
             <p style={{ fontSize: '0.813rem', color: 'var(--text-light)', marginBottom: '1rem' }}>{hero.demoInstructions || 'Takes 30 seconds. Your phone will ring with a live demo.'}</p>
           </>
-        ) : (<a href="/signup" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>Start Your 7-Day Free Trial</a>)}
+        ) : (<a href="/signup" className="btn-large btn-primary" style={{ width: '100%', marginBottom: '0.75rem' }}>{config.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>)}
         <a href="/signup" style={{ fontSize: '0.875rem', fontWeight: 600, color: branding.primaryColor }}>Or start your free trial →</a>
       </div>
     </div>

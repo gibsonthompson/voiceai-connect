@@ -144,7 +144,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
         </a>
         <ul className="a-nav-links">
           <li><a href="#features">Features</a></li>
-          <li><a href="#how-it-works">How It Works</a></li>
+          {c.showHowItWorks !== false && <li><a href="#how-it-works">How It Works</a></li>}
           <li><a href="#pricing">Pricing</a></li>
           <li><a href="/faq">FAQ</a></li>
         </ul>
@@ -181,7 +181,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                   Try Live Demo
                 </a>
               ) : (
-                <a href="#how-it-works" className="a-btn a-btn-ghost a-btn-large">See How It Works</a>
+                c.showHowItWorks !== false ? <a href="#how-it-works" className="a-btn a-btn-ghost a-btn-large">See How It Works</a> : null
               )}
             </div>
             {hero.demoPhone && (
@@ -246,6 +246,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
       </section>
 
       {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
+      {c.showHowItWorks !== false && (
       <section id="how-it-works" className="a-steps">
         <div className="a-container">
           <div className="a-section-header">
@@ -271,6 +272,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── FEATURES (Bento Grid) ───────────────────────────────────────── */}
       <section id="features" className="a-features">
