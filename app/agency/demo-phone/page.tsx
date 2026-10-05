@@ -12,6 +12,7 @@ import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
+import DemoCustomizer from '@/components/agency/DemoCustomizer';
 
 // ============================================================================
 // HELPERS
@@ -941,6 +942,7 @@ export default function DemoPhonePage() {
             </div>
           </div>
 
+          {agency?.id && <DemoCustomizer agencyId={agency.id} theme={theme} />}
           {agency?.id && <DemoCallsList agencyId={agency.id} theme={theme} />}
         </div>
 
