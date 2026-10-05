@@ -459,7 +459,7 @@ export default function DemoPhonePage() {
   // number we then have to sweep. This mirrors the backend gate (403
   // upgrade_required in routes/demo-phone.js) so the paid-only rule holds on
   // both sides and cannot be bypassed from the UI.
-  const isFreePlanAgency = String(agency?.plan_type || '').toLowerCase() === 'free';
+  const isFreePlanAgency = String(agency?.plan_type || '').toLowerCase() === 'free' && !agency?.access_plan;
 
   // Country decides how a demo number is provisioned. US uses the platform
   // number pool; every other country uses the agency's own connected Twilio

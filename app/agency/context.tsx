@@ -14,6 +14,7 @@ interface Agency {
   accent_color: string;
   status: string;
   plan_type: string;
+  access_plan: string | null;
   subscription_status: string;
   trial_ends_at: string | null;
   stripe_account_id: string | null;
@@ -383,7 +384,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const isExpired = isExpiredStatus(agency?.subscription_status) ||
     (isTrialStatus(agency?.subscription_status) && trialDaysLeft !== null && trialDaysLeft <= 0);
 
-  const effectivePlan = isTrialActive ? 'scale' : (agency?.plan_type || 'free');
+  const effectivePlan = agency?.access_plan || (isTrialActive ? 'scale' : (agency?.plan_type || 'free'));
 
   // Free plan = full VoiceAI Connect branding (name, colors, logo)
   // Pro/Scale = agency's own branding

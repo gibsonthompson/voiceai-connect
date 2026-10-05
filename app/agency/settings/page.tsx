@@ -422,7 +422,7 @@ function AgencySettingsContent() {
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const planPrice = PLAN_PRICING[agency?.plan_type || 'free'] ?? 0;
-  const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
+  const isFreePlan = (agency?.plan_type === 'free' || agency?.plan_type === 'starter') && !agency?.access_plan;
 
   // Card-required toggle is only meaningful when the agency has Stripe Connect
   // set up AND can accept charges. UI grays out the toggle when this is false
