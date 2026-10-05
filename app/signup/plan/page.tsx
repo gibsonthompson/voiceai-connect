@@ -540,9 +540,9 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
-          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-2xl md:grid-cols-2' : 'max-w-5xl md:grid-cols-3'}`}>
+          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-2xl md:grid-cols-2' : 'max-w-4xl md:grid-cols-3'}`}>
             {plans.map((plan) => (
-              <div key={plan.id} className="relative rounded-2xl border p-5 transition-all duration-300"
+              <div key={plan.id} className="relative rounded-2xl border p-4 transition-all duration-300"
                 style={{
                   backgroundColor: plan.popular ? cardBg : (isDark ? 'rgba(10,10,10,0.5)' : '#fafafa'),
                   borderColor: plan.popular ? (isDark ? `${primaryColor}40` : primaryColor) : cardBorder,
@@ -605,7 +605,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                 )}
                 {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-6" />}
                 <button onClick={() => handleSelectPlan(plan.id)} disabled={loading || !consentAgreed}
-                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 sm:py-4 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={plan.popular ? { backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 30px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` } : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textColor, border: `1px solid ${cardBorder}` }}>
                   {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<>Get Started<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></>)}
                 </button>
@@ -617,7 +617,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
               consent is captured for every signup; for card-required agencies
               the text also carries the auto-renew disclosure. The stored
               consent_text mirrors this wording (links rendered as plain text). */}
-          <div className="max-w-2xl mx-auto mb-4">
+          <div className="max-w-md mx-auto mt-16 mb-4">
             <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
             <div className="flex gap-2">
               <input value={discountCode} onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); setDiscountStatus('idle'); setDiscountMsg(''); setDiscount(null); }} onBlur={validateDiscount}
@@ -630,7 +630,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
           </div>
 
-          <div className="max-w-2xl mx-auto mb-8">
+          <div className="max-w-md mx-auto mb-8">
             <label className="flex items-start gap-3 rounded-2xl border p-4 sm:p-5 cursor-pointer transition-colors"
               style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderColor: consentAgreed ? primaryColor : cardBorder }}>
               <input type="checkbox" checked={consentAgreed}
