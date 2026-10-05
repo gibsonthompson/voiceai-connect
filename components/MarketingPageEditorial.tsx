@@ -166,13 +166,13 @@ function Nav({ config }: { config: MarketingConfig }) {
           {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} /> : <span>{branding.name}</span>}
         </a>
         <ul className="ed-nav-links">
-          {(config.customNavLinks || []).map((link, i) => (
+          {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
             <li key={`nav-custom-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
           ))}
           {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
-          <li><a href="#how">How it works</a></li>
+          {config.showHowItWorks !== false && <li><a href="#how">How it works</a></li>}
           {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
-          <li><a href="/faq">FAQ</a></li>
+          {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
         </ul>
         <div className="ed-nav-actions">
           {config.clientLoginPath && <a href={config.clientLoginPath} className="ed-nav-login">Client login</a>}
@@ -200,7 +200,7 @@ function Hero({ config }: { config: MarketingConfig }) {
           <a href="/signup" className="ed-btn ed-btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo
             ? <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-line">{hero.demoInstructions || `Hear it: ${hero.demoPhone}`}</a>
-            : <a href="#how" className="ed-btn ed-btn-line">See how it works</a>}
+            : (config.showHowItWorks !== false ? <a href="#how" className="ed-btn ed-btn-line">See how it works</a> : null)}
         </div>
         {hero.trustItems && hero.trustItems.length > 0 && (
           <ul className="ed-hero-trust">

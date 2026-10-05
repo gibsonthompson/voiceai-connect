@@ -160,14 +160,14 @@ function Navigation({ config }: { config: MarketingConfig }) {
             )}
           </a>
           <ul className="nav-links">
-            {(config.customNavLinks || []).map((link, i) => (
+            {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
               <li key={`custom-nav-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
             ))}
             {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
             {config.showHowItWorks !== false && <li><a href="#how-it-works">How It Works</a></li>}
             {config.hero?.demoPhone && <li><a href="/demo">Demo</a></li>}
             {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
-            <li><a href="/faq">FAQ</a></li>
+            {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
           </ul>
           <div className="nav-actions">
             {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
