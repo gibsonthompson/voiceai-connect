@@ -33,7 +33,7 @@ interface IndustryInfo {
 }
 
 interface Defaults {
-  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number;
+  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number; tts_model?: string; transcriber_model?: string;
 }
 
 interface ServiceRow { id: string; name: string; price: string; description: string; }
@@ -54,6 +54,7 @@ const TTS_MODEL_OPTIONS = [
 
 const TRANSCRIBER_OPTIONS = [
   { id: 'nova-3', name: 'Nova-3', desc: 'Best accuracy, recommended for phone calls, accents, and multiple languages', tag: 'Recommended' },
+  { id: 'flux-general-multi', name: 'Flux', desc: 'Newest model, best at sensing when the caller is done talking (fewer interruptions and awkward pauses). Experimental, worth testing.', tag: 'New' },
   { id: 'nova-2', name: 'Nova-2', desc: 'Standard accuracy', tag: 'Standard' },
 ];
 
