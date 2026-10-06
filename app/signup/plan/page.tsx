@@ -558,7 +558,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
-          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-2xl md:grid-cols-2' : 'max-w-4xl md:grid-cols-3'}`}>
+          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
             {plans.map((plan) => (
               <div key={plan.id} className="relative rounded-2xl border p-4 transition-all duration-300"
                 style={{
@@ -825,7 +825,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
             </div>
           )}
 
-          <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-3xl md:grid-cols-2' : 'md:grid-cols-3'}`}>
+          <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
             {plans.map((plan) => (
               <div key={plan.id}
                 className={`relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300 ${
