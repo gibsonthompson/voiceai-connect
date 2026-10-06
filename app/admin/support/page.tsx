@@ -25,6 +25,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AdminSupportThread from '@/components/admin/AdminSupportThread';
+import AdminAgencyThread from '@/components/admin/AdminAgencyThread';
 import {
   LifeBuoy, Search, Loader2, Loader, Clock, Building2,
   User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X} from 'lucide-react';
@@ -71,13 +72,11 @@ export default function AdminSupportPage() {
     try {
       const token = getToken();
       const backendUrl = getBackendUrl();
-      const [s, f, e] = await Promise.all([
+      const [s, e] = await Promise.all([
         fetch(`${backendUrl}/api/admin/support-requests?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${backendUrl}/api/admin/feedback?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${backendUrl}/api/admin/error-reports?resolved=false`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       if (s.ok) { const d = await s.json(); setSupportOpen(d.counts?.open ?? 0); }
-      if (f.ok) { const d = await f.json(); setFeedbackNew(d.counts?.new ?? 0); }
       if (e.ok) { const d = await e.json(); setErrorsOpen(d.unresolved ?? (d.reports?.length ?? 0)); }
     } catch (e) {
       // Badges are non-critical; leave them as-is on error.
@@ -120,7 +119,7 @@ export default function AdminSupportPage() {
       </div>
 
       <div className="flex items-center gap-2 mb-6">
-        {tabBtn('support', 'Support', LifeBuoy, (supportOpen || 0) + (feedbackNew || 0))}
+        {tabBtn('support', 'Support', LifeBuoy, (supportOpen || 0))}
       </div>
 
       <SupportTab onChanged={reloadBadges} />
@@ -189,25 +188,17 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${getToken()}` };
-      const [sRes, fRes] = await Promise.all([
-        fetch(`${getBackendUrl()}/api/admin/support-requests?limit=200`, { headers }),
-        fetch(`${getBackendUrl()}/api/admin/feedback?limit=200`, { headers }),
-      ]);
+      // Feedback now lives in support_requests (kind='feedback'), so one fetch
+      // covers both and the kind field drives the label. No separate feedback
+      // fetch (that would double-show migrated rows).
+      const sRes = await fetch(`${getBackendUrl()}/api/admin/support-requests?limit=200`, { headers });
       const sData = sRes.ok ? await sRes.json() : {};
-      const fData = fRes.ok ? await fRes.json() : {};
-      const support = (sData.requests || []).map((r: any) => ({
-        _kind: 'support', id: r.id, agency_id: r.agency_id, message: r.message,
+      const merged = (sData.requests || []).map((r: any) => ({
+        _kind: r.kind === 'feedback' ? 'feedback' : 'support', id: r.id, agency_id: r.agency_id, message: r.message,
         created_at: r.created_at, display_name: r.display_name, user_email: r.user_email,
         user_type: r.user_type, unified_status: r.status || 'open', admin_notes: r.admin_notes,
         source: r.source || 'widget', resolved_at: r.resolved_at,
-      }));
-      const feedback = (fData.feedback || fData.items || []).map((f: any) => ({
-        _kind: 'feedback', id: f.id, agency_id: f.agency_id, message: f.message,
-        created_at: f.created_at, display_name: f.agency_name, user_email: f.agency_email,
-        user_type: 'agency', unified_status: FB_TO_UNIFIED[f.status || 'new'] || 'open',
-        admin_notes: f.admin_notes, source: 'feedback', resolved_at: f.reviewed_at,
-      }));
-      const merged = [...support, ...feedback].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      })).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setItems(merged);
     } catch (e) {
       console.error('Support queue error:', e);
@@ -236,6 +227,25 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
   const totalPages = Math.ceil(filtered.length / limit);
   const pageItems = filtered.slice(page * limit, page * limit + limit);
 
+  // One row per agency: their whole conversation (support + feedback) collapsed
+  // together, most-recently-active first. Anonymous widget rows (no agency)
+  // group under a single "No agency" bucket and keep per-request threads.
+  const agencyGroups = (() => {
+    const map = new Map<string, any>();
+    for (const it of filtered) {
+      const key = it.agency_id || '__none__';
+      if (!map.has(key)) map.set(key, { key, agency_id: it.agency_id, name: it.display_name || (it.agency_id ? 'Agency' : 'No agency'), items: [], last: it.created_at, open: 0, lastMessage: it.message });
+      const g = map.get(key);
+      g.items.push(it);
+      if (new Date(it.created_at).getTime() > new Date(g.last).getTime()) { g.last = it.created_at; g.lastMessage = it.message; }
+      if (it.unified_status !== 'resolved') g.open += 1;
+      if (it.display_name && (g.name === 'Agency' || g.name === 'No agency')) g.name = it.display_name;
+    }
+    return [...map.values()].sort((a, b) => new Date(b.last).getTime() - new Date(a.last).getTime());
+  })();
+  const groupPages = Math.ceil(agencyGroups.length / limit);
+  const pageGroups = agencyGroups.slice(page * limit, page * limit + limit);
+
   const keyOf = (it: any) => `${it._kind}-${it.id}`;
   const toggleRow = (it: any) => {
     const k = keyOf(it);
@@ -247,11 +257,9 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
     const k = keyOf(it);
     setSavingKey(k);
     try {
-      const url = it._kind === 'feedback'
-        ? `${getBackendUrl()}/api/admin/feedback/${it.id}`
-        : `${getBackendUrl()}/api/admin/support-requests/${it.id}`;
+      const url = `${getBackendUrl()}/api/admin/support-requests/${it.id}`;
       const payload: any = {};
-      if (body.status) payload.status = it._kind === 'feedback' ? (UNIFIED_TO_FB[body.status] || 'new') : body.status;
+      if (body.status) payload.status = body.status;
       if (body.admin_notes !== undefined) payload.admin_notes = body.admin_notes;
       const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error('Failed to update');
@@ -289,9 +297,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                 {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
               </div>
             </div>
-            {it._kind === 'support' && (
-              <div><AdminSupportThread requestId={it.id} agencyId={it.agency_id} /></div>
-            )}
+            <div><AdminSupportThread requestId={it.id} agencyId={it.agency_id} /></div>
             <div>
               <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
               <textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} onClick={(e) => e.stopPropagation()} rows={3} placeholder="Notes for your own reference (not shown to the user)..." className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none" />
@@ -363,10 +369,10 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
         </select>
       </div>
 
-      <div className="a-panel">
+      <div className="a-panel overflow-visible">
         {loading ? (
           <div className="p-12 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>
-        ) : filtered.length === 0 ? (
+        ) : agencyGroups.length === 0 ? (
           <div className="p-16 text-center">
             <div className="relative inline-flex mb-4">
               <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
@@ -376,90 +382,43 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
             <p className="text-xs text-[var(--a-dim)] mt-1">Help-widget escalations and feedback submissions appear here</p>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
-                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-5 py-3.5">Time</th>
-                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">User</th>
-                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Type</th>
-                    <th className="text-left text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Message</th>
-                    <th className="text-center text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] px-4 py-3.5">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--a-line)]">
-                  {pageItems.map((it) => {
-                    const ss = supportStatusStyle(it.unified_status);
-                    const ts = typeStyle(it.user_type);
-                    const k = keyOf(it);
-                    const isExpanded = expandedKey === k;
-                    const isSaving = savingKey === k;
-                    return (
-                      <>
-                        <tr key={k} className="hover:bg-[#F6FCF9] transition-colors cursor-pointer" style={isExpanded ? { background: '#F6FCF9' } : undefined} onClick={() => toggleRow(it)}>
-                          <td className="px-5 py-3.5"><div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-[var(--a-dim)]" /><span className="text-xs text-[var(--a-muted)]">{timeAgo(it.created_at)}</span></div></td>
-                          <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-1.5">
-                              {it.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)]" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)]" />}
-                              <span className="text-xs text-[var(--a-ink)] truncate max-w-[160px]">{it.display_name || 'Unknown'}</span>
-                              {it.source === 'admin' && <span className="text-[8.5px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Manual</span>}
-                            </div>
-                            {it.user_email && <span className="text-[10px] text-[var(--a-dim)] truncate block max-w-[180px]">{it.user_email}</span>}
-                          </td>
-                          <td className="px-4 py-3.5"><span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: ts.bg, borderColor: ts.border, color: ts.color }}>{ts.label}</span></td>
-                          <td className="px-4 py-3.5"><p className="text-xs text-[var(--a-muted)] truncate max-w-[280px]">{it.message?.slice(0, 90)}{it.message?.length > 90 ? '...' : ''}</p></td>
-                          <td className="px-4 py-3.5 text-center"><span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>{ss.label}</span></td>
-                        </tr>
-                        {isExpanded && (
-                          <tr key={`${k}-d`} style={{ background: '#F6FCF9' }}>
-                            <td colSpan={5} className="px-5 py-0">{renderDetail(it, isSaving)}</td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="md:hidden divide-y divide-[var(--a-line)]">
-              {pageItems.map((it) => {
-                const ss = supportStatusStyle(it.unified_status);
-                const k = keyOf(it);
-                const isExpanded = expandedKey === k;
-                const isSaving = savingKey === k;
-                return (
-                  <div key={k}>
-                    <button onClick={() => toggleRow(it)} className="w-full text-left px-4 py-3.5" style={isExpanded ? { background: '#F6FCF9' } : undefined}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            {it.user_type === 'client' ? <User className="h-3 w-3 text-[var(--a-dim)] shrink-0" /> : <Building2 className="h-3 w-3 text-[var(--a-dim)] shrink-0" />}
-                            <span className="text-[13px] font-medium text-[var(--a-ink)] truncate">{it.display_name || 'Unknown'}</span>
-                          </div>
-                          {it.user_email && <p className="text-[10px] text-[var(--a-dim)] truncate mt-0.5">{it.user_email}</p>}
-                        </div>
-                        <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium shrink-0" style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>{ss.label}</span>
+          <div className="divide-y divide-[var(--a-line)]">
+            {pageGroups.map((g: any) => {
+              const isExpanded = expandedKey === g.key;
+              return (
+                <div key={g.key}>
+                  <button onClick={() => setExpandedKey(isExpanded ? null : g.key)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#F6FCF9] transition-colors" style={isExpanded ? { background: '#F6FCF9' } : undefined}>
+                    <Building2 className="h-4 w-4 shrink-0 text-[var(--a-dim)]" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[13px] font-medium text-[var(--a-ink)] truncate max-w-[220px]">{g.name}</span>
+                        {g.open > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>{g.open} open</span>}
+                        <span className="text-[10px] text-[var(--a-dim)]">{g.items.length} message{g.items.length > 1 ? 's' : ''}</span>
                       </div>
-                      <p className="text-xs text-[var(--a-muted)] mt-1.5 line-clamp-2">{it.message}</p>
-                      <p className="text-[10px] text-[var(--a-dim)] mt-1">{timeAgo(it.created_at)}</p>
-                    </button>
-                    {isExpanded && <div className="px-4">{renderDetail(it, isSaving)}</div>}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+                      <p className="text-[11px] text-[var(--a-dim)] truncate mt-0.5">{g.lastMessage}</p>
+                    </div>
+                    <span className="text-[10px] text-[var(--a-dim)] shrink-0">{timeAgo(g.last)}</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-1">
+                      {g.agency_id
+                        ? <AdminAgencyThread agencyId={g.agency_id} />
+                        : <div className="space-y-3">{g.items.map((it: any) => <AdminSupportThread key={it.id} requestId={it.id} agencyId={null} />)}</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {totalPages > 1 && (
+      {groupPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {totalPages} · {filtered.length} total</p>
+          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {groupPages} · {agencyGroups.length} agencies</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ArrowLeft className="h-3 w-3" /> Prev</button>
-            <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Next <ArrowRight className="h-3 w-3" /></button>
+            <button onClick={() => setPage(Math.min(groupPages - 1, page + 1))} disabled={page >= groupPages - 1} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Next <ArrowRight className="h-3 w-3" /></button>
           </div>
         </div>
       )}
