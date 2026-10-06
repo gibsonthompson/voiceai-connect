@@ -76,6 +76,8 @@ interface EditorConfig {
   problems: ProblemConfig[];
   solution: SolutionConfig;
   steps: StepConfig[];
+  stepsHeading?: string;
+  stepsSubheading?: string;
   features: FeatureConfig[];
   pricing: PricingTier[];
   faqs: FAQItem[];
@@ -166,20 +168,23 @@ interface MarketingContentEditorProps {
   inputBorder: string;
   agencyPrimaryColor: string;
   backendUrl: string;
+  scrollToSection?: string | null;
+  onScrolled?: () => void;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 // Accordion section wrapper
 // ────────────────────────────────────────────────────────────────────────────
 function Section({
-  title, icon: Icon, description, isOpen, onToggle, children, isDark, textColor, mutedTextColor, borderColor, cardBg, agencyPrimaryColor
+  title, icon: Icon, description, isOpen, onToggle, children, isDark, textColor, mutedTextColor, borderColor, cardBg, agencyPrimaryColor, anchorId
 }: {
   title: string; icon: any; description: string; isOpen: boolean; onToggle: () => void;
   children: React.ReactNode;
   isDark: boolean; textColor: string; mutedTextColor: string; borderColor: string; cardBg: string; agencyPrimaryColor: string;
+  anchorId?: string;
 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+    <div id={anchorId ? `mc-${anchorId}` : undefined} className="rounded-xl overflow-hidden" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, scrollMarginTop: 80 }}>
       <button onClick={onToggle} className="w-full flex items-center gap-3 p-4 sm:p-5 text-left transition-colors"
         style={{ borderBottom: isOpen ? `1px solid ${borderColor}` : 'none' }}>
         <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
@@ -202,7 +207,8 @@ function Section({
 // ────────────────────────────────────────────────────────────────────────────
 export default function MarketingContentEditor({
   agency, demoMode, refreshAgency,
-  isDark, textColor, mutedTextColor, borderColor, cardBg, inputBg, inputBorder, agencyPrimaryColor, backendUrl
+  isDark, textColor, mutedTextColor, borderColor, cardBg, inputBg, inputBorder, agencyPrimaryColor, backendUrl,
+  scrollToSection, onScrolled
 }: MarketingContentEditorProps) {
 
   const [config, setConfig] = useState<EditorConfig>(DEFAULT_CONFIG);
@@ -222,6 +228,8 @@ export default function MarketingContentEditor({
         problems: mc.problems?.length ? mc.problems : prev.problems,
         solution: { ...prev.solution, ...mc.solution },
         steps: mc.steps?.length ? mc.steps : prev.steps,
+        stepsHeading: mc.stepsHeading ?? prev.stepsHeading,
+        stepsSubheading: mc.stepsSubheading ?? prev.stepsSubheading,
         features: mc.features?.length ? mc.features : prev.features,
         pricing: mc.pricing?.length ? mc.pricing.map((t: any) => ({ ...t, price: typeof t.price === 'number' ? t.price : parseInt(t.price) || 0 })) : prev.pricing,
         faqs: mc.faqs?.length ? mc.faqs.map((f: any) => ({ question: f.question || '', answer: f.answer || '' })) : prev.faqs,
@@ -237,6 +245,19 @@ export default function MarketingContentEditor({
       return next;
     });
   };
+
+  // When the Sections tab links here to edit a specific section, open it and
+  // scroll it into view.
+  useEffect(() => {
+    if (!scrollToSection) return;
+    setOpenSections(prev => new Set(prev).add(scrollToSection));
+    const t = setTimeout(() => {
+      const el = typeof document !== 'undefined' ? document.getElementById(`mc-${scrollToSection}`) : null;
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      onScrolled && onScrolled();
+    }, 140);
+    return () => clearTimeout(t);
+  }, [scrollToSection]);
 
   const update = useCallback((updater: (prev: EditorConfig) => EditorConfig) => {
     setConfig(prev => updater(prev));
@@ -265,6 +286,8 @@ export default function MarketingContentEditor({
         problems: config.problems,
         solution: config.solution,
         steps: config.steps,
+        stepsHeading: config.stepsHeading,
+        stepsSubheading: config.stepsSubheading,
         features: config.features,
         pricing: config.pricing,
         faqs: config.faqs,
@@ -358,7 +381,7 @@ export default function MarketingContentEditor({
 
       {/* ── STATS ─────────────────────────────────────────────────────── */}
       <Section title="Stats Bar" icon={BarChart3} description="Key numbers shown below the hero"
-        isOpen={openSections.has('stats')} onToggle={() => toggleSection('stats')} {...sectionTheme}>
+        anchorId="stats" isOpen={openSections.has('stats')} onToggle={() => toggleSection('stats')} {...sectionTheme}>
         <p style={{ fontSize: '0.75rem', color: mutedTextColor, marginBottom: '0.75rem', lineHeight: 1.5 }}>
           &quot;Setup Time&quot; also sets the &quot;Setup in [X]&quot; wording across your site (hero, pricing, and the final call-to-action). Clear it to hide those. Your trial length and the &quot;No credit card required&quot; line show automatically from your billing settings (Settings &rarr; Billing), so there is nothing to edit for those here.
         </p>
@@ -381,7 +404,7 @@ export default function MarketingContentEditor({
 
       {/* ── PROBLEMS ──────────────────────────────────────────────────── */}
       <Section title="Problem Statements" icon={AlertTriangle} description="Pain points your clients' customers face"
-        isOpen={openSections.has('problems')} onToggle={() => toggleSection('problems')} {...sectionTheme}>
+        anchorId="problems" isOpen={openSections.has('problems')} onToggle={() => toggleSection('problems')} {...sectionTheme}>
         {config.problems.map((p, i) => (
           <div key={i} className="rounded-lg p-3 space-y-3" style={subCardStyle}>
             <div className="flex items-center justify-between">
@@ -448,7 +471,11 @@ export default function MarketingContentEditor({
 
       {/* ── STEPS ─────────────────────────────────────────────────────── */}
       <Section title="How It Works" icon={ListOrdered} description="Step-by-step onboarding process"
-        isOpen={openSections.has('steps')} onToggle={() => toggleSection('steps')} {...sectionTheme}>
+        anchorId="steps" isOpen={openSections.has('steps')} onToggle={() => toggleSection('steps')} {...sectionTheme}>
+        <div className="space-y-2 mb-3">
+          <input type="text" value={config.stepsHeading ?? ''} placeholder="From signup to your first answered call" onChange={e => update(p => ({ ...p, stepsHeading: e.target.value }))} className={inputClass} style={inputStyle} />
+          <input type="text" value={config.stepsSubheading ?? ''} placeholder="A few simple steps, no tech skills required." onChange={e => update(p => ({ ...p, stepsSubheading: e.target.value }))} className={inputClass} style={inputStyle} />
+        </div>
         {config.steps.map((step, i) => (
           <div key={i} className="rounded-lg p-3 space-y-2" style={subCardStyle}>
             <div className="flex items-center justify-between">
@@ -480,7 +507,7 @@ export default function MarketingContentEditor({
 
       {/* ── FEATURES ──────────────────────────────────────────────────── */}
       <Section title="Features" icon={LayoutGrid} description="Key capabilities to highlight"
-        isOpen={openSections.has('features')} onToggle={() => toggleSection('features')} {...sectionTheme}>
+        anchorId="features" isOpen={openSections.has('features')} onToggle={() => toggleSection('features')} {...sectionTheme}>
         {config.features.map((feat, i) => (
           <div key={i} className="rounded-lg p-3 space-y-2" style={subCardStyle}>
             <div className="flex items-center justify-between">
@@ -516,7 +543,7 @@ export default function MarketingContentEditor({
 
       {/* ── PRICING ───────────────────────────────────────────────────── */}
       <Section title="Pricing Tiers" icon={DollarSign} description="Plans and pricing shown on your website"
-        isOpen={openSections.has('pricing')} onToggle={() => toggleSection('pricing')} {...sectionTheme}>
+        anchorId="pricing" isOpen={openSections.has('pricing')} onToggle={() => toggleSection('pricing')} {...sectionTheme}>
         {config.pricing.map((tier, i) => (
           <div key={i} className="rounded-lg p-3 space-y-3" style={{
             ...subCardStyle,
@@ -570,7 +597,7 @@ export default function MarketingContentEditor({
 
       {/* ── FAQ ────────────────────────────────────────────────────────── */}
       <Section title="FAQ" icon={HelpCircle} description="Common questions and answers"
-        isOpen={openSections.has('faq')} onToggle={() => toggleSection('faq')} {...sectionTheme}>
+        anchorId="faq" isOpen={openSections.has('faq')} onToggle={() => toggleSection('faq')} {...sectionTheme}>
         {config.faqs.map((faq, i) => (
           <div key={i} className="rounded-lg p-3 space-y-2" style={subCardStyle}>
             <div className="flex items-center justify-between">

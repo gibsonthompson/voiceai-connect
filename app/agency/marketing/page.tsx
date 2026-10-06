@@ -145,6 +145,7 @@ export default function MarketingWebsitePage() {
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+  const [contentScrollTarget, setContentScrollTarget] = useState<string | null>(null);
 
   // Domain
   const [customDomain, setCustomDomain] = useState('');
@@ -277,15 +278,15 @@ export default function MarketingWebsitePage() {
   };
 
   // ── Website section visibility (show/hide marketing sections) ──
-  const SECTIONS: { key: string; label: string; defaultOff?: boolean }[] = [
-    { key: 'showProofStrip', label: 'Proof / stats strip' },
-    { key: 'showProblemSolution', label: 'Problem & solution' },
-    { key: 'showHowItWorks', label: 'How it works' },
-    { key: 'showFeatures', label: 'Features / capabilities' },
+  const SECTIONS: { key: string; label: string; defaultOff?: boolean; editKey?: string }[] = [
+    { key: 'showProofStrip', label: 'Proof / stats strip', editKey: 'stats' },
+    { key: 'showProblemSolution', label: 'Problem & solution', editKey: 'problems' },
+    { key: 'showHowItWorks', label: 'How it works', editKey: 'steps' },
+    { key: 'showFeatures', label: 'Features / capabilities', editKey: 'features' },
     { key: 'showCommandCenter', label: 'App showcase' },
     { key: 'showROICalculator', label: 'ROI calculator' },
-    { key: 'showPricing', label: 'Pricing' },
-    { key: 'showFAQ', label: 'FAQ' },
+    { key: 'showPricing', label: 'Pricing', editKey: 'pricing' },
+    { key: 'showFAQ', label: 'FAQ', editKey: 'faq' },
     { key: 'showFinalCTA', label: 'Final call-to-action' },
     { key: 'showIndustries', label: 'Industries', defaultOff: true },
     { key: 'showComparison', label: 'Comparison table', defaultOff: true },
@@ -611,9 +612,12 @@ export default function MarketingWebsitePage() {
             {SECTIONS.filter((sec) => (TEMPLATE_SECTIONS[agency?.marketing_template || 'classic'] || []).includes(sec.key)).map((sec) => { const on = sectionIsOn(sec.key, sec.defaultOff); const saving = savingSection === sec.key; return (
               <div key={sec.key} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
                 <span className="text-sm flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>{sec.label}{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</span>
+                <div className="flex items-center gap-3 shrink-0">
+                {sec.editKey && (<button type="button" onClick={() => { setContentScrollTarget(sec.editKey!); setActiveTab('content'); }} className="text-xs font-medium whitespace-nowrap hover:underline" style={{ color: agencyPrimaryColor }}>Edit content</button>)}
                 <button onClick={() => toggleSection(sec.key, sec.defaultOff)} disabled={saving || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0" style={{ backgroundColor: on ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={on} aria-label={`Toggle ${sec.label}`}>
                   <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: on ? 'translateX(22px)' : 'translateX(4px)' }} />
                 </button>
+                </div>
               </div>
             ); })}
           </div>
@@ -621,24 +625,34 @@ export default function MarketingWebsitePage() {
       </div>)}
 
       {/* ══════════════ CONTENT ══════════════ */}
-      {activeTab === 'content' && (<MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} />)}
+      {activeTab === 'content' && (<MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} />)}
 
       {/* ══════════════ NAVIGATION ══════════════ */}
       {activeTab === 'navigation' && (<div className="space-y-4 sm:space-y-6">
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2 mb-1"><ExternalLink className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base">Custom Navigation Links</h3></div>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Add links to your marketing site header and footer that point to your own website, for example a Home link back to your main site. Up to 5 links. They open in a new tab. On phones these show in the footer.</p>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Add links to your marketing site header and footer that point to your own website, for example a Home link back to your main site. Up to 5 links. They open in a new tab. On phones these show in the footer. Or toggle a link to open your support chat instead of linking out.</p>
           <div className="space-y-3">
             {customNavLinks.length === 0 && (<p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>No custom links yet. Add one below.</p>)}
             {customNavLinks.map((link, i) => (
-              <div key={i} className="flex flex-col sm:flex-row gap-2 sm:items-center rounded-lg p-3" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+              <div key={i} className="flex flex-col gap-2 rounded-lg p-3" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <input type="text" value={link.label} onChange={(e) => updateNavLink(i, 'label', e.target.value)} placeholder="Label (e.g. Home)" maxLength={30} className="rounded-lg px-3 py-2 text-sm focus:outline-none sm:w-40" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+                {link.url === '#support' ? (
+                  <div className="flex-1 rounded-lg px-3 py-2 text-sm flex items-center" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}>Opens your support chat</div>
+                ) : (
                 <input type="url" value={link.url} onChange={(e) => updateNavLink(i, 'url', e.target.value)} placeholder="https://yourmainsite.com" maxLength={500} className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+                )}
                 <div className="flex items-center gap-1">
                   <button onClick={() => moveNavLink(i, -1)} disabled={i === 0} className="p-2 rounded-lg disabled:opacity-30" style={{ color: mutedTextColor }} aria-label="Move up"><ChevronUp className="h-4 w-4" /></button>
                   <button onClick={() => moveNavLink(i, 1)} disabled={i === customNavLinks.length - 1} className="p-2 rounded-lg disabled:opacity-30" style={{ color: mutedTextColor }} aria-label="Move down"><ChevronDown className="h-4 w-4" /></button>
                   <button onClick={() => removeNavLink(i)} className="p-2 rounded-lg" style={{ color: isDark ? '#f87171' : '#dc2626' }} aria-label="Remove"><Trash2 className="h-4 w-4" /></button>
                 </div>
+                </div>
+                <label className="flex items-center gap-2 text-xs cursor-pointer select-none" style={{ color: mutedTextColor }}>
+                  <input type="checkbox" checked={link.url === '#support'} onChange={(e) => updateNavLink(i, 'url', e.target.checked ? '#support' : '')} />
+                  Open my support chat instead of linking out
+                </label>
               </div>
             ))}
           </div>
