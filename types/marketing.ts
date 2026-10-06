@@ -143,6 +143,8 @@ export interface MarketingConfig {
   problems: ProblemItem[];
   solution: SolutionConfig;
   steps: StepItem[];
+  stepsHeading?: string;
+  stepsSubheading?: string;
   benefits: BenefitItem[];
   features: FeatureItem[];
   industries: IndustryItem[];
@@ -194,13 +196,13 @@ export const defaultMarketingConfig: MarketingConfig = {
     badge: 'AI-Powered Phone Answering',
     headline: ['Never Miss', 'Another Call'],
     subtitle: 'AI Receptionist Starting at $49/month',
-    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7. Setup takes just 10 minutes.',
+    description: 'Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7.',
     demoPhone: '',
     demoInstructions: 'Call now to hear our AI in action.',
-    trustItems: ['10-Minute Setup', 'No Credit Card Required', '24/7 Call Answering'],
+    trustItems: ['Quick Setup', 'No Credit Card Required', '24/7 Call Answering'],
   },
   stats: {
-    setupTime: '10 min',
+    setupTime: '',
     responseTime: '< 1 sec',
     businessesServed: '200+',
     satisfaction: '96%',
@@ -227,6 +229,8 @@ export const defaultMarketingConfig: MarketingConfig = {
     ],
     highlight: "You get a text summary of every call within seconds, plus an app where you can see transcripts, listen to recordings, and manage everything.",
   },
+  stepsHeading: 'From signup to your first answered call',
+  stepsSubheading: 'A few simple steps, no tech skills required.',
   steps: [
     {
       title: 'Tell Us About Your Business',
@@ -483,7 +487,7 @@ export const defaultMarketingConfig: MarketingConfig = {
       { label: 'Professional Services', href: '#' },
     ],
     companyLinks: [
-      { label: 'Contact', href: '#' },
+      { label: 'Contact', href: '#support' },
       { label: 'Privacy Policy', href: '/privacy' },
       { label: 'Terms & Conditions', href: '/terms' },
     ],

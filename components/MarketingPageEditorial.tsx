@@ -11,6 +11,7 @@
 // agency's brand color rides through as the live accent over the near-black ink.
 // ============================================================================
 'use client';
+import { openAgencySupport, visibleFooterLinks } from '@/lib/marketing-links';
 
 import React, { useState } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -257,7 +258,7 @@ function Steps({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-steps" id="how">
       <div className="ed-container">
-        <div className="ed-section-head"><h2 className="ed-h2">How it works</h2></div>
+        <div className="ed-section-head"><h2 className="ed-h2">{config.stepsHeading || 'From signup to your first answered call'}</h2><p style={{ marginTop: '0.6rem', opacity: 0.6, fontSize: '1.0625rem' }}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p></div>
         <ol className="ed-step-list">
           {steps.map((s, i) => (
             <li className="ed-step" key={i}>
@@ -436,9 +437,9 @@ function Footer({ config }: { config: MarketingConfig }) {
   const homeUrl = config.homepageUrl || '/';
   const year = new Date().getFullYear();
   const groups = [
-    { head: 'Product', links: footer.productLinks || [] },
-    { head: 'Industries', links: footer.industryLinks || [] },
-    { head: 'Company', links: footer.companyLinks || [] },
+    { head: 'Product', links: visibleFooterLinks(footer.productLinks) },
+    { head: 'Industries', links: visibleFooterLinks(footer.industryLinks) },
+    { head: 'Company', links: visibleFooterLinks(footer.companyLinks) },
   ].filter(g => g.links.length > 0);
   return (
     <footer className="ed-footer">
@@ -455,7 +456,7 @@ function Footer({ config }: { config: MarketingConfig }) {
           <nav className="ed-footer-col" key={gi}>
             <h4 className="ed-footer-head">{g.head}</h4>
             <ul>
-              {g.links.map((l, j) => <li key={j}><a href={l.href}>{l.label}</a></li>)}
+              {g.links.map((l, j) => <li key={j}><a href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a></li>)}
               {gi === groups.length - 1 && config.clientLoginPath && <li><a href={config.clientLoginPath}>Client login</a></li>}
             </ul>
           </nav>

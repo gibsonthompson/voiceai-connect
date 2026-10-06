@@ -6,6 +6,7 @@ import {
   Send, Loader2, Bot, User, Sparkles, MessageSquare,
   HelpCircle, Check,
 } from 'lucide-react';
+import { AGENCY_SUPPORT_EVENT } from '@/lib/marketing-links';
 
 interface FAQ { question: string; answer: string; }
 
@@ -132,6 +133,13 @@ export default function AgencySupportWidget({
       setTimeout(() => searchInputRef.current?.focus(), 200);
     }
   }, [open, view]);
+
+  // Let a "Contact" link anywhere on the marketing page open this support bot.
+  useEffect(() => {
+    const handler = () => { setOpen(true); setView('home'); };
+    window.addEventListener(AGENCY_SUPPORT_EVENT, handler);
+    return () => window.removeEventListener(AGENCY_SUPPORT_EVENT, handler);
+  }, []);
 
   // Teaser is never auto-shown. The bubble stays a clean icon until the user
   // taps it, which opens the full panel. (Auto-popup on scroll removed.)

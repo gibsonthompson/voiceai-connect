@@ -9,6 +9,7 @@
 // with Classic plus the Beside personality.
 // ============================================================================
 'use client';
+import { openAgencySupport, visibleFooterLinks } from '@/lib/marketing-links';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -355,8 +356,8 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">How it works</span>
-          <h2>From signup to your first call{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}</h2>
-          <p>No, really. We timed it.</p>
+          <h2>{config.stepsHeading || 'From signup to your first answered call'}</h2>
+          <p>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p>
         </div>
         <div className="bsd-steps bsd-stagger">
           {steps.map((step, i) => (
@@ -769,14 +770,16 @@ function Footer({ config }: { config: MarketingConfig }) {
             <h4>Product</h4>
             {footer.productLinks.map((l, i) => <a key={i} href={l.href}>{l.label}</a>)}
           </div>
+          {visibleFooterLinks(footer.industryLinks).length > 0 && (
           <div className="bsd-footer-col">
             <h4>Industries</h4>
-            {footer.industryLinks.map((l, i) => <a key={i} href={l.href}>{l.label}</a>)}
+            {visibleFooterLinks(footer.industryLinks).map((l, i) => <a key={i} href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a>)}
           </div>
+          )}
           <div className="bsd-footer-col">
             <h4>Company</h4>
             {(config.customNavLinks || []).map((l, i) => <a key={`fc-${i}`} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>)}
-            {footer.companyLinks.map((l, i) => <a key={i} href={l.href}>{l.label}</a>)}
+            {visibleFooterLinks(footer.companyLinks).map((l, i) => <a key={i} href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a>)}
             {config.clientLoginPath && <a href={config.clientLoginPath}>Client login</a>}
           </div>
         </div>

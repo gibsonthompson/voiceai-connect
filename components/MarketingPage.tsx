@@ -1,5 +1,6 @@
 // components/MarketingPage.tsx
 'use client';
+import { openAgencySupport, visibleFooterLinks } from '@/lib/marketing-links';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -270,7 +271,7 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
   return (
     <section id="how-it-works" className="how-it-works">
       <div className="container">
-        <div className="section-header"><h2>From Signup to Your First Call{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}</h2><p className="subtitle">No, Really. We Timed It.</p></div>
+        <div className="section-header"><h2>{config.stepsHeading || 'From signup to your first answered call'}</h2><p className="subtitle">{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p></div>
         <div className="steps-grid">
           {steps.map((step, i) => (
             <div key={i} className="step-card">
@@ -762,15 +763,17 @@ function Footer({ config }: { config: MarketingConfig }) {
             <h4>Product</h4>
             <ul className="footer-links">{footer.productLinks.map((link, i) => (<li key={i}><a href={link.href}>{link.label}</a></li>))}</ul>
           </div>
+          {visibleFooterLinks(footer.industryLinks).length > 0 && (
           <div className="footer-col">
             <h4>Industries</h4>
-            <ul className="footer-links">{footer.industryLinks.map((link, i) => (<li key={i}><a href={link.href}>{link.label}</a></li>))}</ul>
+            <ul className="footer-links">{visibleFooterLinks(footer.industryLinks).map((link, i) => (<li key={i}><a href={link.support ? '#support' : link.href} onClick={link.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{link.label}</a></li>))}</ul>
           </div>
+          )}
           <div className="footer-col">
             <h4>Company</h4>
             <ul className="footer-links">
               {(config.customNavLinks || []).map((link, i) => (<li key={`custom-footer-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>))}
-              {footer.companyLinks.map((link, i) => (<li key={i}><a href={link.href}>{link.label}</a></li>))}
+              {visibleFooterLinks(footer.companyLinks).map((link, i) => (<li key={i}><a href={link.support ? '#support' : link.href} onClick={link.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{link.label}</a></li>))}
               {config.clientLoginPath && <li><a href={config.clientLoginPath}>Client Login</a></li>}
             </ul>
           </div>
