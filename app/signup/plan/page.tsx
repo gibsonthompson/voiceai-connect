@@ -26,6 +26,7 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  signup_logo_align: 'left' | 'center' | 'right' | null;
   client_trial_days?: number | null;
   country: string | null;
   price_starter: number;
@@ -259,6 +260,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const theme: 'light' | 'dark' = agency.website_theme === 'dark' ? 'dark' : 'light';
   const isDark = theme === 'dark';
   const primaryColor = agency.primary_color || '#10b981';
+  const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
   const agencyCountry = agency.country || 'US';
@@ -499,17 +501,19 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
           style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)' }}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 sm:h-20 items-center justify-between">
-              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="flex h-16 sm:h-20 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
                 {agency.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain" />
                 ) : (
-                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                  </div>
+                  <>
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                      <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                    </div>
+                    <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
+                  </>
                 )}
-                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
               </a>
             </div>
           </div>

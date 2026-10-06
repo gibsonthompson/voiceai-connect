@@ -37,6 +37,7 @@ interface Agency {
   marketing_template: string | null;
   website_theme: 'auto' | 'light' | 'dark' | null;
   logo_background_color: string | null;
+  signup_logo_align?: 'left' | 'center' | 'right' | null;
   branding_overrides: {
     nav_bg?: string;
     nav_text?: string;

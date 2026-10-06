@@ -540,15 +540,16 @@ function Comparison({ config }: { config: MarketingConfig }) {
 
   const rows = [
     { label: 'Monthly cost', us: ours, human: moneyRange(3000, 4500), svc: moneyRange(299, 600), vm: money(0) },
-    { label: 'Setup time', us: (config.stats?.setupTime || '10 min'), human: '2-4 weeks', svc: '3-5 days', vm: 'Instant' },
-    { label: 'Available', us: '24/7/365', human: 'Business hours', svc: '24/7', vm: '24/7' },
+    { label: 'Setup time', us: (config.stats?.setupTime || 'Minutes'), human: '2-4 weeks', svc: '3-5 days', vm: 'Instant', usYes: true },
+    { label: 'Available', us: '24/7', human: 'Business hours', svc: '24/7', vm: '24/7' },
+    { label: 'Answers live', us: 'Yes', human: 'If free', svc: 'Usually', vm: 'No' },
     { label: 'Books appointments', us: 'Yes', human: 'Yes', svc: 'Yes', vm: 'No' },
     { label: 'Text summaries', us: 'Yes', human: 'No', svc: 'No', vm: 'No' },
     { label: 'Mobile app', us: 'Yes', human: 'No', svc: 'No', vm: 'No' },
     { label: 'Trained on your business', us: 'Yes', human: 'After weeks', svc: 'Generic', vm: 'N/A' },
     { label: 'Handles multiple calls', us: 'Unlimited', human: 'One at a time', svc: 'Limited', vm: 'Unlimited' },
   ];
-  const cls = (v: string) => (v === 'Yes' || v === 'Unlimited' || v === '24/7/365' || v === '10 min' || v === 'Instant') ? 'yes' : (v === 'No' || v === 'N/A') ? 'no' : '';
+  const cls = (v: string) => (v === 'Yes' || v === 'Unlimited' || v === '24/7' || v === 'Instant') ? 'yes' : (v === 'No' || v === 'N/A') ? 'no' : '';
 
   return (
     <section className="bsd-section bsd-section-soft">
@@ -572,7 +573,7 @@ function Comparison({ config }: { config: MarketingConfig }) {
               {rows.map((r, i) => (
                 <tr key={i}>
                   <td>{r.label}</td>
-                  <td className="bsd-col-us"><span className={cls(r.us)}>{r.us}</span></td>
+                  <td className="bsd-col-us"><span className={(r as any).usYes ? 'yes' : cls(r.us)}>{r.us}</span></td>
                   <td><span className={cls(r.human)}>{r.human}</span></td>
                   <td><span className={cls(r.svc)}>{r.svc}</span></td>
                   <td><span className={cls(r.vm)}>{r.vm}</span></td>

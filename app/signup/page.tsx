@@ -28,6 +28,7 @@ interface Agency {
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
   logo_background_color: string | null;
+  signup_logo_align: 'left' | 'center' | 'right' | null;
   country: string | null;
   client_trial_days?: number | null;
   price_starter: number;
@@ -413,6 +414,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
 
   const isDark = agency.website_theme === 'dark';
   const primaryColor = agency.primary_color || '#10b981';
+  const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
@@ -517,19 +519,21 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
       {!isEmbed && (
         <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-2xl" style={{ backgroundColor: headerBg, borderColor: headerBorder }}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 sm:h-20 items-center justify-between">
-              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="grid grid-cols-[1fr_auto_1fr] h-16 sm:h-20 items-center">
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0" style={{ gridColumn: logoAlign === 'left' ? 1 : logoAlign === 'center' ? 2 : 3, justifySelf: logoAlign === 'right' ? 'end' : logoAlign === 'center' ? 'center' : 'start' }}>
                 {agency.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain" />
                 ) : (
-                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                  </div>
+                  <>
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                      <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                    </div>
+                    <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
+                  </>
                 )}
-                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency.name}</span>
               </a>
-              <a href="/client/login" className="text-sm transition-colors" style={{ color: mutedTextColor }}>
+              <a href="/client/login" className="text-sm transition-colors whitespace-nowrap" style={{ gridColumn: logoAlign === 'right' ? 1 : 3, justifySelf: logoAlign === 'right' ? 'start' : 'end', color: mutedTextColor }}>
                 <span className="hidden sm:inline">Already have an account? </span>Sign in
               </a>
             </div>

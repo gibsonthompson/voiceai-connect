@@ -479,8 +479,9 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
   const oursLowest = pos === 'after' ? `${lowestPrice} ${cs}` : `${cs}${lowestPrice}`;
   const comparisonData = [
     { label: 'Monthly Cost', ours: oursMonthly, human: moneyRange(3000, 4500), ruby: moneyRange(299, 600), vm: money(0) },
-    { label: 'Setup Time', ours: (config.stats?.setupTime || '10 min'), human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant' },
-    { label: 'Available', ours: '24/7/365', human: 'Business hours', ruby: '24/7', vm: '24/7' },
+    { label: 'Setup Time', ours: (config.stats?.setupTime || 'Minutes'), human: '2-4 weeks', ruby: '3-5 days', vm: 'Instant', ourWin: true },
+    { label: 'Available', ours: '24/7', human: 'Business hours', ruby: '24/7', vm: '24/7' },
+    { label: 'Answers live', ours: '✓', human: 'If free', ruby: 'Usually', vm: '✗' },
     { label: 'Books to Google Calendar', ours: '✓', human: '✓', ruby: '✓', vm: '✗' },
     { label: 'Google Calendar', ours: '✓', human: '✓', ruby: '✗', vm: '✗' },
     { label: 'Text Summaries', ours: '✓', human: '✗', ruby: '✗', vm: '✗' },
@@ -507,7 +508,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
               <ul className="comparison-card-features">
                 {comparisonData.slice(1).map((row, j) => {
                   const val = option.getData(row);
-                  const isYes = val === '✓' || val.includes('Unlimited') || val === '24/7/365' || val === '10 min';
+                  const isYes = val === '✓' || val.includes('Unlimited') || val === '24/7' || (option.highlight && !!(row as any).ourWin);
                   const isNo = val === '✗' || val === 'N/A';
                   return (<li key={j}><span className="feature-label">{row.label}</span><span className={`feature-value ${isYes ? 'feature-value--yes' : isNo ? 'feature-value--no' : ''}`}>{val}</span></li>);
                 })}
