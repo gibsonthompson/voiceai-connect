@@ -778,7 +778,7 @@ function Footer({ config }: { config: MarketingConfig }) {
           )}
           <div className="bsd-footer-col">
             <h4>Company</h4>
-            {(config.customNavLinks || []).map((l, i) => {isSupportLink(l.url, l.label) ? <a key={`fc-${i}`} href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{l.label}</a> : <a key={`fc-${i}`} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>})}
+            {(config.customNavLinks || []).map((l, i) => (isSupportLink(l.url, l.label) ? <a key={`fc-${i}`} href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{l.label}</a> : <a key={`fc-${i}`} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>))}
             {visibleFooterLinks(footer.companyLinks).map((l, i) => <a key={i} href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a>)}
             {config.clientLoginPath && <a href={config.clientLoginPath}>Client login</a>}
           </div>
