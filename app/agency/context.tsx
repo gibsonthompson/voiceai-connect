@@ -321,6 +321,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         }),
         fetch(`${backendUrl}/api/agency/${storedUser.agency_id}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         }),
       ]);
 
