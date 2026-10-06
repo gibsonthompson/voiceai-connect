@@ -45,11 +45,16 @@ const MODEL_OPTIONS = [
   { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower — use for complex industries', tag: 'Premium' },
 ];
 
-const TTS_MODEL_OPTIONS = [
+const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean }[] = [
   { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most human and expressive, best for sounding natural (slightly higher latency)', tag: 'Most human' },
   { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural and reliable, a great all-rounder', tag: 'Natural' },
   { id: 'eleven_turbo_v2_5', name: 'Turbo v2.5', desc: 'Balanced, natural and fast', tag: 'Balanced' },
   { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest, lowest latency but least expressive', tag: 'Fastest' },
+  // Newest ElevenLabs voice. Not selectable yet because our voice provider (Vapi)
+  // doesn't support v4 (it needs ElevenLabs' Text-to-Dialogue WebSocket). When
+  // Vapi adds it, drop `comingSoon` here and add 'eleven_v4_turbo' to the backend
+  // validTtsModels list, then it's live.
+  { id: 'eleven_v4_turbo', name: 'Eleven v4 Turbo', desc: 'Newest and most expressive real-time voice (~100ms). Available as soon as our voice provider adds support.', tag: 'Coming soon', comingSoon: true },
 ];
 
 const TRANSCRIBER_OPTIONS = [
@@ -401,8 +406,9 @@ export default function TemplateEditorPage() {
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice engine</label>
-              <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.filter(m => !m.comingSoon).map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTtsObj.desc}</p>}
+              {TTS_MODEL_OPTIONS.some(m => m.comingSoon) && <p className="text-[11px] mt-1.5" style={{ color: theme.primary }}>Coming soon: {TTS_MODEL_OPTIONS.filter(m => m.comingSoon).map(m => m.name).join(', ')} — we'll add it automatically once our voice provider supports it.</p>}
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speech recognition</label>
