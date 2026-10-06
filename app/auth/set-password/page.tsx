@@ -88,6 +88,10 @@ function SetPasswordContent() {
   const [cachedTheme, setCachedThemeState] = useState<'light' | 'dark'>('light');
 
   useEffect(() => { setCachedThemeState(getCachedTheme()); }, []);
+  // Reaching set-password means the signup + checkout completed, so the cached
+  // signup form data is no longer needed. Clear it so a later signup in the
+  // same tab starts fresh (it is intentionally kept through checkout/cancel).
+  useEffect(() => { try { sessionStorage.removeItem('client_signup_data'); } catch {} }, []);
 
   // Detect agency context on mount
   useEffect(() => {

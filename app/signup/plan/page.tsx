@@ -410,7 +410,10 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         throw new Error(data.message || data.error || data.errors?.join(', ') || 'Failed to create account');
       }
 
-      sessionStorage.removeItem('client_signup_data');
+      // NOTE: client_signup_data is intentionally NOT cleared here. The client
+      // row is created, but the prospect still has to complete Stripe checkout.
+      // If they cancel/back out, the form must restore from this, so it's cleared
+      // only on the welcome page after checkout actually completes.
 
       // ──────────────────────────────────────────────────────────────────
       // Card-required trial mode: agency has require_card_for_trial=true.
