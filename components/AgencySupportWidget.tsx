@@ -136,7 +136,7 @@ export default function AgencySupportWidget({
 
   // Let a "Contact" link anywhere on the marketing page open this support bot.
   useEffect(() => {
-    const handler = () => { setOpen(true); setView('home'); };
+    const handler = () => { setOpen(true); setView('escalation'); setEscDone(false); setEscError(''); setEscName(''); setEscContact(''); setEscMessage(''); };
     window.addEventListener(AGENCY_SUPPORT_EVENT, handler);
     return () => window.removeEventListener(AGENCY_SUPPORT_EVENT, handler);
   }, []);

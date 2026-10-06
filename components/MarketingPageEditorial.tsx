@@ -11,7 +11,7 @@
 // agency's brand color rides through as the live accent over the near-black ink.
 // ============================================================================
 'use client';
-import { openAgencySupport, visibleFooterLinks } from '@/lib/marketing-links';
+import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 
 import React, { useState } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -168,7 +168,7 @@ function Nav({ config }: { config: MarketingConfig }) {
         </a>
         <ul className="ed-nav-links">
           {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
-            <li key={`nav-custom-${i}`}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a></li>
+            <li key={`nav-custom-${i}`}>{isSupportLink(link.url, link.label) ? <a href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{link.label}</a> : <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>}</li>
           ))}
           {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
           {config.showHowItWorks !== false && <li><a href="#how">How it works</a></li>}

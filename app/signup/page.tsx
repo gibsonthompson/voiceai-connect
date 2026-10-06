@@ -380,9 +380,31 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
 
   const defaultCountry = agency.country?.toUpperCase() || 'US';
   
-  const [formData, setFormData] = useState({
-    businessName: '', ownerName: '', email: '', phone: '',
-    city: '', state: '', country: defaultCountry, industry: 'general',
+  const [formData, setFormData] = useState(() => {
+    const base = {
+      businessName: '', ownerName: '', email: '', phone: '',
+      city: '', state: '', country: defaultCountry, industry: 'general',
+    };
+    // Restore what the prospect already typed if they came back from the plan
+    // step (or bounced off a canceled checkout), so the form is never wiped.
+    if (typeof window === 'undefined') return base;
+    try {
+      const stored = sessionStorage.getItem('client_signup_data');
+      if (stored) {
+        const d = JSON.parse(stored) || {};
+        return {
+          businessName: d.businessName || '',
+          ownerName: d.ownerName || '',
+          email: d.email || '',
+          phone: d.phone || '',
+          city: d.city || '',
+          state: d.state || '',
+          country: d.country || defaultCountry,
+          industry: d.industry || 'general',
+        };
+      }
+    } catch {}
+    return base;
   });
 
   const trialDays = (agency.client_trial_days ?? 7) as number;
