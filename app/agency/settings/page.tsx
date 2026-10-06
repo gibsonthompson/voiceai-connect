@@ -1056,6 +1056,20 @@ function AgencySettingsContent() {
                       </button>
                     ))}
                   </div>
+                  <details className="mt-3 group">
+                    <summary className="flex items-center gap-1.5 cursor-pointer select-none list-none text-[11px] sm:text-xs font-medium" style={{ color: theme.primary }}>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
+                      How does each option work, and what does the client see?
+                    </summary>
+                    <div className="mt-2 space-y-2.5 text-[11px] sm:text-xs pl-1.5" style={{ color: theme.textMuted }}>
+                      <p>
+                        <span className="font-medium" style={{ color: theme.text }}>Charge at signup:</span> the setup fee shows as a line on the client&apos;s checkout page and is charged the day they sign up, before the free trial begins. They see it in the order summary and pay it that day. Their plan then starts its free trial, and the monthly charge begins when the trial ends.
+                      </p>
+                      <p>
+                        <span className="font-medium" style={{ color: theme.text }}>After the trial:</span> nothing is charged that day. The setup fee is added to the client&apos;s first invoice when the trial ends, together with their first month. Stripe can&apos;t show a fee in the checkout summary without charging it right away, so instead the client sees a note next to the pay button saying their card won&apos;t be charged during the trial and the first invoice includes the one-time setup fee. If a discount code reduces the setup fee, that note shows the discounted amount.
+                      </p>
+                    </div>
+                  </details>
                 </div>
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-3">
