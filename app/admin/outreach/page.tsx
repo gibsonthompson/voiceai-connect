@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText, Mail, MessageSquare, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin,
+  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check,
 } from 'lucide-react';
 
 interface Template {
@@ -40,6 +40,12 @@ const TYPE_STYLE: Record<string, { color: string; bg: string }> = {
 
 export default function AdminOutreachPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [agencyEmails, setAgencyEmails] = useState<{ key: string; name: string; subject: string; body: string }[]>([]);
+  const [aeKey, setAeKey] = useState<string | null>(null);
+  const [aeSubject, setAeSubject] = useState('');
+  const [aeBody, setAeBody] = useState('');
+  const [aeSaving, setAeSaving] = useState(false);
+  const [aeSaved, setAeSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
@@ -48,7 +54,7 @@ export default function AdminOutreachPage() {
   const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const getToken = () => localStorage.getItem('admin_token');
 
-  useEffect(() => { fetchTemplates(); }, []);
+  useEffect(() => { fetchTemplates(); fetchAgencyEmails(); }, []);
 
   const fetchTemplates = async () => {
     try {
@@ -56,6 +62,30 @@ export default function AdminOutreachPage() {
       if (response.ok) { const data = await response.json(); setTemplates(data.templates || []); }
     } catch (error) { console.error('Failed to fetch templates:', error); }
     finally { setLoading(false); }
+  };
+
+  // Agency onboarding emails live in a separate system (email_templates, keyed),
+  // sent per-agency from the Agencies page. Surfaced here so they can be managed
+  // in one place alongside the lead-outreach templates.
+  const fetchAgencyEmails = async () => {
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/admin/email-templates`, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+      if (response.ok) { const data = await response.json(); if (Array.isArray(data.templates)) setAgencyEmails(data.templates); }
+    } catch (error) { console.error('Failed to fetch agency email templates:', error); }
+  };
+  const openAgencyEmail = (t: { key: string; subject: string; body: string }) => { setAeKey(t.key); setAeSubject(t.subject); setAeBody(t.body); setAeSaved(false); };
+  const saveAgencyEmail = async () => {
+    if (!aeKey) return;
+    setAeSaving(true);
+    try {
+      await fetch(`${getBackendUrl()}/api/admin/email-templates/${aeKey}`, {
+        method: 'PUT', headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: aeSubject, body: aeBody }),
+      });
+      setAgencyEmails(prev => prev.map(t => (t.key === aeKey ? { ...t, subject: aeSubject, body: aeBody } : t)));
+      setAeSaved(true); setTimeout(() => setAeSaved(false), 2000);
+    } catch (error) { console.error('Save agency email error:', error); }
+    finally { setAeSaving(false); }
   };
 
   const handleDuplicate = async (template: Template) => {
@@ -208,6 +238,30 @@ export default function AdminOutreachPage() {
             <div>
               <div className="flex items-center gap-2 mb-3"><Linkedin className="h-3.5 w-3.5" style={{ color: '#2563EB' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">LinkedIn Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({linkedinTemplates.length})</span></div>
               <div className="a-panel overflow-visible">{linkedinTemplates.map((t, idx) => renderTemplateRow(t, idx, linkedinTemplates.length))}</div>
+            </div>
+          )}
+          {agencyEmails.length > 0 && !typeFilter && (
+            <div>
+              <div className="flex items-center gap-2 mb-1.5"><Mail className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">Agency Emails</h3><span className="text-[10px] text-[var(--a-dim)]">({agencyEmails.length})</span></div>
+              <p className="text-[11px] text-[var(--a-dim)] mb-3">Onboarding emails sent to signed-up agencies from the Agencies page. {'{name}'} fills with the agency name at send time.</p>
+              <div className="a-panel overflow-visible">
+                {agencyEmails.map((t) => (
+                  <div key={t.key} className="border-b border-[var(--a-line)] last:border-0">
+                    <button onClick={() => (aeKey === t.key ? setAeKey(null) : openAgencyEmail(t))} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F6FCF9] transition-colors">
+                      <Mail className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--a-em-deep)' }} />
+                      <div className="min-w-0 flex-1"><p className="text-[13px] font-medium text-[var(--a-ink)] truncate">{t.name}</p><p className="text-[11px] text-[var(--a-dim)] truncate">{t.subject}</p></div>
+                      <Edit className="h-3.5 w-3.5 shrink-0 text-[var(--a-dim)]" />
+                    </button>
+                    {aeKey === t.key && (
+                      <div className="px-4 pb-4 space-y-3">
+                        <div><label className="block text-[10px] uppercase tracking-wide text-[var(--a-dim)] mb-1">Subject</label><input value={aeSubject} onChange={(e) => setAeSubject(e.target.value)} className="a-input" /></div>
+                        <div><label className="block text-[10px] uppercase tracking-wide text-[var(--a-dim)] mb-1">Body</label><textarea value={aeBody} onChange={(e) => setAeBody(e.target.value)} rows={12} className="a-input" style={{ whiteSpace: 'pre-wrap', resize: 'vertical', minHeight: '260px' }} /></div>
+                        <div className="flex justify-end"><button onClick={saveAgencyEmail} disabled={aeSaving} className="a-btn">{aeSaved ? <><Check className="h-3.5 w-3.5" />Saved</> : aeSaving ? 'Saving...' : 'Save'}</button></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

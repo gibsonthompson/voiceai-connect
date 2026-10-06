@@ -174,6 +174,15 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
     }
   };
 
+  // One action: copy the email, open Gmail composed to the agency, and log it as
+  // sent. Copy + open run synchronously in the click so the Gmail tab isn't
+  // popup-blocked; the log request runs in the background.
+  const logCopyGmail = () => {
+    copy('all', subject + '\n\n' + body);
+    window.open(gmailComposeUrl(agency.email, subject, body), '_blank', 'noopener,noreferrer');
+    logSent();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl bg-white border border-[var(--a-line)] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -215,10 +224,8 @@ function EmailComposerModal({ agency, onClose, onLogged }: {
         </div>
 
         <div className="flex items-center gap-2 px-5 py-4 border-t border-[var(--a-line)] flex-wrap">
-          <button onClick={() => copy('all', subject + '\n\n' + body)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><Copy className="h-3.5 w-3.5" />{copied === 'all' ? 'Copied' : 'Copy all'}</button>
-          <a href={gmailComposeUrl(agency.email, subject, body)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]"><ExternalLink className="h-3.5 w-3.5" />Open in Gmail</a>
           <button onClick={saveTemplate} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line)] text-[var(--a-muted)] hover:bg-[#F6FCF9]" style={{ opacity: saving ? 0.6 : 1 }}>{saved ? <><Check className="h-3.5 w-3.5" />Saved</> : saving ? 'Saving...' : 'Save template'}</button>
-          <button onClick={logSent} disabled={logging || logged} className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em)', color: '#04140D', opacity: (logging || logged) ? 0.6 : 1 }}>{logged ? <><Check className="h-3.5 w-3.5" />Logged</> : logging ? 'Logging...' : 'Log as sent'}</button>
+          <button onClick={logCopyGmail} disabled={logging} title={`Copies the email, opens Gmail to ${agency.email}, and logs it as sent`} className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em)', color: '#04140D', opacity: logging ? 0.6 : 1 }}>{logged ? <><Check className="h-3.5 w-3.5" />Copied, opened &amp; logged</> : logging ? 'Working...' : <><ExternalLink className="h-3.5 w-3.5" />Log, copy &amp; open Gmail</>}</button>
         </div>
       </div>
     </div>
