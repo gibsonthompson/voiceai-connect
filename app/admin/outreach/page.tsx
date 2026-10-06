@@ -44,6 +44,7 @@ export default function AdminOutreachPage() {
   const [aeKey, setAeKey] = useState<string | null>(null);
   const [aeSubject, setAeSubject] = useState('');
   const [aeBody, setAeBody] = useState('');
+  const [aeName, setAeName] = useState('');
   const [aeSaving, setAeSaving] = useState(false);
   const [aeSaved, setAeSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -73,16 +74,16 @@ export default function AdminOutreachPage() {
       if (response.ok) { const data = await response.json(); if (Array.isArray(data.templates)) setAgencyEmails(data.templates); }
     } catch (error) { console.error('Failed to fetch agency email templates:', error); }
   };
-  const openAgencyEmail = (t: { key: string; subject: string; body: string }) => { setAeKey(t.key); setAeSubject(t.subject); setAeBody(t.body); setAeSaved(false); };
+  const openAgencyEmail = (t: { key: string; name: string; subject: string; body: string }) => { setAeKey(t.key); setAeName(t.name || ''); setAeSubject(t.subject); setAeBody(t.body); setAeSaved(false); };
   const saveAgencyEmail = async () => {
     if (!aeKey) return;
     setAeSaving(true);
     try {
       await fetch(`${getBackendUrl()}/api/admin/email-templates/${aeKey}`, {
         method: 'PUT', headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: aeSubject, body: aeBody }),
+        body: JSON.stringify({ name: aeName, subject: aeSubject, body: aeBody }),
       });
-      setAgencyEmails(prev => prev.map(t => (t.key === aeKey ? { ...t, subject: aeSubject, body: aeBody } : t)));
+      setAgencyEmails(prev => prev.map(t => (t.key === aeKey ? { ...t, name: aeName, subject: aeSubject, body: aeBody } : t)));
       setAeSaved(true); setTimeout(() => setAeSaved(false), 2000);
     } catch (error) { console.error('Save agency email error:', error); }
     finally { setAeSaving(false); }
@@ -254,6 +255,7 @@ export default function AdminOutreachPage() {
                     </button>
                     {aeKey === t.key && (
                       <div className="px-4 pb-4 space-y-3">
+                        <div><label className="block text-[10px] uppercase tracking-wide text-[var(--a-dim)] mb-1">Name</label><input value={aeName} onChange={(e) => setAeName(e.target.value)} className="a-input" /></div>
                         <div><label className="block text-[10px] uppercase tracking-wide text-[var(--a-dim)] mb-1">Subject</label><input value={aeSubject} onChange={(e) => setAeSubject(e.target.value)} className="a-input" /></div>
                         <div><label className="block text-[10px] uppercase tracking-wide text-[var(--a-dim)] mb-1">Body</label><textarea value={aeBody} onChange={(e) => setAeBody(e.target.value)} rows={12} className="a-input" style={{ whiteSpace: 'pre-wrap', resize: 'vertical', minHeight: '260px' }} /></div>
                         <div className="flex justify-end"><button onClick={saveAgencyEmail} disabled={aeSaving} className="a-btn">{aeSaved ? <><Check className="h-3.5 w-3.5" />Saved</> : aeSaving ? 'Saving...' : 'Save'}</button></div>

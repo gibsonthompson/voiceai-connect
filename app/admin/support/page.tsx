@@ -23,12 +23,11 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import AdminSupportThread from '@/components/admin/AdminSupportThread';
 import AdminAgencyThread from '@/components/admin/AdminAgencyThread';
 import {
   LifeBuoy, Search, Loader2, Loader, Clock, Building2,
-  User, Mail, ArrowLeft, ArrowRight, Check, ExternalLink, Plus, X} from 'lucide-react';
+  Mail, ArrowLeft, ArrowRight, Check, Plus, X} from 'lucide-react';
 
 
 // Gmail compose deep link so "Reply by email" opens Gmail with the message
@@ -168,14 +167,12 @@ function typeStyle(userType: string | null) {
 function SupportTab({ onChanged }: { onChanged: () => void }) {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<any[]>([]);
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
   const limit = 30;
 
   // Feedback has its own status words; map them onto the support vocabulary so the
@@ -227,111 +224,27 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
   const totalPages = Math.ceil(filtered.length / limit);
   const pageItems = filtered.slice(page * limit, page * limit + limit);
 
-  // One row per agency: their whole conversation (support + feedback) collapsed
-  // together, most-recently-active first. Anonymous widget rows (no agency)
-  // group under a single "No agency" bucket and keep per-request threads.
-  const agencyGroups = (() => {
-    const map = new Map<string, any>();
+  // Left-pane conversation list. One entry per agency (their whole support +
+  // feedback history collapsed into a single running thread), plus one entry per
+  // anonymous widget request (no agency to group under). Most-recently-active first.
+  const conversations = (() => {
+    const byAgency = new Map<string, any>();
+    const anon: any[] = [];
     for (const it of filtered) {
-      const key = it.agency_id || '__none__';
-      if (!map.has(key)) map.set(key, { key, agency_id: it.agency_id, name: it.display_name || (it.agency_id ? 'Agency' : 'No agency'), items: [], last: it.created_at, open: 0, lastMessage: it.message });
-      const g = map.get(key);
-      g.items.push(it);
-      if (new Date(it.created_at).getTime() > new Date(g.last).getTime()) { g.last = it.created_at; g.lastMessage = it.message; }
-      if (it.unified_status !== 'resolved') g.open += 1;
-      if (it.display_name && (g.name === 'Agency' || g.name === 'No agency')) g.name = it.display_name;
+      if (it.agency_id) {
+        if (!byAgency.has(it.agency_id)) byAgency.set(it.agency_id, { key: `ag-${it.agency_id}`, type: 'agency', agency_id: it.agency_id, request_id: null, name: it.display_name || 'Agency', count: 0, last: it.created_at, open: 0, lastMessage: it.message });
+        const g = byAgency.get(it.agency_id);
+        g.count += 1;
+        if (new Date(it.created_at).getTime() >= new Date(g.last).getTime()) { g.last = it.created_at; g.lastMessage = it.message; }
+        if (it.unified_status !== 'resolved') g.open += 1;
+        if (it.display_name && g.name === 'Agency') g.name = it.display_name;
+      } else {
+        anon.push({ key: `an-${it.id}`, type: 'anon', agency_id: null, request_id: it.id, name: it.display_name || it.user_email || 'Anonymous', count: 1, last: it.created_at, open: it.unified_status !== 'resolved' ? 1 : 0, lastMessage: it.message });
+      }
     }
-    return [...map.values()].sort((a, b) => new Date(b.last).getTime() - new Date(a.last).getTime());
+    return [...byAgency.values(), ...anon].sort((a, b) => new Date(b.last).getTime() - new Date(a.last).getTime());
   })();
-  const groupPages = Math.ceil(agencyGroups.length / limit);
-  const pageGroups = agencyGroups.slice(page * limit, page * limit + limit);
-
-  const keyOf = (it: any) => `${it._kind}-${it.id}`;
-  const toggleRow = (it: any) => {
-    const k = keyOf(it);
-    if (expandedKey === k) setExpandedKey(null);
-    else { setExpandedKey(k); setNoteDraft(it.admin_notes || ''); }
-  };
-
-  const patchItem = async (it: any, body: { status?: string; admin_notes?: string }) => {
-    const k = keyOf(it);
-    setSavingKey(k);
-    try {
-      const url = `${getBackendUrl()}/api/admin/support-requests/${it.id}`;
-      const payload: any = {};
-      if (body.status) payload.status = body.status;
-      if (body.admin_notes !== undefined) payload.admin_notes = body.admin_notes;
-      const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(payload) });
-      if (!res.ok) throw new Error('Failed to update');
-      await fetchAll();
-      onChanged();
-    } catch (e) {
-      console.error('Update support item error:', e);
-    } finally {
-      setSavingKey(null);
-    }
-  };
-
-  function renderDetail(it: any, isSaving: boolean) {
-    const ss = supportStatusStyle(it.unified_status);
-    return (
-      <div className="py-4 border-t border-[var(--a-line)]">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-4">
-            <div>
-              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Message</h4>
-              <pre className="text-[12px] text-[var(--a-ink)] font-sans leading-relaxed whitespace-pre-wrap bg-[var(--a-card)] rounded-xl px-4 py-3 border border-[var(--a-line)] max-h-[300px] overflow-y-auto">{it.message}</pre>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Set Status</h4>
-              <div className="flex flex-wrap items-center gap-2">
-                {SUPPORT_STATUS_OPTIONS.map(opt => {
-                  const s = supportStatusStyle(opt.value);
-                  const active = it.unified_status === opt.value;
-                  return (
-                    <button key={opt.value} onClick={(e) => { e.stopPropagation(); if (!active) patchItem(it, { status: opt.value }); }} disabled={isSaving || active} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default" style={{ backgroundColor: active ? s.bg : 'transparent', borderColor: active ? s.border : 'var(--a-line-2)', color: active ? s.color : 'var(--a-muted)' }}>
-                      {active && <Check className="h-3 w-3" />}{opt.label}
-                    </button>
-                  );
-                })}
-                {isSaving && <Loader className="h-3.5 w-3.5 animate-spin text-[var(--a-dim)]" />}
-              </div>
-            </div>
-            <div><AdminSupportThread requestId={it.id} agencyId={it.agency_id} /></div>
-            <div>
-              <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Internal Notes</h4>
-              <textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} onClick={(e) => e.stopPropagation()} rows={3} placeholder="Notes for your own reference (not shown to the user)..." className="w-full rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none" />
-              <div className="mt-2 flex justify-end">
-                <button onClick={(e) => { e.stopPropagation(); patchItem(it, { admin_notes: noteDraft }); }} disabled={isSaving || noteDraft === (it.admin_notes || '')} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)] disabled:opacity-40 disabled:cursor-default">
-                  {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}Save Notes
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-2">Details</h4>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Received</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(it.created_at)}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Channel</span><span className="text-[var(--a-ink)]">{it._kind === 'feedback' ? 'Feedback form' : 'Help widget'}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">User Type</span><span className="text-[var(--a-ink)] capitalize">{it.user_type || 'unknown'}</span></div>
-              {it.display_name && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{it.user_type === 'client' ? 'Business' : 'Agency'}</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{it.display_name}</span></div>}
-              {it.user_email && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Email</span><span className="text-[var(--a-ink)] text-right truncate max-w-[150px]">{it.user_email}</span></div>}
-              <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
-              {it.resolved_at && <div className="flex items-center justify-between gap-3"><span className="text-[var(--a-dim)]">{it._kind === 'feedback' ? 'Reviewed' : 'Resolved'}</span><span className="text-[var(--a-ink)] text-right">{formatDateTime(it.resolved_at)}</span></div>}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {it.agency_id && (
-                <Link href={`/admin/agencies?expand=${it.agency_id}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-em-soft)] border border-[var(--a-em-line)] px-3 py-1.5 text-xs font-medium text-[var(--a-em-deep)] transition-colors hover:bg-[var(--a-em-line)]"><Building2 className="h-3 w-3" /> Open Agency <ExternalLink className="h-3 w-3" /></Link>
-              )}
-              {it.user_email && (
-                <a href={gmailComposeUrl(it.user_email, 'Re: your message to VoiceAI Connect', `Hi ${it.display_name || 'there'},\n\n`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-1.5 text-xs font-medium text-[var(--a-muted)] transition-colors hover:bg-[var(--a-em-soft)]"><Mail className="h-3 w-3" /> Reply by email</a>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const selected = conversations.find((c: any) => c.key === selectedKey) || null;
 
   return (
     <>
@@ -369,59 +282,67 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
         </select>
       </div>
 
-      <div className="a-panel overflow-visible">
-        {loading ? (
-          <div className="p-12 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>
-        ) : agencyGroups.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="relative inline-flex mb-4">
-              <div className="absolute inset-0 blur-2xl bg-[var(--a-em-soft)] rounded-full" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--a-em-soft)] border border-[var(--a-em-line)]"><LifeBuoy className="h-7 w-7 text-[var(--a-dim)]" /></div>
-            </div>
-            <p className="text-sm text-[var(--a-muted)]">No support items found</p>
-            <p className="text-xs text-[var(--a-dim)] mt-1">Help-widget escalations and feedback submissions appear here</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[var(--a-line)]">
-            {pageGroups.map((g: any) => {
-              const isExpanded = expandedKey === g.key;
-              return (
-                <div key={g.key}>
-                  <button onClick={() => setExpandedKey(isExpanded ? null : g.key)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#F6FCF9] transition-colors" style={isExpanded ? { background: '#F6FCF9' } : undefined}>
-                    <Building2 className="h-4 w-4 shrink-0 text-[var(--a-dim)]" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-medium text-[var(--a-ink)] truncate max-w-[220px]">{g.name}</span>
-                        {g.open > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>{g.open} open</span>}
-                        <span className="text-[10px] text-[var(--a-dim)]">{g.items.length} message{g.items.length > 1 ? 's' : ''}</span>
-                      </div>
-                      <p className="text-[11px] text-[var(--a-dim)] truncate mt-0.5">{g.lastMessage}</p>
-                    </div>
-                    <span className="text-[10px] text-[var(--a-dim)] shrink-0">{timeAgo(g.last)}</span>
-                  </button>
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-1">
-                      {g.agency_id
-                        ? <AdminAgencyThread agencyId={g.agency_id} />
-                        : <div className="space-y-3">{g.items.map((it: any) => <AdminSupportThread key={it.id} requestId={it.id} agencyId={null} />)}</div>}
-                    </div>
-                  )}
+      <div className="flex rounded-2xl overflow-hidden" style={{ border: '1px solid var(--a-line)', height: 'calc(100dvh - 340px)', minHeight: '460px' }}>
+        {/* Left: conversation list */}
+        <div className={`${selected ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col shrink-0`} style={{ borderRight: '1px solid var(--a-line)', background: 'var(--a-card)' }}>
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="py-12 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div>
+            ) : conversations.length === 0 ? (
+              <div className="px-4 py-12 text-center">
+                <LifeBuoy className="h-7 w-7 mx-auto text-[var(--a-dim)] mb-2" />
+                <p className="text-sm text-[var(--a-muted)]">No support items</p>
+                <p className="text-xs text-[var(--a-dim)] mt-1">Escalations and feedback appear here</p>
+              </div>
+            ) : conversations.map((c: any) => (
+              <button key={c.key} onClick={() => setSelectedKey(c.key)} className="w-full px-3.5 py-3 text-left transition-colors hover:bg-[#F6FCF9]" style={{ borderBottom: '1px solid var(--a-line)', background: selectedKey === c.key ? 'var(--a-em-wash)' : 'transparent' }}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {c.type === 'agency' ? <Building2 className="h-3.5 w-3.5 shrink-0 text-[var(--a-dim)]" /> : <LifeBuoy className="h-3.5 w-3.5 shrink-0 text-[var(--a-dim)]" />}
+                    <span className="text-[13px] font-medium text-[var(--a-ink)] truncate">{c.name}</span>
+                  </div>
+                  <span className="text-[10px] text-[var(--a-dim)] shrink-0">{timeAgo(c.last)}</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {groupPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--a-dim)]">Page {page + 1} of {groupPages} · {agencyGroups.length} agencies</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ArrowLeft className="h-3 w-3" /> Prev</button>
-            <button onClick={() => setPage(Math.min(groupPages - 1, page + 1))} disabled={page >= groupPages - 1} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Next <ArrowRight className="h-3 w-3" /></button>
+                <div className="flex items-center gap-2 mt-1 pl-[22px]">
+                  {c.open > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>{c.open} open</span>}
+                  <span className="text-[11px] text-[var(--a-dim)] truncate">{c.lastMessage}</span>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
-      )}
+
+        {/* Right: open conversation */}
+        <div className={`${selected ? 'flex' : 'hidden md:flex'} flex-1 flex-col min-w-0`} style={{ background: 'var(--a-bg)' }}>
+          {!selected ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <LifeBuoy className="h-8 w-8 mx-auto text-[var(--a-dim)] mb-2" />
+                <p className="text-sm text-[var(--a-dim)]">Select a conversation</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => setSelectedKey(null)} className="md:hidden flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-[var(--a-muted)] shrink-0" style={{ borderBottom: '1px solid var(--a-line)', background: 'var(--a-card)' }}>
+                <ArrowLeft className="h-3.5 w-3.5" /> All conversations
+              </button>
+              {selected.type === 'agency' ? (
+                <AdminAgencyThread key={selected.key} agencyId={selected.agency_id} agencyName={selected.name} onChanged={() => { fetchAll(); onChanged(); }} />
+              ) : (
+                <div className="flex flex-col h-full min-h-0">
+                  <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--a-line)', background: 'var(--a-card)' }}>
+                    <p className="text-sm font-semibold text-[var(--a-ink)] truncate">{selected.name}</p>
+                    <p className="text-[11px] text-[var(--a-dim)]">Anonymous request</p>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 min-h-0" style={{ background: 'var(--a-bg)' }}>
+                    <AdminSupportThread key={selected.key} requestId={selected.request_id} agencyId={null} />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </>
   );
 }

@@ -98,7 +98,7 @@ export default function FaqChatsPage() {
                 </button>
                 {isOpen && (
                   <div className="px-4 pb-4 pt-2 space-y-2" style={{ borderTop: '1px solid var(--a-em-line)' }}>
-                    {s.messages.map((m, i) => m.role === 'escalation' ? (
+                    {[...s.messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((m, i) => m.role === 'escalation' ? (
                       <div key={i} className="text-[12px] rounded-lg px-3 py-2" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>
                         <ArrowUpRight className="h-3.5 w-3.5 inline mr-1" />{m.content}
                       </div>
