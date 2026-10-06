@@ -38,6 +38,7 @@ interface ClientDetail {
   calls_this_month: number;
   monthly_call_limit: number;
   trial_ends_at: string | null;
+  signup_discount_code?: string | null;
   created_at: string;
   agency_id: string;
   is_test_client?: boolean;
@@ -242,6 +243,7 @@ export default function AdminClientDetailPage() {
           <div className="space-y-2.5 text-[13px]">
             <div className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)] capitalize">{client.plan_type || 'starter'}</span></div>
             {client.trial_ends_at && (<div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--a-cyan)' }} /><span className="text-[11px]" style={{ color: 'var(--a-cyan)' }}>Trial ends {formatDate(client.trial_ends_at)}</span></div>)}
+            {client.signup_discount_code && (<div className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[var(--a-muted)]">Discount: <span className="font-mono" style={{ color: 'var(--a-text)' }}>{client.signup_discount_code}</span></span></div>)}
             <div className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><Link href={`/admin/agencies?expand=${client.agency_id}`} className="text-[13px] hover:underline" style={{ color: 'var(--a-em-deep)' }}>{client.agencies?.name || 'View agency'}</Link></div>
             <div className="flex items-center gap-2 pt-1"><Calendar className="h-3.5 w-3.5 text-[var(--a-dim)] shrink-0" /><span className="text-[11px] text-[var(--a-dim)]">Created {formatDate(client.created_at)}</span></div>
           </div>
