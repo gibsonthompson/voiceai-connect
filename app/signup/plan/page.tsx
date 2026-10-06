@@ -170,6 +170,13 @@ function WaveformIcon({ className }: { className?: string }) {
 // ============================================================================
 function ThemedLoading({ theme, message = 'Loading plans...' }: { theme: 'light' | 'dark'; message?: string }) {
   const isDark = theme === 'dark';
+  // Use the agency's own brand color (cached from the signup step) so this loading
+  // screen never flashes the platform's color on a white-label site. Neutral tone
+  // when no agency color is known yet.
+  let spinnerColor = isDark ? 'rgba(250,250,249,0.5)' : 'rgba(17,24,39,0.4)';
+  if (typeof window !== 'undefined') {
+    try { const c = JSON.parse(sessionStorage.getItem('client_signup_data') || '{}').primary_color; if (c) spinnerColor = c; } catch {}
+  }
   return (
     <div 
       className="min-h-screen flex items-center justify-center"
@@ -178,7 +185,7 @@ function ThemedLoading({ theme, message = 'Loading plans...' }: { theme: 'light'
       <div className="text-center">
         <Loader2 
           className="h-8 w-8 animate-spin mx-auto" 
-          style={{ color: '#10b981' }}
+          style={{ color: spinnerColor }}
         />
         <p 
           className="mt-4 text-sm"
