@@ -46,6 +46,8 @@ function SmsLogTab() {
   const [thread, setThread] = useState<{ phone: string; agency_name: string | null; messages: any[] } | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { const el = replyRef.current; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; } }, [replyText]);
   const [sending, setSending] = useState(false);
   const [replyError, setReplyError] = useState('');
   const paneRef = useRef<HTMLDivElement>(null);
@@ -173,11 +175,11 @@ function SmsLogTab() {
               })}
             </div>
             <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--a-line)', backgroundColor: 'var(--a-card)' }}>
-              <div className="flex items-center gap-2">
-                <input value={replyText} onChange={(e) => setReplyText(e.target.value)}
+              <div className="flex items-end gap-2">
+                <textarea ref={replyRef} value={replyText} onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
-                  placeholder="Type a reply" className="flex-1 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: 'var(--a-bg)', border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} />
-                <button onClick={sendReply} disabled={sending || !replyText.trim()} className="rounded-lg px-3.5 py-2 text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5 shrink-0" style={{ backgroundColor: 'var(--a-em-deep)', color: '#fff' }}>
+                  rows={1} placeholder="Type a reply" className="flex-1 rounded-2xl px-3.5 py-2 text-sm leading-5 resize-none focus:outline-none" style={{ backgroundColor: 'var(--a-bg)', border: '1px solid var(--a-line)', color: 'var(--a-ink)', maxHeight: '140px', overflowY: 'auto' }} />
+                <button onClick={sendReply} disabled={sending || !replyText.trim()} className="rounded-full p-2.5 text-sm font-semibold disabled:opacity-50 flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--a-em-deep)', color: '#fff' }}>
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>

@@ -26,6 +26,7 @@ export default function AdminSupportThread({ requestId, agencyId }: { requestId:
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const replyTaRef = useRef<HTMLTextAreaElement>(null);
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '');
 
   const load = useCallback(async () => {
@@ -38,6 +39,7 @@ export default function AdminSupportThread({ requestId, agencyId }: { requestId:
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { const el = replyTaRef.current; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; } }, [reply]);
 
   const send = async () => {
     const body = reply.trim();
@@ -88,12 +90,13 @@ export default function AdminSupportThread({ requestId, agencyId }: { requestId:
 
       <div className="mt-2 flex items-end gap-2">
         <textarea
+          ref={replyTaRef}
           value={reply}
           onChange={(e) => setReply(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
-          rows={2}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+          rows={1}
           placeholder="Reply to the agency (lands on their dashboard + texts them)..."
-          className="flex-1 rounded-xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none"
+          className="flex-1 rounded-2xl bg-[var(--a-card)] border border-[var(--a-line-2)] px-3 py-2.5 text-xs leading-5 text-[var(--a-ink)] placeholder:text-[var(--a-dim)] focus:outline-none focus:border-[var(--a-em-line)] resize-none max-h-[140px] overflow-y-auto"
         />
         <button
           onClick={send}

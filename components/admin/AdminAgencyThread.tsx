@@ -28,6 +28,7 @@ export default function AdminAgencyThread({
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const replyTaRef = useRef<HTMLTextAreaElement>(null);
   const backend = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('admin_token') : '');
 
@@ -48,6 +49,7 @@ export default function AdminAgencyThread({
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { const el = replyTaRef.current; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; } }, [reply]);
 
   const send = async () => {
     const body = reply.trim();
@@ -128,16 +130,17 @@ export default function AdminAgencyThread({
       <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--a-line)', background: 'var(--a-card)' }}>
         <div className="flex items-end gap-2">
           <textarea
+            ref={replyTaRef}
             value={reply}
             onChange={(e) => setReply(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); }}
-            rows={2}
-            placeholder={latestRequestId ? 'Reply to this agency...  (Cmd/Ctrl+Enter to send)' : 'No request to reply to yet'}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            rows={1}
+            placeholder={latestRequestId ? 'Reply to this agency...' : 'No request to reply to yet'}
             disabled={!latestRequestId}
-            className="flex-1 rounded-lg px-3 py-2 text-[13px] resize-none focus:outline-none"
-            style={{ border: '1px solid var(--a-line)', background: 'var(--a-bg)', color: 'var(--a-ink)' }}
+            className="flex-1 rounded-2xl px-3.5 py-2 text-[13px] leading-5 resize-none focus:outline-none"
+            style={{ border: '1px solid var(--a-line)', background: 'var(--a-bg)', color: 'var(--a-ink)', maxHeight: '140px', overflowY: 'auto' }}
           />
-          <button onClick={send} disabled={sending || !reply.trim() || !latestRequestId} className="shrink-0 rounded-lg px-3.5 py-2 text-sm font-semibold" style={{ background: 'var(--a-em-deep)', color: '#fff', opacity: (sending || !reply.trim() || !latestRequestId) ? 0.6 : 1 }}>{sending ? 'Sending...' : 'Send'}</button>
+          <button onClick={send} disabled={sending || !reply.trim() || !latestRequestId} className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold" style={{ background: 'var(--a-em-deep)', color: '#fff', opacity: (sending || !reply.trim() || !latestRequestId) ? 0.6 : 1 }}>{sending ? 'Sending...' : 'Send'}</button>
         </div>
       </div>
     </div>

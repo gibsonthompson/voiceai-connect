@@ -46,15 +46,14 @@ const MODEL_OPTIONS = [
 ];
 
 const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean }[] = [
-  { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most human and expressive, best for sounding natural (slightly higher latency)', tag: 'Most human' },
-  { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural and reliable, a great all-rounder', tag: 'Natural' },
-  { id: 'eleven_turbo_v2_5', name: 'Turbo v2.5', desc: 'Balanced, natural and fast', tag: 'Balanced' },
-  { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest, lowest latency but least expressive', tag: 'Fastest' },
-  // Newest ElevenLabs voice. Not selectable yet because our voice provider (Vapi)
-  // doesn't support v4 (it needs ElevenLabs' Text-to-Dialogue WebSocket). When
-  // Vapi adds it, drop `comingSoon` here and add 'eleven_v4_turbo' to the backend
-  // validTtsModels list, then it's live.
-  { id: 'eleven_v4_turbo', name: 'Eleven v4 Turbo', desc: 'Newest and most expressive real-time voice (~100ms). Available as soon as our voice provider adds support.', tag: 'Coming soon', comingSoon: true },
+  { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest and most responsive on live calls (~75ms). The real-time standard, recommended for phone receptionists.', tag: 'Recommended' },
+  { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural across 29 languages, but noticeably higher latency. Best when voice quality matters more than call speed.', tag: 'Most natural' },
+  { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most expressive and human, but built for pre-rendered audio, so it can feel laggy on fast back-and-forth calls.', tag: 'Most expressive' },
+  // Eleven v3 Conversational is v3's expressiveness at real-time latency (~280ms,
+  // GA Aug 2026). Not selectable yet because our voice provider (Vapi) lists
+  // eleven_v3 but not eleven_v3_conversational. When Vapi adds it, drop `comingSoon`
+  // here and add 'eleven_v3_conversational' to the backend validTtsModels list.
+  { id: 'eleven_v3_conversational', name: 'Eleven v3 Conversational', desc: "v3's expressiveness at real-time speed (~280ms). Available as soon as our voice provider adds support.", tag: 'Coming soon', comingSoon: true },
 ];
 
 const TRANSCRIBER_OPTIONS = [
@@ -138,7 +137,7 @@ export default function TemplateEditorPage() {
   const [firstMessage, setFirstMessage] = useState('');
   const [voiceId, setVoiceId] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
-  const [ttsModel, setTtsModel] = useState('eleven_turbo_v2_5');
+  const [ttsModel, setTtsModel] = useState('eleven_flash_v2_5');
   const [transcriberModel, setTranscriberModel] = useState('nova-3');
   const [temperature, setTemperature] = useState(0.7);
   const [speed, setSpeed] = useState(1);
@@ -188,7 +187,7 @@ export default function TemplateEditorPage() {
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_turbo_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3');
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3');
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -256,7 +255,7 @@ export default function TemplateEditorPage() {
     try {
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
       if (!r.ok) throw new Error('Failed');
-      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_turbo_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); }
+      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); }
       setKbWebsite(''); setKbServices([{ id: '1', name: '', price: '', description: '' }]);
       setKbFaqs([{ id: '1', question: '', answer: '' }]); setKbAdditionalInfo('');
       await fetchTemplateData();
@@ -273,7 +272,7 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_turbo_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_flash_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
