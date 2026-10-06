@@ -39,18 +39,37 @@ export async function generateMetadata(): Promise<Metadata> {
   // Platform host: no override, root VoiceAI metadata/image applies.
   if (isPlatformHost(host)) return {};
 
-  // Agency host: re-base to the agency origin and serve the agency card.
+  // Agency host: the <title> must be the agency's name, never the root
+  // "VoiceAI Connect: White-Label..." default. Start from a neutral agency-host
+  // title so that even if the agency lookup fails we never leak the platform title.
   const ogUrl = `https://${host}/api/agency-og`;
-  return {
+  const meta: Metadata = {
     metadataBase: new URL(`https://${host}`),
-    openGraph: {
-      images: [{ url: ogUrl, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      images: [ogUrl],
-    },
+    title: { absolute: 'Get Started' },
+    openGraph: { images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', images: [ogUrl] },
   };
+
+  try {
+    const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+    if (BACKEND_URL) {
+      const res = await fetch(`${BACKEND_URL}/api/agency/by-host?host=${encodeURIComponent(host)}`, { cache: 'no-store' });
+      if (res.ok) {
+        const agency = (await res.json())?.agency;
+        if (agency && !['suspended', 'deleted'].includes(agency.status) && agency.name) {
+          // `absolute` bypasses the root "%s | VoiceAI Connect" title template.
+          meta.title = { absolute: agency.name };
+          meta.description = agency.company_tagline || agency.og_description || `Start your AI receptionist with ${agency.name}.`;
+          (meta.openGraph as any).title = agency.name;
+          (meta.openGraph as any).siteName = agency.name;
+          (meta.twitter as any).title = agency.name;
+          if (agency.logo_url) meta.icons = { icon: agency.logo_url, apple: agency.logo_url };
+        }
+      }
+    }
+  } catch { /* keep the neutral agency-host metadata above */ }
+
+  return meta;
 }
 
 export default function SignupLayout({ children }: { children: React.ReactNode }) {

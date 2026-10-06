@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
   if (!agency) {
     return {
       ...base,
-      title: 'AI Phone Answering',
+      title: { absolute: 'AI Phone Answering' },
       description: 'Professional AI receptionist that answers every call 24/7.',
     };
   }
@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     ...base,
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,
