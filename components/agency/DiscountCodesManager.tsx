@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Loader2, Trash2, Tag, X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Loader2, Trash2, Tag, X, Calendar, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 
 interface DiscountCode {
   id: string;
@@ -150,6 +150,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -178,15 +179,34 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
         max_redemptions: form.max_redemptions === '' ? null : Number(form.max_redemptions),
         expires_at: form.expires_at || null,
       };
-      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/discount-codes`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body),
-      });
+      const res = await fetch(
+        editingId
+          ? `${backendUrl}/api/agency/${agencyId}/discount-codes/${editingId}`
+          : `${backendUrl}/api/agency/${agencyId}/discount-codes`,
+        { method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) }
+      );
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Failed to create code'); return; }
-      setForm({ ...emptyForm }); setShowForm(false); load();
-    } catch { setError('Failed to create code'); }
+      if (!res.ok) { setError(data.error || (editingId ? 'Failed to update code' : 'Failed to create code')); return; }
+      setForm({ ...emptyForm }); setEditingId(null); setShowForm(false); load();
+    } catch { setError(editingId ? 'Failed to update code' : 'Failed to create code'); }
     finally { setSaving(false); }
   };
+
+  const startEdit = (c: DiscountCode) => {
+    setEditingId(c.id);
+    setForm({
+      code: c.code || '',
+      percent_off: c.percent_off != null ? String(c.percent_off) : '',
+      waive_setup: !!c.waive_setup,
+      setup_fee_percent_off: c.setup_fee_percent_off != null ? String(c.setup_fee_percent_off) : '',
+      duration: c.duration || 'forever',
+      duration_months: c.duration_months != null ? String(c.duration_months) : '3',
+      max_redemptions: c.max_redemptions != null ? String(c.max_redemptions) : '',
+      expires_at: c.expires_at ? c.expires_at.slice(0, 10) : '',
+    });
+    setError(''); setShowForm(true);
+  };
+  const cancelForm = () => { setForm({ ...emptyForm }); setEditingId(null); setError(''); setShowForm(false); };
 
   const toggleActive = async (c: DiscountCode) => {
     try {
@@ -232,7 +252,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
           <p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>Optional. Codes a client can enter at signup to waive the setup fee or take a percentage off their monthly price.</p>
         </div>
         {isPaid && (
-          <button onClick={() => { setShowForm((s) => !s); setError(''); }} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
+          <button onClick={() => { if (showForm) { cancelForm(); } else { setEditingId(null); setForm({ ...emptyForm }); setError(''); setShowForm(true); } }} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
             {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{showForm ? 'Cancel' : 'New code'}
           </button>
         )}
@@ -284,9 +304,10 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                 </div>
               </div>
               {error && <p className="text-xs mt-2" style={{ color: theme.errorText || '#dc2626' }}>{error}</p>}
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex justify-end gap-2">
+                {editingId && <button onClick={cancelForm} disabled={saving} className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text }}>Cancel</button>}
                 <button onClick={create} disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Create code
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />)}{editingId ? 'Save changes' : 'Create code'}
                 </button>
               </div>
             </div>
@@ -312,6 +333,7 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => startEdit(c)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Edit"><Pencil className="h-4 w-4" /></button>
                     <button onClick={() => toggleActive(c)} className="text-xs font-medium rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.hover, color: theme.text }}>{c.active ? 'Disable' : 'Enable'}</button>
                     <button onClick={() => remove(c)} className="p-1.5 rounded-lg" style={{ color: theme.errorText || '#dc2626' }} aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
                   </div>
