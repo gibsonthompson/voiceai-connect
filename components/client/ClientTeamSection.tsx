@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
   Check, CheckCircle2, Circle, AlertCircle, Mail, Copy,
@@ -10,7 +10,8 @@ import { useClient } from '@/lib/client-context';
 
 interface TeamMember { id: string; display_name: string; phone: string | null; email: string | null; visible_password: string | null; permissions: Record<string, boolean>; notification_prefs: Record<string, boolean>; status: 'active' | 'invited' | 'disabled'; last_login: string | null; created_at: string; }
 interface TeamLimits { allowed: boolean; current: number; max: number; }
-interface Props { clientId: string; theme: any; hideHeader?: boolean; }
+interface Props { clientId: string; theme: any; hideHeader?: boolean; onAddStateChange?: (s: { available: boolean; disabled: boolean }) => void; }
+export interface ClientTeamSectionHandle { openAddForm: () => void; }
 
 const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; sensitive?: boolean }> = {
   dashboard: { label: 'Dashboard', description: 'View dashboard stats' },
@@ -25,7 +26,7 @@ const CLIENT_PERMISSIONS: Record<string, { label: string; description: string; s
 
 const NOTIFICATION_LABELS: Record<string, string> = { sms_new_call: 'Call notifications' };
 
-export default function ClientTeamSection({ clientId, theme, hideHeader }: Props) {
+const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function ClientTeamSection({ clientId, theme, hideHeader, onAddStateChange }, ref) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [limits, setLimits] = useState<TeamLimits>({ allowed: true, current: 0, max: 0 });
   const [loading, setLoading] = useState(true);
@@ -56,11 +57,19 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
   const fetchTeam = async () => { try { setLoading(true); const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Failed to fetch team'); const data = await res.json(); setMembers(data.members || []); setLimits(data.limits || { allowed: true, current: 0, max: 0 }); } catch (err) { setError('Failed to load team members'); } finally { setLoading(false); } };
   useEffect(() => { fetchTeam(); }, [clientId]);
 
+  // Let the parent open the add form (the Add button lives in the section header)
+  // and know whether to show/enable it, based on the plan's seat limits.
+  useImperativeHandle(ref, () => ({ openAddForm: () => setShowAddForm(true) }), []);
+  useEffect(() => {
+    onAddStateChange?.({ available: limits.max !== 0, disabled: !limits.allowed });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limits.max, limits.allowed]);
+
   const handleAdd = async () => { if (!addName.trim() || !addEmail.trim()) { setError('Name and email are required'); return; } setAdding(true); setError(null); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name: addName.trim(), email: addEmail.trim(), phone: addPhone.trim() || null }) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Failed to add'); setMembers(prev => [...prev, data.member]); setLimits(prev => ({ ...prev, current: prev.current + 1 })); setSuccess(`${data.member.display_name} added! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`); setAddName(''); setAddEmail(''); setAddPhone(''); setShowAddForm(false); setExpandedId(data.member.id); setTimeout(() => setSuccess(null), 5000); } catch (err: any) { setError(err.message); } finally { setAdding(false); } };
 
   // Surface the backend's real error (e.g. the owner-only 403) instead of a
   // generic "Failed to update". A 403 here almost always means the request
-  // carried a non-owner token — common causes: viewing in agency preview, or
+  // carried a non-owner token - common causes: viewing in agency preview, or
   // a second tab logged in as a team member overwriting the shared auth_token.
   const togglePermission = async (memberId: string, key: string, currentValue: boolean) => {
     const member = members.find(m => m.id === memberId);
@@ -83,13 +92,13 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
   const toggleNotification = async (memberId: string, key: string, currentValue: boolean) => { const member = members.find(m => m.id === memberId); if (!member) return; const newPrefs = { ...member.notification_prefs, [key]: !currentValue }; setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: newPrefs } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ notification_prefs: newPrefs }) }); if (!res.ok) throw new Error('Failed to update'); setSuccess('Saved'); setTimeout(() => setSuccess(null), 1200); } catch { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, notification_prefs: member.notification_prefs } : m)); setError('Failed to update notifications'); } };
   const savePhone = async (memberId: string) => { const member = members.find(m => m.id === memberId); if (!member) return; const value = phoneDraft.trim(); const prevPhone = member.phone; setSavingPhone(true); setError(null); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, phone: value || null } : m)); try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ phone: value || null }) }); const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || (res.status === 403 ? 'Only the account owner can change team members.' : 'Failed to update phone')); setEditingPhoneId(null); setPhoneDraft(''); setSuccess(value ? 'Phone number updated' : 'Phone number removed'); setTimeout(() => setSuccess(null), 2500); } catch (err: any) { setMembers(prev => prev.map(m => m.id === memberId ? { ...m, phone: prevPhone } : m)); setError(err.message || 'Failed to update phone'); } finally { setSavingPhone(false); } };
   const resetPassword = async (memberId: string, customPassword?: string) => { try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(customPassword ? { password: customPassword } : {}) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Failed to reset'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, visible_password: data.visible_password } : m)); setVisiblePasswords(prev => ({ ...prev, [memberId]: true })); setEditingPasswordId(null); setNewPassword(''); setSuccess(customPassword ? 'Password updated!' : 'Password reset! New credentials sent via SMS.'); setTimeout(() => setSuccess(null), 4000); } catch (err: any) { setError(err.message); } };
-  const toggleStatus = async (memberId: string, currentStatus: string) => { const newStatus = currentStatus === 'active' ? 'disabled' : 'active'; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus }) }); if (!res.ok) throw new Error('Failed to update status'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m)); setSuccess(newStatus === 'disabled' ? 'Login disabled — this user can no longer sign in' : 'Login enabled — this user can sign in again'); setTimeout(() => setSuccess(null), 2800); } catch (err: any) { setError(err.message); } };
+  const toggleStatus = async (memberId: string, currentStatus: string) => { const newStatus = currentStatus === 'active' ? 'disabled' : 'active'; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus }) }); if (!res.ok) throw new Error('Failed to update status'); setMembers(prev => prev.map(m => m.id === memberId ? { ...m, status: newStatus as any } : m)); setSuccess(newStatus === 'disabled' ? 'Login disabled - this user can no longer sign in' : 'Login enabled - this user can sign in again'); setTimeout(() => setSuccess(null), 2800); } catch (err: any) { setError(err.message); } };
   const removeMember = async (memberId: string, name: string) => { if (!confirm(`Remove ${name}? This will delete their account.`)) return; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Failed to remove'); setMembers(prev => prev.filter(m => m.id !== memberId)); setLimits(prev => ({ ...prev, current: Math.max(0, prev.current - 1) })); setSuccess(`${name} removed`); setTimeout(() => setSuccess(null), 3000); } catch (err: any) { setError(err.message); } };
   const copyText = async (text: string) => { try { await navigator.clipboard.writeText(text); setSuccess('Copied!'); setTimeout(() => setSuccess(null), 1500); } catch {} };
 
   if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>;
 
-  // Plan doesn't include users — show upgrade prompt instead of hiding
+  // Plan doesn't include users - show upgrade prompt instead of hiding
   if (limits.max === 0) {
     return (
       <div className="space-y-3">
@@ -105,7 +114,7 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
           <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Add users who can log into this dashboard with their own credentials. Available on Pro and Growth plans.</p>
           <div className="rounded-lg p-2.5 inline-flex items-start gap-2 text-left" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}>
             <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
-            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Different from Staff Directory — users get login access to this dashboard. Staff members are people your AI knows about for call routing and scheduling.</p>
+            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Different from Staff Directory - users get login access to this dashboard. Staff members are people your AI knows about for call routing and scheduling.</p>
           </div>
         </div>
       </div>
@@ -114,17 +123,19 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div className={`flex items-center ${hideHeader ? 'justify-end' : 'justify-between'}`}>
-        {!hideHeader && (
+      {/* When hideHeader is set, the parent SectionCard renders the title and the
+          Add button in its header, so this row is omitted entirely (no orphan row). */}
+      {!hideHeader && (
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
             <Users className="w-4 h-4" style={{ color: theme.primary }} />Users
           </h2>
-          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts — {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
+          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts, {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
         </div>
-        )}
         <button onClick={() => setShowAddForm(!showAddForm)} disabled={!limits.allowed} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" />Add</button>
       </div>
+      )}
 
       {/* Distinction info */}
       <div className="rounded-lg p-2.5 flex items-start gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
@@ -210,7 +221,7 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-0.5" style={{ color: theme.textMuted4 }}>Page Access</p>
-                    <p className="text-[10px] mb-1.5" style={{ color: theme.textMuted4 }}>Which tabs this user can open. Tap to toggle — each change saves on its own. Takes effect the next time they sign in. This is separate from disabling their login below.</p>
+                    <p className="text-[10px] mb-1.5" style={{ color: theme.textMuted4 }}>Which tabs this user can open. Tap to toggle - each change saves on its own. Takes effect the next time they sign in. This is separate from disabling their login below.</p>
                     <div className="grid grid-cols-2 gap-1.5">{Object.entries(CLIENT_PERMISSIONS).map(([key, info]) => { const enabled = member.permissions[key] ?? false; return (<button key={key} onClick={() => togglePermission(member.id, key, enabled)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors" style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : theme.border}` }}>{enabled ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} /> : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{info.label}</span></button>); })}</div>
                   </div>
                   <div>
@@ -242,4 +253,6 @@ export default function ClientTeamSection({ clientId, theme, hideHeader }: Props
       )}
     </div>
   );
-}
+});
+
+export default ClientTeamSection;

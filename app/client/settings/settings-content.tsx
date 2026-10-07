@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Phone, Loader2, User, CreditCard, Link2,
   Check, Copy, Lock, Eye, EyeOff, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users, Download
+  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users, Download, Plus
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
@@ -70,6 +70,12 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const [passwordMessage, setPasswordMessage] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+
+  // Users section: the Add button sits in the section header (across from the
+  // title). It drives the team form through a ref and mirrors its availability
+  // (hidden on plans without users, disabled at the seat cap).
+  const teamRef = useRef<{ openAddForm: () => void } | null>(null);
+  const [teamAdd, setTeamAdd] = useState<{ available: boolean; disabled: boolean }>({ available: true, disabled: false });
 
   const [hipaaMode, setHipaaMode] = useState(client.hipaa_mode || false);
   const [savingHipaa, setSavingHipaa] = useState(false);
@@ -146,8 +152,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   // when the user has set their own password (we then point them to Change
   // Password instead of showing a value).
   const [myCreds, setMyCreds] = useState<{ email: string; visible_password: string | null; has_custom_password: boolean } | null>(null);
-  const [showLoginPw, setShowLoginPw] = useState(false);
-  const [credCopied, setCredCopied] = useState<'user' | 'pass' | null>(null);
   useEffect(() => {
     const fetchCreds = async () => {
       try {
@@ -158,7 +162,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
     };
     fetchCreds();
   }, [client.id, backendUrl]);
-  const copyCred = async (text: string, which: 'user' | 'pass') => { try { await navigator.clipboard.writeText(text); setCredCopied(which); setTimeout(() => setCredCopied(null), 1500); } catch {} };
 
   const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone, owner_name: ownerName }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone, owner_name: ownerName }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
 
@@ -378,13 +381,6 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             </div>
         </SectionCard>
 
-        {/* Add to Home Screen */}
-        <SectionCard icon={Download} title="Export your data" subtitle="Download your call log as a CSV, opens in Excel or Google Sheets" theme={theme} primaryColor={theme.primary}>
-          <button onClick={handleExportCalls} disabled={exporting} className="px-4 py-2 rounded-lg text-sm font-medium transition hover:opacity-90 disabled:opacity-50 flex items-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            {exporting ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><Download className="w-4 h-4" /> Download call log (CSV)</>}
-          </button>
-        </SectionCard>
-
         <SectionCard icon={Smartphone} title="Add to Home Screen" subtitle="Get instant access, works like a native app" action={<button onClick={() => setShowPwaModal(true)} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Install</button>} theme={theme} primaryColor={theme.primary} />
 
         {isOwner && (<>
@@ -409,42 +405,19 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </section>
         )}
 
-        {/* Your Login: the signed-in user's own credentials */}
-        <SectionCard icon={Lock} title="Your Login" theme={theme} primaryColor={theme.primary}>
-          <div className="space-y-2.5">
-            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>The email and password you use to sign in to this dashboard.</p>
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
-              <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-              <div className="min-w-0 flex-1"><p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Username</p><p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{myCreds?.email || user?.email || '-'}</p></div>
-              <button onClick={() => copyCred(myCreds?.email || user?.email || '', 'user')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'user' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
-              <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Password</p>
-                {myCreds && myCreds.visible_password
-                  ? (<p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{showLoginPw ? myCreds.visible_password : '\u2022'.repeat(10)}</p>)
-                  : (<p className="text-[10px] sm:text-xs italic" style={{ color: theme.textMuted4 }}>You set your own password. Use Change Password below to update it.</p>)}
-              </div>
-              {myCreds && myCreds.visible_password && (
-                <>
-                  <button onClick={() => setShowLoginPw(v => !v)} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{showLoginPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
-                  <button onClick={() => copyCred(myCreds.visible_password || '', 'pass')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'pass' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
-                </>
-              )}
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Change Password */}
-        <SectionCard icon={Lock} title="Change Password" theme={theme} primaryColor={theme.primary}>
+        {/* Change Password. The login email lives here now (as the subtitle), so
+            the separate "Your Login" section is gone, see note below. */}
+        <SectionCard icon={Lock} title="Change Password" subtitle={`Signed in as ${myCreds?.email || user?.email || ''}`} theme={theme} primaryColor={theme.primary}>
           <div className="space-y-3 sm:space-y-4">
             {passwordMessage && (<div className="p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(passwordMessage)}>{passwordMessage}</div>)}
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label><div className="relative"><input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Enter current password" /><button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
-            {myCreds?.has_custom_password && (isOwner
-              ? (<div className="text-right"><a href="/auth/forgot-password?scope=client" className="text-[11px] sm:text-xs font-medium hover:underline" style={{ color: theme.primary }}>Forgot your current password?</a></div>)
-              : (<p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted4 }}>Forgot it? Ask your account owner to reset your password.</p>)
-            )}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                <label className="text-xs sm:text-sm font-medium" style={{ color: theme.textMuted }}>Current Password</label>
+                {myCreds?.has_custom_password && isOwner && (<a href="/auth/forgot-password?scope=client" className="text-[11px] sm:text-xs font-medium hover:underline flex-shrink-0" style={{ color: theme.primary }}>Forgot your password?</a>)}
+              </div>
+              <div className="relative"><input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Enter current password" /><button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
+            </div>
+            {myCreds?.has_custom_password && !isOwner && (<p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted4 }}>Forgot it? Ask your account owner to reset your password.</p>)}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label><div className="relative"><input type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Min 8 characters" /><button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
               <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Confirm New Password</label><input type={showNewPassword ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Confirm new password" /></div>
@@ -453,10 +426,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
           </div>
         </SectionCard>
 
-        {/* Users: dashboard login accounts (owner only) */}
+        {/* Users: dashboard login accounts (owner only). Add button lives in the
+            header (across from the title), driven through the team section's ref. */}
         {isOwner && (
-        <SectionCard icon={Users} title="Users" subtitle="Dashboard login accounts for your team" theme={theme} primaryColor={theme.primary}>
-          <ClientTeamSection clientId={client.id} theme={theme} hideHeader />
+        <SectionCard icon={Users} title="Users" subtitle="Dashboard login accounts for your team" theme={theme} primaryColor={theme.primary}
+          action={teamAdd.available ? (
+            <button onClick={() => teamRef.current?.openAddForm()} disabled={teamAdd.disabled} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" />Add</button>
+          ) : undefined}>
+          <ClientTeamSection ref={teamRef} onAddStateChange={setTeamAdd} clientId={client.id} theme={theme} hideHeader />
         </SectionCard>
         )}
 
@@ -559,6 +536,13 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
             <a href={`tel:${supportPhone}`} className="font-semibold text-sm sm:text-lg" style={{ color: theme.primary }}>{formatPhoneNumber(supportPhone)}</a>
           </SectionCard>
         )}
+
+        {/* Export, kept near the bottom of settings */}
+        <SectionCard icon={Download} title="Export Your Data" subtitle="Download your call log as a CSV, opens in Excel or Google Sheets" theme={theme} primaryColor={theme.primary}>
+          <button onClick={handleExportCalls} disabled={exporting} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            {exporting ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><Download className="w-4 h-4" /> Download Call Log (CSV)</>}
+          </button>
+        </SectionCard>
       </div>
 
       <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={branding.agencyName || client.business_name || 'Your App'} />
