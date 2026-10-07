@@ -21,10 +21,17 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 interface SupportWidgetProps {
   theme: any;
   userType?: 'agency' | 'client';
+  openSignal?: number;
+  hideLauncher?: boolean;
+  openToView?: WidgetView;
+  agencyId?: string;
+  collectContact?: boolean;
+  defaultEmail?: string;
 }
 
-export default function SupportWidget({ theme, userType = 'agency' }: SupportWidgetProps) {
+export default function SupportWidget({ theme, userType = 'agency', openSignal, hideLauncher, openToView, agencyId, collectContact, defaultEmail }: SupportWidgetProps) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (openSignal) { setOpen(true); if (openToView) setView(openToView); if (defaultEmail) setEscalationEmail(e => e || defaultEmail); } }, [openSignal]);
   const [view, setView] = useState<WidgetView>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<KBArticle[]>([]);
@@ -42,6 +49,8 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
   const [escalationSending, setEscalationSending] = useState(false);
   const [escalationSent, setEscalationSent] = useState(false);
   const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [escalationName, setEscalationName] = useState('');
+  const [escalationEmail, setEscalationEmail] = useState(defaultEmail || '');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -146,16 +155,20 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
   const handleEscalationSubmit = async () => {
     const msg = escalationMessage.trim();
     if (!msg || escalationSending) return;
+    if (collectContact && !escalationEmail.trim()) { setEscalationError('Please enter your email so we can reply.'); return; }
 
     setEscalationSending(true);
     setEscalationError(null);
 
     try {
       const token = localStorage.getItem('auth_token') || '';
+      const payload = collectContact
+        ? { message: msg, sessionId, agencyId, name: escalationName.trim() || null, email: escalationEmail.trim() }
+        : { message: msg, sessionId };
       const res = await fetch(`${backendUrl}/api/help/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ message: msg, sessionId }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -186,6 +199,7 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
   const inputBorder = theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
 
   if (!open) {
+    if (hideLauncher) return null;
     return (
       <button
         onClick={() => setOpen(true)}
@@ -472,7 +486,7 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
                 </div>
                 <h4 className="text-base font-semibold mb-2" style={{ color: theme.text }}>Message sent!</h4>
                 <p className="text-sm" style={{ color: theme.textMuted }}>
-                  We typically respond within a few hours. You'll receive a text message with our reply.
+                  {collectContact ? "We'll reply to the email you provided, usually within a few hours." : "We typically respond within a few hours. You'll receive a text message with our reply."}
                 </p>
                 <button onClick={goHome} className="mt-4 text-xs font-medium" style={{ color: theme.primary }}>
                   ← Back to Help Center
@@ -481,8 +495,14 @@ export default function SupportWidget({ theme, userType = 'agency' }: SupportWid
             ) : (
               <>
                 <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
-                  Send a message to our team. We'll respond via text message, typically within a few hours.
+                  {collectContact ? "Send us a message and we'll get back to you by email, usually within a few hours." : "Send a message to our team. We'll respond via text message, typically within a few hours."}
                 </p>
+                {collectContact && (
+                  <div className="space-y-2 mb-3">
+                    <input type="text" value={escalationName} onChange={(e) => setEscalationName(e.target.value)} placeholder="Your name (optional)" maxLength={100} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
+                    <input type="email" value={escalationEmail} onChange={(e) => setEscalationEmail(e.target.value)} placeholder="Your email" maxLength={200} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
+                  </div>
+                )}
                 {escalationError && (
                   <div className="mb-3 rounded-lg p-3 text-xs" style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
                     {escalationError}

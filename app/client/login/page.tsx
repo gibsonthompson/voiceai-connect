@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import SupportWidget from '@/components/SupportWidget';
 
 interface Agency { id: string; name: string; slug: string; logo_url: string | null; signup_logo_align?: 'left' | 'center' | 'right' | null; primary_color: string; secondary_color: string; accent_color: string; website_theme?: 'light' | 'dark' | 'auto' | null; logo_background_color?: string | null; }
 
@@ -53,6 +54,7 @@ function ClientLoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [themeHint, setThemeHint] = useState<'light' | 'dark'>('dark');
+  const [helpSignal, setHelpSignal] = useState(0);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -193,11 +195,12 @@ function ClientLoginContent() {
     helpText: '#9ca3af',
   };
 
+  const widgetTheme = { isDark, primary: primaryColor, primaryText, text: t.text, textMuted: t.textMuted, border: t.cardBorder, hover: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', errorBg: t.errorBg, errorBorder: t.errorBorder, errorText: t.errorText };
+
   // Loader paints from the cached theme hint (not a hard dark default) so a
   // light agency doesn't flash dark before the agency fetch resolves.
   if (pageLoading) {
-    const hintDark = themeHint === 'dark';
-    return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: hintDark ? '#050505' : '#ffffff' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
   }
 
   const dynamicStyles = `
@@ -296,11 +299,14 @@ function ClientLoginContent() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-sm" style={{ color: t.helpText }}>
-            Need help? Contact {agency?.name || 'support'} for assistance.
-          </p>
+          <div className="mt-6 text-center">
+            <button type="button" onClick={() => setHelpSignal(s => s + 1)} className="text-sm font-medium transition-colors hover:underline underline-offset-2" style={{ color: primaryColor }}>
+              Need help?
+            </button>
+          </div>
         </div>
       </main>
+      <SupportWidget theme={widgetTheme} userType="client" openSignal={helpSignal} openToView="escalation" hideLauncher agencyId={agency?.id} collectContact defaultEmail={formData.email} />
     </div>
   );
 }
