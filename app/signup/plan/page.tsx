@@ -594,9 +594,9 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                   )}
                   <div className="flex items-baseline justify-center gap-1 mt-2">
                     {discounted != null && (
-                      <span className="text-lg line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                      <span className="text-base line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
                     )}
-                    <span className="text-3xl sm:text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
+                    <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
                     <span className="text-base" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
                   </div>
                 </div>
