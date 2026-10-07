@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   TrendingUp, DollarSign, Users, Wallet, CreditCard, 
-  ChevronRight, Loader2, Phone, CalendarCheck, PhoneForwarded, Moon, ShieldX, Clock
+  ChevronRight, Loader2, Phone, CalendarCheck, PhoneForwarded, Moon, ShieldX, Clock, Mail, AlertTriangle
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -22,9 +22,9 @@ interface Stats {
 
 interface Billing {
   counts: { active: number; manual: number; trial: number; trialExpired: number; pendingPayment: number; pastDue: number; canceled: number };
-  trials: { business_name: string; trial_ends_at: string | null; days_left: number | null; billing_mode: string }[];
-  pendingPayment: { business_name: string; created_at: string; billing_mode: string; days_waiting: number }[];
-  pastDue: { business_name: string; billing_mode: string }[];
+  trials: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; trial_ends_at: string | null; days_left: number | null; billing_mode: string }[];
+  pendingPayment: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; created_at: string; billing_mode: string; days_waiting: number }[];
+  pastDue: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; billing_mode: string }[];
   upcomingCharges: { business_name: string; provider: string; next_charge_at: string | null; days_until: number | null; billing_day: number | null }[];
 }
 
@@ -91,6 +91,35 @@ function ListCard({ title, count, empty, children, theme }: { title: string; cou
         <span>{title}</span>{typeof count === 'number' && count > 0 && <span className="text-xs font-normal" style={{ color: theme.textMuted }}>{count}</span>}
       </h3>
       {empty ? <p className="text-xs sm:text-sm py-2" style={{ color: theme.textMuted }}>{empty}</p> : children}
+    </div>
+  );
+}
+
+function OutreachRow({ item, kind, agency, theme, first }: { item: any; kind: 'pastDue' | 'pending'; agency: any; theme: any; first: boolean }) {
+  const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+  const baseUrl = agency ? ((agency as any).marketing_domain && (agency as any).domain_verified ? `https://${(agency as any).marketing_domain}` : agency.slug ? `https://${agency.slug}.${platformDomain}` : `https://${platformDomain}`) : '';
+  const industry = String(item.industry || '').replace(/_/g, ' ');
+  const price = item.effective_price_cents != null ? `$${Math.round(item.effective_price_cents / 100)}/mo` : '';
+  const meta = [industry, price].filter(Boolean).join(' · ');
+  const statusLine = kind === 'pastDue' ? 'Payment failed' : `${item.days_waiting}d waiting`;
+  const subject = kind === 'pastDue' ? `Your ${item.business_name} AI receptionist` : `Finishing your ${item.business_name} AI receptionist setup`;
+  const emailBody = kind === 'pastDue'
+    ? `Hi,\n\nJust a heads up, the last payment for your AI receptionist didn't go through, so your calls may stop being answered soon. You can update your card here to keep everything running:\n\n${baseUrl}/client/login\n\nLet me know if you need a hand!`
+    : `Hi,\n\nI saw you started setting up your AI receptionist but didn't finish. Here's the link to get it live and answering your calls:\n\n${baseUrl}/signup\n\nHappy to help if you have any questions!`;
+  const mailto = `mailto:${item.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+  return (
+    <div className="rounded-xl p-3" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, marginTop: first ? 0 : 8 }}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium truncate" style={{ color: theme.text }}>{item.business_name}</div>
+          {meta && <div className="text-xs mt-0.5 capitalize truncate" style={{ color: theme.textMuted }}>{meta}</div>}
+          <div className="text-[11px] mt-1 font-medium" style={{ color: kind === 'pastDue' ? '#ef4444' : (theme.warning || '#f59e0b') }}>{statusLine}</div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {item.id && <Link href={`/agency/clients/${item.id}`} className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>View</Link>}
+          {item.email && <a href={mailto} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Mail className="h-3.5 w-3.5" />Email</a>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -213,17 +242,26 @@ export default function AgencyAnalyticsPage() {
           <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Client billing &amp; trials</h2>
           <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
             {[
-              { label: 'Paying', value: billing.counts.active + billing.counts.manual, sub: billing.counts.manual > 0 ? `${billing.counts.manual} billed by you` : '', color: theme.primary },
-              { label: 'On trial', value: billing.counts.trial, sub: '', color: theme.warning || '#f59e0b' },
-              { label: 'Pending payment', value: billing.counts.pendingPayment, sub: '', color: billing.counts.pendingPayment > 0 ? (theme.warning || '#f59e0b') : theme.textMuted },
-              { label: 'Overdue', value: billing.counts.pastDue, sub: '', color: billing.counts.pastDue > 0 ? '#ef4444' : theme.textMuted },
-            ].map((c, i) => (
+              { label: 'Paying', value: billing.counts.active + billing.counts.manual, sub: billing.counts.manual > 0 ? `${billing.counts.manual} billed by you` : '', color: theme.primary, icon: Wallet },
+              { label: 'On trial', value: billing.counts.trial, sub: '', color: theme.warning || '#f59e0b', icon: Clock },
+              { label: 'Pending payment', value: billing.counts.pendingPayment, sub: '', color: billing.counts.pendingPayment > 0 ? (theme.warning || '#f59e0b') : theme.textMuted, icon: CreditCard },
+              { label: 'Overdue', value: billing.counts.pastDue, sub: '', color: billing.counts.pastDue > 0 ? '#ef4444' : theme.textMuted, icon: AlertTriangle },
+            ].map((c, i) => {
+              const Icon = c.icon;
+              return (
               <div key={i} className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <p className="text-lg sm:text-2xl font-semibold" style={{ color: c.color }}>{c.value}</p>
-                <p className="text-[10px] sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>{c.label}</p>
-                {c.sub && <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>{c.sub}</p>}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: c.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-lg sm:text-2xl font-semibold leading-tight" style={{ color: theme.text }}>{c.value}</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>{c.label}</p>
+                  </div>
+                </div>
+                {c.sub && <p className="text-[10px] mt-1.5" style={{ color: theme.textMuted }}>{c.sub}</p>}
               </div>
-            ))}
+            ); })}
           </div>
           <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
             <ListCard title="Trials ending soon" count={billing.trials.length} empty={billing.trials.length === 0 ? 'No active trials right now.' : null} theme={theme}>
@@ -245,7 +283,7 @@ export default function AgencyAnalyticsPage() {
             <div className="mt-3 sm:mt-4">
               <ListCard title="Signed up, haven't paid yet" count={billing.pendingPayment.length} empty={null} theme={theme}>
                 {billing.pendingPayment.slice(0, 12).map((p, i) => (
-                  <BillingRow key={i} first={i === 0} theme={theme} name={p.business_name} right={`${p.days_waiting}d waiting · ${p.billing_mode}`} rightColor={theme.warning || '#f59e0b'} />
+                  <OutreachRow key={i} first={i === 0} item={p} kind="pending" agency={agency} theme={theme} />
                 ))}
               </ListCard>
             </div>
@@ -254,7 +292,7 @@ export default function AgencyAnalyticsPage() {
             <div className="mt-3 sm:mt-4">
               <ListCard title="Overdue (payment failed)" count={billing.pastDue.length} empty={null} theme={theme}>
                 {billing.pastDue.slice(0, 12).map((p, i) => (
-                  <BillingRow key={i} first={i === 0} theme={theme} name={p.business_name} right={`payment failed · ${p.billing_mode}`} rightColor="#ef4444" />
+                  <OutreachRow key={i} first={i === 0} item={p} kind="pastDue" agency={agency} theme={theme} />
                 ))}
               </ListCard>
             </div>
