@@ -47,7 +47,14 @@ export default function AdminAgencyThread({
     } finally { setLoading(false); }
   }, [agencyId, agencyName]);
 
-  useEffect(() => { load(); }, [load]);
+  // Opening a thread clears its admin-unread server-side (the GET above), so
+  // refresh the parent list once the load resolves to drop the unread badge.
+  useEffect(() => {
+    let cancelled = false;
+    load().then(() => { if (!cancelled) onChanged?.(); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [load]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { const el = replyTaRef.current; if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; } }, [reply]);
 

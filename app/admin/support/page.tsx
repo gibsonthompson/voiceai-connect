@@ -190,12 +190,21 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
       // fetch (that would double-show migrated rows).
       const sRes = await fetch(`${getBackendUrl()}/api/admin/support-requests?limit=200`, { headers });
       const sData = sRes.ok ? await sRes.json() : {};
-      const merged = (sData.requests || []).map((r: any) => ({
-        _kind: r.kind === 'feedback' ? 'feedback' : 'support', id: r.id, agency_id: r.agency_id, message: r.message,
-        created_at: r.created_at, display_name: r.display_name, user_email: r.user_email,
-        user_type: r.user_type, unified_status: r.status || 'open', admin_notes: r.admin_notes,
-        source: r.source || 'widget', resolved_at: r.resolved_at,
-      })).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const merged = (sData.requests || []).map((r: any) => {
+        // Latest activity = the newer of the original request and its most recent
+        // reply, so an agency reply (which stamps last_reply_at) resurfaces the
+        // conversation instead of leaving it stuck at the request's created_at.
+        const activity_at = r.last_reply_at && new Date(r.last_reply_at).getTime() > new Date(r.created_at).getTime()
+          ? r.last_reply_at : r.created_at;
+        return {
+          _kind: r.kind === 'feedback' ? 'feedback' : 'support', id: r.id, agency_id: r.agency_id, message: r.message,
+          created_at: r.created_at, display_name: r.display_name, user_email: r.user_email,
+          user_type: r.user_type, unified_status: r.status || 'open', admin_notes: r.admin_notes,
+          source: r.source || 'widget', resolved_at: r.resolved_at,
+          last_reply_at: r.last_reply_at || null, last_sender: r.last_sender || null,
+          admin_unread: Number(r.admin_unread) || 0, activity_at,
+        };
+      }).sort((a: any, b: any) => new Date(b.activity_at).getTime() - new Date(a.activity_at).getTime());
       setItems(merged);
     } catch (e) {
       console.error('Support queue error:', e);
@@ -232,14 +241,16 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
     const anon: any[] = [];
     for (const it of filtered) {
       if (it.agency_id) {
-        if (!byAgency.has(it.agency_id)) byAgency.set(it.agency_id, { key: `ag-${it.agency_id}`, type: 'agency', agency_id: it.agency_id, request_id: null, name: it.display_name || 'Agency', count: 0, last: it.created_at, open: 0, lastMessage: it.message });
+        if (!byAgency.has(it.agency_id)) byAgency.set(it.agency_id, { key: `ag-${it.agency_id}`, type: 'agency', agency_id: it.agency_id, request_id: null, name: it.display_name || 'Agency', count: 0, last: it.activity_at, open: 0, unread: 0, lastReplyBy: null, lastMessage: it.message });
         const g = byAgency.get(it.agency_id);
         g.count += 1;
-        if (new Date(it.created_at).getTime() >= new Date(g.last).getTime()) { g.last = it.created_at; g.lastMessage = it.message; }
+        g.unread += it.admin_unread;
+        // Bump the conversation to the most recent activity (reply or new request).
+        if (new Date(it.activity_at).getTime() >= new Date(g.last).getTime()) { g.last = it.activity_at; g.lastMessage = it.message; g.lastReplyBy = it.last_sender; }
         if (it.unified_status !== 'resolved') g.open += 1;
         if (it.display_name && g.name === 'Agency') g.name = it.display_name;
       } else {
-        anon.push({ key: `an-${it.id}`, type: 'anon', agency_id: null, request_id: it.id, name: it.display_name || it.user_email || 'Anonymous', count: 1, last: it.created_at, open: it.unified_status !== 'resolved' ? 1 : 0, lastMessage: it.message });
+        anon.push({ key: `an-${it.id}`, type: 'anon', agency_id: null, request_id: it.id, name: it.display_name || it.user_email || 'Anonymous', count: 1, last: it.activity_at, open: it.unified_status !== 'resolved' ? 1 : 0, unread: it.admin_unread, lastReplyBy: it.last_sender, lastMessage: it.message });
       }
     }
     return [...byAgency.values(), ...anon].sort((a, b) => new Date(b.last).getTime() - new Date(a.last).getTime());
@@ -298,14 +309,18 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
               <button key={c.key} onClick={() => setSelectedKey(c.key)} className="w-full px-3.5 py-3 text-left transition-colors hover:bg-[#F6FCF9]" style={{ borderBottom: '1px solid var(--a-line)', background: selectedKey === c.key ? 'var(--a-em-wash)' : 'transparent' }}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
+                    {c.unread > 0 && <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: 'var(--a-em-deep)' }} />}
                     {c.type === 'agency' ? <Building2 className="h-3.5 w-3.5 shrink-0 text-[var(--a-dim)]" /> : <LifeBuoy className="h-3.5 w-3.5 shrink-0 text-[var(--a-dim)]" />}
-                    <span className="text-[13px] font-medium text-[var(--a-ink)] truncate">{c.name}</span>
+                    <span className={`text-[13px] truncate text-[var(--a-ink)] ${c.unread > 0 ? 'font-semibold' : 'font-medium'}`}>{c.name}</span>
                   </div>
-                  <span className="text-[10px] text-[var(--a-dim)] shrink-0">{timeAgo(c.last)}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {c.unread > 0 && <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: 'var(--a-em-deep)' }}>{c.unread}</span>}
+                    <span className="text-[10px] text-[var(--a-dim)]">{timeAgo(c.last)}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mt-1 pl-[22px]">
                   {c.open > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>{c.open} open</span>}
-                  <span className="text-[11px] text-[var(--a-dim)] truncate">{c.lastMessage}</span>
+                  <span className={`text-[11px] truncate ${c.unread > 0 ? 'text-[var(--a-ink)] font-medium' : 'text-[var(--a-dim)]'}`}>{c.lastReplyBy === 'agency' ? 'New reply: ' : ''}{c.lastMessage}</span>
                 </div>
               </button>
             ))}
