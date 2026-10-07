@@ -24,7 +24,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
-  LifeBuoy, Headphones, Bot, AlertTriangle,
+  LifeBuoy, Headphones, Bot, AlertTriangle, Globe,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
@@ -68,6 +68,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
   ]},
   { section: 'Content', items: [
     { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
+    { href: '/admin/sample-sites', label: 'Sample Sites', icon: Globe },
   ]},
 ];
 
