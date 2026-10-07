@@ -359,16 +359,16 @@ function SetPasswordContent() {
         <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
           style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 sm:h-20 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+            <div className="flex h-14 sm:h-16 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
               <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
                 {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain" />
+                  <img src={agency.logo_url} alt={agency.name} className="h-10 sm:h-12 w-auto max-w-[200px] object-contain" />
                 ) : (
                   <>
-                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                      <Lock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                    <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                      <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
                     </div>
-                    <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
+                    <span className="text-sm sm:text-base font-semibold tracking-tight">{brandName}</span>
                   </>
                 )}
               </a>
