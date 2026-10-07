@@ -21,7 +21,7 @@ interface Voice {
 interface TemplateData {
   id: string | null; isCustom: boolean; isActive: boolean;
   system_prompt: string; first_message: string; voice_id: string; voice_speed: number; voice: Voice | null;
-  model: string; temperature: number; tts_model?: string; transcriber_model?: string; knowledge_base_data: KBData | null; updated_at: string | null;
+  model: string; temperature: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean; knowledge_base_data: KBData | null; updated_at: string | null;
 }
 
 interface KBData {
@@ -33,7 +33,7 @@ interface IndustryInfo {
 }
 
 interface Defaults {
-  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number; tts_model?: string; transcriber_model?: string;
+  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean;
 }
 
 interface ServiceRow { id: string; name: string; price: string; description: string; }
@@ -143,6 +143,7 @@ export default function TemplateEditorPage() {
   const [transcriberModel, setTranscriberModel] = useState('nova-3');
   const [temperature, setTemperature] = useState(0.7);
   const [speed, setSpeed] = useState(1);
+  const [denoising, setDenoising] = useState(true);
 
   const [kbWebsite, setKbWebsite] = useState('');
   const [kbServices, setKbServices] = useState<ServiceRow[]>([{ id: '1', name: '', price: '', description: '' }]);
@@ -189,7 +190,7 @@ export default function TemplateEditorPage() {
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3');
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3'); setDenoising(data.template.background_denoising ?? true);
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -243,7 +244,7 @@ export default function TemplateEditorPage() {
       const hasKb = kbData.services || kbData.faqs || kbData.additionalInfo || kbData.websiteUrl;
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, tts_model: ttsModel, transcriber_model: transcriberModel, temperature, voice_speed: speed, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
+        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, tts_model: ttsModel, transcriber_model: transcriberModel, temperature, voice_speed: speed, background_denoising: denoising, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
       });
       if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed'); }
       setSaved(true); setTimeout(() => setSaved(false), 3000); await fetchTemplateData();
@@ -257,7 +258,7 @@ export default function TemplateEditorPage() {
     try {
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
       if (!r.ok) throw new Error('Failed');
-      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); }
+      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); setDenoising(defaults.background_denoising ?? true); }
       setKbWebsite(''); setKbServices([{ id: '1', name: '', price: '', description: '' }]);
       setKbFaqs([{ id: '1', question: '', answer: '' }]); setKbAdditionalInfo('');
       await fetchTemplateData();
@@ -274,7 +275,7 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_flash_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_flash_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) || denoising !== (template.background_denoising ?? true) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
@@ -427,6 +428,14 @@ export default function TemplateEditorPage() {
                 <input type="range" min="0.7" max="1.2" step="0.05" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
                 <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
               </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Background Denoising (Krisp)</label>
+              <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}`, maxWidth: '240px' }}>
+                <button type="button" onClick={() => setDenoising(true)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: denoising ? theme.primary : 'transparent', color: denoising ? theme.primaryText : theme.textMuted }}>On</button>
+                <button type="button" onClick={() => setDenoising(false)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: !denoising ? theme.primary : 'transparent', color: !denoising ? theme.primaryText : theme.textMuted }}>Off</button>
+              </div>
+              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Filters background voices and noise so the AI hears only the caller. Recommended on.</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Opening Greeting</label>
