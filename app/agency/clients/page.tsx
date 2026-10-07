@@ -164,8 +164,14 @@ export default function AgencyClientsPage() {
     finally { setExportingCalls(false); }
   };
 
-  const getPlanPrice = (planType: string) => {
+  const getPlanPrice = (planType: string, client?: any) => {
     if (!agency) return 0;
+    if (client && client.pricing_mode === 'custom' && client.custom_price_cents != null) return client.custom_price_cents;
+    const plans = (agency as any).plans;
+    if (Array.isArray(plans)) {
+      const p = plans.find((pl: any) => String(pl.key || '').toLowerCase() === String(planType || '').toLowerCase());
+      if (p && p.price_cents != null) return p.price_cents;
+    }
     switch (planType) {
       case 'starter': return agency.price_starter || 4900;
       case 'pro': return agency.price_pro || 9900;
@@ -586,7 +592,7 @@ export default function AgencyClientsPage() {
                           <>
                             <p className="text-sm capitalize">{client.plan_type || 'starter'}</p>
                             <p className="text-xs" style={{ color: theme.textMuted }}>
-                              ${(getPlanPrice(client.plan_type) / 100).toFixed(0)}/mo
+                              ${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo
                             </p>
                           </>
                         )}
