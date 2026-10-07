@@ -20,6 +20,14 @@ interface Stats {
   totalClients: number;
 }
 
+interface Billing {
+  counts: { active: number; manual: number; trial: number; trialExpired: number; pendingPayment: number; pastDue: number; canceled: number };
+  trials: { business_name: string; trial_ends_at: string | null; days_left: number | null; billing_mode: string }[];
+  pendingPayment: { business_name: string; created_at: string; billing_mode: string; days_waiting: number }[];
+  pastDue: { business_name: string; billing_mode: string }[];
+  upcomingCharges: { business_name: string; provider: string; next_charge_at: string | null; days_until: number | null; billing_day: number | null }[];
+}
+
 interface Payment {
   id: string;
   client_id: string;
@@ -64,6 +72,29 @@ function formatMonth(monthStr: string): string {
 
 // Module-level so it keeps a stable identity across renders (a component
 // defined inside the page would remount on every state change).
+const fmtShortDate = (d: string) => { try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch { return ''; } };
+const ordinalDay = (n: number) => { const s = ['th', 'st', 'nd', 'rd']; const v = n % 100; return `${n}${s[(v - 20) % 10] || s[v] || s[0]}`; };
+
+function BillingRow({ name, right, rightColor, theme, first }: { name: string; right: string; rightColor: string; theme: any; first: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-2" style={{ borderTop: first ? 'none' : `1px solid ${theme.border}` }}>
+      <span className="text-sm truncate mr-3" style={{ color: theme.text }}>{name}</span>
+      <span className="text-xs whitespace-nowrap" style={{ color: rightColor }}>{right}</span>
+    </div>
+  );
+}
+
+function ListCard({ title, count, empty, children, theme }: { title: string; count?: number; empty: string | null; children: React.ReactNode; theme: any }) {
+  return (
+    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <h3 className="font-medium mb-2 text-sm sm:text-base flex items-center justify-between" style={{ color: theme.text }}>
+        <span>{title}</span>{typeof count === 'number' && count > 0 && <span className="text-xs font-normal" style={{ color: theme.textMuted }}>{count}</span>}
+      </h3>
+      {empty ? <p className="text-xs sm:text-sm py-2" style={{ color: theme.textMuted }}>{empty}</p> : children}
+    </div>
+  );
+}
+
 function CallStat({ icon: Icon, label, value, theme }: { icon: any; label: string; value: number; theme: any }) {
   return (
     <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -97,6 +128,7 @@ export default function AgencyAnalyticsPage() {
   const [callsByClient, setCallsByClient] = useState<{ business_name: string; count: number }[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [billing, setBilling] = useState<Billing | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Agency's country for currency formatting
@@ -137,6 +169,7 @@ export default function AgencyAnalyticsPage() {
         setCallsByClient(data.callsByClient || []);
         setPayments(data.payments || []);
         setClients(data.clients || []);
+        setBilling(data.billing || null);
       }
     } catch (error) {
       console.error('Failed to fetch revenue data:', error);
@@ -173,6 +206,61 @@ export default function AgencyAnalyticsPage() {
         <h1 data-tour="tour-analytics" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Analytics & Revenue</h1>
         <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Track your earnings and client metrics.</p>
       </div>
+
+      {/* ── CLIENT BILLING & TRIALS ── */}
+      {billing && (
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Client billing &amp; trials</h2>
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
+            {[
+              { label: 'Paying', value: billing.counts.active + billing.counts.manual, sub: billing.counts.manual > 0 ? `${billing.counts.manual} billed by you` : '', color: theme.primary },
+              { label: 'On trial', value: billing.counts.trial, sub: '', color: theme.warning || '#f59e0b' },
+              { label: 'Pending payment', value: billing.counts.pendingPayment, sub: '', color: billing.counts.pendingPayment > 0 ? (theme.warning || '#f59e0b') : theme.textMuted },
+              { label: 'Overdue', value: billing.counts.pastDue, sub: '', color: billing.counts.pastDue > 0 ? '#ef4444' : theme.textMuted },
+            ].map((c, i) => (
+              <div key={i} className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <p className="text-lg sm:text-2xl font-semibold" style={{ color: c.color }}>{c.value}</p>
+                <p className="text-[10px] sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>{c.label}</p>
+                {c.sub && <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>{c.sub}</p>}
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+            <ListCard title="Trials ending soon" count={billing.trials.length} empty={billing.trials.length === 0 ? 'No active trials right now.' : null} theme={theme}>
+              {billing.trials.slice(0, 8).map((t, i) => (
+                <BillingRow key={i} first={i === 0} theme={theme} name={t.business_name}
+                  right={`${t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'ends today' : `${t.days_left}d left`}${t.trial_ends_at ? ` · ${fmtShortDate(t.trial_ends_at)}` : ''}`}
+                  rightColor={t.days_left != null && t.days_left <= 2 ? '#ef4444' : t.days_left != null && t.days_left <= 5 ? (theme.warning || '#f59e0b') : theme.textMuted} />
+              ))}
+            </ListCard>
+            <ListCard title="Upcoming charges" count={billing.upcomingCharges.length} empty={billing.upcomingCharges.length === 0 ? 'No paying clients yet.' : null} theme={theme}>
+              {billing.upcomingCharges.slice(0, 8).map((u, i) => (
+                <BillingRow key={i} first={i === 0} theme={theme} name={u.business_name}
+                  right={`${u.next_charge_at ? `${fmtShortDate(u.next_charge_at)}${u.days_until != null ? ` (${u.days_until}d)` : ''}` : u.billing_day ? `~${ordinalDay(u.billing_day)} monthly` : u.provider} · ${u.provider}`}
+                  rightColor={theme.textMuted} />
+              ))}
+            </ListCard>
+          </div>
+          {billing.pendingPayment.length > 0 && (
+            <div className="mt-3 sm:mt-4">
+              <ListCard title="Signed up, haven't paid yet" count={billing.pendingPayment.length} empty={null} theme={theme}>
+                {billing.pendingPayment.slice(0, 12).map((p, i) => (
+                  <BillingRow key={i} first={i === 0} theme={theme} name={p.business_name} right={`${p.days_waiting}d waiting · ${p.billing_mode}`} rightColor={theme.warning || '#f59e0b'} />
+                ))}
+              </ListCard>
+            </div>
+          )}
+          {billing.pastDue.length > 0 && (
+            <div className="mt-3 sm:mt-4">
+              <ListCard title="Overdue (payment failed)" count={billing.pastDue.length} empty={null} theme={theme}>
+                {billing.pastDue.slice(0, 12).map((p, i) => (
+                  <BillingRow key={i} first={i === 0} theme={theme} name={p.business_name} right={`payment failed · ${p.billing_mode}`} rightColor="#ef4444" />
+                ))}
+              </ListCard>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Grid */}
       {/* ── CALLS & PERFORMANCE — what the AI actually did for your clients ── */}
