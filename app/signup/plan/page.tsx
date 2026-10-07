@@ -94,7 +94,7 @@ function buildEmbedAwareUrl(path: string, isEmbed: boolean, extras: Record<strin
   const url = new URL(path, window.location.origin);
   if (isEmbed) {
     url.searchParams.set('embed', 'true');
-    // Embed context propagation: see buildNextUrl in signup-page.tsx — agency
+    // Embed context propagation: see buildNextUrl in signup-page.tsx - agency
     // UUID and parent_origin must ride through every internal navigation.
     const current = new URLSearchParams(window.location.search);
     const agencyParam = current.get('agency');
@@ -227,7 +227,7 @@ function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }:
 
 // ============================================================================
 // CLIENT PLAN SELECTION (for agency subdomains)
-// Refactored to use buildClientPlans from lib/plan-features-meta.ts — the
+// Refactored to use buildClientPlans from lib/plan-features-meta.ts - the
 // single source of truth for client-tier plan rendering. Fixes Bug 11
 // (phantom sms_notifications key) by removing the inline FEATURE_DISPLAY
 // dict that drifted from the Settings UI's feature list.
@@ -296,7 +296,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
     : '';
   const consentText = `I agree to the Terms of Service and Privacy Policy and consent to receive service and account text messages (message and data rates may apply, reply STOP to opt out).${trialDisclosure}`;
 
-  // Override body background to match — but go transparent in embed mode.
+  // Override body background to match - but go transparent in embed mode.
   useEffect(() => {
     if (isEmbed) {
       document.documentElement.style.backgroundColor = 'transparent';
@@ -432,7 +432,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
       // success (no-card trial mode). The earlier four-branch handler had
       // dead code for data.checkoutUrl, data.sessionToken, data.exists, and
       // data.clientId shapes the backend has never returned. The 'already
-      // exists' case arrives as a 409 + Account already exists message —
+      // exists' case arrives as a 409 + Account already exists message -
       // caught by the !response.ok branch above and surfaced in the error
       // state, so the UI's includes('already exists') check still renders
       // the Sign In link.
@@ -449,7 +449,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
       }
 
       // Defensive fallback. If we ever get a 2xx response without a token, the
-      // backend invariant has drifted — log it and degrade gracefully to the
+      // backend invariant has drifted - log it and degrade gracefully to the
       // login screen rather than leaving the user stuck on a spinner.
       console.error('Unexpected /api/client/signup response shape (no token):', data);
       safeRedirect('/client/login?message=account-created');
@@ -572,77 +572,65 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
-          <div className={`grid gap-4 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
-            {plans.map((plan) => (
-              <div key={plan.id} className="relative rounded-2xl border p-4 transition-all duration-300"
+          <div className={`grid gap-5 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
+            {plans.map((plan) => {
+              const discounted = discount?.percent_off ? Math.round(plan.price * (1 - (discount.percent_off as number) / 100)) : null;
+              const onPrimaryText = primaryLight ? '#050505' : '#fafaf9';
+              return (
+              <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
                 style={{
-                  backgroundColor: plan.popular ? cardBg : (isDark ? 'rgba(10,10,10,0.5)' : '#fafafa'),
-                  borderColor: plan.popular ? (isDark ? `${primaryColor}40` : primaryColor) : cardBorder,
-                  transform: undefined,
-                  boxShadow: plan.popular ? (isDark ? `0 0 60px ${primaryColor}10` : '0 25px 50px -12px rgba(0,0,0,0.1)') : undefined,
+                  backgroundColor: cardBg,
+                  border: `${plan.popular ? '2px' : '1px'} solid ${plan.popular ? primaryColor : cardBorder}`,
+                  boxShadow: plan.popular ? `0 0 0 1px ${primaryColor}, 0 8px 30px ${primaryColor}1f` : 'none',
                 }}>
                 {plan.popular && (
-                  <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg"
-                      style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: `0 0 20px ${primaryColor}40` }}>
-                      Most Popular
-                    </span>
-                  </div>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: primaryColor, color: onPrimaryText }}>Most Popular</div>
                 )}
-                <div className="text-center mb-5">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3"
-                    style={{ backgroundColor: plan.popular ? `${primaryColor}20` : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)') }}>
-                    <plan.icon className="h-5 w-5" style={{ color: plan.popular ? primaryColor : textColor }} />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold">{plan.name}</h3>
+
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-semibold mb-1 tracking-tight" style={{ color: textColor }}>{plan.name}</h3>
                   {plan.description && (
-                    <p className="mt-1 text-sm" style={{ color: mutedTextColor }}>{plan.description}</p>
+                    <p className="text-[12px] mb-3" style={{ color: mutedTextColor }}>{plan.description}</p>
                   )}
-                  <div className="mt-3">
-                    {discount?.percent_off ? (
-                      <>
-                        <span className="text-lg line-through mr-2" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
-                        <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor }}>{formatAgencyPrice(Math.round(plan.price * (1 - (discount.percent_off as number) / 100)), agencyCountry)}</span>
-                      </>
-                    ) : (
-                      <span className="text-2xl sm:text-3xl font-bold">{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                  <div className="flex items-baseline justify-center gap-1 mt-2">
+                    {discounted != null && (
+                      <span className="text-lg line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
                     )}
-                    <span className="text-sm" style={{ color: mutedTextColor }}>/month</span>
+                    <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
+                    <span className="text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
                   </div>
-                  <p className="mt-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
-                    {plan.callLimit === -1 ? 'Unlimited calls' : `${plan.callLimit} calls included`}
-                  </p>
                 </div>
-                <ul className="space-y-3 mb-4">
-                  {plan.included.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-sm">
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${accentColor}15` }}>
-                        <Check className="h-3 w-3" style={{ color: accentColor }} />
-                      </div>
-                      <span style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#4b5563' }}>{feature}</span>
+
+                <ul className="space-y-2.5 mb-4">
+                  {plan.included.map((feature, i) => (
+                    <li key={`inc-${i}`} className="flex items-start gap-2.5">
+                      <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                      <span className="text-[13px]" style={{ color: isDark ? 'rgba(250,250,249,0.8)' : '#374151' }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
+
                 {plan.excluded && plan.excluded.length > 0 && (
-                  <ul className="space-y-3 mb-6">
-                    {plan.excluded.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3 text-sm">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
-                          <X className="h-3 w-3" style={{ color: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db' }} />
+                  <ul className="space-y-2.5 mb-6">
+                    {plan.excluded.map((feature, i) => (
+                      <li key={`exc-${i}`} className="flex items-start gap-2.5">
+                        <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                          <X className="h-2.5 w-2.5" style={{ color: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db' }} />
                         </div>
-                        <span style={{ color: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af' }}>{feature}</span>
+                        <span className="text-[13px]" style={{ color: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af' }}>{feature}</span>
                       </li>
                     ))}
                   </ul>
                 )}
                 {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-6" />}
+
                 <button onClick={() => handleSelectPlan(plan.id)} disabled={loading || !consentAgreed}
-                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  style={plan.popular ? { backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 30px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` } : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', color: textColor, border: `1px solid ${cardBorder}` }}>
-                  {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<>Get Started<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></>)}
+                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  style={plan.popular ? { backgroundColor: primaryColor, color: onPrimaryText, border: 'none' } : { backgroundColor: 'transparent', color: primaryColor, border: `2px solid ${primaryColor}` }}>
+                  {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<><Zap className="h-4 w-4" />Get Started</>)}
                 </button>
               </div>
-            ))}
+            );})}
           </div>
 
           {/* CONSENT (required). Gates plan selection. Always shown so TCPA/SMS
@@ -721,7 +709,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     setError('');
 
     try {
-      // FREE — no card required. Hit start-trial, land on signup success.
+      // FREE - no card required. Hit start-trial, land on signup success.
       if (planType === 'free') {
         const response = await fetch('/api/agency/start-trial', {
           method: 'POST',
@@ -734,7 +722,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
         return;
       }
 
-      // PRO / SCALE — card required. Go through Stripe Checkout. The
+      // PRO / SCALE - card required. Go through Stripe Checkout. The
       // start-trial route rejects paid plans by design, so calling it for
       // pro/scale (which the old code did) would have errored. We mirror the
       // onboarding flow: if a password token is queued in localStorage,
@@ -966,7 +954,7 @@ function PlanContent() {
         if (platformDomains.includes(host)) {
           // ── Path A: embed mode on platform domain. Look up agency by ID
           // (no host context to derive) and render ClientPlanSelection. We
-          // must NOT route to AgencyPlanSelection here — that flow is for an
+          // must NOT route to AgencyPlanSelection here - that flow is for an
           // agency picking their OWN tier (Free/Pro/Scale), totally different
           // semantic. Without isEmbed, ?agency= continues to mean "the agency
           // is on this page picking their own tier post-signup."
@@ -982,7 +970,7 @@ function PlanContent() {
               if (stored) {
                 setSignupData(JSON.parse(stored));
               } else {
-                // Lost step-1 data — bounce back to /signup preserving embed flag
+                // Lost step-1 data - bounce back to /signup preserving embed flag
                 window.location.href = buildEmbedAwareUrl('/signup', isEmbed, { agency: agencyParam });
                 return;
               }
