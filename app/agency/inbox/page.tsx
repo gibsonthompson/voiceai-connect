@@ -356,7 +356,7 @@ export default function AgencyInboxPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5">
-                            {req.user_type === 'client'
+                            {(req.user_type === 'client' || req.source === 'client_login')
                               ? <User className="h-3 w-3" style={{ color: theme.textMuted }} />
                               : <Globe className="h-3 w-3" style={{ color: theme.textMuted }} />}
                             <span className="text-xs truncate max-w-[160px]" style={{ color: theme.text }}>{req.requester_name || 'Unknown'}</span>
@@ -450,7 +450,7 @@ export default function AgencyInboxPage() {
                                   <h4 className="text-[10px] font-medium uppercase tracking-[0.1em] mb-2" style={{ color: theme.textMuted }}>Details</h4>
                                   <div className="space-y-1.5 text-xs">
                                     <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Received</span><span className="text-right" style={{ color: theme.text }}>{formatDateTime(req.created_at)}</span></div>
-                                    <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>From</span><span style={{ color: theme.text }}>{req.user_type === 'client' ? 'Client' : 'Website visitor'}</span></div>
+                                    <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>From</span><span style={{ color: theme.text }}>{(req.user_type === 'client' || req.source === 'client_login') ? 'Client' : 'Website visitor'}</span></div>
                                     {req.requester_name && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Name</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.requester_name}</span></div>}
                                     {req.contact && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Contact</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.contact}</span></div>}
                                     <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Source</span><span style={{ color: theme.text }}>{req.source === 'client_dashboard' ? 'Client dashboard' : req.source === 'client_login' ? 'Login page' : 'Website'}</span></div>
