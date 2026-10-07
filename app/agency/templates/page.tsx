@@ -452,6 +452,17 @@ export default function AILabPage() {
     finally { setConfigLoading(false); }
   };
 
+  // Deep link: /agency/templates?client=<id> (e.g. from a client's detail page)
+  // opens the AI Lab straight to that client. Runs once after clients load.
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || !clients.length) return;
+    const cid = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('client') : null;
+    if (!cid) { deepLinkHandled.current = true; return; }
+    const match = clients.find(c => c.id === cid);
+    if (match) { deepLinkHandled.current = true; selectClient(match); }
+  }, [clients]);
+
   const saveConfig = async () => {
     if (!agency || !selectedClient) return;
     setConfigSaving(true); setConfigSaved(false); setConfigError('');
