@@ -104,7 +104,7 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
     if (chatMessages.length === 0) {
       setChatMessages([{
         role: 'assistant',
-        content: "Hi! I'm the VoiceAI Connect assistant. Ask me anything about the platform — plans, features, setup, troubleshooting — and I'll find the answer for you.",
+        content: "Hi! I'm the VoiceAI Connect assistant. Ask me anything about the platform (plans, features, setup, troubleshooting) and I'll find the answer for you.",
       }]);
     }
     setTimeout(() => chatInputRef.current?.focus(), 200);
@@ -507,8 +507,8 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
                 </p>
                 {collectContact && (
                   <div className="space-y-2 mb-3">
-                    <input type="text" value={escalationName} onChange={(e) => setEscalationName(e.target.value)} placeholder="Your name (optional)" maxLength={100} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
-                    <input type="email" value={escalationEmail} onChange={(e) => setEscalationEmail(e.target.value)} placeholder="Your email" maxLength={200} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
+                    <input type="text" value={escalationName} onChange={(e) => setEscalationName(e.target.value)} placeholder="Your name" maxLength={100} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
+                    <input type="email" required value={escalationEmail} onChange={(e) => setEscalationEmail(e.target.value)} placeholder="Your email (required)" maxLength={200} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: theme.text }} />
                   </div>
                 )}
                 {escalationError && (
