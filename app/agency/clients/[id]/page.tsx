@@ -538,6 +538,25 @@ export default function AgencyClientDetailPage() {
   const isManualSuspended = client.subscription_status === 'manual_suspended';
   const manualWindowEnd = client.trial_ends_at ? new Date(client.trial_ends_at) : null;
   const manualHasWindow = client.subscription_status === 'manual' && !!manualWindowEnd;
+
+  // Plain-English billing line so the subscription card is unmistakable (no more
+  // "Active" next to a future "Plan fee starts" reading like a contradiction).
+  const _effCents = (client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client);
+  const _priceStr = `$${Math.round((_effCents || 0) / 100)}/mo`;
+  const _teDate = client.trial_ends_at ? new Date(client.trial_ends_at) : null;
+  const _teStr = _teDate ? _teDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  const _teFuture = _teDate ? _teDate.getTime() > Date.now() : false;
+  const _subSt = client.subscription_status || '';
+  let billingSummary = '';
+  if (isManualClient) billingSummary = (manualHasWindow && _teStr) ? `You invoice this client ${_priceStr}. Access through ${_teStr}.` : `You invoice this client ${_priceStr}.`;
+  else if (_subSt === 'trial' || _subSt === 'trialing') billingSummary = _teStr ? `Free trial, then ${_priceStr} starting ${_teStr}.` : `Free trial, then ${_priceStr}.`;
+  else if (_subSt === 'active' && _teFuture) billingSummary = `Free until ${_teStr}, then ${_priceStr}.`;
+  else if (_subSt === 'active') billingSummary = `${_priceStr}, billed monthly.`;
+  else if (_subSt === 'pending_payment' || _subSt === 'pending') billingSummary = `${_priceStr} once they finish signing up. No charge yet.`;
+  else if (_subSt === 'past_due' || _subSt === 'manual_suspended') billingSummary = `${_priceStr}. Last payment failed.`;
+  else if (_subSt === 'trial_expired' || _subSt === 'expired') billingSummary = `Trial ended, not subscribed.`;
+  else if (_subSt === 'canceled' || _subSt === 'cancelled' || _subSt === 'agency_canceled') billingSummary = `Canceled.`;
+  else billingSummary = _priceStr;
   const manualWindowActive = manualHasWindow && manualWindowEnd!.getTime() > Date.now();
 
   // Reusable status indicator for the inline-editable rows
@@ -774,18 +793,7 @@ export default function AgencyClientDetailPage() {
           </div>
 
           {/* Subscription */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo{(client as any).price_discount ? <span className="font-normal" style={{ color: theme.textMuted }}> (was ${(((client as any).base_price_cents || 0) / 100).toFixed(0)}, {(client as any).price_discount.percent_off}% off{(client as any).price_discount.duration === 'once' ? ' first month' : ''})</span> : null}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{(() => {
-                if (!client.trial_ends_at) return null;
-                const d = new Date(client.trial_ends_at);
-                const isFuture = d.getTime() > Date.now();
-                const st = client.subscription_status || '';
-                let label: string | null = null;
-                if (isManualClient) label = 'Access ends';
-                else if (st === 'trial' || st === 'trialing') label = 'Trial ends';
-                else if (st === 'active' && isFuture) label = 'Plan fee starts'; // fee-free window: active from day 1, flat fee deferred
-                if (!label) return null; // active with a past date = stale trial, don't show
-                return <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>{label}</span><span className="text-sm">{d.toLocaleDateString()}</span></div>;
-              })()}{client.signup_discount_code && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Discount Code</span><span className="text-sm font-medium" style={{ fontFamily: 'ui-monospace, monospace' }}>{client.signup_discount_code}</span></div>}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3">{billingSummary && <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><p className="text-sm font-medium leading-snug" style={{ color: theme.text }}>{billingSummary}</p></div>}<div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo{(client as any).price_discount ? <span className="font-normal" style={{ color: theme.textMuted }}> (was ${(((client as any).base_price_cents || 0) / 100).toFixed(0)}, {(client as any).price_discount.percent_off}% off{(client as any).price_discount.duration === 'once' ? ' first month' : ''})</span> : null}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{client.signup_discount_code && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Discount Code</span><span className="text-sm font-medium" style={{ fontFamily: 'ui-monospace, monospace' }}>{client.signup_discount_code}</span></div>}</div></div></div>
 
           {/* Call Usage */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.textMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.textMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Minutes this month</span><span className="text-sm font-semibold">{minutesUsed}{includedMin ? ` of ${includedMin}` : ''}</span></div>{includedMin && includedMin > 0 ? (<div className="mt-2 w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${minutesPercent}%`, backgroundColor: minutesPercent > 90 ? '#ef4444' : minutesPercent > 70 ? '#f59e0b' : theme.primary }} /></div>) : null}</div></div></div>

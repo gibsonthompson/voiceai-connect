@@ -1333,6 +1333,7 @@ function AgencySettingsContent() {
                   </div>
 
                   {minutePassThrough && (
+                    <>
                     <div className="mt-3 flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: billMinutesDuringTrial ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${billMinutesDuringTrial ? theme.primary30 : theme.border}` }}>
                       <div className="flex-1 min-w-0 mr-3">
                         <p className="text-sm font-medium" style={{ color: billMinutesDuringTrial ? theme.primary : theme.text }}>Bill clients for minutes during their trial</p>
@@ -1346,6 +1347,8 @@ function AgencySettingsContent() {
                         <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: billMinutesDuringTrial ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
                       </button>
                     </div>
+                    <p className="text-[11px] mt-2 px-1 leading-relaxed" style={{ color: theme.textMuted }}>These two work together: the toggle above turns per-minute billing on at all, and this one decides whether those minute charges also run during a client&apos;s free trial. With both on, a trial client&apos;s plan is free but their minutes bill from day one.</p>
+                    </>
                   )}
 
                   {minuteToggleLoading && (

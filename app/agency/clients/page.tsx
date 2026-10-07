@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical,
-  Download, X, Phone,
+  Download, X, Phone, CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -190,6 +190,28 @@ export default function AgencyClientsPage() {
       case 'manual': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
       case 'manual_suspended': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder };
       default: return { bg: theme.hover, text: theme.textMuted, border: theme.border };
+    }
+  };
+
+  // One place for a status's human label, color, and icon so every status reads
+  // cleanly (not a raw "pending_payment" in gray). Unknown values are humanized.
+  const getStatusMeta = (status: string): { label: string; bg: string; text: string; Icon: any } => {
+    switch (status) {
+      case 'active': return { label: 'Active', bg: theme.primary15, text: theme.primary, Icon: CheckCircle2 };
+      case 'manual': return { label: 'Manual', bg: theme.primary15, text: theme.primary, Icon: CheckCircle2 };
+      case 'trial':
+      case 'trialing': return { label: 'Trial', bg: theme.warningBg, text: theme.warningText, Icon: Clock };
+      case 'pending_payment':
+      case 'pending': return { label: 'Pending payment', bg: theme.warningBg, text: theme.warningText, Icon: CreditCard };
+      case 'past_due': return { label: 'Past due', bg: theme.errorBg, text: theme.errorText, Icon: AlertTriangle };
+      case 'trial_expired':
+      case 'expired': return { label: 'Trial expired', bg: theme.hover, text: theme.textMuted, Icon: XCircle };
+      case 'canceled':
+      case 'cancelled':
+      case 'agency_canceled': return { label: 'Canceled', bg: theme.hover, text: theme.textMuted, Icon: XCircle };
+      case 'manual_suspended':
+      case 'suspended': return { label: 'Suspended', bg: theme.errorBg, text: theme.errorText, Icon: Ban };
+      default: return { label: status ? (status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')) : 'Unknown', bg: theme.hover, text: theme.textMuted, Icon: Clock };
     }
   };
 
@@ -504,6 +526,7 @@ export default function AgencyClientsPage() {
             <div>
               {filteredClients.map((client, idx) => {
                 const statusStyle = getStatusStyle(client.subscription_status || client.status);
+                const statusMeta = getStatusMeta(client.subscription_status || client.status);
                 const isTest = client.is_test_client;
                 return (
                   <Link
@@ -546,10 +569,10 @@ export default function AgencyClientsPage() {
                       </div>
                       <div className="flex items-center justify-between text-sm pl-[52px]">
                         <span 
-                          className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
-                          style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
+                          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                          style={{ backgroundColor: statusMeta.bg, color: statusMeta.text }}
                         >
-                          {formatStatus(client.subscription_status || client.status)}
+                          <statusMeta.Icon className="h-3 w-3 flex-shrink-0" />{statusMeta.label}
                         </span>
                         <div className="flex items-center gap-3" style={{ color: theme.textMuted }}>
                           {!isTest && <span className="capitalize">{client.plan_type || 'starter'}</span>}
@@ -606,10 +629,10 @@ export default function AgencyClientsPage() {
                       
                       <div className="col-span-2">
                         <span 
-                          className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize"
-                          style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
+                          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium"
+                          style={{ backgroundColor: statusMeta.bg, color: statusMeta.text }}
                         >
-                          {formatStatus(client.subscription_status || client.status)}
+                          <statusMeta.Icon className="h-3 w-3 flex-shrink-0" />{statusMeta.label}
                         </span>
                       </div>
                       
