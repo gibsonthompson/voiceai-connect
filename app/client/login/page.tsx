@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Phone, Loader2, ArrowRight, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import DynamicFavicon from '@/components/DynamicFavicon';
 
-interface Agency { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; secondary_color: string; accent_color: string; website_theme?: 'light' | 'dark' | 'auto' | null; logo_background_color?: string | null; }
+interface Agency { id: string; name: string; slug: string; logo_url: string | null; signup_logo_align?: 'left' | 'center' | 'right' | null; primary_color: string; secondary_color: string; accent_color: string; website_theme?: 'light' | 'dark' | 'auto' | null; logo_background_color?: string | null; }
 
 function getContrastColor(hex: string): string {
   const c = hex.replace('#', '');
@@ -167,6 +167,7 @@ function ClientLoginContent() {
   };
 
   const primaryColor = agency?.primary_color || '#2563eb';
+  const logoAlign = agency?.signup_logo_align || 'left';
   const primaryText = getContrastColor(primaryColor);
   const isDark = agency?.website_theme === 'dark';
 
@@ -217,16 +218,18 @@ function ClientLoginContent() {
       {/* Header -- paddingTop clears the iOS status bar / notch in standalone PWA mode */}
       <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl" style={{ borderBottom: `1px solid ${t.headerBorder}`, backgroundColor: t.headerBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-3">
-            <Link href="/" className="flex items-center gap-3 min-w-0">
+          <div className="grid grid-cols-[1fr_auto_1fr] h-16 items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 min-w-0 group" style={{ gridColumn: logoAlign === 'left' ? 1 : logoAlign === 'center' ? 2 : 3, justifySelf: logoAlign === 'right' ? 'end' : logoAlign === 'center' ? 'center' : 'start' }}>
               {agency?.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="h-11 sm:h-12 w-auto max-w-[200px] object-contain rounded-lg p-1.5" style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
+                <img src={agency.logo_url} alt={agency.name} className="h-11 sm:h-12 w-auto max-w-[200px] object-contain" />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: primaryColor }}><Phone className="h-4 w-4" style={{ color: primaryText }} /></div>
+                <>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: primaryColor }}><Phone className="h-4 w-4" style={{ color: primaryText }} /></div>
+                  <span className="text-base sm:text-lg font-medium tracking-tight truncate">{agency?.name || 'Client Portal'}</span>
+                </>
               )}
-              <span className="text-base sm:text-lg font-medium tracking-tight truncate">{agency?.name || 'Client Portal'}</span>
             </Link>
-            <Link href="/signup" className="text-sm transition-colors whitespace-nowrap flex-shrink-0" style={{ color: t.textLink }}>
+            <Link href="/signup" className="text-sm transition-colors whitespace-nowrap flex-shrink-0" style={{ gridColumn: logoAlign === 'right' ? 1 : 3, justifySelf: logoAlign === 'right' ? 'start' : 'end', color: t.textLink }}>
               <span className="hidden sm:inline">Don&apos;t have an account? </span>Sign up
             </Link>
           </div>
