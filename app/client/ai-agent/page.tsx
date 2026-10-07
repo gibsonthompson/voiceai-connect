@@ -338,26 +338,19 @@ export default function ClientAIAgentPage() {
               </div>
             ) : isCalendarConnected ? (
               <div className="space-y-3">
-                {/* Connected hero: branded gradient, Google Calendar mark, live pulse */}
-                <div className="relative overflow-hidden rounded-xl p-3.5 sm:p-4" style={{ border: `1px solid ${theme.successBorder}`, background: `linear-gradient(135deg, ${theme.successBg}, ${hexToRgba(primaryColor, 0.06)})` }}>
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                        <GoogleGIcon className="w-6 h-6" />
-                      </div>
-                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
-                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 border-2" style={{ backgroundColor: theme.success, borderColor: theme.card }} />
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
-                      {calendarStatus?.email ? (
-                        <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
-                      ) : (
-                        <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar, around the clock.</p>
-                      )}
-                    </div>
+                {/* Connected: quiet success banner with a live pulse, no extra logo */}
+                <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                  <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
+                    {calendarStatus?.email ? (
+                      <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
+                    ) : (
+                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar.</p>
+                    )}
                   </div>
                 </div>
 
@@ -376,42 +369,27 @@ export default function ClientAIAgentPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                {/* Invitation hero: branded gradient, Google Calendar mark */}
-                <div className="relative overflow-hidden rounded-xl p-3.5 sm:p-4" style={{ border: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.08)}, ${theme.card})` }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                      <GoogleGIcon className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>Turn calls into booked jobs</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Connect your calendar so the AI can schedule appointments while it is still on the call.</p>
-                    </div>
-                  </div>
+              <div className="space-y-4">
+                <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                  Connect your calendar and the AI books appointments right on the call, 24/7, then texts you the details.
+                </p>
+
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Books in real time
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
+                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Private, disconnect anytime
+                  </span>
                 </div>
 
-                {/* Two balanced benefit chips */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
-                    <p className="text-[11px] sm:text-xs font-medium" style={{ color: theme.text }}>Books in real time</p>
-                  </div>
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
-                    <p className="text-[11px] sm:text-xs font-medium" style={{ color: theme.text }}>Private & revocable</p>
-                  </div>
-                </div>
-
-                <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-2.5 sm:py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
                   <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
                 </button>
 
-                <div className="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-xl" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-4 h-4 rounded flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
-                    Calendar sync is powered by our scheduling partner, VoiceAI Connect. When you approve access, Google shows their name, that&apos;s expected. Your calendar stays private, and you can disconnect anytime.
-                  </p>
-                </div>
+                <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+                  Powered by our scheduling partner, VoiceAI Connect, so Google shows their name when you approve. Your calendar stays private.
+                </p>
               </div>
             )}
           </SectionCard>
