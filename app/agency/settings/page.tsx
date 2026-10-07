@@ -1019,18 +1019,6 @@ function AgencySettingsContent() {
                   </div>
                 </div>
 
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients change their own plan</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
-                    </div>
-                    <button type="button" onClick={handleTogglePlanChanges} disabled={planChangesToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientPlanChanges ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientPlanChanges ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
                 {/* ─────────────────────────────────────────────────────────
                     Trial Setup - trial length picker + require_card_for_trial.
                     Controls how long new embed-widget / marketing-site signups
@@ -1040,38 +1028,6 @@ function AgencySettingsContent() {
                     manual it is the free-access window. The card toggle is gated
                     on Stripe Connect being set up (canEnableCardRequired).
                 ───────────────────────────────────────────────────────── */}
-                <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Lock className="h-4 w-4" style={{ color: theme.primary }} />
-                    <h4 className="font-medium text-sm sm:text-base">Setup fee timing</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>When a plan has a one-time setup fee, choose when the client is charged for it.</p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {([['upfront', 'Charge at signup', 'Collected upfront, before the free trial starts.'], ['after_trial', 'After the trial', 'Billed with the first invoice when the trial ends.']] as const).map(([val, label, desc]) => (
-                      <button key={val} type="button" onClick={() => setSetupFeeTiming(val)} className="flex-1 text-left rounded-lg p-3 transition-colors" style={{ border: `1px solid ${setupFeeTiming === val ? theme.primary : theme.inputBorder}`, backgroundColor: 'transparent' }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="inline-flex h-3.5 w-3.5 rounded-full items-center justify-center shrink-0" style={{ border: `2px solid ${setupFeeTiming === val ? theme.primary : theme.inputBorder}` }}>{setupFeeTiming === val ? <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: theme.primary }} /> : null}</span>
-                          <span className="text-xs sm:text-sm font-medium">{label}</span>
-                        </div>
-                        <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted, marginLeft: '22px' }}>{desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                  <details className="mt-3 group">
-                    <summary className="flex items-center gap-1.5 cursor-pointer select-none list-none text-[11px] sm:text-xs font-medium" style={{ color: theme.primary }}>
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
-                      How does each option work, and what does the client see?
-                    </summary>
-                    <div className="mt-2 space-y-2.5 text-[11px] sm:text-xs pl-1.5" style={{ color: theme.textMuted }}>
-                      <p>
-                        <span className="font-medium" style={{ color: theme.text }}>Charge at signup:</span> the setup fee shows as a line on the client&apos;s checkout page and is charged the day they sign up, before the free trial begins. They see it in the order summary and pay it that day. Their plan then starts its free trial, and the monthly charge begins when the trial ends.
-                      </p>
-                      <p>
-                        <span className="font-medium" style={{ color: theme.text }}>After the trial:</span> nothing is charged that day. The setup fee is added to the client&apos;s first invoice when the trial ends, together with their first month. Stripe can&apos;t show a fee in the checkout summary without charging it right away, so instead the client sees a note next to the pay button saying their card won&apos;t be charged during the trial and the first invoice includes the one-time setup fee. If a discount code reduces the setup fee, that note shows the discounted amount.
-                      </p>
-                    </div>
-                  </details>
-                </div>
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-3">
                     <Lock className="h-4 w-4" style={{ color: theme.primary }} />
@@ -1254,6 +1210,51 @@ function AgencySettingsContent() {
                   <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
                 </div>
 
+                <div className={`rounded-xl p-4 sm:p-5 mb-4 ${(plans.some((p) => p.setupOn) || setupOnStarter || setupOnPro || setupOnGrowth) ? '' : 'opacity-50 pointer-events-none select-none'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lock className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h4 className="font-medium text-sm sm:text-base">Setup fee timing</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>When a plan has a one-time setup fee, choose when the client is charged for it.</p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {([['upfront', 'Charge at signup', 'Collected upfront, before the free trial starts.'], ['after_trial', 'After the trial', 'Billed with the first invoice when the trial ends.']] as const).map(([val, label, desc]) => (
+                      <button key={val} type="button" onClick={() => setSetupFeeTiming(val)} className="flex-1 text-left rounded-lg p-3 transition-colors" style={{ border: `1px solid ${setupFeeTiming === val ? theme.primary : theme.inputBorder}`, backgroundColor: 'transparent' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex h-3.5 w-3.5 rounded-full items-center justify-center shrink-0" style={{ border: `2px solid ${setupFeeTiming === val ? theme.primary : theme.inputBorder}` }}>{setupFeeTiming === val ? <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: theme.primary }} /> : null}</span>
+                          <span className="text-xs sm:text-sm font-medium">{label}</span>
+                        </div>
+                        <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted, marginLeft: '22px' }}>{desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <details className="mt-3 group">
+                    <summary className="flex items-center gap-1.5 cursor-pointer select-none list-none text-[11px] sm:text-xs font-medium" style={{ color: theme.primary }}>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
+                      How does each option work, and what does the client see?
+                    </summary>
+                    <div className="mt-2 space-y-2.5 text-[11px] sm:text-xs pl-1.5" style={{ color: theme.textMuted }}>
+                      <p>
+                        <span className="font-medium" style={{ color: theme.text }}>Charge at signup:</span> the setup fee shows as a line on the client&apos;s checkout page and is charged the day they sign up, before the free trial begins. They see it in the order summary and pay it that day. Their plan then starts its free trial, and the monthly charge begins when the trial ends.
+                      </p>
+                      <p>
+                        <span className="font-medium" style={{ color: theme.text }}>After the trial:</span> nothing is charged that day. The setup fee is added to the client&apos;s first invoice when the trial ends, together with their first month. Stripe can&apos;t show a fee in the checkout summary without charging it right away, so instead the client sees a note next to the pay button saying their card won&apos;t be charged during the trial and the first invoice includes the one-time setup fee. If a discount code reduces the setup fee, that note shows the discounted amount.
+                      </p>
+                    </div>
+                  </details>
+                </div>
+
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients change their own plan</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
+                    </div>
+                    <button type="button" onClick={handleTogglePlanChanges} disabled={planChangesToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientPlanChanges ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientPlanChanges ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Client Per-Minute Billing. Optional: charge your OWN clients
                     per voice minute on top of their flat plan, billed on your
                     connected Stripe account (you keep 100 percent). Rate + the
@@ -1378,12 +1379,14 @@ function AgencySettingsContent() {
                     </div>
                   )}
 
+                  {minutePassThrough && (
                   <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                     <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
                       Turning this off stops new per-minute charges right away. Minutes already used this cycle still bill, and the per-minute line item drops off at each client's next renewal.
                     </p>
                   </div>
+                  )}
                 </div>
 
                 <DiscountCodesManager theme={theme} agencyId={agency?.id} isPaid={!isFreePlan} />

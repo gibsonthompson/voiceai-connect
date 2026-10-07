@@ -15,6 +15,7 @@ interface Agency {
   slug: string;
   logo_url: string | null;
   favicon_url: string | null;
+  signup_logo_align: 'left' | 'center' | 'right' | null;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
@@ -273,6 +274,7 @@ function SetPasswordContent() {
   const primaryColor = agency?.primary_color || '#10b981';
   const primaryLight = isLightColor(primaryColor);
   const brandName = agency?.name || 'VoiceAI Connect';
+  const logoAlign = agency?.signup_logo_align || 'left';
   const loginUrl = isAgencySubdomain ? '/client/login' : '/agency/login';
 
   // Favicon source. Agency context prefers the agency's favicon, then its logo,
@@ -309,13 +311,13 @@ function SetPasswordContent() {
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
         )}
-        <div className="w-full max-w-lg">
-          <div className="rounded-2xl p-8 text-center"
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl p-7 text-center"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
-            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: `${primaryColor}1A` }}>
-              <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
+            <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-5" style={{ backgroundColor: `${primaryColor}1A` }}>
+              <CheckCircle2 className="h-7 w-7" style={{ color: primaryColor }} />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight mb-2">Password Set Successfully!</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">Password Set Successfully!</h1>
             <p className="mb-6" style={{ color: mutedTextColor }}>
               {isEmbed
                 ? 'Your account is ready. Taking you to sign in...'
@@ -357,15 +359,18 @@ function SetPasswordContent() {
         <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
           style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 sm:h-20 items-center justify-between">
-              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="flex h-16 sm:h-20 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
                 {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain rounded-lg p-1.5"
-                    style={{ backgroundColor: isDark ? '#141414' : '#ffffff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}` }} />
+                  <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain" />
                 ) : (
-                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
+                  <>
+                    <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                      <Lock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                    </div>
+                    <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
+                  </>
                 )}
-                <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
               </a>
             </div>
           </div>
@@ -374,15 +379,15 @@ function SetPasswordContent() {
 
       {/* Main Content */}
       <main className={isEmbed ? 'relative min-h-0 py-2 px-2 sm:px-4' : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32'}>
-        <div className="relative w-full max-w-lg mx-auto">
-          <div className="rounded-2xl p-6 sm:p-8"
+        <div className="relative w-full max-w-md mx-auto">
+          <div className="rounded-2xl p-6 sm:p-7"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
-            <div className="text-center mb-8">
-              <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: `${primaryColor}15` }}>
-                <Lock className="h-6 w-6" style={{ color: primaryColor }} />
+            <div className="text-center mb-6">
+              <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
+                <Lock className="h-5 w-5" style={{ color: primaryColor }} />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h1>
-              <p className="mt-3" style={{ color: mutedTextColor }}>Create a secure password to access your dashboard</p>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Set Your Password</h1>
+              <p className="mt-2" style={{ color: mutedTextColor }}>Create a secure password to access your dashboard</p>
             </div>
 
             {!token ? (
@@ -391,13 +396,13 @@ function SetPasswordContent() {
                 {error}
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>New Password</label>
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" required minLength={8}
-                      className="w-full rounded-xl px-4 py-3.5 pr-12 focus:outline-none focus:ring-2 transition-all"
+                      className="w-full rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 transition-all"
                       style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText, '--tw-ring-color': `${primaryColor}50` } as React.CSSProperties} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
@@ -411,7 +416,7 @@ function SetPasswordContent() {
                   <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Confirm Password</label>
                   <input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••" required minLength={8}
-                    className="w-full rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 transition-all"
+                    className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText, '--tw-ring-color': `${primaryColor}50` } as React.CSSProperties} />
                 </div>
 
@@ -423,7 +428,7 @@ function SetPasswordContent() {
                 )}
 
                 <button type="submit" disabled={loading}
-                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 30px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
                   {loading ? (<><Loader2 className="h-4 w-4 animate-spin" />Setting password...</>) : 'Set Password & Continue'}
                 </button>
