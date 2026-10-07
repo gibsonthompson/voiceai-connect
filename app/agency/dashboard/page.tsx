@@ -234,30 +234,6 @@ export default function AgencyDashboardPage() {
         provisioningTestClient={provisioningTestClient}
       />
 
-      {/* YOUR TEST AI */}
-      {testClient?.vapi_phone_number && (
-        <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: theme.infoBg }}><Phone className="h-4 w-4" style={{ color: theme.info }} /></div>
-                <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Your Test AI</h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Test Client</span>
-              </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Call this number to experience what your clients get. This is a fully working AI receptionist.</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <a href={`tel:${testClient.vapi_phone_number}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-3.5 w-3.5" />Call {formatDemoPhone(testClient.vapi_phone_number)}</a>
-                <button onClick={() => handlePreviewClient(testClient.id)} disabled={previewLoading} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{previewLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading...</> : 'Preview Client Dashboard'}</button>
-              </div>
-            </div>
-            <div className="text-right flex-shrink-0 hidden sm:block">
-              <p className="text-xs" style={{ color: theme.textMuted }}>Usage</p>
-              <p className="text-lg font-bold" style={{ color: theme.text }}>{testClient.calls_this_month || 0}<span className="text-sm font-normal" style={{ color: theme.textMuted }}>/{testClient.monthly_call_limit || 30} calls</span></p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* TRY YOUR AI */}
       {hasDemo && (
         <div className="mb-6 sm:mb-8 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
@@ -292,33 +268,8 @@ export default function AgencyDashboardPage() {
         </div>
       </div>
 
-      {/* SHARE YOUR DEMO */}
-      {hasDemo && (
-        <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Share Your Demo</h3></div>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Send prospects your demo number with a ready-to-go message. They call, experience the AI, and get a signup link automatically.</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS</span></div>
-                <button onClick={copySmsTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: smsCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${smsCopied ? theme.primary + '40' : theme.border}`, color: smsCopied ? theme.primary : theme.textMuted }}>{smsCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{smsCopied ? 'Copied' : 'Copy'}</button>
-              </div>
-              <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8 }}>{smsTemplate}</p>
-            </div>
-            <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Email</span></div>
-                <button onClick={copyEmailTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: emailCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${emailCopied ? theme.primary + '40' : theme.border}`, color: emailCopied ? theme.primary : theme.textMuted }}>{emailCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{emailCopied ? 'Copied' : 'Copy'}</button>
-              </div>
-              <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{emailTemplate}</p>
-            </div>
-          </div>
-          <p className="text-[10px] sm:text-xs mt-3" style={{ color: theme.textMuted }}>After prospects call your demo, they automatically receive a follow-up text with your signup link.</p>
-        </div>
-      )}
-
       {/* Quick Actions \u2014 the agency's most-used jumps. 6 tiles so every row stays
-          filled (2 / 3 / 6 cols). Copy Demo # replaces Messages when a demo line exists. */}
+          filled (2 / 3 / 6 cols). Test Client replaces Messages when a test client exists. */}
       <div className="grid gap-3 mb-6 sm:mb-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <a href="/agency/clients/new" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><UserPlus className="h-5 w-5" style={{ color: theme.primary }} /></div>
@@ -340,11 +291,11 @@ export default function AgencyDashboardPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><BarChart3 className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Analytics</span>
         </a>
-        {hasDemo ? (
-          <button onClick={copyDemoNumber} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.warning}15` }}><Phone className="h-5 w-5" style={{ color: theme.warning }} /></div>
-            <span className="text-sm font-medium" style={{ color: demoCopied ? theme.primary : theme.text }}>{demoCopied ? 'Copied!' : 'Copy Demo #'}</span>
-          </button>
+        {testClient ? (
+          <a href={`/agency/clients/${testClient.id}`} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <span className="text-sm font-medium" style={{ color: theme.text }}>Test Client</span>
+          </a>
         ) : (
           <a href="/agency/clients?tab=messages" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><Inbox className="h-5 w-5" style={{ color: theme.primary }} /></div>
