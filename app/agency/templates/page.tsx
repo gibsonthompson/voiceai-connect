@@ -216,6 +216,8 @@ export default function AILabPage() {
   const _subStatus = agency?.subscription_status;
   const isTrial = _subStatus === 'trial' || _subStatus === 'trialing';
   const showScaleTrialNote = canUseAiLab && isTrial && agency?.plan_type !== 'scale';
+  // Custom ElevenLabs voices are a Scale feature (same gate as the template editor).
+  const isScalePlan = ['trialing', 'trial'].includes(agency?.subscription_status || '') || String(agency?.plan_type || '').toLowerCase() === 'scale';
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 
@@ -244,6 +246,14 @@ export default function AILabPage() {
   const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  // Custom ElevenLabs voice addition (shared with the industry template editor —
+  // both read/write agencies.custom_voices via /api/agency/:id/ai-templates/voices).
+  const [showAddVoice, setShowAddVoice] = useState(false);
+  const [newVoiceId, setNewVoiceId] = useState('');
+  const [newVoiceName, setNewVoiceName] = useState('');
+  const [newVoiceGender, setNewVoiceGender] = useState<'female' | 'male' | ''>('');
+  const [addingVoice, setAddingVoice] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [callState, setCallState] = useState<CallState>('idle');
   const [callDuration, setCallDuration] = useState(0);
@@ -315,7 +325,11 @@ export default function AILabPage() {
   const startTimer = () => { setCallDuration(0); timerRef.current = setInterval(() => setCallDuration(p => p + 1), 1000); };
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
 
-  useEffect(() => { fetch(`${api}/api/voices`).then(r => r.json()).then(d => { setAllVoices(d.voices || []); }).catch(() => {}); }, [api]);
+  // Voices come from the agency endpoint so the agency's own custom ElevenLabs
+  // voices appear alongside the presets (same source as the template editor).
+  const fetchVoices = () => { if (!agency) return; fetch(`${api}/api/agency/${agency.id}/ai-templates/voices`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setAllVoices(d.voices || []); }).catch(() => {}); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchVoices(); }, [agency, api]);
   useEffect(() => { if (!agency) return; setClientsLoading(true); fetch(`${api}/api/agency/${agency.id}/ai-playground/clients`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.json()).then(d => setClients(d.clients || [])).catch(() => {}).finally(() => setClientsLoading(false)); }, [agency, api]);
   const loadIndustries = () => { if (!agency || !canUseIndustryTemplates) return; fetch(`${api}/api/agency/${agency.id}/ai-templates/industries`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).then(d => { if (d) setIndustries(d.industries || []); }).catch(() => {}); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -348,7 +362,64 @@ export default function AILabPage() {
     try { await fetch(`${api}/api/agency/${agency.id}/custom-industries/${key}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } }); loadIndustries(); } catch {}
   };
 
-  const playPreview = (voice: VoiceOption) => { if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); setPlayingVoiceId(null); return; } if (audioRef.current) audioRef.current.pause(); const a = new Audio(voice.previewUrl); audioRef.current = a; a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null); a.play(); setPlayingVoiceId(voice.id); };
+  const playFromUrl = (vId: string, url: string) => {
+    if (audioRef.current) audioRef.current.pause();
+    const a = new Audio(url); audioRef.current = a;
+    a.onended = () => setPlayingVoiceId(null); a.onerror = () => setPlayingVoiceId(null);
+    a.play().catch(() => setPlayingVoiceId(null)); setPlayingVoiceId(vId);
+  };
+
+  // Synthesize a sample in the selected voice (same path the template editor
+  // uses), so every voice previews — presets and custom alike — not just ones
+  // with a stock sample URL. Falls back to a stored previewUrl if synthesis fails.
+  const playPreview = async (voice: VoiceOption) => {
+    if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); audioRef.current = null; setPlayingVoiceId(null); return; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setPlayingVoiceId(voice.id);
+    try {
+      const r = await fetch(`/api/voice-preview`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: voice.id, text: "Hi, thanks for calling! How can I help you today?" }),
+      });
+      if (!r.ok) throw new Error('preview failed');
+      const blob = await r.blob();
+      playFromUrl(voice.id, URL.createObjectURL(blob));
+    } catch {
+      if (voice.previewUrl) playFromUrl(voice.id, voice.previewUrl);
+      else setPlayingVoiceId(null);
+    }
+  };
+
+  // Add / remove a custom ElevenLabs voice (Scale). Writes to the shared
+  // agencies.custom_voices via the same endpoint the template editor uses, so a
+  // voice added here also appears in the per-industry packages, and vice versa.
+  const handleAddVoice = async () => {
+    if (!agency || !newVoiceId.trim()) return;
+    setVoiceError(''); setAddingVoice(true);
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ voiceId: newVoiceId.trim(), name: newVoiceName.trim(), gender: newVoiceGender || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not add that voice.');
+      setAllVoices(data.voices || []);
+      if (data.voice?.id) setEditVoice(data.voice.id);
+      setNewVoiceId(''); setNewVoiceName(''); setNewVoiceGender(''); setShowAddVoice(false);
+    } catch (err: any) { setVoiceError(err?.message || 'Could not add that voice.'); }
+    finally { setAddingVoice(false); }
+  };
+  const handleDeleteCustomVoice = async (id: string) => {
+    if (!agency) return;
+    setVoiceError('');
+    try {
+      const res = await fetch(`${api}/api/agency/${agency.id}/ai-templates/voices/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not remove that voice.');
+      setAllVoices(data.voices || []);
+      if (editVoice === id) setEditVoice('');
+    } catch (err: any) { setVoiceError(err?.message || 'Could not remove that voice.'); }
+  };
 
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
@@ -534,7 +605,44 @@ export default function AILabPage() {
                     <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Filters background voices and noise so the AI hears only the caller. Recommended on.</p>
                   </div>
 
-                  <VoicePicker theme={theme} voices={allVoices} value={editVoice} onChange={setEditVoice} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
+                  <div>
+                    <VoicePicker theme={theme} voices={allVoices} value={editVoice} onChange={setEditVoice} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} onDeleteCustom={isScalePlan ? handleDeleteCustomVoice : undefined} />
+                    {voiceError && <p className="text-sm mt-2" style={{ color: '#ef4444' }}>{voiceError}</p>}
+                    <div className="mt-3">
+                      {isScalePlan ? (
+                        !showAddVoice ? (
+                          <button onClick={() => { setShowAddVoice(true); setVoiceError(''); }} className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.primary }}>
+                            <Plus className="h-3.5 w-3.5" /> Add a custom voice
+                          </button>
+                        ) : (
+                          <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                            <p className="text-sm" style={{ color: theme.textMuted }}>Paste an ElevenLabs voice ID and we&apos;ll add it to your voice options.</p>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <input value={newVoiceId} onChange={e => setNewVoiceId(e.target.value)} placeholder="ElevenLabs voice ID" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
+                              <input value={newVoiceName} onChange={e => setNewVoiceName(e.target.value)} placeholder="Label (optional)" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex gap-1">
+                                {(['', 'female', 'male'] as const).map(g => (
+                                  <button key={g || 'unset'} onClick={() => setNewVoiceGender(g)} className="px-2.5 py-1 rounded-md text-sm font-medium transition" style={{ backgroundColor: newVoiceGender === g ? theme.primary : theme.hover, color: newVoiceGender === g ? theme.primaryText : theme.textMuted }}>
+                                    {g === '' ? 'No tag' : g.charAt(0).toUpperCase() + g.slice(1)}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} className="text-sm font-medium px-2.5 py-1.5" style={{ color: theme.textMuted }}>Cancel</button>
+                                <button onClick={handleAddVoice} disabled={addingVoice || !newVoiceId.trim()} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                                  {addingVoice ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking...</> : <><Plus className="h-3.5 w-3.5" /> Add voice</>}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <p className="text-sm" style={{ color: theme.textMuted }}>Want to use your own ElevenLabs voice? Custom voices are available on the Scale plan.</p>
+                      )}
+                    </div>
+                  </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label><button onClick={copyCompliance} className="flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded transition" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>{copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}</button></div>
