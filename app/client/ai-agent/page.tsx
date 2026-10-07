@@ -53,6 +53,13 @@ const GoogleGIcon = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
+// The Google Calendar logo sized to nearly fill the section's icon bubble. The
+// shared card renders icons small with padding; the calendar mark reads better
+// larger and tighter, so this ignores the card's size class and sets its own.
+const SectionCalendarIcon = () => (
+  <GoogleCalendarIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+);
+
 const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle?: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
   <SharedSectionCard icon={icon} title={title} subtitle={subtitle} live={live} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
 );
@@ -307,7 +314,7 @@ export default function ClientAIAgentPage() {
 
         {/* Google Calendar Integration */}
         <div className="fu fu2">
-          <SectionCard icon={GoogleCalendarIcon} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
+          <SectionCard icon={SectionCalendarIcon} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {calendarLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
             ) : !isCalendarPlanAllowed ? (
@@ -345,7 +352,7 @@ export default function ClientAIAgentPage() {
                   <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
                 </button>
                 <div className="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-xl" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                  <GoogleCalendarIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-4 h-4 rounded flex-shrink-0 mt-0.5" />
                   <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
                     Calendar sync is powered by our scheduling partner, VoiceAI Connect. When you approve access, Google shows their name, that&apos;s expected. Your calendar stays private, and you can disconnect anytime.
                   </p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Phone, PhoneCall, Copy, Check, ChevronDown, ChevronRight, CheckCircle, Loader2 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -70,11 +70,25 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   const { client, refreshClient } = useClient();
   const theme = useClientTheme();
 
+  // Collapse state persists per client, so once the card is collapsed it stays
+  // collapsed across reloads until the user opens it again manually.
+  const readStored = (key: string, dflt: boolean) => {
+    if (typeof window === 'undefined' || !client?.id) return dflt;
+    try { const v = localStorage.getItem(`vac_fwd_${key}_${client.id}`); return v === null ? dflt : v === '1'; } catch { return dflt; }
+  };
+  const persistOpen = (key: string, val: boolean) => {
+    if (typeof window === 'undefined' || !client?.id) return;
+    try { localStorage.setItem(`vac_fwd_${key}_${client.id}`, val ? '1' : '0'); } catch { /* ignore */ }
+  };
+
   const [confirmed, setConfirmed] = useState<boolean>(!!client?.forwarding_confirmed);
-  const [liveOpen, setLiveOpen] = useState(false);
+  const [liveOpen, setLiveOpen] = useState<boolean>(() => readStored('live', false));
   const [copied, setCopied] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [setupOpen, setSetupOpen] = useState(true);
+  const [setupOpen, setSetupOpen] = useState<boolean>(() => readStored('setup', true));
+  const toggleLive = () => setLiveOpen((v) => { const nv = !v; persistOpen('live', nv); return nv; });
+  const toggleSetup = () => setSetupOpen((v) => { const nv = !v; persistOpen('setup', nv); return nv; });
+  const fwdLoadedRef = useRef<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [carrier, setCarrier] = useState<Carrier | null>(null);
   const [mode, setMode] = useState<Mode>('all');
@@ -86,6 +100,18 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   useEffect(() => {
     setConfirmed(!!client?.forwarding_confirmed);
   }, [client?.forwarding_confirmed]);
+
+  // Apply the persisted collapse state once the client id is available. Lazy
+  // init already handled the case where the client was ready at first render;
+  // this covers the client arriving slightly after mount, without clobbering a
+  // stored value (runs once per client).
+  useEffect(() => {
+    if (!client?.id || fwdLoadedRef.current === client.id) return;
+    fwdLoadedRef.current = client.id;
+    setSetupOpen(readStored('setup', true));
+    setLiveOpen(readStored('live', false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client?.id]);
 
   // Carrier + mode persist server-side so the choice follows the client across
   // devices. The saved client record is the source of truth; localStorage is an
@@ -303,7 +329,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     return (
       <div className="rounded-2xl mb-5 sm:mb-7 fu fu2 overflow-hidden"
         style={{ ...card, borderColor: theme.successBorder }}>
-        <button onClick={() => setLiveOpen((v) => !v)}
+        <button onClick={toggleLive}
           className="flex w-full items-center gap-3 px-5 sm:px-6 py-4 text-left transition hover:opacity-90">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
             style={{ backgroundColor: theme.successBg }}>
@@ -351,7 +377,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
   // Shared header explaining the number relationship
   const intro = (
     <>
-      <button onClick={() => setSetupOpen((v) => !v)} className="flex w-full items-start gap-3 text-left">
+      <button onClick={toggleSetup} className="flex w-full items-start gap-3 text-left">
         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
           <Phone className="h-5 w-5" style={{ color: theme.primary }} />
         </div>

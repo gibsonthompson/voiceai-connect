@@ -13,7 +13,7 @@ import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import SupportWidget from '@/components/SupportWidget';
 import OnboardingWizard from '@/components/client/OnboardingWizard';
 
-// Favicon is handled by DynamicFavicon in ClientProvider — no need to set it here
+// Favicon is handled by DynamicFavicon in ClientProvider, no need to set it here
 
 function setManifestLink(clientId: string | null) {
   const existing = document.querySelectorAll('link[rel="manifest"]');
@@ -56,7 +56,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     // exiting is just: clear that tab-scoped session and close the tab. The
     // agency's own tab was never touched and is still signed in. If the browser
     // blocks window.close() (tab not script-opened), fall back to the agency
-    // dashboard — on an /agency route the preview override is absent, so it
+    // dashboard. On an /agency route the preview override is absent, so it
     // reads the real, never-clobbered agency token from localStorage.
     try {
       sessionStorage.removeItem('preview_mode');
@@ -98,7 +98,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
 
-  // ── Background override — useLayoutEffect runs BEFORE browser paints ──
+  // -- Background override (useLayoutEffect runs BEFORE browser paints) --
   // useEffect runs AFTER paint (causes flash). useLayoutEffect runs BEFORE
   // paint, so globals.css #050505 is overridden before the user sees it.
   useLayoutEffect(() => {
@@ -146,7 +146,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   // the member lacks that permission, redirect them to their first accessible
   // page. Owners (hasPermission returns true for role 'client'/'super_admin')
   // and preview mode are never blocked; Settings/upgrade routes are always
-  // accessible. NOTE: client-side UX enforcement only — the backend client
+  // accessible. NOTE: client-side UX enforcement only; the backend client
   // API routes are still open and need requirePermission for true blocking.
   const activeNavItem = navItems.find(item => item.href === '/client/dashboard'
     ? (pathname === '/client/dashboard' || pathname === '/client')
@@ -224,7 +224,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
   }
 
-  // Member hit a page they do not have permission for — show a redirecting
+  // Member hit a page they do not have permission for; show a redirecting
   // state while the guard effect above sends them to their first allowed page.
   if (routeBlocked) {
     return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
@@ -270,7 +270,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <Eye className="h-3 w-3 text-white/70" />
             <span className="text-xs font-medium text-white/90">Preview mode</span>
-            <span className="text-[10px] text-white/50 hidden sm:inline">— exactly what your client sees</span>
+            <span className="text-[10px] text-white/50 hidden sm:inline">exactly what your client sees</span>
           </div>
           <button onClick={handleExitPreview} className="flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-medium transition-all hover:bg-white/25 active:scale-95" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>← Agency</button>
         </div>
@@ -348,10 +348,6 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-semibold" style={{ color: theme.isNavDark ? '#fca5a5' : '#dc2626' }}>Update payment method</p>
             </a>
           )}
-          <div className="rounded-xl px-3 py-2.5" style={{ backgroundColor: nav.poweredByBg, border: `1px solid ${nav.border}` }}>
-            <p className="text-[11px] leading-tight" style={{ color: nav.textMuted }}>Powered by</p>
-            <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: nav.text }}>{branding.agencyName}</p>
-          </div>
           <button onClick={handleSignOut} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors w-full" style={{ color: nav.textMuted }}><LogOut className="h-5 w-5" /> Sign Out</button>
         </div>
       </aside>
