@@ -300,7 +300,7 @@ export default function AgencyClientDetailPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
-      if (data.resumed) { setCancelScheduled(false); setCancelMsg('Cancellation undone — subscription continues.'); }
+      if (data.resumed) { setCancelScheduled(false); setCancelMsg('Cancellation undone, subscription continues.'); }
       else if (data.scheduled) { setCancelScheduled(true); setCancelMsg(data.cancels_at ? `Set to cancel on ${new Date(data.cancels_at).toLocaleDateString()}.` : 'Set to cancel at period end.'); }
       else if (data.canceled) { setCancelScheduled(false); setCancelMsg('Subscription canceled.'); }
       fetchClientData();
@@ -342,7 +342,7 @@ export default function AgencyClientDetailPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || data.error || 'Action failed');
-      setManualMsg(action === 'reactivate' ? 'Marked paid — client is live.' : 'Client suspended (number kept).');
+      setManualMsg(action === 'reactivate' ? 'Marked paid, client is live.' : 'Client suspended (number kept).');
       fetchClientData();
       setTimeout(() => setManualMsg(null), 4000);
     } catch (err: any) {
@@ -500,11 +500,11 @@ export default function AgencyClientDetailPage() {
     }
     switch (planType) { case 'starter': return agency.price_starter || 4900; case 'pro': return agency.price_pro || 9900; case 'growth': return agency.price_growth || 14900; default: return 0; }
   };
-  const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'suspended': case 'cancelled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; case 'manual': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'manual_suspended': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
-  // Friendly badge label. Raw subscription_status values like 'manual_suspended'
-  // would otherwise render with an underscore; map the manual ones to clean
-  // words (a live manual client reads "Manual", a cut-off one reads "Suspended").
-  const formatStatus = (status: string) => { switch (status) { case 'manual': return 'Manual'; case 'manual_suspended': return 'Suspended'; default: return status; } };
+  const getStatusStyle = (status: string) => { switch (status) { case 'active': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'trial': case 'trialing': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'past_due': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'pending': case 'pending_payment': return { bg: theme.warningBg, text: theme.warningText, border: theme.warningBorder }; case 'trial_expired': case 'expired': return { bg: theme.hover, text: theme.textMuted, border: theme.border }; case 'suspended': case 'cancelled': case 'canceled': case 'agency_canceled': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; case 'manual': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 }; case 'manual_suspended': return { bg: theme.errorBg, text: theme.errorText, border: theme.errorBorder }; default: return { bg: theme.hover, text: theme.textMuted, border: theme.border }; } };
+  // Friendly badge label. Raw subscription_status values like 'pending_payment'
+  // or 'trial_expired' would otherwise render with an underscore, so every
+  // status maps to clean words (unknown values are humanized as a fallback).
+  const formatStatus = (status: string) => { switch (status) { case 'active': return 'Active'; case 'trial': case 'trialing': return 'Trial'; case 'past_due': return 'Past due'; case 'pending': case 'pending_payment': return 'Pending payment'; case 'trial_expired': case 'expired': return 'Trial ended'; case 'canceled': case 'cancelled': case 'agency_canceled': return 'Canceled'; case 'manual': return 'Manual'; case 'manual_suspended': return 'Suspended'; default: return (status || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()); } };
 
   const industryEntry = client?.industry ? getIndustry(client.industry) : null;
   const intelligence = industryEntry ? { label: industryEntry.label, ...industryEntry.intelligence } : null;
@@ -700,7 +700,7 @@ export default function AgencyClientDetailPage() {
                         </div>
                       ) : (
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm truncate" style={{ color: theme.text }}>{industryEntry?.label || client.industry || '—'}</p>
+                          <p className="text-sm truncate" style={{ color: theme.text }}>{industryEntry?.label || client.industry || '-'}</p>
                           <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Locked after creation</p>
                         </div>
                       )}
@@ -811,7 +811,7 @@ export default function AgencyClientDetailPage() {
         </div>
         <div className="space-y-4 sm:space-y-6">
 
-          {/* Manual billing — free-access window controls (manual-billing clients only) */}
+          {/* Manual billing: free-access window controls (manual-billing clients only) */}
           {isManualClient && (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="p-4 sm:p-6">
@@ -824,7 +824,7 @@ export default function AgencyClientDetailPage() {
                 {isManualSuspended ? (
                   <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
                     <Ban className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.errorText }} />
-                    <p className="text-xs" style={{ color: theme.errorText }}>Suspended — not taking calls. Their number is kept, so marking them paid restores service instantly.</p>
+                    <p className="text-xs" style={{ color: theme.errorText }}>Suspended, not taking calls. Their number is kept, so marking them paid restores service instantly.</p>
                   </div>
                 ) : manualHasWindow ? (
                   <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
@@ -834,7 +834,7 @@ export default function AgencyClientDetailPage() {
                 ) : (
                   <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
                     <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                    <p className="text-xs" style={{ color: theme.primary }}>Live — taking calls.</p>
+                    <p className="text-xs" style={{ color: theme.primary }}>Live, taking calls.</p>
                   </div>
                 )}
 
@@ -905,7 +905,7 @@ export default function AgencyClientDetailPage() {
             </div>
           </div>
 
-          {/* Change plan — move this client to a different plan (prorates if billed) */}
+          {/* Change plan: move this client to a different plan (prorates if billed) */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1">
@@ -947,11 +947,17 @@ export default function AgencyClientDetailPage() {
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1">
                 <Ban className="h-4 w-4" style={{ color: '#ef4444' }} />
-                <h2 className="font-semibold text-sm sm:text-base">Cancel subscription</h2>
+                <h2 className="font-semibold text-sm sm:text-base">{isManualClient ? 'Cancel & release number' : 'Cancel subscription'}</h2>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Cancels at the end of the current billing period — the client keeps service until then. Use &quot;Cancel now&quot; only to end service and release their number immediately.</p>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>{isManualClient
+                ? 'Ends this client’s service and releases their phone number immediately. To just pause them (keeping their number), use Suspend above.'
+                : 'Cancels at the end of the current billing period, so the client keeps service until then. Use "Cancel now" only to end service and release their number immediately.'}</p>
               <div className="flex items-center gap-2 flex-wrap">
-                {cancelScheduled ? (
+                {isManualClient ? (
+                  <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
+                    {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Cancel & release number
+                  </button>
+                ) : cancelScheduled ? (
                   <button onClick={handleResume} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                     {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Resume subscription
                   </button>
@@ -973,7 +979,7 @@ export default function AgencyClientDetailPage() {
         </div>
       </div>
 
-      {/* Delete client — small, understated destructive action */}
+      {/* Delete client: small, understated destructive action */}
       <div className="mt-8 mb-2 flex justify-end">
         <button
           onClick={handleDeleteClient}
