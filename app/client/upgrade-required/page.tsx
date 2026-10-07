@@ -83,6 +83,20 @@ function ClientUpgradeContent() {
     client?.subscription_status === 'active' ||
     !!client?.stripe_connected_subscription_id;
 
+  // Self-service plan changes require the agency to opt in. This is the SAME
+  // gate the client Settings page uses, and it mirrors the backend: an own-client
+  // call to /api/client/change-plan is rejected with a 403
+  // (client_plan_changes_disabled) when this flag is off, which is exactly the
+  // "there is an error" the client hit when switching plans here. Manual / test
+  // clients are never client-changeable (the backend routes those through the
+  // agency), so they are excluded too. Non-active clients are NOT affected by
+  // this: they still reach checkout below so they can subscribe or reactivate
+  // regardless of the flag.
+  const canChangePlan =
+    !!(agency as any)?.allow_client_plan_changes &&
+    (client as any)?.billing_mode !== 'manual' &&
+    !(client as any)?.is_test_client;
+
   const isDark = agency?.website_theme === 'dark';
   const primaryColor = agency?.primary_color || '#6366f1';
   const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
@@ -198,11 +212,20 @@ function ClientUpgradeContent() {
         // tile they picked.
         if (r.status === 409 && errData.error === 'active_subscription_exists') {
           setCheckoutLoading(null);
-          setConfirmPlan(plans.find(p => p.id === planTier) || null);
+          // Only route into the in-app change flow if this agency allows client
+          // plan changes; otherwise the change-plan call would 403. Tell the
+          // client where to go instead of dead-ending.
+          if (canChangePlan) {
+            setConfirmPlan(plans.find(p => p.id === planTier) || null);
+          } else {
+            setError(`You already have an active subscription. Please contact ${agency?.name || 'your provider'} to change your plan.`);
+          }
           return;
         }
 
-        throw new Error(errData.error || 'Failed');
+        // Prefer the backend's human-readable message; fall back to the machine
+        // code only if there is no message.
+        throw new Error(errData.message || errData.error || 'Checkout failed');
       }
 
       const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No checkout URL returned');
@@ -227,7 +250,9 @@ function ClientUpgradeContent() {
       if (!r.ok) {
         let errData: any = {};
         try { errData = await r.json(); } catch {}
-        throw new Error(errData.error || 'Could not change your plan. Please contact support.');
+        // Prefer the backend's human-readable message over the machine code so
+        // the client never sees raw strings like "client_plan_changes_disabled".
+        throw new Error(errData.message || errData.error || 'Could not change your plan. Please contact support.');
       }
       window.location.href = '/client/dashboard?plan_changed=true';
     } catch (err: any) {
@@ -254,6 +279,25 @@ function ClientUpgradeContent() {
         <h1 className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: theme.text }}>Your plan is managed by {agency.name || 'your provider'}</h1>
         <p className="text-[15px] mb-6" style={{ color: theme.textMuted }}>
           Billing for your account is handled directly by {agency.name || 'your provider'}. To change your plan or sort out anything billing-related, reach out to them{(agency as any).support_email ? ` at ${(agency as any).support_email}` : ''}.
+        </p>
+        <a href="/client/dashboard" className="inline-flex items-center px-5 py-2.5 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Back to dashboard</a>
+      </div>
+    </div>
+  );
+
+  // Active client whose agency has NOT enabled self-service plan changes.
+  // Showing switch buttons here would dead-end at a 403 from the backend (the
+  // bug the client reported), so point them to their provider instead. This
+  // mirrors the client Settings page, which hides the change-plan controls under
+  // the same condition. Non-active clients fall through to the checkout flow
+  // below so they can still subscribe / reactivate regardless of this flag.
+  if (isActive && !canChangePlan) return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div className="max-w-md text-center">
+        {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-5 object-contain" />}
+        <h1 className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: theme.text }}>Plan changes are managed by {agency.name || 'your provider'}</h1>
+        <p className="text-[15px] mb-6" style={{ color: theme.textMuted }}>
+          Your subscription is active. To move to a different plan, reach out to {agency.name || 'your provider'}{(agency as any).support_email ? ` at ${(agency as any).support_email}` : ''} and they will take care of it for you.
         </p>
         <a href="/client/dashboard" className="inline-flex items-center px-5 py-2.5 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Back to dashboard</a>
       </div>
