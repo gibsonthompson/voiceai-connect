@@ -163,6 +163,11 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   // subscription_status, or both.
   const isManual = client.billing_mode === 'manual' || client.subscription_status === 'manual';
 
+  // Agency can hide ALL billing/subscription UI from the client dashboard
+  // (white-glove / manual billing). When on, the trial banners and the Voice
+  // Minutes / usage card are suppressed entirely.
+  const hideBilling = !!(client.agency as any)?.hide_client_billing;
+
   // ── Trial type discrimination ─────────────────────────────────────────────
   // Two different trials share subscription_status === 'trial':
   //   - No-card DB trial: stripe_connected_subscription_id is null. It simply
@@ -258,7 +263,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           charge (no connected Stripe subscription). Card-required trials get
           the billing banner below instead, so the two never show together.
           Hidden while the forwarding setup card is up so the CTAs don't compete. */}
-      {isNoCardTrial && stats.trialDaysLeft !== null && !forwardingSetupActive && (
+      {!hideBilling && isNoCardTrial && stats.trialDaysLeft !== null && !forwardingSetupActive && (
         <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
           style={{
             ...glass,
@@ -297,7 +302,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           CTA goes to Billing to cancel before then, NOT to /upgrade-required
           (which would 409 an already-subscribed client). Hidden while the
           forwarding setup card is up, matching the no-card banner. */}
-      {isCardRequiredTrial && !forwardingSetupActive && (
+      {!hideBilling && isCardRequiredTrial && !forwardingSetupActive && (
         <div className="mb-5 sm:mb-7 rounded-2xl p-4 sm:p-5 fu fu1"
           style={{
             ...glass,
@@ -469,7 +474,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           reads as free. A manual client is excluded because it is billed by its
           agency outside the platform, so a platform per-minute charge projection
           does not apply to it. */}
-      {minutePassThroughOn && !isManual && (
+      {!hideBilling && minutePassThroughOn && !isManual && (
         <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu5" style={glass}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

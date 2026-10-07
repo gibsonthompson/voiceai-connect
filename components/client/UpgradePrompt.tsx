@@ -24,9 +24,13 @@ interface UpgradePromptProps {
   primaryColor: string;
   isDark: boolean;
   message?: string;
+  /** White-glove / manual-billing: hide the self-serve upgrade CTA and show a
+   *  "contact your provider" line instead, so the feature still reads as
+   *  unavailable without implying the client can upgrade it themselves. */
+  hideUpgrade?: boolean;
 }
 
-export default function UpgradePrompt({ feature, primaryColor, isDark, message }: UpgradePromptProps) {
+export default function UpgradePrompt({ feature, primaryColor, isDark, message, hideUpgrade }: UpgradePromptProps) {
   const featureInfo = CLIENT_FEATURE_LABELS[feature];
   const primaryLight = isLightColor(primaryColor);
   
@@ -61,31 +65,37 @@ export default function UpgradePrompt({ feature, primaryColor, isDark, message }
         {message || featureInfo?.description || 'This feature is available on a higher plan.'}
       </p>
       
-      <div 
+      <div
         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-3"
-        style={{ 
+        style={{
           backgroundColor: hexToRgba(primaryColor, isDark ? 0.1 : 0.08),
           color: primaryColor,
         }}
       >
         <Lock className="w-3 h-3" />
-        Available on a higher plan
+        {hideUpgrade ? 'Not included in your plan' : 'Available on a higher plan'}
       </div>
-      
-      <div>
-        {/* FIXED: was /client/upgrade (404) → /client/upgrade-required */}
-        <a
-          href="/client/upgrade-required"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90"
-          style={{ 
-            backgroundColor: primaryColor, 
-            color: primaryLight ? '#111827' : '#ffffff',
-          }}
-        >
-          Upgrade Your Plan
-          <ArrowUpRight className="w-4 h-4" />
-        </a>
-      </div>
+
+      {hideUpgrade ? (
+        <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+          Contact your provider to turn this on.
+        </p>
+      ) : (
+        <div>
+          {/* FIXED: was /client/upgrade (404) → /client/upgrade-required */}
+          <a
+            href="/client/upgrade-required"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition hover:opacity-90"
+            style={{
+              backgroundColor: primaryColor,
+              color: primaryLight ? '#111827' : '#ffffff',
+            }}
+          >
+            Upgrade Your Plan
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -244,6 +244,22 @@ function ClientUpgradeContent() {
     </div>
   );
 
+  // White-glove / manual billing: this agency hides all billing from the client,
+  // so even a bookmarked upgrade URL should not show plans or checkout. Point
+  // the client to their provider instead.
+  if ((agency as any).hide_client_billing) return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div className="max-w-md text-center">
+        {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-5 object-contain" />}
+        <h1 className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: theme.text }}>Your plan is managed by {agency.name || 'your provider'}</h1>
+        <p className="text-[15px] mb-6" style={{ color: theme.textMuted }}>
+          Billing for your account is handled directly by {agency.name || 'your provider'}. To change your plan or sort out anything billing-related, reach out to them{(agency as any).support_email ? ` at ${(agency as any).support_email}` : ''}.
+        </p>
+        <a href="/client/dashboard" className="inline-flex items-center px-5 py-2.5 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Back to dashboard</a>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `\n::selection { background-color: ${primaryColor}40; color: inherit; }` }} />
@@ -289,7 +305,7 @@ function ClientUpgradeContent() {
                 )}
               </div>
 
-              {/* Included features — sourced from buildClientPlans so it reflects
+              {/* Included features, sourced from buildClientPlans so it reflects
                   exactly what the agency toggled in Settings → Pricing. The
                   call-limit string and team-member count are already inlined. */}
               <ul className="space-y-2.5 mb-4">
@@ -301,7 +317,7 @@ function ClientUpgradeContent() {
                 ))}
               </ul>
 
-              {/* Excluded features — greyed out so the user can see what they'd
+              {/* Excluded features, greyed out so the user can see what they'd
                   gain by picking a higher tier. Same pattern as /signup/plan. */}
               {plan.excluded.length > 0 && (
                 <ul className="space-y-2.5 mb-6">

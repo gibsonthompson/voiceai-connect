@@ -74,10 +74,13 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     poweredByBg: theme.isNavDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
   };
 
-  const clientTrialExpired = isTrialExpired(client);
-  const clientPaymentFailed = isPaymentFailed(client?.subscription_status);
-  const clientCanceled = isCanceled(client?.subscription_status);
-  const clientOnTrial = isTrialActive(client);
+  // Agency can hide all billing/subscription UI from the client (white-glove /
+  // manual-billing). When on, trial and payment banners never surface.
+  const hideBilling = !!(client?.agency as any)?.hide_client_billing;
+  const clientTrialExpired = !hideBilling && isTrialExpired(client);
+  const clientPaymentFailed = !hideBilling && isPaymentFailed(client?.subscription_status);
+  const clientCanceled = !hideBilling && isCanceled(client?.subscription_status);
+  const clientOnTrial = !hideBilling && isTrialActive(client);
   const trialDaysLeft = getTrialDaysLeft(client?.trial_ends_at);
   const isAccessibleRoute = ALWAYS_ACCESSIBLE_ROUTES.some(route => pathname?.startsWith(route));
 

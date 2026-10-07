@@ -85,6 +85,8 @@ const UnsavedHint = ({ text, theme }: { text: string; theme: any }) => (
 
 export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
+  // White-glove / manual billing: hide self-serve upgrade CTAs on locked features.
+  const hideBilling = !!(client?.agency as any)?.hide_client_billing;
   const theme = useClientTheme();
   const [message, setMessage] = useState('');
   const primaryColor = theme.primary;
@@ -365,7 +367,7 @@ export default function ClientAIAgentPage() {
         {/* Voice Selection */}
         <div className="fu fu2">
           {!isFeatureEnabled('custom_voice') ? (
-            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+            <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_voice" primaryColor={primaryColor} isDark={theme.isDark} hideUpgrade={hideBilling} /></SectionCard>
           ) : (
             <SectionCard icon={Mic} title="Voice Selection" subtitle="Choose your AI's voice" live theme={theme} primaryColor={primaryColor} glass={glass}>
               {voicesLoading && <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /><span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading voices...</span></div>}
@@ -448,7 +450,7 @@ export default function ClientAIAgentPage() {
         {/* Greeting */}
         <div className="fu fu3">
           {!isFeatureEnabled('custom_greeting') ? (
-            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} /></SectionCard>
+            <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" theme={theme} primaryColor={primaryColor} glass={glass}><UpgradePrompt feature="custom_greeting" primaryColor={primaryColor} isDark={theme.isDark} hideUpgrade={hideBilling} /></SectionCard>
           ) : (
             <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" live theme={theme} primaryColor={primaryColor} glass={glass}>
               {greetingLoading ? <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /></div> : (<>

@@ -1,562 +1,390 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Phone, Loader2, User, CreditCard, Link2,
-  Check, Copy, Lock, Eye, EyeOff, AlertCircle,
-  PhoneForwarded, PhoneIncoming, Headphones, Smartphone, X, Shield, Users, Download
-} from 'lucide-react';
-import { useClientTheme } from '@/hooks/useClientTheme';
-import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
-import ClientBrandingSection from '@/components/client/ClientBrandingSection';
-import ClientTeamSection from '@/components/client/ClientTeamSection';
-import { SectionCard } from '@/components/client/SectionCard';
-import { Toast } from '@/components/ui/toast';
-import { useClient } from '@/lib/client-context';
+import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Check, Loader2, AlertTriangle, Phone, Clock, Zap, X } from 'lucide-react';
+import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
 
-interface Client {
-  id: string; business_name: string; owner_name?: string; email: string; owner_phone: string; industry: string;
-  business_city: string; business_state: string; vapi_phone_number: string; subscription_status: string;
-  plan_type: string; trial_ends_at: string | null; monthly_call_limit: number; calls_this_month: number;
-  billing_mode?: string; pricing_mode?: string;
-  google_calendar_connected: boolean; call_mode?: string; ring_timeout?: number; created_at: string;
-  hipaa_mode?: boolean;
-  forwarding_confirmed?: boolean;
-  agency: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string; secondary_color: string; accent_color: string; support_email: string | null; support_phone: string | null; allow_client_branding?: boolean; } | null;
+function getContrastColor(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16); const g = parseInt(c.substring(2, 4), 16); const b = parseInt(c.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.45 ? '#1f2937' : '#ffffff';
 }
-
-interface Branding {
-  primaryColor: string; secondaryColor: string; accentColor: string; agencyName: string;
-  logoUrl: string | null; supportEmail: string | null; supportPhone: string | null; websiteTheme?: 'light' | 'dark' | 'auto';
-}
-
-interface Props { client: Client; branding: Branding; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16); const g = parseInt(hex.slice(3, 5), 16); const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const formatPhoneNumber = (phone: string): string => {
-  if (!phone) return 'Not set';
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 11) return `+${cleaned[0]} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-  if (cleaned.length === 10) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  return phone;
-};
+// Phase 3: Agency now also carries the plan rebranding columns + plan_features
+// so buildClientPlans can render agency-specific tier names, taglines, and
+// the actual toggled features instead of the invented hardcoded list that
+// used to live here.
+interface Agency {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  primary_color: string;
+  accent_color: string;
+  price_starter?: number;
+  price_pro?: number;
+  price_growth?: number;
+  limit_starter?: number;
+  limit_pro?: number;
+  limit_growth?: number;
+  website_theme?: string;
+  country?: string | null;
+  currency?: string | null;
+  display_currency?: string | null;
+  plan_starter_name?: string | null;
+  plan_pro_name?: string | null;
+  plan_growth_name?: string | null;
+  plan_starter_description?: string | null;
+  plan_pro_description?: string | null;
+  plan_growth_description?: string | null;
+  plan_features?: Record<string, Record<string, boolean | number>> | null;
+}
+interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; stripe_connected_subscription_id?: string | null; }
 
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-};
+// formatPrice accepts currency. Falls back to USD. Uppercases the code because
+// Intl.NumberFormat requires the ISO 4217 form and the DB stores lowercase
+// ('usd', 'eur').
+function formatPrice(cents: number | undefined | null, currency?: string | null): string {
+  const value = cents ?? 0;
+  if (isNaN(value)) return '$--';
+  const code = (currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: code, minimumFractionDigits: 0 }).format(value / 100);
+  } catch {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value / 100);
+  }
+}
 
-export function ClientSettingsContent({ client: initialClient, branding }: Props) {
-  const router = useRouter();
-  const theme = useClientTheme();
-  const [client, setClient] = useState(initialClient);
-  const [email, setEmail] = useState(client.email || '');
-  const [ownerPhone, setOwnerPhone] = useState(client.owner_phone || '');
-  const [ownerName, setOwnerName] = useState(client.owner_name || '');
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
-  const [showPwaModal, setShowPwaModal] = useState(false);
+const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
+function ClientUpgradeContent() {
+  const searchParams = useSearchParams();
+  const expired = searchParams.get('expired') === 'true';
+  const canceled = searchParams.get('canceled') === 'true';
+  const [client, setClient] = useState<Client | null>(null);
+  const [agency, setAgency] = useState<Agency | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // Plan tile pending confirmation for an in-app plan change (active clients).
+  const [confirmPlan, setConfirmPlan] = useState<ClientPlanTile | null>(null);
+  // True while /api/client/change-plan is in flight for the confirmed plan.
+  const [changing, setChanging] = useState(false);
 
-  const [hipaaMode, setHipaaMode] = useState(client.hipaa_mode || false);
-  const [savingHipaa, setSavingHipaa] = useState(false);
+  // An active client already has a live connected subscription, so selecting a
+  // plan here modifies that subscription (proration) rather than creating a new
+  // one. Everyone else (expired trial, canceled, no sub) goes to checkout.
+  const isActive =
+    client?.subscription_status === 'active' ||
+    !!client?.stripe_connected_subscription_id;
 
-  // The client context hydrates instantly from the localStorage cache, then
-  // refetches fresh data in the background. Fields seeded once at mount from a
-  // stale cache would otherwise never pick up the real values, so a saved change
-  // looks like it did not persist on the next load. When fresh server data
-  // arrives, advance the local copy and any field the user has not edited.
-  const serverSnapshot = useRef(initialClient);
+  const isDark = agency?.website_theme === 'dark';
+  const primaryColor = agency?.primary_color || '#6366f1';
+  const primaryText = useMemo(() => getContrastColor(primaryColor), [primaryColor]);
+
+  // Resolved currency used by formatPrice below (agency display currency, then
+  // the raw currency column, then USD).
+  const currencyCode = agency?.display_currency || agency?.currency || 'USD';
+
+  // Phase 3: single source of truth for plan tiles. buildClientPlans handles
+  // pricing defaults, the rebranded name/description, the call-limit display,
+  // and converting the plan_features JSONB into included/excluded label lists.
+  // useMemo so it doesn't rebuild on every render while checkout is loading.
+  const plans: ClientPlanTile[] = useMemo(
+    () => (agency ? buildClientPlans(agency) : []),
+    [agency]
+  );
+
+  const theme = useMemo(() => ({
+    bg: isDark ? '#050505' : '#f9fafb', text: isDark ? '#fafaf9' : '#111827', textMuted: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
+    textMuted4: isDark ? 'rgba(250,250,249,0.5)' : '#6b7280', textSubtle: isDark ? 'rgba(250,250,249,0.8)' : '#374151',
+    border: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    card: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
+    errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', errorText: isDark ? '#fca5a5' : '#991b1b', errorBorder: 'rgba(239,68,68,0.3)',
+    warningBg: isDark ? 'rgba(245,158,11,0.1)' : '#fffbeb', warningText: isDark ? '#fcd34d' : '#92400e',
+    excludedBg: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+    excludedText: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af',
+    excludedIcon: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db',
+  }), [isDark]);
+
+  const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: isDark ? 'blur(20px)' : 'blur(12px)' };
+
+  useEffect(() => { fetchClientData(); }, []);
+
   useEffect(() => {
-    const prev = serverSnapshot.current;
-    setEmail(cur => (cur === (prev.email || '') ? (initialClient.email || '') : cur));
-    setOwnerPhone(cur => (cur === (prev.owner_phone || '') ? (initialClient.owner_phone || '') : cur));
-    setOwnerName(cur => (cur === (prev.owner_name || '') ? (initialClient.owner_name || '') : cur));
-    setHipaaMode(cur => (cur === (prev.hipaa_mode || false) ? (initialClient.hipaa_mode || false) : cur));
-    setClient(initialClient);
-    serverSnapshot.current = initialClient;
-  }, [initialClient]);
+    if (agency?.name) document.title = `${agency.name} - ${isActive ? 'Change Your Plan' : 'Upgrade Your Plan'}`;
+    if (agency?.logo_url) {
+      const existingLinks = document.querySelectorAll("link[rel*='icon']");
+      existingLinks.forEach(link => link.remove());
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/png';
+      link.href = agency.logo_url;
+      document.head.appendChild(link);
+      const appleLink = document.createElement('link');
+      appleLink.rel = 'apple-touch-icon';
+      appleLink.href = agency.logo_url;
+      document.head.appendChild(appleLink);
+    }
+  }, [agency]);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
-
-  const [exporting, setExporting] = useState(false);
-  const csvEscape = (v: any) => { const str = v == null ? '' : String(v); return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str; };
-  const handleExportCalls = async () => {
-    setExporting(true);
+  const fetchClientData = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/client/${client.id}/calls`, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await res.json();
-      const calls: any[] = Array.isArray(d.calls) ? d.calls : [];
-      const cols: { h: string; get: (c: any) => any }[] = [
-        { h: 'Date', get: c => c.created_at ? new Date(c.created_at).toLocaleString() : '' },
-        { h: 'Caller Name', get: c => c.customer_name || '' },
-        { h: 'Caller Phone', get: c => c.customer_phone || c.caller_phone || '' },
-        { h: 'Service Requested', get: c => c.service_requested || '' },
-        { h: 'Duration (sec)', get: c => c.duration_seconds ?? '' },
-        { h: 'Status', get: c => c.call_status || '' },
-        { h: 'Urgency', get: c => c.urgency_level || '' },
-        { h: 'Appointment Booked', get: c => c.appointment_booked ? 'Yes' : 'No' },
-        { h: 'Spam', get: c => (c.is_spam || c.call_status === 'spam') ? 'Yes' : 'No' },
-        { h: 'Summary', get: c => c.summary || c.call_summary || '' },
-      ];
-      const lines = [cols.map(c => c.h).join(',')];
-      for (const call of calls) lines.push(cols.map(c => csvEscape(c.get(call))).join(','));
-      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(client.business_name || 'calls').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-calls-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    } catch { setMessage('Could not export your calls. Please try again.'); setTimeout(() => setMessage(''), 3000); }
-    finally { setExporting(false); }
+      const token = localStorage.getItem('auth_token'); const storedClient = localStorage.getItem('client');
+      if (!token) { window.location.href = '/client/login'; return; }
+      let clientId: string | null = null;
+      if (storedClient) { try { clientId = JSON.parse(storedClient).id; } catch {} }
+      if (!clientId) {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+        const vr = await fetch(`${backendUrl}/api/auth/verify`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!vr.ok) { localStorage.removeItem('auth_token'); localStorage.removeItem('client'); localStorage.removeItem('user'); window.location.href = '/client/login'; return; }
+        const vd = await vr.json(); clientId = vd.user?.client_id;
+      }
+      if (!clientId) { window.location.href = '/client/login'; return; }
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const cr = await fetch(`${backendUrl}/api/client/${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!cr.ok) throw new Error('Failed');
+      const cd = await cr.json();
+      const clientData: Client | undefined = cd.client || cd;
+
+      // Active clients are NOT bounced anymore. Previously an active sub sent
+      // the user to the dashboard to avoid creating a duplicate subscription on
+      // the checkout path. Now selecting a plan while active routes to
+      // /api/client/change-plan (see handleSelectPlan), which modifies the
+      // existing subscription in place, so there is no duplicate-sub risk and
+      // this page doubles as the in-app plan switcher. The backend 409 guard on
+      // checkout still stands as a backstop if state is stale.
+
+      setClient(clientData || null);
+      setAgency(cd.agency || (cd.client as any)?.agency);
+    } catch (err) { setError('Failed to load account'); }
+    finally { setLoading(false); }
   };
-  // The single platform-wide AI support line, fetched live from the backend
-  // (platform_settings.support_line_number) so it always tracks the number that
-  // is actually provisioned. Null until loaded; the Support card renders only
-  // once it resolves.
-  const [supportPhone, setSupportPhone] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${backendUrl}/api/support-line`)
-      .then((r) => r.json())
-      .then((d) => { if (!cancelled && d?.number) setSupportPhone(d.number); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [backendUrl]);
 
-  const { user } = useClient();
-  const isOwner = !user || user.role === 'client' || user.role === 'super_admin';
+  const handleSelectPlan = async (planTier: string) => {
+    if (!client) { setError('Account not loaded. Please refresh.'); return; }
+    setError(null);
 
-  // The signed-in user's own login, fetched from the token-scoped endpoint so
-  // each person only ever sees their OWN credentials. visible_password is null
-  // when the user has set their own password (we then point them to Change
-  // Password instead of showing a value).
-  const [myCreds, setMyCreds] = useState<{ email: string; visible_password: string | null; has_custom_password: boolean } | null>(null);
-  const [showLoginPw, setShowLoginPw] = useState(false);
-  const [credCopied, setCredCopied] = useState<'user' | 'pass' | null>(null);
-  useEffect(() => {
-    const fetchCreds = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const res = await fetch(`${backendUrl}/api/client/${client.id}/my-credentials`, { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) { const d = await res.json(); setMyCreds({ email: d.email, visible_password: d.visible_password ?? null, has_custom_password: !!d.has_custom_password }); }
-      } catch {}
-    };
-    fetchCreds();
-  }, [client.id, backendUrl]);
-  const copyCred = async (text: string, which: 'user' | 'pass') => { try { await navigator.clipboard.writeText(text); setCredCopied(which); setTimeout(() => setCredCopied(null), 1500); } catch {} };
+    // Active client: this is a plan CHANGE, not a new checkout. Open the
+    // confirm dialog for the selected tile; the actual swap runs in
+    // confirmChangePlan against /api/client/change-plan.
+    if (isActive) {
+      if (planTier === client.plan_type) return; // already on this plan
+      setConfirmPlan(plans.find(p => p.id === planTier) || null);
+      return;
+    }
 
-  const handleSave = async () => { setSaving(true); setMessage(''); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, owner_phone: ownerPhone, owner_name: ownerName }) }); const data = await response.json(); if (data.success) { setMessage('Settings saved successfully!'); setClient({ ...client, email, owner_phone: ownerPhone, owner_name: ownerName }); setTimeout(() => setMessage(''), 3000); } else { setMessage(data.error || 'Failed to save settings'); } } catch (error) { setMessage('Error saving settings'); } finally { setSaving(false); } };
-
-  const handleChangePassword = async () => { setPasswordMessage(''); if (!currentPassword) { setPasswordMessage('Current password is required'); return; } if (!newPassword || newPassword.length < 8) { setPasswordMessage('New password must be at least 8 characters'); return; } if (newPassword !== confirmPassword) { setPasswordMessage('Passwords do not match'); return; } setChangingPassword(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ currentPassword, newPassword }) }); const data = await response.json(); if (data.success) { setPasswordMessage('Password changed successfully!'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setTimeout(() => setPasswordMessage(''), 3000); } else { setPasswordMessage(data.error || 'Failed to change password'); } } catch (error) { setPasswordMessage('Error changing password'); } finally { setChangingPassword(false); } };
-
-  const handleCopyNumber = async () => { if (!client.vapi_phone_number) return; const digitsOnly = client.vapi_phone_number.replace(/\D/g, ''); try { await navigator.clipboard.writeText(`+${digitsOnly}`); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch (error) { console.error('Failed to copy:', error); } };
-
-  const handleToggleHipaa = async (enabled: boolean) => {
-    if (!confirm(enabled
-      ? 'Enable HIPAA mode? This will disable call recordings, transcripts, and caller recognition. Booking will switch to collect-request only. This takes effect on the next call.'
-      : 'Disable HIPAA mode? Call recordings, transcripts, and caller recognition will resume on the next call.'
-    )) return;
-    setSavingHipaa(true);
+    // No live subscription (expired trial / canceled / never subscribed):
+    // create one via Stripe checkout.
+    setCheckoutLoading(planTier);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/client/${client.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ hipaa_mode: enabled }) });
-      const data = await response.json();
-      if (data.success) {
-        setHipaaMode(enabled);
-        setClient(prev => ({ ...prev, hipaa_mode: enabled }));
-        try { const cached = localStorage.getItem('client'); if (cached) { const p = JSON.parse(cached); p.hipaa_mode = enabled; localStorage.setItem('client', JSON.stringify(p)); } } catch {}
-        setMessage(enabled ? 'HIPAA mode enabled — recordings and transcripts disabled' : 'HIPAA mode disabled — standard call handling resumed');
-        setTimeout(() => setMessage(''), 4000);
-      } else { setMessage(data.error || 'Failed to update HIPAA mode'); }
-    } catch { setMessage('Error updating HIPAA mode'); }
-    finally { setSavingHipaa(false); }
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
+
+      if (!r.ok) {
+        // Read body ONCE (response stream can only be consumed once)
+        let errData: any = {};
+        try { errData = await r.json(); } catch {}
+
+        // Stale local state: the backend says a subscription is already active.
+        // The billing portal has no plan switch configured, so instead of that
+        // dead end, drop the user into the in-app change-plan confirm for the
+        // tile they picked.
+        if (r.status === 409 && errData.error === 'active_subscription_exists') {
+          setCheckoutLoading(null);
+          setConfirmPlan(plans.find(p => p.id === planTier) || null);
+          return;
+        }
+
+        throw new Error(errData.error || 'Failed');
+      }
+
+      const { url } = await r.json(); if (url) window.location.href = url; else throw new Error('No checkout URL returned');
+    } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
   };
 
-  const handleUpgrade = () => { window.location.href = '/client/upgrade-required'; };
-
-  const [paystackSetupBusy, setPaystackSetupBusy] = useState(false);
-  const [paystackSetupError, setPaystackSetupError] = useState('');
-  const handleSetupPaystack = async () => {
-    setPaystackSetupBusy(true); setPaystackSetupError('');
+  // Confirmed in-app plan change for an active subscription. The backend swaps
+  // the subscription item with proration and writes plan_type +
+  // monthly_call_limit together, so those never desync from Stripe. On success
+  // we send the client back to the dashboard.
+  const confirmChangePlan = async () => {
+    if (!client || !confirmPlan) return;
+    setChanging(true); setError(null);
     try {
       const token = localStorage.getItem('auth_token');
-      const r = await fetch(`${backendUrl}/api/client/paystack/init`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: client.id }) });
-      const d = await r.json();
-      if (d.authorization_url) { window.location.href = d.authorization_url; return; }
-      setPaystackSetupError(d.error || 'Could not start Paystack checkout.');
-    } catch { setPaystackSetupError('Could not start Paystack checkout.'); }
-    finally { setPaystackSetupBusy(false); }
-  };
-  useEffect(() => {
-    const bp = new URLSearchParams(window.location.search).get('billing');
-    if (bp === 'paystack_success') setMessage('Billing set up. You are subscribed via Paystack.');
-    else if (bp === 'paystack_failed') setMessage('That payment did not complete. Please try again.');
-  }, []);
-  const handleManageSubscription = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${backendUrl}/api/client/portal`, {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/change-plan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ client_id: client.id }),
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: client.id, plan: confirmPlan.id }),
       });
-      const data = await response.json();
-      if (data.url) { window.location.href = data.url; }
-      else { setMessage('Unable to open billing portal. Please contact support.'); }
-    } catch { setMessage('Error opening billing portal'); }
-  };
-
-  const [showPlanPicker, setShowPlanPicker] = useState(false);
-  const [changingPlan, setChangingPlan] = useState<string | null>(null);
-  const canChangePlan = !!(client.agency as any)?.allow_client_plan_changes && client.billing_mode !== 'manual' && !(client as any).is_test_client;
-  const paystackCurrencySymbol = (() => {
-    const code = (client.billing_mode === 'paystack' && (client.agency as any)?.paystack_currency) || '';
-    const m: Record<string, string> = { NGN: '\u20a6', GHS: 'GH\u20b5', ZAR: 'R', KES: 'KSh', XOF: 'CFA' };
-    return m[code] || '$';
-  })();
-  const agencyPlans = (() => {
-    const ag = client.agency as any;
-    // Prefer the agency's actual configured plans (custom / Path B). These carry
-    // the real plan keys changeClientPlan validates against; falling back to the
-    // legacy starter/pro/growth only when no custom plans exist.
-    const custom = Array.isArray(ag?.plans) ? ag.plans.filter((p: any) => p && p.key && p.visible !== false) : [];
-    if (custom.length > 0) return custom.map((p: any) => ({ key: p.key, name: p.name || p.key, price: p.price_cents, limit: p.call_limit }));
-    return [
-      { key: 'starter', name: ag?.plan_starter_name || 'Starter', price: ag?.price_starter, limit: ag?.limit_starter },
-      { key: 'pro', name: ag?.plan_pro_name || 'Professional', price: ag?.price_pro, limit: ag?.limit_pro },
-      { key: 'growth', name: ag?.plan_growth_name || 'Growth', price: ag?.price_growth, limit: ag?.limit_growth },
-    ];
-  })();
-  const handleChangePlan = async (plan: string) => {
-    setChangingPlan(plan);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const r = await fetch(`${backendUrl}/api/client/change-plan`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: client.id, plan }) });
-      const d = await r.json();
-      if (d.url) { window.location.href = d.url; return; }
-      if (r.ok && d.success) { setMessage(d.unchanged ? 'You are already on this plan.' : (d.note || 'Plan updated.')); setShowPlanPicker(false); setTimeout(() => window.location.reload(), 1200); }
-      else { setMessage(d.message || 'Unable to change plan.'); }
-    } catch { setMessage('Error changing plan.'); }
-    finally { setChangingPlan(null); }
-  };
-  const [canceling, setCanceling] = useState(false);
-  const [cancelMsg, setCancelMsg] = useState('');
-  const handleCancelSubscription = async () => {
-    if (!confirm('Cancel your subscription at the end of your current billing period? You keep full access until then.')) return;
-    setCanceling(true); setCancelMsg('');
-    try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ client_id: client.id }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
-      setCancelMsg(data.cancels_at ? `Your subscription will cancel on ${new Date(data.cancels_at).toLocaleDateString()}. You keep access until then.` : 'Your subscription will cancel at the end of your billing period.');
-      setTimeout(() => window.location.reload(), 1800);
+      if (!r.ok) {
+        let errData: any = {};
+        try { errData = await r.json(); } catch {}
+        throw new Error(errData.error || 'Could not change your plan. Please contact support.');
+      }
+      window.location.href = '/client/dashboard?plan_changed=true';
     } catch (err: any) {
-      setCancelMsg(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setCanceling(false);
+      setError(err.message || 'Could not change your plan. Please contact support.');
+      setChanging(false);
+      setConfirmPlan(null);
     }
   };
 
-  const handleResumePaystack = async () => {
-    setCanceling(true); setCancelMsg('');
-    try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ client_id: client.id, resume: true }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || data.error || 'Failed to resume');
-      setCancelMsg('Your subscription has been resumed.');
-      setTimeout(() => window.location.reload(), 1500);
-    } catch (err: any) {
-      setCancelMsg(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setCanceling(false);
-    }
-  };
+  if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#9ca3af' }} /></div>;
+  if (!client || !agency) return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div className="text-center"><AlertTriangle className="h-12 w-12 mx-auto mb-4 text-amber-500" /><h1 className="text-xl font-semibold mb-2" style={{ color: theme.text }}>Unable to load account</h1><p className="mb-4" style={{ color: theme.textMuted4 }}>{error || 'Please try logging in again.'}</p><a href="/client/login" className="inline-flex items-center px-4 py-2 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Go to Login</a></div>
+    </div>
+  );
 
-  const getDaysRemaining = (): number | null => { if (!client.trial_ends_at) return null; const diffTime = new Date(client.trial_ends_at).getTime() - Date.now(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return diffDays > 0 ? diffDays : 0; };
-
-  const hasChanges = email !== (client.email || '') || ownerPhone !== (client.owner_phone || '') || ownerName !== (client.owner_name || '');
-  const daysRemaining = getDaysRemaining();
-  const hasPasswordChanges = currentPassword || newPassword || confirmPassword;
-
-  const getMessageStyle = (msg: string) => { const isSuccess = msg.includes('success') || msg.includes('Success') || msg.includes('enabled') || msg.includes('Enabled') || msg.includes('updated'); return isSuccess ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }; };
-  const getStatusStyle = (status: string) => { if (status === 'active') return { backgroundColor: theme.successBg, color: theme.success }; if (status === 'trial') return { backgroundColor: theme.warningBg, color: theme.warning }; return { backgroundColor: theme.errorBg, color: theme.error }; };
-  const statusStyle = getStatusStyle(client.subscription_status);
+  // White-glove / manual billing: this agency hides all billing from the client,
+  // so even a bookmarked upgrade URL should not show plans or checkout. Point
+  // the client to their provider instead.
+  if ((agency as any).hide_client_billing) return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
+      <div className="max-w-md text-center">
+        {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-5 object-contain" />}
+        <h1 className="text-xl sm:text-2xl font-semibold mb-2" style={{ color: theme.text }}>Your plan is managed by {agency.name || 'your provider'}</h1>
+        <p className="text-[15px] mb-6" style={{ color: theme.textMuted }}>
+          Billing for your account is handled directly by {agency.name || 'your provider'}. To change your plan or sort out anything billing-related, reach out to them{(agency as any).support_email ? ` at ${(agency as any).support_email}` : ''}.
+        </p>
+        <a href="/client/dashboard" className="inline-flex items-center px-5 py-2.5 rounded-xl font-medium" style={{ backgroundColor: primaryColor, color: primaryText }}>Back to dashboard</a>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
-      <Toast message={message} isError={!/success|enabled|updated/i.test(message)} style={getMessageStyle(message)} />
+    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: theme.bg }}>
+      <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `\n::selection { background-color: ${primaryColor}40; color: inherit; }` }} />
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-8 fu fu1">
+          {agency.logo_url && <img src={agency.logo_url} alt={agency.name} className="h-12 mx-auto mb-4 object-contain" />}
+          {expired && <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}><Clock className="h-4 w-4" /><span className="text-sm font-medium">Your trial has ended</span></div>}
+          {canceled && <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: theme.warningBg, color: theme.warningText }}><AlertTriangle className="h-4 w-4" /><span className="text-sm font-medium">Checkout was canceled</span></div>}
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2" style={{ color: theme.text }}>{expired ? 'Choose a Plan to Continue' : isActive ? 'Change Your Plan' : 'Upgrade Your Plan'}</h1>
+          <p className="text-[15px]" style={{ color: theme.textMuted }}>Keep your AI receptionist answering calls 24/7</p>
+        </div>
 
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Settings</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Account, security, and billing</p>
-      </div>
-
-      <div className="max-w-3xl">
-
-        {/* Account identity — who you are and which account you're in */}
-        <section className="mb-4 sm:mb-6">
-          <div className="rounded-2xl border p-4 sm:p-5 flex items-center justify-between gap-3" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.18 : 0.1), color: theme.primary }}>{(user?.first_name || user?.email || client.business_name || '?').charAt(0).toUpperCase()}</div>
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-semibold truncate" style={{ color: theme.text }}>{[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'Signed in'}</p>
-                <p className="text-[10px] sm:text-xs truncate" style={{ color: theme.textMuted4 }}>{[[user?.first_name, user?.last_name].filter(Boolean).join(' ') ? user?.email : null, client.business_name].filter(Boolean).join(' · ')}</p>
-              </div>
-            </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: isOwner ? hexToRgba(theme.primary, 0.12) : (theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), color: isOwner ? theme.primary : theme.textMuted }}>{isOwner ? 'Account Owner' : 'Team Member'}</span>
+        {error && (
+          <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 fu fu1" style={{ ...glass, borderColor: theme.errorBorder }}>
+            <AlertTriangle className="h-5 w-5 flex-shrink-0" style={{ color: theme.errorText }} />
+            <p className="text-sm" style={{ color: theme.errorText }}>{error}</p>
           </div>
-        </section>
-
-        {client.agency?.allow_client_branding && (
-          <ClientBrandingSection clientId={client.id} theme={theme} />
         )}
 
-        {/* HIPAA Mode — only shown for healthcare-related industries */}
-        {['medical_practice','dental','mental_health','veterinary','healthcare','chiropractic','optometry','physical_therapy'].includes(client.industry) && (
-        <SectionCard icon={Shield} title="HIPAA Compliance" accent={hipaaMode} theme={theme} primaryColor={theme.primary}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="font-semibold text-xs sm:text-sm" style={{ color: theme.text }}>HIPAA Mode</span>
-                  {hipaaMode && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style={{ backgroundColor: theme.successBg, color: theme.success }}>Active</span>}
+        <div className="grid md:grid-cols-3 gap-5 fu fu2">
+          {plans.map(plan => (
+            <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
+              style={{ ...glass, borderColor: plan.popular ? primaryColor : theme.border, borderWidth: plan.popular ? '2px' : '1px', boxShadow: plan.popular ? `0 0 0 1px ${primaryColor}, 0 8px 30px ${hexToRgba(primaryColor, 0.12)}` : 'none' }}>
+              {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: primaryColor, color: primaryText }}>Most Popular</div>}
+
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold mb-1 tracking-tight" style={{ color: theme.text }}>{plan.name}</h3>
+                {/* Phase 3: agency-provided tagline. Skipped silently if null. */}
+                {plan.description && (
+                  <p className="text-[12px] mb-3" style={{ color: theme.textMuted }}>{plan.description}</p>
+                )}
+                {/* Price pulled from the agency's per-tier pricing via
+                    buildClientPlans (plan.price), formatted in the agency's
+                    currency. */}
+                <div className="flex items-baseline justify-center gap-1 mt-2">
+                  <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatPrice(plan.price, currencyCode)}</span>
+                  <span className="text-sm" style={{ color: theme.textMuted4 }}>/mo</span>
                 </div>
-                <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted4 }}>
-                  {hipaaMode
-                    ? 'HIPAA-compliant call handling is active. Call recordings and transcripts are not stored. Booking is set to collect-request only. The AI collects only name, phone, and general reason for visit.'
-                    : 'Enable for healthcare practices. Disables call recordings, transcripts, and caller recognition. Forces collect-request booking mode. The AI will only collect scheduling information — no medical details.'}
-                </p>
+                {isActive && client?.plan_type === plan.id && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>
+                    <Check className="h-3 w-3" />Current plan
+                  </div>
+                )}
               </div>
-              <button onClick={() => handleToggleHipaa(!hipaaMode)} disabled={savingHipaa} className="relative flex-shrink-0 mt-1 w-11 h-6 rounded-full transition-colors disabled:opacity-50" style={{ backgroundColor: hipaaMode ? theme.primary : theme.isDark ? 'rgba(255,255,255,0.12)' : '#d1d5db' }}>
-                <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform" style={{ transform: hipaaMode ? 'translateX(20px)' : 'translateX(0)' }} />
+
+              {/* Included features, sourced from buildClientPlans so it reflects
+                  exactly what the agency toggled in Settings → Pricing. The
+                  call-limit string and team-member count are already inlined. */}
+              <ul className="space-y-2.5 mb-4">
+                {plan.included.map((f, i) => (
+                  <li key={`inc-${i}`} className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                    <span className="text-[13px]" style={{ color: theme.textSubtle }}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Excluded features, greyed out so the user can see what they'd
+                  gain by picking a higher tier. Same pattern as /signup/plan. */}
+              {plan.excluded.length > 0 && (
+                <ul className="space-y-2.5 mb-6">
+                  {plan.excluded.map((f, i) => (
+                    <li key={`exc-${i}`} className="flex items-start gap-2.5">
+                      <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: theme.excludedBg }}>
+                        <X className="h-2.5 w-2.5" style={{ color: theme.excludedIcon }} />
+                      </div>
+                      <span className="text-[13px]" style={{ color: theme.excludedText }}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {plan.excluded.length === 0 && <div className="mb-6" />}
+
+              <button onClick={() => handleSelectPlan(plan.id)} disabled={(isActive && client?.plan_type === plan.id) || checkoutLoading !== null || changing}
+                className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                style={{ backgroundColor: plan.popular ? primaryColor : 'transparent', color: plan.popular ? primaryText : primaryColor, border: plan.popular ? 'none' : `2px solid ${primaryColor}` }}>
+                {checkoutLoading === plan.id
+                  ? <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+                  : (isActive && client?.plan_type === plan.id)
+                    ? <>Current Plan</>
+                    : <><Zap className="h-4 w-4" />{isActive ? `Switch to ${plan.name}` : `Select ${plan.name}`}</>}
               </button>
             </div>
-            {hipaaMode && (
-              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> Call recordings disabled — no audio stored</div>
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> Transcripts disabled — no verbatim text stored</div>
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> Caller recognition disabled — no patient identification</div>
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> Collect-request booking — office confirms all appointments</div>
-                <div className="flex items-center gap-2 text-[11px]" style={{ color: theme.textMuted }}><span style={{ color: theme.success }}>✓</span> AI collects name, phone, and general visit type only</div>
-              </div>
-            )}
-        </SectionCard>
-        )}
+          ))}
+        </div>
 
-        {/* AI Phone Number */}
-        <SectionCard icon={Phone} title="AI Phone Number" theme={theme} primaryColor={theme.primary}>
-            <div className="flex items-center justify-between gap-3 sm:gap-4">
-              <div className="min-w-0"><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Your AI Receptionist</label><div className="text-base sm:text-xl font-bold truncate" style={{ color: theme.primary }}>{client.vapi_phone_number ? formatPhoneNumber(client.vapi_phone_number) : 'Setting up...'}</div></div>
-              <button onClick={handleCopyNumber} disabled={!client.vapi_phone_number} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>{isCopied ? <Check className="w-4 h-4" style={{ color: theme.success }} /> : <Copy className="w-4 h-4" />}{isCopied ? 'Copied!' : 'Copy'}</button>
-            </div>
-        </SectionCard>
-
-        {/* Add to Home Screen */}
-        <SectionCard icon={Download} title="Export your data" subtitle="Download your call log as a CSV, opens in Excel or Google Sheets" theme={theme} primaryColor={theme.primary}>
-          <button onClick={handleExportCalls} disabled={exporting} className="px-4 py-2 rounded-lg text-sm font-medium transition hover:opacity-90 disabled:opacity-50 flex items-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            {exporting ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing...</> : <><Download className="w-4 h-4" /> Download call log (CSV)</>}
-          </button>
-        </SectionCard>
-
-        <SectionCard icon={Smartphone} title="Add to Home Screen" subtitle="Get instant access, works like a native app" action={<button onClick={() => setShowPwaModal(true)} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Install</button>} theme={theme} primaryColor={theme.primary} />
-
-        {isOwner && (<>
-        {/* Contact Information */}
-        <SectionCard icon={User} title="Contact Information" theme={theme} primaryColor={theme.primary}>
-          <div className="space-y-3 sm:space-y-4">
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Your name</label><input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="e.g. Mike Johnson" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Shown in your dashboard greeting. Your business name is set separately.</p></div>
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Owner Phone *</label><input type="tel" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="+1 (555) 123-4567" /><p className="text-[10px] sm:text-xs mt-1 sm:mt-1.5" style={{ color: theme.textMuted4 }}>Owner SMS notifications are sent here, and this is the default number the AI transfers to when a caller needs a person. Team members get SMS on their own number, set under Users.</p></div>
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Email *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="your@email.com" /></div>
-            <button onClick={handleSave} disabled={saving || !hasChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasChanges ? theme.primary : theme.bg, color: hasChanges ? theme.primaryText : theme.textMuted4, border: hasChanges ? 'none' : `1px solid ${theme.border}` }}>{saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}</button>
+        <div className="mt-12 text-center fu fu3">
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {[{ icon: Phone, label: 'Cancel anytime' }, { icon: Check, label: 'No setup fees' }, { icon: Clock, label: 'Instant activation' }].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-2" style={{ color: theme.textMuted4 }}><Icon className="h-4 w-4" /><span className="text-sm">{label}</span></div>
+            ))}
           </div>
-        </SectionCard>
-        </>)}
+        </div>
 
-        {/* Team-member SMS clarification (shown when the account-level sections are hidden) */}
-        {!isOwner && (
-          <section className="mb-4 sm:mb-6">
-            <div className="rounded-lg p-3 flex items-start gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
-              <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-              <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Account phone, call handling, and billing are managed by the account owner. To get SMS call alerts on your own number, ask the owner to add your phone and turn on notifications for you under Users.</p>
-            </div>
-          </section>
-        )}
-
-        {/* Your Login — the signed-in user's own credentials */}
-        <SectionCard icon={Lock} title="Your Login" theme={theme} primaryColor={theme.primary}>
-          <div className="space-y-2.5">
-            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>The email and password you use to sign in to this dashboard.</p>
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
-              <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-              <div className="min-w-0 flex-1"><p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Username</p><p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{myCreds?.email || user?.email || '—'}</p></div>
-              <button onClick={() => copyCred(myCreds?.email || user?.email || '', 'user')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'user' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.bg }}>
-              <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.textMuted4 }} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Password</p>
-                {myCreds && myCreds.visible_password
-                  ? (<p className="text-xs sm:text-sm font-mono truncate" style={{ color: theme.text }}>{showLoginPw ? myCreds.visible_password : '\u2022'.repeat(10)}</p>)
-                  : (<p className="text-[10px] sm:text-xs italic" style={{ color: theme.textMuted4 }}>You set your own password. Use Change Password below to update it.</p>)}
-              </div>
-              {myCreds && myCreds.visible_password && (
-                <>
-                  <button onClick={() => setShowLoginPw(v => !v)} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{showLoginPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
-                  <button onClick={() => copyCred(myCreds.visible_password || '', 'pass')} className="flex-shrink-0 p-1" style={{ color: theme.textMuted4 }}>{credCopied === 'pass' ? <Check className="w-3.5 h-3.5" style={{ color: theme.success }} /> : <Copy className="w-3.5 h-3.5" />}</button>
-                </>
-              )}
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Change Password */}
-        <SectionCard icon={Lock} title="Change Password" theme={theme} primaryColor={theme.primary}>
-          <div className="space-y-3 sm:space-y-4">
-            {passwordMessage && (<div className="p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm font-medium" style={getMessageStyle(passwordMessage)}>{passwordMessage}</div>)}
-            <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Current Password</label><div className="relative"><input type={showCurrentPassword ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Enter current password" /><button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
-            {myCreds?.has_custom_password && (isOwner
-              ? (<div className="text-right"><a href="/auth/forgot-password?scope=client" className="text-[11px] sm:text-xs font-medium hover:underline" style={{ color: theme.primary }}>Forgot your current password?</a></div>)
-              : (<p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted4 }}>Forgot it? Ask your account owner to reset your password.</p>)
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>New Password</label><div className="relative"><input type={showNewPassword ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition pr-10" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Min 8 characters" /><button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted4 }}>{showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
-              <div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: theme.textMuted }}>Confirm New Password</label><input type={showNewPassword ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border text-sm focus:outline-none focus:ring-2 transition" style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }} placeholder="Confirm new password" /></div>
-            </div>
-            <button onClick={handleChangePassword} disabled={changingPassword || !hasPasswordChanges} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: hasPasswordChanges ? theme.primary : theme.bg, color: hasPasswordChanges ? theme.primaryText : theme.textMuted4, border: hasPasswordChanges ? 'none' : `1px solid ${theme.border}` }}>{changingPassword ? 'Changing...' : 'Change Password'}</button>
-          </div>
-        </SectionCard>
-
-        {/* Users — dashboard login accounts (owner only) */}
-        {isOwner && (
-        <SectionCard icon={Users} title="Users" subtitle="Dashboard login accounts for your team" theme={theme} primaryColor={theme.primary}>
-          <ClientTeamSection clientId={client.id} theme={theme} hideHeader />
-        </SectionCard>
-        )}
-
-        {/* Subscription & Billing */}
-        <SectionCard icon={CreditCard} title="Subscription" theme={theme} primaryColor={theme.primary}>
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{(client as any).pricing_mode === 'custom' ? 'Custom' : (client.plan_type || 'Trial')}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
-            {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
-            {(client.billing_mode === 'paystack' && !['active', 'canceling', 'past_due'].includes((client as any).paystack_status)) ? (
-              <div className="space-y-2">
-                <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a card to start your subscription. You&apos;re billed monthly and can cancel anytime.</p>
-                <button onClick={handleSetupPaystack} disabled={paystackSetupBusy} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackSetupBusy ? 'Starting...' : 'Set up billing'}</button>
-                {paystackSetupError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackSetupError}</p>}
-              </div>
-            ) : (client.subscription_status === 'trial' || client.subscription_status === 'trial_expired') ? (
-              <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Upgrade Now</button>
-            ) : client.subscription_status === 'active' ? (
-              client.billing_mode === 'paystack' ? (
-                (client as any).paystack_status === 'canceling' ? (
-                  <div className="space-y-3">
-                    <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                      <div className="text-sm font-semibold mb-1" style={{ color: theme.warningText }}>Subscription canceled</div>
-                      <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.warningText }}>{(client as any).paystack_next_charge_at ? `You keep full access until ${formatDate((client as any).paystack_next_charge_at)}. After that, billing stops and your service ends.` : 'You keep full access until the end of your current billing period.'}</div>
-                    </div>
-                    <button onClick={handleResumePaystack} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{canceling ? 'Working\u2026' : 'Resume subscription'}</button>
-                    {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
-                  </div>
-                ) : (
-                  <>
-                    {canChangePlan && (
-                      <>
-                        <button onClick={() => setShowPlanPicker(v => !v)} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{showPlanPicker ? 'Hide plans' : 'Change Plan'}</button>
-                        {showPlanPicker && (
-                          <div className="space-y-2">
-                            {agencyPlans.map((pl: any) => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
-                              <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
-                                <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `${paystackCurrencySymbol}${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
-                                <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
-                              </div>
-                            ); })}
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                      <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Billed monthly via Paystack{(client as any).paystack_next_charge_at ? `. Next charge ${formatDate((client as any).paystack_next_charge_at)}` : ''}.{canChangePlan ? ' Plan changes take effect on your next billing date.' : ''}</div>
-                    </div>
-                    <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
-                    {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
-                  </>
-                )
-              ) : client.billing_mode === 'manual' ? (
-                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                  <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Billed by {client.agency?.name || 'your provider'}</div>
-                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Your plan and payments are handled directly by {client.agency?.name || 'your provider'}. To change your plan or update payment, reach out to them{client.agency?.support_email ? ` at ${client.agency.support_email}` : ''}.</div>
-                </div>
-              ) : (
-                <>
-                  {canChangePlan && (
-                    <>
-                      <button onClick={() => setShowPlanPicker(v => !v)} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{showPlanPicker ? 'Hide plans' : 'Change Plan'}</button>
-                      {showPlanPicker && (
-                        <div className="space-y-2">
-                          {agencyPlans.map((pl: any) => { const isCurrent = (client.plan_type || '').toLowerCase() === (pl.key || '').toLowerCase(); return (
-                            <div key={pl.key} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${isCurrent ? theme.primary : theme.border}` }}>
-                              <div><div className="text-sm font-semibold" style={{ color: theme.text }}>{pl.name}{isCurrent ? ' (current)' : ''}</div><div className="text-xs" style={{ color: theme.textMuted }}>{pl.price != null ? `${paystackCurrencySymbol}${Math.round(pl.price / 100)}/mo` : ''}{pl.limit != null ? ` \u00b7 ${pl.limit === -1 ? 'Unlimited' : pl.limit} calls` : ''}</div></div>
-                              <button onClick={() => handleChangePlan(pl.key)} disabled={isCurrent || changingPlan !== null} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ backgroundColor: isCurrent ? theme.bg : theme.primary, color: isCurrent ? theme.textMuted : theme.primaryText, border: isCurrent ? `1px solid ${theme.border}` : 'none' }}>{changingPlan === pl.key ? '\u2026' : isCurrent ? 'Current' : 'Select'}</button>
-                            </div>
-                          ); })}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: canChangePlan ? theme.bg : theme.primary, color: canChangePlan ? theme.textMuted : theme.primaryText, border: canChangePlan ? `1px solid ${theme.border}` : 'none' }}>Manage Subscription</button>
-                  <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
-                  {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
-                </>
-              )
-            ) : client.billing_mode === 'paystack' ? (
-              <div className="space-y-3">
-                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
-                  <div className="text-sm font-semibold mb-1" style={{ color: theme.warningText }}>Payment issue</div>
-                  <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.warningText }}>Your last payment didn&apos;t go through. We&apos;ll retry automatically over the next few days. To fix it now, add a card below.</div>
-                </div>
-                <button onClick={handleSetupPaystack} disabled={paystackSetupBusy} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackSetupBusy ? 'Starting...' : 'Update payment method'}</button>
-                {paystackSetupError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackSetupError}</p>}
-              </div>
-            ) : (
-              <button onClick={handleUpgrade} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Reactivate</button>
-            )}
-          </div>
-        </SectionCard>
-
-        {/* Support */}
-        {supportPhone && (
-          <SectionCard icon={Headphones} title="AI Support Line" subtitle="Available 24/7" action={<a href={`tel:${supportPhone}`} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />Call</a>} theme={theme} primaryColor={theme.primary}>
-            <a href={`tel:${supportPhone}`} className="font-semibold text-sm sm:text-lg" style={{ color: theme.primary }}>{formatPhoneNumber(supportPhone)}</a>
-          </SectionCard>
-        )}
+        <div className="mt-8 text-center"><a href="/client/dashboard" className="text-sm hover:underline" style={{ color: theme.textMuted4 }}>← Back to Dashboard</a></div>
       </div>
 
-      <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={branding.agencyName || client.business_name || 'Your App'} />
+      {confirmPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!changing) setConfirmPlan(null); }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ ...glass, backgroundColor: isDark ? '#0c0c0c' : '#ffffff' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: theme.text }}>Switch to {confirmPlan.name}?</h3>
+            <p className="text-sm mb-5" style={{ color: theme.textMuted }}>Your plan changes right away and your AI receptionist keeps running. Your next invoice is adjusted automatically for the part of the cycle you have already used.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmPlan(null)} disabled={changing}
+                className="flex-1 py-2.5 rounded-xl font-medium text-sm disabled:opacity-50"
+                style={{ backgroundColor: 'transparent', color: theme.textSubtle, border: `1px solid ${theme.border}` }}>
+                Cancel
+              </button>
+              <button onClick={confirmChangePlan} disabled={changing}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ backgroundColor: primaryColor, color: primaryText }}>
+                {changing ? <><Loader2 className="h-4 w-4 animate-spin" />Switching...</> : <>Confirm switch</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function ClientUpgradePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: '#6b7280' }} /></div>}>
+      <ClientUpgradeContent />
+    </Suspense>
   );
 }
