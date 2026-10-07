@@ -496,6 +496,28 @@ export default function MarketingWebsitePage() {
           {/* Signup URL row — handy reference even if they pick the widget */}
           <div className="mb-6"><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your client signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain: ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
 
+          <div className="mb-6">
+            <label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Signup form text</label>
+            <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>The headline and line shown at the top of your embedded signup form. Leave blank to use the defaults.</p>
+            <div className="space-y-2">
+              <input type="text" value={signupHeadline} onChange={e => setSignupHeadline(e.target.value)} placeholder="Get Your AI Receptionist" maxLength={70} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+              <input type="text" value={signupSubtitle} onChange={e => setSignupSubtitle(e.target.value)} placeholder={`Start your free trial with ${agency?.name || 'your business'}`} maxLength={120} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
+            </div>
+            <div className="mt-3">
+              <label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Logo alignment</label>
+              <p className="text-[10px] sm:text-xs mt-0.5 mb-1.5" style={{ color: mutedTextColor }}>Where your logo sits in the header of your signup, plan, and password pages, for when you link to signup from your own website.</p>
+              <div className="inline-flex rounded-lg p-0.5 gap-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                {(['left', 'center', 'right'] as const).map((opt) => (
+                  <button key={opt} type="button" onClick={() => setSignupLogoAlign(opt)} className="px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors" style={{ backgroundColor: signupLogoAlign === opt ? agencyPrimaryColor : 'transparent', color: signupLogoAlign === opt ? '#fff' : mutedTextColor }}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <button onClick={handleSaveSignupText} disabled={savingSignupText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingSignupText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
+              {signupTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
+            </div>
+          </div>
+
           {/* ── Section A: Inline Signup Widget (recommended) ── */}
           <div className="mb-6">
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
@@ -535,28 +557,6 @@ export default function MarketingWebsitePage() {
             </div>
 
             <details className="mt-3 group"><summary className="text-[10px] sm:text-xs cursor-pointer transition-colors" style={{ color: mutedTextColor }}>Optional attributes</summary><div className="mt-2 space-y-1.5 text-[10px] sm:text-xs pl-2 border-l-2" style={{ borderColor: inputBorder }}><div><code className="font-mono" style={{ color: textColor }}>data-theme</code> <span style={{ color: mutedTextColor }}>sets "light" or "dark" to override your default</span></div><div><code className="font-mono" style={{ color: textColor }}>data-default-plan</code> <span style={{ color: mutedTextColor }}>pre-selects "starter", "pro", or "growth"</span></div><div><code className="font-mono" style={{ color: textColor }}>data-redirect-on-success</code> <span style={{ color: mutedTextColor }}>is a URL to send the parent page to after signup</span></div></div></details>
-
-            <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${inputBorder}` }}>
-              <label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Signup form text</label>
-              <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>The headline and line shown at the top of your embedded signup form. Leave blank to use the defaults.</p>
-              <div className="space-y-2">
-                <input type="text" value={signupHeadline} onChange={e => setSignupHeadline(e.target.value)} placeholder="Get Your AI Receptionist" maxLength={70} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-                <input type="text" value={signupSubtitle} onChange={e => setSignupSubtitle(e.target.value)} placeholder={`Start your free trial with ${agency?.name || 'your business'}`} maxLength={120} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} />
-              </div>
-              <div className="mt-3">
-                <label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Logo alignment</label>
-                <p className="text-[10px] sm:text-xs mt-0.5 mb-1.5" style={{ color: mutedTextColor }}>Where your logo sits in the signup and plan page header, for when you link to signup from your own website.</p>
-                <div className="inline-flex rounded-lg p-0.5 gap-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-                  {(['left', 'center', 'right'] as const).map((opt) => (
-                    <button key={opt} type="button" onClick={() => setSignupLogoAlign(opt)} className="px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors" style={{ backgroundColor: signupLogoAlign === opt ? agencyPrimaryColor : 'transparent', color: signupLogoAlign === opt ? '#fff' : mutedTextColor }}>{opt}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 mt-2">
-                <button onClick={handleSaveSignupText} disabled={savingSignupText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingSignupText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
-                {signupTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
-              </div>
-            </div>
           </div>
 
           {/* ── Divider ── */}
