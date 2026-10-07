@@ -221,10 +221,14 @@ export default function TemplateEditorPage() {
     if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); audioRef.current = null; setPlayingVoiceId(null); return; }
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setPlayingVoiceId(voice.id);
+    // Speak the template's actual opening greeting in the chosen voice (per-voice
+    // greeting preview), falling back to a neutral line only if it's empty.
+    const g = (firstMessage || '').trim();
+    const previewText = g.length >= 2 ? g : "Hi, thanks for calling! How can I help you today?";
     try {
       const r = await fetch(`/api/voice-preview`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voice_id: voice.id, text: "Hi, thanks for calling! How can I help you today?" }),
+        body: JSON.stringify({ voice_id: voice.id, text: previewText }),
       });
       if (!r.ok) throw new Error('preview failed');
       const blob = await r.blob();
