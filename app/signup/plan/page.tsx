@@ -572,12 +572,12 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             </div>
           )}
 
-          <div className={`grid gap-5 mx-auto ${plans.length === 1 ? 'max-w-sm' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
+          <div className={`grid gap-6 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-7xl md:grid-cols-3'}`}>
             {plans.map((plan) => {
               const discounted = discount?.percent_off ? Math.round(plan.price * (1 - (discount.percent_off as number) / 100)) : null;
               const onPrimaryText = primaryLight ? '#050505' : '#fafaf9';
               return (
-              <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
+              <div key={plan.id} className="relative rounded-3xl p-8 sm:p-9 transition-all"
                 style={{
                   backgroundColor: cardBg,
                   border: `${plan.popular ? '2px' : '1px'} solid ${plan.popular ? primaryColor : cardBorder}`,
@@ -588,46 +588,46 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                 )}
 
                 <div className="text-center mb-6">
-                  <h3 className="text-lg font-semibold mb-1 tracking-tight" style={{ color: textColor }}>{plan.name}</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 tracking-tight" style={{ color: textColor }}>{plan.name}</h3>
                   {plan.description && (
-                    <p className="text-[12px] mb-3" style={{ color: mutedTextColor }}>{plan.description}</p>
+                    <p className="text-sm mb-4" style={{ color: mutedTextColor }}>{plan.description}</p>
                   )}
                   <div className="flex items-baseline justify-center gap-1 mt-2">
                     {discounted != null && (
                       <span className="text-lg line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
                     )}
-                    <span className="text-4xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
-                    <span className="text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
+                    <span className="text-5xl sm:text-6xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
+                    <span className="text-base" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
                   </div>
                 </div>
 
-                <ul className="space-y-2.5 mb-4">
+                <ul className="space-y-3.5 mb-5">
                   {plan.included.map((feature, i) => (
                     <li key={`inc-${i}`} className="flex items-start gap-2.5">
-                      <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
-                      <span className="text-[13px]" style={{ color: isDark ? 'rgba(250,250,249,0.8)' : '#374151' }}>{feature}</span>
+                      <Check className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                      <span className="text-[15px]" style={{ color: isDark ? 'rgba(250,250,249,0.8)' : '#374151' }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 {plan.excluded && plan.excluded.length > 0 && (
-                  <ul className="space-y-2.5 mb-6">
+                  <ul className="space-y-3.5 mb-7">
                     {plan.excluded.map((feature, i) => (
                       <li key={`exc-${i}`} className="flex items-start gap-2.5">
-                        <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
-                          <X className="h-2.5 w-2.5" style={{ color: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db' }} />
+                        <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}>
+                          <X className="h-3 w-3" style={{ color: isDark ? 'rgba(250,250,249,0.2)' : '#d1d5db' }} />
                         </div>
-                        <span className="text-[13px]" style={{ color: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af' }}>{feature}</span>
+                        <span className="text-[15px]" style={{ color: isDark ? 'rgba(250,250,249,0.3)' : '#9ca3af' }}>{feature}</span>
                       </li>
                     ))}
                   </ul>
                 )}
-                {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-6" />}
+                {(!plan.excluded || plan.excluded.length === 0) && <div className="mb-7" />}
 
                 <button onClick={() => handleSelectPlan(plan.id)} disabled={loading || !consentAgreed}
-                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  className="w-full py-4 rounded-xl font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                   style={plan.popular ? { backgroundColor: primaryColor, color: onPrimaryText, border: 'none' } : { backgroundColor: 'transparent', color: primaryColor, border: `2px solid ${primaryColor}` }}>
-                  {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<><Zap className="h-4 w-4" />Get Started</>)}
+                  {loading && selectedPlan === plan.id ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<><Zap className="h-5 w-5" />Get Started</>)}
                 </button>
               </div>
             );})}
