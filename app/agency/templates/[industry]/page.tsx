@@ -46,8 +46,7 @@ const MODEL_OPTIONS = [
   { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strong reasoning but slower — legacy option for complex industries', tag: 'Legacy' },
 ];
 
-const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean; provider?: string }[] = [
-  { id: 'sonic-3.5', name: 'Cartesia Sonic 3.5', desc: 'Cartesia\'s fastest real-time voice (~70ms first audio), tops the humanness benchmarks. Uses a Cartesia voice id instead of an ElevenLabs voice. Voice speed does not apply.', tag: 'Fastest', provider: 'cartesia' },
+const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean }[] = [
   { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest and most responsive on live calls (~75ms). The real-time standard, recommended for phone receptionists.', tag: 'Recommended' },
   { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural across 29 languages, but noticeably higher latency. Best when voice quality matters more than call speed.', tag: 'Most natural' },
   { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most expressive and human, but built for pre-rendered audio, so it can feel laggy on fast back-and-forth calls.', tag: 'Most expressive' },
@@ -437,17 +436,6 @@ export default function TemplateEditorPage() {
           </div>
 
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            {/* Cartesia uses a free-form voice id (its voices are not in the
-                ElevenLabs library the picker lists), so swap in a text input when
-                the Cartesia engine is selected. voice_id is the shared field. */}
-            {ttsModel === 'sonic-3.5' ? (
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Cartesia Voice ID</label>
-                <input type="text" value={voiceId} onChange={e => setVoiceId(e.target.value)} placeholder="e.g. a0e99841-438c-4a64-b679-ae501e7d6091" className="w-full rounded-lg px-3 py-2 text-sm font-mono" style={inputStyle} />
-                <p className="text-xs mt-1.5" style={{ color: theme.textMuted }}>Paste a Cartesia voice id from the VAPI voice library or the Cartesia playground. Custom/cloned Cartesia voices must be set public. Voice speed does not apply to Cartesia.</p>
-                {voiceError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{voiceError}</p>}
-              </div>
-            ) : (<>
             <VoicePicker theme={theme} voices={voices} value={voiceId} onChange={setVoiceId} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} onDeleteCustom={isScalePlan ? handleDeleteCustomVoice : undefined} />
             {voiceError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{voiceError}</p>}
             <div className="mt-3">
@@ -484,7 +472,6 @@ export default function TemplateEditorPage() {
                 <p className="text-xs" style={{ color: theme.textMuted }}>Want to use your own ElevenLabs voice? Custom voices are available on the Scale plan.</p>
               )}
             </div>
-            </>)}
           </div>
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">

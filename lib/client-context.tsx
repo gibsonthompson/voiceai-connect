@@ -216,6 +216,48 @@ const defaultBranding: Branding = {
   supportEmail: null, supportPhone: null, websiteTheme: 'dark', clientHeaderMode: 'agency_name',
 };
 
+// The login page caches the resolved agency (colors + theme) under
+// 'voiceai_agency_brand'. We read it so the dashboard's very first paint can use
+// the white-label color even when the stored client record has no agency brand
+// attached yet, instead of flashing the generic default blue before the fetch.
+function readAgencyBrandCache(): any | null {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('voiceai_agency_brand') : null;
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// Build the initial branding with no flash of the default color: prefer the
+// cached client record, and whenever that does not carry a usable brand color,
+// overlay the cached agency brand from the login page.
+function seedBranding(): Branding {
+  let base = defaultBranding;
+  try {
+    const cachedClient = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
+    if (cachedClient) {
+      const parsed = JSON.parse(cachedClient);
+      if (parsed) base = buildBranding(parsed);
+    }
+  } catch {}
+
+  if (base.primaryColor === defaultBranding.primaryColor) {
+    const a = readAgencyBrandCache();
+    if (a) {
+      base = {
+        ...base,
+        primaryColor: isUsableBrandColor(a.primary_color) ? a.primary_color.trim() : base.primaryColor,
+        secondaryColor: isUsableBrandColor(a.secondary_color) ? a.secondary_color.trim() : base.secondaryColor,
+        accentColor: isUsableBrandColor(a.accent_color) ? a.accent_color.trim() : base.accentColor,
+        agencyName: a.name || base.agencyName,
+        logoUrl: base.logoUrl || a.logo_url || null,
+        websiteTheme: (a.website_theme === 'light' || a.website_theme === 'dark') ? a.website_theme : base.websiteTheme,
+      };
+    }
+  }
+
+  return base;
+}
+
 const ClientContext = createContext<ClientContextType>({
   client: null, user: null, branding: defaultBranding, loading: true,
   refreshClient: async () => {},
@@ -252,16 +294,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     } catch { return null; }
   });
 
-  const [branding, setBranding] = useState<Branding>(() => {
-    try {
-      const cached = typeof window !== 'undefined' ? localStorage.getItem('client') : null;
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.agency) return buildBranding(parsed);
-      }
-    } catch {}
-    return defaultBranding;
-  });
+  const [branding, setBranding] = useState<Branding>(seedBranding);
 
   const [loading, setLoading] = useState<boolean>(() => {
     try {
