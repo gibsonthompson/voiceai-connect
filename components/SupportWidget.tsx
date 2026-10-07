@@ -161,15 +161,23 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
     setEscalationError(null);
 
     try {
-      const token = localStorage.getItem('auth_token') || '';
-      const payload = collectContact
-        ? { message: msg, sessionId, agencyId, name: escalationName.trim() || null, email: escalationEmail.trim() }
-        : { message: msg, sessionId };
-      const res = await fetch(`${backendUrl}/api/help/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      let res;
+      if (collectContact) {
+        // Not-signed-in client on their agency's login page: send to the agency's
+        // public inbox intake so it reaches the agency (not platform support).
+        res = await fetch(`${backendUrl}/api/agency/support-requests/intake`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agencyId, name: escalationName.trim() || null, contact: escalationEmail.trim(), message: msg, source: 'client_login' }),
+        });
+      } else {
+        const token = localStorage.getItem('auth_token') || '';
+        res = await fetch(`${backendUrl}/api/help/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ message: msg, sessionId }),
+        });
+      }
 
       if (!res.ok) {
         const data = await res.json();

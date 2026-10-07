@@ -453,7 +453,7 @@ export default function AgencyInboxPage() {
                                     <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>From</span><span style={{ color: theme.text }}>{req.user_type === 'client' ? 'Client' : 'Website visitor'}</span></div>
                                     {req.requester_name && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Name</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.requester_name}</span></div>}
                                     {req.contact && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Contact</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.contact}</span></div>}
-                                    <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Source</span><span style={{ color: theme.text }}>{req.source === 'client_dashboard' ? 'Client dashboard' : 'Website'}</span></div>
+                                    <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Source</span><span style={{ color: theme.text }}>{req.source === 'client_dashboard' ? 'Client dashboard' : req.source === 'client_login' ? 'Login page' : 'Website'}</span></div>
                                     <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
                                     {req.resolved_at && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Resolved</span><span className="text-right" style={{ color: theme.text }}>{formatDateTime(req.resolved_at)}</span></div>}
                                   </div>
@@ -482,7 +482,7 @@ export default function AgencyInboxPage() {
                                   )}
                                 </div>
                               </div>
-                              {(req.user_type === 'client' || req.client_id || (req.contact && !isEmail(req.contact))) && (
+                              {(req.client_id || (req.contact && !isEmail(req.contact))) && (
                                 <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${cardBorder}` }}>
                                   <AgencyClientThread agencyId={agencyId as string} backendUrl={backendUrl} requestId={req.id} requesterName={req.requester_name} recipientKind={(req.user_type === 'client' || req.client_id) ? 'client' : 'visitor'} onReplied={fetchRequests} />
                                 </div>
